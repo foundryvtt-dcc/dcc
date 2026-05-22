@@ -974,19 +974,6 @@ at `data-models.spec.js:138` from `mcc-core-book-welcome-dialog`
 intercepting pointer events — sibling-module dialog state, not
 slice-caused).
 
-#### Phase 7 session 5 candidate. Extract chat / hook wiring to `module/chat-hooks.mjs`.
-`renderChatMessageHTML` hook handler + `getChatMessageContextOptions`
-+ related `Hooks.on(...)` blocks for actor/item lifecycle. Mid-
-sized, mid-risk; some handlers reference module-local helpers that
-may need re-exporting first.
-
-#### Phase 7 session 6 candidate. Extract table loading to `module/table-loaders.mjs`.
-`setupCoreBookCompendiumLinks`, `registerTables`, `getSkillTable`,
-related `diceSoNiceReady` / `importAdventure` hooks. Boundary
-clean (no overlap with macros / spell-check / chat). Drops the
-last major `dcc.js` init concern; remaining is registry init +
-init hook scaffolding.
-
 #### Phase 7 session N candidate. Split `styles/dcc.scss` into partials + theme contract.
 Open after the `dcc.js` split lands its biggest chunks. Walk
 `styles/dcc.scss` (~2979 lines) for natural section boundaries
@@ -1006,6 +993,49 @@ stylesheets have stable variables to override.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 6 (2026-05-22): extract chat / hook wiring from
+  `dcc.js` to `module/chat-and-hook-wiring.mjs` — closes the
+  `dcc.js` piecemeal-split arc. Pure refactor — relocates the
+  eleven remaining `Hooks.on` / `Hooks.once` handlers
+  (`hotbarDrop`, `renderChatMessageHTML`,
+  `getChatMessageContextOptions`, `renderActorDirectory`,
+  `preCreateActor`, `preCreateItem`, `applyActiveEffect`,
+  `preUpdateActor`, `updateCombat`, `item-piles-ready`,
+  `getProseMirrorMenuDropDowns`) into a focused module exporting
+  each handler individually + a frozen
+  `CHAT_AND_HOOK_WIRING_HOOKS` dispatch table (only
+  `item-piles-ready` is once-only) + a
+  `registerChatAndHookWiring()` entry-point. `module/dcc.js`
+  shrinks from 737 → 475 lines (-262); the §Appendix A target
+  of ~4–5 focused modules out of `dcc.js` is met. +43 Vitest in
+  new `module/__tests__/chat-and-hook-wiring.test.js` (using
+  `vi.mock` for the seven imported sibling modules so handlers
+  run without a Foundry boot), +1 Playwright in
+  `extension-api.spec.js` (`DCC chat- and hook-wiring ... survives
+  chat-and-hook-wiring.mjs extraction`) exercising
+  `onPreCreateActor` + `onPreCreateItem` + `onPreUpdateActor`
+  end-to-end against a temporary Player probe. **1227 Vitest
+  green** (was 1184, +43); **149 Playwright passed**, zero
+  failures (13.1-min full suite — both prior-session flakes
+  resolved by the follow-up fix commits `1935372` + `2973a13`).
+
+- Phase 7 session 5 (2026-05-21): extract table-loading surface
+  from `dcc.js` to `module/table-loading.mjs`. Pure refactor —
+  relocates `setupCoreBookCompendiumLinks` + `registerTables` +
+  `getSkillTable` + five hook handlers (`diceSoNiceReady`,
+  `importAdventure`, plus the three world-RollTable lifecycle
+  hooks `createRollTable` / `deleteRollTable` /
+  `updateRollTable` that keep `CONFIG.DCC.disapprovalTables` in
+  sync) into a focused module exporting each handler + a frozen
+  `TABLE_LOADING_HOOKS` dispatch table + a
+  `registerTableLoadingHooks()` entry-point. `module/dcc.js`
+  shrinks from 970 → 737 lines (-233). +34 Vitest in new
+  `module/__tests__/table-loading.test.js`, +1 Playwright in
+  `extension-api.spec.js`. **1184 Vitest green** (was 1150,
+  +34); **146 Playwright passed** + 2 failures (latent
+  xcc-core-book DCCItemSheet override + NEW environmental
+  network-suspension flake on `v14-features.spec.js:128`).
 
 - Phase 7 session 4 (2026-05-21): extract `processSpellCheck` from
   `dcc.js` to `module/spell-check-processor.mjs`. Pure refactor —

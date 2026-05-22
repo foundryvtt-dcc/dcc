@@ -14,13 +14,10 @@ import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
 import DCCRoll from './dcc-roll.js'
 import DCC from './config.js'
-import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
 import FleetingLuck from './fleeting-luck.js'
 import SpellDuel from './spell-duel.js'
-import parser from './parser.js'
-import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
 import ReleaseNotes from './release-notes.js'
@@ -38,14 +35,13 @@ import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
-import { createDCCMacro, getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
+import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable, registerTableLoadingHooks, registerTables, setupCoreBookCompendiumLinks } from './table-loading.mjs'
+import { registerChatAndHookWiring } from './chat-and-hook-wiring.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
-
-import { setupItemPilesForDCC } from './item-piles-support.js'
 
 // Import data models
 import {
@@ -454,92 +450,6 @@ function checkMigrations () {
 /* -------------------------------------------- */
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
-// Create a macro when a rollable is dropped on the hotbar
-Hooks.on('hotbarDrop', (bar, data, slot) => {
-  return createDCCMacro(data, slot)
-})
-
-// Highlight 1's and 20's for all regular rolls, special spell check handling
-Hooks.on('renderChatMessageHTML', async (message, html, data) => {
-  if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
-
-  if (game.user.isGM) {
-    message.setFlag('core', 'canPopout', true)
-  }
-  chat.highlightCriticalSuccessFailure(message, html, data)
-  chat.enforceMinimumDamage(message, html)
-  SpellResult.processChatMessage(message, html, data)
-
-  // Add data-item-id for modules that want to use it
-  const itemId = message.getFlag('dcc', 'ItemId')
-  if (itemId !== undefined) {
-    const messageContent = html.querySelector('.message-content')
-    if (messageContent) {
-      messageContent.setAttribute('data-item-id', itemId)
-    }
-  }
-
-  let emoteRolls = false
-  try {
-    emoteRolls = game.settings.get('dcc', 'emoteRolls')
-  } catch {
-    if (message.getFlag('dcc', 'emoteRoll') === true) {
-      emoteRolls = true
-    }
-  }
-
-  let automateDamageFumblesCrits
-  try {
-    automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
-  } catch {
-    automateDamageFumblesCrits = false
-  }
-
-  if (emoteRolls === true) {
-    if (game.user.isGM) {
-      message.setFlag('dcc', 'emoteRoll', true)
-    }
-    chat.emoteAbilityRoll(message, html, data)
-    chat.emoteApplyDamageRoll(message, html, data)
-    chat.emoteAttackRoll(message, html, data)
-    chat.emoteCritRoll(message, html, data)
-    chat.emoteFumbleRoll(message, html, data)
-    chat.emoteDamageRoll(message, html, data)
-    chat.emoteInitiativeRoll(message, html, data)
-    chat.emoteSavingThrowRoll(message, html, data)
-    chat.emoteSkillCheckRoll(message, html, data)
-  }
-
-  // Show spell check pass/fail result for non-emote messages (emote path handles this in emoteSkillCheckRoll)
-  if (emoteRolls === false) {
-    const spellResult = message.getFlag('dcc', 'spellResult')
-    if (spellResult) {
-      const messageContent = html.querySelector('.message-content')
-      if (messageContent) {
-        messageContent.innerHTML += spellResult
-      }
-    }
-  }
-
-  if (emoteRolls === false || (emoteRolls === true && automateDamageFumblesCrits === false)) {
-    // Await these async functions so the DOM is modified before we attach event listeners
-    await chat.lookupCriticalRoll(message, html)
-    await chat.lookupFumbleRoll(message, html, data)
-  }
-
-  // Process table result navigation AFTER emote/lookup functions have modified the HTML
-  // This ensures event listeners are attached to the final DOM elements
-  TableResult.processChatMessage(message, html, data)
-})
-
-// Support context menu on chat cards
-Hooks.on('getChatMessageContextOptions', chat.addChatMessageContextOptions)
-
-// Quick import for actors
-Hooks.on('renderActorDirectory', (app, html) => {
-  parser.onRenderActorDirectory(app, html)
-})
-
 // Settings-table hooks (9 handlers covering disapproval / critical hit
 // packs, divine aid / fumble / lay on hands / turn unholy tables, level
 // data packs, and the mercurial-magic per-class registry + legacy default
@@ -554,184 +464,12 @@ registerSettingsTableHooks()
 // bodies.
 registerTableLoadingHooks()
 
-// Entity pre-creation hooks - set default images before creation to avoid race conditions
-Hooks.on('preCreateActor', (document, data, options) => {
-  // Assign an appropriate DCC actor image if not set
-  if (game.user.isGM && !data.img) {
-    const img = EntityImages.imageForActor(document.type)
-    if (img) {
-      document.updateSource({ img })
-    }
-  }
-
-  // Set Player actor prototype tokens to Link Actor Data by default
-  // Only for brand-new actors (not duplicates or imports)
-  if (!options.keepId && document.type === 'Player' && !document.name.includes('Item Pile')) {
-    document.updateSource({ 'prototypeToken.actorLink': true })
-  }
-})
-
-Hooks.on('preCreateItem', (document, data, options) => {
-  if (!game.user.isGM || data.img) { return }
-
-  // Assign an appropriate DCC item image
-  const img = EntityImages.imageForItem(document.type)
-  if (img) {
-    document.updateSource({ img })
-  }
-})
-
-Hooks.on('applyActiveEffect', (actor, change) => {
-  const { key, value } = change
-  let update = null
-  // We're only interested in strings (dice expressions)
-  const current = foundry.utils.getProperty(actor, key) ?? null
-  if (typeof (current) === 'string') {
-    // If this is a dice chain pattern (e.g. +1d) then we're interested
-    const diceChainPattern = /([+-]?\d+)[dD]/
-    const match = value.match(diceChainPattern)
-    if (match) {
-      update = game.dcc.DiceChain.bumpDie(current, parseInt(match[1]))
-      foundry.utils.setProperty(actor, key, update)
-    }
-  }
-  return update
-})
-
-// Sync prototype token image with actor image when actor image is changed
-Hooks.on('preUpdateActor', async (actor, changes, options, userId) => {
-  // Only process if this client initiated the change
-  if (userId !== game.user.id) return
-
-  // Check if the actor image is being changed
-  if (!changes.img) return
-
-  // Get the current prototype token texture
-  const currentTokenImg = actor.prototypeToken?.texture?.src || ''
-
-  // Define default images that should be replaced
-  const defaultImages = [
-    'icons/svg/mystery-man.svg',
-    EntityImages.imageForActor(actor.type),
-    EntityImages.imageForActor('default')
-  ]
-
-  // Only update token if it's using a default image or is empty
-  if (!currentTokenImg || defaultImages.includes(currentTokenImg)) {
-    // Update the prototype token image to match the new actor image
-    changes['prototypeToken.texture.src'] = changes.img
-  }
-})
-
-// Handle Active Effect duration automation
-Hooks.on('updateCombat', async (combat, changed, options, userId) => {
-  // Only process on the GM's client to avoid duplicates
-  if (!game.user.isGM) return
-
-  // Only process when round changes
-  if (!('round' in changed)) return
-
-  console.log(`DCC | Combat advanced to round ${combat.round}, checking for expired Active Effects...`)
-
-  // Check all actors for expired effects
-  for (const actor of game.actors) {
-    if (actor.effects.size === 0) continue
-
-    const expiredEffects = []
-
-    for (const effect of actor.effects) {
-      // Skip effects with no duration
-      if (!effect.duration) continue
-
-      // For round-based effects
-      if (effect.duration.rounds && effect.duration.startRound !== undefined) {
-        const startRound = effect.duration.startRound
-        const durationRounds = effect.duration.rounds
-        const endRound = startRound + durationRounds
-
-        console.log(`DCC | Effect "${effect.name}": start=${startRound}, duration=${durationRounds}, end=${endRound}, current=${combat.round}`)
-
-        if (combat.round >= endRound) {
-          expiredEffects.push(effect.id)
-          console.log(`DCC | Effect "${effect.name}" on ${actor.name} has expired (round ${combat.round} >= ${endRound})`)
-        }
-      } else if (effect.duration.seconds && effect.isExpired) {
-        // For time-based effects, use Foundry's built-in expiration check
-        expiredEffects.push(effect.id)
-        console.log(`DCC | Time-based effect "${effect.name}" on ${actor.name} has expired`)
-      }
-    }
-
-    // Remove expired effects
-    if (expiredEffects.length > 0) {
-      // Get effect names before deletion
-      const effectNames = expiredEffects.map(id => {
-        const effect = actor.effects.get(id)
-        return effect?.name || 'Unknown'
-      }).join(', ')
-
-      await actor.deleteEmbeddedDocuments('ActiveEffect', expiredEffects)
-
-      // Notify about expired effects
-      ui.notifications.info(game.i18n.format('DCC.EffectsExpired', {
-        actor: actor.name,
-        effects: effectNames
-      }))
-    }
-  }
-})
-
-// Set up Item Piles module compatibility
-Hooks.once('item-piles-ready', setupItemPilesForDCC)
-
-// Add custom ProseMirror menu dropdown for sidebar style
-Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
-  if ('format' in items) {
-    items.format.entries.push({
-      action: 'dcc-custom',
-      title: 'DCC.CustomStyles',
-      active: (state) => {
-        const { $from } = state.selection
-        const preserveAttrs = $from.parent.attrs._preserve || {}
-        return preserveAttrs.class?.includes('sidebar') || false
-      },
-      children: [
-        {
-          action: 'sidebar',
-          title: 'DCC.SidebarText',
-          node: menu.schema.nodes.paragraph,
-          active: (state) => {
-            const { $from } = state.selection
-            const preserveAttrs = $from.parent.attrs._preserve || {}
-            return preserveAttrs.class?.includes('sidebar') || false
-          },
-          cmd: () => {
-            const { state, dispatch } = menu.view
-            const { $from } = state.selection
-            const currentNode = $from.parent
-            const preserveAttrs = currentNode.attrs._preserve || {}
-            const hasSidebarClass = preserveAttrs.class?.includes('sidebar')
-
-            let newClass
-            if (hasSidebarClass) {
-              // Remove sidebar class
-              newClass = preserveAttrs.class.split(' ').filter(c => c !== 'sidebar').join(' ') || null
-            } else {
-              // Add sidebar class
-              newClass = preserveAttrs.class ? `${preserveAttrs.class} sidebar` : 'sidebar'
-            }
-
-            const newPreserve = { ...preserveAttrs }
-            if (newClass) newPreserve.class = newClass
-            else delete newPreserve.class
-
-            return foundry.prosemirror.commands.setBlockType(menu.schema.nodes.paragraph, {
-              ...currentNode.attrs,
-              _preserve: newPreserve
-            })(state, dispatch)
-          }
-        }
-      ]
-    })
-  }
-})
+// Chat and lifecycle hook wiring (11 handlers covering hotbarDrop,
+// renderChatMessageHTML / getChatMessageContextOptions, the parser
+// renderActorDirectory bridge, preCreate{Actor,Item} default-image
+// assignment, applyActiveEffect dice-chain bumps, preUpdateActor
+// prototype-token sync, updateCombat Active Effect expiry,
+// item-piles-ready integration, and the getProseMirrorMenuDropDowns
+// sidebar-style menu). See module/chat-and-hook-wiring.mjs for the
+// handler bodies.
+registerChatAndHookWiring()

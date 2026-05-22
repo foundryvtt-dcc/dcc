@@ -460,6 +460,75 @@ test.describe('DCC Extension API', () => {
     expect(result.afterDelete).toBeNull()
   })
 
+  test('DCC chat- and hook-wiring (preCreateActor / preCreateItem / preUpdateActor + 8 other hooks) survives chat-and-hook-wiring.mjs extraction', async ({ page }) => {
+    // Phase 7 session 6: the eleven `Hooks.on` / `Hooks.once` handlers
+    // (`hotbarDrop`, `renderChatMessageHTML`, `getChatMessageContextOptions`,
+    // `renderActorDirectory`, `preCreateActor`, `preCreateItem`,
+    // `applyActiveEffect`, `preUpdateActor`, `updateCombat`,
+    // `item-piles-ready`, `getProseMirrorMenuDropDowns`) were relocated
+    // from `module/dcc.js` into `module/chat-and-hook-wiring.mjs` and
+    // are wired by a single `registerChatAndHookWiring()` call.
+    //
+    // End-to-end probe: create a temporary Player actor without an img
+    // and assert the relocated `onPreCreateActor` handler fires (DCC
+    // default image applied, prototype-token actor-link set). Create a
+    // weapon item without an img on that actor and assert
+    // `onPreCreateItem` assigns a default item image. Then update the
+    // actor's img and assert `onPreUpdateActor` syncs the prototype-
+    // token texture (it was a default image, so the sync should fire).
+    // Cleanup the actor in a `finally` block so downstream tests see a
+    // clean state.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+      let probe
+
+      try {
+        // 1. preCreateActor: create a fresh Player with no img.
+        probe = await Actor.create({
+          type: 'Player',
+          name: 'P_ChatHook Probe'
+        })
+        observed.actorImg = probe.img
+        observed.actorImgIsString = typeof probe.img === 'string'
+        observed.actorImgNonEmpty = (probe.img || '').length > 0
+        observed.protoTokenActorLink = probe.prototypeToken?.actorLink === true
+
+        // 2. preCreateItem: create a weapon item with no img on the probe.
+        const items = await probe.createEmbeddedDocuments('Item', [{
+          type: 'weapon',
+          name: 'P_ChatHook Probe Weapon'
+        }])
+        const probeItem = items[0]
+        observed.itemImg = probeItem.img
+        observed.itemImgNonEmpty = (probeItem.img || '').length > 0
+
+        // 3. preUpdateActor: changing the actor's img should sync the
+        //    prototype-token texture when the existing texture was a
+        //    default image (we just created the actor with the system
+        //    default — the relocated hook recognises this and updates).
+        const customImg = 'icons/svg/aura.svg'
+        await probe.update({ img: customImg })
+        observed.protoTokenTextureSrc = probe.prototypeToken?.texture?.src
+        observed.protoTokenSyncedToCustom = probe.prototypeToken?.texture?.src === customImg
+      } finally {
+        if (probe) {
+          await probe.delete().catch(() => {})
+        }
+      }
+
+      return observed
+    })
+
+    // preCreateActor: default image got assigned + prototype-token actor-link set.
+    expect(result.actorImgIsString).toBe(true)
+    expect(result.actorImgNonEmpty).toBe(true)
+    expect(result.protoTokenActorLink).toBe(true)
+    // preCreateItem: default item image got assigned.
+    expect(result.itemImgNonEmpty).toBe(true)
+    // preUpdateActor: prototype-token texture synced to the new actor image.
+    expect(result.protoTokenSyncedToCustom).toBe(true)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',
