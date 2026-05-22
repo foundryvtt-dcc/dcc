@@ -13,6 +13,21 @@ const { test, expect } = require('@playwright/test')
  *   npm test
  */
 
+// OS-level network blips (macOS App Nap throttling the Chromium tab,
+// brief Wi-Fi power-management cycles, lid-sleep windows) surface as
+// these specific Chromium error codes plus Foundry's Socket.IO
+// reconnect notice. They are not caused by system code and Foundry
+// re-establishes the connection on its own — but they pollute the
+// `consoleErrors` listener and trip the zero-error gate in
+// `afterEach`. Filter them out alongside `favicon.ico` so the spec
+// stays strict for real regressions but resilient to host-environment
+// transients.
+const TRANSIENT_NETWORK_ERRORS = [
+  'ERR_NETWORK_IO_SUSPENDED',
+  'ERR_SOCKET_NOT_CONNECTED',
+  'lost connection to the server, attempting to re-establish'
+]
+
 test.describe('DCC V14 Features E2E Tests', () => {
   let consoleErrors = []
 
@@ -117,7 +132,8 @@ test.describe('DCC V14 Features E2E Tests', () => {
     }).catch(() => {}) // Don't fail cleanup
 
     const significantErrors = consoleErrors.filter(err =>
-      !err.includes('favicon.ico')
+      !err.includes('favicon.ico') &&
+      !TRANSIENT_NETWORK_ERRORS.some(t => err.includes(t))
     )
     expect(significantErrors, `Console errors detected: ${significantErrors.join('\n')}`).toHaveLength(0)
   })
