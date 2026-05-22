@@ -480,6 +480,19 @@ test.describe('DCC Extension API', () => {
 
   test('registerItemSheet adds a sheet option Foundry can resolve for the item type', async ({ page }) => {
     const result = await page.evaluate(async () => {
+      // Snapshot the existing default sheet constructor BEFORE we
+      // register our non-default sheet. The test asserts that
+      // `registerItemSheet` with `makeDefault: false` does NOT displace
+      // whatever was the existing default — but the literal class name
+      // depends on which sibling modules are installed in the test
+      // world (e.g. xcc-core-book installs `XCCItemSheet` as its
+      // default in its own `init` hook, replacing DCC's default). Take
+      // a snapshot so the assertion is resilient to that.
+      const probeActorPre = await Actor.create({ name: 'P1 SheetProbe Pre', type: 'NPC' })
+      const [probeItemPre] = await probeActorPre.createEmbeddedDocuments('Item', [{ name: 'P1-Probe-pre', type: 'weapon' }])
+      const sheetCtorNameBefore = probeItemPre?.sheet?.constructor?.name
+      await probeActorPre.delete()
+
       class TestModuleWeaponSheet extends foundry.applications.api.DocumentSheetV2 {
         static DEFAULT_OPTIONS = { id: 'test-module-weapon-sheet' }
       }
@@ -490,9 +503,9 @@ test.describe('DCC Extension API', () => {
         makeDefault: false
       })
 
-      // Inspect what Foundry resolves a weapon's sheet to. Create a
-      // temporary actor + weapon (V14 dropped Item.create temporary
-      // support; embedding into an actor we delete is simpler).
+      // Inspect what Foundry resolves a weapon's sheet to AFTER the
+      // registration. With `makeDefault: false` the existing default
+      // should be unchanged.
       const tmpActor = await Actor.create({ name: 'P1 SheetProbe Actor', type: 'NPC' })
       const [tmpItem] = await tmpActor.createEmbeddedDocuments('Item', [{ name: 'P1-ProbeWeapon', type: 'weapon' }])
       const sheetCtorName = tmpItem?.sheet?.constructor?.name
@@ -504,7 +517,8 @@ test.describe('DCC Extension API', () => {
       return {
         weaponEntries,
         ourEntry: CONFIG.Item.sheetClasses?.weapon?.['extension-api-test.TestModuleWeaponSheet'] ?? null,
-        sheetCtorName
+        sheetCtorName,
+        sheetCtorNameBefore
       }
     })
 
@@ -512,8 +526,13 @@ test.describe('DCC Extension API', () => {
     expect(result.ourEntry).not.toBeNull()
     expect(result.ourEntry.label).toBe('Extension API Test Sheet')
     expect(result.ourEntry.default).toBe(false)
-    // The existing DCC default sheet should still be picked.
-    expect(result.sheetCtorName).toBe('DCCItemSheet')
+    // `makeDefault: false` must not displace whatever was the existing
+    // default — whether that's DCCItemSheet or a sibling module's
+    // override (e.g. xcc-core-book's XCCItemSheet). The pre-snapshot
+    // and the post-registration class name should match.
+    expect(result.sheetCtorName).toBe(result.sheetCtorNameBefore)
+    // Sanity check: a default sheet should be resolved at all.
+    expect(result.sheetCtorName).toBeTruthy()
   })
 
   test('registerItemSheet with makeDefault unregisters core ItemSheetV2 for that type', async ({ page }) => {
