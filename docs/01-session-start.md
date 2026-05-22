@@ -42,76 +42,61 @@ session's context):
 
 ## Status (2026-05-22)
 
-**Phase 7 session 6 closed the `module/dcc.js` piecemeal-split
-arc** by extracting the eleven remaining `Hooks.on` /
-`Hooks.once` handlers into a focused module
-`module/chat-and-hook-wiring.mjs`. The relocated surface covers
-`hotbarDrop` (macro creation), `renderChatMessageHTML` (the
-~70-line chat-decoration body — crit/fail highlight, minimum-
-damage clamp, SpellResult HTML, `data-item-id` forwarding,
-9-emote-roll fan-out under `emoteRolls`, `spellResult` HTML
-append on the non-emote path, crit/fumble lookups gated on
-`automateDamageFumblesCrits`, TableResult navigation at the
-end), `getChatMessageContextOptions` (context-menu options on
-chat cards), `renderActorDirectory` (parser quick-import bridge),
-`preCreateActor` / `preCreateItem` (default-image assignment +
-Player prototype-token actor-link), `applyActiveEffect`
-(DiceChain bump for string-valued dice expressions),
-`preUpdateActor` (sync prototype-token texture when actor image
-changes from a default), `updateCombat` (Active Effect duration
-expiry on round advance — round-based + time-based),
-`item-piles-ready` (one-shot Item Piles integration), and
-`getProseMirrorMenuDropDowns` (sidebar-style menu entry). Each
-handler is exported individually plus a frozen
-`CHAT_AND_HOOK_WIRING_HOOKS` dispatch table (entries carry the
-handler + a `once` flag — only `item-piles-ready` is once-only)
-and a `registerChatAndHookWiring()` entry-point that iterates
-the table calling `Hooks.on` or `Hooks.once` per entry —
-matching the `module/settings-table-hooks.mjs` and
-`module/table-loading.mjs` pattern from Phase 7 sessions 3 + 5.
-`module/dcc.js` shrinks from 737 → 475 lines (-262 net including
-the new import line, the dropped `* as chat`, `parser`,
-`EntityImages`, `setupItemPilesForDCC`, and `createDCCMacro`
-imports — the latter three exclusive to the relocated hook
-bodies — plus the 8-line replacement marker comment block).
-Pure refactor — every conditional, every `game.user.isGM` gate,
-every default-image lookup, every emote-roll fan-out is
-preserved verbatim. **The §Appendix A target of ~4–5 focused
-modules out of `dcc.js` is met:** what remains in `dcc.js` is
-the init hook, the `getSceneControlButtons` hook (Fleeting Luck
-+ Spell Duel toolbar buttons — adjacent to init scaffolding),
-the ready hook, the local `checkReleaseNotes` /
-`checkMigrations` / `_onShowJournal` / `_onShowURI` helpers,
-and three single-line `registerXxxHooks()` calls (settings-
-table, table-loading, chat-and-hook-wiring). +43 Vitest tests
-in new `module/__tests__/chat-and-hook-wiring.test.js` covering
-all 11 handlers (including the 8 `onRenderChatMessageHTML`
-branch tests and 5 `onUpdateCombat` cases), the dispatch-table
-shape (exactly 11 entries with only `item-piles-ready`
-once-only), and the registration entry-point (10 `Hooks.on` +
-1 `Hooks.once`). The test file `vi.mock`s the seven imported
-sibling modules (`chat`, `parser`, `entity-images`,
-`spell-result`, `table-result`, `item-piles-support`,
-`macros`) so handlers can be invoked as plain functions
-without a live Foundry boot. +1 Playwright case in
-`extension-api.spec.js` (`DCC chat- and hook-wiring
-(preCreateActor / preCreateItem / preUpdateActor + 8 other
-hooks) survives chat-and-hook-wiring.mjs extraction`) creates
-a temporary `P_ChatHook Probe` Player without an `img`,
-asserts `onPreCreateActor` fired (default img + actor-link),
-creates an embedded weapon item without an `img` and asserts
-`onPreCreateItem` assigned a default image, then updates the
-actor's `img` to `icons/svg/aura.svg` and asserts
-`onPreUpdateActor` synced `prototypeToken.texture.src` to the
-new value — restoring the probe in a `finally` block. **1227
-Vitest green** (was 1184, +43). **149 Playwright passed**, zero
-failures — clean run (13.1-min full suite). Pre-slice baseline
-post the two follow-up fix commits that landed after session
-5 (`1935372` v14-features network-error filter + `2973a13`
-registerItemSheet XCC-resilience) was 148 — both previously-
-flagged failures recovered after the fixes; this slice's +1
-new test cleanly lands the post-slice count at 149. Net pass-
-count math: 148 + 1 = 149.
+**Phase 7 session 7 opened the second Phase 7 arc** by splitting
+`styles/dcc.scss` (was 2979 lines in one file) into 18 focused
+partials + a 34-line manifest. The partials are `_base.scss`
+(globals + fonts + `.dcc` common — 383 lines), `_journal.scss`
+(110), `_armor.scss` (36), `_chat.scss` (chat rolls + spell-check
+chat card + notes — 184), `_weapons.scss` (119),
+`_class-sheets.scss` (cleric + wizard/elf — 135),
+`_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
+`_items.scss` (items + item sheet + level item sheet — 249),
+`_config-dialogs.scss` (82), `_skills.scss` (49), `_tabs.scss`
+(233), `_entity-link.scss` (15), `_dialogs.scss` (roll modifier +
+fleeting luck + spell duel — 353), `_actor-sheet.scss` (596 —
+largest partial), `_effects.scss` (effects + item-effects
+transfer — 162), `_level-change-dialog.scss` (9), and
+`_container-items.scss` (112). Total partial line count: 2977 —
+matches the pre-split body verbatim. The new `dcc.scss` is a
+34-line manifest of `@use 'partial-name';` directives in source
+order, with SCSS-style `//` line comments documenting the
+partial pattern. Each partial maps 1:1 onto a contiguous line
+range from the pre-split file — only adjacent sections are
+combined into single partials, preserving relative rule order so
+specificity ties land identically. **Compiled `styles/dcc.css`
+is byte-identical to the pre-split build** (verified by
+snapshotting `dcc.css` before the split, running `npm run scss`
+after, and confirming `diff -q` reports the files are
+identical). No theme-variable refactoring this slice; the
+existing `--system-*` CSS custom-property contract in
+`styles/variables.css` (with light/dark overrides) stays as-is.
+The 20 remaining hex literals across the partials are left for a
+follow-up slice that pairs hex-to-var migration with the
+`docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
+documentation. No JS or test code touched beyond the new
+Playwright probe. **1227 Vitest green** (unchanged — CSS isn't
+loaded into unit tests). **150 Playwright passed**, zero
+failures (11.9-min full suite). Pre-slice baseline was 149 (post
+session 6); +1 new test in `extension-api.spec.js` (`DCC
+compiled stylesheet survives the styles/dcc.scss split into 18
+partials`) fetches `/systems/dcc/styles/dcc.css` from the live
+Foundry server, asserts HTTP 200, file size in 50-80KB range,
+and 10 representative selectors from across the partials all
+present. Visual-regression suite couldn't run in this V14
+environment (its `start-foundry` script targets `baselinev12`);
+the byte-identical CSS diff provides stronger evidence than a
+visual-regression pixel-comparison would.
+
+**Phase 7 session 6 (extract chat / hook wiring — closed 2026-05-22).**
+Eleven remaining `Hooks.on` / `Hooks.once` handlers
+(`hotbarDrop`, `renderChatMessageHTML`,
+`getChatMessageContextOptions`, `renderActorDirectory`,
+`preCreate{Actor,Item}`, `applyActiveEffect`, `preUpdateActor`,
+`updateCombat`, `item-piles-ready`,
+`getProseMirrorMenuDropDowns`) relocated from `module/dcc.js` to
+`module/chat-and-hook-wiring.mjs`. `dcc.js` 737 → 475 lines
+(-262); §Appendix A target of ~4–5 focused modules met. +43
+Vitest, +1 Playwright. 1227 Vitest / 149 Playwright at close.
 
 **Phase 7 session 5 (extract table-loading — closed 2026-05-21).**
 `setupCoreBookCompendiumLinks` / `registerTables` /
@@ -393,25 +378,27 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 7 session 6 (2026-05-22) closed the `module/dcc.js`
-piecemeal-split arc** by relocating the eleven remaining
-`Hooks.on` / `Hooks.once` handlers into
-`module/chat-and-hook-wiring.mjs`. `module/dcc.js` is now ~475
-lines (was 737); the §Appendix A target of ~4–5 focused
-modules out of `dcc.js` is met.
+**Phase 7 session 7 (2026-05-22) opened the second Phase 7 arc**
+by splitting `styles/dcc.scss` (~2979 lines) into 18 focused
+partials + a 34-line manifest. Compiled `styles/dcc.css` is
+byte-identical to the pre-split build (verified). No
+theme-variable refactoring this slice; the existing `--system-*`
+contract in `styles/variables.css` stays as-is.
 
-**Next-arc candidate — `styles/dcc.scss` partials + theme
-contract.** Walk `styles/dcc.scss` (~2979 lines) for natural
-section boundaries (sheet partials, chat partials, dialog
-partials, status icons, status effects, theme variables). Lift
-each into `styles/_partial-xxx.scss`; convert hard-coded hex
-colors that appear in `:root` / `.dcc.sheet` declarations into
-CSS custom properties (theming contract for the Phase 6
-`sheetTheme` mechanism). Document the contract in
+**Next-arc candidate — hex-literal → theme-variable migration +
+§7 theming-contract documentation.** ~20 hex literals remain
+hard-coded across the partials (per-class accents in
+`_class-sheets.scss` and `_actor-sheet.scss`, damage text colours
+in `_items.scss`, tab-tooltip background/text in `_tabs.scss`,
+focus-state shades in `_dialogs.scss`). Add matching
+`--system-*` entries to `styles/variables.css` (with light/dark
+overrides), replace the literals with `var(...)` references in
+the partials, then document the full theming contract in
 `docs/dev/ARCHITECTURE_REIMAGINED.md §7` so variant theme
-stylesheets have stable variables to override. Run the visual-
-regression suite alongside the standard browser tests since
-this slice touches CSS.
+stylesheets (xcc, mcc) have stable variables to override.
+Visual-regression coverage matters here — if the V14 environment
+can run the V12 baseline visual suite, do; otherwise rely on
+careful manual sheet-by-sheet inspection.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped

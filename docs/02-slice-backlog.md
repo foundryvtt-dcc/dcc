@@ -974,17 +974,23 @@ at `data-models.spec.js:138` from `mcc-core-book-welcome-dialog`
 intercepting pointer events — sibling-module dialog state, not
 slice-caused).
 
-#### Phase 7 session N candidate. Split `styles/dcc.scss` into partials + theme contract.
-Open after the `dcc.js` split lands its biggest chunks. Walk
-`styles/dcc.scss` (~2979 lines) for natural section boundaries
-(sheet partials, chat partials, dialog partials, status icons,
-status effects, theme variables). Lift each into
-`styles/_partial-xxx.scss`; convert hard-coded hex colors that
-appear in `:root` / `.dcc.sheet` declarations into CSS custom
-properties (theming contract for the Phase 6 `sheetTheme`
-mechanism). Document the contract in
-`docs/dev/ARCHITECTURE_REIMAGINED.md §7` so variant theme
-stylesheets have stable variables to override.
+#### Phase 7 session N candidate. Hex-literal → theme-variable migration + §7 theming-contract documentation.
+Follow-up to the Phase 7 session 7 file split. ~20 hex literals
+remain hard-coded across the partials:
+- `_class-sheets.scss` — per-class accents
+- `_actor-sheet.scss` — additional per-class accents
+- `_items.scss` — damage text colours (e.g. `#8b0000`)
+- `_tabs.scss` — tab tooltip background + text colours
+- `_dialogs.scss` — focus-state shades and borders
+Add matching `--system-*` entries to `styles/variables.css` (with
+light/dark overrides where appropriate), replace the literals with
+`var(...)` references in the partials, then document the full
+theming contract in `docs/dev/ARCHITECTURE_REIMAGINED.md §7` so
+variant theme stylesheets (xcc, mcc) have stable variables to
+override. Visual-regression coverage matters here — if the V14
+environment can run the V12 baseline visual suite, do; otherwise
+rely on careful manual sheet-by-sheet inspection alongside the
+existing `extension-api.spec.js` stylesheet probe.
 
 ---
 
@@ -993,6 +999,39 @@ stylesheets have stable variables to override.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 7 (2026-05-22): split `styles/dcc.scss` into
+  18 partials + a 34-line manifest. Opens the second Phase 7
+  arc. Pure structural refactor — combined only adjacent
+  sections so relative CSS rule order (and specificity tie
+  outcomes) is preserved verbatim. Partial map: `_base.scss`
+  (globals + fonts + `.dcc` common — 383 lines),
+  `_journal.scss` (110), `_armor.scss` (36), `_chat.scss` (chat
+  rolls + spell-check chat card + notes — 184),
+  `_weapons.scss` (119), `_class-sheets.scss` (cleric +
+  wizard/elf — 135), `_party-sheet.scss` (110),
+  `_hit-points-dialog.scss` (40), `_items.scss` (items + item
+  sheet + level item sheet — 249), `_config-dialogs.scss`
+  (82), `_skills.scss` (49), `_tabs.scss` (233),
+  `_entity-link.scss` (15), `_dialogs.scss` (roll modifier +
+  fleeting luck + spell duel — 353), `_actor-sheet.scss` (596
+  — largest partial), `_effects.scss` (effects + item-effects
+  transfer — 162), `_level-change-dialog.scss` (9), and
+  `_container-items.scss` (112). The new `dcc.scss` is a
+  34-line manifest of `@use 'partial-name';` directives in
+  source order with SCSS-style `//` line comments documenting
+  the partial pattern. **Compiled `styles/dcc.css` is
+  byte-identical to the pre-split build** (verified via
+  baseline-snapshot diff). +1 Playwright case in
+  `extension-api.spec.js` (`DCC compiled stylesheet survives
+  the styles/dcc.scss split into 18 partials`) — fetches the
+  served CSS, asserts HTTP 200, size in 50-80KB range, and 10
+  representative selectors from across the partials all
+  present. **1227 Vitest green** (unchanged — CSS isn't loaded
+  into unit tests). **150 Playwright passed**, zero failures
+  (11.9-min full suite). Visual-regression suite couldn't run
+  in this V14 environment; the byte-identical CSS diff is
+  stronger evidence than a pixel-comparison would be.
 
 - Phase 7 session 6 (2026-05-22): extract chat / hook wiring from
   `dcc.js` to `module/chat-and-hook-wiring.mjs` — closes the

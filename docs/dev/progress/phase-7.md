@@ -70,3 +70,37 @@
   pre-session-4 + 1 session-4 hygiene + 2 session-5 registerVariant
   cases minus 1 ongoing latent failure); this slice's +1 case lands
   the post-slice count at 143 passed.
+
+- **2026-05-20 — Phase 7 session 2: extract macro factories from
+  `dcc.js` into `module/macros.mjs`.** Second piecemeal Phase 7
+  extraction — relocates the largest cohesive block in `dcc.js`
+  (~380 lines, was `dcc.js:1255–1634`) into a focused module. The
+  relocated surface is the 13 `_createDCCXxxMacro` factories
+  (Ability / Initiative / Hit Dice / Save / Skill / Luck Die /
+  Spell Check / Attack Bonus / Action Dice / Weapon / Item /
+  Apply Disapproval / Roll Disapproval), the `MACRO_FACTORIES`
+  dispatch table, the `createDCCMacro` dispatcher, the
+  `rollDCCWeaponMacro` weapon-roll bridge, `getMacroActor`, and
+  `getMacroOptions`. `module/dcc.js` shrinks from 1655 → 1255
+  lines (-400 lines net including the new `import` and the
+  factoring-out of the inline `handlers` map that lived inside
+  `createDCCMacro`). The init hook keeps the three end-user macro
+  surface entries on `game.dcc.*` (`rollDCCWeaponMacro`,
+  `getMacroActor`, `getMacroOptions` — internal but de-facto
+  stable per `EXTENSION_API.md`'s "macro-surface functions are
+  internal to modules but published to end-user macro scripts"
+  classification); the `hotbarDrop` hook still calls
+  `createDCCMacro(data, slot)` — now imported from `macros.mjs`
+  instead of inlined. Pure refactor — every macro shape
+  (`{ name, command, img }` triple) and the runtime behavior of
+  every factory + dispatcher branch is preserved verbatim. Only
+  structural change: the `handlers` map that lived inside
+  `createDCCMacro` is lifted to module scope as `MACRO_FACTORIES`
+  + exported so the dispatch table can be unit-tested
+  independently of the dispatcher body. +37 Vitest tests in new
+  `module/__tests__/macros.test.js`. +1 Playwright case in
+  `extension-api.spec.js` (`DCC macro factories ... survive
+  macros.mjs extraction`). **1102 Vitest green** (was 1065, +37).
+  **143 Playwright passed** + 2 failures (latent xcc-core-book
+  DCCItemSheet override + the suite-only forceCrit shift-click
+  flake from Phase 6 sessions 1/2/4 — neither slice-caused).

@@ -65,7 +65,61 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 6 (2026-05-22)** closes the `module/dcc.js`
+**Phase 7 session 7 (2026-05-22)** opens the second Phase 7 arc
+by splitting `styles/dcc.scss` (was 2979 lines in one file) into
+18 focused partials + a 34-line manifest. The partials are
+`_base.scss` (globals + fonts + `.dcc` common — 383 lines),
+`_journal.scss` (110), `_armor.scss` (36), `_chat.scss` (chat
+rolls + spell-check chat card + notes — 184), `_weapons.scss`
+(119), `_class-sheets.scss` (cleric + wizard/elf — 135),
+`_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
+`_items.scss` (items + item sheet + level item sheet — 249),
+`_config-dialogs.scss` (82), `_skills.scss` (49), `_tabs.scss`
+(233), `_entity-link.scss` (15), `_dialogs.scss` (roll modifier
++ fleeting luck + spell duel — 353), `_actor-sheet.scss` (596 —
+largest partial), `_effects.scss` (effects + item-effects
+transfer — 162), `_level-change-dialog.scss` (9), and
+`_container-items.scss` (112). The new `dcc.scss` is a manifest
+of `@use 'partial-name';` directives in source order, with
+SCSS-style `//` line comments documenting the contract (those
+don't compile into the CSS output). Each partial maps 1:1 onto
+a contiguous line range from the pre-split file — only adjacent
+sections are combined into single partials, preserving relative
+rule order so specificity ties land identically. **The compiled
+`styles/dcc.css` is byte-identical to the pre-split build** —
+verified by diffing the post-compile output against a baseline
+snapshot taken before the split. No theme-variable refactoring
+this slice; the existing `--system-*` CSS custom-property
+contract in `styles/variables.css` (and its light/dark
+overrides) stays as-is, with the 20 remaining hex literals in
+the partials left for a follow-up slice that pairs hex-to-var
+migration with the `docs/dev/ARCHITECTURE_REIMAGINED.md §7`
+theming-contract documentation. **1227 Vitest green**
+(unchanged — Vitest doesn't load CSS). **150 Playwright
+passed**, zero failures — clean run (11.9-min full suite).
+Pre-slice baseline post session 6 was 149; this slice's +1 new
+test (`extension-api.spec.js` `DCC compiled stylesheet survives
+the styles/dcc.scss split into 18 partials`) cleanly lands the
+post-slice count at 150. Net math: 149 + 1 = 150. The Playwright
+probe fetches `/systems/dcc/styles/dcc.css` from the live
+Foundry server and asserts 10 representative selectors from
+across the partials (`.grid-align-center`, `.journal-sheet`,
+`.deed-result.critical`, `.dcc .party-body`, `.dcc .equipment-bg`,
+`.dcc.sheet .sheet-tabs`, `.dcc-roll-modifier`, `.dcc
+.fleeting-luck`, `.dcc .spell-duel`, `.dcc .container-sheet`)
+plus a size-reasonable sanity check (CSS is ~65KB). Visual-
+regression suite at `browser-tests/visual-regression/` couldn't
+run in this V14 environment (its `start-foundry` script targets
+`baselinev12` per Phase 5 session 4 close); the byte-identical
+CSS diff provides stronger evidence than a visual-regression
+pixel-comparison would (identical bytes → identical pixels). The
+next Phase 7 candidate is the hex-literal → theme-variable
+migration + the §7 documentation expansion (20 hex literals
+across `_class-sheets.scss`, `_items.scss`, `_tabs.scss`,
+`_dialogs.scss` for per-class accents, tab tooltips, and focus
+states).
+
+**Phase 7 session 6 (2026-05-22)** closed the `module/dcc.js`
 piecemeal-split arc by extracting the eleven remaining
 `Hooks.on` / `Hooks.once` handlers into a focused module
 `module/chat-and-hook-wiring.mjs`. The relocated surface covers
@@ -176,6 +230,77 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-22 — Phase 7 session 7: split `styles/dcc.scss` into
+  18 partials + a 34-line manifest (opens the second Phase 7
+  arc).** Pure structural refactor — the previous ~2979-line
+  monolith is broken out into focused partials per existing
+  section comment, combining only adjacent sections so relative
+  CSS rule order (and specificity-tie outcomes) is preserved
+  verbatim. Partial map: `_base.scss` (globals + fonts +
+  `.dcc` common, 383 lines), `_journal.scss` (110),
+  `_armor.scss` (36), `_chat.scss` (chat rolls + spell-check
+  chat card + notes — 184), `_weapons.scss` (119),
+  `_class-sheets.scss` (cleric + wizard/elf — 135),
+  `_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
+  `_items.scss` (items + item sheet + level item sheet — 249),
+  `_config-dialogs.scss` (82), `_skills.scss` (49),
+  `_tabs.scss` (233), `_entity-link.scss` (15),
+  `_dialogs.scss` (roll modifier + fleeting luck + spell duel —
+  353), `_actor-sheet.scss` (596 — largest partial),
+  `_effects.scss` (effects + item-effects transfer — 162),
+  `_level-change-dialog.scss` (9), `_container-items.scss`
+  (112). Total partial line count: 2977 — matches the
+  pre-split body verbatim. The new `dcc.scss` is a 34-line
+  manifest of `@use 'partial-name';` directives in source
+  order, with SCSS-style `//` line comments documenting the
+  partial pattern (those `//` comments don't compile into the
+  CSS output — confirmed by diff). **Compiled
+  `styles/dcc.css` is byte-identical to the pre-split build**
+  (verified by snapshotting `dcc.css` before the split into
+  `/tmp/dcc.css.baseline`, running `npm run scss` after the
+  split, and confirming `diff -q` reports the files are
+  identical). The existing `--system-*` CSS custom-property
+  contract in `styles/variables.css` (with light/dark
+  overrides) stays as-is; the 20 remaining hex literals in
+  the partials (per-class accents in `_class-sheets.scss`,
+  damage colours in `_items.scss`, tab-tooltip colours in
+  `_tabs.scss`, focus-state shades) are left for a follow-up
+  slice that pairs hex-to-var migration with the
+  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
+  documentation. No JS or test code touched beyond the new
+  Playwright probe. No Vitest delta (CSS is not loaded into
+  unit tests). +1 Playwright case in `extension-api.spec.js`
+  (`DCC compiled stylesheet survives the styles/dcc.scss
+  split into 18 partials`) — fetches
+  `/systems/dcc/styles/dcc.css` from the live Foundry server,
+  asserts HTTP 200, file size in 50-80KB range, and 10
+  representative selectors from across the partials all
+  present (`.grid-align-center` from `_grid.scss`,
+  `.journal-sheet` from `_journal.scss`,
+  `.deed-result.critical` from `_chat.scss`,
+  `.dcc .party-body` from `_party-sheet.scss`,
+  `.dcc .equipment-bg` from `_items.scss`,
+  `.dcc.sheet .sheet-tabs` from `_tabs.scss`,
+  `.dcc-roll-modifier` from `_dialogs.scss`,
+  `.dcc .fleeting-luck` from `_dialogs.scss`,
+  `.dcc .spell-duel` from `_dialogs.scss`,
+  `.dcc .container-sheet` from `_container-items.scss`).
+  **1227 Vitest green** (unchanged). **150 Playwright
+  passed**, zero failures (11.9-min full suite). Pre-slice
+  baseline was 149 (post session 6); this slice's +1 new
+  test cleanly lands the post-slice count at 150. Net math:
+  149 + 1 = 150. Visual-regression suite at
+  `browser-tests/visual-regression/` couldn't run in this
+  V14 environment (its `start-foundry` script targets
+  `baselinev12` per the Phase 5 session 4 note); the
+  byte-identical CSS diff provides stronger evidence than a
+  visual-regression pixel-comparison would — identical bytes
+  guarantee identical pixels. With the second Phase 7 arc
+  opened, the next slice candidate is the hex-literal →
+  theme-variable migration + the
+  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
+  documentation.
 
 - **2026-05-22 — Phase 7 session 6: extract chat / hook wiring from
   `dcc.js` into `module/chat-and-hook-wiring.mjs` (closes the
@@ -595,85 +720,6 @@ archives linked above.
   shift-click flag` suite-only flake did NOT fire this run, so
   pre-slice baseline was 143 passed and post-slice is 145 (+1 new
   test + 1 forceCrit recovered).
-
-- **2026-05-20 — Phase 7 session 2: extract macro factories from
-  `dcc.js` into `module/macros.mjs`.** Second piecemeal Phase 7
-  extraction — relocates the largest cohesive block in `dcc.js`
-  (~380 lines, was `dcc.js:1255–1634`) into a focused module. The
-  relocated surface is the 13 `_createDCCXxxMacro` factories
-  (Ability / Initiative / Hit Dice / Save / Skill / Luck Die /
-  Spell Check / Attack Bonus / Action Dice / Weapon / Item /
-  Apply Disapproval / Roll Disapproval), the `MACRO_FACTORIES`
-  dispatch table, the `createDCCMacro` dispatcher, the
-  `rollDCCWeaponMacro` weapon-roll bridge, `getMacroActor`, and
-  `getMacroOptions`. `module/dcc.js` shrinks from 1655 → 1255
-  lines (-400 lines net including the new `import` and the
-  factoring-out of the inline `handlers` map that lived inside
-  `createDCCMacro`). The init hook keeps the three end-user macro
-  surface entries on `game.dcc.*` (`rollDCCWeaponMacro`,
-  `getMacroActor`, `getMacroOptions` — internal but de-facto
-  stable per `EXTENSION_API.md`'s "macro-surface functions are
-  internal to modules but published to end-user macro scripts"
-  classification); the `hotbarDrop` hook still calls
-  `createDCCMacro(data, slot)` — now imported from `macros.mjs`
-  instead of inlined. Pure refactor — every macro shape
-  (`{ name, command, img }` triple) and the runtime behavior of
-  every factory + dispatcher branch is preserved verbatim. Only
-  structural change: the `handlers` map that lived inside
-  `createDCCMacro` is lifted to module scope as `MACRO_FACTORIES`
-  + exported so the dispatch table can be unit-tested
-  independently of the dispatcher body. +37 Vitest tests in new
-  `module/__tests__/macros.test.js`: 2 ability-macro cases
-  (roll-over default with type-mismatch undefined return, roll-
-  under variant wrapping), 1 case per single-shape factory
-  (initiative / hitDice / save / skill / luckDie / attackBonus /
-  actionDice / applyDisapproval / rollDisapproval), 3
-  spellCheck-macro branches (itemId / spell-name fallback / bare),
-  4 weapon-icon-fallback cases (explicit / missing → item-type /
-  mystery-man → item-type / backstab → backstab.svg), 4 item-macro
-  branches (spell / non-spell + image-fallback / system.item
-  preference / null payload), 1 `MACRO_FACTORIES` dispatch-table
-  assertion (all 14 entries route to the right factory, including
-  `Item` and `DCC Item` both → `_createDCCItemMacro`), 5
-  dispatcher cases covering `dccType` / `dccData` rewriting,
-  `type === 'Macro'` returns `true`, unknown-type returns `true`,
-  missing `data` payload returns `true`, and the reuse-existing-
-  macro branch where `game.macros.contents.find(...)` hits, 1
-  `rollDCCWeaponMacro` delegation test (asserts `game.actors.get`
-  + `actor.rollWeaponAttack` are called with the forwarded
-  `(itemId, options)` pair), 4 `getMacroActor` resolution paths
-  (explicit actorId / speaker.token / speaker.actor fallback /
-  no-token warns via `ui.notifications`), and 2 `getMacroOptions`
-  cases (XOR of setting and ctrlKey produces 0/1/0/1 across the
-  four input combinations + the setting-read uses
-  `('dcc', 'showRollModifierByDefault')`). The test file stubs
-  `game` / `CONFIG.DCC.{abilities, saves, macroImages,
-  defaultItemImages}` / `ChatMessage.getSpeaker` / `ui` / `Macro`
-  per `beforeEach` and restores per `afterEach` — same pattern as
-  Phase 7 session 1's handlebars-helpers test. +1 Playwright case
-  in `extension-api.spec.js` (`DCC macro factories
-  (createDCCMacro / rollDCCWeaponMacro / getMacroActor /
-  getMacroOptions) survive macros.mjs extraction`) — exercises
-  the runtime macro surface end-to-end by stubbing a fake
-  actor + speaker temporarily, calling
-  `game.dcc.rollDCCWeaponMacro('W1', 'macroProbe', { backstab:
-  true })`, and asserting the delegation reached
-  `actor.rollWeaponAttack` with `(itemId='W1', opts={ backstab:
-  true })`. Also asserts the three `game.dcc.*` entries are
-  functions and `getMacroOptions()` returns a
-  `{ showModifierDialog }` object. **1102 Vitest green** (was
-  1065, +37). **143 Playwright passed** + 2 failures: (1) the
-  latent xcc-core-book DCCItemSheet override at
-  `extension-api.spec.js:213` — unchanged baseline, flagged every
-  prior session as pre-existing; (2)
-  `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag`
-  — got `natural=1` instead of `20`; documented suite-only
-  environmental race that fired in Phase 6 sessions 1, 2, 4
-  (passes in isolation; not slice-caused — this slice touches no
-  spell-check or attack code, only relocates the macros block).
-  Pre-slice baseline was 143 passed; my new test added +1
-  passing, the forceCrit flake fired this run for -1, net 143 —
-  same as Phase 7 session 1's post-slice count.
 
 ## Closed questions
 

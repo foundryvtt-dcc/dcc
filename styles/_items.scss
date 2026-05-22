@@ -1,0 +1,249 @@
+/* ----------------------------------------- */
+/*  Items                                    */
+/* ----------------------------------------- */
+
+.dcc .equipment-bg {
+  background-image: url('./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
+}
+
+.dcc .item {
+  align-items: center;
+  border-bottom: 0.5px solid burlywood;
+  display: grid;
+  font-size: 13px;
+  justify-items: center;
+  grid-template-columns: subgrid;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+
+  .item-control {
+    font-size: 14px;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+    margin-bottom: 2px;
+  }
+}
+
+.dcc .conversions {
+  margin-top: 3px;
+}
+
+.dcc .item-heading {
+  border-bottom: var(--system-party-sheet-border);
+  font-family: var(--system-label-font), serif;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+  line-height: 1.2rem;
+  margin: 8px 0 0;
+}
+
+.dcc .item-list-header {
+  border-bottom: 2px dotted var(--system-secondary-color);
+  display: grid;
+  font-family: var(--system-label-font), serif;
+  font-size: 12px;
+  grid-template-columns: subgrid;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+}
+
+.dcc .item-list {
+  display: grid;
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px;
+  text-align: center;
+}
+
+.dcc .item-list-spells {
+  grid-template-columns: 30px 22px 40px 1fr 1fr 40px 39px;
+
+  .spell-item-button {
+    background-image: var(--system-d20-icon);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 22px 22px;
+    height: 22px;
+    width: 22px;
+  }
+}
+
+.dcc .item-list-currency {
+  display: grid;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
+
+  .treasure-notes {
+    grid-column: span 5;
+  }
+}
+
+.dcc .left-arrow-button {
+  justify-self: center;
+  background-image: var(--system-left-arrow-button-image);
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.dcc .right-arrow-button {
+  background-image: var(--system-right-arrow-button-image);
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.dcc .roll-value-button {
+  background-image: var(--system-d20-icon);
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+/* ----------------------------------------- */
+/*  Item Sheet                               */
+/* ----------------------------------------- */
+
+.dcc.item .tab-body {
+  align-items: stretch;
+  display: grid;
+  column-gap: 5px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  justify-items: stretch;
+  overflow-x: clip;
+  row-gap: 5px;
+
+  .description {
+    font-family: var(--system-data-font), serif;
+
+    .editor {
+      min-height: 354px;
+    }
+  }
+
+  .manifestation {
+    font-family: var(--system-data-font), serif;
+
+    .editor {
+      min-height: 332px;
+    }
+  }
+
+  .mercurial {
+    font-family: var(--system-data-font), serif;
+
+    .editor {
+      min-height: 315px;
+    }
+  }
+
+  .group-indent {
+    margin-left: 8px;
+  }
+
+  input {
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    height: 18px;
+    line-height: 15px;
+    text-align: center;
+    vertical-align: middle;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+
+  .item-img {
+    display: block;
+    margin: 0 auto;
+    max-height: 64px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .item-values {
+    column-gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    text-align: center;
+
+    input {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      line-height: 13px;
+      height: 15px;
+    }
+  }
+
+  label {
+    font-size: 12px;
+    line-height: 15px;
+    margin: 1px 0 0 0;
+  }
+
+  textarea {
+    background: none;
+    border: 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 15px;
+    height: 100%;
+    padding: 3px;
+    resize: none;
+    text-align: left;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Level Item Sheet                         */
+/* ----------------------------------------- */
+
+.dcc.item {
+  .level-main-tab,
+  .level-alignment-tab {
+    height: calc(100% - 34px);
+  }
+
+  .level-data-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 300px;
+
+    .box-title {
+      margin: 0;
+    }
+
+    .level-data-textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      resize: vertical;
+      font-family: var(--system-data-font), serif;
+      font-size: 12px;
+      padding: 5px;
+      border: 0;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+

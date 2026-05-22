@@ -529,6 +529,59 @@ test.describe('DCC Extension API', () => {
     expect(result.protoTokenSyncedToCustom).toBe(true)
   })
 
+  test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {
+    // Phase 7 session 7: the ~2979-line `styles/dcc.scss` monolith is
+    // split into 18 focused partials (`_base.scss`, `_journal.scss`,
+    // `_armor.scss`, `_chat.scss`, `_weapons.scss`, `_class-sheets.scss`,
+    // `_party-sheet.scss`, `_hit-points-dialog.scss`, `_items.scss`,
+    // `_config-dialogs.scss`, `_skills.scss`, `_tabs.scss`,
+    // `_entity-link.scss`, `_dialogs.scss`, `_actor-sheet.scss`,
+    // `_effects.scss`, `_level-change-dialog.scss`,
+    // `_container-items.scss`). The new `dcc.scss` is a manifest of
+    // `@use 'partial-name'` directives in source order so the compiled
+    // `dcc.css` is byte-identical to the pre-split build.
+    //
+    // End-to-end probe: fetch the served `dcc.css` and assert it
+    // contains representative selectors from selected partials
+    // (proves the SCSS pipeline still produces functional output and
+    // is being served by Foundry).
+    const result = await page.evaluate(async () => {
+      const response = await fetch('/systems/dcc/styles/dcc.css')
+      const text = await response.text()
+      return {
+        status: response.status,
+        bytes: text.length,
+        // Selectors from selected partials — if any are missing, a
+        // partial was lost or the manifest is out of sync.
+        hasGrid: text.includes('.grid-align-center'),
+        hasJournal: text.includes('.journal-sheet'),
+        hasChat: text.includes('.deed-result.critical'),
+        hasPartySheet: text.includes('.dcc .party-body'),
+        hasItems: text.includes('.dcc .equipment-bg'),
+        hasTabs: text.includes('.dcc.sheet .sheet-tabs'),
+        hasRollModifier: text.includes('.dcc-roll-modifier'),
+        hasFleetingLuck: text.includes('.dcc .fleeting-luck'),
+        hasSpellDuel: text.includes('.dcc .spell-duel'),
+        hasContainerItems: text.includes('.dcc .container-sheet'),
+        // Sanity-check size — pre-split build was ~65KB.
+        sizeReasonable: text.length > 50000 && text.length < 80000
+      }
+    })
+
+    expect(result.status).toBe(200)
+    expect(result.hasGrid).toBe(true)
+    expect(result.hasJournal).toBe(true)
+    expect(result.hasChat).toBe(true)
+    expect(result.hasPartySheet).toBe(true)
+    expect(result.hasItems).toBe(true)
+    expect(result.hasTabs).toBe(true)
+    expect(result.hasRollModifier).toBe(true)
+    expect(result.hasFleetingLuck).toBe(true)
+    expect(result.hasSpellDuel).toBe(true)
+    expect(result.hasContainerItems).toBe(true)
+    expect(result.sizeReasonable).toBe(true)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

@@ -1,0 +1,82 @@
+/* ----------------------------------------- */
+/*  Config Dialogs                           */
+/* ----------------------------------------- */
+
+.config-dialog {
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  row-gap: 4px;
+  padding: 5px 0 0 0;
+
+  label {
+    font-weight: bold;
+    font-family: var(--system-label-font), serif;
+    font-size: 13px;
+    margin: 0;
+    line-height: normal;
+    text-align: left;
+    justify-self: start;
+  }
+
+  input {
+    height: 22px;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.1);
+    border: 0;
+    border-radius: 3px;
+    box-shadow: none;
+    margin: 0;
+    outline: none;
+    text-align: center;
+    justify-self: stretch;
+
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      box-shadow: none;
+      border-radius: unset;
+      outline: 1px solid var(--system-input-focus-outline-color);
+    }
+  }
+
+  select {
+    height: 24px;
+    line-height: 1;
+    background: var(--system-input-background);
+    border: 0;
+    border-radius: 3px;
+    box-shadow: none;
+    outline: none;
+    text-align: center;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    justify-self: stretch;
+
+    &:focus-visible {
+      box-shadow: none;
+      border-radius: unset;
+      outline: 1px solid var(--system-input-focus-outline-color);
+    }
+  }
+
+  .group-separator {
+    border-bottom: 2px dotted var(--system-secondary-color);
+    margin: 2px 0 2px 0;
+    grid-column-end: span 2;
+  }
+
+  footer {
+    grid-column-end: span 2;
+    margin-top: 8px;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
