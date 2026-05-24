@@ -48,6 +48,11 @@ pasted into journal entries.
   like "hyphen followed by a newline/space then a lowercase letter"
   (`-\s*\n\s*` → ``) targets only the wrap-hyphens. Always proofread the
   result, since the safe pattern can still miss edge cases.
+- **Keep "un-dead" hyphenated.** Goodman's house style is **un-dead**, not
+  "undead". Watch for this during hyphen cleanup and autocorrect — if
+  "un-dead" wraps across a line it will look exactly like a wrap-hyphen and
+  get joined into "undead". Preserve the hyphen, and do a final
+  find-and-replace to catch any that slipped through.
 
 ### Extract Images
 
