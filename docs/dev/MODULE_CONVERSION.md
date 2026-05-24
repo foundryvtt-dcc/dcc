@@ -121,6 +121,24 @@ should be a journal entry that the GM can read at the table.
   link to actors/items yet — those don't exist. Come back in the
   "Link Everything" step.
 
+#### Create a Landing Page
+
+Every adventure should have a **landing page** journal entry — the first
+thing the GM sees and the front door to the whole module:
+
+- Make it the first entry in the top-level folder (prefix with `00` or
+  similar so it sorts to the top).
+- Lead with the **cover art** as a full-width image at the top of the page.
+- Below the cover, include a short welcome, credits, and a table of
+  contents that `@UUID`-links to each chapter/area journal.
+- Set up a **default landing scene** (often the cover image or a regional
+  map as the scene background) and drop a **journal note** pin on it that
+  links to the landing-page journal. When a GM first opens the world, the
+  note on the map is a one-click jump into the adventure. See the
+  [Make Maps](#make-maps-scenes) step for placing notes, and the user
+  guide's [notes toggle](../user-guide/Using-a-Published-Adventure-Module.md#where-are-the-notes-on-the-map)
+  for making the pin visible.
+
 ### Make Actors
 
 - Folders mirror your journal structure
