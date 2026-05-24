@@ -40,6 +40,14 @@ pasted into journal entries.
   structure you'll build in Phase 2.
 - Strip page headers, footers, and page numbers. Leave stat blocks intact
   for now — you'll harvest those into actors in Phase 2.
+- **Remove line-break hyphens.** PDFs hyphenate words that wrap across a
+  line (`adven-\nture`), and extraction tools keep that hyphen and the
+  break, leaving `adven-ture` or `adven- ture` in the output. Find-and-replace
+  these so words rejoin (`adventure`). Be careful not to strip *real*
+  hyphens in compound words (`half-elf`, `+1`) or em-dashes — a regex
+  like "hyphen followed by a newline/space then a lowercase letter"
+  (`-\s*\n\s*` → ``) targets only the wrap-hyphens. Always proofread the
+  result, since the safe pattern can still miss edge cases.
 
 ### Extract Images
 
