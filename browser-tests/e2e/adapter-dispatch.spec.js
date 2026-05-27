@@ -1,90 +1,44 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { test: base, expect } = require('@playwright/test')
+const { expect, createSessionTest } = require('./fixtures')
 
 const ADAPTER_TAG = '[DCC adapter]'
+
+// Module-scoped capture arrays. The fixture attaches the console listener ONCE
+// per worker (via onConsole below): `adapterLogs` collects the
+// `[DCC adapter] …` dispatch lines this spec asserts on, `consoleErrors`
+// collects errors. beforeEach clears both. Safe with workers:1; if we ever
+// parallelize, move them onto the fixture object.
 const adapterLogs = []
 const consoleErrors = []
-
-/**
- * Session-reuse fixture. Playwright's default is a fresh browser context per
- * test; with Foundry that means a full `/join` navigation + login + system
- * boot every single time (~6–13 s of overhead per test). The
- * `sessionPage` fixture is worker-scoped — each worker logs in ONCE and
- * reuses the same page across every test it runs. The `page` override is
- * test-scoped and simply forwards `sessionPage`, keeping the existing test
- * bodies (`async ({ page }) => ...`) source-compatible. `beforeEach` then
- * only clears captured logs and cleans up `P1 ...` actors / open app
- * windows.
- *
- * The console listener is attached once per worker (attaching it per test
- * would leak listeners on the reused page).
- *
- * With `workers: 1` (playwright.config.js), `adapterLogs` / `consoleErrors`
- * as module-scoped arrays are safe. If we later parallelize, move them
- * onto the fixture object.
- */
-const test = base.extend({
-  sessionPage: [async ({ browser }, use) => {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
-    const page = await context.newPage()
-
-    page.on('console', msg => {
-      const text = msg.text()
-      if (text.includes(ADAPTER_TAG)) adapterLogs.push(text)
-      if (msg.type() === 'error') consoleErrors.push(text)
-    })
-
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined, { timeout: 10000 })
-
-    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(sel)
-      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-      }
-    }
-
-    await use(page)
-    await context.close()
-  }, { scope: 'worker' }],
-
-  page: async ({ sessionPage }, use) => {
-    await use(sessionPage)
+const test = createSessionTest({
+  onConsole: msg => {
+    const text = msg.text()
+    if (text.includes(ADAPTER_TAG)) adapterLogs.push(text)
+    if (msg.type() === 'error') consoleErrors.push(text)
   }
 })
 
 /**
- * Phase 1 adapter-dispatch validation.
+ * Adapter-dispatch validation — the permanent roll/check/save regression net.
  *
- * For every Phase 1 roll (ability check, save, skill check, initiative)
- * this spec drives the public `DCCActor` method in a live Foundry, then
- * asserts the `[DCC adapter] <rollType> -> <via adapter|LEGACY path>`
- * console log emitted by `module/adapter/debug.mjs`. The log is the
- * signal used to verify the dispatcher picks the intended branch; this
- * spec makes that check automatic.
+ * For every roll the adapter handles (ability check, save, skill check,
+ * initiative, spell check, weapon attack/damage/crit/fumble, …) this spec
+ * drives the public `DCCActor` method in a live Foundry, then asserts the
+ * `[DCC adapter] <rollType> -> <via adapter|LEGACY path>` console log emitted
+ * by `module/adapter/debug.mjs`. The log is the signal used to verify the
+ * dispatcher picks the intended branch; this spec makes that check automatic.
  *
- * The dispatch logging is permanent (not a Phase 1 temporary scaffold) —
- * later phases add their own logDispatch calls and extend this spec.
+ * The dispatch logging is permanent (not a temporary scaffold) — each refactor
+ * phase adds its own logDispatch calls and extends this spec. (Formerly
+ * `phase1-adapter-dispatch.spec.js`; renamed once it grew past Phase 1.)
  *
  * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
  * fvtt CLI installPath/dataPath, and launch command. TL;DR:
  *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
- *   npm test -- phase1-adapter-dispatch.spec.js
+ *   npm test -- adapter-dispatch.spec.js
  */
 
-test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
+test.describe('DCC Adapter Dispatch Validation', () => {
   test.beforeAll(async () => {
     let serverUp
     try {

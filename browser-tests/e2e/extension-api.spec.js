@@ -1,54 +1,9 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { test: base, expect } = require('@playwright/test')
+const { expect, createSessionTest } = require('./fixtures')
 
-/**
- * Worker-scoped session-reuse fixture (mirrors phase1-adapter-dispatch.spec.js).
- *
- * Playwright's default is a fresh browser context per test; against Foundry
- * that means a full `/join` navigation + login + system boot every single
- * test (~3–5 s of overhead each). The `sessionPage` fixture is worker-scoped —
- * each worker logs in ONCE and reuses the same page across every test it runs.
- * The `page` override is test-scoped and forwards `sessionPage`, keeping the
- * existing `async ({ page }) => ...` test bodies source-compatible. `beforeEach`
- * then only does world-state hygiene (close windows, clear banners, purge
- * stale `P*` probes).
- *
- * With `workers: 1` (playwright.config.js) this is safe.
- */
-const test = base.extend({
-  sessionPage: [async ({ browser }, use) => {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
-    const page = await context.newPage()
-
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, { timeout: 30000 })
-
-    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(sel)
-      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-      }
-    }
-
-    await use(page)
-    await context.close()
-  }, { scope: 'worker' }],
-
-  page: async ({ sessionPage }, use) => {
-    await use(sessionPage)
-  }
-})
+// No console capture needed — this spec asserts on returned state, not a
+// zero-console-error gate.
+const test = createSessionTest()
 
 /**
  * Extension API E2E tests.
@@ -86,7 +41,7 @@ test.describe('DCC Extension API', () => {
     // Login + system boot is handled ONCE per worker by the sessionPage fixture
     // above; this hook only does world-state hygiene between tests.
     //
-    // World-state hygiene. Mirrors `data-models.spec.js` / `phase1-adapter-dispatch.spec.js`
+    // World-state hygiene. Mirrors `data-models.spec.js` / `adapter-dispatch.spec.js`
     // / `v14-features.spec.js` beforeEach handlers:
     //   - Close any open ApplicationV2 windows from prior tests (sheets,
     //     dialogs) that would otherwise intercept clicks in this test.
@@ -124,7 +79,7 @@ test.describe('DCC Extension API', () => {
     // blocked here but symptomatic), and v14-features.spec.js:540
     // timed out clicking a tab the hardware-acceleration banner was
     // covering. The enhanced beforeEach mirrors data-models /
-    // phase1-adapter-dispatch / v14-features hygiene; this test
+    // adapter-dispatch / v14-features hygiene; this test
     // asserts the invariants every downstream test depends on.
     const state = await page.evaluate(() => ({
       openWindowCount: Object.keys(ui.windows ?? {}).length,

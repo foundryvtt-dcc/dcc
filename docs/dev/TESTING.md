@@ -249,17 +249,19 @@ All PRs must pass tests before merging.
 
 ## Browser tests (Playwright)
 
-End-to-end tests that drive a live Foundry instance live in `browser-tests/`. Two suites:
+End-to-end tests that drive a live Foundry instance live in `browser-tests/e2e/` — four functional specs, all Playwright against a real Foundry server (no mocks, no Vitest):
 
-- `browser-tests/e2e/` — functional specs (data models, V14 features, Phase 1 adapter dispatch)
-- `browser-tests/visual-regression/` — sheet screenshot diffs
+- `adapter-dispatch.spec.js` — every roll/check/save branch dispatches to the intended path (the permanent regression net; formerly `phase1-adapter-dispatch.spec.js`)
+- `extension-api.spec.js` — the stable `game.dcc.*` extension surface
+- `v14-features.spec.js` — V14 features (Active Effects, dice chain, class tabs, …)
+- `data-models.spec.js` — TypeDataModel validation + persistence via the sheet UI
 
-Both use Playwright against a real Foundry server — no mocks, no Vitest. The specs create their own test actors/items via `page.evaluate` and clean up in `beforeEach`, so the world state only needs to be a valid DCC world.
+Shared login/session plumbing lives in `browser-tests/e2e/fixtures.js` (`createSessionTest`). Specs create their own test actors/items via `page.evaluate` and clean up in `beforeEach`, so the world only needs to be a valid DCC world. (A v12-era visual-regression suite was removed — it can be re-added against v14 if screenshot diffing is wanted.)
 
 ### One-time setup
 
 ```bash
-# From browser-tests/e2e/ (or visual-regression/)
+# From browser-tests/e2e/
 npm install
 npx playwright install chromium chromium-headless-shell
 ```
@@ -292,7 +294,7 @@ nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
 
 # From browser-tests/e2e/:
 npm test                                      # full suite
-npm test -- phase1-adapter-dispatch.spec.js   # one spec
+npm test -- adapter-dispatch.spec.js   # one spec
 npm run test:headed                           # watch it drive the browser
 ```
 
@@ -306,7 +308,7 @@ npm run test:headed                           # watch it drive the browser
 
 ### Session-reuse fixture (why the suite is fast)
 
-All four functional specs use a **worker-scoped `sessionPage` fixture**: each worker logs into Foundry **once** and reuses the same page across every test, instead of re-navigating to `/join` + re-booting the system per test. This cut the e2e suite from ~840 s to ~340 s (e.g. `extension-api` 239 s → 34 s). `phase1-adapter-dispatch.spec.js` is the reference implementation. Implications when writing or editing these specs:
+All four functional specs use a **worker-scoped `sessionPage` fixture**: each worker logs into Foundry **once** and reuses the same page across every test, instead of re-navigating to `/join` + re-booting the system per test. This cut the e2e suite from ~840 s to ~340 s (e.g. `extension-api` 239 s → 34 s). `adapter-dispatch.spec.js` is the reference implementation. Implications when writing or editing these specs:
 
 - The `page` in `async ({ page }) => …` is the **shared** session page — it is NOT reset between tests. Do all per-test cleanup in `beforeEach`: close `ui.windows`, delete your probe actors/items, remove `#notifications` banners. Name probe actors with a per-spec prefix (`P1 …`, `V14 …`, `Test …`) so cleanup can find leftovers from a crashed run.
 - Attach the `page.on('console', …)` listener **in the fixture** (once), pushing into a module-scoped array that `beforeEach` clears. Never attach it in `beforeEach` — on a reused page that leaks a listener per test.
@@ -316,7 +318,7 @@ All four functional specs use a **worker-scoped `sessionPage` fixture**: each wo
 
 ### Adapter dispatch validation
 
-`phase1-adapter-dispatch.spec.js` validates every Phase-1 roll branch by capturing the `[DCC adapter] <rollType> → <via adapter|LEGACY path>` console line emitted by `module/adapter/debug.mjs`. The dispatch logging is kept permanently (not a phase-close scaffold) precisely so this spec has a stable signal to assert against. Later phases add their own logDispatch calls and extend the spec.
+`adapter-dispatch.spec.js` validates every Phase-1 roll branch by capturing the `[DCC adapter] <rollType> → <via adapter|LEGACY path>` console line emitted by `module/adapter/debug.mjs`. The dispatch logging is kept permanently (not a phase-close scaffold) precisely so this spec has a stable signal to assert against. Later phases add their own logDispatch calls and extend the spec.
 
 ## Related Documentation
 

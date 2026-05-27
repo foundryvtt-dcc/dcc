@@ -146,7 +146,7 @@ close — 1065 Vitest, 143 Playwright passed.
 **Phase 6 session 4 closed the flake-investigation follow-up.**
 The session-start prompt called out two suite-only Playwright
 flakes — `extension-api.spec.js:553 built-in elf mixin attaches…`
-and `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click
+and `adapter-dispatch.spec.js:922 forceCrit shift-click
 flag…` — observed in Phase 6 sessions 1 and 2 but not in session 3,
 and not in two pre-fix full-suite runs this session. The runs *did*
 surface a different failure pattern in the same environmental-race
@@ -157,7 +157,7 @@ acceleration notification banner intercepting a tab click. The slice
 fills the gap behind those failures: `extension-api.spec.js` was the
 *only* e2e spec lacking the per-test `#notifications .notification`
 banner-removal + `ui.windows` cleanup the other three specs
-(`data-models`, `phase1-adapter-dispatch`, `v14-features`) all
+(`data-models`, `adapter-dispatch`, `v14-features`) all
 carry. The enhanced `beforeEach` closes any open ApplicationV2
 windows, removes notification banners, and purges stale `P*` actor
 probes from failed prior runs. +1 self-verifying Playwright case
@@ -175,7 +175,7 @@ latent failure (xcc-core-book DCCItemSheet override, now at line
 pre-slice; baseline unchanged). All previously-flaked tests passed
 this run: elf:553, forceCrit:922, extension-api:267+302,
 v14-features:540. Did NOT migrate the spec to the worker-scoped
-session-reuse fixture pattern that `phase1-adapter-dispatch` uses
+session-reuse fixture pattern that `adapter-dispatch` uses
 — blast radius too large for one slice; tracked as a possible
 follow-up.
 
@@ -268,7 +268,7 @@ cleanup), +2 Playwright cases (helpers exposed on live
 `game.dcc`; end-to-end round-trip using a fictional class).
 **1005 Vitest green** (was 1003, +2). **135 Playwright passed**
 (was 134, +2 new from this slice; one new flake observed —
-`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…`
+`adapter-dispatch.spec.js:922 forceCrit shift-click flag…`
 fails under the full-suite run but passes in isolation. State
 pollution between tests in the shared Foundry world; not caused
 by this slice. Latent xcc-core-book DCCItemSheet override
@@ -402,7 +402,7 @@ careful manual sheet-by-sheet inspection.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped
-session-reuse fixture pattern in `phase1-adapter-dispatch.spec.js`
+session-reuse fixture pattern in `adapter-dispatch.spec.js`
 (`sessionPage` fixture, login once per worker). Eliminates ~60 per-
 test login overheads + the per-test login race. Larger blast
 radius; tracked here in case future runs surface more login-race

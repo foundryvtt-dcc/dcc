@@ -5,7 +5,7 @@
  * so each code path is identifiable in the Foundry console. Centralized
  * here so the tag stays consistent across every dispatcher branch.
  *
- * Permanent infrastructure: `browser-tests/e2e/phase1-adapter-dispatch.spec.js`
+ * Permanent infrastructure: `browser-tests/e2e/adapter-dispatch.spec.js`
  * captures these lines via Playwright and asserts every dispatcher
  * branch end-to-end. Every new `_xxxViaAdapter` / `_xxxLegacy` method
  * in later phases must call `logDispatch` as its first line.
