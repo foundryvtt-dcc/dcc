@@ -128,3 +128,65 @@ describe('spellburn roll flavor', () => {
     expect(flavored('+2', { type: 'Modifier' })).toBe('+2')
   })
 })
+
+describe('force-fumble modifier mapping (DCCActorSheet.fillRollOptions)', () => {
+  // Mirror of fillRollOptions: shift = crit, ctrl/meta = toggle dialog,
+  // ctrl/meta + shift = fumble (that combo takes fumble over crit + toggle).
+  function rollOptions (event, rollModifierDefault = false) {
+    const modifierKey = event.ctrlKey || event.metaKey
+    return {
+      showModifierDialog: Boolean(rollModifierDefault ^ (modifierKey && !event.shiftKey)),
+      forceCrit: event.shiftKey && !modifierKey,
+      forceFumble: event.shiftKey && modifierKey
+    }
+  }
+
+  test('plain click forces neither crit nor fumble', () => {
+    const o = rollOptions({})
+    expect(o.forceCrit).toBeFalsy()
+    expect(o.forceFumble).toBeFalsy()
+  })
+
+  test('shift alone still forces a crit', () => {
+    const o = rollOptions({ shiftKey: true })
+    expect(o.forceCrit).toBeTruthy()
+    expect(o.forceFumble).toBeFalsy()
+  })
+
+  test('ctrl/meta alone toggles the dialog and forces nothing', () => {
+    const o = rollOptions({ ctrlKey: true }, false)
+    expect(o.showModifierDialog).toBe(true)
+    expect(o.forceCrit).toBeFalsy()
+    expect(o.forceFumble).toBeFalsy()
+  })
+
+  test('ctrl+shift forces a fumble (not a crit) and does not toggle the dialog', () => {
+    const o = rollOptions({ ctrlKey: true, shiftKey: true }, false)
+    expect(o.forceFumble).toBeTruthy()
+    expect(o.forceCrit).toBeFalsy()
+    expect(o.showModifierDialog).toBe(false)
+  })
+
+  test('meta+shift forces a fumble (mac)', () => {
+    expect(rollOptions({ metaKey: true, shiftKey: true }).forceFumble).toBeTruthy()
+  })
+})
+
+describe('forceFumble forces a natural 1', () => {
+  // Mirror of the forceFumble block in processSpellCheck.
+  function applyForceFumble (naturalRoll, forceFumble) {
+    return (forceFumble && naturalRoll !== 1) ? 1 : naturalRoll
+  }
+
+  test('forces an arbitrary roll to 1', () => {
+    expect(applyForceFumble(15, true)).toBe(1)
+  })
+
+  test('forces even a natural 20 to 1 (deterministic, unlike the crit guard)', () => {
+    expect(applyForceFumble(20, true)).toBe(1)
+  })
+
+  test('is a no-op when not forcing', () => {
+    expect(applyForceFumble(15, false)).toBe(15)
+  })
+})

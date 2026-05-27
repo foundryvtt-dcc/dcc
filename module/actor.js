@@ -1479,6 +1479,7 @@ class DCCActor extends Actor {
       item: null,
       flavor,
       forceCrit: options.forceCrit,
+      forceFumble: options.forceFumble,
       suppressPatronTaint: options.suppressPatronTaint
     })
   }

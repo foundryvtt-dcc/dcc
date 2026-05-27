@@ -390,6 +390,7 @@ class DCCItem extends Item {
       manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
       mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
       forceCrit: options.forceCrit,
+      forceFumble: options.forceFumble,
       suppressPatronTaint: options.suppressPatronTaint,
       spellburn: spellburnTotal
     })

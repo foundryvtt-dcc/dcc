@@ -599,6 +599,7 @@ async function processSpellCheck (actor, spellData) {
   const item = spellData.item
   const flavor = spellData.flavor
   const forceCrit = spellData.forceCrit || false
+  const forceFumble = spellData.forceFumble || false
   // Opt-out flag: a caller can set `suppressPatronTaint: true` on the
   // spell-check call to skip DCC's built-in d100 patron-taint roll for this
   // cast — e.g. a variant module that implements its own patron mechanic and
@@ -624,6 +625,17 @@ async function processSpellCheck (actor, spellData) {
     roll.terms[0].results[0].result = 20
     roll.terms[0]._total = 20
     roll._total += (20 - originalDieRoll)
+  }
+
+  // Force a fumble for testing (ctrl+shift-click). Unconditional (a forced
+  // fumble always lands on a natural 1) so it's deterministic; the `!== 1`
+  // guard just avoids a redundant no-op mutation.
+  if (forceFumble && naturalRoll !== 1) {
+    const originalDieRoll = naturalRoll
+    naturalRoll = 1
+    roll.terms[0].results[0].result = 1
+    roll.terms[0]._total = 1
+    roll._total += (1 - originalDieRoll)
   }
 
   // Check for Patron Taint
