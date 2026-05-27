@@ -1,4 +1,5 @@
-const { test, expect } = require('@playwright/test')
+/* eslint-disable no-undef -- Browser globals (game, ui, Actor, Item) used in page.evaluate callbacks */
+const { test: base, expect } = require('@playwright/test')
 
 /**
  * E2E tests for DCC TypeDataModels
@@ -14,10 +15,64 @@ const { test, expect } = require('@playwright/test')
  * join-page select option and the spec will time out.
  */
 
-test.describe('DCC TypeDataModels E2E Tests', () => {
-  // Store console errors for each test
-  let consoleErrors = []
+// Module-scoped console-error capture. The listener is attached ONCE per
+// worker by the sessionPage fixture (attaching it per test would leak
+// listeners on the reused page); beforeEach clears this array and afterEach
+// asserts on it. Safe as a module global with workers:1 (playwright.config.js).
+const consoleErrors = []
 
+/**
+ * Worker-scoped session-reuse fixture (mirrors phase1-adapter-dispatch.spec.js).
+ *
+ * Logs in ONCE per worker and reuses the page across every test; beforeEach
+ * then only resets captured console errors and does world-state hygiene. This
+ * removes the per-test `/join` navigation + login + system boot (~6–13 s each)
+ * that dominated this spec's runtime.
+ *
+ * With `workers: 1` (playwright.config.js) the module-scoped `consoleErrors`
+ * array is safe.
+ */
+const test = base.extend({
+  sessionPage: [async ({ browser }, use) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const page = await context.newPage()
+
+    page.on('console', msg => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text())
+    })
+
+    await page.goto('http://localhost:30000/join')
+    await page.waitForTimeout(1000)
+
+    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
+    if (!isInGame) {
+      const userSelect = page.locator('select[name="userid"]')
+      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
+      await page.click('button[name="join"]')
+      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
+    }
+
+    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
+    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined, { timeout: 10000 }).catch(() => {})
+
+    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
+      const dialog = page.locator(sel)
+      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
+        await page.keyboard.press('Escape')
+      }
+    }
+
+    await use(page)
+    await context.close()
+  }, { scope: 'worker' }],
+
+  page: async ({ sessionPage }, use) => {
+    await use(sessionPage)
+  }
+})
+
+test.describe('DCC TypeDataModels E2E Tests', () => {
   // Check that Foundry is running before all tests (simple fetch check)
   test.beforeAll(async () => {
     let serverUp
@@ -38,73 +93,44 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    // Reset console errors for this test
-    consoleErrors = []
-
-    // Listen for console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        consoleErrors.push(msg.text())
-      }
-    })
-
-    // Set viewport to a reasonable size that fits on screen
-    await page.setViewportSize({ width: 1280, height: 800 })
-
-    // Navigate to join page
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    // Check if we're already in the game (session persisted)
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-
-    if (!isInGame) {
-      // We need to log in - wait for join page
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-
-      // Select Gamemaster
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-
-      // Click join button (no password needed)
-      await page.click('button[name="join"]')
-
-      // Wait for game to load
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    // Wait for Foundry to fully initialize
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-
-    // Remove any Foundry notification banners (e.g. hardware acceleration warning)
-    // These are persistent and can't be dismissed by clicking
-    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
-
-    // Clean up leftover test actors/items from previous failed runs
-    /* eslint-disable no-undef */
+    // Login + system boot is handled ONCE per worker by the sessionPage
+    // fixture; here we only do world-state hygiene (close windows, purge test
+    // actors/items, clear banners) and then reset captured console errors LAST.
+    //
+    // Clearing the console-error buffer at the END (not the start) matters
+    // under session reuse: a prior test may delete an actor without awaiting
+    // its directory re-render (e.g. the "Action Die Test" teardown), emitting a
+    // transient `Actor "<id>" does not exist` log shortly after the test ends.
+    // With a fresh page per test that noise was discarded by the reload; with a
+    // reused page it would otherwise count against THIS test's zero-error gate.
+    // Cleaning up + settling + clearing here scopes the gate to the test body.
     await page.evaluate(async () => {
+      document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
       const testNames = ['Test Player', 'Test NPC', 'Persistence Test', 'Action Die Test', 'Test Weapon', 'Test Armor', 'Test Treasure']
+      for (const app of Object.values(ui.windows)) {
+        try { await app.close() } catch {}
+      }
       for (const actor of game.actors.filter(a => testNames.includes(a.name))) {
-        await actor.delete()
+        try { await actor.delete() } catch {}
       }
       for (const item of game.items.filter(i => testNames.includes(i.name))) {
-        await item.delete()
+        try { await item.delete() } catch {}
       }
-    })
-    /* eslint-enable no-undef */
+    }).catch(() => {})
 
-    // Close any welcome dialogs
-    const dccDialog = page.locator('#dcc-welcome-dialog')
-    if (await dccDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
+    // Welcome dialogs are dismissed once in the fixture; re-dismiss only if one
+    // reappeared.
+    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
+      const dialog = page.locator(sel)
+      if (await dialog.isVisible({ timeout: 300 }).catch(() => false)) {
+        await page.keyboard.press('Escape')
+      }
     }
 
-    const coreBookDialog = page.locator('#dcc-core-book-welcome-dialog')
-    if (await coreBookDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-    }
+    // Let prior-test teardown re-renders drain, THEN clear — so the zero-error
+    // gate in afterEach measures only this test's body.
+    await page.waitForTimeout(400)
+    consoleErrors.length = 0
   })
 
   test.afterEach(async () => {

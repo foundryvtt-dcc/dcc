@@ -1,5 +1,54 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { test, expect } = require('@playwright/test')
+const { test: base, expect } = require('@playwright/test')
+
+/**
+ * Worker-scoped session-reuse fixture (mirrors phase1-adapter-dispatch.spec.js).
+ *
+ * Playwright's default is a fresh browser context per test; against Foundry
+ * that means a full `/join` navigation + login + system boot every single
+ * test (~3–5 s of overhead each). The `sessionPage` fixture is worker-scoped —
+ * each worker logs in ONCE and reuses the same page across every test it runs.
+ * The `page` override is test-scoped and forwards `sessionPage`, keeping the
+ * existing `async ({ page }) => ...` test bodies source-compatible. `beforeEach`
+ * then only does world-state hygiene (close windows, clear banners, purge
+ * stale `P*` probes).
+ *
+ * With `workers: 1` (playwright.config.js) this is safe.
+ */
+const test = base.extend({
+  sessionPage: [async ({ browser }, use) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const page = await context.newPage()
+
+    await page.goto('http://localhost:30000/join')
+    await page.waitForTimeout(1000)
+
+    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
+    if (!isInGame) {
+      const userSelect = page.locator('select[name="userid"]')
+      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
+      await page.click('button[name="join"]')
+      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
+    }
+
+    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, { timeout: 30000 })
+
+    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
+      const dialog = page.locator(sel)
+      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
+        await page.keyboard.press('Escape')
+      }
+    }
+
+    await use(page)
+    await context.close()
+  }, { scope: 'worker' }],
+
+  page: async ({ sessionPage }, use) => {
+    await use(sessionPage)
+  }
+})
 
 /**
  * Extension API E2E tests.
@@ -34,28 +83,9 @@ test.describe('DCC Extension API', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, { timeout: 30000 })
-
-    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(sel)
-      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-      }
-    }
-
+    // Login + system boot is handled ONCE per worker by the sessionPage fixture
+    // above; this hook only does world-state hygiene between tests.
+    //
     // World-state hygiene. Mirrors `data-models.spec.js` / `phase1-adapter-dispatch.spec.js`
     // / `v14-features.spec.js` beforeEach handlers:
     //   - Close any open ApplicationV2 windows from prior tests (sheets,
