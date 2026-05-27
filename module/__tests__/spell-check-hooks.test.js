@@ -103,3 +103,28 @@ describe('spellburn capture (the glowburn amount)', () => {
     expect(burned({ str: 10, agl: 12, sta: 11 }, { str: 10, agl: 12, sta: 11 })).toBe(0)
   })
 })
+
+describe('spellburn roll flavor', () => {
+  // Mirror of the `flavored` helper in roll-modifier.js _constructRoll: a
+  // non-zero Spellburn contribution gets inline [Spellburn] flavor in the
+  // final roll formula; everything else passes through unchanged.
+  function flavored (piece, term) {
+    if (term.type === 'Spellburn' && piece && parseInt(piece) !== 0) {
+      return `${piece}[Spellburn]`
+    }
+    return piece
+  }
+
+  test('tags a non-zero spellburn contribution with inline flavor', () => {
+    expect(flavored('+3', { type: 'Spellburn' })).toBe('+3[Spellburn]')
+  })
+
+  test('leaves an unused (+0) spellburn term unflavored', () => {
+    expect(flavored('+0', { type: 'Spellburn' })).toBe('+0')
+  })
+
+  test('does not touch non-spellburn terms', () => {
+    expect(flavored('1d20', { type: 'Die' })).toBe('1d20')
+    expect(flavored('+2', { type: 'Modifier' })).toBe('+2')
+  })
+})

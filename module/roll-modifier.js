@@ -404,6 +404,17 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         term.callback(formula, term)
       }
     }
+    // The roll is built purely from concatenated formulas, so term identity is
+    // otherwise lost in the result. Tag the spellburn contribution with inline
+    // flavor so a burned bonus renders as e.g. "+3[Spellburn]" in chat. Only
+    // when non-zero (an unused spellburn term is "+0"), and only in the final
+    // formula — the dialog input keeps its plain value.
+    const flavored = function (piece, term) {
+      if (term.type === 'Spellburn' && piece && parseInt(piece) !== 0) {
+        return `${piece}[Spellburn]`
+      }
+      return piece
+    }
     // Build a new Roll object from the collected terms (excluding damage terms)
     let formula = ''
     let termIndex = 0
@@ -416,7 +427,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
           if (termIndex > 0) {
             formula += '+'
           }
-          formula += element.value
+          formula += flavored(element.value, term)
           resolveTerm(element.value, term)
           termIndex++
         }
@@ -427,7 +438,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         if (term.index > 0) {
           formula += '+'
         }
-        formula += term.formula
+        formula += flavored(term.formula, term)
         resolveTerm(term.formula, term)
       }
     }
