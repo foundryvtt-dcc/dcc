@@ -254,15 +254,25 @@ End-to-end tests that drive a live Foundry instance live in `browser-tests/`. Tw
 - `browser-tests/e2e/` — functional specs (data models, V14 features, Phase 1 adapter dispatch)
 - `browser-tests/visual-regression/` — sheet screenshot diffs
 
-Both use Playwright against a real Foundry server — no mocks, no Vitest. The specs create their own test actors/items via `page.evaluate` and clean up in `afterEach`, so the world state only needs to be a valid DCC world.
+Both use Playwright against a real Foundry server — no mocks, no Vitest. The specs create their own test actors/items via `page.evaluate` and clean up in `beforeEach`, so the world state only needs to be a valid DCC world.
 
 ### One-time setup
 
 ```bash
 # From browser-tests/e2e/ (or visual-regression/)
 npm install
-npx playwright install chromium
+npx playwright install chromium chromium-headless-shell
 ```
+
+> **Playwright ≥ 1.60 is required on macOS 26 ("Tahoe").** Older builds
+> (≤ ~1.56) hang during browser **extraction** — the download reaches 100%
+> and then the install freezes mid-unzip (`oopDownloadBrowserMain` stuck on
+> the first extracted file). The download itself is fine; only the old
+> extractor wedges. If you hit this: `pkill -f oopDownloadBrowserMain`,
+> remove the stale lock + partial dir
+> (`rm -rf ~/Library/Caches/ms-playwright/__dirlock ~/Library/Caches/ms-playwright/chromium*-*`),
+> upgrade (`npm i -D @playwright/test@latest`), and retry. `browser-tests/e2e`
+> is pinned to `^1.60.0`.
 
 ### Running a suite
 
@@ -293,6 +303,16 @@ npm run test:headed                           # watch it drive the browser
 - **`dataPath` matters per worktree.** The main repo lives under `/Users/timwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
 - **World name is `v14`, not `automated_testing`.** The worlds in `FoundryVTT-Next/Data/worlds/` are `v14`, `v13`, and `secrets-of-the-spectral-summoner`. Use `v14`.
 - **Close your manual Foundry browser tab first.** If a Gamemaster is already logged in there, the join-page select disables the option and Playwright's login times out (11 s per test) before any assertion runs.
+
+### Session-reuse fixture (why the suite is fast)
+
+All four functional specs use a **worker-scoped `sessionPage` fixture**: each worker logs into Foundry **once** and reuses the same page across every test, instead of re-navigating to `/join` + re-booting the system per test. This cut the e2e suite from ~840 s to ~340 s (e.g. `extension-api` 239 s → 34 s). `phase1-adapter-dispatch.spec.js` is the reference implementation. Implications when writing or editing these specs:
+
+- The `page` in `async ({ page }) => …` is the **shared** session page — it is NOT reset between tests. Do all per-test cleanup in `beforeEach`: close `ui.windows`, delete your probe actors/items, remove `#notifications` banners. Name probe actors with a per-spec prefix (`P1 …`, `V14 …`, `Test …`) so cleanup can find leftovers from a crashed run.
+- Attach the `page.on('console', …)` listener **in the fixture** (once), pushing into a module-scoped array that `beforeEach` clears. Never attach it in `beforeEach` — on a reused page that leaks a listener per test.
+- For specs with a zero-console-error gate in `afterEach`, clear the error buffer at the **end** of `beforeEach` (after cleanup + a short settle), so a prior test's un-awaited teardown (e.g. a UI-driven actor delete) can't trip the next test's gate.
+- `workers: 1` (playwright.config.js) keeps the module-scoped arrays safe. If you ever parallelize, move them onto the fixture object.
+- Prefer deterministic waits (`waitForSelector`/`waitForFunction`/locator auto-wait) over `waitForTimeout`; the latter is pure fixed wall-clock and the bulk of what remains to optimize.
 
 ### Adapter dispatch validation
 
