@@ -318,16 +318,25 @@ class DCCItem extends Item {
       })
     }
 
-    // Clerics cannot spellburn
+    // Clerics cannot spellburn.
+    // Track the total points burned so the result handler can surface it via
+    // the `dcc.afterSpellCheckResult` payload — MCC glowburn IS spellburn, and
+    // its patron manifestation keys off the amount burned.
+    let spellburnTotal = 0
     if (castingMode !== 'cleric') {
+      const sbStr = actor.system.abilities.str.value
+      const sbAgl = actor.system.abilities.agl.value
+      const sbSta = actor.system.abilities.sta.value
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: actor.system.abilities.str.value,
-        agl: actor.system.abilities.agl.value,
-        sta: actor.system.abilities.sta.value,
+        str: sbStr,
+        agl: sbAgl,
+        sta: sbSta,
         callback: (formula, term) => {
-          // Apply the spellburn
+          // Record the points burned (original minus the dialog's reduced
+          // values), then apply the spellburn.
+          spellburnTotal = (sbStr - term.str) + (sbAgl - term.agl) + (sbSta - term.sta)
           actor.update({
             'system.abilities.str.value': term.str,
             'system.abilities.agl.value': term.agl,
@@ -381,7 +390,8 @@ class DCCItem extends Item {
       manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
       mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
       forceCrit: options.forceCrit,
-      suppressPatronTaint: options.suppressPatronTaint
+      suppressPatronTaint: options.suppressPatronTaint,
+      spellburn: spellburnTotal
     })
   }
 

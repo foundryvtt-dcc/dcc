@@ -61,7 +61,8 @@ describe('dcc.afterSpellCheckResult payload contract', () => {
       success: false,
       castingMode: 'generic',
       patronTaint: null,
-      suppressPatronTaint: true
+      suppressPatronTaint: true,
+      spellburn: 2
     }
     callAll('dcc.afterSpellCheckResult', actor, payload)
 
@@ -74,7 +75,8 @@ describe('dcc.afterSpellCheckResult payload contract', () => {
       fumble: expect.any(Boolean),
       success: expect.any(Boolean),
       castingMode: expect.any(String),
-      suppressPatronTaint: expect.any(Boolean)
+      suppressPatronTaint: expect.any(Boolean),
+      spellburn: expect.any(Number)
     }))
   })
 
@@ -83,5 +85,21 @@ describe('dcc.afterSpellCheckResult payload contract', () => {
     const isInvokePatronAi = payload.item?.name?.startsWith('Invoke Patron AI')
     const isNatOne = payload.naturalRoll === 1
     expect(isInvokePatronAi && isNatOne).toBe(true)
+  })
+})
+
+describe('spellburn capture (the glowburn amount)', () => {
+  // Mirror of the burn computation in item.js's Spellburn callback:
+  //   spellburnTotal = (origStr - term.str) + (origAgl - term.agl) + (origSta - term.sta)
+  function burned (orig, term) {
+    return (orig.str - term.str) + (orig.agl - term.agl) + (orig.sta - term.sta)
+  }
+
+  test('sums the points burned across str/agl/sta', () => {
+    expect(burned({ str: 10, agl: 12, sta: 11 }, { str: 8, agl: 12, sta: 10 })).toBe(3)
+  })
+
+  test('is zero when nothing is burned', () => {
+    expect(burned({ str: 10, agl: 12, sta: 11 }, { str: 10, agl: 12, sta: 11 })).toBe(0)
   })
 })

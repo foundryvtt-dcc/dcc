@@ -807,7 +807,8 @@ async function processSpellCheck (actor, spellData) {
       success,
       castingMode,
       patronTaint,
-      suppressPatronTaint
+      suppressPatronTaint,
+      spellburn: spellData.spellburn || 0
     })
   } catch (ex) {
     console.error(ex)
