@@ -253,9 +253,9 @@ End-to-end tests that drive a live Foundry instance live in `browser-tests/e2e/`
 
 - `adapter-dispatch.spec.js` — every roll/check/save branch dispatches to the intended path (the permanent regression net; formerly `phase1-adapter-dispatch.spec.js`)
 - `extension-api.spec.js` — the stable `game.dcc.*` extension surface
-- `v14-features.spec.js` — V14 features (Active Effects, dice chain, class tabs, …)
+- `active-effects.spec.js` — Active Effects (CRUD, application, dice-chain & equipped-item effects, effect transfer, the DCC Effects compendium)
 - `data-models.spec.js` — TypeDataModel validation + persistence via the sheet UI
-- `rolls-ui.spec.js` — basic click-through smoke: open a sheet, click an ability/save roll control, assert a chat card lands (the user-facing path `adapter-dispatch` doesn't cover)
+- `sheet-ui.spec.js` — sheet click-through: roll an ability/save → chat card, class-specific tab sets, tab navigation, and status-effect registration
 
 Shared login/session plumbing lives in `browser-tests/e2e/fixtures.js` (`createSessionTest`). Specs create their own test actors/items via `page.evaluate` and clean up in `beforeEach`, so the world only needs to be a valid DCC world. (A v12-era visual-regression suite was removed — it can be re-added against v14 if screenshot diffing is wanted.)
 

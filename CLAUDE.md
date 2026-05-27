@@ -95,8 +95,9 @@ preconditions for the auto-commit authorization above — if any fail,
 don't commit.
 
 - **Run the FULL browser-tests/e2e Playwright suite each session.**
-  Not just `adapter-dispatch.spec.js` — also `v14-features.spec.js`,
-  `data-models.spec.js`, and every other spec in `browser-tests/e2e/`.
+  Not just `adapter-dispatch.spec.js` — also `active-effects.spec.js`,
+  `sheet-ui.spec.js`, `data-models.spec.js`, and every other spec in
+  `browser-tests/e2e/`.
   Launch via the standard recipe in
   `docs/dev/TESTING.md#browser-tests-playwright` (Node 24, fvtt CLI
   `installPath=foundry-14` + `dataPath=/Users/timwhite/FoundryVTT-Next`,
@@ -109,8 +110,9 @@ don't commit.
   behavior end-to-end against live Foundry. For dispatch changes,
   extend `adapter-dispatch.spec.js` with the new branch. For
   data / sheet / chat-template changes, add cases to the appropriate
-  spec (`v14-features.spec.js`, `data-models.spec.js`, or a new
-  spec file if the surface area warrants one). The adapter-dispatch
+  spec (`active-effects.spec.js`, `sheet-ui.spec.js`,
+  `data-models.spec.js`, or a new spec file if the surface area
+  warrants one). The adapter-dispatch
   test count has climbed with each session (26 at Phase 3 session 2
   close → 33 at session 6 close); that trajectory is expected and
   intentional — the suite IS the regression net for the refactor.

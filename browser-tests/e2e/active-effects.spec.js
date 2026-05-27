@@ -1,59 +1,27 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, Item, CONFIG, etc.) used in page.evaluate callbacks */
-const { expect, createSessionTest } = require('./fixtures')
+const { expect, createSessionTest, openActorSheet, significantConsoleErrors } = require('./fixtures')
 
 /**
- * V14-specific E2E tests for DCC system
+ * Active Effects E2E tests (the V14 ActiveEffect V2 layer).
  *
- * Tests Active Effects, dice chain, equipped item filtering,
- * class-specific tabs, compendium, and status icons.
+ * Covers effect CRUD + application, dice-chain effects, equipped-item effects,
+ * effect transfer from items, and the DCC Effects compendium — end-to-end
+ * against a live Foundry. Sheet-tab navigation + status icons live in
+ * sheet-ui.spec.js.
  *
- * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
- * fvtt CLI installPath/dataPath, and launch command. TL;DR:
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright. TL;DR:
  *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
- *   npm test
+ *   cd browser-tests/e2e && npm test -- active-effects.spec.js
  */
 
-// OS-level network blips (macOS App Nap throttling the Chromium tab,
-// brief Wi-Fi power-management cycles, lid-sleep windows) surface as
-// these specific Chromium error codes plus Foundry's Socket.IO
-// reconnect notice. They are not caused by system code and Foundry
-// re-establishes the connection on its own — but they pollute the
-// `consoleErrors` listener and trip the zero-error gate in
-// `afterEach`. Filter them out alongside `favicon.ico` so the spec
-// stays strict for real regressions but resilient to host-environment
-// transients.
-const TRANSIENT_NETWORK_ERRORS = [
-  'ERR_NETWORK_IO_SUSPENDED',
-  'ERR_SOCKET_NOT_CONNECTED',
-  'lost connection to the server, attempting to re-establish'
-]
-
-// Module-scoped console-error capture. The fixture attaches the listener ONCE
-// per worker (via onConsole below); beforeEach clears this array and afterEach
-// asserts on it. Safe as a module global with workers:1 (playwright.config.js).
+// Module-scoped console-error capture (cleared in beforeEach, asserted in
+// afterEach). The fixture attaches the listener once per worker.
 const consoleErrors = []
 const test = createSessionTest({
   onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
 })
 
-test.describe('DCC V14 Features E2E Tests', () => {
-  /**
-   * Helper: open an actor's sheet by clicking its name in the Actors sidebar
-   */
-  async function openActorSheet (page, actorName) {
-    await page.click('button[data-tab="actors"]')
-    await page.waitForSelector('#actors.active', { timeout: 5000 })
-    await page.click(`.entry-name:has-text("${actorName}")`)
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    // _prepareContext does async class setup then re-renders. Wait for the nav
-    // tabs to be present (structural signal the sheet body rendered) instead of
-    // a blind 2 s sleep, then settle to cover the class-setup re-render. 1.5 s
-    // gives margin for the async re-render (a tighter 750 ms occasionally
-    // flaked) while still beating the original blind 2 s wait.
-    await page.waitForSelector('.dcc.actor.sheet nav [data-tab]', { timeout: 10000 }).catch(() => {})
-    await page.waitForTimeout(1500)
-  }
-
+test.describe('DCC Active Effects', () => {
   test.beforeAll(async () => {
     let serverUp
     try {
@@ -115,11 +83,8 @@ test.describe('DCC V14 Features E2E Tests', () => {
       }
     }).catch(() => {}) // Don't fail cleanup
 
-    const significantErrors = consoleErrors.filter(err =>
-      !err.includes('favicon.ico') &&
-      !TRANSIENT_NETWORK_ERRORS.some(t => err.includes(t))
-    )
-    expect(significantErrors, `Console errors detected: ${significantErrors.join('\n')}`).toHaveLength(0)
+    const errors = significantConsoleErrors(consoleErrors)
+    expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
   })
 
   // ── Active Effects CRUD ──────────────────────────────────────────────
@@ -467,123 +432,6 @@ test.describe('DCC V14 Features E2E Tests', () => {
     })
   })
 
-  // ── Class-Specific Sheet Tabs ────────────────────────────────────────
-
-  test.describe('Class-Specific Sheet Tabs', () => {
-    const classConfigs = [
-      {
-        sheetClass: 'dcc.DCCActorSheetCleric',
-        name: 'Cleric',
-        expectedTabs: ['character', 'equipment', 'cleric', 'clericSpells', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetWarrior',
-        name: 'Warrior',
-        expectedTabs: ['character', 'equipment', 'warrior', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetWizard',
-        name: 'Wizard',
-        expectedTabs: ['character', 'equipment', 'wizard', 'wizardSpells', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetThief',
-        name: 'Thief',
-        expectedTabs: ['character', 'equipment', 'thief', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetElf',
-        name: 'Elf',
-        expectedTabs: ['character', 'equipment', 'elf', 'wizardSpells', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetDwarf',
-        name: 'Dwarf',
-        expectedTabs: ['character', 'equipment', 'dwarf', 'effects', 'notes']
-      },
-      {
-        sheetClass: 'dcc.DCCActorSheetHalfling',
-        name: 'Halfling',
-        expectedTabs: ['character', 'equipment', 'halfling', 'effects', 'notes']
-      }
-    ]
-
-    for (const { sheetClass, name, expectedTabs } of classConfigs) {
-      test(`${name} sheet has correct tabs`, async ({ page }) => {
-        // Create actor with specific sheet class
-        await page.evaluate(async ({ sheetClass, name }) => {
-          await Actor.create({
-            name: `V14 ${name} Tabs`,
-            type: 'Player',
-            flags: { core: { sheetClass } }
-          })
-        }, { sheetClass, name })
-
-        await openActorSheet(page, `V14 ${name} Tabs`)
-
-        // Get all tab IDs from the sheet navigation
-        const tabIds = await page.evaluate(() => {
-          const sheet = document.querySelector('.dcc.actor.sheet')
-          const tabs = sheet.querySelectorAll('nav [data-tab]')
-          return Array.from(tabs).map(t => t.dataset.tab)
-        })
-
-        // Verify expected tabs are present
-        expect(tabIds).toEqual(expectedTabs)
-      })
-    }
-  })
-
-  // ── Sheet Tab Navigation ─────────────────────────────────────────────
-
-  test.describe('Sheet Tab Navigation', () => {
-    test('can switch between all tabs and each renders content', async ({ page }) => {
-      // Create a Cleric actor (has many tabs)
-      await page.evaluate(async () => {
-        await Actor.create({
-          name: 'V14 Tab Navigate',
-          type: 'Player',
-          flags: { core: { sheetClass: 'dcc.DCCActorSheetCleric' } }
-        })
-      })
-
-      await openActorSheet(page, 'V14 Tab Navigate')
-
-      // Character tab (default active)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="character"]')).toHaveClass(/active/)
-
-      // Switch to Equipment tab
-      await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
-
-      // Switch to Cleric tab
-      await page.click('.dcc.actor.sheet nav [data-tab="cleric"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="cleric"]')).toHaveClass(/active/)
-
-      // Switch to Spells tab
-      await page.click('.dcc.actor.sheet nav [data-tab="clericSpells"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="clericSpells"]')).toHaveClass(/active/)
-
-      // Switch to Effects tab
-      await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="effects"]')).toHaveClass(/active/)
-
-      // Switch to Notes tab
-      await page.click('.dcc.actor.sheet nav [data-tab="notes"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('.dcc.actor.sheet nav [data-tab="notes"]')).toHaveClass(/active/)
-
-      // Switch back to Character tab and verify ability scores are visible
-      await page.click('.dcc.actor.sheet nav [data-tab="character"]')
-      await page.waitForTimeout(500)
-      await expect(page.locator('input[name="system.abilities.str.value"]')).toBeVisible()
-    })
-  })
-
   // ── Effects Compendium ───────────────────────────────────────────────
 
   test.describe('Effects Compendium', () => {
@@ -621,63 +469,6 @@ test.describe('DCC V14 Features E2E Tests', () => {
 
       // Verify it's an ActiveEffect type pack
       await expect(packEntry).toHaveClass(/activeeffect/)
-    })
-  })
-
-  // ── Status Icons ─────────────────────────────────────────────────────
-
-  test.describe('Status Icons', () => {
-    test('DCC-specific status effects are registered', async ({ page }) => {
-      // Check for specific known DCC status effect IDs
-      const statusEffects = await page.evaluate(() => {
-        const dccStatusIds = [
-          'armor-seized', 'battle-rage', 'disarmed', 'grip-disrupted',
-          'kneecapped', 'off-balance', 'stumbling', 'turtled',
-          'weapon-tangled-armor', 'weapon-damaged'
-        ]
-        return CONFIG.statusEffects
-          .filter(s => dccStatusIds.includes(s.id))
-          .map(s => ({ id: s.id, name: s.name, img: s.img }))
-      })
-
-      // Verify DCC-specific status effects exist
-      expect(statusEffects.length).toBeGreaterThan(0)
-
-      const statusIds = statusEffects.map(s => s.id)
-      expect(statusIds).toContain('armor-seized')
-      expect(statusIds).toContain('battle-rage')
-      expect(statusIds).toContain('disarmed')
-      expect(statusIds).toContain('weapon-damaged')
-
-      // Verify each has an image path and name
-      for (const effect of statusEffects) {
-        expect(effect.img).toBeTruthy()
-        expect(effect.name).toBeTruthy()
-      }
-    })
-
-    test('can toggle a status effect on an actor', async ({ page }) => {
-      // Create actor and toggle a status effect via API
-      const result = await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'V14 Status Test', type: 'Player' })
-
-        // Check initial status - no effects with armor-seized status
-        const before = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
-
-        // Toggle status on using the status ID directly
-        await actor.toggleStatusEffect('armor-seized')
-        const after = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
-
-        // Toggle status off
-        await actor.toggleStatusEffect('armor-seized')
-        const afterOff = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
-
-        return { before, after, afterOff }
-      })
-
-      expect(result.before).toBe(false)
-      expect(result.after).toBe(true)
-      expect(result.afterOff).toBe(false)
     })
   })
 })

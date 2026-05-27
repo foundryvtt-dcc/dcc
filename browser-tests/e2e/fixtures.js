@@ -92,4 +92,48 @@ function createSessionTest ({ onConsole } = {}) {
   })
 }
 
-module.exports = { base, expect, createSessionTest, login, assertFoundryUp, FOUNDRY_URL }
+// OS-level network blips (macOS App Nap throttling the Chromium tab, Wi-Fi
+// power-management cycles, lid-sleep windows) surface as these Chromium error
+// codes plus Foundry's Socket.IO reconnect notice. They are environmental, not
+// system bugs — filter them out of any zero-console-error gate.
+const TRANSIENT_NETWORK_ERRORS = [
+  'ERR_NETWORK_IO_SUSPENDED',
+  'ERR_SOCKET_NOT_CONNECTED',
+  'lost connection to the server, attempting to re-establish'
+]
+
+/** Reduce a captured console-error array to the entries that should fail a test. */
+function significantConsoleErrors (consoleErrors) {
+  return consoleErrors.filter(err =>
+    !err.includes('favicon.ico') &&
+    !TRANSIENT_NETWORK_ERRORS.some(t => err.includes(t))
+  )
+}
+
+/**
+ * Open an actor's sheet by clicking its name in the Actors sidebar, then wait
+ * for the body to render. `_prepareContext` does async class setup + a
+ * re-render; wait for the nav tabs (structural signal the body rendered) then
+ * settle 1.5 s for the re-render — a tighter 750 ms occasionally flaked, and
+ * this still beats a blind 2 s sleep.
+ */
+async function openActorSheet (page, actorName) {
+  await page.click('button[data-tab="actors"]')
+  await page.waitForSelector('#actors.active', { timeout: 5000 })
+  await page.click(`.entry-name:has-text("${actorName}")`)
+  await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
+  await page.waitForSelector('.dcc.actor.sheet nav [data-tab]', { timeout: 10000 }).catch(() => {})
+  await page.waitForTimeout(1500)
+}
+
+module.exports = {
+  base,
+  expect,
+  createSessionTest,
+  login,
+  assertFoundryUp,
+  openActorSheet,
+  significantConsoleErrors,
+  TRANSIENT_NETWORK_ERRORS,
+  FOUNDRY_URL
+}
