@@ -599,6 +599,12 @@ async function processSpellCheck (actor, spellData) {
   const item = spellData.item
   const flavor = spellData.flavor
   const forceCrit = spellData.forceCrit || false
+  // Opt-out flag: a caller can set `suppressPatronTaint: true` on the
+  // spell-check call to skip DCC's built-in d100 patron-taint roll for this
+  // cast — e.g. a variant module that implements its own patron mechanic and
+  // reacts via the `dcc.afterSpellCheckResult` hook below. Defaults false, so
+  // existing callers are unaffected.
+  const suppressPatronTaint = spellData.suppressPatronTaint || false
 
   let crit = false
   let fumble = false
@@ -628,7 +634,7 @@ async function processSpellCheck (actor, spellData) {
     const associatedPatron = item.system?.associatedPatron || ''
 
     // Check if actor has a patron and spell is patron-related
-    if (patronField && (spellName.includes('Patron') || associatedPatron)) {
+    if (!suppressPatronTaint && patronField && (spellName.includes('Patron') || associatedPatron)) {
       // Roll d100 for patron taint
       const patronTaintRoll = new Roll('1d100')
       await patronTaintRoll.evaluate()
@@ -783,6 +789,26 @@ async function processSpellCheck (actor, spellData) {
     if (item) {
       await item.update({ 'system.lastResult': roll.total })
     }
+
+    // Post-result extension point. Fires once per spell check after the
+    // result is computed and rendered, so modules can react to the outcome
+    // (e.g. a variant rolling its own patron-taint table on a natural 1).
+    // Informational — listeners observe the result, they do not alter the
+    // already-rendered chat message. Mirrors `dcc.modifyAttackRollTerms`'s
+    // role for attacks, on the post-roll side for spell checks.
+    Hooks.callAll('dcc.afterSpellCheckResult', actor, {
+      roll,
+      item,
+      naturalRoll,
+      total: roll.total,
+      result,
+      crit,
+      fumble,
+      success,
+      castingMode,
+      patronTaint,
+      suppressPatronTaint
+    })
   } catch (ex) {
     console.error(ex)
   }

@@ -380,7 +380,8 @@ class DCCItem extends Item {
       flavor,
       manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
       mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
-      forceCrit: options.forceCrit
+      forceCrit: options.forceCrit,
+      suppressPatronTaint: options.suppressPatronTaint
     })
   }
 
