@@ -47,9 +47,11 @@ test.describe('DCC V14 Features E2E Tests', () => {
     await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
     // _prepareContext does async class setup then re-renders. Wait for the nav
     // tabs to be present (structural signal the sheet body rendered) instead of
-    // a blind 2 s sleep, then a short settle to cover the class-setup re-render.
+    // a blind 2 s sleep, then settle to cover the class-setup re-render. 1.5 s
+    // gives margin for the async re-render (a tighter 750 ms occasionally
+    // flaked) while still beating the original blind 2 s wait.
     await page.waitForSelector('.dcc.actor.sheet nav [data-tab]', { timeout: 10000 }).catch(() => {})
-    await page.waitForTimeout(750)
+    await page.waitForTimeout(1500)
   }
 
   test.beforeAll(async () => {
