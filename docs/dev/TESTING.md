@@ -247,6 +247,80 @@ Tests run automatically on:
 
 All PRs must pass tests before merging.
 
+## Browser tests (Playwright)
+
+End-to-end tests that drive a live Foundry instance live in `browser-tests/e2e/` — five functional specs, all Playwright against a real Foundry server (no mocks, no Vitest):
+
+- `adapter-dispatch.spec.js` — every roll/check/save branch dispatches to the intended path (the permanent regression net; formerly `phase1-adapter-dispatch.spec.js`)
+- `extension-api.spec.js` — the stable `game.dcc.*` extension surface
+- `active-effects.spec.js` — Active Effects (CRUD, application, dice-chain & equipped-item effects, effect transfer, the DCC Effects compendium)
+- `data-models.spec.js` — TypeDataModel validation + persistence via the sheet UI
+- `sheet-ui.spec.js` — sheet click-through: roll an ability/save → chat card, class-specific tab sets, tab navigation, and status-effect registration
+
+Shared login/session plumbing lives in `browser-tests/e2e/fixtures.js` (`createSessionTest`). Specs create their own test actors/items via `page.evaluate` and clean up in `beforeEach`, so the world only needs to be a valid DCC world. (A v12-era visual-regression suite was removed — it can be re-added against v14 if screenshot diffing is wanted.)
+
+### One-time setup
+
+```bash
+# From browser-tests/e2e/
+npm install
+npx playwright install chromium chromium-headless-shell
+```
+
+> **Playwright ≥ 1.60 is required on macOS 26 ("Tahoe").** Older builds
+> (≤ ~1.56) hang during browser **extraction** — the download reaches 100%
+> and then the install freezes mid-unzip (`oopDownloadBrowserMain` stuck on
+> the first extracted file). The download itself is fine; only the old
+> extractor wedges. If you hit this: `pkill -f oopDownloadBrowserMain`,
+> remove the stale lock + partial dir
+> (`rm -rf ~/Library/Caches/ms-playwright/__dirlock ~/Library/Caches/ms-playwright/chromium*-*`),
+> upgrade (`npm i -D @playwright/test@latest`), and retry. `browser-tests/e2e`
+> is pinned to `^1.60.0`.
+
+### Running a suite
+
+Foundry must be running before Playwright starts. The fvtt CLI config is global — set it to match the worktree you're testing:
+
+```bash
+# One-time per worktree: tell the fvtt CLI which Foundry install and
+# which user-data dir to use. --dataPath as a launch flag is silently
+# ignored — the CLI reads the persisted config instead.
+npx @foundryvtt/foundryvtt-cli configure set installPath ~/Applications/foundry-14
+npx @foundryvtt/foundryvtt-cli configure set dataPath /Users/timwhite/FoundryVTT-Next
+
+# Every run: Node 24 (required by V14), then launch + test.
+nvm use 24
+nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
+  >/tmp/foundry-v14.log 2>&1 & disown
+
+# From browser-tests/e2e/:
+npm test                                      # full suite
+npm test -- adapter-dispatch.spec.js   # one spec
+npm run test:headed                           # watch it drive the browser
+```
+
+### Gotchas
+
+- **Node 24 is required.** V14 Foundry refuses to boot on older Node. `.nvmrc` pins 24; `nvm use` in the project dir picks it up.
+- **`installPath` default is `foundry-13`.** Running a V14 world on that install fails with `World "…" is not available to auto-launch` plus cryptic data-model validation errors. Always `configure view` first.
+- **`dataPath` matters per worktree.** The main repo lives under `/Users/timwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
+- **World name is `v14`, not `automated_testing`.** The worlds in `FoundryVTT-Next/Data/worlds/` are `v14`, `v13`, and `secrets-of-the-spectral-summoner`. Use `v14`.
+- **Close your manual Foundry browser tab first.** If a Gamemaster is already logged in there, the join-page select disables the option and Playwright's login times out (11 s per test) before any assertion runs.
+
+### Session-reuse fixture (why the suite is fast)
+
+All four functional specs use a **worker-scoped `sessionPage` fixture**: each worker logs into Foundry **once** and reuses the same page across every test, instead of re-navigating to `/join` + re-booting the system per test. This cut the e2e suite from ~840 s to ~340 s (e.g. `extension-api` 239 s → 34 s). `adapter-dispatch.spec.js` is the reference implementation. Implications when writing or editing these specs:
+
+- The `page` in `async ({ page }) => …` is the **shared** session page — it is NOT reset between tests. Do all per-test cleanup in `beforeEach`: close `ui.windows`, delete your probe actors/items, remove `#notifications` banners. Name probe actors with a per-spec prefix (`P1 …`, `V14 …`, `Test …`) so cleanup can find leftovers from a crashed run.
+- Attach the `page.on('console', …)` listener **in the fixture** (once), pushing into a module-scoped array that `beforeEach` clears. Never attach it in `beforeEach` — on a reused page that leaks a listener per test.
+- For specs with a zero-console-error gate in `afterEach`, clear the error buffer at the **end** of `beforeEach` (after cleanup + a short settle), so a prior test's un-awaited teardown (e.g. a UI-driven actor delete) can't trip the next test's gate.
+- `workers: 1` (playwright.config.js) keeps the module-scoped arrays safe. If you ever parallelize, move them onto the fixture object.
+- Prefer deterministic waits (`waitForSelector`/`waitForFunction`/locator auto-wait) over `waitForTimeout`; the latter is pure fixed wall-clock and the bulk of what remains to optimize.
+
+### Adapter dispatch validation
+
+`adapter-dispatch.spec.js` validates every Phase-1 roll branch by capturing the `[DCC adapter] <rollType> → <via adapter|LEGACY path>` console line emitted by `module/adapter/debug.mjs`. The dispatch logging is kept permanently (not a phase-close scaffold) precisely so this spec has a stable signal to assert against. Later phases add their own logDispatch calls and extend the spec.
+
 ## Related Documentation
 
 - [Test Coverage](TEST_COVERAGE.md) - Comprehensive coverage strategy

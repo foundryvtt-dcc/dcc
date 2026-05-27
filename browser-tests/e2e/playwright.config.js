@@ -7,7 +7,7 @@ module.exports = defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker for Foundry
-  reporter: 'html',
+  reporter: process.env.CI ? 'html' : [['list', { printSteps: true }]],
   timeout: 60000, // 60 seconds per test
   use: {
     baseURL: 'http://localhost:30000',

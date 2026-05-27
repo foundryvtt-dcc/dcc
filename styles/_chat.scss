@@ -1,0 +1,184 @@
+/* ----------------------------------------- */
+/*  Chat Rolls                               */
+/* ----------------------------------------- */
+a.inline-roll {
+  line-height: 25px;
+  color: var(--system-primrary-text);
+  background: transparent;
+}
+
+.deed-result.critical,
+.dice-roll .dice-total.critical,
+.emote-alert.critical,
+.inline-roll.critical {
+  color: green;
+  font-weight: 900;
+}
+
+.dice-roll .dice-total.fumble,
+.emote-alert.fumble,
+.inline-roll.fumble {
+  color: red;
+}
+
+.emote-note {
+  font-size: 0.9em;
+}
+
+.flavor-text {
+  font-family: var(--system-label-font), serif;
+
+  .critical {
+    color: green;
+    font-weight: 900;
+  }
+
+  .fumble {
+    color: red;
+    font-weight: 900;
+  }
+}
+
+.message-content {
+  font-family: var(--system-data-font), serif;
+}
+
+.message-sender {
+  font-family: var(--system-label-font), serif;
+}
+
+// Chat messages follow the core app theme (body's theme) regardless of parent application theme
+.chat-message {
+  background: var(--chat-background);
+  color: var(--chat-primary-color);
+
+  .message-header {
+    color: var(--chat-primary-color);
+  }
+
+  .table-draw {
+    color: var(--chat-primary-color);
+
+    .table-description {
+      color: var(--chat-primary-color);
+
+      .content-link {
+        background: transparent;
+        color: var(--chat-primary-color);
+      }
+    }
+  }
+}
+
+.chat-message .table-draw .table-results .table-result .result-text {
+  line-height: 20px;
+}
+
+.chat-message .table-draw .mercurial,
+.chat-message .table-draw .manifestation, {
+  border-top: 1px solid var(--color-border-light-primary);
+  color: var(--color-text-dark-secondary);
+  font-size: var(--font-size-12);
+  line-height: 22px;
+  margin-bottom: 8px;
+  padding: 5px 0;
+}
+
+.chat-message .table-draw th, {
+  padding: 5px;
+}
+
+/* ----------------------------------------- */
+/*  Spell Check Chat Card                    */
+/* ----------------------------------------- */
+.table-draw {
+  h1 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 18px;
+    margin-top: 8px;
+    color: var(--system-heading-color);
+  }
+
+  .table-results {
+    list-style: none;
+    margin-top: 12px;
+    padding: 0;
+    color: var(--chat-primary-color);
+
+    .table-result {
+      display: grid;
+      grid-template-columns: 20px auto;
+      column-gap: 5px;
+      padding: 0;
+
+      .result-range {
+        padding-top: 5px;
+        justify-items: center;
+        margin-right: 3px;
+
+        .spell-shift-down,
+        .spell-shift-up,
+        .crit-shift-down,
+        .crit-shift-up,
+        .fumble-shift-down,
+        .fumble-shift-up {
+          cursor: pointer;
+        }
+      }
+    }
+  }
+
+  .spell-check-mod {
+    background: transparent;
+    margin-top: 8px;
+    text-align: center;
+    word-break: break-all;
+
+    h4 {
+      font-size: 20px;
+    }
+
+    .critical {
+      color: green;
+      font-weight: 900;
+    }
+
+    .fumble {
+      color: red;
+      font-weight: 900;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Notes                              */
+/* ----------------------------------------- */
+
+// Notes tab specific styling - only when the tab is active
+.dcc .tab.notes-bg {
+  background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  font-size: 16px;
+  margin: 0;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > div {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .editor,
+    prose-mirror {
+      line-height: 24px;
+      min-height: 0;
+    }
+  }
+}
+

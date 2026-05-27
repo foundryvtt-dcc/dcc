@@ -62,12 +62,19 @@ packs/**/MANIFEST*
 
 # Claude local settings
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks*
 
 # Foundry VTT dev install for integration tests (populated by scripts/setup-foundry-dev.js)
 .foundry-dev/
 
 # Playwright MCP temporary files
 .playwright-mcp/
+
+# Playwright artifacts when test runner is invoked from project root
+# (browser-tests/e2e/.gitignore covers the canonical location)
+test-results/
+playwright-report/
 
 # Environment files with secrets
 .env

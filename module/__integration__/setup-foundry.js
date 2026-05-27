@@ -260,6 +260,17 @@ globalThis.ui = ui
 globalThis.getType = utils.getType
 globalThis.setProperty = utils.setProperty
 
+// Register built-in DCC class mixins after CONFIG.DCC is attached to
+// globalThis. Phase 4 moved Player schema fields (cleric / dwarf /
+// halfling / thief) off the static body and onto class mixins; the
+// integration suite constructs PlayerData directly without invoking
+// the Foundry `init` hook, so we must register the mixins ourselves
+// before any PlayerData.defineSchema() call sees them. Shared with
+// module/dcc.js:init via module/built-in-class-mixins.mjs.
+const { registerClassMixin } = await import('../extension-api.mjs')
+const { registerBuiltInClassMixins } = await import('../built-in-class-mixins.mjs')
+registerBuiltInClassMixins(registerClassMixin)
+
 // Read version info if available
 let versionInfo = 'unknown'
 try {

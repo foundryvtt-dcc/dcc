@@ -1,0 +1,294 @@
+/* eslint-disable no-undef -- Browser globals (game, Actor, ui, CONFIG) used in page.evaluate callbacks */
+const { expect, createSessionTest, openActorSheet, significantConsoleErrors } = require('./fixtures')
+
+/**
+ * Sheet UI E2E tests — the click-through layer a player actually uses:
+ *   - roll smoke: open a sheet, click an ability/save control, assert a chat card
+ *   - class-specific tab sets render with the expected tabs
+ *   - tab navigation switches and each tab renders
+ *   - DCC status effects are registered and toggleable
+ *
+ * `adapter-dispatch.spec.js` drives the DCCActor roll *methods* directly; this
+ * spec exercises the actual sheet DOM → data-action path. Active-effect
+ * behaviour lives in `active-effects.spec.js`.
+ *
+ * Roll smoke tests force `showRollModifierByDefault` off so a plain click rolls
+ * directly (no modifier dialog). Probe actors are prefixed `SMOKE ` (rolls) or
+ * `V14 ` (tab/status tests).
+ *
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright. TL;DR:
+ *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
+ *   cd browser-tests/e2e && npm test -- sheet-ui.spec.js
+ */
+
+const consoleErrors = []
+const test = createSessionTest({
+  onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
+})
+
+test.describe('DCC Sheet UI', () => {
+  test.beforeEach(async ({ page }) => {
+    // World hygiene + force direct rolls (no roll-modifier dialog) so a plain
+    // click on a roll control produces a chat card deterministically. Probe
+    // actors/items are prefixed `SMOKE ` (rolls) or `V14 ` (tab/status tests).
+    await page.evaluate(async () => {
+      for (const app of Object.values(ui.windows)) { try { await app.close() } catch {} }
+      document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
+      for (const a of game.actors.filter(a => /^(SMOKE|V14) /.test(a.name))) { try { await a.delete() } catch {} }
+      for (const i of game.items.filter(i => /^(SMOKE|V14) /.test(i.name))) { try { await i.delete() } catch {} }
+      try { await game.settings.set('dcc', 'showRollModifierByDefault', false) } catch {}
+    }).catch(() => {})
+    consoleErrors.length = 0
+  })
+
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(async () => {
+      for (const app of Object.values(ui.windows)) { try { await app.close() } catch {} }
+      for (const a of game.actors.filter(a => /^(SMOKE|V14) /.test(a.name))) { try { await a.delete() } catch {} }
+      for (const i of game.items.filter(i => /^(SMOKE|V14) /.test(i.name))) { try { await i.delete() } catch {} }
+    }).catch(() => {})
+    const errors = significantConsoleErrors(consoleErrors)
+    expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
+  })
+
+  /** Create a Player, open its sheet, and wait for the body to render. */
+  async function openSmokeSheet (page, name) {
+    await page.evaluate(async (n) => {
+      await Actor.create({
+        name: n,
+        type: 'Player',
+        system: {
+          abilities: {
+            str: { value: 14 },
+            agl: { value: 12 },
+            sta: { value: 13 },
+            per: { value: 10 },
+            int: { value: 11 },
+            lck: { value: 9 }
+          }
+        }
+      })
+    }, name)
+    await page.click('button[data-tab="actors"]')
+    await page.waitForSelector('#actors.active', { timeout: 5000 })
+    await page.click(`.entry-name:has-text("${name}")`)
+    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
+    await page.waitForSelector('.dcc.actor.sheet [data-action]', { timeout: 10000 }).catch(() => {})
+    await page.waitForTimeout(750)
+  }
+
+  /** Click a roll control and assert a new chat message carrying a roll appears. */
+  async function clickRollAndExpectChat (page, selector, label) {
+    const before = await page.evaluate(() => game.messages.size)
+    await page.locator(selector).first().click()
+    await page.waitForFunction(
+      n => game.messages.size > n,
+      before,
+      { timeout: 10000 }
+    )
+    const last = await page.evaluate(() => {
+      const m = game.messages.contents[game.messages.size - 1]
+      return {
+        hasRolls: (m?.rolls?.length ?? 0) > 0,
+        contentLen: (m?.content ?? '').length,
+        flavor: m?.flavor ?? ''
+      }
+    })
+    expect(
+      last.hasRolls || last.contentLen > 0,
+      `${label}: expected a chat card with roll content (flavor="${last.flavor}")`
+    ).toBeTruthy()
+  }
+
+  test('ability check from the sheet posts a chat card', async ({ page }) => {
+    await openSmokeSheet(page, 'SMOKE Ability')
+    await clickRollAndExpectChat(
+      page,
+      '.dcc.actor.sheet .ability-box[data-ability="str"] [data-action="rollAbilityCheck"]',
+      'Strength check'
+    )
+  })
+
+  test('saving throw from the sheet posts a chat card', async ({ page }) => {
+    await openSmokeSheet(page, 'SMOKE Save')
+    await clickRollAndExpectChat(
+      page,
+      '.dcc.actor.sheet .saving-throw-box[data-save="ref"] [data-action="rollSavingThrow"]',
+      'Reflex save'
+    )
+  })
+
+  // ── Class-Specific Sheet Tabs ────────────────────────────────────────
+
+  test.describe('Class-Specific Sheet Tabs', () => {
+    const classConfigs = [
+      {
+        sheetClass: 'dcc.DCCActorSheetCleric',
+        name: 'Cleric',
+        expectedTabs: ['character', 'equipment', 'cleric', 'clericSpells', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetWarrior',
+        name: 'Warrior',
+        expectedTabs: ['character', 'equipment', 'warrior', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetWizard',
+        name: 'Wizard',
+        expectedTabs: ['character', 'equipment', 'wizard', 'wizardSpells', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetThief',
+        name: 'Thief',
+        expectedTabs: ['character', 'equipment', 'thief', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetElf',
+        name: 'Elf',
+        expectedTabs: ['character', 'equipment', 'elf', 'wizardSpells', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetDwarf',
+        name: 'Dwarf',
+        expectedTabs: ['character', 'equipment', 'dwarf', 'effects', 'notes']
+      },
+      {
+        sheetClass: 'dcc.DCCActorSheetHalfling',
+        name: 'Halfling',
+        expectedTabs: ['character', 'equipment', 'halfling', 'effects', 'notes']
+      }
+    ]
+
+    for (const { sheetClass, name, expectedTabs } of classConfigs) {
+      test(`${name} sheet has correct tabs`, async ({ page }) => {
+        // Create actor with specific sheet class
+        await page.evaluate(async ({ sheetClass, name }) => {
+          await Actor.create({
+            name: `V14 ${name} Tabs`,
+            type: 'Player',
+            flags: { core: { sheetClass } }
+          })
+        }, { sheetClass, name })
+
+        await openActorSheet(page, `V14 ${name} Tabs`)
+
+        // Get all tab IDs from the sheet navigation
+        const tabIds = await page.evaluate(() => {
+          const sheet = document.querySelector('.dcc.actor.sheet')
+          const tabs = sheet.querySelectorAll('nav [data-tab]')
+          return Array.from(tabs).map(t => t.dataset.tab)
+        })
+
+        // Verify expected tabs are present
+        expect(tabIds).toEqual(expectedTabs)
+      })
+    }
+  })
+
+  // ── Sheet Tab Navigation ─────────────────────────────────────────────
+
+  test.describe('Sheet Tab Navigation', () => {
+    test('can switch between all tabs and each renders content', async ({ page }) => {
+      // Create a Cleric actor (has many tabs)
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'V14 Tab Navigate',
+          type: 'Player',
+          flags: { core: { sheetClass: 'dcc.DCCActorSheetCleric' } }
+        })
+      })
+
+      await openActorSheet(page, 'V14 Tab Navigate')
+
+      // Character tab (default active)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="character"]')).toHaveClass(/active/)
+
+      // Switch to Equipment tab
+      await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
+
+      // Switch to Cleric tab
+      await page.click('.dcc.actor.sheet nav [data-tab="cleric"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="cleric"]')).toHaveClass(/active/)
+
+      // Switch to Spells tab
+      await page.click('.dcc.actor.sheet nav [data-tab="clericSpells"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="clericSpells"]')).toHaveClass(/active/)
+
+      // Switch to Effects tab
+      await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="effects"]')).toHaveClass(/active/)
+
+      // Switch to Notes tab
+      await page.click('.dcc.actor.sheet nav [data-tab="notes"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="notes"]')).toHaveClass(/active/)
+
+      // Switch back to Character tab and verify ability scores are visible
+      await page.click('.dcc.actor.sheet nav [data-tab="character"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('input[name="system.abilities.str.value"]')).toBeVisible()
+    })
+  })
+
+  // ── Status Icons ─────────────────────────────────────────────────────
+
+  test.describe('Status Icons', () => {
+    test('DCC-specific status effects are registered', async ({ page }) => {
+      // Check for specific known DCC status effect IDs
+      const statusEffects = await page.evaluate(() => {
+        const dccStatusIds = [
+          'armor-seized', 'battle-rage', 'disarmed', 'grip-disrupted',
+          'kneecapped', 'off-balance', 'stumbling', 'turtled',
+          'weapon-tangled-armor', 'weapon-damaged'
+        ]
+        return CONFIG.statusEffects
+          .filter(s => dccStatusIds.includes(s.id))
+          .map(s => ({ id: s.id, name: s.name, img: s.img }))
+      })
+
+      // Verify DCC-specific status effects exist
+      expect(statusEffects.length).toBeGreaterThan(0)
+
+      const statusIds = statusEffects.map(s => s.id)
+      expect(statusIds).toContain('armor-seized')
+      expect(statusIds).toContain('battle-rage')
+      expect(statusIds).toContain('disarmed')
+      expect(statusIds).toContain('weapon-damaged')
+
+      // Verify each has an image path and name
+      for (const effect of statusEffects) {
+        expect(effect.img).toBeTruthy()
+        expect(effect.name).toBeTruthy()
+      }
+    })
+
+    test('can toggle a status effect on an actor', async ({ page }) => {
+      // Create actor and toggle a status effect via API
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 Status Test', type: 'Player' })
+
+        // Check initial status - no effects with armor-seized status
+        const before = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
+
+        // Toggle status on using the status ID directly
+        await actor.toggleStatusEffect('armor-seized')
+        const after = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
+
+        // Toggle status off
+        await actor.toggleStatusEffect('armor-seized')
+        const afterOff = actor.effects.contents.some(e => e.statuses.has('armor-seized'))
+
+        return { before, after, afterOff }
+      })
+
+      expect(result.before).toBe(false)
+      expect(result.after).toBe(true)
+      expect(result.afterOff).toBe(false)
+    })
+  })
+})

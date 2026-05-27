@@ -1341,7 +1341,8 @@ class Localization {
       'DCC.SpellCheckSuccessNoTable': 'Success.',
       'DCC.SpellCheckFailureNoTable': 'Failure.',
       'DCC.SpellCheckCritNoTable': 'Crit! Natural 20.',
-      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.'
+      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.',
+      'DCC.SkillCheckUnknownSkillWarning': 'Cannot roll a skill check for unknown skill: {skill}'
     }
   }
 
