@@ -106,17 +106,22 @@ describe('spellburn capture (the glowburn amount)', () => {
 
 describe('spellburn roll flavor', () => {
   // Mirror of the `flavored` helper in roll-modifier.js _constructRoll: a
-  // non-zero Spellburn contribution gets inline [Spellburn] flavor in the
-  // final roll formula; everything else passes through unchanged.
-  function flavored (piece, term) {
+  // non-zero Spellburn contribution gets inline flavor using the localized
+  // term label; everything else passes through unchanged. The label is
+  // localized (DCC.RollModifierSpellburnTerm) so variant modules can rename it.
+  function flavored (piece, term, label = 'Spellburn') {
     if (term.type === 'Spellburn' && piece && parseInt(piece) !== 0) {
-      return `${piece}[Spellburn]`
+      return `${piece}[${label}]`
     }
     return piece
   }
 
-  test('tags a non-zero spellburn contribution with inline flavor', () => {
+  test('tags a non-zero spellburn contribution with the localized term label', () => {
     expect(flavored('+3', { type: 'Spellburn' })).toBe('+3[Spellburn]')
+  })
+
+  test('uses the overridden label when localized (MCC renames it to Glowburn)', () => {
+    expect(flavored('+3', { type: 'Spellburn' }, 'Glowburn')).toBe('+3[Glowburn]')
   })
 
   test('leaves an unused (+0) spellburn term unflavored', () => {
