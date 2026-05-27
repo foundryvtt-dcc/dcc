@@ -94,7 +94,11 @@ test.describe('DCC V14 Features E2E Tests', () => {
     await page.waitForSelector('#actors.active', { timeout: 5000 })
     await page.click(`.entry-name:has-text("${actorName}")`)
     await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    await page.waitForTimeout(2000) // Wait for _prepareContext class setup + re-render
+    // _prepareContext does async class setup then re-renders. Wait for the nav
+    // tabs to be present (structural signal the sheet body rendered) instead of
+    // a blind 2 s sleep, then a short settle to cover the class-setup re-render.
+    await page.waitForSelector('.dcc.actor.sheet nav [data-tab]', { timeout: 10000 }).catch(() => {})
+    await page.waitForTimeout(750)
   }
 
   test.beforeAll(async () => {
