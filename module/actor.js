@@ -1263,7 +1263,8 @@ class DCCActor extends Actor {
         rollTable: skillTable,
         roll,
         item: skillItem,
-        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+        suppressPatronTaint: options.suppressPatronTaint
       })
 
       // Divine aid always increases disapproval by its cost (e.g. +10), separate from
@@ -1477,7 +1478,9 @@ class DCCActor extends Actor {
       roll,
       item: null,
       flavor,
-      forceCrit: options.forceCrit
+      forceCrit: options.forceCrit,
+      forceFumble: options.forceFumble,
+      suppressPatronTaint: options.suppressPatronTaint
     })
   }
 

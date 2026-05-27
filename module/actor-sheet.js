@@ -1429,9 +1429,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
+    const modifierKey = event.ctrlKey || event.metaKey
+    // shift = force crit; ctrl/meta = toggle the modifier dialog;
+    // ctrl/meta + shift = force fumble (takes that combo over crit + toggle).
     return {
-      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey),
-      forceCrit: event.shiftKey
+      showModifierDialog: rollModifierDefault ^ (modifierKey && !event.shiftKey),
+      forceCrit: event.shiftKey && !modifierKey,
+      forceFumble: event.shiftKey && modifierKey
     }
   }
 
