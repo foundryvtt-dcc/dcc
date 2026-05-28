@@ -668,6 +668,120 @@ test.describe('DCC Extension API', () => {
     expect(result.tabOverflowActiveTextDark).toBe('#fff')
   })
 
+  test('DCC adapter table caches short-circuit pack walks and invalidate on world-RollTable events', async ({ page }) => {
+    // Phase 7 session 9: the four table-loading sites in
+    // spell-input.mjs (`loadDisapprovalTable`,
+    // `loadMercurialMagicTable`) and utilities.js (`getCritTableLink`,
+    // `getCritTableResult`) now consult `module/adapter/table-cache.mjs`
+    // before walking compendium packs + world tables. World-RollTable
+    // lifecycle hooks (`createRollTable` / `updateRollTable` /
+    // `deleteRollTable`) drop every cache to keep stale data out.
+    //
+    // End-to-end probe:
+    //   (1) Import the cache module live and confirm the four named
+    //       caches are exposed as Map instances + the dispatch table
+    //       carries exactly the three world-RollTable lifecycle hooks.
+    //   (2) Seed each cache with a probe entry, fire `createRollTable`
+    //       via `Hooks.callAll` on a transient probe table, and confirm
+    //       every cache is empty afterwards (invalidation wired by
+    //       `registerTableCacheInvalidation()` at init).
+    //   (3) Repeat for `updateRollTable` and `deleteRollTable`.
+    //   (4) Clean up the probe table so downstream tests start from a
+    //       known state.
+    const result = await page.evaluate(async () => {
+      const cache = await import('../../../../../../../../systems/dcc/module/adapter/table-cache.mjs')
+
+      // (1) Module shape.
+      const shape = {
+        cachesAreMaps: [
+          cache.disapprovalTableCache,
+          cache.mercurialMagicTableCache,
+          cache.critTableLinkCache,
+          cache.critTableDocCache
+        ].every((c) => c instanceof Map),
+        dispatchKeys: Object.keys(cache.TABLE_CACHE_INVALIDATION_HOOKS).sort(),
+        dispatchAllNonOnce: Object.values(cache.TABLE_CACHE_INVALIDATION_HOOKS)
+          .every((entry) => entry.once === false)
+      }
+
+      // Helper: seed one entry per cache so we can prove invalidation
+      // empties them.
+      const seedAll = () => {
+        cache.disapprovalTableCache.set('probe-disapproval', { rows: [] })
+        cache.mercurialMagicTableCache.set('probe-mercurial', { rows: [] })
+        cache.critTableLinkCache.set('probe-link', '@UUID[Compendium.x.y]')
+        cache.critTableDocCache.set('probe-doc', { id: 'x' })
+      }
+      const allSizes = () => ({
+        disapproval: cache.disapprovalTableCache.size,
+        mercurial: cache.mercurialMagicTableCache.size,
+        critLink: cache.critTableLinkCache.size,
+        critDoc: cache.critTableDocCache.size
+      })
+
+      // Create a probe table once so the lifecycle hooks have a real
+      // document to fire against. We reuse it across the three CRUD
+      // assertions (rename + delete operate on the same doc).
+      const probeTable = await RollTable.create({ name: 'P_TableCache Probe' })
+
+      // (2) createRollTable invalidation. Note: seeding AFTER the
+      // create — the create event already fired and would have cleared
+      // an existing cache. Now fire a re-create via Hooks.callAll on a
+      // *separate* table-name to drive the handler chain cleanly.
+      seedAll()
+      const sizesBeforeCreate = allSizes()
+      Hooks.callAll('createRollTable', probeTable)
+      const sizesAfterCreate = allSizes()
+
+      // (3a) updateRollTable invalidation.
+      seedAll()
+      const sizesBeforeUpdate = allSizes()
+      await probeTable.update({ name: 'P_TableCache Probe Renamed' })
+      const sizesAfterUpdate = allSizes()
+
+      // (3b) deleteRollTable invalidation.
+      seedAll()
+      const sizesBeforeDelete = allSizes()
+      await probeTable.delete()
+      const sizesAfterDelete = allSizes()
+
+      return {
+        shape,
+        invalidation: {
+          create: { before: sizesBeforeCreate, after: sizesAfterCreate },
+          update: { before: sizesBeforeUpdate, after: sizesAfterUpdate },
+          delete: { before: sizesBeforeDelete, after: sizesAfterDelete }
+        }
+      }
+    })
+
+    // (1) The cache module exposes the four named caches as Maps + the
+    // dispatch table covers exactly the three world-RollTable lifecycle
+    // hooks, all `once: false`.
+    expect(result.shape.cachesAreMaps).toBe(true)
+    expect(result.shape.dispatchKeys).toEqual([
+      'createRollTable',
+      'deleteRollTable',
+      'updateRollTable'
+    ])
+    expect(result.shape.dispatchAllNonOnce).toBe(true)
+
+    // (2) + (3) Every cache had 1 entry before each lifecycle event and
+    // is empty after — the invalidation hooks fired and `clearAllTableCaches`
+    // ran.
+    for (const phase of ['create', 'update', 'delete']) {
+      const { before, after } = result.invalidation[phase]
+      expect(before.disapproval).toBe(1)
+      expect(before.mercurial).toBe(1)
+      expect(before.critLink).toBe(1)
+      expect(before.critDoc).toBe(1)
+      expect(after.disapproval).toBe(0)
+      expect(after.mercurial).toBe(0)
+      expect(after.critLink).toBe(0)
+      expect(after.critDoc).toBe(0)
+    }
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

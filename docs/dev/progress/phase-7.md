@@ -181,3 +181,115 @@
   shift-click flag` suite-only flake did NOT fire this run, so
   pre-slice baseline was 143 passed and post-slice is 145 (+1 new
   test + 1 forceCrit recovered).
+
+- **2026-05-21 — Phase 7 session 4: extract `processSpellCheck` from
+  `dcc.js` into `module/spell-check-processor.mjs`.** Fourth
+  piecemeal Phase 7 extraction — relocates the ~200-line public
+  stable-API function `processSpellCheck` (was `dcc.js:637–842`)
+  into a focused module. The function handles every spell-check
+  cast routed through `game.dcc.processSpellCheck` — evaluates the
+  roll (lazy `roll._evaluated` check), applies the shift-click GM
+  `forceCrit` mutation (rewrites natural to 20 + recomputes total;
+  no-op when natural is already 1), rolls patron taint when the
+  actor has a `class.patron` field and the spell name contains
+  `'Patron'` OR carries an `associatedPatron` (d100 vs.
+  `patronTaintChance`, persists `+1%` chance increment back to the
+  actor), branches on `rollTable` presence (with-table path:
+  natural-20-on-Player crit boosts result lookup by level AND
+  mutates the roll with `OperatorTerm('+')` + `NumericTerm(level)`
+  + `_formula += ' + N'` + `_total += N`; natural-1 fumble looks
+  up row 1; otherwise lookup by `roll.total`; routes through
+  `game.dcc.SpellResult.addChatMessage` with `{crit, fumble, item,
+  patronTaint, messageData}`; no-table path: emits one of four
+  `<p class="emote-alert ...">DCC.SpellCheck{Fumble,Crit,Success,
+  Failure}NoTable</p>` indicators based on natural roll and
+  threshold-check, generates the `dcc.{RollType, isSpellCheck,
+  isSkillCheck, ItemId, spellResult}` flag block,
+  `FleetingLuck.updateFlags`-amends it, and emits via
+  `roll.toMessage`), determines casting mode from
+  `item.system.config.castingMode` OR — for item-less casts —
+  defaults to `'wizard'` with a `'cleric'` override when
+  `actor.classId === 'cleric'`, routes side-effects (wizard:
+  `await actor.loseSpell(item)` when `automateWizardSpellLoss` ON
+  and threshold-failed; cleric: `rollDisapproval(naturalRoll)`
+  when `automateClericDisapproval` ON and natural inside
+  `class.disapproval` range, then `applyDisapproval()` if the
+  cast failed either via disapproval-forces-failure or
+  threshold), and finally writes `roll.total` back to
+  `item.system.lastResult` for the spells-tab display. The
+  function is exported as a named symbol; `module/dcc.js` keeps
+  the `game.dcc.processSpellCheck` re-publication at init time
+  (Foundry-facing stable surface per `EXTENSION_API.md` /
+  `00-progress.md` Decision #6 — no contract change, no
+  deprecation path). `module/dcc.js` shrinks from 1172 → 970
+  lines (-202 net including the new `import` line, the 5-line
+  replacement marker comment, and dropping `Roll` from the
+  `/* global */` declaration since the patron-taint `new
+  Roll('1d100')` moved with the function). Pure refactor —
+  continues to read `game.dcc.SpellResult` / `game.dcc.FleetingLuck`
+  rather than importing them directly, mirroring the pattern in
+  `module/actor.js`'s spell-check paths and preserving the
+  init-time `game.dcc` registration order. +23 Vitest tests in
+  new `module/__tests__/spell-check-processor.test.js`: 3
+  evaluation/forceCrit cases (lazy evaluate, forceCrit total
+  recompute, natural-1 forceCrit no-op preserves fumble), 5
+  natural fumble/crit detection cases (natural-1 fumble HTML +
+  flag shape, natural-20 Player crit HTML, natural-20 NPC does
+  NOT crit per Player-only rule, success indicator path, failure
+  indicator path), 5 rollTable branch cases (non-crit lookup by
+  roll.total, natural-1 forces row-1 lookup, natural-20 Player
+  boosts lookup by level and mutates roll, string-level coerced
+  via parseInt (regression of the spell-check-crit fix),
+  no-item flavor + speaker forwarded in messageData), 5
+  casting-mode side-effect cases (wizard automation OFF skips
+  loseSpell, wizard automation ON fires loseSpell on threshold
+  failure, cleric automation natural-inside-disapproval-range
+  fires both rollDisapproval + applyDisapproval, cleric
+  automation natural-outside-range with threshold-failure still
+  applies disapproval, no-item cleric inference from
+  `actor.classId === 'cleric'`), 3 patron-taint branch cases
+  (patron-bound actor on Patron-named spell rolls d100 +
+  updates patronTaintChance "1%" → "2%", actor without patron
+  does NOT update, patronTaint object forwarded into
+  SpellResult.addChatMessage with tainted/oldChance/newChance/roll
+  fields), 2 item.lastResult cases (writes roll.total when item
+  present, no-item path skips lastResult). Test file stubs
+  `game`, `ChatMessage`, `foundry`, `Roll` per `beforeEach` and
+  restores per `afterEach` — same pattern as Phase 7 sessions
+  1, 2, 3. +1 Playwright case in `extension-api.spec.js` (`DCC
+  processSpellCheck survives spell-check-processor.mjs extraction`)
+  — creates a temporary `P_SpellProc Probe` Player, evaluates a
+  real `1d20+5` roll, snapshots existing chat-message IDs, fires
+  `game.dcc.processSpellCheck(actor, { roll, flavor:
+  'P_SpellProc probe', forceCrit: false })`, asserts the new
+  chat message carries `dcc.RollType === 'SpellCheck'` +
+  `isSpellCheck === true` + `isSkillCheck === true` and a
+  `spellResult` HTML envelope matching
+  `^<p class="emote-alert (fumble|critical)">[^<]+</p>$`
+  (specific branch depends on the natural roll; envelope is
+  fixed and the localized text is non-empty), then cleans up
+  the created chat messages so downstream tests start from the
+  prior snapshot. **1150 Vitest green** (was 1127, +23). **145
+  Playwright passed** + 2 failures: (1) the latent xcc-core-book
+  DCCItemSheet override at `extension-api.spec.js:420` —
+  unchanged baseline, flagged every prior session as pre-existing
+  (line shifted from 320 because this slice inserted a new test
+  earlier in the file); (2) NEW environmental flake at
+  `data-models.spec.js:138` — the `mcc-core-book-welcome-dialog`
+  aside intercepts pointer events on the new-Player-actor form's
+  OK button (Test timeout of 60000ms exceeded waiting for the
+  click to succeed); sibling-module dialog state in the
+  FoundryVTT-Next world data dir, NOT slice-caused (this slice
+  touches no actor-sheet code, no MCC interaction, no
+  welcome-dialog wiring). The documented `forceCrit
+  shift-click flag` suite-only environmental race that fired in
+  Phase 6 sessions 1, 2, 4 and Phase 7 session 2 stayed quiet
+  this run. Pre-slice baseline was 145 passes (Phase 7 session
+  3 close); this slice's +1 new test minus the mcc-welcome
+  flake nets to 145 — same as the prior session count, with
+  one passing test swapped for one environmental flake. The
+  mcc-welcome-dialog pattern is worth pulling into the
+  flake-investigation queue (extend the
+  `extension-api.spec.js`-style `beforeEach` hygiene to
+  `data-models.spec.js`'s opening setup) but is out of slice
+  scope; tracked as a follow-up.

@@ -8,11 +8,13 @@ import {
   getFirstDie,
   getFirstMod,
   addDamageFlavorToRolls,
+  getCritTableLink,
   getCritTableResult,
   getFumbleTableResult,
   getFumbleTableNameFromCritTableName,
   getNPCFumbleTableResult
 } from '../utilities.js'
+import { clearAllTableCaches, critTableDocCache, critTableLinkCache } from '../adapter/table-cache.mjs'
 
 describe('Utilities', () => {
   describe('ensurePlus', () => {
@@ -325,6 +327,11 @@ describe('Utilities', () => {
           }
         }
       }
+
+      // Phase 7 session 9: drop the module-level cache so each test
+      // starts from a cold cache. The cache is per-process and would
+      // otherwise carry state from prior tests in this file.
+      clearAllTableCaches()
     })
 
     it('evaluates roll if not already evaluated', async () => {
@@ -390,6 +397,129 @@ describe('Utilities', () => {
 
       const result = await getCritTableResult(mockRoll, 'Crit Table III')
       expect(result).toBeUndefined()
+    })
+
+    it('caches the loaded RollTable doc — second call skips pack.getDocument', async () => {
+      // First call: cold cache. Pack walk runs and loads the doc.
+      await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(mockPack.getDocument).toHaveBeenCalledTimes(1)
+
+      // Second call with the SAME table name: cache hit.
+      // pack.getDocument should not run again. getResultsForRoll still
+      // does (it's the cheap per-roll lookup we don't cache).
+      mockTable.getResultsForRoll.mockClear()
+      await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(mockPack.getDocument).toHaveBeenCalledTimes(1)
+      expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(15)
+    })
+
+    it('caches null when no table is found — second call still null without re-walking', async () => {
+      mockPack.index = []
+      global.game.tables.find.mockReturnValue(null)
+
+      // First call: cold cache, walk runs, finds nothing.
+      await getCritTableResult(mockRoll, 'Crit Table III')
+      const firstWalkPackGetCalls = global.game.packs.get.mock.calls.length
+
+      // Second call: cache HAS the entry (it's `null`). Don't re-walk.
+      await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(global.game.packs.get.mock.calls.length).toBe(firstWalkPackGetCalls)
+    })
+
+    it('separate suffixes use separate cache entries', async () => {
+      await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(critTableDocCache.has('Crit Table III')).toBe(true)
+      expect(critTableDocCache.has('Crit Table IV')).toBe(false)
+
+      // A different suffix is a cache miss → another pack.getDocument.
+      mockEntry.name = 'Crit Table IV'
+      await getCritTableResult(mockRoll, 'Crit Table IV')
+      expect(mockPack.getDocument).toHaveBeenCalledTimes(2)
+      expect(critTableDocCache.has('Crit Table IV')).toBe(true)
+    })
+  })
+
+  describe('getCritTableLink', () => {
+    let mockPack
+    let mockEntry
+
+    beforeEach(() => {
+      mockEntry = {
+        _id: 'crit-link-id',
+        name: 'Crit Table III — Edged'
+      }
+      mockPack = {
+        index: [mockEntry]
+      }
+      global.game = {
+        packs: {
+          get: vi.fn().mockReturnValue(mockPack)
+        },
+        tables: {
+          find: vi.fn()
+        }
+      }
+      global.CONFIG = {
+        DCC: {
+          criticalHitPacks: {
+            packs: ['dcc-core-book.dcc-crit-tables'],
+            addPack: vi.fn()
+          }
+        }
+      }
+      clearAllTableCaches()
+    })
+
+    it('returns a Compendium UUID with the display text appended', async () => {
+      const link = await getCritTableLink('III', 'crit table III')
+      expect(link).toBe('@UUID[Compendium.dcc-core-book.dcc-crit-tables.crit-link-id]{crit table III}')
+    })
+
+    it('falls back to a world RollTable UUID when the pack misses', async () => {
+      global.game.packs.get.mockReturnValue(null)
+      global.game.tables.find.mockReturnValue({ id: 'world-table-id' })
+
+      const link = await getCritTableLink('IV', 'crit table IV')
+      expect(link).toBe('@UUID[RollTable.world-table-id]{crit table IV}')
+    })
+
+    it('returns plain display text when no table is found', async () => {
+      mockPack.index = []
+      global.game.tables.find.mockReturnValue(null)
+
+      const link = await getCritTableLink('V', 'crit table V')
+      expect(link).toBe('crit table V')
+    })
+
+    it('caches the resolved UUID prefix — second call skips the pack walk', async () => {
+      await getCritTableLink('III', 'crit table III')
+      expect(global.game.packs.get).toHaveBeenCalledTimes(1)
+
+      // Second call with a DIFFERENT display text still hits cache.
+      // The cached prefix gets concatenated with the new label —
+      // proves the cache stores the prefix, not the full string.
+      const second = await getCritTableLink('III', 'monster crit')
+      expect(global.game.packs.get).toHaveBeenCalledTimes(1)
+      expect(second).toBe('@UUID[Compendium.dcc-core-book.dcc-crit-tables.crit-link-id]{monster crit}')
+    })
+
+    it('caches null when no table is found — second call returns the new displayText without re-walking', async () => {
+      mockPack.index = []
+      global.game.tables.find.mockReturnValue(null)
+
+      await getCritTableLink('V', 'first')
+      const firstPackGetCalls = global.game.packs.get.mock.calls.length
+
+      const second = await getCritTableLink('V', 'second')
+      expect(global.game.packs.get.mock.calls.length).toBe(firstPackGetCalls)
+      expect(second).toBe('second')
+      expect(critTableLinkCache.get('V')).toBeNull()
+    })
+
+    it('Elemental EL suffix uses Crit/Fumble Table EL canonical name', async () => {
+      mockEntry.name = 'Crit/Fumble Table EL'
+      const link = await getCritTableLink('EL', 'elemental crit')
+      expect(link).toBe('@UUID[Compendium.dcc-core-book.dcc-crit-tables.crit-link-id]{elemental crit}')
     })
   })
 

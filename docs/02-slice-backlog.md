@@ -977,6 +977,9 @@ slice-caused).
 #### ~~Phase 7 session 8. Hex-literal → theme-variable migration + §7 theming-contract documentation.~~ **DONE 2026-05-28**
 See entry in Completed slices below.
 
+#### ~~Phase 7 session 9. Compendium-walk caching for the four table-loading sites + isolated fallback-order coverage backfill.~~ **DONE 2026-05-28**
+See entry in Completed slices below.
+
 ---
 
 ## Completed slices
@@ -984,6 +987,44 @@ See entry in Completed slices below.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 9 (2026-05-28): compendium-walk caching for the
+  four table-loading sites (`loadDisapprovalTable` +
+  `loadMercurialMagicTable` in `module/adapter/spell-input.mjs`,
+  `getCritTableLink` + `getCritTableResult` in
+  `module/utilities.js`) via a new
+  `module/adapter/table-cache.mjs` module with four module-level
+  `Map` caches and a `registerTableCacheInvalidation()` helper
+  that wires `createRollTable` / `updateRollTable` /
+  `deleteRollTable` to a global `clearAllTableCaches()`. Each
+  loader consults its cache before falling through to a resolver
+  helper that carries the unchanged pack-walk → world-fallback
+  logic. `critTableLinkCache` stores the `@UUID[...]` prefix
+  WITHOUT the trailing `{displayText}` so the same suffix can
+  render with different labels at zero pack-walk cost;
+  `critTableDocCache` stores the loaded RollTable doc and lets
+  callers run `getResultsForRoll(roll.total)` per call. Cache
+  scope is per-process; world reload starts the maps empty.
+  Wired into `module/dcc.js` alongside the existing
+  `registerSettingsTableHooks()` / `registerTableLoadingHooks()`
+  / `registerChatAndHookWiring()` calls at module-init time.
+  Pure refactor — cold-cache walks match pre-slice behavior
+  byte-for-byte. The slice also closes the PR #720
+  test-coverage-gap item "loadDisapprovalTable /
+  loadMercurialMagicTable isolated fallback-order tests are
+  missing" by backfilling +10 Vitest cases in
+  `adapter-spell-check.test.js`. **1262 Vitest green** (was
+  1227, +35: +16 in new `module/__tests__/table-cache.test.js`,
+  +9 in `utilities.test.js`, +10 in
+  `adapter-spell-check.test.js`). **154 Playwright passed**,
+  zero failures — clean 5.9-min full suite. +1 Playwright probe
+  (`DCC adapter table caches short-circuit pack walks and
+  invalidate on world-RollTable events`) dynamic-imports the
+  live cache module, asserts the four caches + dispatch table
+  shape, then seeds each cache and confirms three real
+  RollTable lifecycle paths (`Hooks.callAll('createRollTable',
+  probeTable)`, `probeTable.update(...)`, `probeTable.delete()`)
+  each drop every cache entry to size 0.
 
 - Phase 7 session 8 (2026-05-28): hex-literal → theme-variable
   migration + `ARCHITECTURE_REIMAGINED.md §7` theming-contract

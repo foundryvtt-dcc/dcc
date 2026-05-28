@@ -48,6 +48,7 @@
 
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
+import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -442,6 +443,18 @@ export async function loadDisapprovalTable (actor) {
   const tableName = actor?.system?.class?.disapprovalTable
   if (!tableName) return null
 
+  // Cache hit — same tableName returns the same lib SimpleTable until a
+  // world-RollTable lifecycle hook fires (`table-cache.mjs` invalidator).
+  if (disapprovalTableCache.has(tableName)) {
+    return disapprovalTableCache.get(tableName)
+  }
+
+  const libTable = await resolveDisapprovalTable(tableName)
+  disapprovalTableCache.set(tableName, libTable)
+  return libTable
+}
+
+async function resolveDisapprovalTable (tableName) {
   const packManager = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.disapprovalPacks) || null
   const packs = packManager?.packs || []
 
@@ -522,6 +535,18 @@ export async function loadMercurialMagicTable (classKey) {
   const tableName = resolveMercurialMagicTableName(classKey)
   if (!tableName) return null
 
+  // Cache hit — same resolved tableName returns the same lib
+  // MercurialTable until a world-RollTable lifecycle hook fires.
+  if (mercurialMagicTableCache.has(tableName)) {
+    return mercurialMagicTableCache.get(tableName)
+  }
+
+  const libTable = await resolveMercurialMagicTable(tableName)
+  mercurialMagicTableCache.set(tableName, libTable)
+  return libTable
+}
+
+async function resolveMercurialMagicTable (tableName) {
   // Compendium lookup — `packId.collectionName.tableName` (3 parts).
   const parts = tableName.split('.')
   if (parts.length === 3) {

@@ -39,6 +39,7 @@ import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs
 import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable, registerTableLoadingHooks, registerTables, setupCoreBookCompendiumLinks } from './table-loading.mjs'
+import { registerTableCacheInvalidation } from './adapter/table-cache.mjs'
 import { registerChatAndHookWiring } from './chat-and-hook-wiring.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
@@ -463,6 +464,13 @@ registerSettingsTableHooks()
 // renamed / removed). See module/table-loading.mjs for the handler
 // bodies.
 registerTableLoadingHooks()
+
+// Adapter-side table caches for the four table-loading sites in
+// spell-input.mjs and utilities.js. Hooks the same world-RollTable
+// lifecycle events as table-loading.mjs above and drops all four
+// caches on any mutation so the next call re-walks. See
+// module/adapter/table-cache.mjs.
+registerTableCacheInvalidation()
 
 // Chat and lifecycle hook wiring (11 handlers covering hotbarDrop,
 // renderChatMessageHTML / getChatMessageContextOptions, the parser

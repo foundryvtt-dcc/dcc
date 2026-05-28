@@ -42,9 +42,51 @@ session's context):
 
 ## Status (2026-05-28)
 
-**Phase 7 session 8 closed the styling-cleanup arc** opened by
-session 7 by migrating the 20 remaining hex literals across the
-new partials onto a documented `--system-*` theming contract.
+**Phase 7 session 9 closed the PR #720 "Uncached compendium
+walks" item** by adding a per-process table cache in a new
+`module/adapter/table-cache.mjs` module and routing the four
+table-loading sites through it:
+`loadDisapprovalTable(actor)` + `loadMercurialMagicTable(classKey)`
+in `spell-input.mjs`, and `getCritTableLink(suffix, displayText)`
++ `getCritTableResult(roll, critTableName)` in `utilities.js`.
+Each site consults a module-level `Map` cache (keyed on
+`tableName` / resolved table name / `critTableSuffix` /
+`critTableCanonical`) before falling through to the resolver
+helpers (`resolveDisapprovalTable`, `resolveMercurialMagicTable`,
+`resolveCritTable`, `resolveCritTableLink`) which carry the
+unchanged pack-walk → world-fallback logic. The two crit-table
+caches separate the expensive lookup from the cheap per-call
+work — `critTableLinkCache` stores the `@UUID[...]` prefix
+WITHOUT the trailing `{displayText}` so the same suffix can
+render with different labels at zero pack-walk cost, and
+`critTableDocCache` stores the loaded RollTable doc so
+`getResultsForRoll(roll.total)` runs per call. Invalidation is
+global: `Hooks.on('createRollTable'|'updateRollTable'|'deleteRollTable')`
+all call `clearAllTableCaches()` via
+`registerTableCacheInvalidation()` wired in `module/dcc.js`
+alongside the existing `registerSettingsTableHooks()` /
+`registerTableLoadingHooks()` / `registerChatAndHookWiring()`
+calls. The world-RollTable lifecycle events are rare enough
+during play that uniform invalidation is cheaper than per-cache
+relevance predicates. Pure refactor — cold-cache walks match
+pre-slice behavior byte-for-byte; warm-cache walks short-circuit
+before the first `game.packs.get(...)` call. The slice also
+backfills the PR #720 "loadDisapprovalTable /
+loadMercurialMagicTable isolated fallback-order tests" coverage
+gap. **1262 Vitest green** (was 1227, +35: +16 in new
+`module/__tests__/table-cache.test.js`, +9 in `utilities.test.js`,
++10 in `adapter-spell-check.test.js`). **154 Playwright
+passed**, zero failures — clean 5.9-min full suite. +1 new
+probe (`DCC adapter table caches short-circuit pack walks and
+invalidate on world-RollTable events`) dynamic-imports the live
+cache module, asserts the four caches + dispatch table shape,
+seeds each cache, and confirms `Hooks.callAll('createRollTable',
+...)`, real `probeTable.update(...)`, and `probeTable.delete()`
+each drop every cache entry to size 0.
+
+**Phase 7 session 8 (closed 2026-05-28)** migrated the 20
+remaining hex literals across the new partials onto a documented
+`--system-*` theming contract.
 Twelve new CSS custom properties land in `styles/variables.css`:
 six theme-agnostic semantic colors
 (`--system-text-muted-color` `#666`, `--system-damage-color`
@@ -399,30 +441,31 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 7 session 8 (2026-05-28) closed the styling-cleanup
-arc.** The 20 hex literals from session 7's partials were
-migrated onto 12 new `--system-*` CSS custom properties in
-`styles/variables.css`; the redundant `body.theme-dark`
-tab-overflow block in `_tabs.scss` was deleted (dark cascade
-now flows through variable overrides). `ARCHITECTURE_REIMAGINED.md
-§7` carries the full theming-contract table — variants
-override variable *values*, not component selectors. The
-`extension-api.spec.js` end-to-end probe asserts each of the
-12 vars resolves to its documented value via `getComputedStyle()`
-in both light (`:root`) and dark (transient `<div
-class="theme-dark">` probe) themes.
+**Phase 7 session 9 (2026-05-28) closed the PR #720 "Uncached
+compendium walks" item** by routing the four table-loading
+sites through a per-process cache in
+`module/adapter/table-cache.mjs`, with global invalidation on
+world-RollTable CRUD events. The slice also backfilled the
+matching "loadDisapprovalTable / loadMercurialMagicTable
+isolated fallback-order tests" PR #720 coverage gap.
 
-**Next-arc candidates.** With both Phase 7 styling-cleanup
-sub-arcs closed and the `dcc.js` piecemeal split done in
-session 6, the remaining Phase 7 work is the §Appendix A
-cruft-removal items (further small slices). Alternatively,
-broaden the adapter / mixin pattern beyond the seven built-in
-classes via a Group E vertical slice — the two candidates
-called out in `00-progress.md` Next steps are the halfling
-vertical slice (concentrated schema-slimming exercise) or a
-homebrew single-class slice (end-to-end Phase 4+5+6 exercise
-via `registerClassMixin` + `registerSheetPart` + variant-aware
-data loading).
+**Next-arc candidates.** Remaining PR #720 resilience items
+(`00-progress.md` PR #720 backlog) are the most natural
+follow-ups: consolidate the three copies of
+`normalizeLibDie` / `_stripDieCount` across
+`module/adapter/attack-input.mjs` / `module/adapter/spell-input.mjs` /
+`module/actor.js`; extract a shared
+`buildLibResultFlag(result, extras)` helper from the four
+near-identical `dcc.libResult` flag payloads in
+`module/adapter/chat-renderer.mjs`; or surface
+`migrateWorld` per-doc failures via `ui.notifications.warn`
+(C2 review item). Alternatively, broaden the adapter / mixin
+pattern via a Group E vertical-slice (halfling vertical slice
+or homebrew single-class slice). Appendix-A file-shrinkage
+arcs for `actor.js` / `actor-sheet.js` / `item.js` /
+`config.js` are real cruft but each is a multi-session
+project, not a single slice — pick one only if the time
+budget allows.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped

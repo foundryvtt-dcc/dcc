@@ -23,7 +23,8 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCheckArgs, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
+import { buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
+import { clearAllTableCaches, disapprovalTableCache, mercurialMagicTableCache } from '../adapter/table-cache.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
 
@@ -1768,4 +1769,262 @@ test('adapter wizard patron-cast with a resolvable taint table posts manifestati
   game.packs = originalGamePacks
   game.tables = originalTables
   findSpy.mockRestore()
+})
+
+// ---------------------------------------------------------------------------
+// Phase 7 session 9 — table-loader fallback-order + caching
+// ---------------------------------------------------------------------------
+//
+// Backfills the PR #720 review-backlog gap for `loadDisapprovalTable` and
+// `loadMercurialMagicTable` isolated coverage (compendium hit / world
+// fallback / both miss / pack throws), and asserts the new cache layer
+// from `module/adapter/table-cache.mjs` short-circuits repeat lookups.
+
+function makeDisapprovalActor (tableName) {
+  return { system: { class: { disapprovalTable: tableName } } }
+}
+
+function makeDisapprovalSourceTable (id, name) {
+  return {
+    id,
+    name,
+    results: [
+      { range: [1, 1], description: 'Minor misalignment' },
+      { range: [2, 2], description: 'Major misalignment' }
+    ]
+  }
+}
+
+test('loadDisapprovalTable resolves a compendium table via CONFIG.DCC.disapprovalPacks', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeDisapprovalSourceTable('pack-doc-id', 'Disapproval-1')
+  const pack = {
+    index: [{ _id: 'pack-doc-id', name: 'Disapproval-1' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.disapprovalPacks = { packs: ['dcc-core-book.dcc-disapproval-tables'] }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('dcc-core-book.dcc-disapproval-tables.Disapproval-1'))
+
+  expect(libTable?.name).toBe('Disapproval-1')
+  expect(libTable?.entries).toHaveLength(2)
+  expect(pack.getDocument).toHaveBeenCalledTimes(1)
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+test('loadDisapprovalTable falls back to world tables when compendium lookup misses', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  const worldTable = makeDisapprovalSourceTable('world-id', 'Disapproval-2')
+  CONFIG.DCC.disapprovalPacks = { packs: ['not-installed.not-installed'] }
+  game.packs = { get: () => null }
+  game.tables = {
+    find: (predicate) => (predicate(worldTable) ? worldTable : null)
+  }
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('Disapproval-2'))
+
+  expect(libTable?.name).toBe('Disapproval-2')
+  expect(libTable?.entries).toHaveLength(2)
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
+test('loadDisapprovalTable returns null when both compendium and world lookups miss', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  CONFIG.DCC.disapprovalPacks = { packs: [] }
+  game.packs = { get: () => null }
+  game.tables = { find: () => null }
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('Disapproval-Nowhere'))
+  expect(libTable).toBeNull()
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
+test('loadDisapprovalTable returns null when actor has no disapprovalTable field', async () => {
+  clearAllTableCaches()
+  // No system.class.disapprovalTable — early return; never hits cache.
+  expect(await loadDisapprovalTable({ system: { class: {} } })).toBeNull()
+  expect(disapprovalTableCache.size).toBe(0)
+})
+
+test('loadDisapprovalTable warns and falls through to the world table when pack.getDocument throws', async () => {
+  // Disapproval matching: `${packName}.${entry.name} === tableName`. A
+  // configured tableName can only match one pack key, so the realistic
+  // "broken pack throws" path is followed by the world-table fallback
+  // (not another pack). The test asserts both: the warn fires AND the
+  // world-table fallback resolves the call.
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  const brokenPack = {
+    index: [{ _id: 'broken', name: 'Disapproval-3' }],
+    getDocument: vi.fn().mockRejectedValue(new Error('socket dropped'))
+  }
+  const worldTable = makeDisapprovalSourceTable('world-fallback', 'Disapproval-3')
+  CONFIG.DCC.disapprovalPacks = { packs: ['broken.pack'] }
+  game.packs = { get: () => brokenPack }
+  game.tables = {
+    find: (predicate) => (predicate(worldTable) ? worldTable : null)
+  }
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('broken.pack.Disapproval-3'))
+
+  expect(libTable?.name).toBe('Disapproval-3')
+  expect(warnSpy).toHaveBeenCalled()
+
+  warnSpy.mockRestore()
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
+test('loadDisapprovalTable caches per tableName — second call skips pack.getDocument', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeDisapprovalSourceTable('cache-doc', 'Disapproval-Cached')
+  const pack = {
+    index: [{ _id: 'cache-doc', name: 'Disapproval-Cached' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.disapprovalPacks = { packs: ['some.pack'] }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  const actor = makeDisapprovalActor('some.pack.Disapproval-Cached')
+  await loadDisapprovalTable(actor)
+  await loadDisapprovalTable(actor)
+
+  expect(pack.getDocument).toHaveBeenCalledTimes(1)
+  expect(disapprovalTableCache.size).toBe(1)
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+function makeMercurialSourceTable (id, name) {
+  return {
+    id,
+    name,
+    results: [
+      {
+        range: [1, 5],
+        description: 'A weird vibration travels through the caster. Spell works as normal.'
+      }
+    ]
+  }
+}
+
+test('loadMercurialMagicTable resolves a compendium table by 3-part tableName', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeMercurialSourceTable('merc-doc-id', 'Mercurial-1')
+  const pack = {
+    index: [{ _id: 'merc-doc-id', name: 'Mercurial-1' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.mercurialMagicTables = { wizard: 'dcc-core-book.dcc-mercurial-tables.Mercurial-1' }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  const libTable = await loadMercurialMagicTable('wizard')
+
+  expect(libTable?.name).toBe('Mercurial-1')
+  expect(libTable?.entries).toHaveLength(1)
+  expect(pack.getDocument).toHaveBeenCalledTimes(1)
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  game.packs = originalGamePacks
+})
+
+test('loadMercurialMagicTable falls back to world tables when compendium lookup misses', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  const worldTable = makeMercurialSourceTable('world-merc', 'Mercurial-2')
+  CONFIG.DCC.mercurialMagicTables = { wizard: 'not-installed.not-installed.Mercurial-2' }
+  game.packs = { get: () => null }
+  game.tables = { getName: (name) => (name === 'Mercurial-2' ? worldTable : null) }
+
+  const libTable = await loadMercurialMagicTable('wizard')
+
+  expect(libTable?.name).toBe('Mercurial-2')
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
+test('loadMercurialMagicTable returns null when both compendium and world lookups miss', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalLegacy = CONFIG.DCC.mercurialMagicTable
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  CONFIG.DCC.mercurialMagicTables = { wizard: 'not-installed.not-installed.Mercurial-Nowhere' }
+  CONFIG.DCC.mercurialMagicTable = null
+  game.packs = { get: () => null }
+  game.tables = { getName: () => null }
+
+  expect(await loadMercurialMagicTable('wizard')).toBeNull()
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  CONFIG.DCC.mercurialMagicTable = originalLegacy
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
+test('loadMercurialMagicTable returns null when resolver finds no table name', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalLegacy = CONFIG.DCC.mercurialMagicTable
+  clearAllTableCaches()
+  CONFIG.DCC.mercurialMagicTables = {}
+  CONFIG.DCC.mercurialMagicTable = null
+
+  // resolveMercurialMagicTableName returns null → early return, no cache write.
+  expect(await loadMercurialMagicTable('wizard')).toBeNull()
+  expect(mercurialMagicTableCache.size).toBe(0)
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  CONFIG.DCC.mercurialMagicTable = originalLegacy
+})
+
+test('loadMercurialMagicTable caches per resolved tableName — second call skips pack.getDocument', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeMercurialSourceTable('merc-cache', 'Mercurial-Cached')
+  const pack = {
+    index: [{ _id: 'merc-cache', name: 'Mercurial-Cached' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.mercurialMagicTables = { wizard: 'some.pack.Mercurial-Cached' }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  await loadMercurialMagicTable('wizard')
+  await loadMercurialMagicTable('wizard')
+
+  expect(pack.getDocument).toHaveBeenCalledTimes(1)
+  expect(mercurialMagicTableCache.size).toBe(1)
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  game.packs = originalGamePacks
 })
