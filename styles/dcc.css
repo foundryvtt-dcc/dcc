@@ -501,7 +501,7 @@
   font-family: var(--system-label-font), serif;
 }
 .dcc .rollable:hover {
-  color: #000;
+  color: var(--system-rollable-hover-color);
   cursor: pointer;
   text-shadow: 0 0 10px red;
 }
@@ -913,10 +913,10 @@ a.inline-roll {
   z-index: 1;
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-primary {
-  color: #4caf50;
+  color: var(--system-two-weapon-primary-color);
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-secondary {
-  color: #d32f2f;
+  color: var(--system-two-weapon-secondary-color);
 }
 
 /* ----------------------------------------- */
@@ -1086,7 +1086,7 @@ a.inline-roll {
   cursor: pointer;
 }
 .dcc .party-body .character-row .fa-heart.clickable:hover {
-  color: #8b0000;
+  color: var(--system-damage-color);
 }
 .dcc .party-body .character-row .weapon {
   grid-column: span 1;
@@ -1116,7 +1116,7 @@ a.inline-roll {
 .dcc .party-body .empty-party p {
   font-family: var(--system-data-font), serif;
   font-style: italic;
-  color: #666;
+  color: var(--system-text-muted-color);
   margin: 0;
 }
 
@@ -1132,7 +1132,7 @@ a.inline-roll {
   border-radius: 4px;
 }
 .dcc.hit-points-config .hp-display .hp-current {
-  color: #8b0000;
+  color: var(--system-damage-color);
   font-weight: bold;
 }
 .dcc.hit-points-config .hp-display .hp-separator {
@@ -1147,7 +1147,7 @@ a.inline-roll {
 }
 .dcc.hit-points-config .hint {
   font-size: 0.85em;
-  color: #666;
+  color: var(--system-text-muted-color);
   font-style: italic;
   margin: 0;
 }
@@ -1473,7 +1473,7 @@ a.inline-roll {
 }
 .dcc .skill-list .skill-summary-text {
   grid-column: 1/-1;
-  color: #666;
+  color: var(--system-text-muted-color);
   font-size: 0.9em;
   padding-top: 4px;
   text-align: left !important;
@@ -1548,8 +1548,8 @@ a.inline-roll {
   top: 100%;
   right: 0;
   z-index: 100;
-  background: #f0e8d8; /* Parchment-like background matching sheet style */
-  border: 1px solid #8b7355;
+  background: var(--system-tab-overflow-background);
+  border: 1px solid var(--system-tab-overflow-border-color);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   min-width: 150px;
@@ -1561,38 +1561,21 @@ a.inline-roll {
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
   display: block;
   padding: 6px 12px;
-  color: #4a3c2a;
+  color: var(--system-tab-overflow-text-color);
   text-decoration: none;
   white-space: nowrap;
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
-  background: #e0d5c0;
-  color: #2a1f14;
+  background: var(--system-tab-overflow-hover-background);
+  color: var(--system-tab-overflow-hover-text-color);
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
-  color: var(--color-text-dark-primary);
+  color: var(--system-tab-overflow-active-text-color);
   font-weight: bold;
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]::before {
   font-family: var(--system-icon-font), serif;
   padding-right: 8px;
-}
-.dcc.sheet {
-  /* Dark mode styles for tabs overflow dropdown */
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
-  background: #2a2a2a;
-  border-color: #444;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
-  color: #ccc;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
-  background: #3a3a3a;
-  color: #fff;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
-  color: #fff;
 }
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
@@ -1753,7 +1736,7 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 }
 .dcc-roll-modifier button.flat-button {
   background: rgba(0, 0, 0, 0.05);
-  border: 2px groove #c9c7b8;
+  border: 2px groove var(--system-flat-button-border-color);
 }
 
 /* ----------------------------------------- */

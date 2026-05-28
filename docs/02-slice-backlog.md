@@ -974,23 +974,8 @@ at `data-models.spec.js:138` from `mcc-core-book-welcome-dialog`
 intercepting pointer events — sibling-module dialog state, not
 slice-caused).
 
-#### Phase 7 session N candidate. Hex-literal → theme-variable migration + §7 theming-contract documentation.
-Follow-up to the Phase 7 session 7 file split. ~20 hex literals
-remain hard-coded across the partials:
-- `_class-sheets.scss` — per-class accents
-- `_actor-sheet.scss` — additional per-class accents
-- `_items.scss` — damage text colours (e.g. `#8b0000`)
-- `_tabs.scss` — tab tooltip background + text colours
-- `_dialogs.scss` — focus-state shades and borders
-Add matching `--system-*` entries to `styles/variables.css` (with
-light/dark overrides where appropriate), replace the literals with
-`var(...)` references in the partials, then document the full
-theming contract in `docs/dev/ARCHITECTURE_REIMAGINED.md §7` so
-variant theme stylesheets (xcc, mcc) have stable variables to
-override. Visual-regression coverage matters here — if the V14
-environment can run the V12 baseline visual suite, do; otherwise
-rely on careful manual sheet-by-sheet inspection alongside the
-existing `extension-api.spec.js` stylesheet probe.
+#### ~~Phase 7 session 8. Hex-literal → theme-variable migration + §7 theming-contract documentation.~~ **DONE 2026-05-28**
+See entry in Completed slices below.
 
 ---
 
@@ -999,6 +984,52 @@ existing `extension-api.spec.js` stylesheet probe.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 8 (2026-05-28): hex-literal → theme-variable
+  migration + `ARCHITECTURE_REIMAGINED.md §7` theming-contract
+  documentation. Closes the styling-cleanup arc opened by session
+  7. Twelve new `--system-*` CSS custom properties land in
+  `styles/variables.css`: six theme-agnostic semantic colors
+  (`--system-text-muted-color` `#666`, `--system-damage-color`
+  `#8b0000`, `--system-rollable-hover-color` `#000`,
+  `--system-flat-button-border-color` `#c9c7b8`,
+  `--system-two-weapon-primary-color` `#4caf50`,
+  `--system-two-weapon-secondary-color` `#d32f2f`) plus six
+  tab-overflow dropdown vars paired with dark-theme overrides
+  (`--system-tab-overflow-background` `#f0e8d8`/`#2a2a2a`,
+  `--system-tab-overflow-border-color` `#8b7355`/`#444`,
+  `--system-tab-overflow-text-color` `#4a3c2a`/`#ccc`,
+  `--system-tab-overflow-hover-background` `#e0d5c0`/`#3a3a3a`,
+  `--system-tab-overflow-hover-text-color` `#2a1f14`/`#fff`,
+  `--system-tab-overflow-active-text-color`
+  `var(--color-text-dark-primary)`/`#fff`). All 14 light-path
+  hex literals across seven partials (`_base.scss`,
+  `_dialogs.scss`, `_hit-points-dialog.scss`, `_skills.scss`,
+  `_party-sheet.scss`, `_tabs.scss`, `_weapons.scss`) are
+  replaced with the matching `var(...)` references. The 17-line
+  `body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow
+  .tabs-overflow-menu` override block in `_tabs.scss` is deleted
+  — the dark cascade now flows through variable overrides in
+  `variables.css` rather than through a duplicate component
+  selector. Compiled `dcc.css` shrinks 64,741 → 64,502 bytes
+  (-239 net; still in the existing probe's 50-80KB range).
+  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` is expanded with a
+  "Theming contract (`--system-*` CSS custom properties)"
+  subsection documenting each variable's role, light + dark
+  defaults, and the override pattern variants (XCC, MCC,
+  homebrew) should use (variants override variable *values*,
+  not component selectors). +1 Playwright case in
+  `extension-api.spec.js` (`DCC theming-contract --system-*
+  vars resolve to documented values in both themes`) asserts
+  the contract end-to-end via `getComputedStyle()` reads
+  against both `:root` and a transient `<div
+  class="theme-dark">` probe — no live-theme flip needed.
+  **1227 Vitest green** (unchanged — CSS not loaded in unit
+  tests). **152 Playwright passed** + 1 environmental flake
+  at `adapter-dispatch.spec.js:1898 halfling two-weapon
+  fumble note round-trips through adapter` (navigation race
+  during `rollWeaponAttack`; passes cleanly in isolation,
+  1.2s; not slice-caused).
 
 - Phase 7 session 7 (2026-05-22): split `styles/dcc.scss` into
   18 partials + a 34-line manifest. Opens the second Phase 7

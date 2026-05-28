@@ -30,7 +30,7 @@
 
   .skill-summary-text {
     grid-column: 1 / -1;
-    color: #666;
+    color: var(--system-text-muted-color);
     font-size: 0.9em;
     padding-top: 4px;
     text-align: left !important;

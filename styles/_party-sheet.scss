@@ -64,7 +64,7 @@
       cursor: pointer;
 
       &:hover {
-        color: #8b0000;
+        color: var(--system-damage-color);
       }
     }
 
@@ -102,7 +102,7 @@
     p {
       font-family: var(--system-data-font), serif;
       font-style: italic;
-      color: #666;
+      color: var(--system-text-muted-color);
       margin: 0;
     }
   }

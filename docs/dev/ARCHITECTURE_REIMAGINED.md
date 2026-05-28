@@ -373,6 +373,39 @@ their own schedule by adding a single `registerVariant({...})` call.
 - Split `styles/dcc.scss` into partials + theme layer
 - Extract the `module/ruleset/` (what little remains) into the variant config for DCC core
 
+#### Theming contract (`--system-*` CSS custom properties)
+
+`styles/variables.css` is the single source of truth for the styling values referenced from the SCSS partials. Variants (XCC, MCC, homebrew) override these *variable values* in their own stylesheets — they should not need to redeclare component selectors. The partials reference vars only; raw hex literals belong in `variables.css` (with light defaults in `:root` and dark overrides in `.theme-dark`) or in a variant's overriding stylesheet.
+
+Variant-side overrides have two common shapes:
+- Scope under `body.theme-<variant>` (sheet-wide rebrand). Pair with `registerVariant({ id, label, classes, sheetTheme: 'theme-<variant>' })` so `applyActiveVariantSheetTheme` decorates the actor sheet with the matching class.
+- Scope under `.dcc-<feature>` (per-feature accent). Useful when only a subset of vars should shift.
+
+Either way the variant only needs to redeclare the `--system-*` value — the partials pick up the new value through the cascade.
+
+**The contract:**
+
+| Variable | Role | Default (light) | Default (dark) |
+|---|---|---|---|
+| `--system-text-muted-color` | Hint text, summary text, empty-state copy | `#666` | (no override) |
+| `--system-damage-color` | Damage / current-HP indicator (`.hp-current`, `.fa-heart.clickable:hover`) | `#8b0000` | (no override) |
+| `--system-rollable-hover-color` | `.rollable:hover` foreground | `#000` | (no override) |
+| `--system-flat-button-border-color` | `button.flat-button` groove border | `#c9c7b8` | (no override) |
+| `--system-two-weapon-primary-color` | `.two-weapon-primary` hand indicator | `#4caf50` | (no override) |
+| `--system-two-weapon-secondary-color` | `.two-weapon-secondary` hand indicator | `#d32f2f` | (no override) |
+| `--system-tab-overflow-background` | Responsive-tabs overflow dropdown bg | `#f0e8d8` | `#2a2a2a` |
+| `--system-tab-overflow-border-color` | Overflow dropdown border | `#8b7355` | `#444` |
+| `--system-tab-overflow-text-color` | Overflow dropdown link foreground | `#4a3c2a` | `#ccc` |
+| `--system-tab-overflow-hover-background` | Overflow dropdown link hover bg | `#e0d5c0` | `#3a3a3a` |
+| `--system-tab-overflow-hover-text-color` | Overflow dropdown link hover fg | `#2a1f14` | `#fff` |
+| `--system-tab-overflow-active-text-color` | Overflow dropdown active-tab fg | `var(--color-text-dark-primary)` | `#fff` |
+
+Vars without a dark override use the same value in both themes; if the existing value reads poorly against the dark background, the variant (or a later DCC slice) can add a `.theme-dark` override in `variables.css` without touching the partials.
+
+The pre-existing core vars (`--system-primary-color`, `--system-background`, `--system-frame-*`, `--system-input-*`, font / icon / d20-icon / arrow-button / parchment-image / value-display-background / checkbox-* / accent / secondary) follow the same contract — partials reference them, `variables.css` defines them, variants override values. Theming changes outside the contract (new selectors, new media queries, new font stacks) should be reviewed: most variant theming needs are achievable by overriding a value rather than expanding the surface.
+
+`browser-tests/e2e/extension-api.spec.js` carries an end-to-end probe (`DCC theming-contract --system-* vars resolve to documented values in both themes`) that asserts each contract variable resolves to its documented value via `getComputedStyle()` — and that the prior `body.theme-dark .tabs-overflow-menu` override block is gone (the dark cascade now flows through the variables only). Future contract changes should update the probe and this table in lockstep.
+
 **Total effort:** ~20–25 engineering weeks for Phases 1–6, plus ongoing cleanup. With part-time maintenance, ~10–12 months. With focused full-time work, ~4–5 months.
 
 ---

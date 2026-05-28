@@ -12,7 +12,7 @@
     border-radius: 4px;
 
     .hp-current {
-      color: #8b0000;
+      color: var(--system-damage-color);
       font-weight: bold;
     }
 
@@ -32,7 +32,7 @@
 
   .hint {
     font-size: 0.85em;
-    color: #666;
+    color: var(--system-text-muted-color);
     font-style: italic;
     margin: 0;
   }

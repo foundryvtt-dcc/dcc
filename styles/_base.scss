@@ -343,7 +343,7 @@
   }
 
   .rollable:hover {
-    color: #000;
+    color: var(--system-rollable-hover-color);
     cursor: pointer;
     text-shadow: 0 0 10px red;
   }

@@ -65,162 +65,88 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 7 (2026-05-22)** opens the second Phase 7 arc
-by splitting `styles/dcc.scss` (was 2979 lines in one file) into
-18 focused partials + a 34-line manifest. The partials are
-`_base.scss` (globals + fonts + `.dcc` common — 383 lines),
-`_journal.scss` (110), `_armor.scss` (36), `_chat.scss` (chat
-rolls + spell-check chat card + notes — 184), `_weapons.scss`
-(119), `_class-sheets.scss` (cleric + wizard/elf — 135),
-`_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
-`_items.scss` (items + item sheet + level item sheet — 249),
-`_config-dialogs.scss` (82), `_skills.scss` (49), `_tabs.scss`
-(233), `_entity-link.scss` (15), `_dialogs.scss` (roll modifier
-+ fleeting luck + spell duel — 353), `_actor-sheet.scss` (596 —
-largest partial), `_effects.scss` (effects + item-effects
-transfer — 162), `_level-change-dialog.scss` (9), and
-`_container-items.scss` (112). The new `dcc.scss` is a manifest
-of `@use 'partial-name';` directives in source order, with
-SCSS-style `//` line comments documenting the contract (those
-don't compile into the CSS output). Each partial maps 1:1 onto
-a contiguous line range from the pre-split file — only adjacent
-sections are combined into single partials, preserving relative
-rule order so specificity ties land identically. **The compiled
-`styles/dcc.css` is byte-identical to the pre-split build** —
-verified by diffing the post-compile output against a baseline
-snapshot taken before the split. No theme-variable refactoring
-this slice; the existing `--system-*` CSS custom-property
-contract in `styles/variables.css` (and its light/dark
-overrides) stays as-is, with the 20 remaining hex literals in
-the partials left for a follow-up slice that pairs hex-to-var
-migration with the `docs/dev/ARCHITECTURE_REIMAGINED.md §7`
-theming-contract documentation. **1227 Vitest green**
-(unchanged — Vitest doesn't load CSS). **150 Playwright
-passed**, zero failures — clean run (11.9-min full suite).
-Pre-slice baseline post session 6 was 149; this slice's +1 new
-test (`extension-api.spec.js` `DCC compiled stylesheet survives
-the styles/dcc.scss split into 18 partials`) cleanly lands the
-post-slice count at 150. Net math: 149 + 1 = 150. The Playwright
-probe fetches `/systems/dcc/styles/dcc.css` from the live
-Foundry server and asserts 10 representative selectors from
-across the partials (`.grid-align-center`, `.journal-sheet`,
-`.deed-result.critical`, `.dcc .party-body`, `.dcc .equipment-bg`,
-`.dcc.sheet .sheet-tabs`, `.dcc-roll-modifier`, `.dcc
-.fleeting-luck`, `.dcc .spell-duel`, `.dcc .container-sheet`)
-plus a size-reasonable sanity check (CSS is ~65KB). Visual-
-regression suite at `browser-tests/visual-regression/` couldn't
-run in this V14 environment (its `start-foundry` script targets
-`baselinev12` per Phase 5 session 4 close); the byte-identical
-CSS diff provides stronger evidence than a visual-regression
-pixel-comparison would (identical bytes → identical pixels). The
-next Phase 7 candidate is the hex-literal → theme-variable
-migration + the §7 documentation expansion (20 hex literals
-across `_class-sheets.scss`, `_items.scss`, `_tabs.scss`,
-`_dialogs.scss` for per-class accents, tab tooltips, and focus
-states).
+**Phase 7 session 8 (2026-05-28)** closes the styling-cleanup
+arc opened by session 7 by migrating the 20 remaining hex
+literals across the new partials onto a documented
+`--system-*` theming contract. Twelve new CSS custom
+properties are added to `styles/variables.css`: six
+theme-agnostic semantic colors (`--system-text-muted-color`
+`#666`, `--system-damage-color` `#8b0000`,
+`--system-rollable-hover-color` `#000`,
+`--system-flat-button-border-color` `#c9c7b8`,
+`--system-two-weapon-primary-color` `#4caf50`,
+`--system-two-weapon-secondary-color` `#d32f2f`) plus six
+tab-overflow dropdown vars paired with dark-theme overrides
+(`--system-tab-overflow-background` `#f0e8d8`/`#2a2a2a`,
+`--system-tab-overflow-border-color` `#8b7355`/`#444`,
+`--system-tab-overflow-text-color` `#4a3c2a`/`#ccc`,
+`--system-tab-overflow-hover-background` `#e0d5c0`/`#3a3a3a`,
+`--system-tab-overflow-hover-text-color` `#2a1f14`/`#fff`,
+`--system-tab-overflow-active-text-color`
+`var(--color-text-dark-primary)`/`#fff`). All 14 light-path
+hex literals across `_base.scss`, `_dialogs.scss`,
+`_hit-points-dialog.scss`, `_skills.scss`, `_party-sheet.scss`,
+`_tabs.scss`, and `_weapons.scss` are replaced with the
+matching `var(...)` references, and the 17-line
+`body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow
+.tabs-overflow-menu` override block in `_tabs.scss` is deleted
+— the dark cascade now flows through variable overrides in
+`variables.css` rather than through a duplicate component
+selector. Compiled `dcc.css` shrinks 64,741 → 64,502 bytes
+(-239 net; still well inside the existing probe's 50-80KB
+range), and the only structural diff vs. the pre-slice HEAD
+output is exactly those 14 substitutions plus the deleted
+dark-override block. The §7 `ARCHITECTURE_REIMAGINED.md`
+theming contract is expanded with a "Theming contract
+(`--system-*` CSS custom properties)" subsection that
+documents each variable's role, light + dark defaults, and
+the override pattern variants (XCC, MCC, homebrew) should use
+(`body.theme-<variant>` sheet-wide vs `.dcc-<feature>`
+per-feature scoping) — variants override variable *values*,
+not component selectors. **1227 Vitest green** (unchanged —
+Vitest doesn't load CSS). **152 Playwright passed** in the
+full-suite run + 1 environmental flake at
+`adapter-dispatch.spec.js:1898 halfling two-weapon fumble
+note round-trips through adapter` (`page.evaluate: Execution
+context was destroyed, most likely because of a navigation` —
+a sibling-spec state pollution / navigation race; passes
+cleanly in isolation, 1.2s; not slice-caused — the slice
+touches only CSS partials, variables.css, the
+ARCHITECTURE_REIMAGINED docs, and the new extension-api
+probe). Pre-slice baseline was 152 (the five post-session-7
+e2e refactor commits — split v14-features, widen
+openActorSheet settle, rolls-ui smoke, shared session
+fixture, remove v12 visual-regression — shifted the spec
+layout but the net pass count). +1 new Playwright case in
+`extension-api.spec.js` (`DCC theming-contract --system-*
+vars resolve to documented values in both themes`) asserts
+the full contract end-to-end: the compiled CSS references the
+new vars; the redundant `body.theme-dark` tab-overflow block
+is gone; `getComputedStyle()` resolves each of the 12 vars to
+its documented light value via `:root` and each of the 6
+tab-overflow vars to its documented dark override via a
+transient `.theme-dark` probe element (no live-theme flip
+needed, so the test is robust to whichever theme the test
+user has selected). The next Phase 7 candidates are the
+remaining §Appendix A items (cruft removal slices) or a
+Group E vertical-slice — halfling vertical slice or homebrew
+single-class slice — both viable starts to broaden the
+adapter / mixin pattern beyond the built-in seven classes.
 
-**Phase 7 session 6 (2026-05-22)** closed the `module/dcc.js`
-piecemeal-split arc by extracting the eleven remaining
-`Hooks.on` / `Hooks.once` handlers into a focused module
-`module/chat-and-hook-wiring.mjs`. The relocated surface covers
-`hotbarDrop` (macro creation), `renderChatMessageHTML` (the
-~70-line chat-decoration body — crit/fail highlight, minimum-
-damage clamp, SpellResult HTML, `data-item-id` forwarding, the
-nine `chat.emoteXxxRoll` calls under the `emoteRolls` setting,
-the `spellResult` HTML append on the non-emote path, crit/fumble
-result lookups gated on `automateDamageFumblesCrits`, and
-TableResult navigation at the end), `getChatMessageContextOptions`,
-`renderActorDirectory` (parser quick-import bridge),
-`preCreateActor` / `preCreateItem` (default-image assignment +
-Player prototype-token actor-link), `applyActiveEffect`
-(DiceChain bump for string-valued dice expressions),
-`preUpdateActor` (sync prototype-token texture when the actor
-image changes from a default), `updateCombat` (Active Effect
-duration expiry on round advance — round-based and time-based),
-`item-piles-ready` (one-shot Item Piles integration), and
-`getProseMirrorMenuDropDowns` (sidebar-style menu entry). Each
-handler is exported individually plus a frozen
-`CHAT_AND_HOOK_WIRING_HOOKS` dispatch table (entries carry the
-handler + a `once` flag — only `item-piles-ready` is once-only)
-and a `registerChatAndHookWiring()` entry-point that iterates
-the table calling `Hooks.on` or `Hooks.once` per entry —
-matching the `module/settings-table-hooks.mjs` and
-`module/table-loading.mjs` pattern from Phase 7 sessions 3 + 5.
-`module/dcc.js` shrinks from 737 → 475 lines (-262 net
-including the new import line, the dropped `* as chat`,
-`parser`, `EntityImages`, `setupItemPilesForDCC`, and
-`createDCCMacro` imports — the latter three exclusive to the
-relocated hook bodies — plus the 8-line replacement marker
-comment block). Pure refactor — every conditional, every
-`game.user.isGM` gate, every default-image lookup, every emote-
-roll fan-out is preserved verbatim. **The §Appendix A target
-of ~4–5 focused modules out of `dcc.js` is met:** what remains
-in `dcc.js` is the init hook (data models, sheet
-registrations, template paths, `game.dcc` registry, Active
-Effect setup, custom dice types, custom document classes,
-Fleeting Luck setting), the `getSceneControlButtons` hook
-(Fleeting Luck + Spell Duel toolbar buttons — adjacent to init
-scaffolding), the ready hook (settings init, KeyState,
-release-notes, migrations, table-loading boot, Fleeting Luck /
-Spell Duel init, status icons, theme classes, welcome dialog,
-compendium-link setup, class-progression load, `dcc.ready`
-emission), the local `checkReleaseNotes` / `checkMigrations` /
-`_onShowJournal` / `_onShowURI` helpers, and three single-line
-`registerXxxHooks()` calls (settings-table, table-loading,
-chat-and-hook-wiring). +43 Vitest tests in new
-`module/__tests__/chat-and-hook-wiring.test.js` covering all 11
-handlers — early-return guards on `onRenderChatMessageHTML`,
-the 9-emote-roll fan-out + lookup gating, `data-item-id`
-forwarding, `spellResult` HTML append, emote-flag fallback
-when `game.settings.get` throws; the four
-`onPreCreateActor` branches (GM default-img assignment,
-has-img skip, non-GM skip, `prototypeToken.actorLink` for
-brand-new non-Item-Pile Players, plus `keepId` and
-Item-Pile-name skip checks); `onPreCreateItem` default-img +
-null-image-lookup + non-GM short-circuit; the
-`onApplyActiveEffect` non-string / matching / non-matching
-branches; `onPreUpdateActor` userId gate + no-img-change skip +
-default-image-replacement + custom-texture-preservation;
-`onUpdateCombat` non-GM gate + no-round-delta skip +
-round-based expiry (round 5 >= startRound 2 + rounds 3) +
-time-based expiry (`effect.isExpired`) + zero-effect actor
-skip; `onItemPilesReady` delegate; `onGetProseMirrorMenuDropDowns`
-no-format-key no-op + push-entry shape + active-predicate
-sidebar detection — plus the `CHAT_AND_HOOK_WIRING_HOOKS`
-dispatch-table shape (exactly 11 entries with only
-`item-piles-ready` once-only) and the
-`registerChatAndHookWiring()` entry-point routing (10
-`Hooks.on` + 1 `Hooks.once`). The test file `vi.mock`s the
-seven imported sibling modules (`chat`, `parser`,
-`entity-images`, `spell-result`, `table-result`,
-`item-piles-support`, `macros`) so handlers can be invoked as
-plain functions without a live Foundry boot — same
-stub-and-restore beforeEach/afterEach pattern as Phase 7
-sessions 1, 2, 3, 4, 5. +1 Playwright case in
-`extension-api.spec.js` (`DCC chat- and hook-wiring
-(preCreateActor / preCreateItem / preUpdateActor + 8 other
-hooks) survives chat-and-hook-wiring.mjs extraction`) —
-creates a temporary `P_ChatHook Probe` Player actor without
-an `img`, asserts the relocated `onPreCreateActor` handler
-fired (`actor.img` is a non-empty string AND
-`prototypeToken.actorLink === true`), creates an embedded
-weapon item without an `img` and asserts `onPreCreateItem`
-assigned a default image, then updates the actor's `img` to
-`icons/svg/aura.svg` and asserts `onPreUpdateActor` synced
-`prototypeToken.texture.src` to the new value — restoring
-the probe in a `finally` block. **1227 Vitest green** (was
-1184, +43). **149 Playwright passed**, zero failures —
-clean run (13.1-min full suite). Pre-slice baseline post the
-two follow-up fix commits that landed after session 5
-(`1935372` v14-features network-error filter + `2973a13`
-registerItemSheet XCC-resilience) was 148 — both
-previously-flagged failures (xcc-core-book DCCItemSheet
-baseline + v14-features network flake) recovered after the
-fixes; this slice's +1 new test cleanly lands the post-slice
-count at 149. Net pass-count math: 148 + 1 = 149. With the
-`dcc.js` piecemeal-split arc closed, the next Phase 7
-candidate is item 4 — split `styles/dcc.scss` (~2979 lines)
-into partials + theme contract.
+**Phase 7 session 7 (2026-05-22)** opened the second Phase 7
+arc by splitting `styles/dcc.scss` (was 2979 lines in one file)
+into 18 focused partials + a 34-line manifest. Each partial
+maps 1:1 onto a contiguous line range from the pre-split file;
+only adjacent sections are combined, preserving relative rule
+order so specificity ties land identically. Compiled
+`styles/dcc.css` was byte-identical to the pre-split build
+(verified by diffing the post-compile output against a baseline
+snapshot). No theme-variable refactoring that slice; the 20
+remaining hex literals were left for session 8 above. +1
+Playwright probe in `extension-api.spec.js` asserts 10
+representative selectors across the partials and the
+file-size sanity check. **1227 Vitest green** (unchanged), **150
+Playwright passed**, zero failures — clean 11.9-min full suite.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -230,6 +156,94 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-28 — Phase 7 session 8: hex-literal → theme-variable
+  migration + `ARCHITECTURE_REIMAGINED.md §7` theming-contract
+  documentation (closes the styling-cleanup arc opened by session
+  7).** Mechanical refactor — the 20 remaining hex literals across
+  the new partials (session 7 left them in place) are replaced
+  with `var(--system-*)` references and the new variables are
+  added to `styles/variables.css` as the documented theming
+  contract for variants (XCC, MCC, homebrew). Twelve new
+  `--system-*` vars: six theme-agnostic semantic colors
+  (`--system-text-muted-color` `#666`, `--system-damage-color`
+  `#8b0000`, `--system-rollable-hover-color` `#000`,
+  `--system-flat-button-border-color` `#c9c7b8`,
+  `--system-two-weapon-primary-color` `#4caf50`,
+  `--system-two-weapon-secondary-color` `#d32f2f`) plus six
+  tab-overflow dropdown vars paired with dark-theme overrides
+  (`--system-tab-overflow-background` `#f0e8d8`/`#2a2a2a`,
+  `--system-tab-overflow-border-color` `#8b7355`/`#444`,
+  `--system-tab-overflow-text-color` `#4a3c2a`/`#ccc`,
+  `--system-tab-overflow-hover-background` `#e0d5c0`/`#3a3a3a`,
+  `--system-tab-overflow-hover-text-color` `#2a1f14`/`#fff`,
+  `--system-tab-overflow-active-text-color`
+  `var(--color-text-dark-primary)`/`#fff`). All 14 light-path
+  hex literals across seven partials (`_base.scss:346` on
+  `.rollable:hover`, `_dialogs.scss:78` on `button.flat-button`
+  border, `_hit-points-dialog.scss:15,35` on `.hp-current` /
+  `.hint`, `_skills.scss:33` on `.skill-summary-text`,
+  `_party-sheet.scss:67,105` on `.fa-heart.clickable:hover` /
+  `.empty-party p`, `_tabs.scss` lines 68/69/82/87/88 on the
+  `.tabs-overflow-menu` light path, and `_weapons.scss:109,113`
+  on `.two-weapon-primary` / `.two-weapon-secondary`) are
+  replaced with the matching `var(...)` references. The 17-line
+  `body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow
+  .tabs-overflow-menu` override block in `_tabs.scss` is deleted
+  — the dark cascade now flows through the variable overrides
+  in `variables.css` rather than through a duplicate component
+  selector. Compiled `dcc.css` shrinks 64,741 → 64,502 bytes
+  (-239 net; still well inside the existing probe's 50-80KB
+  range). Only structural diff vs. the pre-slice HEAD output is
+  exactly those 14 substitutions plus the deleted dark-override
+  block (verified by `diff` against `git show HEAD:styles/dcc.css`).
+  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` is expanded with a
+  "Theming contract (`--system-*` CSS custom properties)"
+  subsection documenting each variable's role, light + dark
+  defaults, and the override pattern variants should use
+  (`body.theme-<variant>` sheet-wide vs `.dcc-<feature>`
+  per-feature scoping — variants override variable *values*, not
+  component selectors). +1 Playwright case in
+  `extension-api.spec.js` (`DCC theming-contract --system-* vars
+  resolve to documented values in both themes`) asserts the
+  full contract end-to-end: (1) the compiled CSS references the
+  new vars (regression net against re-introducing hex
+  literals), (2) the redundant `body.theme-dark` tab-overflow
+  block is gone from the compiled output, (3) `getComputedStyle()`
+  resolves each of the 12 vars to its documented light value
+  via `:root` and each of the 6 tab-overflow vars to its
+  documented dark override via a transient `<div class="theme-
+  dark">` probe element appended to body — no live-theme flip
+  needed, so the test is robust to whichever theme the test
+  user has selected. **1227 Vitest green** (unchanged — CSS is
+  not loaded into unit tests). **152 Playwright passed** in the
+  full-suite run + 1 environmental flake at
+  `adapter-dispatch.spec.js:1898 halfling two-weapon fumble
+  note round-trips through adapter` (`page.evaluate: Execution
+  context was destroyed, most likely because of a navigation` —
+  a sibling-spec state pollution / navigation race during
+  `rollWeaponAttack`; the failing test passes cleanly in
+  isolation, 1.2s, confirming it's a flake rather than a
+  regression; NOT slice-caused — this slice touches only CSS
+  partials, `variables.css`, the `ARCHITECTURE_REIMAGINED.md`
+  docs, and the new `extension-api.spec.js` probe; the slice
+  changed no JS code that runs in `actor.js` / `item.js` /
+  anywhere else, and cannot semantically cause a navigation
+  event mid-test). Pre-slice baseline was 152 (the five
+  post-session-7 e2e refactor commits on main — split
+  `v14-features` into `active-effects` + `sheet-ui` (`0e76620`),
+  widen `openActorSheet` settle to 1.5s (`a83d944`), add
+  `rolls-ui` smoke spec (`fe7a4da`), shared session fixture +
+  rename adapter-dispatch spec (`1c9924b`), remove dead v12
+  visual-regression suite (`e3eae15`) — shifted the spec layout
+  and the net baseline). Net pass math: 152 baseline + 1 new
+  test = 153 expected; observed 152 pass + 1 flake = 153 total,
+  with the flake passing in isolation. With the styling-cleanup
+  arc closed, the next Phase 7 candidates are the remaining
+  §Appendix A items (cruft removal slices) or a Group E
+  vertical-slice — halfling vertical slice or homebrew
+  single-class slice — both viable starts to broaden the
+  adapter / mixin pattern beyond the built-in seven classes.
 
 - **2026-05-22 — Phase 7 session 7: split `styles/dcc.scss` into
   18 partials + a 34-line manifest (opens the second Phase 7
@@ -643,83 +657,6 @@ archives linked above.
   `extension-api.spec.js`-style `beforeEach` hygiene to
   `data-models.spec.js`'s opening setup) but is out of slice
   scope; tracked as a follow-up.
-
-- **2026-05-20 — Phase 7 session 3: extract settings-table hooks
-  from `dcc.js` into `module/settings-table-hooks.mjs`.** Third
-  piecemeal Phase 7 extraction — relocates the nine top-level
-  `Hooks.on('dcc.{register,set}Xxx', ...)` handlers (was
-  `dcc.js:932–1019`, ~88 lines) into a focused module. The
-  handlers cover: `dcc.registerDisapprovalPack` /
-  `dcc.registerCriticalHitsPack` (delegate to
-  `CONFIG.DCC.{name}Packs.addPack`); `dcc.setDivineAidTable` /
-  `dcc.setFumbleTable` / `dcc.setLayOnHandsTable` /
-  `dcc.setTurnUnholyTable` (first-write-wins on the matching
-  `CONFIG.DCC.<name>Table` scalar, with `fromSystemSetting=true`
-  overriding); `dcc.registerLevelDataPack` (lazy-inits a
-  `TablePackManager` onto `CONFIG.DCC.levelDataPacks` if absent
-  then delegates `.addPack`); `dcc.registerMercurialMagicTable`
-  (per-class registry writing `CONFIG.DCC.mercurialMagicTables[classKey] = value`
-  + mirroring onto the legacy `mercurialMagicTable` field iff
-  `classKey === 'default'`); and `dcc.setMercurialMagicTable`
-  (legacy single-table setter — first-write-wins, system-setting
-  override, mirrors onto `mercurialMagicTables.default`). Each
-  handler is exported individually as a plain function
-  (`onRegisterDisapprovalPack`, `onSetDivineAidTable`, …) plus a
-  frozen `SETTINGS_TABLE_HOOKS` dispatch table mapping hook name
-  → handler and a `registerSettingsTableHooks()` entry-point that
-  iterates the dispatch table and registers each via `Hooks.on`.
-  `module/dcc.js` shrinks from 1254 → 1172 lines (-82 net
-  including the new `import` line and a 5-line replacement
-  comment + call). Pure refactor — hook names, parameter shapes,
-  defaults (`fromSystemSetting = false`), and mutation semantics
-  are preserved verbatim across every handler. Sibling modules
-  (dcc-core-book, xcc-core-book) emit
-  `Hooks.callAll('dcc.setFumbleTable', 'module.fumble', false)`
-  exactly as before and see the same `CONFIG.DCC.fumbleTable`
-  mutation land. **No external contract change.** +25 Vitest
-  tests in new `module/__tests__/settings-table-hooks.test.js`:
-  3 disapproval-pack cases (delegation with explicit
-  `fromSystemSetting=true`, default `false` when omitted, no-op
-  when CONFIG.DCC.disapprovalPacks is absent), 2 critical-hits-pack
-  cases (delegation, no-op when registry absent), 3 divine-aid
-  cases (first-write, first-write-wins on subsequent non-system
-  writes, system-setting override), 1 fumble + 1 layOnHands + 1
-  turnUnholy case each (same three-phase pattern), 2 levelData
-  cases (lazy-init constructs TablePackManager with the probe
-  pack stored under `_packs[name]`, reuse on subsequent calls),
-  4 per-class mercurial cases (per-class write doesn't touch
-  legacy field, `'default'` classKey mirrors onto legacy field,
-  no-op on falsy classKey, no-op on falsy value), 4 legacy
-  mercurial cases (sets when unset, first-write-wins, system
-  override touches both fields + default slot, per-class slots
-  unaffected), 1 SETTINGS_TABLE_HOOKS dispatch-table
-  one-to-one routing assertion, 1 dispatch-table-covers-exactly-9
-  assertion, 1 `registerSettingsTableHooks` wires-all-9-via-Hooks.on
-  assertion + 1 calls-Hooks.on-exactly-9-times assertion. Test
-  file stubs `CONFIG` (and per-describe `Hooks`) in `beforeEach`
-  and restores in `afterEach` — same pattern as Phase 7 sessions
-  1 & 2. +1 Playwright case in `extension-api.spec.js` (`DCC
-  settings-table hooks (disapproval / critical hits / level data
-  packs + 4 set-table hooks + mercurial registry) survive
-  settings-table-hooks.mjs extraction`) — snapshots seven
-  `CONFIG.DCC.*` slots (`divineAidTable`, `fumbleTable`,
-  `layOnHandsTable`, `turnUnholyTable`, `mercurialMagicTable`,
-  `mercurialMagicTables.default`, `levelDataPacks`), fires every
-  hook via `Hooks.callAll(...)` with a probe value, asserts each
-  expected mutation landed (pack present in `_packs[name]`, table
-  scalar updated, per-class mercurial entry written without
-  touching legacy field, lazy-init of `levelDataPacks` when
-  absent), then restores all seven snapshots in a `finally` block
-  so downstream tests in this spec see the prior state. **1127
-  Vitest green** (was 1102, +25). **145 Playwright passed** + 1
-  failure: the latent xcc-core-book DCCItemSheet override at
-  `extension-api.spec.js:320` (unchanged baseline, flagged every
-  prior session as pre-existing — line shifted from 213 because
-  this slice inserted a new test earlier in the file). The
-  documented `phase1-adapter-dispatch.spec.js:922 forceCrit
-  shift-click flag` suite-only flake did NOT fire this run, so
-  pre-slice baseline was 143 passed and post-slice is 145 (+1 new
-  test + 1 forceCrit recovered).
 
 ## Closed questions
 

@@ -30,6 +30,26 @@
   --system-right-arrow-button-image: url('./images/right-arrow.svg');
   --system-secondary-color: #97958e;
   --system-value-display-background-color: #d0cec3;
+
+  /* Theming contract — semantic colors referenced from style partials.
+     Variants (xcc, mcc) override these in their own stylesheets without
+     redeclaring component selectors. See
+     docs/dev/ARCHITECTURE_REIMAGINED.md §7 for the full contract. */
+  --system-text-muted-color: #666;
+  --system-damage-color: #8b0000;
+  --system-rollable-hover-color: #000;
+  --system-flat-button-border-color: #c9c7b8;
+  --system-two-weapon-primary-color: #4caf50;
+  --system-two-weapon-secondary-color: #d32f2f;
+
+  /* Responsive-tabs overflow dropdown (light defaults — dark theme
+     overrides below). */
+  --system-tab-overflow-background: #f0e8d8;
+  --system-tab-overflow-border-color: #8b7355;
+  --system-tab-overflow-text-color: #4a3c2a;
+  --system-tab-overflow-hover-background: #e0d5c0;
+  --system-tab-overflow-hover-text-color: #2a1f14;
+  --system-tab-overflow-active-text-color: var(--color-text-dark-primary);
 }
 
 /* Chat card colors - scoped to body to follow app theme, not UI theme */
@@ -70,6 +90,15 @@ body.theme-dark {
   --system-right-arrow-button-image: url('./images/right-arrow-grey.svg');
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
+
+  /* Responsive-tabs overflow dropdown — dark-theme overrides matching
+     the previous body.theme-dark block in _tabs.scss. */
+  --system-tab-overflow-background: #2a2a2a;
+  --system-tab-overflow-border-color: #444;
+  --system-tab-overflow-text-color: #ccc;
+  --system-tab-overflow-hover-background: #3a3a3a;
+  --system-tab-overflow-hover-text-color: #fff;
+  --system-tab-overflow-active-text-color: #fff;
 }
 
 /* When the setting to disable icon filter is enabled, remove the filter */

@@ -106,11 +106,11 @@
         z-index: 1;
 
         &.two-weapon-primary {
-          color: #4caf50; // Green for primary hand
+          color: var(--system-two-weapon-primary-color);
         }
 
         &.two-weapon-secondary {
-          color: #d32f2f; // Brighter red for better visibility
+          color: var(--system-two-weapon-secondary-color);
         }
       }
     }

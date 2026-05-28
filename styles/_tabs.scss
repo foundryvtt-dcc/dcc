@@ -65,8 +65,8 @@
         top: 100%;
         right: 0;
         z-index: 100;
-        background: #f0e8d8; /* Parchment-like background matching sheet style */
-        border: 1px solid #8b7355;
+        background: var(--system-tab-overflow-background);
+        border: 1px solid var(--system-tab-overflow-border-color);
         border-radius: 4px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         min-width: 150px;
@@ -79,17 +79,17 @@
         a[data-tab] {
           display: block;
           padding: 6px 12px;
-          color: #4a3c2a;
+          color: var(--system-tab-overflow-text-color);
           text-decoration: none;
           white-space: nowrap;
 
           &:hover {
-            background: #e0d5c0;
-            color: #2a1f14;
+            background: var(--system-tab-overflow-hover-background);
+            color: var(--system-tab-overflow-hover-text-color);
           }
 
           &.active {
-            color: var(--color-text-dark-primary);
+            color: var(--system-tab-overflow-active-text-color);
             font-weight: bold;
           }
 
@@ -98,25 +98,6 @@
             padding-right: 8px;
           }
         }
-      }
-    }
-  }
-
-  /* Dark mode styles for tabs overflow dropdown */
-  body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
-    background: #2a2a2a;
-    border-color: #444;
-
-    a[data-tab] {
-      color: #ccc;
-
-      &:hover {
-        background: #3a3a3a;
-        color: #fff;
-      }
-
-      &.active {
-        color: #fff;
       }
     }
   }

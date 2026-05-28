@@ -75,7 +75,7 @@
 
   button.flat-button {
     background: rgba(0, 0, 0, 0.05);
-    border: 2px groove #c9c7b8;
+    border: 2px groove var(--system-flat-button-border-color);
   }
 }
 

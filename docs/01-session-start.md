@@ -40,52 +40,73 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-05-22)
+## Status (2026-05-28)
 
-**Phase 7 session 7 opened the second Phase 7 arc** by splitting
-`styles/dcc.scss` (was 2979 lines in one file) into 18 focused
-partials + a 34-line manifest. The partials are `_base.scss`
-(globals + fonts + `.dcc` common — 383 lines), `_journal.scss`
-(110), `_armor.scss` (36), `_chat.scss` (chat rolls + spell-check
-chat card + notes — 184), `_weapons.scss` (119),
-`_class-sheets.scss` (cleric + wizard/elf — 135),
-`_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
-`_items.scss` (items + item sheet + level item sheet — 249),
-`_config-dialogs.scss` (82), `_skills.scss` (49), `_tabs.scss`
-(233), `_entity-link.scss` (15), `_dialogs.scss` (roll modifier +
-fleeting luck + spell duel — 353), `_actor-sheet.scss` (596 —
-largest partial), `_effects.scss` (effects + item-effects
-transfer — 162), `_level-change-dialog.scss` (9), and
-`_container-items.scss` (112). Total partial line count: 2977 —
-matches the pre-split body verbatim. The new `dcc.scss` is a
-34-line manifest of `@use 'partial-name';` directives in source
-order, with SCSS-style `//` line comments documenting the
-partial pattern. Each partial maps 1:1 onto a contiguous line
-range from the pre-split file — only adjacent sections are
-combined into single partials, preserving relative rule order so
-specificity ties land identically. **Compiled `styles/dcc.css`
-is byte-identical to the pre-split build** (verified by
-snapshotting `dcc.css` before the split, running `npm run scss`
-after, and confirming `diff -q` reports the files are
-identical). No theme-variable refactoring this slice; the
-existing `--system-*` CSS custom-property contract in
-`styles/variables.css` (with light/dark overrides) stays as-is.
-The 20 remaining hex literals across the partials are left for a
-follow-up slice that pairs hex-to-var migration with the
-`docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
-documentation. No JS or test code touched beyond the new
-Playwright probe. **1227 Vitest green** (unchanged — CSS isn't
-loaded into unit tests). **150 Playwright passed**, zero
-failures (11.9-min full suite). Pre-slice baseline was 149 (post
-session 6); +1 new test in `extension-api.spec.js` (`DCC
-compiled stylesheet survives the styles/dcc.scss split into 18
-partials`) fetches `/systems/dcc/styles/dcc.css` from the live
-Foundry server, asserts HTTP 200, file size in 50-80KB range,
-and 10 representative selectors from across the partials all
-present. Visual-regression suite couldn't run in this V14
-environment (its `start-foundry` script targets `baselinev12`);
-the byte-identical CSS diff provides stronger evidence than a
-visual-regression pixel-comparison would.
+**Phase 7 session 8 closed the styling-cleanup arc** opened by
+session 7 by migrating the 20 remaining hex literals across the
+new partials onto a documented `--system-*` theming contract.
+Twelve new CSS custom properties land in `styles/variables.css`:
+six theme-agnostic semantic colors
+(`--system-text-muted-color` `#666`, `--system-damage-color`
+`#8b0000`, `--system-rollable-hover-color` `#000`,
+`--system-flat-button-border-color` `#c9c7b8`,
+`--system-two-weapon-primary-color` `#4caf50`,
+`--system-two-weapon-secondary-color` `#d32f2f`) plus six
+tab-overflow dropdown vars paired with dark-theme overrides
+(`--system-tab-overflow-background` `#f0e8d8`/`#2a2a2a`,
+`--system-tab-overflow-border-color` `#8b7355`/`#444`,
+`--system-tab-overflow-text-color` `#4a3c2a`/`#ccc`,
+`--system-tab-overflow-hover-background` `#e0d5c0`/`#3a3a3a`,
+`--system-tab-overflow-hover-text-color` `#2a1f14`/`#fff`,
+`--system-tab-overflow-active-text-color`
+`var(--color-text-dark-primary)`/`#fff`). All 14 light-path
+hex literals across seven partials (`_base.scss`, `_dialogs.scss`,
+`_hit-points-dialog.scss`, `_skills.scss`, `_party-sheet.scss`,
+`_tabs.scss`, `_weapons.scss`) are replaced with the matching
+`var(...)` references. The 17-line
+`body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow
+.tabs-overflow-menu` override block in `_tabs.scss` is deleted
+— the dark cascade now flows through variable overrides in
+`variables.css` rather than through a duplicate component
+selector. Compiled `dcc.css` shrinks 64,741 → 64,502 bytes
+(-239 net; still well inside the existing probe's 50-80KB
+range), and the only structural diff vs. pre-slice HEAD is
+exactly those 14 substitutions + the deleted dark-override
+block. `docs/dev/ARCHITECTURE_REIMAGINED.md §7` is expanded
+with a "Theming contract (`--system-*` CSS custom properties)"
+subsection documenting each variable's role, light + dark
+defaults, and the override pattern variants (XCC, MCC,
+homebrew) should use (variants override variable *values*, not
+component selectors). +1 Playwright case in
+`extension-api.spec.js` (`DCC theming-contract --system-* vars
+resolve to documented values in both themes`) asserts the
+contract end-to-end via `getComputedStyle()` reads against
+both `:root` and a transient `<div class="theme-dark">` probe
+— no live-theme flip needed, so the test is robust to the
+test user's theme choice. **1227 Vitest green** (unchanged —
+CSS not loaded in unit tests). **152 Playwright passed** in
+the full-suite run + 1 environmental flake at
+`adapter-dispatch.spec.js:1898 halfling two-weapon fumble
+note round-trips through adapter` (navigation race during
+`rollWeaponAttack`; passes cleanly in isolation, 1.2s; not
+slice-caused — this slice touches only CSS + variables + docs
++ the new probe). Pre-slice baseline was 152 (after the five
+post-session-7 e2e refactor commits on main); +1 new test
+nets the post-slice count at 153 with the flake passing in
+isolation.
+
+**Phase 7 session 7 (closed 2026-05-22)** opened the second
+Phase 7 arc by splitting `styles/dcc.scss` (was 2979 lines in
+one file) into 18 focused partials + a 34-line manifest. Each
+partial maps 1:1 onto a contiguous line range from the pre-split
+file; only adjacent sections are combined, preserving relative
+rule order so specificity ties land identically. Compiled
+`styles/dcc.css` was byte-identical to the pre-split build
+(verified by diffing the post-compile output against a baseline
+snapshot taken before the split). No theme-variable refactoring
+that slice — handed off to session 8 above. **1227 Vitest
+green** (unchanged), **150 Playwright passed**, zero failures
+(11.9-min full suite).
 
 **Phase 7 session 6 (extract chat / hook wiring — closed 2026-05-22).**
 Eleven remaining `Hooks.on` / `Hooks.once` handlers
@@ -378,27 +399,30 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 7 session 7 (2026-05-22) opened the second Phase 7 arc**
-by splitting `styles/dcc.scss` (~2979 lines) into 18 focused
-partials + a 34-line manifest. Compiled `styles/dcc.css` is
-byte-identical to the pre-split build (verified). No
-theme-variable refactoring this slice; the existing `--system-*`
-contract in `styles/variables.css` stays as-is.
+**Phase 7 session 8 (2026-05-28) closed the styling-cleanup
+arc.** The 20 hex literals from session 7's partials were
+migrated onto 12 new `--system-*` CSS custom properties in
+`styles/variables.css`; the redundant `body.theme-dark`
+tab-overflow block in `_tabs.scss` was deleted (dark cascade
+now flows through variable overrides). `ARCHITECTURE_REIMAGINED.md
+§7` carries the full theming-contract table — variants
+override variable *values*, not component selectors. The
+`extension-api.spec.js` end-to-end probe asserts each of the
+12 vars resolves to its documented value via `getComputedStyle()`
+in both light (`:root`) and dark (transient `<div
+class="theme-dark">` probe) themes.
 
-**Next-arc candidate — hex-literal → theme-variable migration +
-§7 theming-contract documentation.** ~20 hex literals remain
-hard-coded across the partials (per-class accents in
-`_class-sheets.scss` and `_actor-sheet.scss`, damage text colours
-in `_items.scss`, tab-tooltip background/text in `_tabs.scss`,
-focus-state shades in `_dialogs.scss`). Add matching
-`--system-*` entries to `styles/variables.css` (with light/dark
-overrides), replace the literals with `var(...)` references in
-the partials, then document the full theming contract in
-`docs/dev/ARCHITECTURE_REIMAGINED.md §7` so variant theme
-stylesheets (xcc, mcc) have stable variables to override.
-Visual-regression coverage matters here — if the V14 environment
-can run the V12 baseline visual suite, do; otherwise rely on
-careful manual sheet-by-sheet inspection.
+**Next-arc candidates.** With both Phase 7 styling-cleanup
+sub-arcs closed and the `dcc.js` piecemeal split done in
+session 6, the remaining Phase 7 work is the §Appendix A
+cruft-removal items (further small slices). Alternatively,
+broaden the adapter / mixin pattern beyond the seven built-in
+classes via a Group E vertical slice — the two candidates
+called out in `00-progress.md` Next steps are the halfling
+vertical slice (concentrated schema-slimming exercise) or a
+homebrew single-class slice (end-to-end Phase 4+5+6 exercise
+via `registerClassMixin` + `registerSheetPart` + variant-aware
+data loading).
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped

@@ -567,6 +567,107 @@ test.describe('DCC Extension API', () => {
     expect(result.sizeReasonable).toBe(true)
   })
 
+  test('DCC theming-contract --system-* vars resolve to documented values in both themes', async ({ page }) => {
+    // Phase 7 session 8: the hex-literal → theme-variable migration
+    // introduced 12 new --system-* CSS custom properties as the
+    // theming contract for variants (xcc, mcc). Six are
+    // theme-agnostic semantic colors (muted text, damage red,
+    // rollable hover, flat-button border, two-weapon hand
+    // indicators); six are tab-overflow dropdown colors paired with
+    // dark-theme overrides in `styles/variables.css`. The old
+    // `body.theme-dark & .sheet-tabs ... .tabs-overflow-menu`
+    // override block in `_tabs.scss` is now redundant — the dark
+    // cascade flows through the variable overrides instead.
+    //
+    // This probe asserts the documented contract end-to-end:
+    //   1. The compiled `dcc.css` references the new vars in place
+    //      of the prior hex literals (regression net for any future
+    //      re-introduction).
+    //   2. The redundant `body.theme-dark ... .tabs-overflow-menu`
+    //      block is gone from the compiled output.
+    //   3. `getComputedStyle()` resolves each var to its documented
+    //      light value via `:root`, and to its documented dark
+    //      override value via a transient `.theme-dark` probe
+    //      element (no live-theme flip required, so the test is
+    //      robust to whatever theme the test user has selected).
+    const result = await page.evaluate(async () => {
+      const css = await fetch('/systems/dcc/styles/dcc.css').then(r => r.text())
+      // Probe element scoped under `.theme-dark` — descendants of an
+      // element matching `.theme-dark` see the variable overrides.
+      const probe = document.createElement('div')
+      probe.className = 'theme-dark'
+      document.body.appendChild(probe)
+      const lightStyle = getComputedStyle(document.documentElement)
+      const darkStyle = getComputedStyle(probe)
+      const read = (style, varName) => style.getPropertyValue(varName).trim()
+      const out = {
+        // (1) Compiled CSS references the new vars.
+        hasRollableHoverVar: css.includes('color: var(--system-rollable-hover-color)'),
+        hasDamageVar: css.includes('color: var(--system-damage-color)'),
+        hasMutedVar: css.includes('color: var(--system-text-muted-color)'),
+        hasFlatButtonBorderVar: css.includes('border: 2px groove var(--system-flat-button-border-color)'),
+        hasTwoWeaponPrimaryVar: css.includes('color: var(--system-two-weapon-primary-color)'),
+        hasTwoWeaponSecondaryVar: css.includes('color: var(--system-two-weapon-secondary-color)'),
+        hasTabOverflowBgVar: css.includes('background: var(--system-tab-overflow-background)'),
+        // (2) Redundant body.theme-dark tabs-overflow block gone.
+        noDarkOverrideBlock: !css.includes('body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu'),
+        // (3a) Theme-agnostic semantic vars — documented light defaults.
+        mutedColorLight: read(lightStyle, '--system-text-muted-color'),
+        damageColorLight: read(lightStyle, '--system-damage-color'),
+        rollableHoverLight: read(lightStyle, '--system-rollable-hover-color'),
+        flatButtonBorderLight: read(lightStyle, '--system-flat-button-border-color'),
+        twoWeaponPrimaryLight: read(lightStyle, '--system-two-weapon-primary-color'),
+        twoWeaponSecondaryLight: read(lightStyle, '--system-two-weapon-secondary-color'),
+        // (3b) Tab-overflow vars — light defaults.
+        tabOverflowBgLight: read(lightStyle, '--system-tab-overflow-background'),
+        tabOverflowBorderLight: read(lightStyle, '--system-tab-overflow-border-color'),
+        tabOverflowTextLight: read(lightStyle, '--system-tab-overflow-text-color'),
+        tabOverflowHoverBgLight: read(lightStyle, '--system-tab-overflow-hover-background'),
+        tabOverflowHoverTextLight: read(lightStyle, '--system-tab-overflow-hover-text-color'),
+        // (3c) Tab-overflow vars — dark overrides via .theme-dark probe.
+        tabOverflowBgDark: read(darkStyle, '--system-tab-overflow-background'),
+        tabOverflowBorderDark: read(darkStyle, '--system-tab-overflow-border-color'),
+        tabOverflowTextDark: read(darkStyle, '--system-tab-overflow-text-color'),
+        tabOverflowHoverBgDark: read(darkStyle, '--system-tab-overflow-hover-background'),
+        tabOverflowHoverTextDark: read(darkStyle, '--system-tab-overflow-hover-text-color'),
+        tabOverflowActiveTextDark: read(darkStyle, '--system-tab-overflow-active-text-color')
+      }
+      probe.remove()
+      return out
+    })
+
+    // (1) Compiled CSS references the new vars.
+    expect(result.hasRollableHoverVar).toBe(true)
+    expect(result.hasDamageVar).toBe(true)
+    expect(result.hasMutedVar).toBe(true)
+    expect(result.hasFlatButtonBorderVar).toBe(true)
+    expect(result.hasTwoWeaponPrimaryVar).toBe(true)
+    expect(result.hasTwoWeaponSecondaryVar).toBe(true)
+    expect(result.hasTabOverflowBgVar).toBe(true)
+    // (2) Redundant body.theme-dark tabs-overflow block is gone.
+    expect(result.noDarkOverrideBlock).toBe(true)
+    // (3a) Theme-agnostic semantic vars resolve to documented values.
+    expect(result.mutedColorLight).toBe('#666')
+    expect(result.damageColorLight).toBe('#8b0000')
+    expect(result.rollableHoverLight).toBe('#000')
+    expect(result.flatButtonBorderLight).toBe('#c9c7b8')
+    expect(result.twoWeaponPrimaryLight).toBe('#4caf50')
+    expect(result.twoWeaponSecondaryLight).toBe('#d32f2f')
+    // (3b) Tab-overflow vars — light defaults.
+    expect(result.tabOverflowBgLight).toBe('#f0e8d8')
+    expect(result.tabOverflowBorderLight).toBe('#8b7355')
+    expect(result.tabOverflowTextLight).toBe('#4a3c2a')
+    expect(result.tabOverflowHoverBgLight).toBe('#e0d5c0')
+    expect(result.tabOverflowHoverTextLight).toBe('#2a1f14')
+    // (3c) Tab-overflow vars — dark overrides.
+    expect(result.tabOverflowBgDark).toBe('#2a2a2a')
+    expect(result.tabOverflowBorderDark).toBe('#444')
+    expect(result.tabOverflowTextDark).toBe('#ccc')
+    expect(result.tabOverflowHoverBgDark).toBe('#3a3a3a')
+    expect(result.tabOverflowHoverTextDark).toBe('#fff')
+    expect(result.tabOverflowActiveTextDark).toBe('#fff')
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',
