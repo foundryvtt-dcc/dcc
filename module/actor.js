@@ -1164,7 +1164,40 @@ class DCCActor extends Actor {
       ? plan.formula.replace(/^(1d\d+)/i, `$1[${weaponLabel}]`)
       : plan.formula
 
-    return new Roll(finalFormula, this.getRollData())
+    // Re-append any additive init-die tail (e.g. MCC's Mutant Horror folds
+    // its die into init.die as `1d20+1d3`, up to `1d20+1d7+7` at higher
+    // levels). The lib models initiative as a single die + flat modifiers,
+    // so an *additive die* is a Foundry-side idiom it can't represent — we
+    // re-append it the same way as the weapon-die label above. Computed
+    // from the actor's own `init.die` (not the possibly weapon-overridden
+    // `dieFormula`) and suppressed when a weapon override is in effect: an
+    // equipped two-handed / `initiativeDieOverride` weapon replaces the
+    // init die entirely (matches `main` + the legacy dialog path).
+    const additiveInitTerms = weaponLabel
+      ? ''
+      : this._initDieAdditiveTerms(this.system.attributes.init.die || '')
+    const rolledFormula = additiveInitTerms
+      ? `${finalFormula} ${additiveInitTerms}`
+      : finalFormula
+
+    return new Roll(rolledFormula, this.getRollData())
+  }
+
+  /**
+   * The additive tail of an initiative die formula — everything after the
+   * leading die. e.g. '1d20+1d3' -> '+1d3', '1d20+1d7+7' -> '+1d7+7',
+   * '1d20' -> ''. The lib models initiative as a single die + flat
+   * modifiers, so an *additive* die (MCC's Mutant Horror folds one into
+   * `init.die`; see mcc-core-book §9.2a) is a Foundry-side idiom the lib
+   * can't represent — `_getInitiativeRollViaAdapter` re-appends it the same
+   * way the weapon-die label is re-injected.
+   * @param {string} formula
+   * @returns {string}
+   * @private
+   */
+  _initDieAdditiveTerms (formula) {
+    const m = /^\s*\d*d\d+(.*)$/i.exec(String(formula ?? '').trim())
+    return m ? m[1].trim() : ''
   }
 
   /**

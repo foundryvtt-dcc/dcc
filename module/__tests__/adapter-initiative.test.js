@@ -117,6 +117,79 @@ test('legacy path kicks in when showModifierDialog is set and invokes DCCRoll.cr
   }))
 })
 
+test('adapter path re-appends an additive init-die tail (Mutant Horror 1d20+1d3)', () => {
+  dccRollCreateRollMock.mockClear()
+  // MCC folds the Mutant Horror die into init.die as `1d20+1d3` (see
+  // mcc-core-book §9.2a). The lib's single-die model can't represent the
+  // additive die, so the adapter re-appends it Foundry-side.
+  actor.system.attributes.init.die = '1d20+1d3'
+  actor.system.attributes.init.value = 0
+
+  const roll = actor.getInitiativeRoll()
+
+  expect(roll).toBeInstanceOf(Roll)
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(roll.formula).toMatch(/1d20/)
+  expect(roll.formula).toMatch(/1d3/)
+  // Two dice terms survive (the leading d20 + the appended horror die).
+  expect(roll.formula.match(/d\d+/g)).toHaveLength(2)
+})
+
+test('adapter path preserves a higher-level additive tail with a flat bonus (1d20+1d7+7)', () => {
+  dccRollCreateRollMock.mockClear()
+  actor.system.attributes.init.die = '1d20+1d7+7'
+  actor.system.attributes.init.value = 0
+
+  const roll = actor.getInitiativeRoll()
+
+  expect(roll).toBeInstanceOf(Roll)
+  expect(roll.formula).toMatch(/1d7/)
+  // The flat +7 baked into the folded init die survives too.
+  expect(roll.formula).toMatch(/\+\s*7/)
+  expect(roll.formula.match(/d\d+/g)).toHaveLength(2)
+})
+
+test('adapter path leaves a plain 1d20 init die unchanged (no additive tail)', () => {
+  dccRollCreateRollMock.mockClear()
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = 0
+
+  const roll = actor.getInitiativeRoll()
+
+  expect(roll).toBeInstanceOf(Roll)
+  expect(roll.formula).toBe('1d20')
+  expect(roll.formula.match(/d\d+/g)).toHaveLength(1)
+})
+
+test('a weapon init-die override suppresses the additive tail (weapon die wins)', () => {
+  dccRollCreateRollMock.mockClear()
+  // Compound init.die AND an equipped two-handed weapon: the weapon die
+  // replaces the init die entirely (matches `main` + the legacy path), so
+  // the folded horror die must NOT be appended.
+  actor.system.attributes.init.die = '1d20+1d3'
+  actor.system.attributes.init.value = 0
+
+  const originalFind = actor.items.find
+  const twoHandedWeapon = {
+    system: { twoHanded: true, equipped: true, initiativeDie: '1d16', config: {} }
+  }
+  actor.items.find = vi.fn((predicate) =>
+    predicate(twoHandedWeapon) ? twoHandedWeapon : undefined
+  )
+
+  try {
+    const roll = actor.getInitiativeRoll()
+
+    expect(roll).toBeInstanceOf(Roll)
+    expect(roll.formula).toMatch(/1d16\[WeaponPropertiesTwoHanded\]/)
+    // The folded horror die is suppressed when the weapon override wins.
+    expect(roll.formula).not.toMatch(/1d3/)
+    expect(roll.formula.match(/d\d+/g)).toHaveLength(1)
+  } finally {
+    actor.items.find = originalFind
+  }
+})
+
 test('pre-built Roll short-circuit: returns the incoming Roll unchanged', () => {
   dccRollCreateRollMock.mockClear()
   const preBuilt = new Roll('1d20 + 5')

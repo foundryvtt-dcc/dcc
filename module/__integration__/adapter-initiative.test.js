@@ -104,7 +104,15 @@ async function runAdapterInitiative (actor) {
     modifiers
   })
 
-  const foundryRoll = new Roll(plan.formula)
+  // Mirror the production `_getInitiativeRollViaAdapter` re-append of an
+  // additive init-die tail (e.g. MCC's Mutant Horror folds its die into
+  // init.die as `1d20+1d3`). The lib's single-die model can't represent
+  // an additive die, so the adapter appends it Foundry-side. Plain dies
+  // ('1d20', '1d14', …) have no tail, so this is a no-op for them.
+  const additiveTail = /^\s*\d*d\d+(.*)$/i.exec(String(actor.system.attributes.init.die ?? '').trim())?.[1].trim() || ''
+  const rolledFormula = additiveTail ? `${plan.formula} ${additiveTail}` : plan.formula
+
+  const foundryRoll = new Roll(rolledFormula)
   await foundryRoll.evaluate()
 
   const primaryDie = foundryRoll.dice?.[0]
@@ -168,6 +176,22 @@ describeIfDice('adapter formula flow for initiative (real Foundry dice)', () => 
       expect(natural).toBeLessThanOrEqual(16)
       expect(foundryRoll.total).toBe(natural + 1)
     }
+  })
+
+  test('additive init die (Mutant Horror 1d20+1d3) evaluates the compound roll with real dice', async () => {
+    // MCC folds the Mutant Horror die into init.die as `1d20+1d3` (see
+    // mcc-core-book §9.2a). The lib emits the single leading d20; the
+    // adapter re-appends `+1d3`, and the real dice engine evaluates both.
+    const actor = makeActor({ initDie: '1d20+1d3', initValue: 0 })
+    const { plan, foundryRoll } = await runAdapterInitiative(actor)
+
+    expect(plan.formula).toMatch(/^1d20/)
+    expect(foundryRoll.formula).toMatch(/1d3/)
+    // Two dice terms are evaluated, and the total stays within the
+    // compound range: 1d20 [1-20] + 1d3 [1-3] => [2, 23].
+    expect(foundryRoll.dice).toHaveLength(2)
+    expect(foundryRoll.total).toBeGreaterThanOrEqual(2)
+    expect(foundryRoll.total).toBeLessThanOrEqual(23)
   })
 
   test('modifier breakdown carries the aggregate initiative-total origin', async () => {

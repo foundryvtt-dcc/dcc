@@ -432,6 +432,30 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(actualDie, 'weapon initiativeDie should not fall back to 1d20').not.toBe('1d20')
       assertPath(line, 'adapter', { die: actualDie })
     })
+
+    test('compound additive init die (Mutant Horror 1d20+1d3) survives the combat-tracker path', async ({ page }) => {
+      // mcc-core-book §9.2a folds the Mutant Horror die into init.die as
+      // `1d20+1d3`. The combat-tracker init path (no dialog →
+      // `_getInitiativeRollViaAdapter`) used to flatten it through the
+      // lib's single-die model and silently drop the `+1d3`, rolling only
+      // 1d20; the adapter now re-appends the additive tail Foundry-side.
+      // (The sheet "Roll Initiative" button — the legacy/dialog path — was
+      // never affected.) This probe drives the live combat-tracker entry
+      // point and asserts both dice survive into the produced Roll.
+      await makePlayer(page, 'P1 Init Additive', { attributes: { init: { die: '1d20+1d3' } } })
+      const result = await page.evaluate(async () => {
+        const roll = game.actors.getName('P1 Init Additive').getInitiativeRoll()
+        await roll.evaluate()
+        return { formula: roll.formula, diceCount: roll.dice.length }
+      })
+      const line = await waitForAdapterLog('rollInit')
+      assertPath(line, 'adapter', { die: '1d20+1d3' })
+      // Both dice survive into the combat-tracker roll (lib's leading d20 +
+      // the re-appended horror die), not just the flattened 1d20.
+      expect(result.formula).toMatch(/1d20/)
+      expect(result.formula).toMatch(/1d3/)
+      expect(result.diceCount, `formula: ${result.formula}`).toBe(2)
+    })
   })
 
   // ── rollSpellCheck (Phase 2) ────────────────────────────────────────
