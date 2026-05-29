@@ -65,46 +65,18 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Latest (2026-05-29) — `feat(adapter)` `options.checkLabel`.** A small
-feature built from `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`: a raw
-(no-item) spell check can carry a label override so a class/module
-relabels the chat flavor (MCC's "Mutation Check" / "Wetware Program
-Check") instead of the generic "Spell Check". Two backward-compatible
-edits (`actor-sheet.js` `#rollSpellCheck` forwards a `data-check-label`
-cell attribute; `actor.js` `_castNakedViaAdapter` uses it as the flavor
-base). +3 Vitest, +1 Playwright. **1302 Vitest** / **161 e2e passed**.
+**Phase 7 cleanup — latest 2026-05-29.** Two small items landed this
+session (full detail in *Recent slices*): `feat(adapter)`
+`options.checkLabel` (relabel the raw spell-check chat flavor so MCC's
+Mutation / Wetware Program checks read correctly) and Phase 7 session 14
+(render the per-modifier breakdown `flags.dcc.libResult.modifiers` under
+the rolled formula in chat — closed a PR #720 resilience item). Repo
+green: **1302 Vitest** / **161 Playwright e2e passed**, zero failures.
 
-**Phase 7 session 14 (2026-05-29)** closes the PR #720 "chat doesn't
-surface the per-modifier breakdown the adapter already captures" item.
-The lib emits each contributing modifier with rich origin metadata and
-the adapter persists it as `flags.dcc.libResult.modifiers`, but nothing
-rendered it — and because the adapter builds the Foundry Roll from the
-lib's flat formula string, Foundry's native term tooltip was unlabelled
-too (a regression vs. the legacy `roll-modifier.js` path). New exported
-pure helper `buildModifierBreakdownHtml(modifiers, heading)` in
-`module/adapter/chat-renderer.mjs` lists each modifier as
-`<origin.label> <signed value>` (e.g. "STR modifier +2"), handling both
-the tagged-union `RollModifier` shape (ability / save / skill) and the
-flat `LegacyRollModifier` shape (spell). All four renderers append it
-under the rolled formula via the proven manual-`rollHTML` + `content`
-pattern. New i18n key `DCC.ModifierBreakdown` ("Modifiers", all 7
-langs); `.dcc-modifier-breakdown` styling in `styles/_chat.scss`. +11
-Vitest (`chat-renderer.test.js`), +1 Playwright
-(`adapter-dispatch.spec.js`). **1299 Vitest**; full e2e **160 passed,
-zero failures** (the previously-flaky `extension-api.spec.js:2232`
-link-fields test passed clean this run). Remaining PR #720 candidates:
-dispatcher gate-style unification; unused crit/fumble predicate params.
-
-**Prior (2026-05-29):** session 13 made `checkMigrations` async +
-`await`ed `migrateWorld` before firing `dcc.ready` (threading
-`{ migrationComplete }` onto the payload); a standalone `fix(adapter)`
-preserved additive init-die terms (`1d20+1d3`) through the
-combat-tracker path via `_initDieAdditiveTerms`
-(`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`).
-
-<!-- Detailed prior-phase narrative removed — archived in
-`dev/progress/phase-{3,4,5}.md`. The Recent slices section below
-keeps the five most-recent entries. -->
+**Remaining PR #720 items:** dispatcher gate-style unification; unused
+crit/fumble predicate params (see *PR #720 review backlog* below).
+Alternatively a Group E vertical-slice (halfling / homebrew single-class)
+to broaden the adapter / mixin pattern.
 
 ## Recent slices
 
@@ -310,403 +282,139 @@ archives linked above.
 
 ## Closed questions
 
-5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at
-   Session 21 / D3a: `dcc-core-lib@0.7.0` models the two RAW triggers
-   (creeping chance + patron-spell result-table entries) plus the
-   natural-1-forces-row-1 rule; `_runLegacyPatronTaint` deleted.
-   D3b (manifestation table loader + cross-repo content mirror) closed
-   at session 22; D3b-γ (sibling audit) closed as a no-op; D3c
-   (dead-flag cleanup) closed at session 23 via `dcc-core-lib@0.8.0`.
-   Entire D3 arc complete.**
+All resolved — one-line ticks (full rationale in the linked sessions /
+phase archives):
 
-6. ~~**Spellburn dialog integration.**~~ **Resolved 2026-04-18 at
-   Phase 3 session 1: adapter-side `promptSpellburnCommitment` dialog
-   via DialogV2, wired into `rollSpellCheck` dispatcher for the
-   wizard / elf + `showModifierDialog` branch.** The latent regression
-   from Phase 2 session 2 (wizard adapter casts silently lost the
-   Spellburn UI) is fixed. Other legacy-dialog capabilities (die
-   tweak, custom modifier rows, CheckPenalty toggle, FleetingLuck)
-   remain absent on the adapter path and will be revisited once the
-   attack / damage dialog work generalizes the roll-dialog scaffold.
-
-3. ~~**Dead hook `dcc.update`.**~~ **Resolved 2026-05-18: don't emit.**
-   Git history showed the DCC system never emitted the hook; XCC's
-   listener was speculative from its initial commit (`24b68b1`) and
-   its body was a debug-only `console.log` gated on `isDebug` —
-   redundant with the adjacent Foundry-native `updateActor` listener
-   doing the same thing. Inventing an emission contract from nothing
-   would add coupling without a real consumer. XCC removed the
-   listener on `chore/drop-dead-dcc-update-hook`; `EXTENSION_API.md`
-   Dead-hook table cleared.
+1. ~~Runtime loading strategy~~ — vendor the lib's built `dist/`; adapter imports a relative path into `module/vendor/dcc-core-lib/`, one `npm run sync-core-lib` per lib bump (2026-04-17).
+2. ~~Package-name discrepancy~~ — moot under the vendor approach; docs call out the scoped `@moonloch/dcc-core-lib` (the bare token = local paths only) (2026-05-18).
+3. ~~Dead hook `dcc.update`~~ — don't emit; XCC's speculative debug-only listener removed; `EXTENSION_API.md` Dead-hook table cleared (2026-05-18).
+4. ~~Undocumented `game.dcc.*` with heavy XCC usage~~ — re-audit confirmed every symbol XCC touches is in `EXTENSION_API.md` Stable; caught + fixed two doc-rot items (2026-05-18).
+5. ~~Patron-taint mechanic alignment~~ — `dcc-core-lib@0.7.0` models the RAW triggers; `_runLegacyPatronTaint` deleted; entire D3 arc complete (2026-04-24).
+6. ~~Spellburn dialog integration~~ — adapter DialogV2 prompt wired into `rollSpellCheck` (2026-04-18); later unified into `promptRollModifierDialog` (Q7).
+7. ~~Wizard/elf modifier-dialog coverage beyond Spellburn~~ — unified `promptRollModifierDialog` covers skill + spell checks incl. spellburn (2026-05-17, sessions 26 + 27).
 
 ## Blockers / open questions
 
-1. ~~**Runtime loading strategy.**~~ **Resolved 2026-04-17: vendor
-   approach (option b).** `scripts/sync-core-lib.mjs` builds the linked
-   lib and copies its `dist/` into `module/vendor/dcc-core-lib/`, which
-   is committed. Adapter code imports via relative path
-   (`../vendor/dcc-core-lib/index.js`). No bundler added. One sync
-   command (`npm run sync-core-lib`) + one commit per lib-version bump.
-
-2. ~~**Package name discrepancy.**~~ **Closed 2026-05-18.** The
-   underlying issue (the unscoped `dcc-core-lib` cannot be `npm
-   install`ed because only the scoped `@moonloch/dcc-core-lib` is
-   published) was rendered moot by the vendor approach (open question
-   #1, resolved 2026-04-17) — the system imports from
-   `module/vendor/dcc-core-lib/` and never `npm install`s the lib at
-   all. The documentation cleanup (2026-05-18) updated the top of
-   `ARCHITECTURE_REIMAGINED.md`, the install step in Phase 0, the
-   `EXTENSION_API.md` header, and the "Working with dcc-core-lib"
-   section in `CLAUDE.md` to call out the scoped name explicitly and
-   note that the bare `dcc-core-lib` token in branch / vendor / repo
-   identifiers refers to local-only paths, not the npm package.
-   Historical session-handoff prose that says e.g. "synced
-   dcc-core-lib@0.7.0" is unchanged — it refers to lib versions, not
-   install instructions, and the context is unambiguous.
-
-4. ~~**Undocumented `game.dcc.*` pieces with heavy XCC usage.**~~
-   **Closed 2026-05-18.** Re-audit of XCC, MCC, dcc-crawl-classes,
-   dcc-qol, and the four content-pack modules against the current
-   stable surface confirmed: every `game.dcc.*` symbol XCC actually
-   touches (`DCCRoll.createRoll` / `DCCRoll.cleanFormula`,
-   `DiceChain.bumpDie` / `calculateCritAdjustment` /
-   `calculateProportionalCritRange`, the five-method `FleetingLuck`
-   surface — `init`, `updateFlags`, `give`, `enabled`,
-   `automationEnabled`, the latter two consumed via
-   `Object.defineProperty`, so they must remain configurable —
-   `processSpellCheck`, and `registerActorSheet`) appears in
-   `EXTENSION_API.md`'s Stable table. No undocumented usage and no
-   gaps. The audit also caught two doc-rot items, both fixed in the
-   same pass: `dcc.afterComputeSpellCheck` now has a live XCC
-   consumer (XCC retired `xcc-actor.js` + `CONFIG.Actor.documentClass`
-   override 2026-05-18 in favor of the hook) and XCC migrated all 19
-   actor-sheet registrations to `game.dcc.registerActorSheet`. MCC
-   (7 sites) and dcc-crawl-classes (9 sites) have not migrated yet;
-   that's opt-in with no deadline. See `EXTENSION_API.md` re-audit
-   header dated 2026-05-18.
-
-7. **Wizard / elf adapter-path modifier-dialog coverage beyond
-   Spellburn.** **Fully resolved 2026-05-17 across sessions 26 +
-   27.** Session 26 / Q7-phase1 landed
-   `promptRollModifierDialog` + the skill-check fold; session 27 /
-   Q7-phase2 extended the wrapper with an optional spellburn
-   descriptor and folded wizard / cleric / naked spell-check
-   routes onto it (retiring the bespoke
-   `promptSpellburnCommitment` helper). The unified prompt now
-   surfaces Die / Compound / CheckPenalty / Spellburn / Other
-   Bonus in one dialog for both skill checks and spell checks,
-   matching the legacy `DCCItem.rollSpellCheck` term layout.
-   `_castViaCalculateSpellCheck` subtracts the lib's auto level +
-   ability from the dialog total to avoid double-counting when
-   feeding the user's flat modifier as a situational. Can be
-   closed.
+None open. All prior blockers/questions are resolved (see *Closed
+questions* above); active design / coverage work is tracked in the
+*PR #720 review backlog* below.
 
 ## PR #720 review backlog (2026-04-19)
 
-PR #720 (the merge of Phases 0-3 into `main`) triggered a full
-8-agent review. Safe auto-fixes landed in the PR as follow-up
-commits; the items below are the deferred findings — real issues or
-design calls — that are out of scope for a "review cleanup" commit
-and should be scheduled into Phase 4+ work.
+PR #720 (the merge of Phases 0-3 into `main`) triggered a full 8-agent
+review. Fixed findings have been pruned — their narratives live in the
+*Recent slices* section / phase archives. The items below are the
+deferred findings still open.
 
-**Blocking for Phase 4 start (pick up before broadening the adapter):**
+**Open design calls (need a deliberate decision, not a silent fix):**
 
-- ~~**Silent adapter→legacy fallbacks missing a logged reason.**~~
-  **Fixed 2026-04-23.** Each silent-fallback site now emits a
-  `reason=<tag>` field on the dispatch log so the code path is
-  readable from the console without opening the source.
-    - `buildSpellCheckArgs` returns `null` (custom-class caster with
-      no lib profile) → `_rollSpellCheckLegacy` called with
-      `reason: 'noCasterProfile'`; the legacy dispatch log carries
-      `reason=noCasterProfile` alongside the `spell=…` field.
-    - `loadDisapprovalTable` returns `null` (cleric actor without a
-      disapproval table configured) → a second
-      `logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })`
-      line fires from `_castViaCalculateSpellCheck`. The adapter path
-      continues (degradation, not legacy fall-back) but the silent
-      sub-roll skip is now observable.
-    - `loadMercurialMagicTable` returns `null` (wizard/elf first-cast
-      with no mercurial table) → `_rollMercurialIfNeeded` emits a
-      `logDispatch('rollSpellCheck', 'adapter', { reason: 'noMercurialTable' })`
-      line and bails; the cast continues without a fresh effect.
-  Coverage: three new unit tests in
-  `module/__tests__/adapter-spell-check.test.js` (`…reason=noCasterProfile`,
-  `…reason=noDisapprovalTable`, `…reason=noMercurialTable`) and three
-  matching Playwright cases in
-  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
-- ~~**Partial-failure state when `_castViaCalculateSpellCheck`'s pass-2
-  returns `result.error`.**~~ **Fixed 2026-04-23.** Events now run
-  with a rollback-capable wrapper; if pass-2 returns `result.error`
-  the adapter reverses applied actor / spellItem mutations before
-  returning.
-- **Spellburn dialog prompts before the adapter knows it can handle
-  the cast.** `rollSpellCheck` (`module/actor.js:1914-1940`) calls
-  `promptSpellburnCommitment` before `_rollSpellCheckViaAdapter` tries
+- **Spellburn dialog prompts before the adapter knows it can handle the
+  cast.** `rollSpellCheck` calls the spellburn dialog before
   `buildSpellCheckArgs` — when the actor's class has no lib caster
   profile the adapter falls back to `_rollSpellCheckLegacy`, which
-  ignores `options.spellburn`, silently dropping the user's
-  commitment. Scope is narrow (custom-class wizards / elves with
-  spellburn) but user-visible. Fix: a cheap `resolveCasterProfile`
-  pre-check before the dialog, or have legacy honor `options.spellburn`.
-
-**Design calls (need a deliberate decision, not a silent fix):**
-
+  ignores `options.spellburn`, silently dropping the user's commitment.
+  Narrow scope (custom-class wizards / elves with spellburn) but
+  user-visible. Fix: a cheap `resolveCasterProfile` pre-check before the
+  dialog, or have legacy honor `options.spellburn`.
 - **Spellburn clamp: `1` vs `0`.** `onSpellburnApplied`
-  (`module/adapter/spell-events.mjs:124`) clamps ability scores at
-  1; legacy `DCCSpellburnTerm` allowed 0 (RAW permits a wizard dying
-  from Stamina burn). The docstring acknowledges the adapter's
-  choice. Decide: preserve legacy (allow 0) or keep the safer
-  adapter floor (1) and document it as a house-rules change.
-- **Damage `_total` clamp divergence** (`module/actor.js:3096`).
-  Foundry clamps `damageRoll._total = 1` when below; the lib
-  doesn't. Review cleanup added `warnIfDivergent` with post-clamp
-  normalization, so no more false-positive warns — but the
-  `dcc.libDamageResult.total` flag can still carry `0` or a negative
-  while chat shows `1`. Decide: mirror the clamp on the flag
-  (`libDamageResult.total = Math.max(1, libResult.total)`) or
-  document that the flag is "lib-native, pre-clamp" and let
-  consumers clamp.
-- **Error boundaries around `_xxxViaAdapter`.** A lib throw currently
-  becomes an unhandled rejection → the cast silently fails, broken UX.
-  Wrapping every adapter path in `try/catch` with legacy fallback
-  would make the system more forgiving, but risks masking the very
-  lib bugs the observational refactor is designed to surface. Right
-  answer is probably: add the fallback *after* Phase 4-5 prove the
-  adapter paths stable.
-- **`createFoundryRoller` — delete or wire.** Review cleanup updated
-  the docstring to reflect that no dispatcher path currently consumes
-  it. Phase 4 should either adopt it (replacing the inline `new Roll`
-  + `evaluate()` scattered across dispatchers) or delete the file.
+  (`spell-events.mjs`) clamps ability scores at 1; legacy
+  `DCCSpellburnTerm` allowed 0 (RAW permits a wizard dying from Stamina
+  burn). Decide: preserve legacy (allow 0), or keep the adapter floor
+  (1) and document it as a house rule.
+- **Damage `_total` clamp divergence** (`actor.js`). Foundry clamps
+  `damageRoll._total = 1` when below; the lib doesn't. `warnIfDivergent`
+  post-clamp normalization stops false-positive warns, but
+  `dcc.libDamageResult.total` can still carry `0`/negative while chat
+  shows `1`. Decide: mirror the clamp on the flag, or document the flag
+  as "lib-native, pre-clamp".
+- **Error boundaries around `_xxxViaAdapter`.** A lib throw becomes an
+  unhandled rejection → the cast silently fails. Wrapping every adapter
+  path in `try/catch` + legacy fallback is more forgiving but risks
+  masking the lib bugs the observational refactor is meant to surface.
+  Likely right answer: add the fallback after the adapter paths are
+  proven stable.
+- **`createFoundryRoller` — delete or wire.** No dispatcher path
+  consumes it. Either adopt it (replacing scattered inline `new Roll` +
+  `evaluate()`) or delete the file.
 
-**Resilience (low-risk, nice-to-have):**
-
-- ~~**`rollSpellCheck`'s cleric branch silently no-ops without
-  `details.sheetClass = 'Cleric'`.**~~ **Fixed 2026-04-23.** The
-  dispatcher's `isCleric` gate in `module/actor.js` now accepts
-  either `system.details.sheetClass === 'Cleric'` OR
-  `system.class.className === 'Cleric'` — programmatic PCs (anything
-  not routed through the level-change dialog) route via the cleric
-  adapter path instead of silently no-oping on the legacy
-  `spellItem.rollSpellCheck` delegate. Matches the class-identity
-  key `resolveCasterProfile` (`spell-input.mjs:194`) already uses.
-  Symmetric effect: wizard / generic branches on a
-  className-only-Cleric actor now correctly route to legacy
-  (preserving the "wizard spell on cleric → legacy side-effect set"
-  contract). Coverage: unit test
-  `adapter path fires for a cleric-castingMode item on a
-  className-only Cleric (no sheetClass)` in
-  `module/__tests__/adapter-spell-check.test.js`; Playwright case
-  `cleric-castingMode spell on className-only Cleric (no sheetClass)
-  → adapter + chat` in
-  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
-
-- **Programmatic PC creation produces inconsistent class config —
-  the system relies on the level-change dialog to populate it.**
-  `Actor.create({..., system: { class: { className: 'Wizard' } } })`
-  does NOT set `class.spellCheckAbility` (defaults to `'per'` for
-  every class — Wizards then cast with Personality, formula AND
-  flavor), `details.sheetClass` (cleric branch above won't fire),
-  `saves.{ref,frt,wil}.classBonus` (saves drop to ability-mod-only),
-  or class-appropriate crit die / luck die / etc. Real users get
-  these via the level-change dialog (which applies a class-specific
-  level item from `CONFIG.DCC.levelDataPacks`), so end-users don't
-  hit this — it bites browser-test fixtures, the PC parser when a
-  field is missing, and any future "quick PC" tooling. Two paths to
-  resolve: (a) document the level-change-dialog dependency
-  prominently and have programmatic creators call into the same
-  apply-level-data routine, or (b) register the standard DCC class
-  progressions with the lib (`registerClassProgression`) and have
-  the system auto-derive defaults from `class.className` + level on
-  prepare. The lib already has `getSavingThrows("warrior", 3)` etc.
-  — currently returns zeros because no class is registered. Option
-  (b) is more invasive but eliminates a whole class of "PC silently
-  has wrong stats because user skipped the level-up dialog" bugs.
-  Surfaced 2026-04-23 during exhaustive manual-testing.
-
-- ~~**Chat doesn't surface the per-modifier breakdown the adapter
-  already captures.**~~ **Fixed 2026-05-29** (Phase 7 session 14).
-  The four chat renderers (`renderAbilityCheck` / `renderSavingThrow`
-  / `renderSkillCheck` / `renderSpellCheck`) now render the modifier
-  breakdown under the rolled formula via a new exported pure helper
-  `buildModifierBreakdownHtml(modifiers, heading)` in
-  `module/adapter/chat-renderer.mjs`. It lists each contributing
-  modifier as `<origin.label> <signed value>` (e.g. "STR modifier
-  +2"), handling both the tagged-union `RollModifier` shape
-  (ability / save / skill — renders `add` / `display` numeric values +
-  `add-dice` as a `+1d3` term, drops `applied:false` rows, skips the
-  die-reshaping kinds set-die / bump-die / multiply / threat-shift)
-  and the flat `LegacyRollModifier` shape (spell — `label || source` +
-  signed value). Labels are HTML-escaped (item names can carry markup).
-  The heading is the new i18n key `DCC.ModifierBreakdown` ("Modifiers",
-  all 7 langs), passed in by the renderers so the helper stays
-  Foundry-global-free + unit-testable (mirrors `buildLibResultFlag`).
-  Renderers append it via the proven manual-`rollHTML` + `content`
-  pattern (the same one `renderSkillCheck` already used for skill-item
-  descriptions), so the breakdown rides under the roll exactly once and
-  the legacy `roll-modifier.js` labelled-term UX is restored. Styling
-  via `.dcc-modifier-breakdown` in `styles/_chat.scss` (theming-contract
-  vars). +11 Vitest in `chat-renderer.test.js`, +1 Playwright in
-  `adapter-dispatch.spec.js` (live STR-16 ability check → labelled `+2`
-  row, rendered once). Surfaced 2026-04-23 during the Cheesemaker
-  save-bonus debugging session.
+**Open resilience / cleanup items:**
 
 - **Dispatcher gate style inconsistency.** Attack / damage / crit /
-  fumble use named `_canRouteXxxViaAdapter` predicates; ability /
-  save / skill / spell / init inline their gates as
-  `const needsLegacyPath = …`. Pick one convention and retrofit —
-  the named predicate form scales better as gates grow.
+  fumble use named `_canRouteXxxViaAdapter` predicates; ability / save /
+  skill / spell / init inline their gates as `const needsLegacyPath = …`.
+  Pick one convention and retrofit — the named-predicate form scales
+  better as gates grow.
 - **Unused `weapon` / `attackRollResult` parameters** on
-  `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`
-  (`weapon` unused) and `_rollCriticalLegacy` / `_rollFumbleLegacy`
-  (`attackRollResult` unused). Dropping them touches test call
-  sites that pass positional args; clean as a pair of coordinated
-  edits but out of scope for the review cleanup. Tracker: do this
-  with the gate-style unification above. (Note: `_rollCriticalLegacy`
-  / `_rollFumbleLegacy` retired at session 16 — revisit the
-  remaining predicate params.)
-- ~~**Three copies of "strip die count" normalization.**~~ **Fixed
-  2026-05-29** (Phase 7 session 12). Consolidated onto one
-  parameterized `normalizeLibDie(foundryDie, fallback = 'd20')` in
-  `module/adapter/attack-input.mjs`: `spell-input.mjs` imports it
-  (private dup deleted), and `DCCActor._stripDieCount` is a one-line
-  wrapper delegating with `fallback: null`. All eight call sites pass a
-  single die string or a falsy value, so the former copies' edge-case
-  divergences (falsy / no-match fallback + anchoring) are unreachable;
-  the lone behavior change (former `attack-input` no-match → fallback
-  instead of original string) is unreachable + more correct. +3 Vitest,
-  +1 Playwright probe.
-- ~~**Four near-identical `dcc.libResult` flag payloads** in
-  `module/adapter/chat-renderer.mjs`.~~ **Fixed 2026-05-29** (Phase 7
-  session 10). Exported `buildLibResultFlag(result, extras = {})`
-  owns the shared seven-field core; the three checks pass
-  `{ skillId }`, the spell renderer `{ spellId, tier, spellLost,
-  corruptionTriggered }`. The duplicated `FleetingLuck.updateFlags`
-  guard is now `applyFleetingLuck(flags, foundryRoll)`. Pure
-  structural; flag consumed by key name so the on-message contract is
-  unchanged. +10 Vitest in new `chat-renderer.test.js`, +1 Playwright
-  probe in `extension-api.spec.js`.
-- ~~**Uncached compendium walks.**~~ **Fixed 2026-05-28** (Phase 7
-  session 9). `module/adapter/table-cache.mjs` adds four module-level
-  `Map` caches keyed on `tableName` / `critTableSuffix` /
-  `critTableCanonical`; `loadDisapprovalTable` + `loadMercurialMagicTable`
-  (`spell-input.mjs`) and `getCritTableLink` + `getCritTableResult`
-  (`utilities.js`) consult them before walking packs.
-  `registerTableCacheInvalidation()` wires
-  `createRollTable` / `updateRollTable` / `deleteRollTable` to
-  `clearAllTableCaches()` so GM edits drop stale entries. Coverage:
-  +16 Vitest in new `table-cache.test.js`, +9 in `utilities.test.js`,
-  +10 in `adapter-spell-check.test.js` (also closes the matching
-  "loadDisapprovalTable / loadMercurialMagicTable isolated
-  fallback-order tests" coverage-gap item below), +1 Playwright
-  probe in `extension-api.spec.js` asserting the wiring + global
-  invalidation on real RollTable CRUD events.
-- ~~**`migrateWorld` per-doc catches swallow silently**~~ **Fixed
-  2026-05-29** (Phase 7 session 11). The four
-  `catch (err) { console.error(err) }` sites in `module/migrations.js`
-  now also push `{ type, name }` onto a `failures` array;
-  `migrateCompendium` returns its failures up to `migrateWorld`. A new
-  pure exported `migrationOutcome(failures)` gates the finish: a clean
-  run stamps the version at `NEEDS_MIGRATION_VERSION` + shows the
-  "complete" toast; any failure leaves the version unstamped (the
-  idempotent data-driven migrations re-run next load) and raises
-  `ui.notifications.warn(DCC.MigrationFailures, { count })`. New i18n
-  key translated to all 7 langs. +4 Vitest in new
-  `migration-outcome.test.js`, +1 Playwright probe.
-- ~~**`migrateWorld` fire-and-forget from a sync ready hook**~~ **Fixed
-  2026-05-29** (Phase 7 session 13). `checkMigrations` relocated out of
-  `module/dcc.js` into `migrations.js`, made `async`, and now `await`s
-  `migrateWorld`; the ready hook `await`s `checkMigrations` before the
-  rest of the chain (`registerTables`, `FleetingLuck.init`,
-  `SpellDuel.init`, `defineStatusIcons`, welcome dialog,
-  `Hooks.callAll('dcc.ready', { migrationComplete })`) runs, so listeners
-  no longer race the async per-document mutations. `migrateWorld` +
-  `checkMigrations` return `{ migrationComplete }` (`true` for non-GM /
-  already-migrated / clean run; `false` for a blocked pre-V14 world or a
-  run with per-document failures), threaded onto the `dcc.ready` payload.
-  +4 Vitest in new `module/__tests__/check-migrations.test.js`, +1
-  Playwright probe in `extension-api.spec.js`.
+  `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter` (`weapon`
+  unused). `_rollCriticalLegacy` / `_rollFumbleLegacy` retired at session
+  16; revisit the remaining predicate params. Do this with the
+  gate-style unification above.
+- **Programmatic PC creation produces inconsistent class config.**
+  `Actor.create({ system: { class: { className: 'Wizard' } } })` doesn't
+  set `spellCheckAbility`, `details.sheetClass`, save `classBonus`, crit
+  / luck die, etc. — real users get these from the level-change dialog.
+  Phase 6 sessions 1-2 wired `registerClassProgression` + a compendium →
+  lib-registry loader, so in worlds where a content module ships level
+  data the lib derives these; the open-source system ships none, so bare
+  programmatic creation in a content-free world still hits it. Remaining:
+  document the level-change-dialog dependency for "quick PC" tooling /
+  browser-test fixtures.
 
-**Test coverage gaps (pr-test-analyzer severity ≥ 6):**
+**Open test coverage gaps (pr-test-analyzer severity ≥ 6):**
 
-- `renderDisapprovalRoll` has no unit/integration test — only covered
-  transitively via the cleric disapproval browser-test case.
-- `promptSpellburnCommitment` + `clampBurn` are entirely mocked
-  across every caller; `roll-dialog.mjs` has no direct coverage.
-- `onSpellLost` is tested as a direct callback but never verified to
-  *actually fire* during a real adapter cast — regression surface if
-  `createSpellEvents` wiring drifts.
-- Two-pass divergence (hook mutates terms *after* pass 1) only has
-  coverage for the `terms[0]` die-bump case; `terms[N]` Compound /
-  Modifier in-place mutations are uncovered.
-- `_canRouteAttackViaAdapter` untested branches: dice-bearing
-  `weapon.toHit` (e.g. `+1d4` magic), `twoWeaponSecondary: true`,
-  and the `game.settings.get` try/catch fallback. **(Note: gate
-  retired at session 15 — these assertions moved to the single-path
-  body.)**
-- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment`
-  Modifier injection block is uncovered (PC-only tests).
-- `_rollToHitViaAdapter` `Roll.validate(toHit) === false` early
-  return path is untested.
-- ~~`loadDisapprovalTable` / `loadMercurialMagicTable` isolated
-  fallback-order tests (compendium hit / world fallback / both miss)
-  are missing.~~ **Closed 2026-05-28** (Phase 7 session 9). +10
-  tests in `module/__tests__/adapter-spell-check.test.js` cover
-  compendium hit / world fallback / both miss / no-tableName /
-  pack-throws-warn-and-falls-through / caching-per-tableName for
-  both loaders.
-- `createFoundryRoller` has no direct unit test (ties to the
-  delete-or-wire decision above).
-- `__mocks__/dcc-roll.js` declares `createRoll` as `static async`
-  while production is sync; tests install local sync stubs to
-  paper over the mismatch — fix the shared mock, delete the stubs.
-- **Surviving data-driven migration branches have no fixture
-  tests** (C2 review, 2026-04-24). `migrateActorData` /
-  `migrateItemData` retain the V14 ActiveEffect numeric-mode →
-  string-type converter, the `sheetClass`-from-localized-`className`
-  inverse helper, `critRange` / `disapproval` string→number
-  coercion, `luckyRoll` → `birthAugur`, and default alignment.
-  None have direct Vitest coverage; they're exercised only
-  transitively when Foundry boots a real world. The V14 AE
-  converter is particularly V14-critical — if it silently stops
-  running, every pre-V14 active effect fails to apply on upgrade.
-  Proposed: `migrations-data-driven.test.js` with one fixture per
-  branch (numeric-mode effect → string-type, localized
-  `className: 'Zwerg'` → `sheetClass: 'Dwarf'`, stringy
-  `critRange: '20'` → number, unaligned actor → alignment `'l'`,
-  `luckyRoll: '…'` → `birthAugur`). Requires exporting
-  `migrateActorData` / `migrateItemData` (currently module-local
-  `const`) or a test-only export.
+- `renderDisapprovalRoll` — no unit/integration test (only transitively
+  via the cleric disapproval browser-test).
+- `promptSpellburnCommitment` + `clampBurn` mocked across every caller;
+  `roll-dialog.mjs` has no direct coverage.
+- `onSpellLost` tested as a direct callback but never verified to fire
+  during a real adapter cast.
+- Two-pass divergence: only the `terms[0]` die-bump case is covered;
+  `terms[N]` Compound / Modifier in-place mutations are not.
+- `_canRouteAttackViaAdapter` untested branches (dice-bearing
+  `weapon.toHit`, `twoWeaponSecondary`, settings try/catch). Gate retired
+  at session 15 — assertions moved to the single-path body.
+- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
+  injection (PC-only tests) + the `Roll.validate(toHit) === false`
+  early-return path.
+- `createFoundryRoller` — no direct unit test (ties to the delete-or-wire
+  call above).
+- `__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
+  production is sync; tests install local sync stubs — fix the shared
+  mock, delete the stubs.
+- Surviving data-driven migration branches (`migrateActorData` /
+  `migrateItemData`: V14 AE numeric-mode → string-type converter,
+  `sheetClass`-from-localized-`className`, `critRange` / `disapproval`
+  string→number, `luckyRoll` → `birthAugur`, default alignment) have no
+  fixture tests — only exercised when Foundry boots a real world. The V14
+  AE converter is V14-critical. Proposed: `migrations-data-driven.test.js`
+  with one fixture per branch (needs a test-only export of the two
+  module-local `const` helpers).
 
 **Documentation / comment hygiene:**
 
-- `docs/dev/ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference
-  lib APIs `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` /
+- `ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference lib APIs
+  `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` /
   `rollInitiative(…)` but the adapter landed `rollAbilityCheck` /
-  `rollSavingThrow` / `rollCheck` (subsumed skill + init). Annotate
-  the bullets with landed names.
-- ARCHITECTURE_REIMAGINED.md §2.7 file-size snapshot is pinned to
-  branch start; prefix with a `(Snapshot at main @ 2337ec0)` note
-  so readers don't mistake it for current state.
-- `module/actor.js:2136-2138` ("post the disapproval roll chat
-  after the main spell-check chat, mirroring the legacy two-message
-  ordering") overstates ordering guarantees — `onDisapprovalIncreased`
-  fires fire-and-forget inside pass 2, actual interleaving is at
-  the mercy of Foundry's chat-message pipeline. Soften the claim or
-  `await` the chat-message creation inside the event.
-- `_getInitiativeRollViaAdapter` accepts an `options = {}` parameter
-  it never reads — drop, or document "reserved for future
-  modifier-dialog bridge."
+  `rollSavingThrow` / `rollCheck` (subsumed skill + init). Annotate with
+  the landed names.
+- `ARCHITECTURE_REIMAGINED.md` §2.7 file-size snapshot is pinned to
+  branch start; prefix with `(Snapshot at main @ 2337ec0)`.
+- `actor.js` disapproval-chat-ordering comment overstates ordering
+  guarantees (`onDisapprovalIncreased` fires fire-and-forget inside
+  pass 2). Soften the claim or `await` the chat-message creation.
+- `_getInitiativeRollViaAdapter` accepts an `options = {}` param it never
+  reads — drop, or document "reserved for future modifier-dialog bridge."
 
 **Performance (below measurement threshold; document only):**
 
-- `getActionDice` called 3× per `_rollToHitViaAdapter`
-  (`module/actor.js:2735-2752`). Hoist to a single `const dice = ...`.
-- `items.find` called 2× per `_getInitiativeRollViaAdapter`
-  (`module/actor.js:1065, 1070, 1129, 1133`). Fold into one iteration.
+- `getActionDice` called 3× per `_rollToHitViaAdapter` — hoist to a
+  single `const`.
+- `items.find` called 2× per `_getInitiativeRollViaAdapter` — fold into
+  one iteration.
 - `renderDisapprovalRoll` / `renderMercurialEffect` use
-  `new Roll('${N}d1')` for deterministic chat. Use
-  `Roll.fromTerms([new NumericTerm({ number: total })])` — no
-  measurable win, but reads cleaner.
+  `new Roll('${N}d1')` for deterministic chat;
+  `Roll.fromTerms([new NumericTerm({ number: total })])` reads cleaner
+  (no measurable win).
 
 ## Decisions made
 
