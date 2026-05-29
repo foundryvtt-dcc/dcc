@@ -293,3 +293,50 @@
   `extension-api.spec.js`-style `beforeEach` hygiene to
   `data-models.spec.js`'s opening setup) but is out of slice
   scope; tracked as a follow-up.
+
+- **2026-05-21 — Phase 7 session 5: extract table-loading surface
+  from `dcc.js` into `module/table-loading.mjs`.** Fifth piecemeal
+  Phase 7 extraction — relocates the table-loading surface
+  (`setupCoreBookCompendiumLinks` + `registerTables` setup-time
+  functions, `getSkillTable` stable-API lookup, five hook handlers
+  for `diceSoNiceReady` / `importAdventure` / `createRollTable` /
+  `deleteRollTable` / `updateRollTable`) into a focused module
+  following the dispatch-table-plus-entry-point pattern from
+  session 3. The five hook handlers are exported individually plus
+  a frozen `TABLE_LOADING_HOOKS` table (entries carry the handler
+  + a `once` flag — only `importAdventure` is once-only) and a
+  `registerTableLoadingHooks()` entry-point that iterates the
+  table calling `Hooks.on` or `Hooks.once` per entry.
+  `module/dcc.js` shrinks from 970 → 737 lines (-233 net
+  including the new import line, the dropped `TablePackManager`
+  import + `ChatMessage` global, and an 8-line replacement
+  marker comment). Pure refactor — every branch, every CONFIG
+  slot, every `i18n.localize('DCC.Disapproval')` lookup is
+  preserved verbatim. Only structural change: the three near-
+  identical `isDisapprovalTable` checks that lived inline in
+  `registerTables`'s closure, the `createRollTable` handler, and
+  the `updateRollTable` handler are folded into one module-
+  private helper that reads `game.i18n` per call (identical
+  semantics — the localized string was already read at hook-fire
+  time pre-extraction, not at module load). +34 Vitest tests in
+  new `module/__tests__/table-loading.test.js` (3
+  setupCoreBookCompendiumLinks cases, 7 registerTables cases, 6
+  getSkillTable cases, 1 diceSoNiceReady, 2 importAdventure, 3
+  createRollTable, 2 deleteRollTable, 3 updateRollTable, 3
+  `TABLE_LOADING_HOOKS` dispatch-table cases, 3
+  `registerTableLoadingHooks` wiring cases). +1 Playwright case in
+  `extension-api.spec.js` asserting the three TablePackManager
+  registries are constructor-typed at ready time, the patron-taint
+  registry is seeded with both core + xcc side-effect packs,
+  `setupCoreBookCompendiumLinks` touched the
+  `coreBookCompendiumLinks` slot, `game.dcc.getSkillTable` is a
+  function, and the relocated world-RollTable lifecycle hooks keep
+  `CONFIG.DCC.disapprovalTables` in sync end-to-end (create / rename
+  / rename-back / delete a probe table, restoring the snapshot in a
+  `finally`). **1184 Vitest green** (was 1150, +34). **146
+  Playwright passed** + 2 failures (the latent xcc-core-book
+  DCCItemSheet override baseline; a NEW environmental
+  network-suspension flake at `v14-features.spec.js:128` —
+  `net::ERR_NETWORK_IO_SUSPENDED`, not slice-caused). Pre-slice
+  baseline was 146; +1 new test minus the network flake nets to
+  146.

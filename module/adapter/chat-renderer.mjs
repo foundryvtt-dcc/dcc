@@ -18,6 +18,61 @@
  */
 
 /**
+ * Build the shared `dcc.libResult` flag payload from a lib result.
+ *
+ * The ability / save / skill / spell renderers all persist the lib's
+ * core roll outcome (`die`, `natural`, `total`, `formula`, `critical`,
+ * `fumble`, `modifiers`) onto the ChatMessage as `flags.dcc.libResult`
+ * for downstream consumers (dcc-qol, token-action-hud-dcc). Those four
+ * payloads were byte-identical apart from the result-id field
+ * (`skillId` for checks vs `spellId` for spell checks) and the three
+ * spell-only extras (`tier`, `spellLost`, `corruptionTriggered`). This
+ * helper owns the shared core; callers pass their type-specific fields
+ * via `extras`.
+ *
+ * Key order in the returned object differs from the pre-extraction
+ * literals (the core fields now precede the spread `extras`), but the
+ * flag is consumed by key name — not position — so the on-message
+ * contract is unchanged.
+ *
+ * @param {Object} result - The lib's SkillCheckResult / SpellCheckResult.
+ * @param {Object} [extras] - Type-specific fields merged onto the core
+ *   payload, e.g. `{ skillId }` for checks or `{ spellId, tier,
+ *   spellLost, corruptionTriggered }` for spell checks.
+ * @returns {Object} The `dcc.libResult` flag payload.
+ */
+export function buildLibResultFlag (result, extras = {}) {
+  return {
+    die: result.die,
+    natural: result.natural,
+    total: result.total,
+    formula: result.formula,
+    critical: result.critical,
+    fumble: result.fumble,
+    modifiers: result.modifiers,
+    ...extras
+  }
+}
+
+/**
+ * Apply the FleetingLuck flag update in place, if the luck-tracking
+ * class is available. The ability / save / skill / spell renderers all
+ * carried this identical guarded block (Phase 7 session 10 extraction).
+ * Guarded because test mocks may not expose `game.dcc.FleetingLuck`,
+ * and a no-op when `foundryRoll` is absent — both conditions match the
+ * pre-extraction inline behavior. Mutates `flags`.
+ *
+ * @param {Object} flags - The ChatMessage flags object to mutate.
+ * @param {Roll} [foundryRoll] - The evaluated Foundry Roll; no-op when
+ *   absent.
+ */
+export function applyFleetingLuck (flags, foundryRoll) {
+  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
+    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
+  }
+}
+
+/**
  * Render an ability-check result as a Foundry ChatMessage.
  *
  * @param {Object} params
@@ -44,27 +99,14 @@ export async function renderAbilityCheck ({
     'dcc.RollType': 'AbilityCheck',
     'dcc.Ability': abilityId,
     'dcc.isAbilityCheck': true,
-    'dcc.libResult': {
-      skillId: result.skillId,
-      die: result.die,
-      natural: result.natural,
-      total: result.total,
-      formula: result.formula,
-      critical: result.critical,
-      fumble: result.fumble,
-      modifiers: result.modifiers
-    }
+    'dcc.libResult': buildLibResultFlag(result, { skillId: result.skillId })
   }
 
   if (abilityId === 'str' || abilityId === 'agl') {
     flags.checkPenaltyCouldApply = true
   }
 
-  // FleetingLuck flag update — preserves existing luck-tracking
-  // behavior. Guarded because test mocks may not expose the class.
-  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
-    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
-  }
+  applyFleetingLuck(flags, foundryRoll)
 
   const messageData = await foundryRoll.toMessage(
     {
@@ -125,21 +167,10 @@ export async function renderSavingThrow ({
     'dcc.RollType': 'SavingThrow',
     'dcc.Save': saveId,
     'dcc.isSave': true,
-    'dcc.libResult': {
-      skillId: result.skillId,
-      die: result.die,
-      natural: result.natural,
-      total: result.total,
-      formula: result.formula,
-      critical: result.critical,
-      fumble: result.fumble,
-      modifiers: result.modifiers
-    }
+    'dcc.libResult': buildLibResultFlag(result, { skillId: result.skillId })
   }
 
-  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
-    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
-  }
+  applyFleetingLuck(flags, foundryRoll)
 
   const messageData = await foundryRoll.toMessage(
     {
@@ -197,25 +228,14 @@ export async function renderSkillCheck ({
     'dcc.ItemId': skillId,
     'dcc.SkillId': skillId,
     'dcc.isSkillCheck': true,
-    'dcc.libResult': {
-      skillId: result.skillId,
-      die: result.die,
-      natural: result.natural,
-      total: result.total,
-      formula: result.formula,
-      critical: result.critical,
-      fumble: result.fumble,
-      modifiers: result.modifiers
-    }
+    'dcc.libResult': buildLibResultFlag(result, { skillId: result.skillId })
   }
 
   if (abilityId) {
     flags['dcc.Ability'] = abilityId
   }
 
-  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
-    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
-  }
+  applyFleetingLuck(flags, foundryRoll)
 
   const systemData = { skillId }
 
@@ -274,24 +294,15 @@ export async function renderSpellCheck ({
     'dcc.isSpellCheck': true,
     'dcc.isSkillCheck': true,
     'dcc.ItemId': spellItem?.id,
-    'dcc.libResult': {
+    'dcc.libResult': buildLibResultFlag(result, {
       spellId: result.spellId,
-      die: result.die,
-      natural: result.natural,
-      total: result.total,
-      formula: result.formula,
-      critical: result.critical,
-      fumble: result.fumble,
       tier: result.tier,
       spellLost: result.spellLost,
-      corruptionTriggered: result.corruptionTriggered,
-      modifiers: result.modifiers
-    }
+      corruptionTriggered: result.corruptionTriggered
+    })
   }
 
-  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
-    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
-  }
+  applyFleetingLuck(flags, foundryRoll)
 
   // Naked spell-check chat indicator. Mirrors the legacy
   // `processSpellCheck:702-710` no-table emit (the four

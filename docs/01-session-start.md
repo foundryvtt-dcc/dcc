@@ -40,7 +40,30 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-05-28)
+## Status (2026-05-29)
+
+**Phase 7 session 10 opened a three-slice PR #720 resilience
+batch** (the backlog active queue having drained at session 9).
+Session 10 closed the "four near-identical `dcc.libResult` flag
+payloads" item: the four chat renderers in
+`module/adapter/chat-renderer.mjs` (`renderAbilityCheck`,
+`renderSavingThrow`, `renderSkillCheck`, `renderSpellCheck`) built
+near-identical `dcc.libResult` flag literals plus an identical
+guarded `FleetingLuck.updateFlags` block. The shared seven-field
+core (`die` / `natural` / `total` / `formula` / `critical` /
+`fumble` / `modifiers`) now lives in one exported
+`buildLibResultFlag(result, extras = {})`, with callers passing
+type-specific extras (`{ skillId }` for the three checks,
+`{ spellId, tier, spellLost, corruptionTriggered }` for spell
+checks), and the luck update in `applyFleetingLuck(flags,
+foundryRoll)`. Pure structural — the on-message flag contract is
+unchanged (consumed by key name, not order). +10 Vitest in new
+`module/__tests__/chat-renderer.test.js`, +1 Playwright probe in
+`extension-api.spec.js`. **1272 Vitest green** (was 1262),
+**155 Playwright passed** (was 154), clean 5.8-min suite. The two
+remaining batch slices (sessions 11 + 12): surface `migrateWorld`
+per-doc failures via `ui.notifications.warn`, then consolidate the
+three `normalizeLibDie` / `_stripDieCount` die-normalize copies.
 
 **Phase 7 session 9 closed the PR #720 "Uncached compendium
 walks" item** by adding a per-process table cache in a new

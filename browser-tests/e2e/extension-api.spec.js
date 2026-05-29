@@ -782,6 +782,106 @@ test.describe('DCC Extension API', () => {
     }
   })
 
+  test('DCC chat-renderer shared helpers (buildLibResultFlag + applyFleetingLuck) survive the Phase 7 session 10 extraction', async ({ page }) => {
+    // Phase 7 session 10: the four chat renderers (ability / save /
+    // skill / spell) shared a near-identical `dcc.libResult` payload
+    // plus an identical guarded `FleetingLuck.updateFlags` block. The
+    // shared core (die / natural / total / formula / critical / fumble /
+    // modifiers) is now owned by `buildLibResultFlag(result, extras)`
+    // and the luck update by `applyFleetingLuck(flags, roll)` in
+    // `module/adapter/chat-renderer.mjs`; callers pass the result-id
+    // (`skillId` for checks, `spellId` for spell checks) plus the
+    // spell-only fields (tier / spellLost / corruptionTriggered) as
+    // extras. This probe imports the live-served module and confirms the
+    // deployed helpers reproduce both payload shapes the renderers emit
+    // and that the luck helper stays a guard-safe no-op without a roll.
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/adapter/chat-renderer.mjs')
+
+      const libResult = {
+        skillId: 'sneakSilently',
+        spellId: 'magic-missile',
+        die: 'd20',
+        natural: 14,
+        total: 17,
+        formula: '1d20 + 3',
+        critical: false,
+        fumble: false,
+        tier: 'success-minor',
+        spellLost: false,
+        corruptionTriggered: true,
+        modifiers: [{ kind: 'ability', value: 3, applied: true }]
+      }
+
+      // Check-shaped payload (renderAbilityCheck / renderSavingThrow /
+      // renderSkillCheck all build this).
+      const checkFlag = mod.buildLibResultFlag(libResult, { skillId: libResult.skillId })
+      // Spell-shaped payload (renderSpellCheck).
+      const spellFlag = mod.buildLibResultFlag(libResult, {
+        spellId: libResult.spellId,
+        tier: libResult.tier,
+        spellLost: libResult.spellLost,
+        corruptionTriggered: libResult.corruptionTriggered
+      })
+
+      // applyFleetingLuck: exported + guard-safe. Calling with an
+      // absent roll must be a no-op (no keys added, no throw) — the
+      // same guard the four renderers relied on inline pre-extraction.
+      const luckFlags = { 'dcc.RollType': 'AbilityCheck' }
+      let luckThrew = false
+      try {
+        mod.applyFleetingLuck(luckFlags, undefined)
+      } catch {
+        luckThrew = true
+      }
+
+      return {
+        isFunction: typeof mod.buildLibResultFlag === 'function',
+        applyFleetingLuckIsFunction: typeof mod.applyFleetingLuck === 'function',
+        applyFleetingLuckNoRollIsNoOp: !luckThrew && Object.keys(luckFlags).length === 1,
+        checkKeys: Object.keys(checkFlag).sort(),
+        checkValues: {
+          skillId: checkFlag.skillId,
+          die: checkFlag.die,
+          total: checkFlag.total,
+          modifiersIsArray: Array.isArray(checkFlag.modifiers)
+        },
+        checkHasSpellId: Object.prototype.hasOwnProperty.call(checkFlag, 'spellId'),
+        spellKeys: Object.keys(spellFlag).sort(),
+        spellValues: {
+          spellId: spellFlag.spellId,
+          tier: spellFlag.tier,
+          corruptionTriggered: spellFlag.corruptionTriggered
+        },
+        spellHasSkillId: Object.prototype.hasOwnProperty.call(spellFlag, 'skillId')
+      }
+    })
+
+    expect(result.isFunction).toBe(true)
+    expect(result.applyFleetingLuckIsFunction).toBe(true)
+    expect(result.applyFleetingLuckNoRollIsNoOp).toBe(true)
+
+    // Check payload: shared core + skillId, no spell-only fields.
+    expect(result.checkKeys).toEqual(
+      ['critical', 'die', 'formula', 'fumble', 'modifiers', 'natural', 'skillId', 'total'].sort()
+    )
+    expect(result.checkValues.skillId).toBe('sneakSilently')
+    expect(result.checkValues.die).toBe('d20')
+    expect(result.checkValues.total).toBe(17)
+    expect(result.checkValues.modifiersIsArray).toBe(true)
+    expect(result.checkHasSpellId).toBe(false)
+
+    // Spell payload: shared core + spellId + tier + spellLost +
+    // corruptionTriggered, and NO skillId.
+    expect(result.spellKeys).toEqual(
+      ['corruptionTriggered', 'critical', 'die', 'formula', 'fumble', 'modifiers', 'natural', 'spellId', 'spellLost', 'tier', 'total'].sort()
+    )
+    expect(result.spellValues.spellId).toBe('magic-missile')
+    expect(result.spellValues.tier).toBe('success-minor')
+    expect(result.spellValues.corruptionTriggered).toBe(true)
+    expect(result.spellHasSkillId).toBe(false)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

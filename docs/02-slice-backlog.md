@@ -980,6 +980,10 @@ See entry in Completed slices below.
 #### ~~Phase 7 session 9. Compendium-walk caching for the four table-loading sites + isolated fallback-order coverage backfill.~~ **DONE 2026-05-28**
 See entry in Completed slices below.
 
+#### ~~Phase 7 session 10. Extract `buildLibResultFlag` + `applyFleetingLuck` shared helpers from the four chat renderers.~~ **DONE 2026-05-29**
+First of the three-slice PR #720 resilience batch. See entry in
+Completed slices below.
+
 ---
 
 ## Completed slices
@@ -987,6 +991,26 @@ See entry in Completed slices below.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 10 (2026-05-29): extract `buildLibResultFlag` +
+  `applyFleetingLuck` shared helpers from `module/adapter/chat-renderer.mjs`
+  (closes the PR #720 "four near-identical `dcc.libResult` flag
+  payloads" resilience item; opens the three-slice resilience batch).
+  Pure structural refactor — the four renderers
+  (`renderAbilityCheck` / `renderSavingThrow` / `renderSkillCheck` /
+  `renderSpellCheck`) each hand-rolled an identical `dcc.libResult`
+  core projection (`die` / `natural` / `total` / `formula` /
+  `critical` / `fumble` / `modifiers`) plus an identical guarded
+  `FleetingLuck.updateFlags` block. The core is now owned by exported
+  `buildLibResultFlag(result, extras = {})` (checks pass `{ skillId }`,
+  spell passes `{ spellId, tier, spellLost, corruptionTriggered }`),
+  and the luck update by exported `applyFleetingLuck(flags,
+  foundryRoll)`. Flag consumed by key name, not order, so the
+  on-message contract is unchanged. +10 Vitest in new
+  `module/__tests__/chat-renderer.test.js`, +1 Playwright probe in
+  `extension-api.spec.js`. **1272 Vitest green** (was 1262, +10);
+  **155 Playwright passed** (was 154, +1), zero failures, clean
+  5.8-min full suite.
 
 - Phase 7 session 9 (2026-05-28): compendium-walk caching for the
   four table-loading sites (`loadDisapprovalTable` +
