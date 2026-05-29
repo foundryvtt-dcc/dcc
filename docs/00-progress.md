@@ -65,6 +65,15 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Latest (2026-05-29) — `feat(adapter)` `options.checkLabel`.** A small
+feature built from `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`: a raw
+(no-item) spell check can carry a label override so a class/module
+relabels the chat flavor (MCC's "Mutation Check" / "Wetware Program
+Check") instead of the generic "Spell Check". Two backward-compatible
+edits (`actor-sheet.js` `#rollSpellCheck` forwards a `data-check-label`
+cell attribute; `actor.js` `_castNakedViaAdapter` uses it as the flavor
+base). +3 Vitest, +1 Playwright. **1302 Vitest** / **161 e2e passed**.
+
 **Phase 7 session 14 (2026-05-29)** closes the PR #720 "chat doesn't
 surface the per-modifier breakdown the adapter already captures" item.
 The lib emits each contributing modifier with rich origin metadata and
@@ -101,6 +110,35 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — feat(adapter): optional `options.checkLabel` to relabel
+  the raw (no-item) spell-check chat flavor.** Implemented from
+  `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`. A raw spell check rolled from
+  a class cell (`system.class.spellCheck`, not a specific spell item)
+  always read "Spell Check" in chat — MCC reuses the spell-check
+  machinery for **Mutation Check** (mutant / manimal / plantient) and
+  **Wetware Program Check** (shaman), so the flavor was wrong for those.
+  Two small, fully backward-compatible edits: `module/actor-sheet.js`
+  `#rollSpellCheck` now forwards a `data-check-label` cell attribute as
+  `options.checkLabel`; `module/actor.js` `_castNakedViaAdapter` uses it
+  as the flavor base when no spell name is present
+  (`options.spell || (options.checkLabel ? localize(checkLabel) :
+  localize('DCC.SpellCheck'))` — `localize` passes a non-key literal
+  through unchanged, so `checkLabel` works as an i18n key *or* a raw
+  string). The ability suffix (` (Intelligence)`) is preserved; item
+  casts already flavor with the item name and are unaffected (setting
+  `checkLabel` on an item cast is a harmless no-op — `_buildSpellCheckFlavor`,
+  the only other flavor builder, is item-only by construction). +3 Vitest
+  in `module/__tests__/adapter-spell-check.test.js` (raw relabel via a
+  literal; regression without `checkLabel` → still the generic check;
+  item cast ignores `checkLabel` → flavor stays the item name) + 1
+  Playwright in `adapter-dispatch.spec.js` (a live naked check with
+  `checkLabel: 'Mutation Check'` → chat flavor starts with "Mutation
+  Check", never "Spell Check"). Spec doc Status flipped to ✅ landed.
+  Downstream MCC ships the `data-check-label` attributes on its
+  mutation / program-check cells on its own schedule (inert until then).
+  **1302 Vitest** (was 1299, +3). **161 Playwright passed**, zero
+  failures (was 160, +1).
 
 - **2026-05-29 — Phase 7 session 14: render the per-modifier breakdown
   the adapter already captures (`libResult.modifiers`) under the rolled
@@ -269,52 +307,6 @@ archives linked above.
   async-await fire-and-forget fix; chat per-modifier breakdown
   rendering; dispatcher gate-style unification; unused crit/fumble
   predicate params) or a Group E vertical-slice.
-
-- **2026-05-29 — Phase 7 session 11: surface `migrateWorld` per-doc
-  failures via `ui.notifications.warn` + gate version-stamping on a
-  clean run (closes the PR #720 "`migrateWorld` per-doc catches
-  swallow silently" item).** Before this slice, the four
-  `catch (err) { console.error(err) }` sites in `module/migrations.js`
-  (`migrateWorld`'s actors / items / scenes loops + `migrateCompendium`)
-  logged to the console and kept going — and the run stamped the world
-  at `NEEDS_MIGRATION_VERSION` and showed the green "complete" toast
-  regardless, so a GM whose migration failed on every document had no
-  in-app signal. Now each loop pushes `{ type, name }` onto a
-  `failures` array (still `console.error`ing the stack);
-  `migrateCompendium` returns its own failures array which
-  `migrateWorld` accumulates. A new pure exported
-  `migrationOutcome(failures)` (no Foundry globals — same testable
-  pattern as `classifyMigrationDecision`) decides the finish: a clean
-  run stamps the version + shows the "complete" toast; any failure
-  leaves the version unstamped (the idempotent data-driven migrations
-  re-run on the next load after the GM resolves the issue) and raises
-  `ui.notifications.warn(DCC.MigrationFailures, { count }, { permanent:
-  true })`. New i18n key `DCC.MigrationFailures` added to all 7 lang
-  files (en + cn/de/es/fr/it/pl translated; `compare-lang` reports 0
-  missing keys). +4 Vitest in new
-  `module/__tests__/migration-outcome.test.js` (clean → stamp +
-  complete; one failure → no-stamp + failures; multi-failure exact
-  count; non-array defensive → treated as clean). +1 Playwright probe
-  in `extension-api.spec.js` (`DCC migrationOutcome gates
-  version-stamping on a clean run + DCC.MigrationFailures resolves`)
-  dynamic-imports the live module, asserts the clean / failed outcome
-  shapes, and confirms `game.i18n.format('DCC.MigrationFailures',
-  { count: 2 })` resolves (≠ the raw key) + interpolates the count —
-  without running `migrateWorld` against the live world. **1276 Vitest
-  green** (was 1272, +4; +1 test file). **155 Playwright passed + 1
-  environmental flake** at `sheet-ui.spec.js:163 Halfling sheet has
-  correct tabs` (`Execution context was destroyed, most likely because
-  of a navigation` — the documented halfling navigation-race family,
-  same one session 8 saw at `adapter-dispatch.spec.js:1898`; passes
-  cleanly in isolation, 7.8s; NOT slice-caused — slice 2 touches only
-  `migrations.js` + lang files + the migrations probe + docs, none of
-  which run in sheet UI or trigger navigation). My new probe (test
-  103) passed. Net: pre-slice 155 + 1 new probe = 156 expected;
-  observed 155 pass + 1 isolation-passing flake = 156 total. Note:
-  this closes only the *silent-swallow* `migrateWorld` item; the
-  separate PR #720 "`migrateWorld` fire-and-forget from a sync ready
-  hook" item (make `checkMigrations` async + `await`) is untouched
-  and out of this batch's scope.
 
 ## Closed questions
 
@@ -807,24 +799,12 @@ viable next):
 (Mercurial-magic, originally listed here as the third candidate,
 landed as Group E session 1 — see Recent slices.)
 
-**Pending feature — optional label override for raw spell checks
-(`options.checkLabel`).** Small, general-purpose, fully
-backward-compatible addition so a class/module can relabel the raw
-(no-item) spell-check chat flavor (today hardcoded to "Spell Check").
-MCC reuses the spell-check machinery for **Mutation Check** (mutant /
-manimal / plantient) and **Wetware Program Check** (shaman), which
-currently read wrong in chat. Change is two small edits:
-`module/actor-sheet.js` `#rollSpellCheck` forwards a `data-check-label`
-cell attribute as `options.checkLabel`; `module/actor.js`
-`_castNakedViaAdapter` uses it as the flavor base when no spell name is
-present (`game.i18n.localize` passes through a non-key literal, so it
-works as either an i18n key or a raw string). Item casts unaffected
-(already flavor with the item name); the ability suffix is preserved.
-Tests: raw `rollSpellCheck({ checkLabel })` → localized flavor; regression
-`rollSpellCheck({})` → still "Spell Check"; item cast with `checkLabel`
-→ still the item name. Downstream: MCC adds the `data-check-label`
-attributes (inert until this DCC change ships). Full spec:
-[docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md](dev/SPELL_CHECK_LABEL_OVERRIDE.md).
+**~~Pending feature — optional label override for raw spell checks
+(`options.checkLabel`).~~ LANDED 2026-05-29.** Implemented from the spec
+([docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md](dev/SPELL_CHECK_LABEL_OVERRIDE.md),
+Status now ✅ landed) — see Recent slices. Downstream: MCC still needs to
+add the `data-check-label` attributes on its mutation / program-check
+cells (inert until MCC ships them; no DCC-side work remaining).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

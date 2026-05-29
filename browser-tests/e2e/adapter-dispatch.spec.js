@@ -949,6 +949,44 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { mode: 'naked' })
     })
 
+    test('naked spell check honors options.checkLabel as the chat flavor (SPELL_CHECK_LABEL_OVERRIDE)', async ({ page }) => {
+      // A raw (no-item) spell check can carry a label override so a
+      // class/module relabels the chat flavor (e.g. MCC's "Mutation
+      // Check") instead of the generic "Spell Check". `checkLabel` is
+      // an i18n key or a literal — a literal passes through `localize`
+      // unchanged. Downstream MCC wires it from a `data-check-label`
+      // cell attribute via the sheet's `#rollSpellCheck` action.
+      await makePlayer(page, 'P1 Spell CheckLabel', {
+        class: { className: 'Wizard', spellCheckAbility: 'int' },
+        details: { sheetClass: 'Wizard' }
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell CheckLabel').rollSpellCheck({ checkLabel: 'Mutation Check' })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { mode: 'naked' })
+
+      const flavor = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Spell CheckLabel' &&
+              m.getFlag('dcc', 'RollType') === 'SpellCheck'
+            )
+          if (msg) return msg.flavor
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flavor, 'checkLabel must drive the raw spell-check chat flavor').not.toBeNull()
+      expect(flavor.startsWith('Mutation Check')).toBe(true)
+      expect(flavor.includes('Spell Check')).toBe(false)
+    })
+
     test('forceCrit shift-click flag pushes natural to 20 on the adapter route (D4 forceCrit)', async ({ page }) => {
       // Phase 3 session 25 / D4(forceCrit): `options.forceCrit` flows
       // through every spell-check adapter route via the shared

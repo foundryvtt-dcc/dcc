@@ -2691,7 +2691,12 @@ class DCCActor extends Actor {
     }
 
     const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
-    let flavor = options.spell || game.i18n.localize('DCC.SpellCheck')
+    // Flavor base: an explicit spell name wins; otherwise an optional
+    // `checkLabel` (i18n key or literal — `localize` passes a non-key
+    // through unchanged) lets a class/module relabel the raw check
+    // (e.g. "Mutation Check"); falls back to the generic "Spell Check".
+    let flavor = options.spell ||
+      (options.checkLabel ? game.i18n.localize(options.checkLabel) : game.i18n.localize('DCC.SpellCheck'))
     if (abilityLabel) {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }

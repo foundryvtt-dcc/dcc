@@ -586,6 +586,66 @@ test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async
   expect(messageData.flags['dcc.spellResult']).toBeDefined()
 })
 
+test('naked spell check honors options.checkLabel as the chat flavor base (raw-check relabel)', async () => {
+  // SPELL_CHECK_LABEL_OVERRIDE: a raw (no-item) spell check rolled from
+  // a class cell can carry a label override so e.g. MCC's "Mutation
+  // Check" reads correctly in chat instead of the generic "Spell Check".
+  // `checkLabel` is an i18n key or a literal — `localize` passes a
+  // non-key literal through unchanged.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  await actor.rollSpellCheck({ checkLabel: 'Mutation Check' })
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flavor.startsWith('Mutation Check')).toBe(true)
+})
+
+test('naked spell check without checkLabel still flavors as the generic spell check (regression)', async () => {
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  await actor.rollSpellCheck()
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  const expected = game.i18n.localize('DCC.SpellCheck')
+  expect(messageData.flavor.startsWith(expected)).toBe(true)
+  expect(messageData.flavor.startsWith('Mutation Check')).toBe(false)
+})
+
+test('item cast ignores options.checkLabel — flavor stays the item name', async () => {
+  // checkLabel only affects the raw/no-item path; an item cast already
+  // flavors with the item name, so setting checkLabel is a harmless no-op.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Generic Cantrip', checkLabel: 'Mutation Check' })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flavor.startsWith('Generic Cantrip')).toBe(true)
+  expect(messageData.flavor).not.toContain('Mutation Check')
+
+  findSpy.mockRestore()
+})
+
 test('rollSkillCheck routes turnUnholy via adapter skill-table path (D4 skill-table)', async () => {
   // Phase 3 session 25 / D4(skill-table) — `useDisapprovalRange`
   // skills (Turn Unholy, layOnHands, divineAid) flow through

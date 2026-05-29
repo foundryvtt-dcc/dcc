@@ -42,7 +42,16 @@ session's context):
 
 ## Status (2026-05-29)
 
-**Phase 7 session 14 (latest)** closes the PR #720 "chat doesn't surface
+**Latest — `feat(adapter)` `options.checkLabel`** (built from
+`docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`): a raw (no-item) spell check can
+carry a label override so a class/module relabels the chat flavor (MCC's
+"Mutation Check" / "Wetware Program Check") instead of "Spell Check". Two
+backward-compatible edits — `actor-sheet.js` `#rollSpellCheck` forwards a
+`data-check-label` cell attribute as `options.checkLabel`; `actor.js`
+`_castNakedViaAdapter` uses it as the flavor base. +3 Vitest, +1
+Playwright. Repo green: **1302 Vitest** / **161 e2e passed**.
+
+**Phase 7 session 14** closes the PR #720 "chat doesn't surface
 the per-modifier breakdown the adapter already captures" item. The four
 chat renderers (`renderAbilityCheck` / `renderSavingThrow` /
 `renderSkillCheck` / `renderSpellCheck`) now render the modifier
@@ -55,10 +64,8 @@ flat `LegacyRollModifier` shape (spell). New i18n key
 `DCC.ModifierBreakdown` ("Modifiers", all 7 langs);
 `.dcc-modifier-breakdown` styling in `styles/_chat.scss`. +11 Vitest
 (`chat-renderer.test.js`), +1 Playwright (`adapter-dispatch.spec.js`).
-Repo green: **1299 Vitest**; full e2e **160 passed, zero failures** (the
-previously-flaky `extension-api.spec.js:2232` link-fields test passed
-clean this run). Remaining PR #720 items: dispatcher gate-style
-unification; unused crit/fumble predicate params.
+At session-14 close: 1299 Vitest / 160 e2e. Remaining PR #720 items:
+dispatcher gate-style unification; unused crit/fumble predicate params.
 
 **Prior (2026-05-29):** session 13 made `checkMigrations` async +
 `await`ed `migrateWorld` before firing `dcc.ready` (threading
@@ -67,11 +74,10 @@ additive `init.die` terms (MCC Mutant Horror `1d20+1d3`, mcc-core-book
 §9.2a) through the combat-tracker path via `_initDieAdditiveTerms`
 (`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`).
 
-**Pending feature (logged, not yet built):** optional `options.checkLabel`
-to relabel raw (no-item) spell-check chat flavor — MCC's Mutation /
-Wetware Program checks read "Spell Check" today. Two-line,
-backward-compatible change; full spec in
-`docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`.
+**`options.checkLabel` — LANDED 2026-05-29** (see top of Status). Spec
+`docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md` Status flipped to ✅ landed.
+Only remaining piece is downstream MCC adding the `data-check-label`
+attributes (no DCC-side work).
 
 **Phase 7 sessions 10 + 11 + 12 completed a three-slice PR #720
 resilience batch** (the backlog active queue having drained at

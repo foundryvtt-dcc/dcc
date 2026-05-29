@@ -1545,6 +1545,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollSpellCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const dataset = target.parentElement.dataset
+    // Optional label override for raw (no-item) spell checks. Lets a
+    // class/module relabel the chat flavor of a class-level spell check
+    // (e.g. MCC's "Mutation Check" / "Wetware Program Check") via a
+    // `data-check-label` attribute on the rollable cell. Inert for item
+    // casts (they already flavor with the item name).
+    if (dataset.checkLabel) options.checkLabel = dataset.checkLabel
     if (dataset.itemId) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)

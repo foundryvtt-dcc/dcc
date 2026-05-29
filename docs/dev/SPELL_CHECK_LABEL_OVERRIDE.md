@@ -1,7 +1,15 @@
 # Feature: optional label override for raw spell checks (`options.checkLabel`)
 
-**Status:** proposed for `refactor/dcc-core-lib-adapter`. Small, general-purpose
-addition so a class/module can relabel the raw (no-item) spell-check chat flavor.
+**Status:** ✅ **landed** on `refactor/dcc-core-lib-adapter` (2026-05-29). Implemented
+exactly as specced below: `module/actor-sheet.js` `#rollSpellCheck` forwards a
+`data-check-label` cell attribute as `options.checkLabel`, and `module/actor.js`
+`_castNakedViaAdapter` uses it as the flavor base when no spell name is present.
+Backward-compatible (unset → unchanged "Spell Check"); item casts unaffected.
+Coverage: +3 Vitest in `module/__tests__/adapter-spell-check.test.js` (raw relabel;
+regression without it; item cast unaffected) + 1 Playwright in
+`browser-tests/e2e/adapter-dispatch.spec.js` (live raw check → "Mutation Check"
+flavor). Downstream MCC wiring (the `data-check-label` attributes) is inert until
+MCC ships it.
 
 ## Problem
 
