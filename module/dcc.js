@@ -1,4 +1,4 @@
-/* global CONFIG, foundry, game, Hooks, ui */
+/* global CONFIG, foundry, game, Hooks */
 
 /**
  * DCC
@@ -331,7 +331,11 @@ Hooks.once('ready', async function () {
   game.dcc.KeyState = new KeyState()
 
   checkReleaseNotes()
-  checkMigrations()
+  // Await world migration before continuing the ready chain so
+  // `registerTables` / `FleetingLuck.init` / `dcc.ready` listeners see a
+  // fully-migrated world instead of racing the async per-document
+  // mutations. The returned status is threaded onto `dcc.ready` below.
+  const migrationStatus = await migrations.checkMigrations()
   registerTables()
 
   // Initialise Fleeting Luck
@@ -375,8 +379,11 @@ Hooks.once('ready', async function () {
     console.error('DCC | Failed to load class progressions from level-data packs', err)
   }
 
-  // Let modules know the DCC system is ready
-  Hooks.callAll('dcc.ready')
+  // Let modules know the DCC system is ready. The migration status (from
+  // the awaited `checkMigrations` above) is threaded onto the payload so
+  // listeners can branch on whether this client left the world fully
+  // migrated — see `migrations.checkMigrations`.
+  Hooks.callAll('dcc.ready', { migrationComplete: migrationStatus.migrationComplete })
 })
 
 function checkReleaseNotes () {
@@ -411,27 +418,6 @@ async function _onShowJournal (packName, journalName) {
 
 async function _onShowURI (uri) {
   window.open(uri)
-}
-
-function checkMigrations () {
-  if (!game.user.isGM) return
-  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const decision = migrations.classifyMigrationDecision(currentVersion)
-  if (decision === 'skip') return
-  if (decision === 'block') {
-    // Toggles to a dot-separated string so the decimal separator doesn't
-    // drift between interpolated and literal tokens in locales that format
-    // numbers with a comma.
-    ui.notifications.error(
-      game.i18n.format('DCC.MigrationUnsupportedVersion', {
-        currentVersion: currentVersion.toFixed(2),
-        minimumVersion: migrations.MINIMUM_SUPPORTED_VERSION.toFixed(2)
-      }),
-      { permanent: true }
-    )
-    return
-  }
-  migrations.migrateWorld()
 }
 
 // `setupCoreBookCompendiumLinks` / `registerTables` / `getSkillTable` /

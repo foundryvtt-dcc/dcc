@@ -924,6 +924,56 @@ test.describe('DCC Extension API', () => {
     expect(result.i18nInterpolatesCount).toBe(true)
   })
 
+  test('DCC checkMigrations is async + reports migrationComplete (Phase 7 session 13)', async ({ page }) => {
+    // Phase 7 session 13: `checkMigrations` was relocated out of
+    // `module/dcc.js` into `migrations.js`, made `async`, and now `await`s
+    // `migrateWorld` so the system's ready hook can `await` it before
+    // firing `dcc.ready` (fixing the "fire-and-forget from a sync ready
+    // hook" race). It returns `{ migrationComplete }`, which `dcc.js`
+    // threads onto the `dcc.ready` payload. This probe imports the
+    // live-served module to confirm the deployed helper is an async
+    // function and that — on the already-migrated test world (decision
+    // `'skip'`) — invoking it is a true no-op: it returns
+    // `{ migrationComplete: true }` without running `migrateWorld` (no
+    // MigrationInfo toast, no version write). The 'skip' path returns
+    // before any mutation, so calling it live is safe.
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/migrations.js')
+
+      const isFunction = typeof mod.checkMigrations === 'function'
+      const isAsync = mod.checkMigrations.constructor.name === 'AsyncFunction'
+
+      const storedVersion = game.settings.get('dcc', 'systemMigrationVersion')
+      const decision = mod.classifyMigrationDecision(storedVersion)
+
+      // Only invoke live when the decision is the no-op 'skip' (the booted
+      // world is already stamped). Spy on the info toast to prove
+      // migrateWorld — whose first line announces via MigrationInfo — never
+      // runs on the skip path.
+      let skipResult = null
+      let infoFiredDuringCheck = false
+      if (decision === 'skip') {
+        const realInfo = ui.notifications.info.bind(ui.notifications)
+        ui.notifications.info = (...args) => { infoFiredDuringCheck = true; return realInfo(...args) }
+        try {
+          skipResult = await mod.checkMigrations()
+        } finally {
+          ui.notifications.info = realInfo
+        }
+      }
+
+      return { isFunction, isAsync, decision, skipResult, infoFiredDuringCheck }
+    })
+
+    expect(result.isFunction).toBe(true)
+    expect(result.isAsync).toBe(true)
+    // The booted test world has already been migrated → classifies 'skip'.
+    expect(result.decision, 'booted test world should already be migrated (skip)').toBe('skip')
+    // Live no-op invocation reports complete and runs no migrateWorld.
+    expect(result.skipResult).toEqual({ migrationComplete: true })
+    expect(result.infoFiredDuringCheck).toBe(false)
+  })
+
   test('DCC normalizeLibDie consolidation: canonical helper + live _stripDieCount delegation (Phase 7 session 12)', async ({ page }) => {
     // Phase 7 session 12: the three former die-normalize copies
     // (attack-input.mjs `normalizeLibDie`, spell-input.mjs private

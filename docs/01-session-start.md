@@ -42,6 +42,26 @@ session's context):
 
 ## Status (2026-05-29)
 
+**Phase 7 session 13 (latest) + a standalone init-die `fix(adapter)`**
+landed together. Session 13 closes the PR #720 "`migrateWorld`
+fire-and-forget from a sync ready hook" item: `checkMigrations` moved
+out of `module/dcc.js` into `migrations.js`, became `async`, and now
+`await`s `migrateWorld`; the ready hook `await`s it before the rest of
+the chain and fires `Hooks.callAll('dcc.ready', { migrationComplete })`,
+so listeners no longer race the async per-document mutations.
+`migrateWorld` + `checkMigrations` return `{ migrationComplete }`. +4
+Vitest (`check-migrations.test.js`), +1 Playwright probe. The init-die
+fix preserves additive `init.die` terms (MCC Mutant Horror `1d20+1d3`,
+mcc-core-book §9.2a) through the combat-tracker path — a new
+`_initDieAdditiveTerms` helper re-appends the tail Foundry-side that
+`_getInitiativeRollViaAdapter` previously flattened to `d20`; +4 Vitest,
++1 integration, +1 Playwright (spec:
+`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`). Repo green: **1288 Vitest**;
+full e2e **158 passed + 1 isolation-passing flake** (unrelated
+`extension-api.spec.js:2232` link-fields navigation race). Remaining
+PR #720 items: chat per-modifier breakdown; dispatcher gate-style
+unification; unused crit/fumble predicate params.
+
 **Phase 7 sessions 10 + 11 + 12 completed a three-slice PR #720
 resilience batch** (the backlog active queue having drained at
 session 9). All three items in the `00-progress.md` PR #720 backlog

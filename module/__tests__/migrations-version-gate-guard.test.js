@@ -2,8 +2,9 @@
  * Regression guard: prevent pre-V14 version-gated migration branches
  * from reappearing in `module/migrations.js`. The V14-era floor is 0.66
  * and is enforced up-front by `classifyMigrationDecision` / the
- * `MINIMUM_SUPPORTED_VERSION` guard in `module/dcc.js`'s
- * `checkMigrations`, so per-branch `currentVersion <op> 0.NN` gates
+ * `MINIMUM_SUPPORTED_VERSION` guard in `migrations.js`'s
+ * `checkMigrations` (awaited from `module/dcc.js`'s ready hook), so
+ * per-branch `currentVersion <op> 0.NN` gates
  * below that floor are dead code.
  *
  * Rule: any `currentVersion` comparison against a numeric literal

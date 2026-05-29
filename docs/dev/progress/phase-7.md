@@ -401,3 +401,190 @@
   **150 Playwright passed**, zero failures (11.9-min full suite).
   Visual-regression suite couldn't run in this V14 environment; the
   byte-identical CSS diff is stronger evidence than a pixel-comparison.
+
+- **2026-05-28 — Phase 7 session 8: hex-literal → theme-variable
+  migration + `ARCHITECTURE_REIMAGINED.md §7` theming-contract
+  documentation (closes the styling-cleanup arc opened by session
+  7).** Mechanical refactor — the 20 remaining hex literals across
+  the new partials (session 7 left them in place) are replaced
+  with `var(--system-*)` references and the new variables are
+  added to `styles/variables.css` as the documented theming
+  contract for variants (XCC, MCC, homebrew). Twelve new
+  `--system-*` vars: six theme-agnostic semantic colors
+  (`--system-text-muted-color` `#666`, `--system-damage-color`
+  `#8b0000`, `--system-rollable-hover-color` `#000`,
+  `--system-flat-button-border-color` `#c9c7b8`,
+  `--system-two-weapon-primary-color` `#4caf50`,
+  `--system-two-weapon-secondary-color` `#d32f2f`) plus six
+  tab-overflow dropdown vars paired with dark-theme overrides
+  (`--system-tab-overflow-background` `#f0e8d8`/`#2a2a2a`,
+  `--system-tab-overflow-border-color` `#8b7355`/`#444`,
+  `--system-tab-overflow-text-color` `#4a3c2a`/`#ccc`,
+  `--system-tab-overflow-hover-background` `#e0d5c0`/`#3a3a3a`,
+  `--system-tab-overflow-hover-text-color` `#2a1f14`/`#fff`,
+  `--system-tab-overflow-active-text-color`
+  `var(--color-text-dark-primary)`/`#fff`). All 14 light-path
+  hex literals across seven partials (`_base.scss:346` on
+  `.rollable:hover`, `_dialogs.scss:78` on `button.flat-button`
+  border, `_hit-points-dialog.scss:15,35` on `.hp-current` /
+  `.hint`, `_skills.scss:33` on `.skill-summary-text`,
+  `_party-sheet.scss:67,105` on `.fa-heart.clickable:hover` /
+  `.empty-party p`, `_tabs.scss` lines 68/69/82/87/88 on the
+  `.tabs-overflow-menu` light path, and `_weapons.scss:109,113`
+  on `.two-weapon-primary` / `.two-weapon-secondary`) are
+  replaced with the matching `var(...)` references. The 17-line
+  `body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow
+  .tabs-overflow-menu` override block in `_tabs.scss` is deleted
+  — the dark cascade now flows through the variable overrides
+  in `variables.css` rather than through a duplicate component
+  selector. Compiled `dcc.css` shrinks 64,741 → 64,502 bytes
+  (-239 net; still well inside the existing probe's 50-80KB
+  range). Only structural diff vs. the pre-slice HEAD output is
+  exactly those 14 substitutions plus the deleted dark-override
+  block (verified by `diff` against `git show HEAD:styles/dcc.css`).
+  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` is expanded with a
+  "Theming contract (`--system-*` CSS custom properties)"
+  subsection documenting each variable's role, light + dark
+  defaults, and the override pattern variants should use
+  (`body.theme-<variant>` sheet-wide vs `.dcc-<feature>`
+  per-feature scoping — variants override variable *values*, not
+  component selectors). +1 Playwright case in
+  `extension-api.spec.js` (`DCC theming-contract --system-* vars
+  resolve to documented values in both themes`) asserts the
+  full contract end-to-end: (1) the compiled CSS references the
+  new vars (regression net against re-introducing hex
+  literals), (2) the redundant `body.theme-dark` tab-overflow
+  block is gone from the compiled output, (3) `getComputedStyle()`
+  resolves each of the 12 vars to its documented light value
+  via `:root` and each of the 6 tab-overflow vars to its
+  documented dark override via a transient `<div class="theme-
+  dark">` probe element appended to body — no live-theme flip
+  needed, so the test is robust to whichever theme the test
+  user has selected. **1227 Vitest green** (unchanged — CSS is
+  not loaded into unit tests). **152 Playwright passed** in the
+  full-suite run + 1 environmental flake at
+  `adapter-dispatch.spec.js:1898 halfling two-weapon fumble
+  note round-trips through adapter` (`page.evaluate: Execution
+  context was destroyed, most likely because of a navigation` —
+  a sibling-spec state pollution / navigation race during
+  `rollWeaponAttack`; the failing test passes cleanly in
+  isolation, 1.2s, confirming it's a flake rather than a
+  regression; NOT slice-caused — this slice touches only CSS
+  partials, `variables.css`, the `ARCHITECTURE_REIMAGINED.md`
+  docs, and the new `extension-api.spec.js` probe; the slice
+  changed no JS code that runs in `actor.js` / `item.js` /
+  anywhere else, and cannot semantically cause a navigation
+  event mid-test). Pre-slice baseline was 152 (the five
+  post-session-7 e2e refactor commits on main — split
+  `v14-features` into `active-effects` + `sheet-ui` (`0e76620`),
+  widen `openActorSheet` settle to 1.5s (`a83d944`), add
+  `rolls-ui` smoke spec (`fe7a4da`), shared session fixture +
+  rename adapter-dispatch spec (`1c9924b`), remove dead v12
+  visual-regression suite (`e3eae15`) — shifted the spec layout
+  and the net baseline). Net pass math: 152 baseline + 1 new
+  test = 153 expected; observed 152 pass + 1 flake = 153 total,
+  with the flake passing in isolation. With the styling-cleanup
+  arc closed, the next Phase 7 candidates are the remaining
+  §Appendix A items (cruft removal slices) or a Group E
+  vertical-slice — halfling vertical slice or homebrew
+  single-class slice — both viable starts to broaden the
+  adapter / mixin pattern beyond the built-in seven classes.
+
+- **2026-05-28 — Phase 7 session 9: compendium-walk caching for the
+  four table-loading sites + isolated fallback-order coverage
+  backfill (closes the PR #720 "Uncached compendium walks" item
+  and the matching test-coverage gap).** New module
+  `module/adapter/table-cache.mjs` owns four `Map` caches —
+  `disapprovalTableCache` (keyed on `actor.system.class.disapprovalTable`,
+  value: lib `SimpleTable | null`), `mercurialMagicTableCache`
+  (keyed on the resolved table name from
+  `resolveMercurialMagicTableName(classKey)`, value: lib
+  `MercurialTable | null`), `critTableLinkCache` (keyed on
+  `critTableSuffix`, value: `@UUID[Compendium...|RollTable...]`
+  prefix without trailing `{displayText}` so the same suffix can
+  render with different labels), and `critTableDocCache` (keyed
+  on `critTableCanonical`, value: loaded Foundry `RollTable`
+  document) — plus `clearAllTableCaches()`, three invalidation
+  handlers (`onCreateRollTableInvalidate` / `onUpdateRollTableInvalidate`
+  / `onDeleteRollTableInvalidate`), a frozen
+  `TABLE_CACHE_INVALIDATION_HOOKS` dispatch table, and
+  `registerTableCacheInvalidation()` that iterates the table
+  wiring each entry via `Hooks.on` (all `once: false`).
+  `module/adapter/spell-input.mjs` and `module/utilities.js`
+  import their respective caches and check `cache.has(key)` /
+  `cache.get(key)` before falling through to the resolver
+  helpers (`resolveDisapprovalTable`, `resolveMercurialMagicTable`,
+  `resolveCritTable`, `resolveCritTableLink`) which carry the
+  unchanged pack-walk → world-fallback logic. The
+  `getCritTableResult` EL-suffix side effect
+  (`CONFIG.DCC.criticalHitPacks.addPack('dcc-core-book.dcc-monster-fumble-tables')`)
+  stays in the pre-cache code path — `addPack` is idempotent
+  per `TablePackManager.addPack`, so re-running it on every EL
+  crit while the doc cache is warm is safe. Cache invalidation
+  is global: any world-RollTable lifecycle event drops every
+  cache entry — the simplest correct response since a rename /
+  row change / delete can shift which table answers a name
+  lookup, and the events are rare enough during play that
+  uniform invalidation is cheaper than per-cache relevance
+  predicates. `module/dcc.js` adds the `registerTableCacheInvalidation()`
+  call alongside the existing `registerSettingsTableHooks()` /
+  `registerTableLoadingHooks()` / `registerChatAndHookWiring()`
+  calls at module-init time. Pure refactor — cold-cache walks
+  match the pre-slice behavior byte-for-byte; warm-cache walks
+  short-circuit before the first `game.packs.get(...)` call.
+  No external contract change; `loadDisapprovalTable` /
+  `loadMercurialMagicTable` / `getCritTableLink` /
+  `getCritTableResult` retain their existing signatures, return
+  types, and null-on-miss semantics. **1262 Vitest green** (was
+  1227, +35): +16 in new
+  `module/__tests__/table-cache.test.js` (TABLE_CACHES shape +
+  same-Map identity + frozen invariant; clearAllTableCaches
+  empties every cache and is safe on empty maps; each of the
+  three invalidation handlers drops every cache entry and
+  ignores its argument shape; dispatch table covers exactly the
+  three lifecycle hooks, routes name → handler one-to-one, all
+  `once: false`, is frozen; `registerTableCacheInvalidation`
+  calls `Hooks.on` three times with the right name+handler
+  pairs and does NOT call `Hooks.once`), +9 in
+  `utilities.test.js` (the existing `getCritTableResult`
+  describe gains 3 new cases — second call skips
+  `pack.getDocument`, cached null skips the re-walk, separate
+  suffixes use separate cache entries — plus a new
+  `getCritTableLink` describe with 6 cases including the
+  prefix-only caching that lets the same suffix render with
+  different labels), +10 in `adapter-spell-check.test.js`
+  backfilling the PR #720 isolated-coverage gap (5 for
+  `loadDisapprovalTable`: compendium hit / world fallback /
+  both miss / no-tableName → null / pack throws → warn + world
+  fallback / cache per tableName; 5 for `loadMercurialMagicTable`:
+  compendium hit by 3-part name / world fallback by stripped
+  table name / both miss / resolver-returns-null no-op / cache
+  per resolved tableName). +1 Playwright case in
+  `extension-api.spec.js` (`DCC adapter table caches
+  short-circuit pack walks and invalidate on world-RollTable
+  events`) — dynamic-imports the live cache module
+  (`/systems/dcc/module/adapter/table-cache.mjs`), asserts the
+  four named caches are `Map` instances + the dispatch table
+  covers exactly the three lifecycle hooks all `once: false`,
+  then seeds each cache with a probe entry and confirms that
+  `Hooks.callAll('createRollTable', probeTable)`, a real
+  `probeTable.update({ name: ... })`, and `probeTable.delete()`
+  each drop every cache entry to size 0 (proves the wiring
+  registered at init survives end-to-end and fires for both
+  synthetic `callAll` events and real Foundry document
+  mutations). **154 Playwright passed**, zero failures —
+  clean 5.9-min full suite. Pre-slice baseline post session 8
+  was 153 (152 + 1 new session 8 test plus the halfling
+  two-weapon fumble flake from session 8 staying quiet this
+  run); +1 new probe takes us to 154. With the caching item
+  closed and the `loadDisapprovalTable` /
+  `loadMercurialMagicTable` isolated-coverage gap backfilled,
+  the next-arc candidates are the remaining PR #720
+  resilience items (`normalizeLibDie` consolidation across
+  `attack-input.mjs` / `spell-input.mjs` /
+  `actor.js:_stripDieCount`, the four near-identical
+  `dcc.libResult` flag payload extraction from
+  `chat-renderer.mjs`, surfacing `migrateWorld` per-doc
+  failures via `ui.notifications.warn`) or a Group E
+  vertical-slice (halfling vertical slice / homebrew
+  single-class).

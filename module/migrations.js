@@ -122,7 +122,11 @@ export function migrationOutcome (failures) {
 /**
  * Migrate the current world to the current version of the system
  *
- * @return {Promise}    A promise which resolves once the migration is completed
+ * @return {Promise<{ migrationComplete: boolean }>}  Resolves once the
+ *   migration finishes. `migrationComplete` is `true` for a clean run
+ *   (version stamped) and `false` if any document failed (version left
+ *   unstamped so the idempotent migrations re-run next load). The flag is
+ *   threaded onto the `dcc.ready` payload via `checkMigrations`.
  */
 export const migrateWorld = async function () {
   ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
@@ -195,6 +199,52 @@ export const migrateWorld = async function () {
   } else {
     ui.notifications.warn(game.i18n.format('DCC.MigrationFailures', { count: outcome.failureCount }), { permanent: true })
   }
+
+  return { migrationComplete: outcome.stampVersion }
+}
+
+/* -------------------------------------------- */
+
+/**
+ * Entry point the system's `ready` hook awaits before firing `dcc.ready`.
+ * Decides — via `classifyMigrationDecision` — whether the stored migration
+ * version needs work, and (when it does) **awaits** `migrateWorld` to
+ * completion so the rest of the ready chain and any `dcc.ready` listeners
+ * observe a fully-migrated world rather than racing the async per-document
+ * mutations. Previously `dcc.js` called this fire-and-forget from a sync
+ * ready callback, so `registerTables` / `FleetingLuck.init` / `dcc.ready`
+ * et al. ran concurrently with the in-flight `update()` calls.
+ *
+ * Only the GM client migrates; other clients return immediately. The
+ * returned `{ migrationComplete }` flag is threaded onto the `dcc.ready`
+ * payload so sibling modules can branch on whether this client left the
+ * world fully migrated:
+ *   - `true`  — nothing to migrate (already at the ceiling), a non-GM
+ *               client (never migrates locally), or a clean `migrateWorld`.
+ *   - `false` — a pre-V14 world was refused (blocked), or `migrateWorld`
+ *               finished with per-document failures (version left unstamped).
+ *
+ * @returns {Promise<{ migrationComplete: boolean }>}
+ */
+export const checkMigrations = async function () {
+  if (!game.user.isGM) return { migrationComplete: true }
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+  const decision = classifyMigrationDecision(currentVersion)
+  if (decision === 'skip') return { migrationComplete: true }
+  if (decision === 'block') {
+    // Toggles to a dot-separated string so the decimal separator doesn't
+    // drift between interpolated and literal tokens in locales that format
+    // numbers with a comma.
+    ui.notifications.error(
+      game.i18n.format('DCC.MigrationUnsupportedVersion', {
+        currentVersion: currentVersion.toFixed(2),
+        minimumVersion: MINIMUM_SUPPORTED_VERSION.toFixed(2)
+      }),
+      { permanent: true }
+    )
+    return { migrationComplete: false }
+  }
+  return migrateWorld()
 }
 
 /* -------------------------------------------- */
