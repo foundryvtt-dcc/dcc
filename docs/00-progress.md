@@ -65,34 +65,37 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 11 (2026-05-29)** is the second slice of the
-three-slice PR #720 resilience batch. It closes the "`migrateWorld`
+**Phase 7 session 12 (2026-05-29)** is the third and final slice of
+the PR #720 resilience batch — it **completes the batch**. It
+consolidates the three former die-normalize copies (`attack-input.mjs`
+`normalizeLibDie` exported, `spell-input.mjs` `normalizeLibDie`
+private dup, `actor.js` `_stripDieCount` anchored regex) onto one
+parameterized `normalizeLibDie(foundryDie, fallback = 'd20')` in
+`attack-input.mjs`: `spell-input.mjs` imports it, `_stripDieCount` is
+a one-line wrapper delegating with `fallback: null`. The three copies
+diverged on edge cases (falsy / no-match fallback + anchoring), but an
+audit of all eight call sites confirms each passes a single die string
+or a falsy value — so the divergences are unreachable, and the lone
+behavior change (former `attack-input` no-match → fallback instead of
+the original string) is both unreachable and more correct. The
+`actor.js:1593` site that relies on the `null` return keeps it via the
+`fallback: null` wrapper. **1279 Vitest** (was 1276, +3); **157
+Playwright passed**, zero failures (the halfling navigation-race flake
+stayed quiet this run). **The three-slice PR #720 resilience batch is
+complete.** Next-arc candidates: remaining PR #720 items (`migrateWorld`
+async-await fix; chat per-modifier breakdown; dispatcher gate-style
+unification; unused crit/fumble predicate params) or a Group E
+vertical-slice.
+
+**Phase 7 session 11 (closed 2026-05-29)** closed the "`migrateWorld`
 per-doc catches swallow silently" item: the four
 `catch (err) { console.error(err) }` sites in `module/migrations.js`
-(actors / items / scenes loops + `migrateCompendium`) now also push
-`{ type, name }` onto a `failures` array; `migrateCompendium` returns
-its failures up to `migrateWorld`. A new pure exported
-`migrationOutcome(failures)` decides the finish — a clean run stamps
-the world at `NEEDS_MIGRATION_VERSION` + shows the "complete" toast;
-any failure leaves the version unstamped (idempotent migrations
-re-run next load) and raises `ui.notifications.warn` with the count
-(new i18n key `DCC.MigrationFailures`, translated to all 7 langs).
-**1276 Vitest** (was 1272, +4 in new
-`module/__tests__/migration-outcome.test.js`), **155 Playwright + 1
-environmental halfling sheet-ui navigation-race flake** (passes in
-isolation, 7.8s; not slice-caused — slice 2 touches only
-`migrations.js` + lang + docs). The separate PR #720 "`migrateWorld`
-fire-and-forget from a sync ready hook" item is out of scope.
-
-**Phase 7 session 10 (closed 2026-05-29)** opened the resilience
-batch by closing the "four near-identical `dcc.libResult` flag
-payloads" item: the four chat renderers in
-`module/adapter/chat-renderer.mjs` shared an identical core
-projection + `FleetingLuck.updateFlags` guard, now owned by exported
-`buildLibResultFlag(result, extras = {})` and `applyFleetingLuck(flags,
-foundryRoll)`. Pure structural; flag consumed by key name so the
-on-message contract is unchanged. 1272 Vitest, 155 Playwright at
-close.
+now push `{ type, name }` onto a `failures` array; a new pure
+`migrationOutcome(failures)` gates the finish — a clean run stamps the
+version + "complete" toast, any failure leaves it unstamped (idempotent
+migrations re-run next load) and warns with the count (new i18n key
+`DCC.MigrationFailures`, all 7 langs). 1276 Vitest, 155 Playwright + 1
+isolation-passing halfling flake at close.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -102,6 +105,56 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — Phase 7 session 12: consolidate the three
+  `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one
+  canonical helper (closes the PR #720 "three copies of strip die
+  count normalization" item — completes the three-slice resilience
+  batch).** The three former copies — `module/adapter/attack-input.mjs`
+  `normalizeLibDie` (exported), `module/adapter/spell-input.mjs`
+  `normalizeLibDie` (module-private dup), and
+  `module/actor.js` `_stripDieCount` (anchored regex) — diverged on
+  edge cases: falsy fallback (`'d20'` / `'d20'` / `null`), no-match
+  fallback (original string / `'d20'` / `null`), and anchoring
+  (unanchored / unanchored / anchored). They are now one parameterized
+  `normalizeLibDie(foundryDie, fallback = 'd20')` in
+  `attack-input.mjs`: `spell-input.mjs` imports it (private dup
+  deleted), and `_stripDieCount` is a one-line wrapper delegating with
+  `fallback: null`. **Divergence audit (surfaced, not silently
+  translated):** every one of the eight call sites
+  (`attack-input.mjs:100`, `actor.js:2601/2758/3481`,
+  `crit-fumble-input.mjs:51/77`, `spell-input.mjs` deriveActionDie,
+  and the three `_stripDieCount` sites `actor.js:1130/1593/1814`)
+  passes either a single Foundry die string (`'1d20'`, `'d14'`, a
+  Roll term `formula`) or a falsy value — so the anchored-vs-unanchored
+  difference is unreachable (a compound `'1d20+2'` would differ, but no
+  site produces one), and the only behavior change anywhere is the
+  former `attack-input` copy's no-match return (original string → the
+  `'d20'` fallback), which is both unreachable in practice and more
+  correct (feeds the lib a valid `DieType` rather than an unparseable
+  string). The `actor.js:1593` site that *relies* on the `null` return
+  (`if (libDie) definition.roll.die = libDie`) keeps it via the
+  `fallback: null` wrapper. +3 Vitest (2 new cases in
+  `adapter-weapon-attack.test.js` — case-insensitivity + default
+  fallback, and the explicit-null-fallback `_stripDieCount` contract;
+  1 in `actor.test.js` exercising `actor._stripDieCount` directly).
+  +1 Playwright probe in `extension-api.spec.js` (`DCC normalizeLibDie
+  consolidation: canonical helper + live _stripDieCount delegation`)
+  dynamic-imports the live canonical helper (asserts default + null
+  fallback behavior) and creates a live Player actor to confirm
+  `_stripDieCount` delegates end-to-end. **1279 Vitest green** (was
+  1276, +3). **157 Playwright passed**, zero failures — clean 5.9-min
+  full suite (pre-slice was 156 total at session 11 = 155 pass + 1
+  isolation-passing halfling flake; +1 new probe = 157, and the
+  halfling navigation-race flake stayed quiet this run). With session
+  12 done, **the three-slice PR #720 resilience batch is complete** —
+  all three targeted backlog items (`buildLibResultFlag` /
+  `applyFleetingLuck` extraction, `migrateWorld` failure surfacing, and
+  the `normalizeLibDie` / `_stripDieCount` consolidation) are ticked.
+  Next-arc candidates: the remaining PR #720 items (`migrateWorld`
+  async-await fire-and-forget fix; chat per-modifier breakdown
+  rendering; dispatcher gate-style unification; unused crit/fumble
+  predicate params) or a Group E vertical-slice.
 
 - **2026-05-29 — Phase 7 session 11: surface `migrateWorld` per-doc
   failures via `ui.notifications.warn` + gate version-stamping on a
@@ -381,77 +434,6 @@ archives linked above.
   single-class slice — both viable starts to broaden the
   adapter / mixin pattern beyond the built-in seven classes.
 
-- **2026-05-22 — Phase 7 session 7: split `styles/dcc.scss` into
-  18 partials + a 34-line manifest (opens the second Phase 7
-  arc).** Pure structural refactor — the previous ~2979-line
-  monolith is broken out into focused partials per existing
-  section comment, combining only adjacent sections so relative
-  CSS rule order (and specificity-tie outcomes) is preserved
-  verbatim. Partial map: `_base.scss` (globals + fonts +
-  `.dcc` common, 383 lines), `_journal.scss` (110),
-  `_armor.scss` (36), `_chat.scss` (chat rolls + spell-check
-  chat card + notes — 184), `_weapons.scss` (119),
-  `_class-sheets.scss` (cleric + wizard/elf — 135),
-  `_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
-  `_items.scss` (items + item sheet + level item sheet — 249),
-  `_config-dialogs.scss` (82), `_skills.scss` (49),
-  `_tabs.scss` (233), `_entity-link.scss` (15),
-  `_dialogs.scss` (roll modifier + fleeting luck + spell duel —
-  353), `_actor-sheet.scss` (596 — largest partial),
-  `_effects.scss` (effects + item-effects transfer — 162),
-  `_level-change-dialog.scss` (9), `_container-items.scss`
-  (112). Total partial line count: 2977 — matches the
-  pre-split body verbatim. The new `dcc.scss` is a 34-line
-  manifest of `@use 'partial-name';` directives in source
-  order, with SCSS-style `//` line comments documenting the
-  partial pattern (those `//` comments don't compile into the
-  CSS output — confirmed by diff). **Compiled
-  `styles/dcc.css` is byte-identical to the pre-split build**
-  (verified by snapshotting `dcc.css` before the split into
-  `/tmp/dcc.css.baseline`, running `npm run scss` after the
-  split, and confirming `diff -q` reports the files are
-  identical). The existing `--system-*` CSS custom-property
-  contract in `styles/variables.css` (with light/dark
-  overrides) stays as-is; the 20 remaining hex literals in
-  the partials (per-class accents in `_class-sheets.scss`,
-  damage colours in `_items.scss`, tab-tooltip colours in
-  `_tabs.scss`, focus-state shades) are left for a follow-up
-  slice that pairs hex-to-var migration with the
-  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
-  documentation. No JS or test code touched beyond the new
-  Playwright probe. No Vitest delta (CSS is not loaded into
-  unit tests). +1 Playwright case in `extension-api.spec.js`
-  (`DCC compiled stylesheet survives the styles/dcc.scss
-  split into 18 partials`) — fetches
-  `/systems/dcc/styles/dcc.css` from the live Foundry server,
-  asserts HTTP 200, file size in 50-80KB range, and 10
-  representative selectors from across the partials all
-  present (`.grid-align-center` from `_grid.scss`,
-  `.journal-sheet` from `_journal.scss`,
-  `.deed-result.critical` from `_chat.scss`,
-  `.dcc .party-body` from `_party-sheet.scss`,
-  `.dcc .equipment-bg` from `_items.scss`,
-  `.dcc.sheet .sheet-tabs` from `_tabs.scss`,
-  `.dcc-roll-modifier` from `_dialogs.scss`,
-  `.dcc .fleeting-luck` from `_dialogs.scss`,
-  `.dcc .spell-duel` from `_dialogs.scss`,
-  `.dcc .container-sheet` from `_container-items.scss`).
-  **1227 Vitest green** (unchanged). **150 Playwright
-  passed**, zero failures (11.9-min full suite). Pre-slice
-  baseline was 149 (post session 6); this slice's +1 new
-  test cleanly lands the post-slice count at 150. Net math:
-  149 + 1 = 150. Visual-regression suite at
-  `browser-tests/visual-regression/` couldn't run in this
-  V14 environment (its `start-foundry` script targets
-  `baselinev12` per the Phase 5 session 4 note); the
-  byte-identical CSS diff provides stronger evidence than a
-  visual-regression pixel-comparison would — identical bytes
-  guarantee identical pixels. With the second Phase 7 arc
-  opened, the next slice candidate is the hex-literal →
-  theme-variable migration + the
-  `docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
-  documentation.
-
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at
@@ -705,12 +687,17 @@ and should be scheduled into Phase 4+ work.
   with the gate-style unification above. (Note: `_rollCriticalLegacy`
   / `_rollFumbleLegacy` retired at session 16 — revisit the
   remaining predicate params.)
-- **Three copies of "strip die count" normalization:**
-  `module/adapter/attack-input.mjs:normalizeLibDie`,
-  `module/adapter/spell-input.mjs:normalizeLibDie` (private), and
-  `module/actor.js:_stripDieCount`. Pick one canonical
-  `normalizeLibDie` (probably `attack-input.mjs`'s, it's already
-  exported) and consolidate.
+- ~~**Three copies of "strip die count" normalization.**~~ **Fixed
+  2026-05-29** (Phase 7 session 12). Consolidated onto one
+  parameterized `normalizeLibDie(foundryDie, fallback = 'd20')` in
+  `module/adapter/attack-input.mjs`: `spell-input.mjs` imports it
+  (private dup deleted), and `DCCActor._stripDieCount` is a one-line
+  wrapper delegating with `fallback: null`. All eight call sites pass a
+  single die string or a falsy value, so the former copies' edge-case
+  divergences (falsy / no-match fallback + anchoring) are unreachable;
+  the lone behavior change (former `attack-input` no-match → fallback
+  instead of original string) is unreachable + more correct. +3 Vitest,
+  +1 Playwright probe.
 - ~~**Four near-identical `dcc.libResult` flag payloads** in
   `module/adapter/chat-renderer.mjs`.~~ **Fixed 2026-05-29** (Phase 7
   session 10). Exported `buildLibResultFlag(result, extras = {})`

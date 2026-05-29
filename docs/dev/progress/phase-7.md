@@ -374,3 +374,30 @@
   green** (was 1184, +43). **149 Playwright passed**, zero failures
   (13.1-min full suite — both prior-session flakes resolved by the
   follow-up fix commits `1935372` + `2973a13`).
+
+- **2026-05-22 — Phase 7 session 7: split `styles/dcc.scss` into 18
+  partials + a 34-line manifest (opens the second Phase 7 arc).**
+  Pure structural refactor — the previous ~2979-line monolith is
+  broken out into focused partials per existing section comment,
+  combining only adjacent sections so relative CSS rule order (and
+  specificity-tie outcomes) is preserved verbatim. Partial map:
+  `_base.scss` (383), `_journal.scss` (110), `_armor.scss` (36),
+  `_chat.scss` (184), `_weapons.scss` (119), `_class-sheets.scss`
+  (135), `_party-sheet.scss` (110), `_hit-points-dialog.scss` (40),
+  `_items.scss` (249), `_config-dialogs.scss` (82), `_skills.scss`
+  (49), `_tabs.scss` (233), `_entity-link.scss` (15),
+  `_dialogs.scss` (353), `_actor-sheet.scss` (596 — largest),
+  `_effects.scss` (162), `_level-change-dialog.scss` (9),
+  `_container-items.scss` (112). Total partial line count 2977 —
+  matches the pre-split body verbatim. The new `dcc.scss` is a
+  34-line `@use` manifest. **Compiled `styles/dcc.css` is
+  byte-identical to the pre-split build** (verified via baseline
+  snapshot + `diff -q`). The 20 remaining hex literals were left for
+  the session-8 hex-to-var migration. No JS/test code touched beyond
+  the new Playwright probe; no Vitest delta (CSS not loaded into unit
+  tests). +1 Playwright case in `extension-api.spec.js` fetching the
+  served CSS and asserting HTTP 200, 50-80KB size, and 10
+  representative selectors present. **1227 Vitest green** (unchanged).
+  **150 Playwright passed**, zero failures (11.9-min full suite).
+  Visual-regression suite couldn't run in this V14 environment; the
+  byte-identical CSS diff is stronger evidence than a pixel-comparison.

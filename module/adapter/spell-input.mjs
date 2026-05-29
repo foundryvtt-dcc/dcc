@@ -49,6 +49,7 @@
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
+import { normalizeLibDie } from './attack-input.mjs'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -57,17 +58,6 @@ import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.m
  * yet differentiate spell availability per caster type.
  */
 const DEFAULT_SPELL_CASTER_TYPES = Object.freeze(['wizard', 'cleric', 'elf', 'generic'])
-
-/**
- * Normalize a Foundry die expression ('1d20', '1d14', 'd20', etc.) to
- * the lib's die shape ('d20', 'd14'). Falls back to 'd20'.
- */
-function normalizeLibDie (die) {
-  if (!die) return 'd20'
-  const s = String(die).trim().toLowerCase()
-  const match = /d(\d+)/.exec(s)
-  return match ? `d${match[1]}` : 'd20'
-}
 
 /**
  * Synthetic caster profile for the generic-castingMode path. Every

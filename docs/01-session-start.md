@@ -42,37 +42,45 @@ session's context):
 
 ## Status (2026-05-29)
 
-**Phase 7 sessions 10 + 11 worked a three-slice PR #720 resilience
-batch** (the backlog active queue having drained at session 9).
+**Phase 7 sessions 10 + 11 + 12 completed a three-slice PR #720
+resilience batch** (the backlog active queue having drained at
+session 9). All three items in the `00-progress.md` PR #720 backlog
+that this batch targeted are now ticked. Repo green at batch close:
+**1279 Vitest**, **157 Playwright passed** (zero failures; the
+intermittent halfling sheet-ui navigation-race flake stayed quiet on
+the session-12 run).
 
-**Session 11 (latest)** closed the "`migrateWorld` per-doc catches
-swallow silently" item: the four
-`catch (err) { console.error(err) }` sites in `module/migrations.js`
-(actors / items / scenes loops + `migrateCompendium`) now push
-`{ type, name }` onto a `failures` array; `migrateCompendium`
-returns its failures up to `migrateWorld`. A new pure exported
-`migrationOutcome(failures)` gates the finish — a clean run stamps
-the world at `NEEDS_MIGRATION_VERSION` + "complete" toast; any
-failure leaves the version unstamped (idempotent migrations re-run
-next load) and raises `ui.notifications.warn` with the count (new
-i18n key `DCC.MigrationFailures`, all 7 langs). +4 Vitest in new
-`module/__tests__/migration-outcome.test.js`, +1 Playwright probe.
-**1276 Vitest green**, **155 Playwright passed + 1 environmental
-halfling sheet-ui navigation-race flake** (passes in isolation; not
-slice-caused). The separate PR #720 "`migrateWorld` fire-and-forget
-from a sync ready hook" item is out of scope. Remaining batch slice
-(session 12): consolidate the three `normalizeLibDie` /
-`_stripDieCount` die-normalize copies.
+**Session 12 (latest — completes the batch)** consolidated the three
+former die-normalize copies (`attack-input.mjs` `normalizeLibDie`
+exported, `spell-input.mjs` private dup, `actor.js` `_stripDieCount`
+anchored regex) onto one parameterized
+`normalizeLibDie(foundryDie, fallback = 'd20')` in `attack-input.mjs`:
+`spell-input.mjs` imports it (dup deleted), `_stripDieCount` is a
+one-line wrapper delegating with `fallback: null`. An audit of all
+eight call sites confirmed each passes a single die string or a falsy
+value, so the former copies' edge-case divergences are unreachable;
+the lone behavior change (former `attack-input` no-match → fallback
+instead of original string) is unreachable + more correct. +3 Vitest,
++1 Playwright probe (canonical helper + live `_stripDieCount`
+delegation). 1279 Vitest at close.
 
-**Session 10** closed the "four near-identical `dcc.libResult` flag
-payloads" item: the four chat renderers in
-`module/adapter/chat-renderer.mjs` shared an identical core
-projection + `FleetingLuck.updateFlags` guard, now owned by exported
-`buildLibResultFlag(result, extras = {})` and
-`applyFleetingLuck(flags, foundryRoll)`. Pure structural; flag
-consumed by key name so the on-message contract is unchanged. +10
-Vitest in new `chat-renderer.test.js`, +1 Playwright probe. 1272
-Vitest, 155 Playwright at close.
+**Session 11** closed "`migrateWorld` per-doc catches swallow
+silently": the four `catch (err) { console.error(err) }` sites in
+`module/migrations.js` now push `{ type, name }` onto a `failures`
+array; a new pure `migrationOutcome(failures)` gates the finish — a
+clean run stamps the version + "complete" toast, any failure leaves it
+unstamped (idempotent migrations re-run next load) and warns with the
+count (new i18n key `DCC.MigrationFailures`, all 7 langs). +4 Vitest,
++1 Playwright probe. The separate PR #720 "`migrateWorld`
+fire-and-forget from a sync ready hook" item is still open (out of
+this batch's scope).
+
+**Session 10** closed "four near-identical `dcc.libResult` flag
+payloads": the four chat renderers shared an identical core projection
++ `FleetingLuck.updateFlags` guard, now owned by exported
+`buildLibResultFlag(result, extras = {})` and `applyFleetingLuck(flags,
+foundryRoll)`. Pure structural; flag consumed by key name so the
+on-message contract is unchanged. +10 Vitest, +1 Playwright probe.
 
 **Phase 7 session 9 closed the PR #720 "Uncached compendium
 walks" item** by adding a per-process table cache in a new
@@ -473,25 +481,27 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 7 session 9 (2026-05-28) closed the PR #720 "Uncached
-compendium walks" item** by routing the four table-loading
-sites through a per-process cache in
-`module/adapter/table-cache.mjs`, with global invalidation on
-world-RollTable CRUD events. The slice also backfilled the
-matching "loadDisapprovalTable / loadMercurialMagicTable
-isolated fallback-order tests" PR #720 coverage gap.
+**Phase 7 sessions 10–12 (2026-05-29) completed a three-slice
+PR #720 resilience batch:** (10) extracted
+`buildLibResultFlag` + `applyFleetingLuck` from the four chat
+renderers; (11) surfaced `migrateWorld` per-doc failures via
+`ui.notifications.warn` + gated version-stamping on a clean
+run; (12) consolidated the three `normalizeLibDie` /
+`_stripDieCount` die-normalize copies onto one canonical helper.
+All three targeted `00-progress.md` PR #720 backlog items are
+now ticked.
 
-**Next-arc candidates.** Remaining PR #720 resilience items
-(`00-progress.md` PR #720 backlog) are the most natural
-follow-ups: consolidate the three copies of
-`normalizeLibDie` / `_stripDieCount` across
-`module/adapter/attack-input.mjs` / `module/adapter/spell-input.mjs` /
-`module/actor.js`; extract a shared
-`buildLibResultFlag(result, extras)` helper from the four
-near-identical `dcc.libResult` flag payloads in
-`module/adapter/chat-renderer.mjs`; or surface
-`migrateWorld` per-doc failures via `ui.notifications.warn`
-(C2 review item). Alternatively, broaden the adapter / mixin
+**Next-arc candidates.** The remaining PR #720 resilience items
+(still open in the `00-progress.md` PR #720 backlog): make
+`checkMigrations` async + `await migrations.migrateWorld()` (the
+"fire-and-forget from a sync ready hook" item — distinct from
+the now-closed silent-swallow item); render the per-modifier
+breakdown the adapter already captures (`libResult.modifiers`)
+in chat; unify the dispatcher gate style (named
+`_canRouteXxxViaAdapter` predicates vs inline
+`const needsLegacyPath`); drop the unused `weapon` /
+`attackRollResult` params on the crit/fumble predicates +
+legacy methods. Alternatively, broaden the adapter / mixin
 pattern via a Group E vertical-slice (halfling vertical slice
 or homebrew single-class slice). Appendix-A file-shrinkage
 arcs for `actor.js` / `actor-sheet.js` / `item.js` /

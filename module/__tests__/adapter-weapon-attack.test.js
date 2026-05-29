@@ -563,6 +563,28 @@ test('normalizeLibDie strips the leading count from Foundry-style die strings', 
   expect(normalizeLibDie(null)).toBe('d20')
 })
 
+test('normalizeLibDie is case-insensitive and defaults unparseable input to the fallback', () => {
+  // Phase 7 session 12 consolidation: the canonical normalizer now takes
+  // a `fallback`. Default fallback is 'd20'; a no-match returns it (the
+  // pre-consolidation attack-input copy returned the original string, but
+  // every real call site passes a single die string or a falsy value, so
+  // feeding the lib a valid DieType is the correct normalization).
+  expect(normalizeLibDie('D20')).toBe('d20')
+  expect(normalizeLibDie('garbage')).toBe('d20')
+  expect(normalizeLibDie(undefined)).toBe('d20')
+})
+
+test('normalizeLibDie with an explicit null fallback backs the DCCActor._stripDieCount contract', () => {
+  // _stripDieCount delegates to normalizeLibDie(formula, null): a parsed
+  // single die returns its bare type, and falsy / unparseable input
+  // returns null (callers either `|| 'd20'` it or keep the existing die).
+  expect(normalizeLibDie('1d14', null)).toBe('d14')
+  expect(normalizeLibDie('d20', null)).toBe('d20')
+  expect(normalizeLibDie('', null)).toBe(null)
+  expect(normalizeLibDie(null, null)).toBe(null)
+  expect(normalizeLibDie('not-a-die', null)).toBe(null)
+})
+
 test('adapter path reflects in-place dice-chain bump of terms[0].formula', async () => {
   logDispatch.mockClear()
   const originalCall = Hooks.call

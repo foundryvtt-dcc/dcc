@@ -19,13 +19,28 @@
  * Normalize a Foundry-style die string (e.g. '1d20') to the lib's
  * `DieType` shape (e.g. 'd20').
  *
+ * Canonical die-normalizer for the adapter — `spell-input.mjs` imports
+ * it (rather than re-declaring its own copy) and `DCCActor._stripDieCount`
+ * delegates to it with `fallback: null` (Phase 7 session 12 consolidation
+ * of the three former copies).
+ *
+ * `fallback` is returned when the input is falsy OR has no `dN` die
+ * substring. Callers that want the lib's `'d20'` default (action dice,
+ * spell-check dice) leave it; skill / initiative callers pass `null`
+ * and treat that as "no usable die, keep the existing value". The
+ * pre-consolidation `attack-input` copy returned the original string on
+ * a no-match; that case is unreachable here (every call site passes a
+ * single die string or a falsy value), and returning the fallback feeds
+ * the lib a valid `DieType` rather than a string it can't parse.
+ *
  * @param {string} foundryDie
- * @returns {string}
+ * @param {string|null} [fallback='d20'] - Value returned for falsy /
+ *   unparseable input.
+ * @returns {string|null}
  */
-export function normalizeLibDie (foundryDie) {
-  if (!foundryDie) return 'd20'
-  const match = String(foundryDie).match(/\d*d(\d+)/i)
-  return match ? `d${match[1]}` : String(foundryDie)
+export function normalizeLibDie (foundryDie, fallback = 'd20') {
+  const match = /\d*d(\d+)/i.exec(String(foundryDie ?? ''))
+  return match ? `d${match[1]}` : fallback
 }
 
 /**

@@ -988,6 +988,10 @@ Completed slices below.
 Second of the three-slice PR #720 resilience batch. See entry in
 Completed slices below.
 
+#### ~~Phase 7 session 12. Consolidate the three `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one canonical helper.~~ **DONE 2026-05-29**
+Third and final slice of the three-slice PR #720 resilience batch
+(batch complete). See entry in Completed slices below.
+
 ---
 
 ## Completed slices
@@ -995,6 +999,32 @@ Completed slices below.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 12 (2026-05-29): consolidate the three
+  `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one
+  canonical helper (closes the PR #720 "three copies of strip die
+  count normalization" resilience item; **completes the three-slice
+  resilience batch**). The three former copies — `attack-input.mjs`
+  `normalizeLibDie` (exported), `spell-input.mjs` `normalizeLibDie`
+  (private dup), `actor.js` `_stripDieCount` (anchored regex) —
+  diverged on falsy fallback (`'d20'`/`'d20'`/`null`), no-match
+  fallback (original string/`'d20'`/`null`), and anchoring. Now one
+  parameterized `normalizeLibDie(foundryDie, fallback = 'd20')` in
+  `attack-input.mjs`: `spell-input.mjs` imports it (dup deleted),
+  `DCCActor._stripDieCount` is a one-line wrapper delegating with
+  `fallback: null`. Divergence surfaced, not silently translated: an
+  audit of all eight call sites confirms each passes a single die
+  string or falsy value, so the divergences are unreachable, and the
+  lone behavior change (former `attack-input` no-match → fallback
+  instead of original string) is unreachable + more correct; the
+  `actor.js:1593` site relying on the `null` return keeps it via the
+  `fallback: null` wrapper. +3 Vitest (2 in `adapter-weapon-attack.test.js`,
+  1 in `actor.test.js`), +1 Playwright probe in `extension-api.spec.js`
+  (canonical helper behavior + live `_stripDieCount` delegation).
+  **1279 Vitest green** (was 1276, +3); **157 Playwright passed**,
+  zero failures, clean 5.9-min full suite (the intermittent halfling
+  sheet-ui navigation-race flake stayed quiet this run). Completes the
+  three-slice PR #720 resilience batch.
 
 - Phase 7 session 11 (2026-05-29): surface `migrateWorld` per-doc
   failures via `ui.notifications.warn` + gate version-stamping on a

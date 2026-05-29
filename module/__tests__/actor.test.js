@@ -72,6 +72,19 @@ test('classId is idempotent when sheetClass is already lowercase', () => {
   expect(already.classId).toEqual('halfling')
 })
 
+test('_stripDieCount delegates to normalizeLibDie with a null fallback', () => {
+  // Phase 7 session 12: _stripDieCount is now a thin wrapper over the
+  // canonical adapter normalizeLibDie(formula, null). Single die strings
+  // strip to the bare lib DieType; falsy / unparseable input returns null
+  // (callers `|| 'd20'` it or leave the existing die untouched).
+  expect(actor._stripDieCount('1d14')).toEqual('d14')
+  expect(actor._stripDieCount('1d20')).toEqual('d20')
+  expect(actor._stripDieCount('d24')).toEqual('d24')
+  expect(actor._stripDieCount('')).toEqual(null)
+  expect(actor._stripDieCount(null)).toEqual(null)
+  expect(actor._stripDieCount('not-a-die')).toEqual(null)
+})
+
 test('roll ability check', async () => {
   dccRollCreateRollMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')

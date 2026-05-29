@@ -924,6 +924,68 @@ test.describe('DCC Extension API', () => {
     expect(result.i18nInterpolatesCount).toBe(true)
   })
 
+  test('DCC normalizeLibDie consolidation: canonical helper + live _stripDieCount delegation (Phase 7 session 12)', async ({ page }) => {
+    // Phase 7 session 12: the three former die-normalize copies
+    // (attack-input.mjs `normalizeLibDie`, spell-input.mjs private
+    // `normalizeLibDie`, actor.js `_stripDieCount`) are consolidated onto
+    // the single canonical `normalizeLibDie(foundryDie, fallback = 'd20')`
+    // in `module/adapter/attack-input.mjs`. spell-input now imports it;
+    // `DCCActor._stripDieCount` delegates with `fallback: null`. This
+    // probe imports the live-served canonical helper to confirm its
+    // behavior (incl. the null-fallback contract `_stripDieCount` relies
+    // on) and creates a live Player actor to confirm `_stripDieCount`
+    // delegates correctly end-to-end.
+    const result = await page.evaluate(async () => {
+      const attack = await import('../../../../../../../../systems/dcc/module/adapter/attack-input.mjs')
+      const n = attack.normalizeLibDie
+
+      const cases = {
+        clean: n('1d20'),
+        bare: n('d16'),
+        upper: n('D20'),
+        falsyDefault: n(''),
+        garbageDefault: n('garbage'),
+        nullFallbackParsed: n('1d14', null),
+        nullFallbackFalsy: n('', null),
+        nullFallbackGarbage: n('xyz', null)
+      }
+
+      // Live _stripDieCount delegation on a throwaway Player actor.
+      const actor = await Actor.create({ name: 'P_DieProbe', type: 'Player' })
+      let strip
+      try {
+        strip = {
+          parsed: actor._stripDieCount('1d14'),
+          bare: actor._stripDieCount('d20'),
+          falsy: actor._stripDieCount(''),
+          garbage: actor._stripDieCount('not-a-die')
+        }
+      } finally {
+        await actor.delete()
+      }
+
+      return { isFunction: typeof n === 'function', cases, strip }
+    })
+
+    expect(result.isFunction).toBe(true)
+    // Canonical helper: default fallback 'd20', case-insensitive,
+    // unparseable → fallback.
+    expect(result.cases.clean).toBe('d20')
+    expect(result.cases.bare).toBe('d16')
+    expect(result.cases.upper).toBe('d20')
+    expect(result.cases.falsyDefault).toBe('d20')
+    expect(result.cases.garbageDefault).toBe('d20')
+    // null-fallback contract (what _stripDieCount depends on).
+    expect(result.cases.nullFallbackParsed).toBe('d14')
+    expect(result.cases.nullFallbackFalsy).toBe(null)
+    expect(result.cases.nullFallbackGarbage).toBe(null)
+    // Live _stripDieCount delegates to the canonical helper.
+    expect(result.strip.parsed).toBe('d14')
+    expect(result.strip.bare).toBe('d20')
+    expect(result.strip.falsy).toBe(null)
+    expect(result.strip.garbage).toBe(null)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

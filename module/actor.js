@@ -1913,13 +1913,17 @@ class DCCActor extends Actor {
   /**
    * Turn a Foundry die formula like `'1d14'` into the bare die type
    * `'d14'` the lib's SkillDefinition wants. Returns null when the
-   * input can't be parsed.
+   * input can't be parsed (callers either `|| 'd20'` it or use the
+   * null to leave the existing die untouched).
+   *
+   * Delegates to the canonical adapter `normalizeLibDie` (Phase 7
+   * session 12 consolidation) with `fallback: null` — every call site
+   * passes a single die string, so the unanchored matcher behaves
+   * identically to the former anchored regex here.
    * @private
    */
   _stripDieCount (formula) {
-    if (!formula) return null
-    const match = /^(?:\d+)?(d\d+)$/i.exec(formula.trim())
-    return match ? match[1].toLowerCase() : null
+    return normalizeLibDie(formula, null)
   }
 
   /**
