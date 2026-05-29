@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { applyFleetingLuck, buildLibResultFlag } from '../adapter/chat-renderer.mjs'
+import { applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml } from '../adapter/chat-renderer.mjs'
 
 // A representative lib SkillCheckResult-shaped object. Carries every
 // core field the flag projects plus the spell-only extras so the
@@ -104,6 +104,102 @@ describe('buildLibResultFlag', () => {
   test('extras win over core when keys collide (caller controls the override)', () => {
     const flag = buildLibResultFlag(makeResult({ total: 17 }), { total: 99 })
     expect(flag.total).toBe(99)
+  })
+})
+
+describe('buildModifierBreakdownHtml', () => {
+  test('returns empty string for missing / empty / non-array input', () => {
+    expect(buildModifierBreakdownHtml(undefined)).toBe('')
+    expect(buildModifierBreakdownHtml(null)).toBe('')
+    expect(buildModifierBreakdownHtml([])).toBe('')
+    expect(buildModifierBreakdownHtml('nope')).toBe('')
+  })
+
+  test('renders tagged-union `add` modifiers as label + signed value', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'add', value: 1, origin: { category: 'ability', id: 'str', label: 'Strength' }, applied: true },
+      { kind: 'add', value: -2, origin: { category: 'penalty', id: 'check-penalty', label: 'Check Penalty' }, applied: true }
+    ])
+    expect(html).toContain('<div class="dcc-modifier-breakdown">')
+    expect(html).toContain('<span class="dcc-modifier-label">Strength</span><span class="dcc-modifier-value">+1</span>')
+    expect(html).toContain('<span class="dcc-modifier-label">Check Penalty</span><span class="dcc-modifier-value">-2</span>')
+  })
+
+  test('renders a zero-value modifier as +0 (the backlog "Save bonus +0" case)', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'add', value: 0, origin: { category: 'progression', id: 'save', label: 'Save bonus' }, applied: true }
+    ])
+    expect(html).toContain('<span class="dcc-modifier-label">Save bonus</span><span class="dcc-modifier-value">+0</span>')
+  })
+
+  test('includes the localized heading when provided, omits it otherwise', () => {
+    const mods = [{ kind: 'add', value: 1, origin: { label: 'Strength' }, applied: true }]
+    const withHeading = buildModifierBreakdownHtml(mods, 'Modifiers')
+    expect(withHeading).toContain('<span class="dcc-modifier-breakdown-heading">Modifiers</span>')
+    const without = buildModifierBreakdownHtml(mods)
+    expect(without).not.toContain('dcc-modifier-breakdown-heading')
+  })
+
+  test('drops tagged-union modifiers the evaluator marked applied:false', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'add', value: 3, origin: { label: 'Counted' }, applied: true },
+      { kind: 'add', value: 5, origin: { label: 'Dropped' }, applied: false }
+    ])
+    expect(html).toContain('Counted')
+    expect(html).not.toContain('Dropped')
+  })
+
+  test('renders `display` modifiers (informational, no applied flag) and `add-dice` as a dice term', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'display', value: 0, origin: { label: 'Armor Check Penalty' } },
+      { kind: 'add-dice', dice: '1d3', origin: { label: 'Mighty Deed' }, applied: true }
+    ])
+    expect(html).toContain('<span class="dcc-modifier-label">Armor Check Penalty</span><span class="dcc-modifier-value">+0</span>')
+    expect(html).toContain('<span class="dcc-modifier-label">Mighty Deed</span><span class="dcc-modifier-value">+1d3</span>')
+  })
+
+  test('skips die-reshaping kinds (set-die / bump-die / multiply / threat-shift)', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'set-die', die: 'd24', origin: { label: 'Set Die' } },
+      { kind: 'bump-die', steps: 1, origin: { label: 'Bump Die' } },
+      { kind: 'multiply', factor: 2, origin: { label: 'Double' } },
+      { kind: 'threat-shift', amount: 1, origin: { label: 'Threat' } }
+    ])
+    // None of those have a flat "+N under the formula" reading.
+    expect(html).toBe('')
+  })
+
+  test('synthesizes a category:id label when origin.label is absent', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'add', value: 2, origin: { category: 'luck-burn', id: 'luck' }, applied: true }
+    ])
+    expect(html).toContain('<span class="dcc-modifier-label">luck-burn: luck</span>')
+  })
+
+  test('renders LegacyRollModifier shape (spell results) using label || source', () => {
+    const html = buildModifierBreakdownHtml([
+      { source: 'strength', value: 1, label: 'Strength' },
+      { source: 'caster level', value: 2 }
+    ])
+    expect(html).toContain('<span class="dcc-modifier-label">Strength</span><span class="dcc-modifier-value">+1</span>')
+    expect(html).toContain('<span class="dcc-modifier-label">caster level</span><span class="dcc-modifier-value">+2</span>')
+  })
+
+  test('skips rows with a non-finite value rather than rendering +NaN', () => {
+    const html = buildModifierBreakdownHtml([
+      { source: 'bad', value: 'not-a-number' },
+      { source: 'good', value: 4 }
+    ])
+    expect(html).not.toContain('NaN')
+    expect(html).toContain('good')
+  })
+
+  test('escapes HTML in labels (item names can carry markup)', () => {
+    const html = buildModifierBreakdownHtml([
+      { kind: 'add', value: 1, origin: { label: '<b>Sword</b> & "Shield"' }, applied: true }
+    ])
+    expect(html).toContain('&lt;b&gt;Sword&lt;/b&gt; &amp; &quot;Shield&quot;')
+    expect(html).not.toContain('<b>Sword</b>')
   })
 })
 

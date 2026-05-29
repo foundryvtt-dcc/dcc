@@ -73,6 +73,134 @@ export function applyFleetingLuck (flags, foundryRoll) {
 }
 
 /**
+ * Minimal HTML escape for values interpolated into the breakdown markup.
+ * Origin labels and ids can originate from user-authored content (e.g.
+ * an equipment item's name), so escape before injecting into chat HTML.
+ */
+function escapeHtml (value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Format a number as a signed string for the breakdown (`+3`, `-1`,
+ * `+0`). Returns `null` for a non-finite input so the caller can skip
+ * the row rather than render `+NaN`.
+ */
+function signedNumber (value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return null
+  return num >= 0 ? `+${num}` : `${num}`
+}
+
+/**
+ * Resolve a human-readable label for a tagged-union modifier's origin.
+ * Prefers the lib-supplied `origin.label`; the lib documents a
+ * renderer-synthesized `category: id` fallback when `label` is absent
+ * (see dcc-core-lib/types/dice.d.ts ModifierOrigin).
+ */
+function resolveOriginLabel (origin) {
+  if (!origin) return null
+  if (origin.label) return origin.label
+  if (origin.category && origin.id) return `${origin.category}: ${origin.id}`
+  return origin.id || origin.category || null
+}
+
+/**
+ * Normalize one modifier — either a tagged-union `RollModifier`
+ * (ability / save / skill results) or a flat `LegacyRollModifier`
+ * (spell results) — into a `{ label, value }` display row, or `null`
+ * if it should not appear in the breakdown.
+ *
+ * Tagged-union handling: `applied === false` rows are dropped (the
+ * evaluator marks modifiers that did not contribute). Only the variants
+ * that have a natural "term under the formula" reading are rendered —
+ * `add` / `display` (signed numeric) and `add-dice` (a `+1d3`-style
+ * dice term). `set-die` / `bump-die` / `multiply` / `threat-shift`
+ * reshape the die or threat range rather than adding a flat term, so
+ * the simple breakdown skips them. `display` modifiers are
+ * informational (e.g. a 0-value armor check penalty) and always render.
+ *
+ * @param {Object} mod - A RollModifier or LegacyRollModifier.
+ * @returns {{label: string, value: string}|null}
+ */
+function modifierToDisplayRow (mod) {
+  if (!mod || typeof mod !== 'object') return null
+
+  // Tagged-union RollModifier — discriminated by `kind`.
+  if (typeof mod.kind === 'string') {
+    if (mod.applied === false) return null
+    const label = resolveOriginLabel(mod.origin)
+    if (!label) return null
+    switch (mod.kind) {
+      case 'add':
+      case 'display': {
+        const value = signedNumber(mod.value)
+        return value === null ? null : { label, value }
+      }
+      case 'add-dice':
+        return mod.dice ? { label, value: `+${mod.dice}` } : null
+      default:
+        return null
+    }
+  }
+
+  // LegacyRollModifier — flat `{ source, value, label? }`.
+  const label = mod.label || mod.source
+  if (!label) return null
+  const value = signedNumber(mod.value)
+  return value === null ? null : { label, value }
+}
+
+/**
+ * Build the per-modifier breakdown HTML that lists each contributing
+ * modifier as `<label> <signed value>` under the rolled formula. The
+ * lib captures rich per-modifier metadata on every check / save / spell
+ * result and the adapter persists it as `flags.dcc.libResult.modifiers`,
+ * but nothing rendered it — Foundry's native term tooltip is also
+ * unlabelled because the adapter builds the Roll from the lib's flat
+ * formula string. This restores the labelled-term UX the legacy
+ * `roll-modifier.js` path surfaced (PR #720 resilience item).
+ *
+ * Pure — the localized heading is passed in by the caller (the four
+ * renderers already hold `game.i18n`), keeping this helper free of
+ * Foundry globals and unit-testable in isolation, mirroring
+ * `buildLibResultFlag`.
+ *
+ * @param {Array} modifiers - `result.modifiers`; a `RollModifier[]`
+ *   (ability / save / skill) or `LegacyRollModifier[]` (spell).
+ * @param {string} [heading] - Localized breakdown heading; omitted from
+ *   the markup when falsy.
+ * @returns {string} The breakdown `<div>` HTML, or `''` when there is
+ *   nothing displayable.
+ */
+export function buildModifierBreakdownHtml (modifiers, heading = '') {
+  if (!Array.isArray(modifiers) || modifiers.length === 0) return ''
+
+  const rows = []
+  for (const mod of modifiers) {
+    const row = modifierToDisplayRow(mod)
+    if (row) rows.push(row)
+  }
+  if (rows.length === 0) return ''
+
+  const headingHtml = heading
+    ? `<span class="dcc-modifier-breakdown-heading">${escapeHtml(heading)}</span>`
+    : ''
+  const items = rows
+    .map(r =>
+      `<li class="dcc-modifier-row"><span class="dcc-modifier-label">${escapeHtml(r.label)}</span><span class="dcc-modifier-value">${escapeHtml(r.value)}</span></li>`
+    )
+    .join('')
+
+  return `<div class="dcc-modifier-breakdown">${headingHtml}<ul class="dcc-modifier-list">${items}</ul></div>`
+}
+
+/**
  * Render an ability-check result as a Foundry ChatMessage.
  *
  * @param {Object} params
@@ -108,17 +236,25 @@ export async function renderAbilityCheck ({
 
   applyFleetingLuck(flags, foundryRoll)
 
-  const messageData = await foundryRoll.toMessage(
-    {
-      speaker: ChatMessage.getSpeaker({ actor }),
-      flavor,
-      flags,
-      system: {
-        checkPenaltyRollIndex: null
-      }
-    },
-    { create: false }
+  const toMessageData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags,
+    system: {
+      checkPenaltyRollIndex: null
+    }
+  }
+
+  const breakdownHtml = buildModifierBreakdownHtml(
+    result.modifiers,
+    game.i18n.localize('DCC.ModifierBreakdown')
   )
+  if (breakdownHtml) {
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}${breakdownHtml}`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
 
   return ChatMessage.create(messageData)
 }
@@ -172,14 +308,22 @@ export async function renderSavingThrow ({
 
   applyFleetingLuck(flags, foundryRoll)
 
-  const messageData = await foundryRoll.toMessage(
-    {
-      speaker: ChatMessage.getSpeaker({ actor }),
-      flavor,
-      flags
-    },
-    { create: false }
+  const toMessageData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags
+  }
+
+  const breakdownHtml = buildModifierBreakdownHtml(
+    result.modifiers,
+    game.i18n.localize('DCC.ModifierBreakdown')
   )
+  if (breakdownHtml) {
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}${breakdownHtml}`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
 
   return ChatMessage.create(messageData)
 }
@@ -246,10 +390,25 @@ export async function renderSkillCheck ({
     system: systemData
   }
 
-  if (skillItem && skillItem.system.description?.value) {
-    systemData.skillDescription = skillItem.system.description.value
+  const breakdownHtml = buildModifierBreakdownHtml(
+    result.modifiers,
+    game.i18n.localize('DCC.ModifierBreakdown')
+  )
+  const description = skillItem?.system.description?.value || ''
+  if (description) {
+    systemData.skillDescription = description
+  }
+
+  // Manual roll render when either the breakdown or the skill-item
+  // description needs to ride under the rolled formula (matches the
+  // pre-extraction skill-description path; the breakdown sits between
+  // the roll and the description).
+  if (breakdownHtml || description) {
     const rollHTML = await foundryRoll.render()
-    toMessageData.content = `${rollHTML}<div class="skill-description">${skillItem.system.description.value}</div>`
+    const descriptionHtml = description
+      ? `<div class="skill-description">${description}</div>`
+      : ''
+    toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
@@ -323,8 +482,19 @@ export async function renderSpellCheck ({
 
   if (nakedHtml) {
     flags['dcc.spellResult'] = nakedHtml
+  }
+
+  // Manual roll render when either the breakdown or the naked-cast
+  // verdict needs to ride under the rolled formula. The breakdown sits
+  // between the roll and the verdict emote. Spell results carry the
+  // `LegacyRollModifier` shape; `buildModifierBreakdownHtml` handles it.
+  const breakdownHtml = buildModifierBreakdownHtml(
+    result.modifiers,
+    game.i18n.localize('DCC.ModifierBreakdown')
+  )
+  if (breakdownHtml || nakedHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessagePayload.content = `${rollHTML}${nakedHtml}`
+    toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })

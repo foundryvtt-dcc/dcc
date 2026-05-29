@@ -992,6 +992,23 @@ Completed slices below.
 Third and final slice of the three-slice PR #720 resilience batch
 (batch complete). See entry in Completed slices below.
 
+#### ~~Phase 7 session 14. Render the per-modifier breakdown (`libResult.modifiers`) under the rolled formula in chat.~~ **DONE 2026-05-29**
+Closes the PR #720 "chat doesn't surface the per-modifier breakdown the
+adapter already captures" resilience item. New exported pure helper
+`buildModifierBreakdownHtml(modifiers, heading)` in
+`module/adapter/chat-renderer.mjs` lists each contributing modifier as
+`<origin.label> <signed value>`, handling both the tagged-union
+`RollModifier` shape (ability / save / skill) and the flat
+`LegacyRollModifier` shape (spell). All four renderers append it under
+the rolled formula via the proven manual-`rollHTML` + `content` pattern.
+New i18n key `DCC.ModifierBreakdown` ("Modifiers", all 7 langs);
+`.dcc-modifier-breakdown` styling in `styles/_chat.scss`. +11 Vitest
+(`chat-renderer.test.js`), +1 Playwright (`adapter-dispatch.spec.js`).
+1299 Vitest green, 160 Playwright passed (zero failures). (Session 13
+was the migration-ordering slice; no session was numbered 13 in this
+file — it landed alongside the init-die fix directly in
+`00-progress.md`.)
+
 ---
 
 ## Completed slices

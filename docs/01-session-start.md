@@ -42,25 +42,36 @@ session's context):
 
 ## Status (2026-05-29)
 
-**Phase 7 session 13 (latest) + a standalone init-die `fix(adapter)`**
-landed together. Session 13 closes the PR #720 "`migrateWorld`
-fire-and-forget from a sync ready hook" item: `checkMigrations` moved
-out of `module/dcc.js` into `migrations.js`, became `async`, and now
-`await`s `migrateWorld`; the ready hook `await`s it before the rest of
-the chain and fires `Hooks.callAll('dcc.ready', { migrationComplete })`,
-so listeners no longer race the async per-document mutations.
-`migrateWorld` + `checkMigrations` return `{ migrationComplete }`. +4
-Vitest (`check-migrations.test.js`), +1 Playwright probe. The init-die
-fix preserves additive `init.die` terms (MCC Mutant Horror `1d20+1d3`,
-mcc-core-book §9.2a) through the combat-tracker path — a new
-`_initDieAdditiveTerms` helper re-appends the tail Foundry-side that
-`_getInitiativeRollViaAdapter` previously flattened to `d20`; +4 Vitest,
-+1 integration, +1 Playwright (spec:
-`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`). Repo green: **1288 Vitest**;
-full e2e **158 passed + 1 isolation-passing flake** (unrelated
-`extension-api.spec.js:2232` link-fields navigation race). Remaining
-PR #720 items: chat per-modifier breakdown; dispatcher gate-style
+**Phase 7 session 14 (latest)** closes the PR #720 "chat doesn't surface
+the per-modifier breakdown the adapter already captures" item. The four
+chat renderers (`renderAbilityCheck` / `renderSavingThrow` /
+`renderSkillCheck` / `renderSpellCheck`) now render the modifier
+breakdown under the rolled formula via a new exported pure helper
+`buildModifierBreakdownHtml(modifiers, heading)` in
+`module/adapter/chat-renderer.mjs` — lists each modifier as
+`<origin.label> <signed value>` (e.g. "STR modifier +2"), handling both
+the tagged-union `RollModifier` shape (ability / save / skill) and the
+flat `LegacyRollModifier` shape (spell). New i18n key
+`DCC.ModifierBreakdown` ("Modifiers", all 7 langs);
+`.dcc-modifier-breakdown` styling in `styles/_chat.scss`. +11 Vitest
+(`chat-renderer.test.js`), +1 Playwright (`adapter-dispatch.spec.js`).
+Repo green: **1299 Vitest**; full e2e **160 passed, zero failures** (the
+previously-flaky `extension-api.spec.js:2232` link-fields test passed
+clean this run). Remaining PR #720 items: dispatcher gate-style
 unification; unused crit/fumble predicate params.
+
+**Prior (2026-05-29):** session 13 made `checkMigrations` async +
+`await`ed `migrateWorld` before firing `dcc.ready` (threading
+`{ migrationComplete }`); a standalone init-die `fix(adapter)` preserved
+additive `init.die` terms (MCC Mutant Horror `1d20+1d3`, mcc-core-book
+§9.2a) through the combat-tracker path via `_initDieAdditiveTerms`
+(`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`).
+
+**Pending feature (logged, not yet built):** optional `options.checkLabel`
+to relabel raw (no-item) spell-check chat flavor — MCC's Mutation /
+Wetware Program checks read "Spell Check" today. Two-line,
+backward-compatible change; full spec in
+`docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`.
 
 **Phase 7 sessions 10 + 11 + 12 completed a three-slice PR #720
 resilience batch** (the backlog active queue having drained at

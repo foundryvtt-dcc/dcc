@@ -685,6 +685,35 @@ a.inline-roll {
   font-size: 0.9em;
 }
 
+/* ----------------------------------------- */
+/*  Per-modifier breakdown                   */
+/* ----------------------------------------- */
+.dcc-modifier-breakdown {
+  margin-top: 4px;
+  font-size: var(--font-size-12);
+  color: var(--system-text-muted-color);
+}
+.dcc-modifier-breakdown .dcc-modifier-breakdown-heading {
+  display: block;
+  font-family: var(--system-label-font), serif;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.dcc-modifier-breakdown .dcc-modifier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dcc-modifier-breakdown .dcc-modifier-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 18px;
+}
+.dcc-modifier-breakdown .dcc-modifier-value {
+  font-variant-numeric: tabular-nums;
+}
+
 .flavor-text {
   font-family: var(--system-label-font), serif;
 }

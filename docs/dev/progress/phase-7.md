@@ -588,3 +588,48 @@
   failures via `ui.notifications.warn`) or a Group E
   vertical-slice (halfling vertical slice / homebrew
   single-class).
+
+- **2026-05-29 — Phase 7 session 10: extract `buildLibResultFlag` +
+  `applyFleetingLuck` shared helpers from the four chat renderers
+  (closes the PR #720 resilience item "four near-identical
+  `dcc.libResult` flag payloads").** Pure structural refactor —
+  `renderAbilityCheck`, `renderSavingThrow`, `renderSkillCheck`, and
+  `renderSpellCheck` in `module/adapter/chat-renderer.mjs` each built
+  a near-identical `dcc.libResult` flag literal — the seven shared
+  core fields (`die`, `natural`, `total`, `formula`, `critical`,
+  `fumble`, `modifiers`), a result-id field (`skillId` for the three
+  checks, `spellId` for spell checks), and — for spell checks only —
+  `tier` / `spellLost` / `corruptionTriggered` — followed by an
+  identical guarded `game.dcc?.FleetingLuck?.updateFlags(flags,
+  foundryRoll)` block. The shared core now lives in a new exported
+  `buildLibResultFlag(result, extras = {})` (the three checks pass
+  `{ skillId: result.skillId }`, the spell renderer passes
+  `{ spellId, tier, spellLost, corruptionTriggered }`); the luck
+  update is now the exported `applyFleetingLuck(flags, foundryRoll)`
+  (same guard — test-mock-safe + no-op without a roll). Key order in
+  the produced flag object changes (core fields now precede the spread
+  `extras`) but the flag is consumed by key name, not position, so
+  the on-message contract downstream modules (dcc-qol,
+  token-action-hud-dcc) read is unchanged — and the adapter
+  ability/save/skill/spell round-trip tests (which read
+  `libResult.skillId` / `.modifiers`) stay green untouched. +10 Vitest
+  in new `module/__tests__/chat-renderer.test.js` (7 buildLibResultFlag:
+  core-only field set when no extras; verbatim core copy + modifiers
+  carried by reference; no result-id / spell fields without extras;
+  check-shaped and spell-shaped field sets matching the pre-extraction
+  literals; undefined-core passthrough with no silent defaulting;
+  extras-win-on-key-collision — plus 3 applyFleetingLuck: calls
+  `updateFlags(flags, roll)` when both present; no-op without a roll;
+  no-throw when `game.dcc.FleetingLuck` is unavailable). +1 Playwright
+  probe in `extension-api.spec.js` (`DCC chat-renderer shared helpers
+  (buildLibResultFlag + applyFleetingLuck) survive the Phase 7 session
+  10 extraction`) dynamic-imports the live-served module and asserts
+  both flag-payload shapes (check: core + `skillId`, no `spellId`;
+  spell: core + `spellId` + `tier` + `spellLost` +
+  `corruptionTriggered`, no `skillId`) plus `applyFleetingLuck` being a
+  function and a guard-safe no-op without a roll. **1272 Vitest green**
+  (was 1262, +10; +1 test file). **155 Playwright passed**, zero
+  failures — clean 5.8-min full suite (was 154 pre-slice, +1 new
+  probe). Next batch slices: surface `migrateWorld` per-doc failures
+  via `ui.notifications.warn`, then consolidate the three
+  `normalizeLibDie` / `_stripDieCount` die-normalize copies.

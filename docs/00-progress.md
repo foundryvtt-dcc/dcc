@@ -65,39 +65,33 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 13 (2026-05-29)** closes the PR #720 "`migrateWorld`
-fire-and-forget from a sync ready hook" item. `checkMigrations` moved
-out of `module/dcc.js` into `migrations.js`, became `async`, and now
-`await`s `migrateWorld`; `dcc.js`'s ready hook `await`s
-`checkMigrations` (`const migrationStatus = await
-migrations.checkMigrations()`) before `registerTables` /
-`FleetingLuck.init` / `Hooks.callAll('dcc.ready', { migrationComplete })`
-run — so the ready chain and any `dcc.ready` listeners no longer race
-the async per-document `update()` calls. `migrateWorld` +
-`checkMigrations` now return `{ migrationComplete }` (`true` for non-GM /
-already-migrated / clean run; `false` for a blocked pre-V14 world or a
-run with per-document failures), threaded onto the payload. Co-locating
-the function with `migrateWorld` / `classifyMigrationDecision` /
-`migrationOutcome` makes its decide-then-await orchestration
-unit-testable (`ui` dropped from `dcc.js`'s `/* global */`). +4 Vitest
-(new `check-migrations.test.js`), +1 Playwright probe. **1283 Vitest**
-after this slice.
+**Phase 7 session 14 (2026-05-29)** closes the PR #720 "chat doesn't
+surface the per-modifier breakdown the adapter already captures" item.
+The lib emits each contributing modifier with rich origin metadata and
+the adapter persists it as `flags.dcc.libResult.modifiers`, but nothing
+rendered it — and because the adapter builds the Foundry Roll from the
+lib's flat formula string, Foundry's native term tooltip was unlabelled
+too (a regression vs. the legacy `roll-modifier.js` path). New exported
+pure helper `buildModifierBreakdownHtml(modifiers, heading)` in
+`module/adapter/chat-renderer.mjs` lists each modifier as
+`<origin.label> <signed value>` (e.g. "STR modifier +2"), handling both
+the tagged-union `RollModifier` shape (ability / save / skill) and the
+flat `LegacyRollModifier` shape (spell). All four renderers append it
+under the rolled formula via the proven manual-`rollHTML` + `content`
+pattern. New i18n key `DCC.ModifierBreakdown` ("Modifiers", all 7
+langs); `.dcc-modifier-breakdown` styling in `styles/_chat.scss`. +11
+Vitest (`chat-renderer.test.js`), +1 Playwright
+(`adapter-dispatch.spec.js`). **1299 Vitest**; full e2e **160 passed,
+zero failures** (the previously-flaky `extension-api.spec.js:2232`
+link-fields test passed clean this run). Remaining PR #720 candidates:
+dispatcher gate-style unification; unused crit/fumble predicate params.
 
-**Alongside it (2026-05-29), a standalone `fix(adapter)`** preserves
-additive init-die terms through the combat-tracker initiative path. A
-compound `init.die` like MCC's Mutant Horror `1d20+1d3` (mcc-core-book
-§9.2a; up to `1d20+1d7+7` at higher levels) was flattened to a single
-`d20` by `_getInitiativeRollViaAdapter` (`_stripDieCount('1d20+1d3')` →
-`'d20'`) and the extra die dropped — combat-tracker only; the sheet
-button (`_getInitiativeRollLegacy`) and `main` read `init.die` verbatim.
-New `_initDieAdditiveTerms` helper re-appends the tail Foundry-side
-(mirroring the weapon-label re-injection), suppressed under a weapon
-init-die override. +4 Vitest, +1 integration, +1 Playwright; spec in
-`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`. **1288 Vitest** combined;
-full e2e **158 passed + 1 isolation-passing flake** (unrelated
-`extension-api.spec.js:2232` link-fields navigation race). Next PR #720
-candidates: chat per-modifier breakdown; dispatcher gate-style
-unification; unused crit/fumble predicate params.
+**Prior (2026-05-29):** session 13 made `checkMigrations` async +
+`await`ed `migrateWorld` before firing `dcc.ready` (threading
+`{ migrationComplete }` onto the payload); a standalone `fix(adapter)`
+preserved additive init-die terms (`1d20+1d3`) through the
+combat-tracker path via `_initDieAdditiveTerms`
+(`docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`).
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -107,6 +101,55 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — Phase 7 session 14: render the per-modifier breakdown
+  the adapter already captures (`libResult.modifiers`) under the rolled
+  formula in chat (closes the PR #720 "chat doesn't surface the
+  per-modifier breakdown" resilience item).** The lib emits each
+  contributing modifier with rich origin metadata
+  (`{ kind, value, origin: { category, id, label }, applied }` for the
+  tagged-union shape; `{ source, value, label? }` for the legacy spell
+  shape) and the four chat renderers persist the array as
+  `flags.dcc.libResult.modifiers` — but nothing rendered it, and because
+  the adapter builds the Foundry Roll from the lib's flat formula string
+  (`new Roll(plan.formula)`) Foundry's native term tooltip was unlabelled
+  too, a regression vs. the legacy `module/roll-modifier.js` path that
+  set per-term labels. New exported pure helper
+  `buildModifierBreakdownHtml(modifiers, heading)` in
+  `module/adapter/chat-renderer.mjs` lists each modifier as
+  `<origin.label> <signed value>`. Tagged-union handling renders `add` /
+  `display` (signed numeric) + `add-dice` (a `+1d3`-style dice term),
+  drops `applied:false` rows, and skips the die-reshaping kinds
+  (`set-die` / `bump-die` / `multiply` / `threat-shift`) that have no
+  flat "+N under the formula" reading; the legacy shape renders
+  `label || source` + signed value. Labels are HTML-escaped (equipment /
+  AE item names can carry markup). The localized heading (new i18n key
+  `DCC.ModifierBreakdown` = "Modifiers", translated to all 7 langs;
+  `compare-lang` clean) is passed in by the renderers, keeping the
+  helper free of Foundry globals + unit-testable in isolation (mirrors
+  `buildLibResultFlag`). All four renderers (`renderAbilityCheck` /
+  `renderSavingThrow` / `renderSkillCheck` / `renderSpellCheck`) append
+  the breakdown via the proven manual-`rollHTML` + `content` pattern
+  (the one `renderSkillCheck` already used for skill-item descriptions),
+  so it rides under the roll exactly once; ability / save switch from
+  the auto-render path to manual-content in the common case (modifiers
+  almost always present) — the manual `await foundryRoll.render()`
+  reproduces the auto-render byte-for-byte plus the breakdown. Styling
+  via `.dcc-modifier-breakdown` / `-heading` / `-list` / `-row` /
+  `-value` in `styles/_chat.scss` (theming-contract `--system-*` vars;
+  `dcc.css` recompiled). +11 Vitest in `chat-renderer.test.js` (empty /
+  non-array input; `add` signed values; the `+0` "Save bonus" case;
+  heading present/absent; `applied:false` drop; `display` + `add-dice`;
+  die-reshaping skip; `category:id` label fallback; legacy
+  `label || source`; non-finite-value skip; HTML escaping). +1 Playwright
+  in `adapter-dispatch.spec.js` (a live STR-16 ability check asserts the
+  breakdown container + localized heading + a labelled `+2` row render,
+  exactly once). **1299 Vitest** (was 1288, +11). **160 Playwright
+  passed**, zero failures — clean 6.3-min full suite (was 158 passed +
+  1 isolation-passing flake at session 13; +1 new probe = 159, and the
+  `extension-api.spec.js:2232` link-fields navigation-race flake passed
+  clean this run → 160). Next PR #720 candidates: dispatcher gate-style
+  unification; unused crit/fumble predicate params.
 
 - **2026-05-29 — Phase 7 session 13: `await` world migration before
   firing `dcc.ready` + thread `{ migrationComplete }` onto the payload
@@ -272,51 +315,6 @@ archives linked above.
   separate PR #720 "`migrateWorld` fire-and-forget from a sync ready
   hook" item (make `checkMigrations` async + `await`) is untouched
   and out of this batch's scope.
-
-- **2026-05-29 — Phase 7 session 10: extract `buildLibResultFlag` +
-  `applyFleetingLuck` shared helpers from the four chat renderers
-  (closes the PR #720 resilience item "four near-identical
-  `dcc.libResult` flag payloads").** Pure structural refactor —
-  `renderAbilityCheck`, `renderSavingThrow`, `renderSkillCheck`, and
-  `renderSpellCheck` in `module/adapter/chat-renderer.mjs` each built
-  a near-identical `dcc.libResult` flag literal — the seven shared
-  core fields (`die`, `natural`, `total`, `formula`, `critical`,
-  `fumble`, `modifiers`), a result-id field (`skillId` for the three
-  checks, `spellId` for spell checks), and — for spell checks only —
-  `tier` / `spellLost` / `corruptionTriggered` — followed by an
-  identical guarded `game.dcc?.FleetingLuck?.updateFlags(flags,
-  foundryRoll)` block. The shared core now lives in a new exported
-  `buildLibResultFlag(result, extras = {})` (the three checks pass
-  `{ skillId: result.skillId }`, the spell renderer passes
-  `{ spellId, tier, spellLost, corruptionTriggered }`); the luck
-  update is now the exported `applyFleetingLuck(flags, foundryRoll)`
-  (same guard — test-mock-safe + no-op without a roll). Key order in
-  the produced flag object changes (core fields now precede the spread
-  `extras`) but the flag is consumed by key name, not position, so
-  the on-message contract downstream modules (dcc-qol,
-  token-action-hud-dcc) read is unchanged — and the adapter
-  ability/save/skill/spell round-trip tests (which read
-  `libResult.skillId` / `.modifiers`) stay green untouched. +10 Vitest
-  in new `module/__tests__/chat-renderer.test.js` (7 buildLibResultFlag:
-  core-only field set when no extras; verbatim core copy + modifiers
-  carried by reference; no result-id / spell fields without extras;
-  check-shaped and spell-shaped field sets matching the pre-extraction
-  literals; undefined-core passthrough with no silent defaulting;
-  extras-win-on-key-collision — plus 3 applyFleetingLuck: calls
-  `updateFlags(flags, roll)` when both present; no-op without a roll;
-  no-throw when `game.dcc.FleetingLuck` is unavailable). +1 Playwright
-  probe in `extension-api.spec.js` (`DCC chat-renderer shared helpers
-  (buildLibResultFlag + applyFleetingLuck) survive the Phase 7 session
-  10 extraction`) dynamic-imports the live-served module and asserts
-  both flag-payload shapes (check: core + `skillId`, no `spellId`;
-  spell: core + `spellId` + `tier` + `spellLost` +
-  `corruptionTriggered`, no `skillId`) plus `applyFleetingLuck` being a
-  function and a guard-safe no-op without a roll. **1272 Vitest green**
-  (was 1262, +10; +1 test file). **155 Playwright passed**, zero
-  failures — clean 5.8-min full suite (was 154 pre-slice, +1 new
-  probe). Next batch slices: surface `migrateWorld` per-doc failures
-  via `ui.notifications.warn`, then consolidate the three
-  `normalizeLibDie` / `_stripDieCount` die-normalize copies.
 
 ## Closed questions
 
@@ -533,29 +531,32 @@ and should be scheduled into Phase 4+ work.
   has wrong stats because user skipped the level-up dialog" bugs.
   Surfaced 2026-04-23 during exhaustive manual-testing.
 
-- **Chat doesn't surface the per-modifier breakdown the adapter
-  already captures.** The lib emits each contributing modifier with
-  rich origin metadata (`{ kind, value, origin: { category, id,
-  label }, applied }`) and the adapter persists the array onto the
-  ChatMessage as `flags.dcc.libResult.modifiers` (see
-  `module/adapter/chat-renderer.mjs` — every renderer projects it).
-  Nothing currently renders it: chat templates don't reference
-  `libResult.modifiers`, and because the adapter builds the Foundry
-  Roll from the lib's flat formula string (`new Roll(plan.formula)`),
-  Foundry's native term-tooltip is unlabelled too — a regression vs.
-  the legacy `module/roll-modifier.js` path, which set per-term
-  `label` (e.g. "Strength", "Stamina") that Foundry's tooltip
-  surfaced. Cheapest fix: a small chat-template partial under the
-  rolled formula that lists each `applied` modifier as
-  `<origin.label> <signed value>` (e.g. "STA modifier +1, Save bonus
-  +0"). More invasive alternative: reconstruct the Roll term-by-term
-  in the adapter so the native Foundry tooltip works again — keeps
-  parity with the legacy path's UX without adding a chat partial,
-  but requires every renderer / dispatcher to thread structured
-  terms instead of a string formula. Surfaced 2026-04-23 during the
-  Cheesemaker save-bonus debugging session — modifier metadata is
-  available to downstream modules (`dcc-qol` etc.) and to debugger
-  scripts via the flag, but invisible to the player reading chat.
+- ~~**Chat doesn't surface the per-modifier breakdown the adapter
+  already captures.**~~ **Fixed 2026-05-29** (Phase 7 session 14).
+  The four chat renderers (`renderAbilityCheck` / `renderSavingThrow`
+  / `renderSkillCheck` / `renderSpellCheck`) now render the modifier
+  breakdown under the rolled formula via a new exported pure helper
+  `buildModifierBreakdownHtml(modifiers, heading)` in
+  `module/adapter/chat-renderer.mjs`. It lists each contributing
+  modifier as `<origin.label> <signed value>` (e.g. "STR modifier
+  +2"), handling both the tagged-union `RollModifier` shape
+  (ability / save / skill — renders `add` / `display` numeric values +
+  `add-dice` as a `+1d3` term, drops `applied:false` rows, skips the
+  die-reshaping kinds set-die / bump-die / multiply / threat-shift)
+  and the flat `LegacyRollModifier` shape (spell — `label || source` +
+  signed value). Labels are HTML-escaped (item names can carry markup).
+  The heading is the new i18n key `DCC.ModifierBreakdown` ("Modifiers",
+  all 7 langs), passed in by the renderers so the helper stays
+  Foundry-global-free + unit-testable (mirrors `buildLibResultFlag`).
+  Renderers append it via the proven manual-`rollHTML` + `content`
+  pattern (the same one `renderSkillCheck` already used for skill-item
+  descriptions), so the breakdown rides under the roll exactly once and
+  the legacy `roll-modifier.js` labelled-term UX is restored. Styling
+  via `.dcc-modifier-breakdown` in `styles/_chat.scss` (theming-contract
+  vars). +11 Vitest in `chat-renderer.test.js`, +1 Playwright in
+  `adapter-dispatch.spec.js` (live STR-16 ability check → labelled `+2`
+  row, rendered once). Surfaced 2026-04-23 during the Cheesemaker
+  save-bonus debugging session.
 
 - **Dispatcher gate style inconsistency.** Attack / damage / crit /
   fumble use named `_canRouteXxxViaAdapter` predicates; ability /
@@ -805,6 +806,25 @@ viable next):
 
 (Mercurial-magic, originally listed here as the third candidate,
 landed as Group E session 1 — see Recent slices.)
+
+**Pending feature — optional label override for raw spell checks
+(`options.checkLabel`).** Small, general-purpose, fully
+backward-compatible addition so a class/module can relabel the raw
+(no-item) spell-check chat flavor (today hardcoded to "Spell Check").
+MCC reuses the spell-check machinery for **Mutation Check** (mutant /
+manimal / plantient) and **Wetware Program Check** (shaman), which
+currently read wrong in chat. Change is two small edits:
+`module/actor-sheet.js` `#rollSpellCheck` forwards a `data-check-label`
+cell attribute as `options.checkLabel`; `module/actor.js`
+`_castNakedViaAdapter` uses it as the flavor base when no spell name is
+present (`game.i18n.localize` passes through a non-key literal, so it
+works as either an i18n key or a raw string). Item casts unaffected
+(already flavor with the item name); the ability suffix is preserved.
+Tests: raw `rollSpellCheck({ checkLabel })` → localized flavor; regression
+`rollSpellCheck({})` → still "Spell Check"; item cast with `checkLabel`
+→ still the item name. Downstream: MCC adds the `data-check-label`
+attributes (inert until this DCC change ships). Full spec:
+[docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md](dev/SPELL_CHECK_LABEL_OVERRIDE.md).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

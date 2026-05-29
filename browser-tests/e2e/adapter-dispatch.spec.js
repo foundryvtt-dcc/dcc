@@ -158,6 +158,58 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollAbilityCheck')
       assertPath(line, 'legacy', { abilityId: 'str' })
     })
+
+    // Phase 7 session 14: the per-modifier breakdown the adapter
+    // already captures on `flags.dcc.libResult.modifiers` now renders
+    // under the rolled formula in chat (PR #720 resilience item). The
+    // lib emits each contributing modifier as a tagged-union
+    // `{ kind: 'add', value, origin: { label } }`; the chat-renderer
+    // lists them as `<label> <signed value>`.
+    test('adapter ability-check chat surfaces the per-modifier breakdown', async ({ page }) => {
+      await makePlayer(page, 'P1 Ability Breakdown', {
+        abilities: { str: { value: 16, max: 16 } }
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Ability Breakdown').rollAbilityCheck('str')
+      })
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Ability Breakdown' &&
+              m.getFlag('dcc', 'isAbilityCheck') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) {
+            return {
+              content: msg.content,
+              modifiers: msg.getFlag('dcc', 'libResult').modifiers ?? null
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(card, 'ability-check adapter path must post a chat message').not.toBeNull()
+      // The captured lib modifiers are the tagged-union shape.
+      expect(Array.isArray(card.modifiers)).toBe(true)
+      // The breakdown container + localized heading render under the roll.
+      expect(card.content).toContain('class="dcc-modifier-breakdown"')
+      expect(card.content).toContain('dcc-modifier-breakdown-heading">Modifiers<')
+      // STR 16 → +2 ability modifier; it must appear as a labelled,
+      // signed value row (the regression this slice closes — the value
+      // used to be invisible because the Roll is built from the lib's
+      // flat formula string).
+      expect(card.content).toMatch(/<span class="dcc-modifier-label">[^<]*<\/span><span class="dcc-modifier-value">\+2<\/span>/)
+      // The breakdown renders exactly once (no double-content from the
+      // manual roll render).
+      expect(card.content.match(/class="dcc-modifier-breakdown"/g)).toHaveLength(1)
+    })
   })
 
   // ── rollSavingThrow ─────────────────────────────────────────────────

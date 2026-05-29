@@ -25,6 +25,42 @@ a.inline-roll {
   font-size: 0.9em;
 }
 
+/* ----------------------------------------- */
+/*  Per-modifier breakdown                   */
+/* ----------------------------------------- */
+// Lists each modifier the lib contributed to a check / save / spell
+// result under the rolled formula (e.g. "Strength +1"). Built by
+// `buildModifierBreakdownHtml` in module/adapter/chat-renderer.mjs.
+.dcc-modifier-breakdown {
+  margin-top: 4px;
+  font-size: var(--font-size-12);
+  color: var(--system-text-muted-color);
+
+  .dcc-modifier-breakdown-heading {
+    display: block;
+    font-family: var(--system-label-font), serif;
+    font-weight: bold;
+    margin-bottom: 2px;
+  }
+
+  .dcc-modifier-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dcc-modifier-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    line-height: 18px;
+  }
+
+  .dcc-modifier-value {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 .flavor-text {
   font-family: var(--system-label-font), serif;
 
