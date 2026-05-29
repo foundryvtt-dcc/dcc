@@ -142,6 +142,15 @@ test('D2 retirement: crit + fumble gate/legacy/adapter-alias methods are absent 
   expect(typeof proto._rollFumble, '_rollFumble remains the single path').toBe('function')
 })
 
+test('gate-style cleanup: the vestigial attackRollResult param was dropped from crit + fumble', () => {
+  const proto = DCCActor.prototype
+  // `attackRollResult` was unused since the D2 retirement; dropping it
+  // leaves `(weapon, ctx)`. Function.length counts params before the
+  // first default, so a 2-arity signature proves the middle param is gone.
+  expect(proto._rollCritical.length, '_rollCritical is (weapon, ctx)').toBe(2)
+  expect(proto._rollFumble.length, '_rollFumble is (weapon, ctx)').toBe(2)
+})
+
 // ============================================================================
 // Crit dispatcher tests
 // ============================================================================
@@ -156,11 +165,10 @@ test('adapter path logs rollCritical dispatch + returns libCritResult', async ()
   actor.system.attributes = { critical: { die: '1d10', table: 'III' } }
   actor.system.abilities = { lck: { mod: '+2' } }
   const weapon = { name: 'longsword' }
-  const attackRollResult = { libResult: { total: 18 } }
 
   let result
   try {
-    result = await actor._rollCritical(weapon, attackRollResult, {
+    result = await actor._rollCritical(weapon, {
       automate: true,
       luckMod: '+2',
       critTableName: 'III'
@@ -187,9 +195,8 @@ test('crit path returns inline-roll template (no lib result, no Roll) when autom
   const actor = new DCCActor()
   actor.system.attributes = { critical: { die: '1d10', table: 'III' } }
   actor.system.abilities = { lck: { mod: '+0' } }
-  const attackRollResult = { libResult: { total: 20 } }
 
-  const result = await actor._rollCritical({ name: 'sword' }, attackRollResult, {
+  const result = await actor._rollCritical({ name: 'sword' }, {
     automate: false,
     luckMod: '+0',
     critTableName: 'III'
@@ -222,11 +229,10 @@ test('adapter path logs rollFumble dispatch + returns libFumbleResult', async ()
   }
   actor.system.abilities = { lck: { mod: '+1' } }
   const weapon = { name: 'longsword' }
-  const attackRollResult = { libResult: { total: 1 } }
 
   let result
   try {
-    result = await actor._rollFumble(weapon, attackRollResult, {
+    result = await actor._rollFumble(weapon, {
       automate: true,
       luckMod: '+1',
       inverseLuckMod: '-1',
@@ -260,9 +266,8 @@ test('fumble path returns inline-roll template (no lib result, no Roll) when aut
     fumble: { die: '1d8' }
   }
   actor.system.abilities = { lck: { mod: '+0' } }
-  const attackRollResult = { libResult: { total: 1 } }
 
-  const result = await actor._rollFumble({ name: 'sword' }, attackRollResult, {
+  const result = await actor._rollFumble({ name: 'sword' }, {
     automate: false,
     luckMod: '+0',
     inverseLuckMod: '+0',
@@ -297,7 +302,7 @@ test('adapter fumble path swaps to NPC fumble die when actor is NPC + useNPCFumb
 
   let result
   try {
-    result = await actor._rollFumble({ name: 'claws' }, { libResult: { total: 1 } }, {
+    result = await actor._rollFumble({ name: 'claws' }, {
       automate: true,
       luckMod: '+0',
       inverseLuckMod: '+0',

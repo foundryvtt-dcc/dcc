@@ -117,6 +117,20 @@ test('legacy path kicks in when showModifierDialog is set and invokes DCCRoll.cr
   }))
 })
 
+test('legacy path kicks in for the bitwise-XOR truthy showModifierDialog: 1', () => {
+  // The sheet's fillRollOptions builds showModifierDialog via bitwise XOR,
+  // which yields 0 or 1 (not true/false). The dispatcher's `needsLegacyPath`
+  // gate uses `!!` so the numeric `1` still routes to legacy — mirrors the
+  // rollAbilityCheck / rollSavingThrow binary-gate idiom.
+  dccRollCreateRollMock.mockClear()
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = -1
+
+  actor.getInitiativeRoll(null, { showModifierDialog: 1 })
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+})
+
 test('adapter path re-appends an additive init-die tail (Mutant Horror 1d20+1d3)', () => {
   dccRollCreateRollMock.mockClear()
   // MCC folds the Mutant Horror die into init.die as `1d20+1d3` (see

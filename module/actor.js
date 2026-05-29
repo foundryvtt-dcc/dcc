@@ -1093,7 +1093,12 @@ class DCCActor extends Actor {
       return formula
     }
 
-    if (options.showModifierDialog) {
+    // Truthy check — the sheet's fillRollOptions uses bitwise XOR, which
+    // returns 0 or 1, not true/false. Matches the `needsLegacyPath`
+    // binary-gate idiom in rollAbilityCheck / rollSavingThrow.
+    const needsLegacyPath = !!options.showModifierDialog
+
+    if (needsLegacyPath) {
       return this._getInitiativeRollLegacy(options)
     }
 
@@ -3210,7 +3215,7 @@ class DCCActor extends Actor {
     let damageRoll, damageInlineRoll, damagePrompt, libDamageResult
     let libCritResult, libFumbleResult
     if (automateDamageFumblesCrits && damageRollFormula) {
-      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, attackRollResult, { ...options, npcDamageAdjustment })
+      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, { ...options, npcDamageAdjustment })
       damageRoll = damageDispatch.damageRoll
       damageInlineRoll = damageDispatch.damageInlineRoll
       damagePrompt = damageDispatch.damagePrompt
@@ -3237,7 +3242,7 @@ class DCCActor extends Actor {
     let critRollTotal = null
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
-      const critDispatch = await this._rollCritical(weapon, attackRollResult, {
+      const critDispatch = await this._rollCritical(weapon, {
         automate: automateDamageFumblesCrits,
         luckMod,
         critTableName
@@ -3271,7 +3276,7 @@ class DCCActor extends Actor {
     let isNPCFumble = false
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
-      const fumbleDispatch = await this._rollFumble(weapon, attackRollResult, {
+      const fumbleDispatch = await this._rollFumble(weapon, {
         automate: automateDamageFumblesCrits,
         luckMod,
         inverseLuckMod,
@@ -3654,12 +3659,10 @@ class DCCActor extends Actor {
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
-   * @param {Object} attackRollResult unused post-session-19 but kept for
-   *   API stability with `rollWeaponAttack` + external callers.
    * @param {Object} options
    * @private
    */
-  async _rollDamage (weapon, damageRollFormula, attackRollResult, options = {}) {
+  async _rollDamage (weapon, damageRollFormula, options = {}) {
     logDispatch('rollDamage', 'adapter', { weapon: weapon?.name || 'unknown' })
 
     const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
@@ -3845,11 +3848,10 @@ class DCCActor extends Actor {
    * folded into this body directly.
    *
    * @param {Object} weapon
-   * @param {Object} attackRollResult
    * @param {{automate: boolean, luckMod: string, critTableName: string}} ctx
    * @private
    */
-  async _rollCritical (weapon, attackRollResult, ctx) {
+  async _rollCritical (weapon, ctx) {
     logDispatch('rollCritical', 'adapter', { weapon: weapon?.name || 'unknown' })
 
     const { automate, luckMod, critTableName } = ctx
@@ -3936,11 +3938,10 @@ class DCCActor extends Actor {
    * above.
    *
    * @param {Object} weapon
-   * @param {Object} attackRollResult
    * @param {Object} ctx
    * @private
    */
-  async _rollFumble (weapon, attackRollResult, ctx) {
+  async _rollFumble (weapon, ctx) {
     logDispatch('rollFumble', 'adapter', { weapon: weapon?.name || 'unknown' })
 
     const { automate, inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx

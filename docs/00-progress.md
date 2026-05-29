@@ -65,23 +65,65 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-29.** Two small items landed this
-session (full detail in *Recent slices*): `feat(adapter)`
-`options.checkLabel` (relabel the raw spell-check chat flavor so MCC's
-Mutation / Wetware Program checks read correctly) and Phase 7 session 14
-(render the per-modifier breakdown `flags.dcc.libResult.modifiers` under
-the rolled formula in chat — closed a PR #720 resilience item). Repo
-green: **1302 Vitest** / **161 Playwright e2e passed**, zero failures.
+**Phase 7 cleanup — latest 2026-05-29.** Phase 7 session 15 (full detail
+in *Recent slices*) closed the last two PR #720 resilience/cleanup items:
+unified the dispatcher gate style (normalized `getInitiativeRoll`'s bare
+`if` onto the `const needsLegacyPath` named-boolean idiom shared by
+`rollAbilityCheck` / `rollSavingThrow`) and dropped the vestigial
+`attackRollResult` param from `_rollDamage` / `_rollCritical` /
+`_rollFumble`. Repo green: **1304 Vitest** / **162 Playwright e2e
+passed**, zero failures.
 
-**Remaining PR #720 items:** dispatcher gate-style unification; unused
-crit/fumble predicate params (see *PR #720 review backlog* below).
-Alternatively a Group E vertical-slice (halfling / homebrew single-class)
-to broaden the adapter / mixin pattern.
+**Remaining PR #720 items:** only open *design calls* + *test-coverage
+gaps* + *doc hygiene* remain (see *PR #720 review backlog* below) — the
+resilience/cleanup sub-list is now fully ticked. Alternatively a Group E
+vertical-slice (halfling / homebrew single-class) to broaden the adapter
+/ mixin pattern.
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — Phase 7 session 15: unify the dispatcher gate style +
+  drop the vestigial `attackRollResult` param (closes the last two
+  PR #720 resilience/cleanup items).** Both backlog items' framing was
+  **stale**, surfaced rather than papered over: item 1 claimed
+  attack/damage/crit/fumble use named `_canRouteXxxViaAdapter` predicates,
+  but those were all retired in D1/D2 (sessions 15–16) — those four are
+  single-path with no gate. The only surviving binary legacy-vs-adapter
+  gates were `rollAbilityCheck` + `rollSavingThrow` (named `const
+  needsLegacyPath = …`) and `getInitiativeRoll` (a bare `if
+  (options.showModifierDialog)`). Normalized init onto the named-boolean
+  idiom (`const needsLegacyPath = !!options.showModifierDialog`) so all
+  three binary gates read identically + defend the sheet's bitwise-XOR
+  `0`/`1` shape uniformly. `rollSkillCheck` / `rollSpellCheck` are
+  **intentionally left multi-way** — they dispatch to several adapter
+  sub-routes (skill-table / disapproval-range / naked / wizard / cleric
+  override), not a binary legacy gate; forcing them into a boolean would
+  mislead. Item 2's `_canRouteCrit/FumbleViaAdapter` predicates were
+  likewise already retired; the surviving dead param was
+  `attackRollResult` on `_rollDamage` / `_rollCritical` / `_rollFumble`
+  (unused since session 19, no external/sibling callers — verified across
+  all four sibling modules — `_`-prefixed private). Dropped from all
+  three signatures (`_rollCritical`/`_rollFumble` → `(weapon, ctx)`;
+  `_rollDamage` → `(weapon, formula, options)`), the three call sites in
+  `rollWeaponAttack`, and the doc comments. Pure refactor — no behavior
+  change; the `attackRollResult.crit`/`.fumble`/`.deedDieRoll` reads in
+  `rollWeaponAttack`'s own scope are untouched. +2 Vitest (crit/fumble
+  arity guard in `adapter-weapon-crit-fumble.test.js`; init XOR-truthy
+  `showModifierDialog: 1` → legacy in `adapter-initiative.test.js`) + a
+  `_rollDamage` arity assertion folded into the existing damage
+  retirement guard; ~18 damage/crit/fumble test call sites + their now-
+  unused `attackRollResult` declarations updated to the new signatures.
+  +1 Playwright in `adapter-dispatch.spec.js` (`gate-style cleanup:
+  crit/fumble/damage accept the post-cleanup signatures live` — invokes
+  all three private methods directly against live Foundry with the new
+  arity, asserts `.length === 2` + each returns its dispatch shape).
+  **1304 Vitest** (was 1302, +2). **162 Playwright passed**, zero
+  failures — clean 6.2-min full suite (was 161, +1). With this slice the
+  PR #720 *resilience / cleanup* sub-list is fully drained; only design
+  calls, test-coverage gaps, and doc hygiene remain.
 
 - **2026-05-29 — feat(adapter): optional `options.checkLabel` to relabel
   the raw (no-item) spell-check chat flavor.** Implemented from
@@ -230,56 +272,6 @@ archives linked above.
   Player keeps both dice). **1288 Vitest** combined with session 13.
   Unblocks dropping the mcc-core-book §9.2a "known limitation" caveat.
 
-- **2026-05-29 — Phase 7 session 12: consolidate the three
-  `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one
-  canonical helper (closes the PR #720 "three copies of strip die
-  count normalization" item — completes the three-slice resilience
-  batch).** The three former copies — `module/adapter/attack-input.mjs`
-  `normalizeLibDie` (exported), `module/adapter/spell-input.mjs`
-  `normalizeLibDie` (module-private dup), and
-  `module/actor.js` `_stripDieCount` (anchored regex) — diverged on
-  edge cases: falsy fallback (`'d20'` / `'d20'` / `null`), no-match
-  fallback (original string / `'d20'` / `null`), and anchoring
-  (unanchored / unanchored / anchored). They are now one parameterized
-  `normalizeLibDie(foundryDie, fallback = 'd20')` in
-  `attack-input.mjs`: `spell-input.mjs` imports it (private dup
-  deleted), and `_stripDieCount` is a one-line wrapper delegating with
-  `fallback: null`. **Divergence audit (surfaced, not silently
-  translated):** every one of the eight call sites
-  (`attack-input.mjs:100`, `actor.js:2601/2758/3481`,
-  `crit-fumble-input.mjs:51/77`, `spell-input.mjs` deriveActionDie,
-  and the three `_stripDieCount` sites `actor.js:1130/1593/1814`)
-  passes either a single Foundry die string (`'1d20'`, `'d14'`, a
-  Roll term `formula`) or a falsy value — so the anchored-vs-unanchored
-  difference is unreachable (a compound `'1d20+2'` would differ, but no
-  site produces one), and the only behavior change anywhere is the
-  former `attack-input` copy's no-match return (original string → the
-  `'d20'` fallback), which is both unreachable in practice and more
-  correct (feeds the lib a valid `DieType` rather than an unparseable
-  string). The `actor.js:1593` site that *relies* on the `null` return
-  (`if (libDie) definition.roll.die = libDie`) keeps it via the
-  `fallback: null` wrapper. +3 Vitest (2 new cases in
-  `adapter-weapon-attack.test.js` — case-insensitivity + default
-  fallback, and the explicit-null-fallback `_stripDieCount` contract;
-  1 in `actor.test.js` exercising `actor._stripDieCount` directly).
-  +1 Playwright probe in `extension-api.spec.js` (`DCC normalizeLibDie
-  consolidation: canonical helper + live _stripDieCount delegation`)
-  dynamic-imports the live canonical helper (asserts default + null
-  fallback behavior) and creates a live Player actor to confirm
-  `_stripDieCount` delegates end-to-end. **1279 Vitest green** (was
-  1276, +3). **157 Playwright passed**, zero failures — clean 5.9-min
-  full suite (pre-slice was 156 total at session 11 = 155 pass + 1
-  isolation-passing halfling flake; +1 new probe = 157, and the
-  halfling navigation-race flake stayed quiet this run). With session
-  12 done, **the three-slice PR #720 resilience batch is complete** —
-  all three targeted backlog items (`buildLibResultFlag` /
-  `applyFleetingLuck` extraction, `migrateWorld` failure surfacing, and
-  the `normalizeLibDie` / `_stripDieCount` consolidation) are ticked.
-  Next-arc candidates: the remaining PR #720 items (`migrateWorld`
-  async-await fire-and-forget fix; chat per-modifier breakdown
-  rendering; dispatcher gate-style unification; unused crit/fumble
-  predicate params) or a Group E vertical-slice.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -339,16 +331,22 @@ deferred findings still open.
 
 **Open resilience / cleanup items:**
 
-- **Dispatcher gate style inconsistency.** Attack / damage / crit /
-  fumble use named `_canRouteXxxViaAdapter` predicates; ability / save /
-  skill / spell / init inline their gates as `const needsLegacyPath = …`.
-  Pick one convention and retrofit — the named-predicate form scales
-  better as gates grow.
-- **Unused `weapon` / `attackRollResult` parameters** on
-  `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter` (`weapon`
-  unused). `_rollCriticalLegacy` / `_rollFumbleLegacy` retired at session
-  16; revisit the remaining predicate params. Do this with the
-  gate-style unification above.
+- ~~**Dispatcher gate style inconsistency.**~~ CLOSED 2026-05-29 (Phase 7
+  session 15). The premise was stale: the named `_canRouteXxxViaAdapter`
+  predicates were already retired in D1/D2 (sessions 15–16), so
+  attack/damage/crit/fumble are single-path with no gate. The only
+  surviving binary legacy-vs-adapter gates were ability + save (named
+  `const needsLegacyPath`) and init (a bare `if`). Normalized init to the
+  named-boolean idiom so all three read identically; skill + spell are
+  intentionally left multi-way (they dispatch to several adapter
+  sub-routes, not a binary legacy gate). See Recent slices.
+- ~~**Unused `weapon` / `attackRollResult` parameters.**~~ CLOSED
+  2026-05-29 (Phase 7 session 15). The `_canRouteCrit/FumbleViaAdapter`
+  predicates this referenced were retired in D2; the surviving vestigial
+  param was `attackRollResult` on `_rollDamage` / `_rollCritical` /
+  `_rollFumble` (unused since session 19, no external/sibling callers,
+  `_`-prefixed private). Dropped from all three signatures + call sites +
+  tests. See Recent slices.
 - **Programmatic PC creation produces inconsistent class config.**
   `Actor.create({ system: { class: { className: 'Wizard' } } })` doesn't
   set `spellCheckAbility`, `details.sheetClass`, save `classBonus`, crit

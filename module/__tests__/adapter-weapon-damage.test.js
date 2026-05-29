@@ -296,6 +296,12 @@ test('D2 damage retirement guard — gate + legacy + via-adapter aliases absent'
   expect(typeof proto._rollDamage).toBe('function')
   expect(typeof proto._buildLibDamageResult).toBe('function')
   expect(typeof proto._structureDamageInput).toBe('function')
+  // The vestigial `attackRollResult` param (unused since session 19) was
+  // dropped in the gate-style cleanup slice — signature is now
+  // `(weapon, damageRollFormula, options = {})`. Function.length counts
+  // params before the first default, so 2-arity proves the middle param
+  // is gone.
+  expect(proto._rollDamage.length, '_rollDamage is (weapon, formula, options)').toBe(2)
 })
 
 test('adapter path logs rollDamage dispatch + returns libDamageResult', async () => {
@@ -306,11 +312,10 @@ test('adapter path logs rollDamage dispatch + returns libDamageResult', async ()
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'longsword' }
-  const attackRollResult = { libResult: { total: 18 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d8+2', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d8+2', {})
   } finally {
     restore()
     restoreRoll()
@@ -331,8 +336,9 @@ test('adapter path routes regardless of attack route (single-path post-retiremen
   // Pre-retirement, a legacy attack forced the damage side to legacy too
   // (defensive `attackRollResult?.libResult` check). Post-session-19 the
   // damage body no longer gates on that — `rollWeaponAttack` only invokes
-  // `_rollDamage` when a Roll is actually produced, and that scenario
-  // is covered by the existing test.
+  // `_rollDamage` when a Roll is actually produced. The vestigial
+  // `attackRollResult` param was dropped entirely in the gate-style
+  // cleanup slice, so the signature is now `(weapon, formula, options)`.
   logDispatch.mockClear()
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 4, natural: 4 }))
 
@@ -341,7 +347,7 @@ test('adapter path routes regardless of attack route (single-path post-retiremen
   const weapon = { name: 'longsword' }
 
   try {
-    await actor._rollDamage(weapon, '1d8', {}, {})
+    await actor._rollDamage(weapon, '1d8', {})
   } finally {
     restoreRoll()
   }
@@ -354,7 +360,6 @@ test('adapter path routes multi-type per-term formulas via native Roll', async (
   logDispatch.mockClear()
   // `1d6[fire]+1d6[cold]` → native `new Roll` (so Foundry preserves the
   // per-term flavors in chat) → lib sees base d6 + extra d6[cold].
-  const attackRollResult = { libResult: { total: 18 } }
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -378,7 +383,7 @@ test('adapter path routes multi-type per-term formulas via native Roll', async (
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d6[fire]+1d6[cold]', {})
   } finally {
     global.Roll = originalRoll
   }
@@ -410,11 +415,10 @@ test('adapter path routes dice-bearing magic bonus as extraDamageDice', async ()
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: '+1d4 flaming sword', system: { damageWeaponBonus: '+1d4' } }
-  const attackRollResult = { libResult: { total: 19 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d8+3+1d4', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d8+3+1d4', {})
   } finally {
     restore()
     restoreRoll()
@@ -444,11 +448,10 @@ test('adapter path routes cursed weapon as negative magicBonus', async () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'cursed blade', system: { damageWeaponBonus: '-1' } }
-  const attackRollResult = { libResult: { total: 15 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d8+2', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d8+2', {})
   } finally {
     restore()
     restoreRoll()
@@ -475,11 +478,10 @@ test('adapter path attributes NPC damage adjustment as a bonus, not Strength', a
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'goblin club' }
-  const attackRollResult = { libResult: { total: 12 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d4+1', attackRollResult, { npcDamageAdjustment: 1 })
+    result = await actor._rollDamage(weapon, '1d4+1', { npcDamageAdjustment: 1 })
   } finally {
     restore()
     restoreRoll()
@@ -505,11 +507,10 @@ test('adapter path attributes +1 weapon bonus as magic, not Strength', async () 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: '+1 longsword', system: { damageWeaponBonus: '+1' } }
-  const attackRollResult = { libResult: { total: 20 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d8+2+1', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d8+2+1', {})
   } finally {
     restore()
     restoreRoll()
@@ -545,11 +546,10 @@ test('adapter path peels trailing flavor bracket into Compound term + libDamageR
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'longsword' }
-  const attackRollResult = { libResult: { total: 18 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d6+2[Slashing]', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d6+2[Slashing]', {})
   } finally {
     restore()
     restoreRoll()
@@ -581,11 +581,10 @@ test('adapter path falls back to passthrough libDamageResult for unparseable for
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'mounted lance' }
-  const attackRollResult = { libResult: { total: 18 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '(1d8)*2+3', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '(1d8)*2+3', {})
   } finally {
     restore()
     restoreRoll()
@@ -614,11 +613,10 @@ test('adapter path falls back to passthrough when weapon magic bonus is unrecogn
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'weird weapon', system: { damageWeaponBonus: '+1+1d4' } }
-  const attackRollResult = { libResult: { total: 15 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d8+3+1+1d4', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d8+3+1+1d4', {})
   } finally {
     restore()
     restoreRoll()
@@ -636,11 +634,10 @@ test('adapter path clamps damage minimum to 1', async () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'club' }
-  const attackRollResult = { libResult: { total: 12 } }
 
   let result
   try {
-    result = await actor._rollDamage(weapon, '1d4-5', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d4-5', {})
   } finally {
     restore()
     restoreRoll()

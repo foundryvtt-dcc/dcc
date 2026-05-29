@@ -2968,6 +2968,44 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(typeof flag.critTable).toBe('string')
       expect(Array.isArray(flag.modifiers)).toBe(true)
     })
+
+    test('gate-style cleanup: crit/fumble/damage accept the post-cleanup signatures live', async ({ page }) => {
+      // The vestigial `attackRollResult` middle param was dropped from
+      // `_rollDamage` / `_rollCritical` / `_rollFumble` (unused since the
+      // D2 retirement). Invoke each private method directly against live
+      // Foundry with the new signature — `(weapon, ctx)` for crit/fumble,
+      // `(weapon, formula, options)` for damage — to prove the drop holds
+      // end-to-end, not just under unit mocks.
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Sig Cleanup', type: 'Player' })
+        actor.system.abilities.lck.mod = '+0'
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        const weapon = { name: 'P1-SigWeapon', system: {} }
+
+        const proto = Object.getPrototypeOf(actor)
+        const crit = await actor._rollCritical(weapon, { automate: true, luckMod: '+0', critTableName: 'III' })
+        const fumble = await actor._rollFumble(weapon, {
+          automate: true, luckMod: '+0', inverseLuckMod: '+0', useNPCFumbles: false, fumbleTableName: 'Table 4-2: Fumbles', originalFumbleTableName: 'Table 4-2: Fumbles'
+        })
+        const damage = await actor._rollDamage(weapon, '1d8+2', {})
+
+        return {
+          critArity: proto._rollCritical.length,
+          fumbleArity: proto._rollFumble.length,
+          damageArity: proto._rollDamage.length,
+          critFormula: crit.critRollFormula,
+          fumbleFormula: fumble.fumbleRollFormula,
+          damageDefined: !!damage.damageRoll
+        }
+      })
+
+      expect(result.critArity, '_rollCritical is (weapon, ctx)').toBe(2)
+      expect(result.fumbleArity, '_rollFumble is (weapon, ctx)').toBe(2)
+      expect(result.damageArity, '_rollDamage is (weapon, formula, options)').toBe(2)
+      expect(result.critFormula).toMatch(/d\d+/)
+      expect(result.fumbleFormula).toMatch(/d\d+/)
+      expect(result.damageDefined, 'damage route produced a Roll under the new signature').toBe(true)
+    })
   })
 
   test.describe('rollFumble', () => {

@@ -42,14 +42,29 @@ session's context):
 
 ## Status (2026-05-29)
 
-**Latest — `feat(adapter)` `options.checkLabel`** (built from
+**Latest — Phase 7 session 15** closed the last two PR #720
+*resilience/cleanup* items, both with stale framing surfaced rather than
+papered over. (1) Dispatcher gate-style unification: the named
+`_canRouteXxxViaAdapter` predicates the backlog cited were already
+retired in D1/D2, so attack/damage/crit/fumble are single-path. The only
+surviving binary legacy-vs-adapter gates were `rollAbilityCheck` +
+`rollSavingThrow` (named `const needsLegacyPath`) and `getInitiativeRoll`
+(a bare `if`); normalized init onto the named-boolean idiom so all three
+read identically. `rollSkillCheck` / `rollSpellCheck` stay multi-way
+(intentional — not binary gates). (2) Dropped the vestigial
+`attackRollResult` param (unused since session 19, no external callers)
+from `_rollDamage` / `_rollCritical` / `_rollFumble`. Pure refactor, no
+behavior change. +2 Vitest, +1 Playwright. Repo green: **1304 Vitest** /
+**162 e2e passed**.
+
+**Prior — `feat(adapter)` `options.checkLabel`** (built from
 `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`): a raw (no-item) spell check can
 carry a label override so a class/module relabels the chat flavor (MCC's
 "Mutation Check" / "Wetware Program Check") instead of "Spell Check". Two
 backward-compatible edits — `actor-sheet.js` `#rollSpellCheck` forwards a
 `data-check-label` cell attribute as `options.checkLabel`; `actor.js`
 `_castNakedViaAdapter` uses it as the flavor base. +3 Vitest, +1
-Playwright. Repo green: **1302 Vitest** / **161 e2e passed**.
+Playwright.
 
 **Phase 7 session 14** closes the PR #720 "chat doesn't surface
 the per-modifier breakdown the adapter already captures" item. The four

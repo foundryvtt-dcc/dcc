@@ -679,3 +679,49 @@
   separate PR #720 "`migrateWorld` fire-and-forget from a sync ready
   hook" item (make `checkMigrations` async + `await`) is untouched
   and out of this batch's scope.
+
+- **2026-05-29 — Phase 7 session 12: consolidate the three
+  `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one
+  canonical helper (closes the PR #720 "three copies of strip die
+  count normalization" item — completes the three-slice resilience
+  batch).** The three former copies — `module/adapter/attack-input.mjs`
+  `normalizeLibDie` (exported), `module/adapter/spell-input.mjs`
+  `normalizeLibDie` (module-private dup), and
+  `module/actor.js` `_stripDieCount` (anchored regex) — diverged on
+  edge cases: falsy fallback (`'d20'` / `'d20'` / `null`), no-match
+  fallback (original string / `'d20'` / `null`), and anchoring
+  (unanchored / unanchored / anchored). They are now one parameterized
+  `normalizeLibDie(foundryDie, fallback = 'd20')` in
+  `attack-input.mjs`: `spell-input.mjs` imports it (private dup
+  deleted), and `_stripDieCount` is a one-line wrapper delegating with
+  `fallback: null`. **Divergence audit (surfaced, not silently
+  translated):** every one of the eight call sites
+  (`attack-input.mjs:100`, `actor.js:2601/2758/3481`,
+  `crit-fumble-input.mjs:51/77`, `spell-input.mjs` deriveActionDie,
+  and the three `_stripDieCount` sites `actor.js:1130/1593/1814`)
+  passes either a single Foundry die string (`'1d20'`, `'d14'`, a
+  Roll term `formula`) or a falsy value — so the anchored-vs-unanchored
+  difference is unreachable (a compound `'1d20+2'` would differ, but no
+  site produces one), and the only behavior change anywhere is the
+  former `attack-input` copy's no-match return (original string → the
+  `'d20'` fallback), which is both unreachable in practice and more
+  correct (feeds the lib a valid `DieType` rather than an unparseable
+  string). The `actor.js:1593` site that *relies* on the `null` return
+  (`if (libDie) definition.roll.die = libDie`) keeps it via the
+  `fallback: null` wrapper. +3 Vitest (2 new cases in
+  `adapter-weapon-attack.test.js` — case-insensitivity + default
+  fallback, and the explicit-null-fallback `_stripDieCount` contract;
+  1 in `actor.test.js` exercising `actor._stripDieCount` directly).
+  +1 Playwright probe in `extension-api.spec.js` (`DCC normalizeLibDie
+  consolidation: canonical helper + live _stripDieCount delegation`)
+  dynamic-imports the live canonical helper (asserts default + null
+  fallback behavior) and creates a live Player actor to confirm
+  `_stripDieCount` delegates end-to-end. **1279 Vitest green** (was
+  1276, +3). **157 Playwright passed**, zero failures — clean 5.9-min
+  full suite (pre-slice was 156 total at session 11 = 155 pass + 1
+  isolation-passing halfling flake; +1 new probe = 157, and the
+  halfling navigation-race flake stayed quiet this run). With session
+  12 done, **the three-slice PR #720 resilience batch is complete** —
+  all three targeted backlog items (`buildLibResultFlag` /
+  `applyFleetingLuck` extraction, `migrateWorld` failure surfacing, and
+  the `normalizeLibDie` / `_stripDieCount` consolidation) are ticked.
