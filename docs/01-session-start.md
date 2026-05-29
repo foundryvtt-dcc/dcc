@@ -42,28 +42,37 @@ session's context):
 
 ## Status (2026-05-29)
 
-**Phase 7 session 10 opened a three-slice PR #720 resilience
+**Phase 7 sessions 10 + 11 worked a three-slice PR #720 resilience
 batch** (the backlog active queue having drained at session 9).
-Session 10 closed the "four near-identical `dcc.libResult` flag
+
+**Session 11 (latest)** closed the "`migrateWorld` per-doc catches
+swallow silently" item: the four
+`catch (err) { console.error(err) }` sites in `module/migrations.js`
+(actors / items / scenes loops + `migrateCompendium`) now push
+`{ type, name }` onto a `failures` array; `migrateCompendium`
+returns its failures up to `migrateWorld`. A new pure exported
+`migrationOutcome(failures)` gates the finish — a clean run stamps
+the world at `NEEDS_MIGRATION_VERSION` + "complete" toast; any
+failure leaves the version unstamped (idempotent migrations re-run
+next load) and raises `ui.notifications.warn` with the count (new
+i18n key `DCC.MigrationFailures`, all 7 langs). +4 Vitest in new
+`module/__tests__/migration-outcome.test.js`, +1 Playwright probe.
+**1276 Vitest green**, **155 Playwright passed + 1 environmental
+halfling sheet-ui navigation-race flake** (passes in isolation; not
+slice-caused). The separate PR #720 "`migrateWorld` fire-and-forget
+from a sync ready hook" item is out of scope. Remaining batch slice
+(session 12): consolidate the three `normalizeLibDie` /
+`_stripDieCount` die-normalize copies.
+
+**Session 10** closed the "four near-identical `dcc.libResult` flag
 payloads" item: the four chat renderers in
-`module/adapter/chat-renderer.mjs` (`renderAbilityCheck`,
-`renderSavingThrow`, `renderSkillCheck`, `renderSpellCheck`) built
-near-identical `dcc.libResult` flag literals plus an identical
-guarded `FleetingLuck.updateFlags` block. The shared seven-field
-core (`die` / `natural` / `total` / `formula` / `critical` /
-`fumble` / `modifiers`) now lives in one exported
-`buildLibResultFlag(result, extras = {})`, with callers passing
-type-specific extras (`{ skillId }` for the three checks,
-`{ spellId, tier, spellLost, corruptionTriggered }` for spell
-checks), and the luck update in `applyFleetingLuck(flags,
-foundryRoll)`. Pure structural — the on-message flag contract is
-unchanged (consumed by key name, not order). +10 Vitest in new
-`module/__tests__/chat-renderer.test.js`, +1 Playwright probe in
-`extension-api.spec.js`. **1272 Vitest green** (was 1262),
-**155 Playwright passed** (was 154), clean 5.8-min suite. The two
-remaining batch slices (sessions 11 + 12): surface `migrateWorld`
-per-doc failures via `ui.notifications.warn`, then consolidate the
-three `normalizeLibDie` / `_stripDieCount` die-normalize copies.
+`module/adapter/chat-renderer.mjs` shared an identical core
+projection + `FleetingLuck.updateFlags` guard, now owned by exported
+`buildLibResultFlag(result, extras = {})` and
+`applyFleetingLuck(flags, foundryRoll)`. Pure structural; flag
+consumed by key name so the on-message contract is unchanged. +10
+Vitest in new `chat-renderer.test.js`, +1 Playwright probe. 1272
+Vitest, 155 Playwright at close.
 
 **Phase 7 session 9 closed the PR #720 "Uncached compendium
 walks" item** by adding a per-process table cache in a new

@@ -418,6 +418,7 @@
   "DCC.MightyDeedsLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.UrVBDNG5csbS5bBa#mighty-deeds-of-arms]{武勇壮举}",
   "DCC.MightyDeedsOfArms": "武勇壮举",
   "DCC.MigrationComplete": "完成迁移 DCC 系统版本至 {systemVersion}！",
+  "DCC.MigrationFailures": "DCC 迁移完成，但有 {count} 个文档更新失败——详情请查看浏览器控制台。世界迁移版本未提升；请解决问题后重新加载以重试。",
   "DCC.MigrationInfo": "开始迁移 DCC 系统版本至 {systemVersion}。请耐心等待，不要关闭游戏或服务器",
   "DCC.MigrationMessage": "迁移 {type} 实体 {name}",
   "DCC.MigrationUnsupportedVersion": "DCC 世界数据版本 ({currentVersion}) 低于最低支持版本 ({minimumVersion})。请先在 V14 之前的 DCC 版本 (0.65.x) 中打开此世界以完成前置迁移，然后再返回当前系统。",

@@ -94,12 +94,43 @@ export function classifyMigrationDecision (currentVersion) {
 }
 
 /**
+ * Decide how `migrateWorld` should finish, given the list of per-document
+ * failures it accumulated. Pure function — no Foundry globals — so the
+ * stamp / notify policy is unit-testable in isolation (same pattern as
+ * `classifyMigrationDecision`).
+ *
+ * Policy: a clean run stamps the world at `NEEDS_MIGRATION_VERSION` and
+ * shows the "complete" notification. A run with any failed document does
+ * NOT advance the version (so the world stays flagged and re-runs the —
+ * idempotent — migrations on the next load after the GM resolves the
+ * issue) and surfaces a `ui.notifications.warn` carrying the count. The
+ * pre-this-change behavior swallowed each failure with a bare
+ * `console.error` and stamped the version regardless, leaving a GM with
+ * a green "complete" toast over a partially-migrated world.
+ *
+ * @param {Array<{type: string, name: string}>} failures - One entry per
+ *   document whose migration threw. Empty array means a clean run.
+ * @returns {{ stampVersion: boolean, notify: 'complete'|'failures', failureCount: number }}
+ */
+export function migrationOutcome (failures) {
+  const failureCount = Array.isArray(failures) ? failures.length : 0
+  return failureCount === 0
+    ? { stampVersion: true, notify: 'complete', failureCount: 0 }
+    : { stampVersion: false, notify: 'failures', failureCount }
+}
+
+/**
  * Migrate the current world to the current version of the system
  *
  * @return {Promise}    A promise which resolves once the migration is completed
  */
 export const migrateWorld = async function () {
   ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
+
+  // Per-document failures accumulate here so the run can report them as a
+  // group and gate version-stamping (see `migrationOutcome`). Each catch
+  // still logs the stack to the console for debugging.
+  const failures = []
 
   // Migrate World Actors
   for (const a of game.actors) {
@@ -111,6 +142,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Actor', name: a.name })
     }
   }
 
@@ -124,6 +156,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Item', name: i.name })
     }
   }
 
@@ -137,6 +170,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Scene', name: s.name })
     }
   }
 
@@ -145,13 +179,22 @@ export const migrateWorld = async function () {
     return (p.metadata.package === 'world') && ['Actor', 'Item', 'Scene'].includes(p.documentName)
   })
   for (const p of packs) {
-    await migrateCompendium(p)
+    failures.push(...await migrateCompendium(p))
   }
 
-  // Stamp the world with the post-migration version so subsequent loads
-  // classify as 'skip' in `classifyMigrationDecision`.
-  game.settings.set('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
+  // Decide the finish: a clean run stamps the world at
+  // `NEEDS_MIGRATION_VERSION` (so subsequent loads classify as 'skip'
+  // in `classifyMigrationDecision`) and shows the "complete" toast; a
+  // run with failures leaves the version unstamped (the idempotent
+  // data-driven migrations re-run on the next load) and warns the GM
+  // with the count rather than silently swallowing the errors.
+  const outcome = migrationOutcome(failures)
+  if (outcome.stampVersion) {
+    game.settings.set('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
+    ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
+  } else {
+    ui.notifications.warn(game.i18n.format('DCC.MigrationFailures', { count: outcome.failureCount }), { permanent: true })
+  }
 }
 
 /* -------------------------------------------- */
@@ -159,11 +202,15 @@ export const migrateWorld = async function () {
 /**
  * Apply migration rules to all Entities within a single Compendium pack
  * @param pack
- * @return {Promise}
+ * @return {Promise<Array<{type: string, name: string}>>}  Per-document
+ *   failures (empty when clean), surfaced up to `migrateWorld` so they
+ *   count toward the run's outcome.
  */
 const migrateCompendium = async function (pack) {
   const documentName = pack.documentName
-  if (!['Actor', 'Item', 'Scene'].includes(documentName)) return
+  if (!['Actor', 'Item', 'Scene'].includes(documentName)) return []
+
+  const failures = []
 
   // Unlock the pack for editing
   const wasLocked = pack.locked
@@ -195,6 +242,7 @@ const migrateCompendium = async function (pack) {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: documentName, name: doc.name })
     }
   }
 
@@ -202,6 +250,7 @@ const migrateCompendium = async function (pack) {
   await pack.configure({ locked: wasLocked })
 
   console.log(`Migrated all ${documentName} documents from Compendium ${pack.collection}`)
+  return failures
 }
 
 /* -------------------------------------------- */

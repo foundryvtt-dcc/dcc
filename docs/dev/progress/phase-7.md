@@ -340,3 +340,37 @@
   `net::ERR_NETWORK_IO_SUSPENDED`, not slice-caused). Pre-slice
   baseline was 146; +1 new test minus the network flake nets to
   146.
+
+- **2026-05-22 — Phase 7 session 6: extract chat / hook wiring from
+  `dcc.js` into `module/chat-and-hook-wiring.mjs` (closes the
+  `dcc.js` piecemeal-split arc).** Sixth and final piecemeal Phase 7
+  extraction — relocates the eleven remaining `Hooks.on` /
+  `Hooks.once` handlers (`hotbarDrop`, `renderChatMessageHTML`,
+  `getChatMessageContextOptions`, `renderActorDirectory`,
+  `preCreateActor`, `preCreateItem`, `applyActiveEffect`,
+  `preUpdateActor`, `updateCombat`, `item-piles-ready`,
+  `getProseMirrorMenuDropDowns`) into a focused module. The largest
+  body is the ~70-line `renderChatMessageHTML` chat-decoration
+  pipeline (crit/fail highlight, minimum-damage clamp, SpellResult
+  HTML, `data-item-id` forwarding, the nine `chat.emoteXxxRoll`
+  fan-out gated on `emoteRolls` with the `dcc.emoteRoll` flag
+  fallback, crit/fumble lookups gated on `automateDamageFumblesCrits`,
+  TableResult navigation); also the `updateCombat` Active Effect
+  expiry loop and the `getProseMirrorMenuDropDowns` sidebar-style
+  menu entry. Each handler exported individually plus a frozen
+  `CHAT_AND_HOOK_WIRING_HOOKS` dispatch table (only
+  `item-piles-ready` is once-only) + a `registerChatAndHookWiring()`
+  entry-point — matching the `settings-table-hooks.mjs` /
+  `table-loading.mjs` pattern (sessions 3 + 5). `module/dcc.js`
+  shrinks 737 → 475 lines (-262). **The §Appendix A target of ~4–5
+  focused modules out of `dcc.js` is met.** Pure refactor — every
+  conditional, GM gate, default-image lookup, emote-roll fan-out, and
+  AE duration calc preserved verbatim. +43 Vitest in new
+  `module/__tests__/chat-and-hook-wiring.test.js` (the seven imported
+  sibling modules `vi.mock`ed so handlers run without a Foundry boot),
+  +1 Playwright case in `extension-api.spec.js` exercising
+  `onPreCreateActor` + `onPreCreateItem` + `onPreUpdateActor`
+  end-to-end against a temporary `P_ChatHook Probe`. **1227 Vitest
+  green** (was 1184, +43). **149 Playwright passed**, zero failures
+  (13.1-min full suite — both prior-session flakes resolved by the
+  follow-up fix commits `1935372` + `2973a13`).

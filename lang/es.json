@@ -418,6 +418,7 @@
   "DCC.MightyDeedsLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.UrVBDNG5csbS5bBa#mighty-deeds-of-arms]{Hazañas poderosas de armas}",
   "DCC.MightyDeedsOfArms": "Hazañas poderosas de armas",
   "DCC.MigrationComplete": "¡Migración al sistema DCC versión {systemVersion} finalizada!",
+  "DCC.MigrationFailures": "La migración de DCC finalizó con {count} documento(s) que no se pudieron actualizar; consulta la consola del navegador para más detalles. La versión de migración del mundo no avanzó; resuelve los problemas y recarga para reintentar.",
   "DCC.MigrationInfo": "Iniciando migración del sistema DCC a la versión {systemVersion}. Por favor, sea paciente y no cierre el juego ni apague el servidor",
   "DCC.MigrationMessage": "Migrando entidad {type} {name}",
   "DCC.MigrationUnsupportedVersion": "La versión de los datos del mundo DCC ({currentVersion}) es inferior a la versión mínima compatible ({minimumVersion}). Abre primero este mundo en una versión de DCC anterior a V14 (0.65.x) para migrarlo y luego vuelve al sistema actual.",

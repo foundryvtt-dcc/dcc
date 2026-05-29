@@ -405,6 +405,7 @@
   "DCC.MightyDeedsLink": "@Compendium[dcc-core-book.dcc-core-journals.1gcH2FKbeGbxWtIQ]{Haut fait d'armes}",
   "DCC.MightyDeedsOfArms": "Hauts faits d'arme",
   "DCC.MigrationComplete": "Migration du système DCC terminée: {systemVersion}!",
+  "DCC.MigrationFailures": "La migration DCC s'est terminée avec {count} document(s) non mis à jour — voir la console du navigateur pour les détails. La version de migration du monde n'a pas été avancée ; corrigez les problèmes et rechargez pour réessayer.",
   "DCC.MigrationInfo": "Démarrage du system DCC vers la version {systemVersion}. Veuillez patienter et ne pas fermer ou éteindre votre serveur.",
   "DCC.MigrationMessage": "Migration {type} de l'entité {name}",
   "DCC.MigrationUnsupportedVersion": "La version des données du monde DCC ({currentVersion}) est inférieure à la version minimale prise en charge ({minimumVersion}). Ouvrez d'abord ce monde dans une version de DCC antérieure à V14 (0.65.x) pour effectuer la migration, puis revenez au système actuel.",

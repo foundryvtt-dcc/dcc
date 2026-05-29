@@ -984,6 +984,10 @@ See entry in Completed slices below.
 First of the three-slice PR #720 resilience batch. See entry in
 Completed slices below.
 
+#### ~~Phase 7 session 11. Surface `migrateWorld` per-doc failures via `ui.notifications.warn` + gate version-stamping on a clean run.~~ **DONE 2026-05-29**
+Second of the three-slice PR #720 resilience batch. See entry in
+Completed slices below.
+
 ---
 
 ## Completed slices
@@ -991,6 +995,33 @@ Completed slices below.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 11 (2026-05-29): surface `migrateWorld` per-doc
+  failures via `ui.notifications.warn` + gate version-stamping on a
+  clean run (closes the PR #720 "`migrateWorld` per-doc catches
+  swallow silently" resilience item). The four
+  `catch (err) { console.error(err) }` sites in `module/migrations.js`
+  (`migrateWorld`'s actors / items / scenes loops + `migrateCompendium`)
+  now push `{ type, name }` onto a `failures` array (still
+  `console.error`ing the stack); `migrateCompendium` returns its own
+  failures array which `migrateWorld` accumulates. New pure exported
+  `migrationOutcome(failures)` (no Foundry globals — mirrors
+  `classifyMigrationDecision`) gates the finish: clean run → stamp
+  `NEEDS_MIGRATION_VERSION` + "complete" toast; any failure → version
+  left unstamped (idempotent data-driven migrations re-run next load)
+  + `ui.notifications.warn(DCC.MigrationFailures, { count })`. New
+  i18n key `DCC.MigrationFailures` added to all 7 lang files
+  (`compare-lang`: 0 missing). +4 Vitest in new
+  `module/__tests__/migration-outcome.test.js`, +1 Playwright probe in
+  `extension-api.spec.js` (asserts the clean / failed outcome shapes +
+  the new i18n key resolves & interpolates live, without running
+  `migrateWorld`). **1276 Vitest green** (was 1272, +4); **155
+  Playwright passed + 1 environmental halfling sheet-ui
+  navigation-race flake** (passes cleanly in isolation, 7.8s; not
+  slice-caused — slice 2 touches only `migrations.js` + lang + docs).
+  Closes only the silent-swallow item; the separate "`migrateWorld`
+  fire-and-forget from a sync ready hook" PR #720 item stays open
+  (out of batch scope).
 
 - Phase 7 session 10 (2026-05-29): extract `buildLibResultFlag` +
   `applyFleetingLuck` shared helpers from `module/adapter/chat-renderer.mjs`

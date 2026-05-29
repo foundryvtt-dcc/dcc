@@ -418,6 +418,7 @@
   "DCC.MightyDeedsLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.UrVBDNG5csbS5bBa#mighty-deeds-of-arms]{Mighty Deeds of Arms}",
   "DCC.MightyDeedsOfArms": "Mighty Deeds of Arms",
   "DCC.MigrationComplete": "Finished migration to DCC System version {systemVersion}!",
+  "DCC.MigrationFailures": "DCC migration finished with {count} document(s) that failed to update — see the browser console for details. The world migration version was not advanced; resolve the issues and reload to retry.",
   "DCC.MigrationInfo": "Beginning DCC System Migration to version {systemVersion}. Please be patient and do not close your game or shut down your server",
   "DCC.MigrationMessage": "Migrating {type} entity {name}",
   "DCC.MigrationUnsupportedVersion": "DCC world data version ({currentVersion}) is below the minimum supported version ({minimumVersion}). Open this world in a pre-V14 DCC release (0.65.x) first to migrate forward, then return to the current system.",

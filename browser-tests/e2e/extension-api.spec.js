@@ -882,6 +882,48 @@ test.describe('DCC Extension API', () => {
     expect(result.spellHasSkillId).toBe(false)
   })
 
+  test('DCC migrationOutcome gates version-stamping on a clean run + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
+    // Phase 7 session 11: `migrateWorld` now accumulates per-document
+    // failures and applies the pure `migrationOutcome(failures)` policy
+    // — a clean run stamps the world version + shows the "complete"
+    // toast; any failure leaves the version unstamped and raises a
+    // `ui.notifications.warn(DCC.MigrationFailures, { count })`. This
+    // probe imports the live-served module to confirm the deployed
+    // helper's stamp/notify decisions and that the new i18n key is
+    // registered + interpolates the {count} placeholder. It does NOT
+    // run migrateWorld (which would mutate the live world).
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/migrations.js')
+
+      const clean = mod.migrationOutcome([])
+      const failed = mod.migrationOutcome([
+        { type: 'Actor', name: 'P_MigProbe A' },
+        { type: 'Item', name: 'P_MigProbe I' }
+      ])
+
+      // Live i18n: a registered key interpolates; an unregistered key
+      // is returned verbatim by Foundry's localizer.
+      const failuresMsg = game.i18n.format('DCC.MigrationFailures', { count: 2 })
+
+      return {
+        isFunction: typeof mod.migrationOutcome === 'function',
+        clean,
+        failed,
+        i18nResolves: failuresMsg !== 'DCC.MigrationFailures',
+        i18nInterpolatesCount: failuresMsg.includes('2')
+      }
+    })
+
+    expect(result.isFunction).toBe(true)
+    // Clean run → stamp + complete.
+    expect(result.clean).toEqual({ stampVersion: true, notify: 'complete', failureCount: 0 })
+    // Failed run → no stamp + warn with the exact count.
+    expect(result.failed).toEqual({ stampVersion: false, notify: 'failures', failureCount: 2 })
+    // The new failure-summary i18n key is registered and interpolates.
+    expect(result.i18nResolves).toBe(true)
+    expect(result.i18nInterpolatesCount).toBe(true)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

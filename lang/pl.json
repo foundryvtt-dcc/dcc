@@ -418,6 +418,7 @@
   "DCC.MightyDeedsLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.UrVBDNG5csbS5bBa#mighty-deeds-of-arms]{Potężne Czyny Broni}",
   "DCC.MightyDeedsOfArms": "Potężne Czyny Broni",
   "DCC.MigrationComplete": "Zakończono migrację do DCC System wersji {systemVersion}!",
+  "DCC.MigrationFailures": "Migracja DCC zakończyła się z {count} dokumentem(ami), których nie udało się zaktualizować — szczegóły w konsoli przeglądarki. Wersja migracji świata nie została podniesiona; rozwiąż problemy i przeładuj, aby spróbować ponownie.",
   "DCC.MigrationInfo": "Rozpoczynanie Migracji Systemu DCC do wersji {systemVersion}. Proszę być cierpliwym i nie zamykać gry ani wyłączać serwera",
   "DCC.MigrationMessage": "Migruje {type} entity {name}",
   "DCC.MigrationUnsupportedVersion": "Wersja danych świata DCC ({currentVersion}) jest niższa niż minimalna obsługiwana wersja ({minimumVersion}). Otwórz najpierw ten świat w wydaniu DCC sprzed V14 (0.65.x), aby przeprowadzić migrację, a następnie wróć do bieżącego systemu.",

@@ -65,38 +65,34 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 10 (2026-05-29)** opens a three-slice PR #720
-resilience batch (the queue having drained at session 9). This
-slice closes the "four near-identical `dcc.libResult` flag payloads"
-item: the four chat renderers in `module/adapter/chat-renderer.mjs`
-(`renderAbilityCheck`, `renderSavingThrow`, `renderSkillCheck`,
-`renderSpellCheck`) built near-identical `dcc.libResult` flag
-literals plus an identical guarded `FleetingLuck.updateFlags` block.
-The shared seven-field core (`die` / `natural` / `total` / `formula`
-/ `critical` / `fumble` / `modifiers`) now lives in one exported
-`buildLibResultFlag(result, extras = {})` (callers pass type-specific
-extras — `{ skillId }` for the three checks,
-`{ spellId, tier, spellLost, corruptionTriggered }` for spell
-checks), and the luck update in `applyFleetingLuck(flags,
-foundryRoll)`. Pure structural — the on-message flag contract is
-unchanged (consumed by key name, not order). **1272 Vitest** (was
-1262, +10 in new `module/__tests__/chat-renderer.test.js`), **155
-Playwright** (was 154, +1 probe), clean 5.8-min suite. The remaining
-two batch slices are: surface `migrateWorld` per-doc failures via
-`ui.notifications.warn`, and consolidate the three `normalizeLibDie`
-/ `_stripDieCount` die-normalize copies across
-`module/adapter/attack-input.mjs`, `module/adapter/spell-input.mjs`,
-and `module/actor.js`.
+**Phase 7 session 11 (2026-05-29)** is the second slice of the
+three-slice PR #720 resilience batch. It closes the "`migrateWorld`
+per-doc catches swallow silently" item: the four
+`catch (err) { console.error(err) }` sites in `module/migrations.js`
+(actors / items / scenes loops + `migrateCompendium`) now also push
+`{ type, name }` onto a `failures` array; `migrateCompendium` returns
+its failures up to `migrateWorld`. A new pure exported
+`migrationOutcome(failures)` decides the finish — a clean run stamps
+the world at `NEEDS_MIGRATION_VERSION` + shows the "complete" toast;
+any failure leaves the version unstamped (idempotent migrations
+re-run next load) and raises `ui.notifications.warn` with the count
+(new i18n key `DCC.MigrationFailures`, translated to all 7 langs).
+**1276 Vitest** (was 1272, +4 in new
+`module/__tests__/migration-outcome.test.js`), **155 Playwright + 1
+environmental halfling sheet-ui navigation-race flake** (passes in
+isolation, 7.8s; not slice-caused — slice 2 touches only
+`migrations.js` + lang + docs). The separate PR #720 "`migrateWorld`
+fire-and-forget from a sync ready hook" item is out of scope.
 
-**Phase 7 session 9 (closed 2026-05-28)** closed the PR #720
-"Uncached compendium walks" item with a per-process table cache in
-`module/adapter/table-cache.mjs` routing the four table-loading
-sites (`loadDisapprovalTable` / `loadMercurialMagicTable` in
-`spell-input.mjs`; `getCritTableLink` / `getCritTableResult` in
-`utilities.js`) through `Map` caches, with global invalidation on
-world-RollTable CRUD events via `registerTableCacheInvalidation()`.
-Pure refactor; cold-cache walks match prior behavior byte-for-byte.
-1262 Vitest, 154 Playwright at close.
+**Phase 7 session 10 (closed 2026-05-29)** opened the resilience
+batch by closing the "four near-identical `dcc.libResult` flag
+payloads" item: the four chat renderers in
+`module/adapter/chat-renderer.mjs` shared an identical core
+projection + `FleetingLuck.updateFlags` guard, now owned by exported
+`buildLibResultFlag(result, extras = {})` and `applyFleetingLuck(flags,
+foundryRoll)`. Pure structural; flag consumed by key name so the
+on-message contract is unchanged. 1272 Vitest, 155 Playwright at
+close.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -106,6 +102,52 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — Phase 7 session 11: surface `migrateWorld` per-doc
+  failures via `ui.notifications.warn` + gate version-stamping on a
+  clean run (closes the PR #720 "`migrateWorld` per-doc catches
+  swallow silently" item).** Before this slice, the four
+  `catch (err) { console.error(err) }` sites in `module/migrations.js`
+  (`migrateWorld`'s actors / items / scenes loops + `migrateCompendium`)
+  logged to the console and kept going — and the run stamped the world
+  at `NEEDS_MIGRATION_VERSION` and showed the green "complete" toast
+  regardless, so a GM whose migration failed on every document had no
+  in-app signal. Now each loop pushes `{ type, name }` onto a
+  `failures` array (still `console.error`ing the stack);
+  `migrateCompendium` returns its own failures array which
+  `migrateWorld` accumulates. A new pure exported
+  `migrationOutcome(failures)` (no Foundry globals — same testable
+  pattern as `classifyMigrationDecision`) decides the finish: a clean
+  run stamps the version + shows the "complete" toast; any failure
+  leaves the version unstamped (the idempotent data-driven migrations
+  re-run on the next load after the GM resolves the issue) and raises
+  `ui.notifications.warn(DCC.MigrationFailures, { count }, { permanent:
+  true })`. New i18n key `DCC.MigrationFailures` added to all 7 lang
+  files (en + cn/de/es/fr/it/pl translated; `compare-lang` reports 0
+  missing keys). +4 Vitest in new
+  `module/__tests__/migration-outcome.test.js` (clean → stamp +
+  complete; one failure → no-stamp + failures; multi-failure exact
+  count; non-array defensive → treated as clean). +1 Playwright probe
+  in `extension-api.spec.js` (`DCC migrationOutcome gates
+  version-stamping on a clean run + DCC.MigrationFailures resolves`)
+  dynamic-imports the live module, asserts the clean / failed outcome
+  shapes, and confirms `game.i18n.format('DCC.MigrationFailures',
+  { count: 2 })` resolves (≠ the raw key) + interpolates the count —
+  without running `migrateWorld` against the live world. **1276 Vitest
+  green** (was 1272, +4; +1 test file). **155 Playwright passed + 1
+  environmental flake** at `sheet-ui.spec.js:163 Halfling sheet has
+  correct tabs` (`Execution context was destroyed, most likely because
+  of a navigation` — the documented halfling navigation-race family,
+  same one session 8 saw at `adapter-dispatch.spec.js:1898`; passes
+  cleanly in isolation, 7.8s; NOT slice-caused — slice 2 touches only
+  `migrations.js` + lang files + the migrations probe + docs, none of
+  which run in sheet UI or trigger navigation). My new probe (test
+  103) passed. Net: pre-slice 155 + 1 new probe = 156 expected;
+  observed 155 pass + 1 isolation-passing flake = 156 total. Note:
+  this closes only the *silent-swallow* `migrateWorld` item; the
+  separate PR #720 "`migrateWorld` fire-and-forget from a sync ready
+  hook" item (make `checkMigrations` async + `await`) is untouched
+  and out of this batch's scope.
 
 - **2026-05-29 — Phase 7 session 10: extract `buildLibResultFlag` +
   `applyFleetingLuck` shared helpers from the four chat renderers
@@ -410,138 +452,6 @@ archives linked above.
   `docs/dev/ARCHITECTURE_REIMAGINED.md §7` theming-contract
   documentation.
 
-- **2026-05-22 — Phase 7 session 6: extract chat / hook wiring from
-  `dcc.js` into `module/chat-and-hook-wiring.mjs` (closes the
-  `dcc.js` piecemeal-split arc).** Sixth and final piecemeal Phase 7
-  extraction — relocates the eleven remaining
-  `Hooks.on` / `Hooks.once` handlers (`hotbarDrop`,
-  `renderChatMessageHTML`, `getChatMessageContextOptions`,
-  `renderActorDirectory`, `preCreateActor`, `preCreateItem`,
-  `applyActiveEffect`, `preUpdateActor`, `updateCombat`,
-  `item-piles-ready`, `getProseMirrorMenuDropDowns`) into a
-  focused module. The largest body is the ~70-line
-  `renderChatMessageHTML` chat-decoration pipeline (crit/fail
-  highlight, minimum-damage clamp, SpellResult HTML,
-  `data-item-id` attribute forwarding, the nine `chat.emoteXxxRoll`
-  fan-out gated on the `emoteRolls` setting with the fallback
-  to the `dcc.emoteRoll` message flag when the setting throws,
-  the `spellResult` HTML append on the non-emote path, crit /
-  fumble result lookups gated on `automateDamageFumblesCrits`,
-  and TableResult navigation at the end); the `updateCombat`
-  Active Effect expiry loop (round-based + time-based, GM-only,
-  with the `ui.notifications.info(DCC.EffectsExpired)` summary);
-  and the `getProseMirrorMenuDropDowns` sidebar-style menu entry
-  (active-predicate + cmd toggle that adds/removes the `sidebar`
-  class on the current paragraph node via
-  `foundry.prosemirror.commands.setBlockType`). Each handler is
-  exported individually plus a frozen
-  `CHAT_AND_HOOK_WIRING_HOOKS` dispatch table (entries carry
-  the handler + a `once` flag — only `item-piles-ready` is
-  once-only) and a `registerChatAndHookWiring()` entry-point
-  that iterates the table calling `Hooks.on` or `Hooks.once`
-  per entry — matching the `module/settings-table-hooks.mjs`
-  and `module/table-loading.mjs` pattern from Phase 7 sessions
-  3 + 5. `module/dcc.js` shrinks from 737 → 475 lines (-262
-  net including the new `import { registerChatAndHookWiring }`
-  line, the dropped `* as chat`, `parser`, `EntityImages`,
-  `setupItemPilesForDCC`, and `createDCCMacro` imports — the
-  latter three exclusive to the relocated hook bodies — plus
-  the 8-line replacement marker comment block summarising the
-  eleven relocated handlers). Pure refactor — every
-  conditional, every `game.user.isGM` gate, every default-
-  image lookup, every emote-roll fan-out, every Active Effect
-  duration calculation is preserved verbatim. **The §Appendix
-  A target of ~4–5 focused modules out of `dcc.js` is met:**
-  what remains in `dcc.js` is the init hook (data models, sheet
-  registrations, template paths, `game.dcc` registry, Active
-  Effect setup, custom dice types, custom document classes,
-  Fleeting Luck setting), the `getSceneControlButtons` hook
-  (Fleeting Luck + Spell Duel toolbar buttons — adjacent to
-  init scaffolding), the ready hook (settings init, KeyState,
-  release-notes, migrations, table-loading boot, Fleeting Luck
-  / Spell Duel init, status icons, theme classes, welcome
-  dialog, compendium-link setup, class-progression load,
-  `dcc.ready` emission), the local `checkReleaseNotes` /
-  `checkMigrations` / `_onShowJournal` / `_onShowURI`
-  helpers, and three single-line `registerXxxHooks()` calls
-  (settings-table, table-loading, chat-and-hook-wiring). +43
-  Vitest tests in new `module/__tests__/chat-and-hook-wiring.test.js`:
-  1 `onHotbarDrop` delegate test, 8 `onRenderChatMessageHTML`
-  cases (early-return on `!isRoll`, on `!isContentVisible`, on
-  empty `rolls`; the decoration pipeline canPopout + highlight
-  + minimum-damage + SpellResult; the `data-item-id` attribute
-  forwarding; the 9-emote-roll fan-out under `emoteRolls=true`
-  with `automateDamageFumblesCrits=true` skipping the
-  crit/fumble lookup; the `spellResult` HTML append on the
-  non-emote path; the `game.settings.get` throws fallback to
-  the `dcc.emoteRoll` message flag; the
-  `lookupCriticalRoll` + `lookupFumbleRoll` invocation when
-  emote is off OR automate is off), 1
-  `onGetChatMessageContextOptions` delegate, 1
-  `onRenderActorDirectory` delegate, 5 `onPreCreateActor`
-  cases (GM-with-no-img default-img assignment; has-img skip;
-  non-GM skip; brand-new non-Item-Pile Player gets
-  `prototypeToken.actorLink`; `keepId=true` duplicate +
-  Item-Pile-named Player both skip the actor-link path), 3
-  `onPreCreateItem` cases (GM-with-no-img default-img; null-
-  image-lookup no-op; non-GM short-circuit), 3
-  `onApplyActiveEffect` cases (non-string current value
-  returns null + skips setProperty; matching `[+-]?\d+d`
-  pattern bumps via `game.dcc.DiceChain.bumpDie`;
-  non-matching value returns null), 5 `onPreUpdateActor`
-  cases (wrong userId; no img change; mystery-man default-
-  image replacement; type-specific default-image replacement;
-  custom-texture preservation), 5 `onUpdateCombat` cases
-  (non-GM gate; no-round-delta skip; round-based expiry on
-  round 5 >= startRound 2 + rounds 3; time-based expiry on
-  `effect.isExpired`; zero-effect actor skip), 1
-  `onItemPilesReady` delegate, 3
-  `onGetProseMirrorMenuDropDowns` cases (no-format-key
-  no-op; pushed `dcc-custom` entry shape + `DCC.CustomStyles`
-  / `DCC.SidebarText` titles; active-predicate detects the
-  sidebar class on the current paragraph node), 3
-  `CHAT_AND_HOOK_WIRING_HOOKS` dispatch-table cases (one-to-
-  one routing; exactly-11-keys; only-`item-piles-ready`-is-once),
-  3 `registerChatAndHookWiring` cases (wires ten via
-  `Hooks.on`, wires `item-piles-ready` via `Hooks.once`,
-  exact `10 + 1` count). The test file `vi.mock`s the seven
-  imported sibling modules (`../chat.js`, `../parser.js`,
-  `../entity-images.js`, `../spell-result.js`,
-  `../table-result.js`, `../item-piles-support.js`,
-  `../macros.mjs`) so handlers can be invoked as plain
-  functions without a live Foundry boot — `vi.fn()` shells
-  for each named export, plain-object `makeHtml` stand-in
-  for the DOM (the unit env has no jsdom), and plain-object
-  effects collections with custom `[Symbol.iterator]` for
-  the `updateCombat` walk (a real `Map`'s `size` getter
-  isn't overridable). Same stub-and-restore beforeEach/
-  afterEach pattern as Phase 7 sessions 1, 2, 3, 4, 5. +1
-  Playwright case in `extension-api.spec.js` (`DCC chat-
-  and hook-wiring (preCreateActor / preCreateItem /
-  preUpdateActor + 8 other hooks) survives chat-and-hook-
-  wiring.mjs extraction`) — creates a temporary `P_ChatHook
-  Probe` Player actor without an `img`, asserts the
-  relocated `onPreCreateActor` handler fired (`actor.img`
-  is a non-empty string AND `prototypeToken.actorLink ===
-  true`), creates an embedded weapon item without an `img`
-  and asserts `onPreCreateItem` assigned a default image,
-  then updates the actor's `img` to `icons/svg/aura.svg` and
-  asserts `onPreUpdateActor` synced
-  `prototypeToken.texture.src` to the new value — restoring
-  the probe in a `finally` block. **1227 Vitest green** (was
-  1184, +43). **149 Playwright passed**, zero failures —
-  clean run (13.1-min full suite). Pre-slice baseline post
-  the two follow-up fix commits that landed after session 5
-  (`1935372` v14-features network-error filter + `2973a13`
-  registerItemSheet XCC-resilience) was 148 — both
-  previously-flagged failures (xcc-core-book DCCItemSheet
-  baseline + v14-features network flake) recovered after
-  the fixes; this slice's +1 new test cleanly lands the
-  post-slice count at 149. Net pass-count math: 148 + 1 =
-  149. With the `dcc.js` piecemeal-split arc closed, the
-  next Phase 7 candidate is item 4 — split `styles/dcc.scss`
-  (~2979 lines) into partials + theme contract.
-
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at
@@ -826,17 +736,18 @@ and should be scheduled into Phase 4+ work.
   fallback-order tests" coverage-gap item below), +1 Playwright
   probe in `extension-api.spec.js` asserting the wiring + global
   invalidation on real RollTable CRUD events.
-- **`migrateWorld` per-doc catches swallow silently** (C2 review,
-  2026-04-24). Four `catch (err) { console.error(err) }` sites in
-  `module/migrations.js` (`migrateWorld`'s actors/items/scenes loops
-  + `migrateCompendium`) log to console and keep going. A
-  migration that fails on every document still stamps the world at
-  `NEEDS_MIGRATION_VERSION` and shows the green "complete"
-  notification, so the GM has no signal. Align with the
-  `9e79459 feat(adapter): reason codes for silent adapter→legacy
-  fallbacks` pattern: accumulate failures into a `failedMigrations[]`
-  array, surface a `ui.notifications.warn` with the count at the
-  end, and only stamp the version when the run was clean.
+- ~~**`migrateWorld` per-doc catches swallow silently**~~ **Fixed
+  2026-05-29** (Phase 7 session 11). The four
+  `catch (err) { console.error(err) }` sites in `module/migrations.js`
+  now also push `{ type, name }` onto a `failures` array;
+  `migrateCompendium` returns its failures up to `migrateWorld`. A new
+  pure exported `migrationOutcome(failures)` gates the finish: a clean
+  run stamps the version at `NEEDS_MIGRATION_VERSION` + shows the
+  "complete" toast; any failure leaves the version unstamped (the
+  idempotent data-driven migrations re-run next load) and raises
+  `ui.notifications.warn(DCC.MigrationFailures, { count })`. New i18n
+  key translated to all 7 langs. +4 Vitest in new
+  `migration-outcome.test.js`, +1 Playwright probe.
 - **`migrateWorld` fire-and-forget from a sync ready hook** (C2
   review, 2026-04-24). `checkMigrations` calls `migrations.migrateWorld()`
   without `await` from a non-async ready callback, so the rest of
