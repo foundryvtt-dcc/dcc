@@ -725,3 +725,34 @@
   all three targeted backlog items (`buildLibResultFlag` /
   `applyFleetingLuck` extraction, `migrateWorld` failure surfacing, and
   the `normalizeLibDie` / `_stripDieCount` consolidation) are ticked.
+
+- **2026-05-29 — fix(adapter): preserve additive init-die terms through
+  the combat-tracker initiative path.** When `system.attributes.init.die`
+  is a compound additive formula — MCC folds the Mutant Horror die into
+  init as `1d20+1d3` (up to `1d20+1d7+7` at higher levels; see
+  mcc-core-book §9.2a) — the combat-tracker path (`DCCCombatant`
+  `getInitiativeRoll` → `actor.getInitiativeRoll(formula)` with no
+  dialog → `_getInitiativeRollViaAdapter`) flattened it through the lib's
+  single-die model (`_stripDieCount('1d20+1d3')` → `'d20'`, since
+  `normalizeLibDie`'s regex matches only the first die) and silently
+  dropped the extra die, rolling only `1d20`. The sheet "Roll
+  Initiative" button (`_getInitiativeRollLegacy`, dialog path) reads
+  `init.die` verbatim, so it was unaffected — and `main` reads it
+  verbatim on both paths, making this an adapter-only regression. Fix
+  mirrors the existing weapon-die-label re-injection ("a Foundry display
+  idiom the lib doesn't model"): a new `_initDieAdditiveTerms(formula)`
+  helper extracts the tail after the leading die (`'1d20+1d3'` → `'+1d3'`,
+  `'1d20+1d7+7'` → `'+1d7+7'`, `'1d20'` → `''`), and
+  `_getInitiativeRollViaAdapter` re-appends it to the lib formula
+  Foundry-side — computed from the actor's own `init.die` and **suppressed
+  when an equipped two-handed / `initiativeDieOverride` weapon is in
+  effect** (the weapon die replaces init entirely, matching `main` + the
+  legacy path). Full spec: `docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`. +4
+  Vitest (`adapter-initiative.test.js`: `1d20+1d3` → two dice;
+  `1d20+1d7+7` → tail die + flat `+7`; plain `1d20` unchanged;
+  weapon-override suppresses the tail) + 1 integration
+  (`__integration__/adapter-initiative.test.js`: the compound die
+  evaluates with real Foundry dice, total within `[2, 23]`) + 1 Playwright
+  (`adapter-dispatch.spec.js`: a live combat-tracker roll on a `1d20+1d3`
+  Player keeps both dice). **1288 Vitest** combined with session 13.
+  Unblocks dropping the mcc-core-book §9.2a "known limitation" caveat.

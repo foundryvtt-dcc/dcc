@@ -76,14 +76,41 @@ passed**, zero failures.
 
 **Remaining PR #720 items:** only open *design calls* + *test-coverage
 gaps* + *doc hygiene* remain (see *PR #720 review backlog* below) — the
-resilience/cleanup sub-list is now fully ticked. Alternatively a Group E
-vertical-slice (halfling / homebrew single-class) to broaden the adapter
-/ mixin pattern.
+resilience/cleanup sub-list is now fully ticked.
+
+**Group E / §2.8 validated by real consumers (2026-05-29).** The
+"homebrew single-class vertical" candidate is fulfilled by migrating two
+*actual* sibling content modules onto the Phase 4–6 class-registration
+API — `dcc-crawl-classes` (9 classes, PR #40) and `mcc-classes` (7
+classes, PR #38). No further DCC-side Group E work is needed (the
+registries already shipped in Phases 4–6; these are downstream
+consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-29 — §2.8 homebrew extensibility validated by real
+  sibling-module migrations + EXTENSION_API doc refresh (`c76a3a9`).** The
+  Phase 4–6 class-registration stack (`registerClassMixin` /
+  `registerClassDefaults` / `registerSheetPart` / `registerActorSheet`)
+  got its first real-world consumers: `dcc-crawl-classes` (9 classes — PR
+  foundryvtt-dcc/dcc-crawl-classes#40) and `mcc-classes` (7 classes — PR
+  foundryvtt-dcc/mcc-classes#38) were migrated off the legacy
+  monolithic-`dcc.definePlayerSchema` + NPC-base-sheet pattern onto the
+  API, each verified live in the v14 world. This fulfills the Group E
+  "homebrew single-class vertical" candidate with **actual content
+  modules** rather than a synthetic class — crawl collapsed to 5-line
+  `DCCSheet` stubs; mcc kept thin `_prepareContext` overrides for its
+  §9.2/§9.3a one-time data migrations (the `-=`/transform logic
+  `registerClassDefaults` can't express). **No DCC-suite delta** (the
+  migrations live in the sibling repos with their own suites; counts stay
+  1304 Vitest / 162 Playwright). The only DCC-branch artifact is the
+  docs-only `c76a3a9` refreshing the `EXTENSION_API.md` `registerActorSheet`
+  row (both modules were still listed "migration opt-in"). Surfaced no
+  DCC-system gaps — every enabler (`DCCSheet` export, `sheetClass` on the
+  base schema, the progression-load hook) already existed.
 
 - **2026-05-29 — Phase 7 session 15: unify the dispatcher gate style +
   drop the vestigial `attackRollResult` param (closes the last two
@@ -240,37 +267,6 @@ archives linked above.
   separate (now-closed) silent-swallow item landed at session 11. The
   ordering item was the last remaining `migrateWorld`-related PR #720
   entry.
-
-- **2026-05-29 — fix(adapter): preserve additive init-die terms through
-  the combat-tracker initiative path.** When `system.attributes.init.die`
-  is a compound additive formula — MCC folds the Mutant Horror die into
-  init as `1d20+1d3` (up to `1d20+1d7+7` at higher levels; see
-  mcc-core-book §9.2a) — the combat-tracker path (`DCCCombatant`
-  `getInitiativeRoll` → `actor.getInitiativeRoll(formula)` with no
-  dialog → `_getInitiativeRollViaAdapter`) flattened it through the lib's
-  single-die model (`_stripDieCount('1d20+1d3')` → `'d20'`, since
-  `normalizeLibDie`'s regex matches only the first die) and silently
-  dropped the extra die, rolling only `1d20`. The sheet "Roll
-  Initiative" button (`_getInitiativeRollLegacy`, dialog path) reads
-  `init.die` verbatim, so it was unaffected — and `main` reads it
-  verbatim on both paths, making this an adapter-only regression. Fix
-  mirrors the existing weapon-die-label re-injection ("a Foundry display
-  idiom the lib doesn't model"): a new `_initDieAdditiveTerms(formula)`
-  helper extracts the tail after the leading die (`'1d20+1d3'` → `'+1d3'`,
-  `'1d20+1d7+7'` → `'+1d7+7'`, `'1d20'` → `''`), and
-  `_getInitiativeRollViaAdapter` re-appends it to the lib formula
-  Foundry-side — computed from the actor's own `init.die` and **suppressed
-  when an equipped two-handed / `initiativeDieOverride` weapon is in
-  effect** (the weapon die replaces init entirely, matching `main` + the
-  legacy path). Full spec: `docs/dev/ADDITIVE_INITIATIVE_DIE_FIX.md`. +4
-  Vitest (`adapter-initiative.test.js`: `1d20+1d3` → two dice;
-  `1d20+1d7+7` → tail die + flat `+7`; plain `1d20` unchanged;
-  weapon-override suppresses the tail) + 1 integration
-  (`__integration__/adapter-initiative.test.js`: the compound die
-  evaluates with real Foundry dice, total within `[2, 23]`) + 1 Playwright
-  (`adapter-dispatch.spec.js`: a live combat-tracker roll on a `1d20+1d3`
-  Player keeps both dice). **1288 Vitest** combined with session 13.
-  Unblocks dropping the mcc-core-book §9.2a "known limitation" caveat.
 
 ## Closed questions
 
@@ -517,16 +513,26 @@ feature in the lib's tagged-union modifier (e.g. skill items with
 `allowLuck` needing dice-chain bumps), land the lib change first in
 its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
 
-**Sibling-module status:** XCC has consumed the
-`dcc.afterComputeSpellCheck` hook + `game.dcc.registerActorSheet`
-recipes shipped in B1-followup / B1-followup-2; PR pending on
-`foundryvtt-dcc/xcc` branch `chore/migrate-to-dcc-extension-api`.
-Same branch also retires 9 XCC-side redefinitions of DCC class
-schema fields (luckDie, backstab, knownSpells, maxSpellLevel,
-disapproval, disapprovalTable, deity, corruption,
-spellCheckAbility) that were silently clobbering DCC defaults.
-Phase 4 schema-mixin design needs to coordinate with the XCC field
-consumption documented in this PR.
+**Sibling-module status:**
+- **`dcc-crawl-classes`** — migrated to the full class-registration API
+  (mixins / defaults / sheet-parts / `registerActorSheet` + 5-line
+  `DCCSheet` stubs). Branch `refactor/dcc-extension-api`, PR
+  foundryvtt-dcc/dcc-crawl-classes#40 (2026-05-29).
+- **`mcc-classes`** — migrated the same way, keeping thin `_prepareContext`
+  overrides for its §9.2/§9.3a data migrations; cross-cutting shared MCC
+  fields stay on the `dcc.definePlayerSchema` hook. Branch
+  `refactor/dcc-extension-api`, PR foundryvtt-dcc/mcc-classes#38
+  (2026-05-29). Both verified live in the v14 world; together they are the
+  §2.8 homebrew-extensibility validation.
+- **XCC** has consumed the `dcc.afterComputeSpellCheck` hook +
+  `game.dcc.registerActorSheet` recipes shipped in B1-followup /
+  B1-followup-2; PR pending on `foundryvtt-dcc/xcc` branch
+  `chore/migrate-to-dcc-extension-api`. Same branch also retires 9
+  XCC-side redefinitions of DCC class schema fields (luckDie, backstab,
+  knownSpells, maxSpellLevel, disapproval, disapprovalTable, deity,
+  corruption, spellCheckAbility) that were silently clobbering DCC
+  defaults. Phase 4 schema-mixin design needs to coordinate with the XCC
+  field consumption documented in this PR.
 
 ## Notes for future sessions
 
