@@ -1318,6 +1318,8 @@ class Localization {
       'DCC.AbilityInt': 'Intelligence',
       'DCC.AbilityLck': 'Luck',
       'DCC.ActionDie': 'Action Die',
+      'DCC.CritTable': 'Crit Table',
+      'DCC.CritTableLookupHint': 'Roll the crit die above and look up the result on {table} in your rulebook.',
       'DCC.RollModifierTitleInitiative': 'Initiative',
       'DCC.ToHit': 'Attack',
       'DCC.SavesReflex': 'Reflex',

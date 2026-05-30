@@ -147,6 +147,7 @@
   "DCC.CritRange": "Portée coup critique",
   "DCC.CritResult": "Résultat Critique",
   "DCC.CritTable": "Table crit.",
+  "DCC.CritTableLookupHint": "Lancez le dé de critique ci-dessus et cherchez le résultat sur {table} dans votre livre de règles.",
   "DCC.CritTableUnavailable": "Table Critique Indisponible",
   "DCC.Critical": "Critique",
   "DCC.CriticalHit": "Coup critique",

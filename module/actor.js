@@ -3239,6 +3239,7 @@ class DCCActor extends Actor {
     let critRoll
     const critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
     let critResult = '' // Separate storage for navigable result
+    let critTableLookupHint = '' // Set when no crit table is available (look-it-up prompt)
     let critRollTotal = null
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -3252,6 +3253,7 @@ class DCCActor extends Actor {
       critPrompt = critDispatch.critPrompt
       critRoll = critDispatch.critRoll
       critResult = critDispatch.critResult
+      critTableLookupHint = critDispatch.critTableLookupHint
       critRollTotal = critDispatch.critRollTotal
       libCritResult = critDispatch.libCritResult
       if (critRoll) rolls.push(critRoll)
@@ -3347,6 +3349,7 @@ class DCCActor extends Actor {
         critRoll,
         critRollFormula,
         critResult,
+        critTableLookupHint,
         critRollTotal,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
@@ -3870,6 +3873,7 @@ class DCCActor extends Actor {
         critPrompt: game.i18n.localize('DCC.RollCritical'),
         critRoll: undefined,
         critResult: '',
+        critTableLookupHint: '',
         critRollTotal: null
       }
     }
@@ -3897,9 +3901,16 @@ class DCCActor extends Actor {
     warnIfDivergent('rollCritical', critRoll.total, libResult.total, { weapon: weapon?.name })
 
     let critResult = ''
+    let critTableLookupHint = ''
     const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     if (critResultObj) {
       critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
+    } else {
+      // No crit table available (e.g. the core book module is disabled).
+      // Don't fail silently and don't complain about the missing module —
+      // the rolled total is shown in the crit anchor above; just point the
+      // user at the table to look up by hand in their physical rulebook.
+      critTableLookupHint = game.i18n.format('DCC.CritTableLookupHint', { table: critTableDisplayText })
     }
     const critResultPrompt = game.i18n.localize('DCC.CritResult')
     const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
@@ -3911,6 +3922,7 @@ class DCCActor extends Actor {
       critPrompt,
       critRoll,
       critResult,
+      critTableLookupHint,
       critRollTotal,
       libCritResult: {
         critDie: libResult.roll.formula,

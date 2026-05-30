@@ -32,6 +32,7 @@ import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
+import { getCritTableResult } from '../utilities.js'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -186,6 +187,42 @@ test('adapter path logs rollCritical dispatch + returns libCritResult', async ()
   expect(result.libCritResult.natural).toBe(7)
   expect(result.libCritResult.total).toBe(9) // natural 7 + luck 2
   expect(result.libCritResult.critTable).toBe('III')
+})
+
+test('automated crit with no available table surfaces a look-it-up hint instead of failing silently', async () => {
+  // Core-book module disabled: the table lookup resolves to nothing.
+  // The roll still happens (total is shown), and instead of an empty
+  // crit-result block we hand back a prompt to look it up by hand.
+  logDispatch.mockClear()
+  getCritTableResult.mockResolvedValueOnce(undefined)
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 9, natural: 7 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.attributes = { critical: { die: '1d10', table: 'III' } }
+  actor.system.abilities = { lck: { mod: '+2' } }
+
+  let result
+  try {
+    result = await actor._rollCritical({ name: 'longsword' }, {
+      automate: true,
+      luckMod: '+2',
+      critTableName: 'III'
+    })
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  // The roll still resolves and the total is preserved …
+  expect(result.critRoll).toBeDefined()
+  expect(result.critRollTotal).toBe(9)
+  // … but with no table available, the navigable result is empty and a
+  // look-it-up hint naming the crit table is surfaced instead.
+  expect(result.critResult).toBe('')
+  expect(result.critTableLookupHint).toBeTruthy()
+  expect(result.critTableLookupHint).toContain('III')
 })
 
 test('crit path returns inline-roll template (no lib result, no Roll) when automate is off', async () => {

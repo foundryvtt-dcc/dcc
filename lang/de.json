@@ -161,6 +161,7 @@
   "DCC.CritResult": "Krit-Ergebnis",
   "DCC.CritRange": "Krit-Bereich",
   "DCC.CritTable": "Krit-Tabelle",
+  "DCC.CritTableLookupHint": "Würfle oben den Krit-Würfel und schlage das Ergebnis auf {table} in deinem Regelwerk nach.",
   "DCC.CritTableUnavailable": "Kritische Treffertabelle nicht verfügbar",
   "DCC.Critical": "Krit",
   "DCC.CriticalHit": "Kritischer Treffer",

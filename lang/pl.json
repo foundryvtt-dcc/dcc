@@ -161,6 +161,7 @@
   "DCC.CritResult": "Wynik Krytyka",
   "DCC.CritRange": "Zakres Trafienia Krytycznego",
   "DCC.CritTable": "Tabela Krytyka",
+  "DCC.CritTableLookupHint": "Rzuć powyższą kością krytyka i sprawdź wynik w {table} w swoim podręczniku.",
   "DCC.CritTableUnavailable": "Tabela Krytyczna Niedostępna",
   "DCC.Critical": "Krytyczny",
   "DCC.CriticalHit": "Trafienie Krytyczne",

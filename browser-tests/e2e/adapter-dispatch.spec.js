@@ -2345,6 +2345,41 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(surface.hasGate, '_canRouteAttackViaAdapter retired in D1').toBe(false)
       expect(surface.hasAdapterAlias, '_rollToHitViaAdapter folded into rollToHit').toBe(false)
     })
+
+    test('crit with no available table surfaces a look-it-up hint, not a silent miss', async ({ page }) => {
+      // Reproduces the "core book module disabled" scenario: with the
+      // crit roll automated but no crit table resolvable, the result
+      // block must NOT be silently empty. _rollCritical keeps the rolled
+      // total and hands back `critTableLookupHint` (the friendly prompt
+      // naming the table) instead. A bogus table name guarantees the
+      // lookup misses regardless of which packs the world has installed,
+      // so the assertion holds whether or not dcc-core-book is enabled.
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Crit NoTable', type: 'Player' })
+        actor.system.attributes = actor.system.attributes || {}
+        actor.system.abilities = actor.system.abilities || {}
+        const dispatch = await actor._rollCritical(
+          { name: 'P1-NoTableSword', system: { critDie: '1d10' } },
+          { automate: true, luckMod: '+0', critTableName: 'ZZZ' }
+        )
+        await actor.delete()
+        return {
+          critResult: dispatch.critResult,
+          critRollTotal: dispatch.critRollTotal,
+          critTableLookupHint: dispatch.critTableLookupHint,
+          unavailableComplaint: game.i18n.localize('DCC.CritTableUnavailable')
+        }
+      })
+      // The roll still resolved (total preserved for the chat anchor) …
+      expect(typeof result.critRollTotal, 'crit die still rolled').toBe('number')
+      // … the navigable result block is empty (no table to draw from) …
+      expect(result.critResult, 'no fabricated crit-table result').toBe('')
+      // … and the friendly look-it-up hint is surfaced, naming the table
+      // and NOT repeating the old "unavailable" complaint.
+      expect(result.critTableLookupHint, 'look-it-up hint is present').toBeTruthy()
+      expect(result.critTableLookupHint).toContain('ZZZ')
+      expect(result.critTableLookupHint).not.toBe(result.unavailableComplaint)
+    })
   })
 
   // ── rollDamage (Phase 3 session 5, single-path post-session-19) ────

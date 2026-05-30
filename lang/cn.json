@@ -161,6 +161,7 @@
   "DCC.CritResult": "大成功结果",
   "DCC.CritRange": "大成功威胁范围",
   "DCC.CritTable": "大成功表",
+  "DCC.CritTableLookupHint": "请投掷上方的大成功骰，然后在你的规则书中的 {table} 上查找结果。",
   "DCC.CritTableUnavailable": "大成功表不可用",
   "DCC.Critical": "大成功",
   "DCC.CriticalHit": "大成功命中",

@@ -161,6 +161,7 @@
   "DCC.CritResult": "Crit Result",
   "DCC.CritRange": "Critical Threat Range",
   "DCC.CritTable": "Crit Table",
+  "DCC.CritTableLookupHint": "Roll the crit die above and look up the result on {table} in your rulebook.",
   "DCC.CritTableUnavailable": "Critical Table Unavailable",
   "DCC.Critical": "Critical",
   "DCC.CriticalHit": "Critical Hit",

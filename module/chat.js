@@ -598,8 +598,12 @@ export const lookupCriticalRoll = async function (message, html) {
 
     // Check if we got a result from the table lookup
     if (!critResult || !critResult.description) {
-      // No table available or no result found - just append the unavailable message
-      messageContent.innerHTML += `<br>${game.i18n.localize('DCC.CritTableUnavailable')}`
+      // No table available (e.g. the core book module is disabled) or no
+      // matching result. Don't complain about the missing module — the
+      // rolled total is already shown above, so just prompt the user to
+      // look the result up by hand on the named table in their rulebook.
+      const lookupHint = game.i18n.format('DCC.CritTableLookupHint', { table: fullTableName })
+      messageContent.innerHTML += `<br><span class="crit-lookup-hint"><em>${lookupHint}</em></span>`
       return
     }
 

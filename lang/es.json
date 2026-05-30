@@ -161,6 +161,7 @@
   "DCC.CritResult": "Resultado crítico",
   "DCC.CritRange": "Rango de Amenaza",
   "DCC.CritTable": "T.Crítica",
+  "DCC.CritTableLookupHint": "Tira el dado de crítico de arriba y busca el resultado en {table} en tu manual.",
   "DCC.CritTableUnavailable": "Tabla crítica no disponible",
   "DCC.Critical": "Crítico",
   "DCC.CriticalHit": "Golpe crítico",
