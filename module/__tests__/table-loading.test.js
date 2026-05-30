@@ -342,16 +342,16 @@ describe('onImportAdventure', () => {
     }
   })
 
-  test('toggles map-note display on and regenerates a thumbnail per scene', async () => {
+  test('toggles map-note display on and regenerates a thumbnail per scene from its Level', async () => {
     const sceneA = {
       name: 'Scene A',
-      img: 'a.png',
+      initialLevel: { id: 'level-a' },
       createThumbnail: vi.fn().mockResolvedValue({ thumb: 'thumb-a' }),
       update: vi.fn().mockResolvedValue(undefined)
     }
     const sceneB = {
       name: 'Scene B',
-      img: 'b.png',
+      initialLevel: { id: 'level-b' },
       createThumbnail: vi.fn().mockResolvedValue({ thumb: 'thumb-b' }),
       update: vi.fn().mockResolvedValue(undefined)
     }
@@ -360,6 +360,9 @@ describe('onImportAdventure', () => {
     await onImportAdventure()
 
     expect(globalThis.game.settings.set).toHaveBeenCalledWith('core', 'core.notesDisplayToggle', true)
+    // v14: createThumbnail renders from a Level id, never the deprecated `img` param
+    expect(sceneA.createThumbnail).toHaveBeenCalledWith({ level: 'level-a' })
+    expect(sceneB.createThumbnail).toHaveBeenCalledWith({ level: 'level-b' })
     expect(sceneA.update).toHaveBeenCalledWith({ thumb: 'thumb-a' })
     expect(sceneB.update).toHaveBeenCalledWith({ thumb: 'thumb-b' })
   })
@@ -367,7 +370,7 @@ describe('onImportAdventure', () => {
   test('skips the update for scenes whose createThumbnail returns no thumb', async () => {
     const scene = {
       name: 'Empty',
-      img: null,
+      initialLevel: { id: 'level-empty' },
       createThumbnail: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(undefined)
     }
@@ -375,6 +378,21 @@ describe('onImportAdventure', () => {
 
     await onImportAdventure()
 
+    expect(scene.update).not.toHaveBeenCalled()
+  })
+
+  test('skips level-less scenes entirely rather than calling createThumbnail (v14 would throw)', async () => {
+    const scene = {
+      name: 'No Level',
+      initialLevel: undefined,
+      createThumbnail: vi.fn().mockResolvedValue({ thumb: 'never' }),
+      update: vi.fn().mockResolvedValue(undefined)
+    }
+    globalThis.game.scenes = [scene]
+
+    await onImportAdventure()
+
+    expect(scene.createThumbnail).not.toHaveBeenCalled()
     expect(scene.update).not.toHaveBeenCalled()
   })
 })

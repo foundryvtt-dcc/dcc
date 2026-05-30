@@ -223,9 +223,17 @@ export async function onImportAdventure () {
   // This is a client side setting so only the GM user is affected
   game.settings.set('core', foundry.canvas.layers.NotesLayer.TOGGLE_SETTING, true)
 
-  // Regenerate all the scene thumbnails, since the adventure packer doesn't do that
+  // Regenerate all the scene thumbnails, since the adventure packer doesn't do that.
+  // v14 reworked Scene#createThumbnail to render from a Level (the background
+  // moved onto Level textures); the old `img` parameter is deprecated and
+  // passing it — even as undefined — fires a compatibility warning per scene.
+  // `initialLevel` already falls back to the scene's first Level, so resolve
+  // it once and skip level-less scenes rather than letting createThumbnail
+  // throw "The Level doesn't belong to this Scene".
   for (const scene of game.scenes) {
-    const t = await scene.createThumbnail({ img: scene.img || undefined })
+    const level = scene.initialLevel
+    if (!level) continue
+    const t = await scene.createThumbnail({ level: level.id })
     if (t?.thumb) {
       console.log(`Regenerated thumbnail for ${scene.name}`)
       await scene.update({ thumb: t.thumb })
