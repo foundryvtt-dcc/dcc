@@ -2067,6 +2067,15 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   margin-bottom: 5px;
   width: 37px;
 }
+.dcc .character .ac-and-hp input[data-len="3"] {
+  font-size: 20px;
+}
+.dcc .character .ac-and-hp input[data-len="4"] {
+  font-size: 15px;
+}
+.dcc .character .ac-and-hp input[data-len="5"] {
+  font-size: 12px;
+}
 .dcc .character .ac-and-hp .ac-effects,
 .dcc .character .ac-and-hp .hp-effects {
   position: absolute;
@@ -2336,6 +2345,13 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   align-self: center;
   border: 0;
   font-size: 22px;
+  height: 26px;
+}
+.dcc .npc-grid .ac-and-hp input[data-len="4"] {
+  font-size: 18px;
+}
+.dcc .npc-grid .ac-and-hp input[data-len="5"] {
+  font-size: 14px;
 }
 .dcc .npc-grid .ac-and-hp .ac-effects,
 .dcc .npc-grid .ac-and-hp .hp-effects {
@@ -2412,6 +2428,13 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   height: 20px;
   margin-left: 5px;
   width: 20px;
+}
+.dcc .npc-grid .saving-throws .saving-throw-box input[data-len="3"] {
+  font-size: 10px;
+}
+.dcc .npc-grid .saving-throws .saving-throw-box input[data-len="4"] {
+  font-size: 8px;
+  letter-spacing: -0.5px;
 }
 .dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects {
   display: flex;
