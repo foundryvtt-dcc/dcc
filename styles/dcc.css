@@ -1062,6 +1062,19 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Party Sheet                              */
 /* ----------------------------------------- */
+.dcc .party-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dcc .party-name label {
+  font-size: 13px;
+}
+.dcc .party-name input {
+  flex: 1;
+}
+
 .dcc .party-body {
   display: grid;
   grid-template-columns: 1fr;
@@ -1091,6 +1104,7 @@ a.inline-roll {
   width: 90px;
   padding: 6px;
   cursor: pointer;
+  object-fit: contain;
 }
 .dcc .party-body .character-row .occupation {
   grid-column: span 7;

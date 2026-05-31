@@ -2,6 +2,13 @@
 <section class="tab {{tabs.party.id}} {{tabs.party.cssClass}}" id="party"
          data-tab="{{tabs.party.id}}"
          data-group="{{tabs.party.group}}">
+  {{!-- Name Section --}}
+  <div class="party-name">
+    <label for="name">{{localize "DCC.Name"}}</label>
+    <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.Name'}}"
+           placeholder="{{localize 'DCC.Name'}}" autocomplete="off">
+  </div>
+
   <div class="party-body">
     {{#each partyMembers}}
       <div class="character-row data-font" data-actor-id="{{id}}">

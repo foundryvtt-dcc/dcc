@@ -2,6 +2,21 @@
 /*  Party Sheet                              */
 /* ----------------------------------------- */
 
+.dcc .party-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+
+  label {
+    font-size: 13px;
+  }
+
+  input {
+    flex: 1;
+  }
+}
+
 .dcc .party-body {
   display: grid;
   grid-template-columns: 1fr;
@@ -33,6 +48,11 @@
         width: 90px;
         padding: 6px;
         cursor: pointer;
+
+        // Fixed 90x90 box stretched non-square member portraits; letterbox
+        // them instead so the aspect ratio is preserved (mirrors the PC and
+        // NPC portrait treatment).
+        object-fit: contain;
       }
     }
 
