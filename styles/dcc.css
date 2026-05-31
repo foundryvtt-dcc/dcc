@@ -2263,6 +2263,7 @@ a.inline-roll {
   border: 0;
   justify-self: center;
   align-self: center;
+  object-fit: contain;
 }
 .dcc .character .row-separator {
   border-bottom: 2px dotted var(--system-secondary-color);

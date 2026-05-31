@@ -307,6 +307,11 @@
       border: 0;
       justify-self: center;
       align-self: center;
+
+      // The img carries fixed height/width="100px" attributes, so a
+      // non-square portrait was stretched to fill the square. Letterbox it
+      // within the box instead (mirrors the NPC portrait treatment).
+      object-fit: contain;
     }
   }
 
