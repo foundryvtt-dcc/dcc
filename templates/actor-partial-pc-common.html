@@ -171,14 +171,13 @@
       >
 
       {{!-- Speed --}}
-      <label for="system.attributes.speed.value">{{localize "DCC.Speed"}}</label>
+      <label for="system.attributes.speed.value" {{#if system.config.computeSpeed}}title="{{localize 'DCC.SpeedComputeHint'}}"{{/if}}>{{localize "DCC.Speed"}}</label>
       <input id="system.attributes.speed.value" name="system.attributes.speed.value"
              value="{{distanceFormat system.attributes.speed.value}}"
              size="3"
              data-dtype="String"
         {{#if system.config.computeSpeed }}
-             title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}}
-               {{distanceFormat system.attributes.ac.speedPenalty}} - {{localize 'DCC.ConfigureHint'}}"
+             title="{{localize 'DCC.SpeedBase'}}: {{distanceFormat system.attributes.speed.base}} · {{localize 'DCC.SpeedPenalty'}}: {{distanceFormat system.attributes.ac.speedPenalty}} — {{localize 'DCC.SpeedComputeHint'}}"
              disabled
         {{/if}}
       >

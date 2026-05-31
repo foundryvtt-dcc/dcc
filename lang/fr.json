@@ -634,6 +634,7 @@
   "DCC.SpeedBase": "Déplacement de base",
   "DCC.SpeedOtherMod": "Autre Modificateur de Déplacement",
   "DCC.SpeedOtherModHint": "Modificateur de déplacement qui ne provient pas de l'équipement ou des caractéristiques et qui devrait être inclus dans le calcul automatique (p. ex. un jet de chance ou une capacité de classe)",
+  "DCC.SpeedComputeHint": "Le déplacement est calculé. Modifiez le Déplacement de base ou ajoutez un Modificateur de déplacement dans le menu de Configuration (3 points dans la barre de titre).",
   "DCC.SpeedPenalty": "Malus au déplacement",
   "DCC.Spell": "Sort",
   "DCC.SpellCastingAttributeHint": "Modificateur de caractéristique de votre caractéristique d'incantation principale",

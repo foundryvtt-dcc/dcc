@@ -641,6 +641,7 @@
   "DCC.SpeedBase": "Bazowa Szybkość",
   "DCC.SpeedOtherMod": "Inny Modyfikator do Szybkości",
   "DCC.SpeedOtherModHint": "Modyfikator do Szybkości niepochodzący z wyposażenia lub cechy, który powinien być uwzględniony w automatycznych obliczeniach (np. szczęśliwy rzut lub zdolność klasowa)",
+  "DCC.SpeedComputeHint": "Szybkość jest obliczana. Zmień Bazową Szybkość lub dodaj Modyfikator Szybkości w menu Konfiguracji (3 kropki na pasku tytułu).",
   "DCC.SpeedPenalty": "Kara do Szybkości",
   "DCC.SwimSpeed": "Pływanie",
   "DCC.FlySpeed": "Lot",

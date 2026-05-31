@@ -641,6 +641,7 @@
   "DCC.SpeedBase": "基础速度",
   "DCC.SpeedOtherMod": "其他速度调整值",
   "DCC.SpeedOtherModHint": "用于自动计算且非装备非属性的速度调整值（例如幸运掷骰或职业特性）",
+  "DCC.SpeedComputeHint": "速度为自动计算。请在配置菜单（标题栏的三个点）中修改基础速度或添加速度调整值。",
   "DCC.SpeedPenalty": "速度惩罚",
   "DCC.SwimSpeed": "游泳",
   "DCC.FlySpeed": "飞行",
