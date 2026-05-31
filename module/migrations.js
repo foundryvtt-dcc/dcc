@@ -63,7 +63,7 @@ async function buildClassNameLookup () {
  * breaking changes. After migration completes we stamp the world at this
  * value to prevent repeated migrations.
  */
-export const NEEDS_MIGRATION_VERSION = 0.67
+export const NEEDS_MIGRATION_VERSION = 0.68
 
 /**
  * Floor for V14-era worlds. Worlds at or above this value can be migrated
@@ -381,6 +381,19 @@ const migrateActorData = async function (actor) {
     if (hasEffectUpdates) {
       updateData.effects = migratedEffects
     }
+  }
+
+  // Seed base speed from the persisted displayed speed so computed speed
+  // derives from the character's real speed rather than the schema default.
+  // Data-driven: only seeds when base is unset or still the '30' default while
+  // the displayed value differs (#739). Reads raw _source so a schema-defaulted
+  // base does not mask a genuinely-unset value.
+  const rawSpeed = actor._source?.system?.attributes?.speed || {}
+  const rawSpeedBase = rawSpeed.base
+  const rawSpeedValue = rawSpeed.value
+  const speedBaseUnset = rawSpeedBase === undefined || rawSpeedBase === null || rawSpeedBase === ''
+  if ((speedBaseUnset || String(rawSpeedBase) === '30') && rawSpeedValue !== undefined && rawSpeedValue !== '' && String(rawSpeedValue) !== String(rawSpeedBase)) {
+    updateData['system.attributes.speed.base'] = rawSpeedValue
   }
 
   // Migrate Owned Items

@@ -102,6 +102,9 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     // Convert init.otherMod from string to integer if needed
     migrateFieldsToInteger(source.attributes?.init, ['otherMod'], 0)
 
+    // Convert speed.otherMod from string to integer if needed
+    migrateFieldsToInteger(source.attributes?.speed, ['otherMod'], 0)
+
     // Convert XP fields from strings to integers if needed
     migrateFieldsToInteger(source.details?.xp, ['value', 'min', 'max'], { max: 10 })
 
@@ -191,6 +194,7 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
         speed: new SchemaField({
           value: new StringField({ initial: '30' }), // Can include units like "30'" or "25/50/100"
           base: new StringField({ initial: '30' }), // Can include units
+          otherMod: new NumberField({ initial: 0, integer: true }), // Manual flat modifier (e.g. lucky roll, class feature)
           special: new StringField({ initial: '' }),
           swim: new StringField({ initial: '' }), // Can include units
           fly: new StringField({ initial: '' }) // Can include units

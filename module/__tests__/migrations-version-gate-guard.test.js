@@ -42,7 +42,7 @@ const antiPattern = /currentVersion\s*(?:<=?|>=?|===?|!==?)\s*0\.(?:[0-5]\d|6[0-
 describe('classifyMigrationDecision', () => {
   test('exported floor + ceiling constants', () => {
     expect(MINIMUM_SUPPORTED_VERSION).toBe(0.66)
-    expect(NEEDS_MIGRATION_VERSION).toBe(0.67)
+    expect(NEEDS_MIGRATION_VERSION).toBe(0.68)
   })
 
   test('fresh world (default: 0) runs migrateWorld', () => {
@@ -68,8 +68,8 @@ describe('classifyMigrationDecision', () => {
     expect(classifyMigrationDecision(0.66)).toBe('run')
   })
 
-  test('already migrated (0.67) skips', () => {
-    expect(classifyMigrationDecision(0.67)).toBe('skip')
+  test('already migrated (0.68) skips', () => {
+    expect(classifyMigrationDecision(0.68)).toBe('skip')
   })
 
   test('above ceiling skips', () => {

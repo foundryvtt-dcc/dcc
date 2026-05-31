@@ -646,6 +646,8 @@
   "DCC.Special": "Special",
   "DCC.Speed": "Speed",
   "DCC.SpeedBase": "Base Speed",
+  "DCC.SpeedOtherMod": "Other Modifier to Speed",
+  "DCC.SpeedOtherModHint": "Modifier to Speed that is not from armor or ability that should be included in the auto calculation (e.g. a lucky roll or class feature)",
   "DCC.SpeedPenalty": "Speed Penalty",
   "DCC.SwimSpeed": "Swim",
   "DCC.FlySpeed": "Fly",
