@@ -222,9 +222,13 @@ const migrateActorData = async function (actor) {
     const rawSpeed = actor._source?.system?.attributes?.speed || {}
     const rawBase = rawSpeed.base
     const rawValue = rawSpeed.value
-    const baseUnset = rawBase === undefined || rawBase === null || rawBase === ''
-    if ((baseUnset || String(rawBase) === '30') && rawValue !== undefined && rawValue !== '' && String(rawValue) !== String(rawBase)) {
-      updateData['system.attributes.speed.base'] = rawValue
+    // Compare parsed integers so unit-bearing values (e.g. "30'") aren't treated
+    // as different from the unitless '30' default, and store base unitless (#739).
+    const baseNum = parseInt(rawBase)
+    const valueNum = parseInt(rawValue)
+    const baseUnsetOrDefault = rawBase === undefined || rawBase === null || rawBase === '' || baseNum === 30
+    if (baseUnsetOrDefault && !isNaN(valueNum) && valueNum !== baseNum) {
+      updateData['system.attributes.speed.base'] = String(valueNum)
     }
   }
 
