@@ -283,7 +283,7 @@ class DCCActor extends Actor {
           switch (type) {
             case 'custom':
               // Custom mode - let modules handle this
-              this._applyCustomEffect(key, value)
+              this._applyCustomEffect(change, value, overrides)
               break
 
             case 'add':
@@ -340,10 +340,28 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Apply a custom active effect (extensibility hook for DCC-specific mechanics)
+   * Apply a custom active effect.
+   *
+   * Our applyActiveEffects() fully replaces core Foundry's implementation, so we
+   * must re-fire the `applyActiveEffect` hook that core fires for custom-mode
+   * changes. Modules that drive targets the actor data model doesn't own — most
+   * notably Active Token Effects (ATL), which applies token light/vision overrides
+   * for torches etc. via `ATL.*` keys — listen on that hook. Without re-firing it
+   * those token overrides silently no-op (#736).
+   *
+   * Mirrors core's pre/post comparison: any actor-owned property the hook mutates
+   * is recorded in `overrides` so form submission can exclude it.
+   * @param {EffectChangeData} change - The change being applied
+   * @param {*} value - The resolved change value (@-references already substituted)
+   * @param {Object} overrides - Accumulator of effect-modified fields
    * @private
    */
-  _applyCustomEffect (key, value) {
+  _applyCustomEffect (change, value, overrides) {
+    const key = change.key
+    const current = foundry.utils.getProperty(this, key)
+    Hooks.callAll('applyActiveEffect', this, { ...change, value }, current, value, overrides)
+    const post = foundry.utils.getProperty(this, key)
+    if (post !== current) overrides[key] = post
   }
 
   /**

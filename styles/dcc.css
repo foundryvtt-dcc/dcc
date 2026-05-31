@@ -1033,6 +1033,19 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Party Sheet                              */
 /* ----------------------------------------- */
+.dcc .party-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dcc .party-name label {
+  font-size: 13px;
+}
+.dcc .party-name input {
+  flex: 1;
+}
+
 .dcc .party-body {
   display: grid;
   grid-template-columns: 1fr;
@@ -1062,6 +1075,7 @@ a.inline-roll {
   width: 90px;
   padding: 6px;
   cursor: pointer;
+  object-fit: contain;
 }
 .dcc .party-body .character-row .occupation {
   grid-column: span 7;
@@ -2251,6 +2265,7 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   border: 0;
   justify-self: center;
   align-self: center;
+  object-fit: contain;
 }
 .dcc .character .row-separator {
   border-bottom: 2px dotted var(--system-secondary-color);
