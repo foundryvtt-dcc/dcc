@@ -267,8 +267,8 @@ class DCCActor extends Actor {
     // base field at all (runtime safety net; the one-time migration corrects
     // actors whose base defaulted to '30'). Read from _source so a
     // schema-defaulted base does not mask a genuinely-unset value.
-    if (this._source.system?.attributes?.speed?.base === undefined ||
-        this._source.system?.attributes?.speed?.base === '') {
+    if (this._source?.system?.attributes?.speed?.base === undefined ||
+        this._source?.system?.attributes?.speed?.base === '') {
       this.system.attributes.speed.base = this.system.attributes.speed.value
     }
 
