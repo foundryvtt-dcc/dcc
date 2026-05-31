@@ -1240,11 +1240,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     // code read. Mirrored 1:1 by vitest cases in
     // `module/__tests__/adapter-spell-check.test.js`.
 
-    test('wizard-castingMode spell on a class the lib does not know → legacy with reason=noCasterProfile', async ({ page }) => {
+    test('wizard-castingMode spell on a class the lib does not know → adapter derives the profile from the castingMode (reason=profileFromCastingMode)', async ({ page }) => {
       // Warrior isn't in the lib's caster-profile registry, so
-      // `buildSpellCheckArgs` returns null and the dispatcher falls
-      // back to the legacy path — `reason=noCasterProfile` on the
-      // legacy log is the only signal that tells us why.
+      // `buildSpellCheckArgs` returns null for the class. Pre-Phase-7-s16
+      // the dispatcher fell back to `_rollSpellCheckLegacy` (which
+      // silently ignored spellburn — PR #720 design-call #1). Now the
+      // adapter retries with `castingModeOverride: 'wizard'`, derives the
+      // canonical wizard profile, and the cast stays adapter-owned. The
+      // `reason=profileFromCastingMode` log is the signal it happened.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Spell NoCasterProfile',
@@ -1269,21 +1272,62 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Spell NoCasterProfile').rollSpellCheck({ spell: 'P1-Orphan-Wizard-Spell' })
       })
 
-      // `_rollSpellCheckViaAdapter` logs `adapter` FIRST (it tries the
-      // adapter route), then `buildSpellCheckArgs` returns null and
-      // `_rollSpellCheckLegacy` logs the legacy fallback with a
-      // reason. The default `waitForAdapterLog` grabs the first match;
-      // scan for the legacy line specifically.
+      // No legacy line — the cast is fully adapter-owned now.
       await waitForAdapterLog('rollSpellCheck')
       const legacyLine = adapterLogs.find(l =>
         l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
         l.includes('LEGACY path')
       )
       expect(legacyLine,
-        `expected a legacy-fallback log; adapterLogs=\n${adapterLogs.join('\n')}`
+        `expected NO legacy-fallback log; adapterLogs=\n${adapterLogs.join('\n')}`
+      ).toBeUndefined()
+
+      // The castingMode-derived fallback emits its own reason marker.
+      const derivedLine = adapterLogs.find(l =>
+        l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
+        l.includes('via adapter') &&
+        l.includes('reason=profileFromCastingMode')
+      )
+      expect(derivedLine,
+        `expected reason=profileFromCastingMode adapter log; adapterLogs=\n${adapterLogs.join('\n')}`
       ).toBeTruthy()
-      expect(legacyLine).toContain('reason=noCasterProfile')
-      expect(legacyLine).toContain('spell=P1-Orphan-Wizard-Spell')
+      expect(derivedLine).toContain('mode=wizard')
+    })
+
+    test('spellburn on a class the lib does not know is HONORED (PR #720 design-call #1 — the burn deducts ability points)', async ({ page }) => {
+      // The end-to-end proof that retiring the noCasterProfile→legacy
+      // fallback fixed design-call #1: an unregistered-class wizard cast
+      // with a pre-committed spellburn now deducts the burned ability
+      // points (it routes through `_castViaCalculateSpellCheck`, whose
+      // `onSpellburnApplied` bridge subtracts the burn). Pre-s16 the
+      // legacy path silently dropped the commitment.
+      const strAfter = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Burn Honored',
+          type: 'Player',
+          system: {
+            class: { className: 'Warrior' },
+            details: { sheetClass: 'Warrior' },
+            abilities: { str: { value: 12 } }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Burn-Wizard-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+        await actor.rollSpellCheck({ spell: 'P1-Burn-Wizard-Spell', spellburn: { str: 3, agl: 0, sta: 0 } })
+        return game.actors.getName('P1 Spell Burn Honored').system.abilities.str.value
+      })
+
+      // 12 - 3 = 9. Had the burn been dropped (the pre-s16 bug) it would
+      // still read 12.
+      expect(strAfter).toBe(9)
     })
 
     test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async ({ page }) => {

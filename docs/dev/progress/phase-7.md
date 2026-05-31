@@ -756,3 +756,41 @@
   (`adapter-dispatch.spec.js`: a live combat-tracker roll on a `1d20+1d3`
   Player keeps both dice). **1288 Vitest** combined with session 13.
   Unblocks dropping the mcc-core-book §9.2a "known limitation" caveat.
+
+- **2026-05-29 — Phase 7 session 13: `await` world migration before
+  firing `dcc.ready` + thread `{ migrationComplete }` onto the payload
+  (closes the PR #720 "`migrateWorld` fire-and-forget from a sync ready
+  hook" item).** Before this slice `module/dcc.js`'s sync ready callback
+  called `checkMigrations()` (and inside it `migrations.migrateWorld()`)
+  fire-and-forget, so `registerTables` / `FleetingLuck.init` /
+  `SpellDuel.init` / … / `Hooks.callAll('dcc.ready')` ran concurrently
+  with the async per-document `update()` calls — third-party modules
+  listening on `dcc.ready` could fire against a half-migrated world.
+  `checkMigrations` was relocated out of `dcc.js` into `migrations.js`
+  (co-located with `migrateWorld` / `classifyMigrationDecision` /
+  `migrationOutcome`), made `async`, and now `await`s `migrateWorld`;
+  the ready hook does `const migrationStatus = await
+  migrations.checkMigrations()` before the rest of the chain, and fires
+  `Hooks.callAll('dcc.ready', { migrationComplete:
+  migrationStatus.migrationComplete })`. `migrateWorld` now returns
+  `{ migrationComplete: outcome.stampVersion }`; `checkMigrations`
+  returns `{ migrationComplete }` — `true` for a non-GM client (never
+  migrates locally), an already-migrated world (`skip`), or a clean run;
+  `false` for a blocked pre-V14 world or a run that finished with
+  per-document failures (version left unstamped). `ui` dropped from
+  `dcc.js`'s `/* global */` (its only use was the now-relocated block
+  notification). The relocation makes the decide-then-await orchestration
+  unit-testable in the established `migrations.js` pattern. +4 Vitest in
+  new `module/__tests__/check-migrations.test.js` (non-GM no-op; `skip`
+  no-op; pre-V14 `block` → error toast + no migrate + reports incomplete;
+  V14-era `run` → runs `migrateWorld` to completion on an empty world +
+  stamps the version + reports complete). +1 Playwright probe in
+  `extension-api.spec.js` dynamic-imports the live module, asserts
+  `checkMigrations` is an `AsyncFunction`, and — on the already-migrated
+  test world (decision `skip`) — invokes it live to confirm the
+  `{ migrationComplete: true }` return contract with **no** `migrateWorld`
+  run (spies the MigrationInfo toast to prove the no-op). **1283 Vitest**
+  (was 1279, +4). Note: this closes only the fire-and-forget item; the
+  separate (now-closed) silent-swallow item landed at session 11. The
+  ordering item was the last remaining `migrateWorld`-related PR #720
+  entry.

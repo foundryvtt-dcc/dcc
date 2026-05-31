@@ -510,9 +510,9 @@ test('roll spell check routes naked check via adapter (Phase 3 session 25 / D4 n
   rollToMessageMock.mockClear()
 
   // Naked spell check (no `options.spell`) now routes through
-  // `_castNakedViaAdapter` instead of `_rollSpellCheckLegacy` →
-  // `processSpellCheck`. Legacy term-builder and processSpellCheck
-  // are no longer reachable for the no-item case.
+  // `_castNakedViaAdapter` instead of the legacy term-builder →
+  // `processSpellCheck` flow, which is no longer reachable for the
+  // no-item case.
   await actor.rollSpellCheck()
 
   expect(dccRollCreateRollMock).not.toHaveBeenCalled()
@@ -570,15 +570,21 @@ test('roll spell check item', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
-  // game.dcc.processSpellCheck.mockClear()
+  rollToMessageMock.mockClear()
 
-  // Roll a spell check with an item
+  // Roll a spell check with an item. The item carries no explicit
+  // `config.castingMode`, so the dispatcher treats it as generic and
+  // routes it through the adapter's synthetic-generic `_castViaCastSpell`
+  // (Phase 7 session 16 — the former `_rollSpellCheckLegacy` fall-through
+  // is now adapter-owned). The cast no longer delegates to
+  // `DCCItem.rollSpellCheck`.
   const dummyItem = new DCCItem({ name: 'The Gloaming', type: 'spell' })
   collectionFindMock.mockReturnValue(dummyItem)
   const dccItemRollSpellCheckSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck')
   await actor.rollSpellCheck({ spell: 'The Gloaming' })
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
-  expect(dccItemRollSpellCheckSpy).toHaveBeenCalledWith('int', { abilityId: 'int', spell: 'The Gloaming' })
+  expect(dccItemRollSpellCheckSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
 })
 

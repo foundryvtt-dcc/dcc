@@ -26,8 +26,8 @@
  * Reuses `game.dcc.DCCRoll.createRoll({ showModifierDialog: true })` so
  * the dialog UI / term partials / preset buttons stay in one place
  * (`module/roll-modifier.js`). The adapter caller passes the same
- * term-descriptor array the legacy `_rollSkillCheckLegacy` /
- * `_rollSpellCheckLegacy` built (Die / Compound / Modifier /
+ * term-descriptor array the legacy `_rollSkillCheckLegacy` and the
+ * pre-adapter `DCCItem.rollSpellCheck` built (Die / Compound / Modifier /
  * CheckPenalty / Spellburn / ...), and gets back the parsed parts it
  * needs to feed the lib pass: the user-selected action die and the
  * flat sum of every non-die term.

@@ -65,18 +65,18 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-29.** Phase 7 session 15 (full detail
-in *Recent slices*) closed the last two PR #720 resilience/cleanup items:
-unified the dispatcher gate style (normalized `getInitiativeRoll`'s bare
-`if` onto the `const needsLegacyPath` named-boolean idiom shared by
-`rollAbilityCheck` / `rollSavingThrow`) and dropped the vestigial
-`attackRollResult` param from `_rollDamage` / `_rollCritical` /
-`_rollFumble`. Repo green: **1304 Vitest** / **162 Playwright e2e
-passed**, zero failures.
+**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 16 (full detail
+in *Recent slices*) retired `_rollSpellCheckLegacy` entirely and, in doing
+so, closed PR #720 **design-call #1** (spellburn silently dropped on
+unregistered-class casts). The adapter now derives a caster profile from
+the *spell's* castingMode when the actor's *class* has none — so every
+wizard/cleric-mode cast stays adapter-owned (honoring spellburn), and
+generic/unknown modes route to the synthetic-generic path. Repo green:
+**1309 Vitest** / **164 Playwright e2e passed**, zero failures.
 
-**Remaining PR #720 items:** only open *design calls* + *test-coverage
-gaps* + *doc hygiene* remain (see *PR #720 review backlog* below) — the
-resilience/cleanup sub-list is now fully ticked.
+**Remaining PR #720 items:** open *design calls* (4 left after #1 closed)
++ *test-coverage gaps* + *doc hygiene* (see *PR #720 review backlog*
+below) — the resilience/cleanup sub-list is fully ticked.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -90,6 +90,45 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 16: retire `_rollSpellCheckLegacy` by
+  deriving the caster profile from the spell's castingMode (closes PR #720
+  design-call #1 — silently-dropped spellburn).** The internal legacy
+  spell-check backstop had two reachable triggers, both "the lib can't
+  model this class": the `noCasterProfile` fallback (wizard/cleric-mode
+  spell on a class with no lib profile) and the dispatcher fall-through
+  (unknown castingMode, or a generic-mode spell on a cleric/patron actor).
+  The key realization: the lib already resolves a profile from
+  `castingModeOverride` via `getCasterProfile(mode)` (canonical wizard/
+  cleric regardless of the actor's class), so the adapter can absorb every
+  legacy case — **no lib change needed**, pure routing consolidation.
+  `_rollSpellCheckViaAdapter` now retries `buildSpellCheckArgs` with
+  `castingModeOverride: castingMode` when the class profile is null
+  (logged `reason=profileFromCastingMode`), routing the cast through
+  `_castViaCalculateSpellCheck` with canonical wizard/cleric mechanics
+  driven by the spell — **which honors `options.spellburn`**, the harm in
+  design-call #1 (legacy ignored it, so the player burned ability points
+  for nothing). The dispatcher dropped its `!isCleric && !hasPatron`
+  generic guard (generic spells carry no disapproval / patron taint per
+  RAW) and routes generic + unknown modes to the synthetic-generic
+  `_castViaCastSpell`. `_rollSpellCheckLegacy` deleted; 4 stale comment
+  references (actor.js / roll-dialog.mjs / spell-input.mjs docstrings)
+  cleaned. `DCCItem.rollSpellCheck` / `processSpellCheck` stay (permanent
+  public API, decision #6 — only the internal dispatch wrapper went).
+  Behavior contract change (user-approved 2026-05-31): an unregistered
+  class's wizard/cleric-mode spell now gets canonical lib treatment from
+  the castingMode; unknown-mode spells get a side-effect-free generic
+  cast; the escape hatch for bespoke mechanics is
+  `registerClassProgression`. +1 Vitest (spellburn deducts on an
+  unregistered class) + 4 flipped unit/actor tests to the new contract.
+  +1 Playwright (`spellburn on a class the lib does not know is HONORED` —
+  live STR 12 → 9 after a 3-point burn) + 1 flipped (`noCasterProfile` →
+  `profileFromCastingMode`). **1309 Vitest** (was 1304). **164 Playwright
+  passed**, zero failures. Note: the full e2e run first showed 2
+  `extension-api.spec.js` failures from `dcc-core-book` being **disabled
+  in the v14 world** (pin-pointed via the boot log — the level pack never
+  connected; nothing to do with this slice); re-enabling the module +
+  rebooting → fully green.
 
 - **2026-05-29 — §2.8 homebrew extensibility validated by real
   sibling-module migrations + EXTENSION_API doc refresh (`c76a3a9`).** The
@@ -230,44 +269,6 @@ archives linked above.
   clean this run → 160). Next PR #720 candidates: dispatcher gate-style
   unification; unused crit/fumble predicate params.
 
-- **2026-05-29 — Phase 7 session 13: `await` world migration before
-  firing `dcc.ready` + thread `{ migrationComplete }` onto the payload
-  (closes the PR #720 "`migrateWorld` fire-and-forget from a sync ready
-  hook" item).** Before this slice `module/dcc.js`'s sync ready callback
-  called `checkMigrations()` (and inside it `migrations.migrateWorld()`)
-  fire-and-forget, so `registerTables` / `FleetingLuck.init` /
-  `SpellDuel.init` / … / `Hooks.callAll('dcc.ready')` ran concurrently
-  with the async per-document `update()` calls — third-party modules
-  listening on `dcc.ready` could fire against a half-migrated world.
-  `checkMigrations` was relocated out of `dcc.js` into `migrations.js`
-  (co-located with `migrateWorld` / `classifyMigrationDecision` /
-  `migrationOutcome`), made `async`, and now `await`s `migrateWorld`;
-  the ready hook does `const migrationStatus = await
-  migrations.checkMigrations()` before the rest of the chain, and fires
-  `Hooks.callAll('dcc.ready', { migrationComplete:
-  migrationStatus.migrationComplete })`. `migrateWorld` now returns
-  `{ migrationComplete: outcome.stampVersion }`; `checkMigrations`
-  returns `{ migrationComplete }` — `true` for a non-GM client (never
-  migrates locally), an already-migrated world (`skip`), or a clean run;
-  `false` for a blocked pre-V14 world or a run that finished with
-  per-document failures (version left unstamped). `ui` dropped from
-  `dcc.js`'s `/* global */` (its only use was the now-relocated block
-  notification). The relocation makes the decide-then-await orchestration
-  unit-testable in the established `migrations.js` pattern. +4 Vitest in
-  new `module/__tests__/check-migrations.test.js` (non-GM no-op; `skip`
-  no-op; pre-V14 `block` → error toast + no migrate + reports incomplete;
-  V14-era `run` → runs `migrateWorld` to completion on an empty world +
-  stamps the version + reports complete). +1 Playwright probe in
-  `extension-api.spec.js` dynamic-imports the live module, asserts
-  `checkMigrations` is an `AsyncFunction`, and — on the already-migrated
-  test world (decision `skip`) — invokes it live to confirm the
-  `{ migrationComplete: true }` return contract with **no** `migrateWorld`
-  run (spies the MigrationInfo toast to prove the no-op). **1283 Vitest**
-  (was 1279, +4). Note: this closes only the fire-and-forget item; the
-  separate (now-closed) silent-swallow item landed at session 11. The
-  ordering item was the last remaining `migrateWorld`-related PR #720
-  entry.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -296,14 +297,15 @@ deferred findings still open.
 
 **Open design calls (need a deliberate decision, not a silent fix):**
 
-- **Spellburn dialog prompts before the adapter knows it can handle the
-  cast.** `rollSpellCheck` calls the spellburn dialog before
-  `buildSpellCheckArgs` — when the actor's class has no lib caster
-  profile the adapter falls back to `_rollSpellCheckLegacy`, which
-  ignores `options.spellburn`, silently dropping the user's commitment.
-  Narrow scope (custom-class wizards / elves with spellburn) but
-  user-visible. Fix: a cheap `resolveCasterProfile` pre-check before the
-  dialog, or have legacy honor `options.spellburn`.
+- ~~**Spellburn dialog prompts before the adapter knows it can handle the
+  cast.**~~ CLOSED 2026-05-31 (Phase 7 session 16). Resolved by retiring
+  `_rollSpellCheckLegacy` itself rather than guarding the dialog: when the
+  actor's class has no lib profile, `_rollSpellCheckViaAdapter` now derives
+  the profile from the spell's own castingMode (`castingModeOverride:
+  castingMode` → canonical wizard/cleric) and routes through
+  `_castViaCalculateSpellCheck`, **which honors `options.spellburn`**.
+  There is no longer a `noCasterProfile`→legacy path to drop the
+  commitment. See Recent slices.
 - **Spellburn clamp: `1` vs `0`.** `onSpellburnApplied`
   (`spell-events.mjs`) clamps ability scores at 1; legacy
   `DCCSpellburnTerm` allowed 0 (RAW permits a wizard dying from Stamina

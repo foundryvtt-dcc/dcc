@@ -2246,12 +2246,12 @@ class DCCActor extends Actor {
     // cleric signal, not just `details.sheetClass`. Programmatic PCs
     // (anything not routed through the level-change dialog) can have
     // `className: 'Cleric'` without `sheetClass` populated; pre-fix the
-    // cleric-castingMode branch fell through to `_rollSpellCheckLegacy`,
-    // which delegates to `spellItem.rollSpellCheck` — a silent no-op
-    // for this shape (no chat, no error). `resolveCasterProfile` in
-    // `spell-input.mjs` already keys on `className`, so widening here
-    // also fixes the symmetric "Wizard spell on cleric-by-className-only
-    // actor" routing (kept on legacy instead of misrouting via adapter).
+    // cleric-castingMode branch took the no-override adapter route, which
+    // (before the castingMode-derived profile fallback) couldn't resolve a
+    // profile for a cleric-by-className-only actor. `resolveCasterProfile`
+    // in `spell-input.mjs` already keys on `className`, so widening here
+    // routes the symmetric "Wizard spell on cleric-by-className-only actor"
+    // case through the adapter with the right `castingModeOverride`.
     const isCleric =
       this.classId === 'cleric' ||
       this.system.class?.className === 'Cleric'
@@ -2265,48 +2265,50 @@ class DCCActor extends Actor {
       return this._castNakedViaAdapter(options)
     }
 
-    if (spellItem) {
-      if (castingMode === 'generic' && !isCleric && !hasPatron) {
-        return this._rollSpellCheckViaAdapter(spellItem, options)
+    if (castingMode === 'wizard') {
+      // Adapter-side spell-loss pre-check — mirrors the legacy
+      // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
+      // and abort. Once the cast reaches the adapter the item has
+      // already been looked up, so this is the natural place.
+      if (spellItem.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+        return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+          actor: this.name,
+          spell: spellItem.name
+        }))
       }
-      if (castingMode === 'wizard') {
-        // Adapter-side spell-loss pre-check — mirrors the legacy
-        // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
-        // and abort. Once the cast reaches the adapter the item has
-        // already been looked up, so this is the natural place.
-        if (spellItem.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss')) {
-          return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
-            actor: this.name,
-            spell: spellItem.name
-          }))
-        }
-        // Phase 3 session 24 / D4 — wizard-castingMode item on a
-        // cleric actor routes through the adapter with an explicit
-        // wizard `profileOverride` so the lib applies wizard
-        // mechanics (spellburn, spell-loss, patron-taint) even though
-        // the actor's class is cleric. Pre-D4 this fell to legacy via
-        // `DCCItem.rollSpellCheck` → `processSpellCheck`.
-        if (isCleric) {
-          return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'wizard' })
-        }
-        return this._rollSpellCheckViaAdapter(spellItem, options)
+      // Phase 3 session 24 / D4 — wizard-castingMode item on a
+      // cleric actor routes through the adapter with an explicit
+      // wizard `profileOverride` so the lib applies wizard
+      // mechanics (spellburn, spell-loss, patron-taint) even though
+      // the actor's class is cleric. Pre-D4 this fell to legacy via
+      // `DCCItem.rollSpellCheck` → `processSpellCheck`.
+      if (isCleric) {
+        return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'wizard' })
       }
-      if (castingMode === 'cleric') {
-        // Phase 3 session 24 / D4 — cleric-castingMode item on a
-        // non-cleric or patron-bound actor routes through the adapter
-        // with an explicit cleric `profileOverride` so cleric
-        // mechanics (disapproval, no spellburn) drive the cast. The
-        // override is harmless for the canonical "cleric actor, no
-        // patron" case (it matches the derived profile) so the
-        // dispatcher passes it uniformly.
-        if (!isCleric || hasPatron) {
-          return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'cleric' })
-        }
-        return this._rollSpellCheckViaAdapter(spellItem, options)
+      return this._rollSpellCheckViaAdapter(spellItem, options)
+    }
+    if (castingMode === 'cleric') {
+      // Phase 3 session 24 / D4 — cleric-castingMode item on a
+      // non-cleric or patron-bound actor routes through the adapter
+      // with an explicit cleric `profileOverride` so cleric
+      // mechanics (disapproval, no spellburn) drive the cast. The
+      // override is harmless for the canonical "cleric actor, no
+      // patron" case (it matches the derived profile) so the
+      // dispatcher passes it uniformly.
+      if (!isCleric || hasPatron) {
+        return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'cleric' })
       }
+      return this._rollSpellCheckViaAdapter(spellItem, options)
     }
 
-    return this._rollSpellCheckLegacy(options, spellItem)
+    // generic castingMode — and any mode the system doesn't define, plus
+    // generic-mode spells cast by cleric/patron actors — route through the
+    // adapter's synthetic-generic path (`_castViaCastSpell`): side-effect-free
+    // per DCC's generic / idol-magic semantics. This is the former
+    // `_rollSpellCheckLegacy` fall-through, now fully adapter-owned (Phase 7
+    // session 16). Generic spells carry no disapproval / patron taint, so the
+    // earlier `!isCleric && !hasPatron` guard on the generic branch is gone.
+    return this._rollSpellCheckViaAdapter(spellItem, options)
   }
 
   /**
@@ -2500,14 +2502,27 @@ class DCCActor extends Actor {
       // `SpellCheckOptions.profileOverride` so the lib uses it for
       // every behavior switch (casterTypes validation, spellburn,
       // disapproval, patron-taint, spell-loss recovery).
-      const args = buildSpellCheckArgs(this, spellItem, {
+      let args = buildSpellCheckArgs(this, spellItem, {
         ...options,
         castingModeOverride: dispatch.castingModeOverride
       })
-      // No lib-side profile for this actor's class — drop back to legacy
-      // so spinoff classes with wizard/cleric-castingMode spells still work.
+      // No lib-side profile for this actor's *class* (homebrew / unregistered
+      // class casting a wizard- or cleric-castingMode spell). Pre-Phase-7-s16
+      // this dropped to `_rollSpellCheckLegacy`, which silently ignored
+      // `options.spellburn` (PR #720 design-call #1). Instead derive the
+      // profile from the spell's own castingMode — `getCasterProfile('wizard'
+      // |'cleric')` always resolves the canonical profile — so the cast keeps
+      // RAW wizard/cleric side-effects (spellburn, spell-loss, disapproval,
+      // patron-taint) driven by the spell rather than the class. A homebrew
+      // class wanting bespoke mechanics registers its own profile via
+      // `registerClassProgression`, in which case `args` resolves on the first
+      // call and this branch never fires.
       if (!args) {
-        return this._rollSpellCheckLegacy(options, spellItem, 'noCasterProfile')
+        logDispatch('rollSpellCheck', 'adapter', { reason: 'profileFromCastingMode', mode: castingMode })
+        args = buildSpellCheckArgs(this, spellItem, {
+          ...options,
+          castingModeOverride: castingMode
+        })
       }
       return this._castViaCalculateSpellCheck(args, spellItem, options)
     }
@@ -2524,7 +2539,7 @@ class DCCActor extends Actor {
    * `spellbookEntry` (lib 0.10.0). Replaces the inline term-builder +
    * `processSpellCheck({rollTable: null})` legacy flow.
    *
-   * Behavior parity with legacy `_rollSpellCheckLegacy`'s no-item branch:
+   * Behavior parity with the pre-adapter no-item spell-check flow:
    *   - Action die from `system.attributes.actionDice.value`, overridden
    *     by `system.class.spellCheckOverrideDie` when set.
    *   - When `system.class.spellCheckOverride` is set, that string
@@ -2702,8 +2717,8 @@ class DCCActor extends Actor {
 
     // Spellburn applied via the lib's event in item-bound routes; for
     // naked we just deduct here since there's no `createSpellEvents`
-    // wiring (no spellItem to mutate). Matches the legacy
-    // `DCCSpellburnTerm` callback at `_rollSpellCheckLegacy:2495-2500`.
+    // wiring (no spellItem to mutate). Matches the pre-adapter
+    // `DCCSpellburnTerm` callback semantics.
     if (input.spellburn) {
       const burn = input.spellburn
       await this.update({
@@ -3124,35 +3139,6 @@ class DCCActor extends Actor {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }
     return flavor
-  }
-
-  /**
-   * Legacy spell-check fallback for spell items the adapter can't
-   * route. Delegates to `DCCItem.rollSpellCheck`, which builds its own
-   * Foundry roll + chat + `processSpellCheck` flow. Hit when the
-   * adapter declines for `noCasterProfile` (custom class with no
-   * lib-side profile) or an unrecognized castingMode.
-   *
-   * Pre-D4(naked) (session 25) the naked branch lived here too;
-   * `_castNakedViaAdapter` now owns ad-hoc spell-check rolls. This
-   * method is spell-item-only by construction — the dispatcher
-   * routes the no-item case to the adapter unconditionally.
-   * @private
-   */
-  async _rollSpellCheckLegacy (options, spellItem, reason = null) {
-    // `reason` captures why the adapter path declined and routed here —
-    // e.g. `noCasterProfile` when `buildSpellCheckArgs` returns null for
-    // a custom class the lib doesn't know. Surfaces an otherwise-silent
-    // fallback in the dispatch log so debugging doesn't need a code read.
-    const details = { spell: options.spell ?? '' }
-    if (reason) details.reason = reason
-    logDispatch('rollSpellCheck', 'legacy', details)
-
-    // Fire-and-forget — matches the pre-dispatcher contract. The
-    // item's rollSpellCheck performs its own chat + processSpellCheck
-    // orchestration; awaiting here would change the public return
-    // shape and surface errors the original path swallowed.
-    spellItem.rollSpellCheck(options.abilityId, options)
   }
 
   /**

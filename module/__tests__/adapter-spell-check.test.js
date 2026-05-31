@@ -322,7 +322,7 @@ test('wizard-castingMode item on a patron-bound elf routes to adapter (session 4
   findSpy.mockRestore()
 })
 
-test('generic item on a Cleric actor routes to legacy (castingMode does not claim a cleric profile)', async () => {
+test('generic item on a Cleric actor routes to the synthetic-generic adapter path (Phase 7 session 16)', async () => {
   rollToMessageMock.mockClear()
 
   // noinspection JSCheckFunctionSignatures
@@ -336,8 +336,15 @@ test('generic item on a Cleric actor routes to legacy (castingMode does not clai
 
   await actor.rollSpellCheck({ spell: 'Generic Cantrip' })
 
-  expect(itemSpy).toHaveBeenCalledTimes(1)
-  expect(rollToMessageMock).not.toHaveBeenCalled()
+  // Generic-castingMode spells are side-effect-free per DCC's
+  // generic / idol-magic semantics — cleric disapproval does NOT apply.
+  // Pre-s16 the `!isCleric && !hasPatron` guard sent this to legacy
+  // (`DCCItem.rollSpellCheck`); now the dispatcher routes it straight
+  // through the adapter's synthetic-generic `_castViaCastSpell`.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
@@ -511,7 +518,7 @@ test('wizard-castingMode item on a Cleric actor routes to adapter with wizard pr
   findSpy.mockRestore()
 })
 
-test('generic item on a patron-bound actor routes to legacy (taint side-effects preserved)', async () => {
+test('generic item on a patron-bound actor routes to the synthetic-generic adapter path (no taint — generic spells are side-effect-free)', async () => {
   rollToMessageMock.mockClear()
 
   // noinspection JSCheckFunctionSignatures
@@ -525,8 +532,15 @@ test('generic item on a patron-bound actor routes to legacy (taint side-effects 
 
   await actor.rollSpellCheck({ spell: 'Generic Cantrip' })
 
-  expect(itemSpy).toHaveBeenCalledTimes(1)
-  expect(rollToMessageMock).not.toHaveBeenCalled()
+  // A generic-castingMode spell carries no patron taint per RAW (taint
+  // triggers on patron-spell casts, not generic checks). Pre-s16 the
+  // `!isCleric && !hasPatron` guard sent this to legacy to run
+  // `processSpellCheck`'s taint pass; now the dispatcher routes it
+  // through the adapter's synthetic-generic, side-effect-free path.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
@@ -1363,7 +1377,7 @@ test('wizard cast on an NPC actor bypasses the modifier dialog', async () => {
 // end-to-end against a live Foundry; both are the regression net for
 // the observability contract.
 
-test('wizard-castingMode item on a class the lib does not know → legacy log carries reason=noCasterProfile', async () => {
+test('wizard-castingMode item on a class the lib does not know → adapter derives the wizard profile from the castingMode (reason=profileFromCastingMode)', async () => {
   rollToMessageMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
   const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -1372,7 +1386,10 @@ test('wizard-castingMode item on a class the lib does not know → legacy log ca
   const actor = new DCCActor()
   actor.system.class.patron = ''
   // Warrior isn't in `getCasterProfile`'s registry → buildSpellCheckArgs
-  // returns null → dispatcher falls back to _rollSpellCheckLegacy.
+  // returns null for the class. Pre-s16 the dispatcher dropped to
+  // `_rollSpellCheckLegacy` (which silently ignored spellburn); now the
+  // adapter retries with `castingModeOverride: 'wizard'` and the cast
+  // stays adapter-owned with canonical wizard mechanics.
   actor.system.class.className = 'Warrior'
   actor.system.details.sheetClass = 'Warrior'
 
@@ -1381,20 +1398,64 @@ test('wizard-castingMode item on a class the lib does not know → legacy log ca
 
   await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
-  // Legacy delegation (the fallback actually happened) + reason log.
-  expect(itemSpy).toHaveBeenCalledTimes(1)
+  // No legacy delegation — the adapter handled it via the derived profile.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
+  // Wizard profile ran → the lib emitted a modifier list (caster level +
+  // ability mod), proving canonical wizard mechanics drove the cast.
+  expect(Array.isArray(messageData.flags['dcc.libResult'].modifiers)).toBe(true)
 
-  const legacyLog = consoleSpy.mock.calls.find(([line]) =>
+  const fallbackLog = consoleSpy.mock.calls.find(([line]) =>
     typeof line === 'string' &&
     line.includes('[DCC adapter] rollSpellCheck') &&
-    line.includes('LEGACY path') &&
-    line.includes('reason=noCasterProfile')
+    line.includes('via adapter') &&
+    line.includes('reason=profileFromCastingMode') &&
+    line.includes('mode=wizard')
   )
-  expect(legacyLog, `expected reason=noCasterProfile legacy log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
+  expect(fallbackLog, `expected reason=profileFromCastingMode adapter log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
   consoleSpy.mockRestore()
+})
+
+test('spellburn committed on a class the lib does not know is HONORED, not silently dropped (PR #720 design-call #1)', async () => {
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Warrior'
+  actor.system.details.sheetClass = 'Warrior'
+  actor.system.abilities.str.value = 12
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const updateSpy = vi.spyOn(actor, 'update').mockResolvedValue(undefined)
+
+  // Pre-committed burn (3 Strength) — the shape `promptSpellCheckDialog`
+  // would produce. Pre-s16 the noCasterProfile→legacy fallback dropped
+  // this on the floor (no stat deduction, no roll bonus). Now the
+  // castingMode-derived wizard profile routes it through
+  // `_castViaCalculateSpellCheck`, whose `onSpellburnApplied` bridge
+  // deducts the burned ability points.
+  await actor.rollSpellCheck({ spell: 'Magic Missile', spellburn: { str: 3, agl: 0, sta: 0 } })
+
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  // The burn reached the lib and the event bridge deducted Strength.
+  const strUpdate = updateSpy.mock.calls.find(([data]) =>
+    data && Object.prototype.hasOwnProperty.call(data, 'system.abilities.str.value')
+  )
+  expect(strUpdate, 'expected a Strength deduction from the honored spellburn').toBeDefined()
+  expect(strUpdate[0]['system.abilities.str.value']).toBe(9)
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+  updateSpy.mockRestore()
 })
 
 test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async () => {

@@ -184,8 +184,9 @@ export function buildSpellCastInput (actor, spellItem, options = {}) {
 /**
  * Resolve the lib caster profile for the actor's class. Returns
  * `null` when no lib-side profile exists (e.g. Warrior, Thief, or a
- * homebrew class unknown to `getCasterProfile`) — the adapter
- * treats that as a signal to drop back to the legacy path.
+ * homebrew class unknown to `getCasterProfile`) — the adapter treats
+ * that as a signal to derive the profile from the spell's own
+ * castingMode instead (see `_rollSpellCheckViaAdapter`).
  */
 function resolveCasterProfile (actor) {
   const classId = (actor.system.class?.className || '').toLowerCase()
@@ -218,7 +219,9 @@ function resolveCasterProfile (actor) {
  *     follows the spell's mechanic class rather than the actor's.
  *   - Without an override, the actor's class profile is resolved via
  *     `resolveCasterProfile(actor)`. Returns `null` when the actor's
- *     class has no lib-side caster profile (legacy fallback signal).
+ *     class has no lib-side caster profile; the caller
+ *     (`_rollSpellCheckViaAdapter`) then retries with the spell's own
+ *     castingMode as the override so the cast stays adapter-owned.
  *
  * @param {Object} actor - DCCActor
  * @param {Object} spellItem - Foundry spell item
