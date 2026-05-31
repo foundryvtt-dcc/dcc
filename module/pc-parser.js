@@ -95,6 +95,9 @@ function _parseJSONPCs (pcObject) {
       })
     }
     pc['attributes.speed.value'] = pcObject.speed || 30
+    // Seed base speed from the imported speed so computed speed derives from the
+    // character's real speed rather than the schema default (#739).
+    pc['attributes.speed.base'] = pcObject.speed || 30
     if (pcObject.initiative) {
       pc['attributes.init.value'] = pcObject.initiative
     }

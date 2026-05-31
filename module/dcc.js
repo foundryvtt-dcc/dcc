@@ -419,7 +419,7 @@ function checkMigrations () {
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
   // Version that triggers migration - set this to the version that introduced breaking changes
   // After migration completes, we save this version to prevent repeated migrations
-  const NEEDS_MIGRATION_VERSION = 0.67
+  const NEEDS_MIGRATION_VERSION = 0.68
   const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
