@@ -2357,6 +2357,7 @@ a.inline-roll {
   align-self: center;
   border: 0;
   font-size: 22px;
+  height: 26px;
 }
 .dcc .npc-grid .ac-and-hp input[data-len="4"] {
   font-size: 18px;
