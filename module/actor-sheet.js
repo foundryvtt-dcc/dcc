@@ -193,7 +193,25 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
     this.#setupResponsiveTabs()
+    this.#fitFixedNumericFields()
     applyActiveVariantSheetTheme(this.element)
+  }
+
+  /**
+   * Annotate fixed-size numeric fields (AC, HP, saving throws) with the
+   * character length of their value via a `data-len` attribute. The
+   * stylesheet keys off this to shrink the font for multi-digit values so
+   * they don't overflow their fixed-size container (e.g. a +12 save in the
+   * small saving-throw circle). Updates live as the field is edited.
+   * @private
+   */
+  #fitFixedNumericFields () {
+    const fields = this.element.querySelectorAll('.ac-and-hp input, .saving-throw-box input')
+    for (const input of fields) {
+      const annotate = () => { input.dataset.len = String(input.value ?? '').length }
+      annotate()
+      input.addEventListener('input', annotate)
+    }
   }
 
   /**
