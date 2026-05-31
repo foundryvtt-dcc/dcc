@@ -639,6 +639,8 @@
   "DCC.Special": "Especial",
   "DCC.Speed": "Velocidad",
   "DCC.SpeedBase": "Velocidad base",
+  "DCC.SpeedOtherMod": "Otro modific. a velocidad",
+  "DCC.SpeedOtherModHint": "Modificador a la velocidad que no proviene de equipo o habilidad y debe incluirse en el cálculo automático (p. ej., una tirada de suerte o un rasgo de clase)",
   "DCC.SpeedPenalty": "Penalización de velocidad",
   "DCC.SwimSpeed": "Nadar",
   "DCC.FlySpeed": "Volar",

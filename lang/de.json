@@ -639,6 +639,8 @@
   "DCC.Special": "Spezial",
   "DCC.Speed": "Bewegung",
   "DCC.SpeedBase": "Grundbewegungsrate",
+  "DCC.SpeedOtherMod": "Sonstiger Bewegungsraten-Modifikator",
+  "DCC.SpeedOtherModHint": "Modifikator für die Bewegungsrate, der nicht von Ausrüstung oder Attributen stammt und in die automatische Berechnung einbezogen werden soll (z. B. ein Glückswurf oder eine Klassenfähigkeit)",
   "DCC.SpeedPenalty": "Bewegungsratenmalus",
   "DCC.SwimSpeed": "Schwimmen",
   "DCC.FlySpeed": "Fliegen",
