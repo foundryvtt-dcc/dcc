@@ -22,7 +22,9 @@ export interface SpellburnValidationResult {
  * Validate that a spellburn commitment is possible given current ability scores.
  *
  * Rules:
- * - Cannot burn more than current score minus 1 (can't go below 1)
+ * - Cannot burn more than the current score (a physical ability may be
+ *   burned all the way to 0). Per DCC RAW this is permitted and is
+ *   potentially lethal — e.g. burning Stamina to 0 kills the caster.
  * - Can only burn from STR, AGL, STA
  * - Total burn must be positive to have any effect
  */

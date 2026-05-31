@@ -10,7 +10,9 @@ import { totalSpellburn } from "../types/spells.js";
  * Validate that a spellburn commitment is possible given current ability scores.
  *
  * Rules:
- * - Cannot burn more than current score minus 1 (can't go below 1)
+ * - Cannot burn more than the current score (a physical ability may be
+ *   burned all the way to 0). Per DCC RAW this is permitted and is
+ *   potentially lethal — e.g. burning Stamina to 0 kills the caster.
  * - Can only burn from STR, AGL, STA
  * - Total burn must be positive to have any effect
  */
@@ -32,7 +34,7 @@ export function validateSpellburn(abilities, commitment) {
             continue;
         }
         const current = abilities[ability].current;
-        const maxBurn = current - 1; // Can't go below 1
+        const maxBurn = current; // RAW: a physical ability may be burned to 0 (lethal)
         if (burn > maxBurn) {
             errors.push(`Cannot burn ${String(burn)} ${name} (current: ${String(current)}, max burn: ${String(maxBurn)})`);
         }
@@ -57,10 +59,12 @@ export function validateSpellburn(abilities, commitment) {
  * Get the maximum spellburn possible for each ability
  */
 export function getMaxSpellburn(abilities) {
+    // RAW: a physical ability may be burned all the way to 0, so the maximum
+    // burn is the full current score (clamped at 0 to guard malformed input).
     return {
-        str: Math.max(0, abilities.str.current - 1),
-        agl: Math.max(0, abilities.agl.current - 1),
-        sta: Math.max(0, abilities.sta.current - 1),
+        str: Math.max(0, abilities.str.current),
+        agl: Math.max(0, abilities.agl.current),
+        sta: Math.max(0, abilities.sta.current),
     };
 }
 /**
@@ -96,8 +100,10 @@ function applyBurnToAbility(ability, burn) {
     if (burn === 0) {
         return { ...ability };
     }
+    // RAW: spellburn may reduce a physical ability to 0 (lethal). Clamp at 0
+    // only to guard against a commitment larger than the current score.
     return {
-        current: Math.max(1, ability.current - burn),
+        current: Math.max(0, ability.current - burn),
         max: ability.max,
     };
 }
