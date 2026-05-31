@@ -79,6 +79,21 @@ global.mockRollResult(15, [15])
 
 Integration tests import real Foundry VTT source code instead of mocks. This catches behavioral differences that mocks hide, which is especially valuable when preparing for Foundry version upgrades (e.g., v13 → v14).
 
+> **Mocks can't see schema-level validation.** The unit-test `foundry.js`
+> mock has no real `NumberField`, so `min`/`max` clamping, type coercion,
+> and other DataModel `clean`/validation behavior are **invisible** to
+> `module/__tests__/`. A change like "an ability score should be able to
+> reach 0" can pass every unit test while the live data model silently
+> clamps the persisted value back to the field's `min`. This actually
+> happened with the spellburn floor-0 work (Phase 7 session 17):
+> `AbilityField.value` had `min: 1`, so the adapter's `0`-write was clamped
+> to `1` — the mocked unit tests were green, and only the **burn-to-0
+> browser test** (running real schema validation) caught it. **Rule of
+> thumb:** any "this value should now be able to be X" behavior that
+> depends on a schema field bound (`min`/`max`/`integer`/`choices`) needs
+> an integration test (`module/__integration__/`, real fields) *or* a
+> browser test — a unit test alone proves nothing about the floor/ceiling.
+
 ### What's Real vs Mocked
 
 | Real (from Foundry source) | Still Mocked |
@@ -223,6 +238,7 @@ describe('ComponentName', () => {
 3. **Descriptive names**: Test names should explain behavior
 4. **Test edge cases**: Include boundary conditions and error cases
 5. **Use fixtures**: Store complex test data in `fixtures/` directory
+6. **Don't trust a unit test for schema-bound behavior**: `min`/`max`/coercion live in real Foundry fields the unit mock doesn't implement. If a change is "value X should now be reachable/rejected," cover it with an integration test (real fields) or a browser test — see the callout under [Integration Tests](#integration-tests-real-foundry).
 
 ## Coverage Goals
 
