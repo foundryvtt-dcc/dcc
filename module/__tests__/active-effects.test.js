@@ -2,7 +2,7 @@
  * Tests for Active Effects functionality
  */
 
-import { expect, test, describe } from 'vitest'
+import { expect, test, describe, vi, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor'
 import DCCActiveEffect from '../active-effect'
@@ -897,5 +897,60 @@ describe('Active Effects - Overrides Tracking (#714)', () => {
     actor.applyActiveEffects()
 
     expect(actor.overrides['system.class.spellCheckOtherMod']).toBeDefined()
+  })
+})
+
+describe('Active Effects - Custom mode fires applyActiveEffect hook (#736)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('custom-mode changes re-fire the applyActiveEffect hook so token-override modules (ATL) can apply', () => {
+    // ATL drives token light/torches via custom-mode changes on ATL.* keys. Our
+    // applyActiveEffects() fully replaces core's, so it must re-fire this hook or
+    // those overrides silently no-op (#736).
+    const hookSpy = vi.spyOn(global.Hooks, 'callAll')
+    const actor = createPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'ATL.light.dim', type: 'custom', value: '40' }
+      ]
+    }
+    actor.effects = new global.Collection([['torch-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    const call = hookSpy.mock.calls.find(c => c[0] === 'applyActiveEffect')
+    expect(call).toBeDefined()
+    // (hook, actor, change, current, delta, overrides)
+    expect(call[1]).toBe(actor)
+    expect(call[2].key).toEqual('ATL.light.dim')
+    expect(call[2].value).toEqual('40')
+    expect(call[5]).toBe(actor.overrides)
+  })
+
+  test('a property mutated by an applyActiveEffect listener is recorded in overrides', () => {
+    // Emulate a module (e.g. ATL) writing to an actor-owned property from the hook.
+    vi.spyOn(global.Hooks, 'callAll').mockImplementation((hook, actor, change) => {
+      if (hook === 'applyActiveEffect' && change?.key === 'system.attributes.init.value') {
+        global.foundry.utils.setProperty(actor, change.key, 99)
+      }
+      return true
+    })
+    const actor = createPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'system.attributes.init.value', type: 'custom', value: '99' }
+      ]
+    }
+    actor.effects = new global.Collection([['init-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    expect(actor.overrides['system.attributes.init.value']).toEqual(99)
   })
 })

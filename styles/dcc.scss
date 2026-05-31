@@ -971,6 +971,21 @@ a.inline-roll {
 /*  Party Sheet                              */
 /* ----------------------------------------- */
 
+.dcc .party-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+
+  label {
+    font-size: 13px;
+  }
+
+  input {
+    flex: 1;
+  }
+}
+
 .dcc .party-body {
   display: grid;
   grid-template-columns: 1fr;
@@ -1002,6 +1017,11 @@ a.inline-roll {
         width: 90px;
         padding: 6px;
         cursor: pointer;
+
+        // Fixed 90x90 box stretched non-square member portraits; letterbox
+        // them instead so the aspect ratio is preserved (mirrors the PC and
+        // NPC portrait treatment).
+        object-fit: contain;
       }
     }
 
@@ -2407,6 +2427,11 @@ a.inline-roll {
       border: 0;
       justify-self: center;
       align-self: center;
+
+      // The img carries fixed height/width="100px" attributes, so a
+      // non-square portrait was stretched to fill the square. Letterbox it
+      // within the box instead (mirrors the NPC portrait treatment).
+      object-fit: contain;
     }
   }
 
