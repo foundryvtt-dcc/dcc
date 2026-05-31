@@ -116,7 +116,7 @@ export const migrateWorld = async function () {
   // Set the migration as complete
   // Save the target migration version to prevent repeated migrations
   // This must match NEEDS_MIGRATION_VERSION in dcc.js
-  game.settings.set('dcc', 'systemMigrationVersion', 0.67)
+  game.settings.set('dcc', 'systemMigrationVersion', 0.68)
   ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
 }
 
@@ -210,6 +210,21 @@ const migrateActorData = async function (actor) {
   if (currentVersion < 0.65) {
     if (!actor.system?.attributes?.speed?.base && actor.system?.attributes?.speed?.value) {
       updateData['system.attributes.speed.base'] = actor.system.attributes.speed.value
+    }
+  }
+
+  // If migrating from earlier than 0.68.0, seed base speed from the persisted
+  // displayed speed so computed speed derives from the character's real speed.
+  // The <0.65 block above never fired because base defaults to '30' in the
+  // schema (so `!base` was always false). Read raw _source here to tell a
+  // genuinely unset/default base from an explicitly configured one (#739).
+  if (currentVersion < 0.68) {
+    const rawSpeed = actor._source?.system?.attributes?.speed || {}
+    const rawBase = rawSpeed.base
+    const rawValue = rawSpeed.value
+    const baseUnset = rawBase === undefined || rawBase === null || rawBase === ''
+    if ((baseUnset || String(rawBase) === '30') && rawValue !== undefined && rawValue !== '' && String(rawValue) !== String(rawBase)) {
+      updateData['system.attributes.speed.base'] = rawValue
     }
   }
 

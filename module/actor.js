@@ -102,6 +102,37 @@ class DCCActor extends Actor {
     }
   }
 
+  /**
+   * Compute the displayed Speed from its component parts.
+   *
+   * Kept as a pure static so the arithmetic is unit-testable without a full
+   * actor prepare cycle (see __tests__/speed-compute.test.js).
+   *
+   * value = base + manual modifier + armor penalty + active-effect delta,
+   * where the active-effect delta is the difference between the post-effect
+   * in-memory value and the persisted (`_source`) value. Deriving the delta
+   * from `_source` — rather than from baseSpeed — is what lets Config edits to
+   * Base Speed reach the sheet (#739); the previous implementation used
+   * `currentValue - baseSpeed`, which cancelled baseSpeed entirely.
+   *
+   * @param {object} parts
+   * @param {number|string} parts.base          Configured base speed
+   * @param {number|string} parts.otherMod      Manual flat modifier
+   * @param {number|string} parts.armorPenalty  Summed armor speed penalty
+   * @param {number|string} parts.currentValue  In-memory (post-effect) value
+   * @param {number|string} parts.sourceValue   Persisted (pre-effect) value
+   * @returns {number} The computed speed value
+   */
+  static computeSpeedValue ({ base, otherMod, armorPenalty, currentValue, sourceValue } = {}) {
+    const baseSpeed = parseInt(base) || 0
+    const mod = parseInt(otherMod) || 0
+    const penalty = parseInt(armorPenalty) || 0
+    const current = parseInt(currentValue)
+    const source = parseInt(sourceValue)
+    const aeModifier = (isNaN(current) || isNaN(source)) ? 0 : current - source
+    return baseSpeed + mod + penalty + aeModifier
+  }
+
   /** @override */
   prepareDerivedData () {
     super.prepareDerivedData()
@@ -168,15 +199,18 @@ class DCCActor extends Actor {
       }
     }
 
-    // Set base speed from current speed if not present (for display purposes only)
-    if (!this.system.attributes.speed.base) {
+    // Seed base speed from the persisted speed for older actors that stored no
+    // base field at all (runtime safety net; the one-time migration corrects
+    // actors whose base defaulted to '30'). Read from _source so a
+    // schema-defaulted base does not mask a genuinely-unset value.
+    if (this._source.system?.attributes?.speed?.base === undefined ||
+        this._source.system?.attributes?.speed?.base === '') {
       this.system.attributes.speed.base = this.system.attributes.speed.value
     }
 
     // Compute AC if required
     if (config.computeAC || config.computeSpeed) {
       const baseACAbility = this.system.abilities[config.baseACAbility] || { mod: 0 }
-      const baseSpeed = parseInt(this.system.attributes.speed.base)
       const abilityMod = baseACAbility.mod
       const acOtherMod = parseInt(this.system.attributes.ac.otherMod) || 0
       const abilityLabel = baseACAbility.label
@@ -196,12 +230,13 @@ class DCCActor extends Actor {
       }
       if (config.computeSpeed) {
         this.system.attributes.ac.speedPenalty = speedPenalty
-        // Preserve any modifier already applied to value (e.g. by an active
-        // effect targeting system.attributes.speed.value) — without this,
-        // recomputing from base would clobber speed-modifying effects.
-        const currentValue = parseInt(this.system.attributes.speed.value)
-        const valueModifier = isNaN(currentValue) ? 0 : currentValue - baseSpeed
-        this.system.attributes.speed.value = baseSpeed + speedPenalty + valueModifier
+        this.system.attributes.speed.value = DCCActor.computeSpeedValue({
+          base: this.system.attributes.speed.base,
+          otherMod: this.system.attributes.speed.otherMod,
+          armorPenalty: speedPenalty,
+          currentValue: this.system.attributes.speed.value,
+          sourceValue: this._source?.system?.attributes?.speed?.value
+        })
       }
     }
 
