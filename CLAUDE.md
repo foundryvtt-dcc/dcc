@@ -39,7 +39,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 
 We own **`@moonloch/dcc-core-lib`** (scoped npm name — the unscoped
 `dcc-core-lib` is **not** published; never `npm install dcc-core-lib`).
-The upstream library is at `/Users/timwhite/WebstormProjects/dcc-core-lib`,
+The upstream library is at `/Users/timlwhite/WebstormProjects/dcc-core-lib`,
 GitHub repo `moonloch/dcc-core-lib`, vendored into this repo at
 `module/vendor/dcc-core-lib/`. When the doc/branch/path uses the bare
 `dcc-core-lib` token (branch `refactor/dcc-core-lib-adapter`, vendor
@@ -100,7 +100,7 @@ don't commit.
   `browser-tests/e2e/`.
   Launch via the standard recipe in
   `docs/dev/TESTING.md#browser-tests-playwright` (Node 24, fvtt CLI
-  `installPath=foundry-14` + `dataPath=/Users/timwhite/FoundryVTT-Next`,
+  `installPath=foundry-14` + `dataPath=/Users/timlwhite/FoundryVTT-Next`,
   `--world=v14`), then `cd browser-tests/e2e && npm test` (no spec
   filter). Report any failure, even if apparently unrelated to the
   slice — pre-existing flakes are worth flagging and pin-pointing,

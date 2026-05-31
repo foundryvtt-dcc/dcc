@@ -115,8 +115,18 @@ export function createSpellEvents ({ actor, spellItem }) {
      * Lib reports spellburn was applied for this cast. Mirror the
      * legacy roll-modifier `Spellburn` term callback
      * (`module/item.js:329-336`): for each physical ability, subtract
-     * the burn from `system.abilities.<id>.value`, clamped at 1. NPC
-     * actors bail (consistent with the disapproval handler and the
+     * the burn from `system.abilities.<id>.value`, clamped at 0. Per DCC
+     * RAW spellburn has no floor of 1 — a physical ability may be burned
+     * all the way to 0, and burning Stamina to 0 is lethal (an intentional
+     * rules feature). The legacy `#modifySpellburn` dialog already permits
+     * a resulting score of 0 (`newStat >= 0`), so the input side is
+     * already floor-0-consistent; this matches it on the write side. The
+     * `Math.max(0, …)` guards only against a malformed oversized burn, not
+     * against reaching 0. (Mirrors dcc-core-lib@0.11.0, which moved its own
+     * spellburn floor from 1 to 0 — moonloch/dcc-core-lib#8 — though that
+     * lib utility is not in the cast path; the persisted-score floor is the
+     * adapter's responsibility since the lib never writes to the actor.)
+     * NPC actors bail (consistent with the disapproval handler and the
      * legacy spellburn-dialog flow, which is PC-only in practice).
      *
      * The lib passes the `SpellburnCommitment` ({ str, agl, sta })
@@ -132,7 +142,7 @@ export function createSpellEvents ({ actor, spellItem }) {
         const amount = Number(burn[abilityId]) || 0
         if (amount <= 0) continue
         const current = Number(actor.system?.abilities?.[abilityId]?.value) || 0
-        updates[`system.abilities.${abilityId}.value`] = Math.max(1, current - amount)
+        updates[`system.abilities.${abilityId}.value`] = Math.max(0, current - amount)
       }
 
       if (Object.keys(updates).length > 0) {

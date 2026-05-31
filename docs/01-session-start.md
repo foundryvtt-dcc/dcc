@@ -7,7 +7,7 @@
 ---
 
 We're resuming a refactor on the DCC FoundryVTT system. Working dir:
-`/Users/timwhite/FoundryVTT-Next/Data/systems/dcc` (git worktree,
+`/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc` (git worktree,
 branch `refactor/dcc-core-lib-adapter`). Run `nvm use` first — `.nvmrc`
 pins Node 24.
 
@@ -28,7 +28,7 @@ pins Node 24.
 6. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
    covers the e2e launch recipe (fvtt CLI installPath / dataPath /
    Node 24 / world name gotchas).
-7. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md` —
+7. `/Users/timlwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md` —
    lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
@@ -512,7 +512,7 @@ in [phase-3.md](dev/progress/phase-3.md).
   line. Silent fallbacks emit a `reason=<camelCaseTag>` field so the
   Foundry console is self-documenting.
 - **`@moonloch/dcc-core-lib`** vendored at `module/vendor/dcc-core-lib/`.
-  Lib updates: bump in `/Users/timwhite/WebstormProjects/dcc-core-lib`,
+  Lib updates: bump in `/Users/timlwhite/WebstormProjects/dcc-core-lib`,
   then `npm run sync-core-lib` here (commit the vendor delta separately).
 - **`dcc.modifyAttackRollTerms`** is dcc-qol's primary integration
   point. Fires inside `rollToHit` (single-path adapter body) before the

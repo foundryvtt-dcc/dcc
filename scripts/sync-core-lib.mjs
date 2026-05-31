@@ -4,7 +4,7 @@
 // compiled ESM output and commit it. See docs/dev/ARCHITECTURE_REIMAGINED.md.
 //
 // Source of truth defaults to the co-evolving checkout at
-// /Users/timwhite/WebstormProjects/dcc-core-lib. Override with
+// /Users/timlwhite/WebstormProjects/dcc-core-lib. Override with
 // DCC_CORE_LIB_SRC=/path/to/dcc-core-lib npm run sync-core-lib.
 
 import { execSync } from 'node:child_process'
@@ -13,7 +13,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SYSTEM_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const LIB_SRC = process.env.DCC_CORE_LIB_SRC ?? '/Users/timwhite/WebstormProjects/dcc-core-lib'
+const LIB_SRC = process.env.DCC_CORE_LIB_SRC ?? '/Users/timlwhite/WebstormProjects/dcc-core-lib'
 const VENDOR_DEST = resolve(SYSTEM_ROOT, 'module/vendor/dcc-core-lib')
 
 function fail (msg) {

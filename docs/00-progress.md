@@ -65,18 +65,23 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 16 (full detail
-in *Recent slices*) retired `_rollSpellCheckLegacy` entirely and, in doing
-so, closed PR #720 **design-call #1** (spellburn silently dropped on
-unregistered-class casts). The adapter now derives a caster profile from
-the *spell's* castingMode when the actor's *class* has none — so every
-wizard/cleric-mode cast stays adapter-owned (honoring spellburn), and
-generic/unknown modes route to the synthetic-generic path. Repo green:
-**1309 Vitest** / **164 Playwright e2e passed**, zero failures.
+**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 17 (full detail
+in *Recent slices*) closed the **spellburn floor-1-vs-0 design call** in
+favor of RAW fidelity: a physical ability may now be burned all the way to
+0 (Stamina to 0 is lethal — an intentional DCC rules feature). The
+load-bearing fix was the **data-model schema** (`AbilityField.value`
+`min: 1` → `min: 0`) — Foundry was silently clamping the adapter's 0-write
+back to 1; the two adapter write-sites (`onSpellburnApplied` bridge +
+naked-cast inline deduct) also flipped to `Math.max(0, …)`, and the lib
+floor was fixed + **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0,
+`631f250`; PR moonloch/dcc-core-lib#8). Also added an **e2e smoke-test
+fast-fail** (`global-setup.js`) so a stale GM login aborts the run in ~10 s
+instead of timing out every test for ~25 min. Repo green: **1318 Vitest** /
+**165 Playwright e2e passed**, zero failures.
 
-**Remaining PR #720 items:** open *design calls* (4 left after #1 closed)
-+ *test-coverage gaps* + *doc hygiene* (see *PR #720 review backlog*
-below) — the resilience/cleanup sub-list is fully ticked.
+**Remaining PR #720 items:** open *design calls* (3 left) + *test-coverage
+gaps* + *doc hygiene* (see *PR #720 review backlog* below) — the
+resilience/cleanup sub-list is fully ticked.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -90,6 +95,54 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 17: resolve the spellburn floor-1-vs-0
+  design call in favor of RAW fidelity (floor 0) — the load-bearing fix was
+  the *schema*, not the adapter clamp; + an e2e smoke-test fast-fail; + lib
+  0.11.0 synced.** The PR #720 design call asked whether a physical ability
+  burned by spellburn floors at 1 or 0 (legacy + DCC RAW allow 0 — burning
+  Stamina to 0 is lethal, an intentional rules feature). Decided **floor 0**.
+  The floor turned out to live in **three** layers, peeled in order:
+  1. **Adapter write-sites** — two `Math.max(1, …)` clamps flipped to
+     `Math.max(0, …)`: the item-bound `onSpellburnApplied` bridge
+     (`adapter/spell-events.mjs`) and the **naked-cast inline deduct** in
+     `_castNakedViaAdapter` (`actor.js`, easy to miss — a raw check has no
+     `spellItem` to wire `createSpellEvents`, so it deducts inline).
+  2. **Data-model schema** — the *actual* persisted floor: `AbilityField.value`
+     was `NumberField({ min: 1 })`, so Foundry silently clamped the adapter's
+     0-write back to 1. Changed to `min: 0` (`max` keeps `min: 1` — a 0
+     ceiling is nonsensical). **This is the load-bearing change**; the
+     adapter clamps alone were cosmetic without it. The mocked unit tests
+     missed it (they don't run schema validation); the new burn-to-0
+     **browser test caught it live** (read 1, expected 0) — exactly the
+     regression net the suite exists for.
+  3. **Lib utilities** — `validateSpellburn` / `getMaxSpellburn` /
+     `applyBurnToAbility` floors moved 1→0 in `@moonloch/dcc-core-lib`
+     (PR moonloch/dcc-core-lib#8, **merged**, v0.11.0; `631f250`). These are
+     RAW-correctness / landmine-removal — **not in the cast path** (nothing
+     calls them), so behavior never depended on them; fixed per the "fix it
+     in dcc-core-lib" rule for any future consumer. New dedicated
+     `spellburn.test.ts` (10 tests) in the lib.
+  Vendor **synced** (`npm run sync-core-lib` → `module/vendor/dcc-core-lib/`
+  at 0.11.0/`631f250`); the sync also pruned 28 stale `data/classes/*-progression.*`
+  files (pre-registry build artifacts vendored at the Phase 0 `fddcf04` sync,
+  provably unused — `data/classes/index.js` only re-exports `progression-utils.js`).
+  Separately, **added an e2e smoke-test fast-fail** (`browser-tests/e2e/global-setup.js`
+  + a defense-in-depth check in `fixtures.js login()`): when Foundry is down or a
+  GM is already logged in (the "Gamemaster" `/join` option is disabled), the run
+  now aborts in ~10 s with an actionable message instead of letting all ~165 tests
+  each burn the 60 s setup timeout (~25 min). This was prompted by exactly that
+  happening this session. The 20 s picker-wait avoids false-fails on a slow world
+  boot (verified: passes when joinable, fast-fails when blocked). Also corrected the
+  stale `/Users/timwhite` → `/Users/timlwhite` username across CLAUDE.md, the sync
+  script, and docs (this machine's checkout is under `timlwhite`), and cloned the
+  lib source to `/Users/timlwhite/WebstormProjects/dcc-core-lib` (it was absent).
+  Tests: +2 Vitest (item-bridge burn-to-0 + oversized-burn-clamps-at-0, replacing
+  the old floor-1 assertion) +1 Vitest (naked-path burn-to-0) +1 integration
+  (`data-models.test.js`: real-`NumberField` value 0 accepted, −3 clamps to 0,
+  `max` 0→1). +1 Playwright (`adapter-dispatch.spec.js`: live Wizard burns Stamina
+  3 → 0, asserts 0 not 1). **1318 Vitest** (was 1309). **165 Playwright passed**,
+  zero failures (5.9-min full suite, smoke-gated).
 
 - **2026-05-31 — Phase 7 session 16: retire `_rollSpellCheckLegacy` by
   deriving the caster profile from the spell's castingMode (closes PR #720
@@ -220,55 +273,6 @@ archives linked above.
   **1302 Vitest** (was 1299, +3). **161 Playwright passed**, zero
   failures (was 160, +1).
 
-- **2026-05-29 — Phase 7 session 14: render the per-modifier breakdown
-  the adapter already captures (`libResult.modifiers`) under the rolled
-  formula in chat (closes the PR #720 "chat doesn't surface the
-  per-modifier breakdown" resilience item).** The lib emits each
-  contributing modifier with rich origin metadata
-  (`{ kind, value, origin: { category, id, label }, applied }` for the
-  tagged-union shape; `{ source, value, label? }` for the legacy spell
-  shape) and the four chat renderers persist the array as
-  `flags.dcc.libResult.modifiers` — but nothing rendered it, and because
-  the adapter builds the Foundry Roll from the lib's flat formula string
-  (`new Roll(plan.formula)`) Foundry's native term tooltip was unlabelled
-  too, a regression vs. the legacy `module/roll-modifier.js` path that
-  set per-term labels. New exported pure helper
-  `buildModifierBreakdownHtml(modifiers, heading)` in
-  `module/adapter/chat-renderer.mjs` lists each modifier as
-  `<origin.label> <signed value>`. Tagged-union handling renders `add` /
-  `display` (signed numeric) + `add-dice` (a `+1d3`-style dice term),
-  drops `applied:false` rows, and skips the die-reshaping kinds
-  (`set-die` / `bump-die` / `multiply` / `threat-shift`) that have no
-  flat "+N under the formula" reading; the legacy shape renders
-  `label || source` + signed value. Labels are HTML-escaped (equipment /
-  AE item names can carry markup). The localized heading (new i18n key
-  `DCC.ModifierBreakdown` = "Modifiers", translated to all 7 langs;
-  `compare-lang` clean) is passed in by the renderers, keeping the
-  helper free of Foundry globals + unit-testable in isolation (mirrors
-  `buildLibResultFlag`). All four renderers (`renderAbilityCheck` /
-  `renderSavingThrow` / `renderSkillCheck` / `renderSpellCheck`) append
-  the breakdown via the proven manual-`rollHTML` + `content` pattern
-  (the one `renderSkillCheck` already used for skill-item descriptions),
-  so it rides under the roll exactly once; ability / save switch from
-  the auto-render path to manual-content in the common case (modifiers
-  almost always present) — the manual `await foundryRoll.render()`
-  reproduces the auto-render byte-for-byte plus the breakdown. Styling
-  via `.dcc-modifier-breakdown` / `-heading` / `-list` / `-row` /
-  `-value` in `styles/_chat.scss` (theming-contract `--system-*` vars;
-  `dcc.css` recompiled). +11 Vitest in `chat-renderer.test.js` (empty /
-  non-array input; `add` signed values; the `+0` "Save bonus" case;
-  heading present/absent; `applied:false` drop; `display` + `add-dice`;
-  die-reshaping skip; `category:id` label fallback; legacy
-  `label || source`; non-finite-value skip; HTML escaping). +1 Playwright
-  in `adapter-dispatch.spec.js` (a live STR-16 ability check asserts the
-  breakdown container + localized heading + a labelled `+2` row render,
-  exactly once). **1299 Vitest** (was 1288, +11). **160 Playwright
-  passed**, zero failures — clean 6.3-min full suite (was 158 passed +
-  1 isolation-passing flake at session 13; +1 new probe = 159, and the
-  `extension-api.spec.js:2232` link-fields navigation-race flake passed
-  clean this run → 160). Next PR #720 candidates: dispatcher gate-style
-  unification; unused crit/fumble predicate params.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -306,11 +310,21 @@ deferred findings still open.
   `_castViaCalculateSpellCheck`, **which honors `options.spellburn`**.
   There is no longer a `noCasterProfile`→legacy path to drop the
   commitment. See Recent slices.
-- **Spellburn clamp: `1` vs `0`.** `onSpellburnApplied`
-  (`spell-events.mjs`) clamps ability scores at 1; legacy
-  `DCCSpellburnTerm` allowed 0 (RAW permits a wizard dying from Stamina
-  burn). Decide: preserve legacy (allow 0), or keep the adapter floor
-  (1) and document it as a house rule.
+- ~~**Spellburn clamp: `1` vs `0`.**~~ CLOSED 2026-05-31 (Phase 7 session
+  17). Decided in favor of **RAW fidelity (floor 0)** — a physical ability
+  may be burned all the way to 0 (burning Stamina to 0 is lethal, an
+  intentional DCC rules feature). The floor lived in **three** layers, all
+  flipped: (1) the **data-model schema** `AbilityField.value`
+  (`min: 1` → `min: 0`) — the actual persisted floor; Foundry was silently
+  clamping the 0-write to 1 (caught live by the new burn-to-0 browser test,
+  missed by the mocked unit tests); (2) both adapter write-sites — the
+  item-bound `onSpellburnApplied` bridge and the naked-cast inline deduct
+  in `_castNakedViaAdapter` (`Math.max(1,…)` → `Math.max(0,…)`); (3) the
+  lib utilities `validateSpellburn` / `getMaxSpellburn` / `applyBurnToAbility`
+  (RAW-correctness only — not in the cast path). The legacy `#modifySpellburn`
+  dialog already permitted `newStat >= 0`, so the input side needed no change.
+  Lib **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0, `631f250`;
+  PR moonloch/dcc-core-lib#8). See Recent slices.
 - **Damage `_total` clamp divergence** (`actor.js`). Foundry clamps
   `damageRoll._total = 1` when below; the lib doesn't. `warnIfDivergent`
   post-clamp normalization stops false-positive warns, but
@@ -419,22 +433,22 @@ deferred findings still open.
    sync + `scripts/sync-core-lib.mjs` in a standalone prep commit so
    Phase 1 imports have somewhere to import *from*. The sync script
    reads from `$DCC_CORE_LIB_SRC` (default
-   `/Users/timwhite/WebstormProjects/dcc-core-lib`), runs `npm run
+   `/Users/timlwhite/WebstormProjects/dcc-core-lib`), runs `npm run
    build` inside the lib, wipes and copies `dist/`, and writes a
    `VERSION.json` with `{ name, version, commit, dirty, syncedAt }`.
    `module/vendor/**` added to `standard.ignore` so the linter skips
    vendored output.
 
 1. **Worktree location.** Now at
-   `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Main repo remains
-   at `/Users/timwhite/FoundryVTT/Data/systems/dcc`.
+   `/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc`. Main repo remains
+   at `/Users/timlwhite/FoundryVTT/Data/systems/dcc`.
    *Why:* `FoundryVTT-Next` is a separate Foundry user-data install, so
    the worktree can live under its `systems/` directory without clashing
    with the main repo on `system.json` id (each Foundry install sees
    only its own `systems/` tree). This lets Tim actually run the
    refactored system in Foundry for testing during Phase 1+.
    *History:* originally parked at
-   `/Users/timwhite/WebstormProjects/dcc-refactor` on 2026-04-17 to
+   `/Users/timlwhite/WebstormProjects/dcc-refactor` on 2026-04-17 to
    avoid `systems/` collisions; moved same day once the separate
    `FoundryVTT-Next` install was set up.
 

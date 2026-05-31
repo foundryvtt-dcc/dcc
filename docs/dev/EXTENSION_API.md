@@ -27,7 +27,7 @@ knows what it must preserve.
 
 Audit method: `Hooks.(call|callAll|on|once)\(['"]dcc\.` and
 `game\.dcc\.*` across sibling modules at
-`/Users/timwhite/FoundryVTT-Next/Data/modules/`. Audit performed
+`/Users/timlwhite/FoundryVTT-Next/Data/modules/`. Audit performed
 2026-04-17 against the commit on `main` at the time (`2337ec0`).
 Cross-reference pass against `ARCHITECTURE_REIMAGINED.md
 §2.8–§2.12` performed 2026-04-19 (Phase 3 session 8); pain-point

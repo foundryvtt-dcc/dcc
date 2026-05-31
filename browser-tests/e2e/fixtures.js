@@ -49,6 +49,22 @@ async function login (page) {
   if (!isInGame) {
     const userSelect = page.locator('select[name="userid"]')
     await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+    // Defense-in-depth vs. globalSetup: if a GM logs in AFTER the smoke check
+    // (or someone bypasses globalSetup), the "Gamemaster" option is disabled
+    // and `selectOption` would hang for the full 60 s fixture timeout. Detect
+    // it and throw the same actionable message immediately.
+    const gmDisabled = await userSelect
+      .locator('option', { hasText: 'Gamemaster' })
+      .first()
+      .evaluate(o => o.disabled)
+      .catch(() => false)
+    if (gmDisabled) {
+      throw new Error(
+        'A Gamemaster is already logged into Foundry (the "Gamemaster" join option ' +
+        'is disabled). Close the Foundry browser tab logged in as GM and re-run — ' +
+        'only one GM session is allowed at a time.'
+      )
+    }
     await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
     await page.click('button[name="join"]')
     await page.waitForSelector('.game.system-dcc', { timeout: 30000 })

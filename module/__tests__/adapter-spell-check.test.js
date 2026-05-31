@@ -576,6 +576,38 @@ test('naked spell check (no item) routes via adapter through libCastSpell (D4 na
   itemSpy.mockRestore()
 })
 
+test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _castNakedViaAdapter)', async () => {
+  // The naked path deducts spellburn inline in `_castNakedViaAdapter`
+  // (no spellItem → no `createSpellEvents`/`onSpellburnApplied` wiring).
+  // Per DCC RAW the floor is 0, not 1 — burning Stamina to 0 is lethal.
+  // This pins the inline deduct's floor in lockstep with the item-bound
+  // bridge in `adapter/spell-events.mjs`.
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 12
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 3
+
+  await actor.rollSpellCheck({ spellburn: { str: 0, agl: 0, sta: 3 } })
+
+  // Stamina burned 3 → 0 (not floored at 1); the naked path writes all
+  // three physical scores, so str/agl come through unchanged.
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.str.value': 12,
+    'system.abilities.agl.value': 12,
+    'system.abilities.sta.value': 0
+  })
+
+  itemSpy.mockRestore()
+})
+
 test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async () => {
   // Cleric naked check: actor's `sheetClass = 'Cleric'` selects the
   // cleric profile (no spellburn, idol-magic check, disapproval-
@@ -761,7 +793,22 @@ test('createSpellEvents onSpellburnApplied subtracts burn amounts from physical 
   })
 })
 
-test('createSpellEvents onSpellburnApplied clamps ability scores at 1', () => {
+test('createSpellEvents onSpellburnApplied allows burning a physical ability to 0 (DCC RAW, lethal)', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: { abilities: { str: { value: 12 }, agl: { value: 12 }, sta: { value: 3 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  // Burn all 3 of Stamina — RAW permits reaching 0 (and 0 STA is lethal).
+  // The floor is 0, not 1: a wizard CAN kill themselves with spellburn.
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 3 })
+
+  expect(actor.update).toHaveBeenCalledWith({ 'system.abilities.sta.value': 0 })
+})
+
+test('createSpellEvents onSpellburnApplied clamps an oversized burn at 0, not below', () => {
   const actor = {
     update: vi.fn(),
     isNPC: false,
@@ -769,10 +816,10 @@ test('createSpellEvents onSpellburnApplied clamps ability scores at 1', () => {
   }
   const events = createSpellEvents({ actor, spellItem: null })
 
-  // Burn 5 from str (would go to -2) — expect clamp to 1.
+  // Burn 5 from str (would go to -2) — clamp at 0 (never negative, never 1).
   events.onSpellburnApplied({ str: 5, agl: 0, sta: 0 })
 
-  expect(actor.update).toHaveBeenCalledWith({ 'system.abilities.str.value': 1 })
+  expect(actor.update).toHaveBeenCalledWith({ 'system.abilities.str.value': 0 })
 })
 
 test('createSpellEvents onSpellburnApplied bails early for NPC actors', () => {

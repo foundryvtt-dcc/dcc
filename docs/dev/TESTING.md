@@ -286,7 +286,7 @@ Foundry must be running before Playwright starts. The fvtt CLI config is global 
 # which user-data dir to use. --dataPath as a launch flag is silently
 # ignored — the CLI reads the persisted config instead.
 npx @foundryvtt/foundryvtt-cli configure set installPath ~/Applications/foundry-14
-npx @foundryvtt/foundryvtt-cli configure set dataPath /Users/timwhite/FoundryVTT-Next
+npx @foundryvtt/foundryvtt-cli configure set dataPath /Users/timlwhite/FoundryVTT-Next
 
 # Every run: Node 24 (required by V14), then launch + test.
 nvm use 24
@@ -303,9 +303,9 @@ npm run test:headed                           # watch it drive the browser
 
 - **Node 24 is required.** V14 Foundry refuses to boot on older Node. `.nvmrc` pins 24; `nvm use` in the project dir picks it up.
 - **`installPath` default is `foundry-13`.** Running a V14 world on that install fails with `World "…" is not available to auto-launch` plus cryptic data-model validation errors. Always `configure view` first.
-- **`dataPath` matters per worktree.** The main repo lives under `/Users/timwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
+- **`dataPath` matters per worktree.** The main repo lives under `/Users/timlwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
 - **World name is `v14`, not `automated_testing`.** The worlds in `FoundryVTT-Next/Data/worlds/` are `v14`, `v13`, and `secrets-of-the-spectral-summoner`. Use `v14`.
-- **Close your manual Foundry browser tab first.** If a Gamemaster is already logged in there, the join-page select disables the option and Playwright's login times out (11 s per test) before any assertion runs.
+- **Close your manual Foundry browser tab first.** If a Gamemaster is already logged in there, the join-page select disables the "Gamemaster" option and Playwright can't claim a GM session. A `globalSetup` smoke check (`browser-tests/e2e/global-setup.js`) now catches this and **aborts the whole run in ~10 s with an actionable message** ("A Gamemaster is already logged into Foundry … close the tab") instead of letting every test burn its 60 s setup timeout (~25 min total). The same check fast-fails when Foundry is down or no world is launched. It waits up to 20 s for the JS-rendered user picker, so a slow world boot won't false-fail.
 
 ### Session-reuse fixture (why the suite is fast)
 

@@ -13,7 +13,7 @@
 
 - Created worktree on branch `refactor/dcc-core-lib-adapter` off `main`
   (`2337ec0`). Worktree now lives at
-  `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc` (moved 2026-04-17 —
+  `/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc` (moved 2026-04-17 —
   see Decisions §1 in `00-progress.md` for the updated location rationale).
 - Committed architecture doc at `docs/dev/ARCHITECTURE_REIMAGINED.md`
   (**32a5f79**).
@@ -24,7 +24,7 @@
   (the original link didn't travel with the worktree because
   `node_modules/` isn't tracked). Current symlink:
   `node_modules/@moonloch/dcc-core-lib` →
-  `/Users/timwhite/WebstormProjects/dcc-core-lib`.
+  `/Users/timlwhite/WebstormProjects/dcc-core-lib`.
 - Created Phase 0 adapter stubs under `module/adapter/`:
   - `character-accessors.mjs` — Foundry actor shape → lib `Character` via
     `CharacterAccessors`

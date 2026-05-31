@@ -22,7 +22,7 @@ Three forces are pushing at the DCC system at once:
 2. **Spinoffs.** MCC, XCC, Crawl!, Empire of the East, and future settings keep reusing the DCC engine. Some (MCC, dcc-crawl-classes) extend cleanly through two documented hooks. Others (XCC) must replace `CONFIG.Actor.documentClass` globally because no clean API exists for "I'm a variant game, not an add-on."
 3. **Homebrew.** Users want to invent classes, skills, and sheet layouts without touching the system. Today this is impractical — every class field lives in one Player schema, sheet selection is manual, and class-specific behavior is scattered through string checks.
 
-**And now there's a fourth, much bigger factor:** a pure-functional TypeScript engine for DCC already exists as `dcc-core-lib` at `/Users/timwhite/WebstormProjects/dcc-core-lib`. 44K lines of source, 1,079 passing tests, zero Foundry dependencies, explicit `SystemConfig` for variants, and a unified skill model where everything from Turn Unholy to an attack roll is a `SkillDefinition`.
+**And now there's a fourth, much bigger factor:** a pure-functional TypeScript engine for DCC already exists as `dcc-core-lib` at `/Users/timlwhite/WebstormProjects/dcc-core-lib`. 44K lines of source, 1,079 passing tests, zero Foundry dependencies, explicit `SystemConfig` for variants, and a unified skill model where everything from Turn Unholy to an attack roll is a `SkillDefinition`.
 
 This changes the refactor question entirely. The goal isn't "rebuild the DCC engine inside Foundry." The goal is **thin the Foundry system until it's an adapter over `dcc-core-lib`**.
 

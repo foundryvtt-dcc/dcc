@@ -9,9 +9,9 @@ import { fileURLToPath } from 'url'
 const execAsync = promisify(exec)
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const MODULES_DIR = '/Users/timwhite/FoundryVTT/Data/modules'
+const MODULES_DIR = '/Users/timlwhite/FoundryVTT/Data/modules'
 const SOURCE_DIR = join(__dirname, '..')
-const SAILORS_SOURCE_DIR = '/Users/timwhite/FoundryVTT/Data/modules/dcc-sailors-on-the-starless-sea'
+const SAILORS_SOURCE_DIR = '/Users/timlwhite/FoundryVTT/Data/modules/dcc-sailors-on-the-starless-sea'
 const ORG_NAME = 'foundryvtt-dcc'
 const BRANCH_NAME = 'feature/v13'
 const COMMIT_MESSAGE = 'v13 upgrade'

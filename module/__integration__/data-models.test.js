@@ -156,6 +156,24 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
     expect(data.class.className).toBe('Warrior')
   })
 
+  test('ability value may be 0 (schema min: 0, DCC RAW spellburn-to-0)', () => {
+    // Per DCC RAW a physical ability may be burned/drained all the way to 0
+    // (burning Stamina to 0 is lethal). AbilityField.value uses min: 0, so the
+    // real Foundry NumberField accepts 0 — the prior min: 1 silently clamped a
+    // floor-0 spellburn write back up to 1 (caught by the adapter-dispatch
+    // burn-to-0 browser test).
+    const burned = new PlayerData({ abilities: { sta: { value: 0, max: 12 } } })
+    expect(burned.abilities.sta.value).toBe(0)
+
+    // The floor holds at 0 — a negative value clamps up to 0, never below.
+    const overburned = new PlayerData({ abilities: { sta: { value: -3, max: 12 } } })
+    expect(overburned.abilities.sta.value).toBe(0)
+
+    // `max` keeps its own min: 1 floor (a ceiling of 0 is nonsensical).
+    const zeroMax = new PlayerData({ abilities: { sta: { value: 0, max: 0 } } })
+    expect(zeroMax.abilities.sta.max).toBe(1)
+  })
+
   test('WeaponData constructs with defaults', () => {
     const data = new WeaponData({})
     expect(data.description).toBeDefined()

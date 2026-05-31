@@ -2752,14 +2752,18 @@ class DCCActor extends Actor {
 
     // Spellburn applied via the lib's event in item-bound routes; for
     // naked we just deduct here since there's no `createSpellEvents`
-    // wiring (no spellItem to mutate). Matches the pre-adapter
-    // `DCCSpellburnTerm` callback semantics.
+    // wiring (no spellItem to mutate). Clamped at 0, not 1: per DCC RAW a
+    // physical ability may be burned all the way to 0 (Stamina to 0 is
+    // lethal). This matches the pre-adapter `DCCSpellburnTerm` callback
+    // semantics (the legacy `#modifySpellburn` dialog permitted a
+    // resulting score of 0) and the item-bound `onSpellburnApplied` bridge
+    // in `adapter/spell-events.mjs`.
     if (input.spellburn) {
       const burn = input.spellburn
       await this.update({
-        'system.abilities.str.value': Math.max(1, this.system.abilities.str.value - (burn.str || 0)),
-        'system.abilities.agl.value': Math.max(1, this.system.abilities.agl.value - (burn.agl || 0)),
-        'system.abilities.sta.value': Math.max(1, this.system.abilities.sta.value - (burn.sta || 0))
+        'system.abilities.str.value': Math.max(0, this.system.abilities.str.value - (burn.str || 0)),
+        'system.abilities.agl.value': Math.max(0, this.system.abilities.agl.value - (burn.agl || 0)),
+        'system.abilities.sta.value': Math.max(0, this.system.abilities.sta.value - (burn.sta || 0))
       })
     }
 

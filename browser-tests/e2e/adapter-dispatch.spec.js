@@ -1330,6 +1330,47 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(strAfter).toBe(9)
     })
 
+    test('spellburn may reduce a physical ability all the way to 0 (DCC RAW, floor-0 design call)', async ({ page }) => {
+      // Resolution of the PR #720 floor-1-vs-0 design call: per DCC RAW a
+      // caster may burn a physical ability to 0 (burning Stamina to 0 is
+      // lethal — an intentional rules feature). The `onSpellburnApplied`
+      // bridge now clamps at 0, not 1. Pre-fix the same cast would have
+      // floored Stamina at 1; this asserts the burned score reaches 0 live.
+      const staAfter = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Burn To Zero',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard' },
+            details: { sheetClass: 'Wizard' },
+            abilities: {
+              str: { value: 12, max: 12 },
+              agl: { value: 12, max: 12 },
+              sta: { value: 3, max: 3 },
+              per: { value: 10, max: 10 },
+              int: { value: 16, max: 16 },
+              lck: { value: 10, max: 10 }
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Burn-To-Zero-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+        await actor.rollSpellCheck({ spell: 'P1-Burn-To-Zero-Spell', spellburn: { str: 0, agl: 0, sta: 3 } })
+        return game.actors.getName('P1 Spell Burn To Zero').system.abilities.sta.value
+      })
+
+      // 3 - 3 = 0. The old floor-1 behavior would have read 1.
+      expect(staAfter).toBe(0)
+    })
+
     test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async ({ page }) => {
       // Cleric actor with `disapproval: 1` but no `disapprovalTable`
       // set — adapter path continues (not legacy) but silently skips
