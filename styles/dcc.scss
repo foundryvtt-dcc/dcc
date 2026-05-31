@@ -2517,6 +2517,11 @@ a.inline-roll {
         border: 0;
         font-size: 22px;
 
+        // The default input height (17px) is shorter than the 22px line, so
+        // the tall digits were clipped top and bottom. Give them enough
+        // vertical room; the input is centred in the 50px shield row.
+        height: 26px;
+
         // Three-digit AC/HP (e.g. 200) still fit at 22px; only shrink the
         // font once values reach four or more digits so they don't overflow
         // the shield.
