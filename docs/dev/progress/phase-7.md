@@ -872,3 +872,43 @@
   mutation / program-check cells on its own schedule (inert until then).
   **1302 Vitest** (was 1299, +3). **161 Playwright passed**, zero
   failures (was 160, +1).
+
+- **2026-05-29 — Phase 7 session 15: unify the dispatcher gate style +
+  drop the vestigial `attackRollResult` param (closes the last two
+  PR #720 resilience/cleanup items).** Both backlog items' framing was
+  **stale**, surfaced rather than papered over: item 1 claimed
+  attack/damage/crit/fumble use named `_canRouteXxxViaAdapter` predicates,
+  but those were all retired in D1/D2 (sessions 15–16) — those four are
+  single-path with no gate. The only surviving binary legacy-vs-adapter
+  gates were `rollAbilityCheck` + `rollSavingThrow` (named `const
+  needsLegacyPath = …`) and `getInitiativeRoll` (a bare `if
+  (options.showModifierDialog)`). Normalized init onto the named-boolean
+  idiom (`const needsLegacyPath = !!options.showModifierDialog`) so all
+  three binary gates read identically + defend the sheet's bitwise-XOR
+  `0`/`1` shape uniformly. `rollSkillCheck` / `rollSpellCheck` are
+  **intentionally left multi-way** — they dispatch to several adapter
+  sub-routes (skill-table / disapproval-range / naked / wizard / cleric
+  override), not a binary legacy gate; forcing them into a boolean would
+  mislead. Item 2's `_canRouteCrit/FumbleViaAdapter` predicates were
+  likewise already retired; the surviving dead param was
+  `attackRollResult` on `_rollDamage` / `_rollCritical` / `_rollFumble`
+  (unused since session 19, no external/sibling callers — verified across
+  all four sibling modules — `_`-prefixed private). Dropped from all
+  three signatures (`_rollCritical`/`_rollFumble` → `(weapon, ctx)`;
+  `_rollDamage` → `(weapon, formula, options)`), the three call sites in
+  `rollWeaponAttack`, and the doc comments. Pure refactor — no behavior
+  change; the `attackRollResult.crit`/`.fumble`/`.deedDieRoll` reads in
+  `rollWeaponAttack`'s own scope are untouched. +2 Vitest (crit/fumble
+  arity guard in `adapter-weapon-crit-fumble.test.js`; init XOR-truthy
+  `showModifierDialog: 1` → legacy in `adapter-initiative.test.js`) + a
+  `_rollDamage` arity assertion folded into the existing damage
+  retirement guard; ~18 damage/crit/fumble test call sites + their now-
+  unused `attackRollResult` declarations updated to the new signatures.
+  +1 Playwright in `adapter-dispatch.spec.js` (`gate-style cleanup:
+  crit/fumble/damage accept the post-cleanup signatures live` — invokes
+  all three private methods directly against live Foundry with the new
+  arity, asserts `.length === 2` + each returns its dispatch shape).
+  **1304 Vitest** (was 1302, +2). **162 Playwright passed**, zero
+  failures — clean 6.2-min full suite (was 161, +1). With this slice the
+  PR #720 *resilience / cleanup* sub-list is fully drained; only design
+  calls, test-coverage gaps, and doc hygiene remain.

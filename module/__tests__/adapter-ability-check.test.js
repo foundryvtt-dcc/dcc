@@ -5,8 +5,9 @@
  * Exercises the full adapter flow for a non-legacy ability check:
  *   DCCActor._rollAbilityCheckViaAdapter →
  *   actorToCharacter →
- *   rollAbilityCheckAsync (lib) →
- *   foundry-roller (awaits Roll.evaluate) →
+ *   libRollAbilityCheck pass 1 ({mode:'formula'}) →
+ *   inline `new Roll(plan.formula).evaluate()` (Foundry owns the dice) →
+ *   libRollAbilityCheck pass 2 ({mode:'evaluate', roller: () => natural}) →
  *   chat-renderer (builds ChatMessage).
  *
  * Locks the contract between the Foundry adapter and dcc-core-lib

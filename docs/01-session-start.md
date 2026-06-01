@@ -493,10 +493,13 @@ in [phase-3.md](dev/progress/phase-3.md).
   through adapter for the common case; legacy fallbacks gated by
   `reason=…` log codes.
 - **Adapter modules**: `module/adapter/{character-accessors,
-  foundry-roller, chat-renderer, spell-input, spell-events,
-  attack-input, attack-events, damage-input, crit-fumble-input,
-  roll-dialog, debug}.mjs`. `roll-dialog.mjs` carries the unified
+  chat-renderer, spell-input, spell-events, attack-input,
+  attack-events, damage-input, crit-fumble-input, roll-dialog,
+  debug}.mjs`. `roll-dialog.mjs` carries the unified
   `promptRollModifierDialog` for both skill + spell checks.
+  (`foundry-roller.mjs` was deleted Phase 7 session 19 — the
+  dispatchers build rolls inline via the two-pass sync pattern, so the
+  lib's async roller wrapper was never consumed.)
 - **Extension API** (`module/extension-api.mjs`): `registerItemSheet`,
   `registerActorSheet`, `registerClassMixin` + `applyClassMixins`,
   `registerClassDefaults` + `applyClassDefaults` (Phase 5 session 1

@@ -259,7 +259,10 @@ A new `module/adapter/` directory owns the bridge:
 ```
 module/adapter/
   character-accessors.mjs   // Implements CharacterAccessors over Foundry Actor shape
-  foundry-roller.mjs        // Wraps Foundry's Roll as a custom roller for the lib
+  foundry-roller.mjs        // PLANNED, NEVER ADOPTED — wraps Foundry's Roll as the
+                            // lib's async roller. The dispatchers ended up using the
+                            // two-pass sync pattern (Foundry evaluates, lib classifies),
+                            // so this was deleted in Phase 7 session 19.
   foundry-events.mjs        // Bridges lib events → Foundry Hooks
   foundry-data-loader.mjs   // Loads tables/progressions from Foundry compendia
   chat-renderer.mjs         // Renders SkillCheckResult/AttackResult as ChatMessages

@@ -92,7 +92,8 @@ test('roll ability check', async () => {
   // Strength check with the mock actor's checkPenalty=0 takes the
   // adapter path (no non-zero penalty to display). DCCRoll.createRoll
   // is NOT invoked; the lib builds the formula and the Foundry Roll
-  // is constructed directly in foundry-roller.
+  // is constructed inline in _rollAbilityCheckViaAdapter
+  // (`new Roll(plan.formula).evaluate()`).
   await actor.rollAbilityCheck('str')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
   expect(rollToMessageMock).toHaveBeenLastCalledWith(
@@ -139,8 +140,8 @@ test('roll ability check', async () => {
 
   // ...and the non-rollUnder Luck check takes the adapter path (not
   // str/agl, no dialog, no rollUnder → adapter). DCCRoll.createRoll is
-  // NOT called; the Foundry Roll is constructed directly by the
-  // adapter's foundry-roller and passed through chat-renderer.
+  // NOT called; the Foundry Roll is constructed inline by
+  // _rollAbilityCheckViaAdapter and passed through chat-renderer.
   await actor.rollAbilityCheck('lck', { rollUnder: false })
   // Still 1 — only the rollUnder call invoked DCCRoll.createRoll.
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)

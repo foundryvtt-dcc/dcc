@@ -65,23 +65,22 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 18 (full detail
-in *Recent slices*) closed the PR #720 **damage `_total` clamp-divergence
-design call** — resolved-upstream, the premise was stale. The lib has
-since gained its own min-1 clamp (`combat/damage.js:93`), so the displayed
-total and `dcc.libDamageResult.total` can no longer diverge; an
-investigative `displayTotal` mirror field was tried and backed out as
-redundant. Final change is **doc + test only, zero behavior change** —
-corrected the now-false "lib doesn't clamp" comments + a regression test
-pinning the both-sides-floor contract. (Session 17 had closed the
-**spellburn floor-1-vs-0 design call** in favor of RAW fidelity — floor 0,
-load-bearing fix in the `AbilityField.value` schema `min: 1` → `min: 0`;
-lib v0.11.0 `631f250` synced.) Repo green: **1319 Vitest** / **166
-Playwright e2e passed**, zero failures.
+**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 19 (full detail
+in *Recent slices*) closed the PR #720 **`createFoundryRoller`
+delete-or-wire design call** — deleted. The async Foundry-Roll wrapper had
+zero consumers and its only rationale (a future phase preferring the lib's
+async roller) is a closed door: every dispatcher landed on the two-pass
+**sync** pattern instead, which the async roller conflicts with. Closed
+both the design call and its paired coverage gap; corrected three stale
+comments + two live docs. (Session 18 closed the **damage `_total`
+clamp-divergence** call as resolved-upstream — the lib now clamps `total`
+itself; session 17 closed the **spellburn floor-1-vs-0** call in favor of
+RAW fidelity.) Repo green: **1319 Vitest** / **166 Playwright e2e passed**,
+zero failures.
 
-**Remaining PR #720 items:** open *design calls* (2 left — damage-clamp
-divergence closed 2026-05-31, resolved-upstream once the lib was found to
-clamp `total` itself) + *test-coverage gaps* + *doc hygiene* (see *PR #720
+**Remaining PR #720 items:** open *design calls* (1 left — **error
+boundaries around `_xxxViaAdapter`**; damage-clamp + `createFoundryRoller`
+closed 2026-05-31) + *test-coverage gaps* + *doc hygiene* (see *PR #720
 review backlog* below) — the resilience/cleanup sub-list is fully ticked.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
@@ -96,6 +95,29 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 19: close the PR #720 `createFoundryRoller`
+  delete-or-wire design call — deleted (+ its paired coverage gap).** The
+  async Foundry-Roll wrapper (`module/adapter/foundry-roller.mjs`,
+  39 lines) had **zero consumers** — production, tests, and all four
+  sibling modules. Its stated future-use ("later phases may prefer the
+  lib's async roller") is a *closed door*: Groups A/C/D + the unified
+  modifier dialog all landed on the two-pass **sync** pattern (Foundry
+  evaluates the formula inline via `new Roll(plan.formula).evaluate()`,
+  the lib classifies the natural in a second `{mode:'evaluate'}` pass),
+  which the async roller fundamentally conflicts with — wiring it would
+  *reverse* a deliberate design choice, not finish an unfinished one.
+  `git rm`'d the file + corrected three stale comments that
+  mischaracterized the ability-check flow as routing through it
+  (`adapter-ability-check.test.js` header flow-diagram; two in
+  `actor.test.js`). Live docs updated (`01-session-start.md` adapter
+  list; `ARCHITECTURE_REIMAGINED.md` §5.4 annotated PLANNED/NEVER-ADOPTED);
+  the `phase-0-1.md` archive references stay (accurate history — the file
+  existed then). Zero behavior change (nothing imported it). Closes both
+  the design call and its paired test-coverage gap. **1319 Vitest**
+  (unchanged — no tests removed; the file had none). Full e2e re-run as
+  the regression net (the deleted path's stale comments referenced the
+  live ability-check dispatch, already covered).
 
 - **2026-05-31 — Phase 7 session 18: close the PR #720 damage `_total`
   clamp-divergence design call — resolved-upstream, the premise was
@@ -230,46 +252,6 @@ archives linked above.
   DCC-system gaps — every enabler (`DCCSheet` export, `sheetClass` on the
   base schema, the progression-load hook) already existed.
 
-- **2026-05-29 — Phase 7 session 15: unify the dispatcher gate style +
-  drop the vestigial `attackRollResult` param (closes the last two
-  PR #720 resilience/cleanup items).** Both backlog items' framing was
-  **stale**, surfaced rather than papered over: item 1 claimed
-  attack/damage/crit/fumble use named `_canRouteXxxViaAdapter` predicates,
-  but those were all retired in D1/D2 (sessions 15–16) — those four are
-  single-path with no gate. The only surviving binary legacy-vs-adapter
-  gates were `rollAbilityCheck` + `rollSavingThrow` (named `const
-  needsLegacyPath = …`) and `getInitiativeRoll` (a bare `if
-  (options.showModifierDialog)`). Normalized init onto the named-boolean
-  idiom (`const needsLegacyPath = !!options.showModifierDialog`) so all
-  three binary gates read identically + defend the sheet's bitwise-XOR
-  `0`/`1` shape uniformly. `rollSkillCheck` / `rollSpellCheck` are
-  **intentionally left multi-way** — they dispatch to several adapter
-  sub-routes (skill-table / disapproval-range / naked / wizard / cleric
-  override), not a binary legacy gate; forcing them into a boolean would
-  mislead. Item 2's `_canRouteCrit/FumbleViaAdapter` predicates were
-  likewise already retired; the surviving dead param was
-  `attackRollResult` on `_rollDamage` / `_rollCritical` / `_rollFumble`
-  (unused since session 19, no external/sibling callers — verified across
-  all four sibling modules — `_`-prefixed private). Dropped from all
-  three signatures (`_rollCritical`/`_rollFumble` → `(weapon, ctx)`;
-  `_rollDamage` → `(weapon, formula, options)`), the three call sites in
-  `rollWeaponAttack`, and the doc comments. Pure refactor — no behavior
-  change; the `attackRollResult.crit`/`.fumble`/`.deedDieRoll` reads in
-  `rollWeaponAttack`'s own scope are untouched. +2 Vitest (crit/fumble
-  arity guard in `adapter-weapon-crit-fumble.test.js`; init XOR-truthy
-  `showModifierDialog: 1` → legacy in `adapter-initiative.test.js`) + a
-  `_rollDamage` arity assertion folded into the existing damage
-  retirement guard; ~18 damage/crit/fumble test call sites + their now-
-  unused `attackRollResult` declarations updated to the new signatures.
-  +1 Playwright in `adapter-dispatch.spec.js` (`gate-style cleanup:
-  crit/fumble/damage accept the post-cleanup signatures live` — invokes
-  all three private methods directly against live Foundry with the new
-  arity, asserts `.length === 2` + each returns its dispatch shape).
-  **1304 Vitest** (was 1302, +2). **162 Playwright passed**, zero
-  failures — clean 6.2-min full suite (was 161, +1). With this slice the
-  PR #720 *resilience / cleanup* sub-list is fully drained; only design
-  calls, test-coverage gaps, and doc hygiene remain.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -346,9 +328,21 @@ deferred findings still open.
   masking the lib bugs the observational refactor is meant to surface.
   Likely right answer: add the fallback after the adapter paths are
   proven stable.
-- **`createFoundryRoller` — delete or wire.** No dispatcher path
-  consumes it. Either adopt it (replacing scattered inline `new Roll` +
-  `evaluate()`) or delete the file.
+- ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
+  (Phase 7 session 19) — **deleted.** Zero consumers (production, tests,
+  or any of the four sibling modules); its stated reason to exist
+  ("later phases may prefer the lib's async roller") is a closed door —
+  Groups A/C/D + the unified modifier dialog all landed on the two-pass
+  *sync* pattern (Foundry evaluates inline, lib classifies), which the
+  async roller fundamentally conflicts with. Wiring it would reverse a
+  deliberate design choice, not finish an unfinished one. Deleted
+  `module/adapter/foundry-roller.mjs` + corrected three stale comments
+  that mischaracterized the ability-check flow as routing through it
+  (`adapter-ability-check.test.js` header, two in `actor.test.js` — the
+  roll is built inline via `new Roll(plan.formula).evaluate()`). Live
+  docs updated (`01-session-start.md` adapter-module list;
+  `ARCHITECTURE_REIMAGINED.md` §5.4 annotated PLANNED/NEVER-ADOPTED).
+  Closes the paired coverage gap below. See Recent slices.
 
 **Open resilience / cleanup items:**
 
@@ -395,8 +389,9 @@ deferred findings still open.
 - `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
   injection (PC-only tests) + the `Roll.validate(toHit) === false`
   early-return path.
-- `createFoundryRoller` — no direct unit test (ties to the delete-or-wire
-  call above).
+- ~~`createFoundryRoller` — no direct unit test~~ CLOSED 2026-05-31
+  (Phase 7 session 19) — moot; the file was deleted (see the design-call
+  closure above), so there is nothing left to cover.
 - `__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
   production is sync; tests install local sync stubs — fix the shared
   mock, delete the stubs.
