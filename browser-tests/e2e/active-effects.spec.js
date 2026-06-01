@@ -263,6 +263,44 @@ test.describe('DCC Active Effects', () => {
       strValue = await page.locator('input[name="system.abilities.str.value"]').inputValue()
       expect(parseInt(strValue)).toBe(10)
     })
+
+    test('native token.* override routes to the token, not the actor (#736)', async ({ page }) => {
+      // Core Foundry v14 applies token light/vision overrides via `token.*` keys.
+      // Our applyActiveEffects() replaces core's, so it must strip the `token.`
+      // prefix and stash the change on actor.tokenActiveEffectChanges for
+      // TokenDocument#applyActiveEffects to apply — otherwise it crashes writing a
+      // non-existent `token` field on the actor. This verifies the module-free,
+      // core path end-to-end (the afterEach also asserts no `target is null` error).
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 Token Light', type: 'Player' })
+        await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Torch',
+          img: 'icons/svg/light.svg',
+          changes: [
+            { key: 'token.light.dim', value: '60', mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE },
+            { key: 'token.light.bright', value: '30', mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE }
+          ],
+          disabled: false
+        }])
+        actor.reset() // force a data-preparation cycle
+
+        // A token document reads actor.tokenActiveEffectChanges and applies them.
+        const token = await actor.getTokenDocument()
+
+        return {
+          stashedKeys: (actor.tokenActiveEffectChanges?.initial ?? []).map(c => c.key),
+          dim: Number(token.light?.dim),
+          bright: Number(token.light?.bright)
+        }
+      })
+
+      // Our routing stripped the `token.` prefix and stashed the changes.
+      expect(result.stashedKeys).toContain('light.dim')
+      expect(result.stashedKeys).toContain('light.bright')
+      // Core applied them to the token's light, the native way.
+      expect(result.dim).toBe(60)
+      expect(result.bright).toBe(30)
+    })
   })
 
   // ── Dice Chain Effects ───────────────────────────────────────────────
