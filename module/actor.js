@@ -275,6 +275,15 @@ class DCCActor extends Actor {
     const overrides = this.overrides
     const effects = []
 
+    // Native V14 token overrides (#736): changes keyed `token.*` (e.g. token.light.dim)
+    // target the TokenDocument, not the actor. Core's Actor#applyActiveEffects strips
+    // the `token.` prefix and stashes them on tokenActiveEffectChanges[phase] so
+    // TokenDocument#applyActiveEffects can apply them to each token. Because our
+    // implementation replaces core's, we must reproduce that routing — otherwise these
+    // changes fall through to the actor and crash writing a non-existent `token` field.
+    this.tokenActiveEffectChanges = {}
+    const tokenChanges = []
+
     // Collect active effects from the actor
     for (const effect of this.effects) {
       if (!effect.disabled && !effect.isSuppressed) {
@@ -310,6 +319,15 @@ class DCCActor extends Actor {
 
       for (const change of effect.changes) {
         const key = change.key
+
+        // Route native token-override changes to the token (core Foundry v14 path).
+        // Strip the `token.` prefix and stash for TokenDocument#applyActiveEffects;
+        // never apply them to the actor data model (#736).
+        if (typeof key === 'string' && key.startsWith('token.')) {
+          tokenChanges.push({ ...change, key: key.slice(6), effect })
+          continue
+        }
+
         const type = change.type || 'add'
 
         // Handle different change types
@@ -361,6 +379,11 @@ class DCCActor extends Actor {
         }
       }
     }
+
+    // Hand the routed token-override changes off to core's TokenDocument pipeline.
+    // We only run the "initial" phase (see the early return above), so the "final"
+    // batch stays empty — matching how we apply every actor change in one pass.
+    this.tokenActiveEffectChanges[phase] = tokenChanges
   }
 
   /**
