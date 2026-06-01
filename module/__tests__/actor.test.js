@@ -2004,6 +2004,63 @@ test('roll skill check without useLevel config', async () => {
   )
 })
 
+test('NPC skill item with useDie:false + a value modifier inherits the actor action die', async () => {
+  // Regression: imported NPCs carry skill items configured with
+  // `useDie: false` but a flat `value` (e.g. "Divine Aid +4"). Before
+  // the fix the missing-die fallback only matched built-in slots
+  // (`!skillItem`), so these rolled with no action die. Now a rollable
+  // skill item inherits the actor's action die.
+  dccRollCreateRollMock.mockClear()
+
+  const skillItem = new DCCItem({
+    name: 'Divine Aid',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: true,
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false
+      },
+      ability: 'int',
+      die: '1d20',
+      value: '4',
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  // Ensure a clean action die (earlier tests can leave config.actionDice
+  // mutated to 'invalid').
+  actor.system.config.actionDice = '1d20'
+
+  await actor.rollSkillCheck('Divine Aid')
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  const terms = dccRollCreateRollMock.mock.calls[0][0]
+
+  // Inherited the actor's action die (labelled "Action Die" because the
+  // skill item carries no per-skill die).
+  const dieTerm = terms.find(t => t.type === 'Die')
+  expect(dieTerm).toBeDefined()
+  expect(dieTerm.formula).toBe('1d20')
+  expect(dieTerm.label).toBe('Action Die')
+
+  // Flat +4 skill value carried through as a Compound term.
+  const valueTerm = terms.find(t => t.type === 'Compound')
+  expect(valueTerm).toBeDefined()
+  expect(valueTerm.formula).toBe('4')
+
+  global.itemTypesMock.mockReset()
+})
+
 test('computeSpellCheck propagates spellCheckOtherMod to cleric abilities', () => {
   // Set up cleric-like skills
   actor.system.skills.divineAid = { label: 'Divine Aid', value: '', ability: '' }

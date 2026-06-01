@@ -1146,8 +1146,22 @@ class DCCActor extends Actor {
       hasDie = true
     }
 
-    // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
-    if (!hasDie && !skillItem) {
+    // If no die is specified and no override, fall back to the actor's
+    // action die. Built-in skill slots always inherit it. Skill items
+    // inherit it too — but only when they actually roll something (they
+    // contribute a value, ability, or level modifier). A pure
+    // description-only skill item (useDie / useValue / useAbility /
+    // useLevel all off) must stay on the description path and gets no
+    // die. Fixes NPC skill items saved with `useDie: false` that carry
+    // a flat `value` modifier (e.g. an imported NPC's "Divine Aid +4"):
+    // before, the missing-die branch only matched built-in slots, so
+    // those items rolled with no action die.
+    const skillItemIsRollable = !!skillItem && (
+      skill.value !== undefined ||
+      !!(skill.ability && skill.ability.trim()) ||
+      skill.level !== undefined
+    )
+    if (!hasDie && (!skillItem || skillItemIsRollable)) {
       die = this.getActionDice()[0].formula || '1d20'
       hasDie = true
     }

@@ -22,12 +22,8 @@
         </div>
         <label class="skill-check skill-name rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill">{{skill.name}}</label>
         <div>
-          {{#if skill.system.config.useDie}}
-            {{#if skill.system.die}}
-              {{skill.system.die}}
-            {{else}}
-              --
-            {{/if}}
+          {{#if skill.displayDie}}
+            {{skill.displayDie}}
           {{else}}
             --
           {{/if}}
