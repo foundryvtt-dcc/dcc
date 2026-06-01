@@ -65,27 +65,35 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup → Legacy decommission — latest 2026-05-31.** Phase 7
-session 21 (full detail in *Recent slices*) started the **legacy-decom
-plan**: **step 1 (roll-under in the adapter)** is done. Roll-under is
-provably **Luck-only** (the only triggers gate on `lck`), so the luck
-case now routes through `_rollLuckCheckViaAdapter` → the lib's
-`rollLuckCheck` (naked d20, success ≤ Luck score), with a dedicated
-`renderAbilityCheckRollUnder` reproducing the legacy flag/flavor contract
-+ the `options.dcc.rollUnder` die-tag that drives chat highlighting. The
-`!!options.rollUnder` clause was dropped from **both** dispatcher gates;
-**saves never use roll-under** (audited — no caller passes it; the legacy
-save body never even implemented it), so that clause was dead. The
-now-unreachable roll-under branch was removed from `_rollAbilityCheckLegacy`.
-Repo green: **1329 Vitest** / **169 Playwright e2e passed**, zero failures.
+**Phase 7 cleanup → Legacy decommission — latest 2026-06-01.** Phase 7
+session 22 (full detail in *Recent slices*) landed **legacy-decom step 2
+— the modifier dialog for ability + save + init in the adapter**. Each
+dispatcher now surfaces the unified `promptRollModifierDialog` adapter-side
+(mirroring the skill-check dialog from Q7): on submit the user's flattened
+die + total route through the lib via `rollCheck` with a bare definition +
+a single `dialog-modifier` line (ability/save — bypassing the auto-add
+wrapper that would double-count the ability mod / save value the dialog
+total already includes), while **init returns the user's dialog-built Roll
+directly** (no lib round-trip — init has no crit/fumble and Foundry's
+`Combat#rollInitiative` posts the chat). The init landmine was handled:
+`getInitiativeRoll` stays **synchronous** for the combat tracker, and the
+async dialog branch (`_getInitiativeRollWithDialogViaAdapter`) is only
+reached via `rollInit`, which awaits. **Gate flips:** `rollSavingThrow` is
+now single-path adapter; `rollAbilityCheck`'s only surviving legacy gate is
+non-zero check-penalty (step 3); init's only legacy gate is gone. No lib
+change (ability/save lib APIs already accept `modifiers`; the init adapter
+path already used `rollCheck`). Repo green: **1338 Vitest** / **172
+Playwright e2e passed**, zero failures.
 
-**Remaining legacy-decom steps (2–5):** modifier-dialog for ability +
-save + init (step 2), non-zero check-penalty display (step 3),
-description-only skill items (step 4), then delete the four `_xxxLegacy`
-bodies + `_buildSkillCheckLegacyTerms` (step 5). See the *Legacy
-decommission* backlog subsection + *Next steps*. All PR #720 design calls
-remain closed (the error-boundary prerequisite landed session 20); the
-*test-coverage gaps* + *doc hygiene* lists are still open.
+**Remaining legacy-decom steps (3–5):** non-zero check-penalty display
+(step 3, the last `_rollAbilityCheckLegacy` gate), description-only skill
+items (step 4), then delete the now-dead `_rollSavingThrowLegacy` +
+`_getInitiativeRollLegacy` (fully unreachable after step 2) plus the
+remaining `_rollAbilityCheckLegacy` / `_rollSkillCheckLegacy` +
+`_buildSkillCheckLegacyTerms` (step 5). See the *Legacy decommission*
+backlog subsection + *Next steps*. All PR #720 design calls remain closed
+(the error-boundary prerequisite landed session 20); the *test-coverage
+gaps* + *doc hygiene* lists are still open.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -99,6 +107,58 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-01 — Phase 7 session 22: modifier dialog for ability + save +
+  init in the adapter (legacy-decom step 2 of 5).** Extended the unified
+  `promptRollModifierDialog` scaffold (Q7, previously serving skill + spell
+  checks) to the three remaining binary gates. **No lib change** — the
+  ability/save lib APIs already accept `options.modifiers`, and the init
+  adapter path already routed through `rollCheck`. Three new private helpers
+  (`_rollAbilityCheckWithDialog`, `_rollSavingThrowWithDialog`,
+  `_getInitiativeRollWithDialogViaAdapter`); each `_xxxViaAdapter` delegates
+  to its helper when `options.showModifierDialog`, after emitting the
+  generic `via adapter` dispatch log (so the e2e cancel-path assertions
+  still see the adapter branch — the helper emits a second `dialog=true`
+  line). **Ability/save** mirror the skill-check pattern exactly: build the
+  legacy-shaped dialog terms (action die + ability/save modifier; ability
+  also offers a 0 check-penalty toggle for str/agl), prompt, then on submit
+  build a **bare `rollCheck` definition** (no `roll.ability`) + a single
+  flat `dialog-modifier` line — bypassing the `rollAbilityCheck` /
+  `rollSavingThrow` convenience wrappers, which would auto-add the ability
+  mod / save value the dialog total *already includes* (the
+  double-count the skill path also avoids). Two-pass formula/evaluate,
+  render via the existing `renderAbilityCheck` / `renderSavingThrow` (the
+  `libRollCheck` result shape is identical to the wrapper's, so the chat
+  flag + DC-suffix contract is unchanged). **Init is simpler** — no lib
+  round-trip: init has no crit/fumble and Foundry's `Combat#rollInitiative`
+  posts the chat (with the `core.initiativeRoll` flag the emote handler
+  gates on), so the dialog path just builds the legacy term list (init die
+  incl. additive tail + weapon overrides, plus the flat init modifier) and
+  hands back **`prompt.roll`** — the user's dialog-built Roll — exactly as
+  `_getInitiativeRollLegacy` returned `DCCRoll.createRoll(...)`. **Init
+  landmine handled:** `getInitiativeRoll` must stay *synchronous* for the
+  combat tracker (`DCCCombatant.getInitiativeRoll` overrides Foundry core's
+  sync contract). The async dialog branch returns a `Promise<Roll>` through
+  the sync `withRollErrorBoundarySync`, but it's only ever reached via
+  `rollInit`, which `await`s it — matching the pre-step-2 legacy path, which
+  also returned a promise there. **Gate flips:** `rollSavingThrow` collapsed
+  to single-path adapter (legacy now fully dead); `rollAbilityCheck`'s only
+  surviving legacy gate is `hasNonZeroCheckPenalty` (step 3 — when a penalty
+  *and* a dialog both apply, legacy still wins and shows both); init's only
+  legacy gate is gone. The three `_xxxLegacy` bodies stay in place (now
+  unreachable for save+init) for the step-5 batch delete. +6 Vitest
+  (ability dialog + cancel; save dialog + DC-suffix + cancel; init flipped
+  ×2 to assert adapter routing + a new cancel test). +1 Playwright new
+  (`adapter-dispatch.spec.js`: a save dialog driven to **completion** —
+  clicks the dialog's Roll button, asserts the chat card's
+  `libResult.modifiers` carries the flattened `dialog-modifier` +2 from a
+  Sta-16 actor) + 3 Playwright flipped (ability/save/init `showModifierDialog
+  → adapter`). **1338 Vitest** (was 1329, +9 — includes dice-gated
+  integration cases that ran this session). **172 Playwright passed**, zero
+  failures (5.8-min full suite). `_rollAbilityCheckLegacy` is now kept alive
+  only by step 3 (check-penalty); `_rollSavingThrowLegacy` +
+  `_getInitiativeRollLegacy` are fully unreachable, awaiting the step-5
+  delete.
 
 - **2026-05-31 — Phase 7 session 21: roll-under in the adapter
   (legacy-decom step 1 of 5).** Started the user-directed legacy-decom
@@ -225,54 +285,6 @@ archives linked above.
   (was 1318, +1). **166 Playwright passed**, zero failures (was 165, +1;
   5.5-min full suite). PR #720 design calls: 3 → 2 left.
 
-- **2026-05-31 — Phase 7 session 17: resolve the spellburn floor-1-vs-0
-  design call in favor of RAW fidelity (floor 0) — the load-bearing fix was
-  the *schema*, not the adapter clamp; + an e2e smoke-test fast-fail; + lib
-  0.11.0 synced.** The PR #720 design call asked whether a physical ability
-  burned by spellburn floors at 1 or 0 (legacy + DCC RAW allow 0 — burning
-  Stamina to 0 is lethal, an intentional rules feature). Decided **floor 0**.
-  The floor turned out to live in **three** layers, peeled in order:
-  1. **Adapter write-sites** — two `Math.max(1, …)` clamps flipped to
-     `Math.max(0, …)`: the item-bound `onSpellburnApplied` bridge
-     (`adapter/spell-events.mjs`) and the **naked-cast inline deduct** in
-     `_castNakedViaAdapter` (`actor.js`, easy to miss — a raw check has no
-     `spellItem` to wire `createSpellEvents`, so it deducts inline).
-  2. **Data-model schema** — the *actual* persisted floor: `AbilityField.value`
-     was `NumberField({ min: 1 })`, so Foundry silently clamped the adapter's
-     0-write back to 1. Changed to `min: 0` (`max` keeps `min: 1` — a 0
-     ceiling is nonsensical). **This is the load-bearing change**; the
-     adapter clamps alone were cosmetic without it. The mocked unit tests
-     missed it (they don't run schema validation); the new burn-to-0
-     **browser test caught it live** (read 1, expected 0) — exactly the
-     regression net the suite exists for.
-  3. **Lib utilities** — `validateSpellburn` / `getMaxSpellburn` /
-     `applyBurnToAbility` floors moved 1→0 in `@moonloch/dcc-core-lib`
-     (PR moonloch/dcc-core-lib#8, **merged**, v0.11.0; `631f250`). These are
-     RAW-correctness / landmine-removal — **not in the cast path** (nothing
-     calls them), so behavior never depended on them; fixed per the "fix it
-     in dcc-core-lib" rule for any future consumer. New dedicated
-     `spellburn.test.ts` (10 tests) in the lib.
-  Vendor **synced** (`npm run sync-core-lib` → `module/vendor/dcc-core-lib/`
-  at 0.11.0/`631f250`); the sync also pruned 28 stale `data/classes/*-progression.*`
-  files (pre-registry build artifacts vendored at the Phase 0 `fddcf04` sync,
-  provably unused — `data/classes/index.js` only re-exports `progression-utils.js`).
-  Separately, **added an e2e smoke-test fast-fail** (`browser-tests/e2e/global-setup.js`
-  + a defense-in-depth check in `fixtures.js login()`): when Foundry is down or a
-  GM is already logged in (the "Gamemaster" `/join` option is disabled), the run
-  now aborts in ~10 s with an actionable message instead of letting all ~165 tests
-  each burn the 60 s setup timeout (~25 min). This was prompted by exactly that
-  happening this session. The 20 s picker-wait avoids false-fails on a slow world
-  boot (verified: passes when joinable, fast-fails when blocked). Also corrected the
-  stale `/Users/timwhite` → `/Users/timlwhite` username across CLAUDE.md, the sync
-  script, and docs (this machine's checkout is under `timlwhite`), and cloned the
-  lib source to `/Users/timlwhite/WebstormProjects/dcc-core-lib` (it was absent).
-  Tests: +2 Vitest (item-bridge burn-to-0 + oversized-burn-clamps-at-0, replacing
-  the old floor-1 assertion) +1 Vitest (naked-path burn-to-0) +1 integration
-  (`data-models.test.js`: real-`NumberField` value 0 accepted, −3 clamps to 0,
-  `max` 0→1). +1 Playwright (`adapter-dispatch.spec.js`: live Wizard burns Stamina
-  3 → 0, asserts 0 not 1). **1318 Vitest** (was 1309). **165 Playwright passed**,
-  zero failures (5.9-min full suite, smoke-gated).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -392,12 +404,15 @@ legacy-branch-retirement principle (decision #7 — Foundry-facing API
 stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
 coverage is exhaustive for their gate). Group D already retired
 attack / crit / fumble / damage; the spell-check legacy wrapper went in
-session 16. Step 1 (roll-under) landed session 21; **three `_xxxLegacy`
-bodies plus the ability legacy's two remaining gate-clauses remain**,
-each kept alive only by the option-flag(s) in its dispatcher gate.
-Retiring them is gated on moving those capabilities into the adapter
-first — sequence the work by the shared capability, not by the method,
-since one capability unblocks several gates at once:
+session 16. Step 1 (roll-under) landed session 21; step 2 (modifier
+dialog) landed session 22. **After step 2, `_rollSavingThrowLegacy` +
+`_getInitiativeRollLegacy` are fully unreachable (awaiting the step-5
+delete); `_rollAbilityCheckLegacy` is kept alive only by step 3
+(check-penalty); `_rollSkillCheckLegacy` only by step 4
+(description-only skill items).** Retiring them is gated on moving those
+capabilities into the adapter first — sequence the work by the shared
+capability, not by the method, since one capability unblocks several
+gates at once:
 
 1. ~~**Roll-under in the adapter.**~~ **DONE 2026-05-31 (Phase 7 session
    21).** Roll-under is provably **Luck-only** (all triggers gate on
@@ -411,17 +426,30 @@ since one capability unblocks several gates at once:
    clause was dropped from both gates (inert on saves now). The
    now-unreachable roll-under branch was removed from
    `_rollAbilityCheckLegacy`. No lib change needed (the lib API already
-   existed). See Recent slices. **`_rollAbilityCheckLegacy` is now kept
-   alive only by step 2 (`showModifierDialog`) + step 3 (check-penalty);
-   `_rollSavingThrowLegacy` only by step 2.**
-2. **Modifier-dialog for ability + save + init.** Blocks the
-   `!!options.showModifierDialog` clause in `_rollAbilityCheckLegacy`,
-   `_rollSavingThrowLegacy`, and `_getInitiativeRollLegacy`. The
-   pattern already exists — Q7 (sessions 26–27) wired
-   `promptRollModifierDialog` adapter-side for skill + spell checks.
-   This extends the same dialog to the three remaining binary gates.
-   Biggest single unblock: clears the only gate on init, and one of
-   two clauses on ability + save.
+   existed). See Recent slices.
+2. ~~**Modifier-dialog for ability + save + init.**~~ **DONE 2026-06-01
+   (Phase 7 session 22).** Extended the unified `promptRollModifierDialog`
+   scaffold (Q7) to the three remaining binary gates via three new private
+   helpers (`_rollAbilityCheckWithDialog`, `_rollSavingThrowWithDialog`,
+   `_getInitiativeRollWithDialogViaAdapter`). Ability/save mirror the
+   skill-check pattern: legacy-shaped dialog terms → prompt → **bare
+   `rollCheck` definition** (no `roll.ability`) + a single flat
+   `dialog-modifier` line, bypassing the auto-add wrapper that would
+   double-count the ability mod / save value the dialog total already
+   includes. **Init takes no lib round-trip** — no crit/fumble + Foundry
+   posts the chat — so it hands back the user's dialog-built `Roll`
+   (`prompt.roll`), exactly as the legacy path returned `DCCRoll.createRoll`.
+   **Init landmine:** `getInitiativeRoll` stays *sync* for the combat
+   tracker; the async dialog branch returns a `Promise<Roll>` and is only
+   reached via `rollInit`, which awaits (matching the pre-step-2 legacy
+   contract). **No lib change** — ability/save lib APIs already accept
+   `options.modifiers`, and the init adapter path already used `rollCheck`.
+   **Gate flips:** `rollSavingThrow` is single-path adapter;
+   `rollAbilityCheck`'s only surviving legacy gate is `hasNonZeroCheckPenalty`
+   (step 3); init's only legacy gate is gone. +6 Vitest, +1 Playwright new
+   (save dialog driven to completion) + 3 flipped. See Recent slices.
+   **`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` are now fully
+   unreachable; `_rollAbilityCheckLegacy` is kept alive only by step 3.**
 3. **Non-zero check-penalty display in the adapter.** Blocks the last
    clause of `_rollAbilityCheckLegacy` (str/agl with a non-zero armor
    check penalty render a penalty term). Adapter must surface the
@@ -593,19 +621,22 @@ Dependency notes / landmines:
 
 **PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
 roll paths.** See the *Legacy decommission* subsection in the PR #720
-backlog above for the sequenced 5-step plan. **Step 1 (roll-under) +
-the error-boundaries prerequisite are both DONE** (sessions 21 + 20).
-**Next up is step 2 — modifier-dialog for ability + save + init**: extend
-the existing `promptRollModifierDialog` scaffold (Q7 sessions 26–27, today
-serving skill + spell checks) to the three remaining binary gates. It's
-the biggest single unblock — it clears the *only* gate on
-`_getInitiativeRollLegacy` and one of two clauses on both
-`_rollAbilityCheckLegacy` and `_rollSavingThrowLegacy`. Then step 3
-(non-zero check-penalty display, the last ability clause), step 4
-(description-only skill items), step 5 (delete the three remaining
-`_xxxLegacy` bodies + `_buildSkillCheckLegacyTerms` + add retirement-guard
-tests). Any lib capability gap (modifier-dialog term threading) lands as a
-`dcc-core-lib` PR first, then `npm run sync-core-lib`.
+backlog above for the sequenced 5-step plan. **Steps 1 (roll-under) + 2
+(modifier dialog) + the error-boundaries prerequisite are all DONE**
+(sessions 21 + 22 + 20). **Next up is step 3 — non-zero check-penalty
+display in the adapter**: this is the *only* surviving gate on
+`_rollAbilityCheckLegacy` (str/agl with a non-zero armor check penalty
+render a labelled penalty term). The adapter must surface that penalty as
+a modifier in the chat breakdown — the `buildModifierBreakdownHtml`
+machinery (chat-renderer) can likely carry it; the lib's `rollCheck`
+accepts a `display`-kind modifier the renderer already knows how to
+render. Then step 4 (description-only skill items, the last
+`_rollSkillCheckLegacy` gate), then step 5 (delete the now-dead
+`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` + the remaining
+`_rollAbilityCheckLegacy` / `_rollSkillCheckLegacy` +
+`_buildSkillCheckLegacyTerms`, collapse each dispatcher, add
+retirement-guard tests). Any lib capability gap lands as a `dcc-core-lib`
+PR first, then `npm run sync-core-lib` (step 2 needed none).
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
 fully closed; open questions #2, #3, #4, and #7 all closed

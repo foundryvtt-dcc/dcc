@@ -7,8 +7,10 @@
  *     which asks the lib for a formula via rollCheck(mode:'formula')
  *     and returns a Foundry `Roll`.
  *   - `options.showModifierDialog: true` routes to
- *     `_getInitiativeRollLegacy`, which builds structured DCCRoll
- *     terms (preset-die support required by the dialog).
+ *     `_getInitiativeRollWithDialogViaAdapter` (legacy-decom step 2),
+ *     which builds the same structured DCCRoll terms and surfaces the
+ *     unified modifier dialog adapter-side via `promptRollModifierDialog`,
+ *     handing back the user's dialog-built Roll.
  *   - `formula instanceof Roll` short-circuits — Foundry's combat flow
  *     reuses a pre-built Roll across combatants.
  *
@@ -98,12 +100,17 @@ test('adapter path annotates the die with the two-handed label when such a weapo
   }
 })
 
-test('legacy path kicks in when showModifierDialog is set and invokes DCCRoll.createRoll', () => {
+test('showModifierDialog routes to the adapter dialog and builds DCCRoll terms', async () => {
+  // Legacy-decom step 2: the dialog no longer routes to
+  // `_getInitiativeRollLegacy`. The adapter surfaces the same modifier
+  // dialog via `promptRollModifierDialog` (which wraps DCCRoll.createRoll)
+  // and hands back the user's dialog-built Roll. The term shape + dialog
+  // request are unchanged — only the dispatch path moved.
   dccRollCreateRollMock.mockClear()
   actor.system.attributes.init.die = '1d20'
   actor.system.attributes.init.value = -1
 
-  actor.getInitiativeRoll(null, { showModifierDialog: true })
+  const result = await actor.getInitiativeRoll(null, { showModifierDialog: true })
 
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
   const [terms, , options] = dccRollCreateRollMock.mock.calls[0]
@@ -115,20 +122,37 @@ test('legacy path kicks in when showModifierDialog is set and invokes DCCRoll.cr
     title: 'Initiative',
     showModifierDialog: true
   }))
+  // Init has no crit/fumble + Foundry posts the chat, so the adapter
+  // dialog path returns the user's Roll directly (no lib round-trip).
+  expect(result).toBeInstanceOf(Roll)
 })
 
-test('legacy path kicks in for the bitwise-XOR truthy showModifierDialog: 1', () => {
+test('showModifierDialog routes to the adapter for the bitwise-XOR truthy value 1', async () => {
   // The sheet's fillRollOptions builds showModifierDialog via bitwise XOR,
-  // which yields 0 or 1 (not true/false). The dispatcher's `needsLegacyPath`
-  // gate uses `!!` so the numeric `1` still routes to legacy — mirrors the
-  // rollAbilityCheck / rollSavingThrow binary-gate idiom.
+  // which yields 0 or 1 (not true/false). The dispatcher's `if
+  // (options.showModifierDialog)` gate treats the numeric `1` as truthy —
+  // mirrors the rollAbilityCheck / rollSavingThrow idiom.
   dccRollCreateRollMock.mockClear()
   actor.system.attributes.init.die = '1d20'
   actor.system.attributes.init.value = -1
 
-  actor.getInitiativeRoll(null, { showModifierDialog: 1 })
+  await actor.getInitiativeRoll(null, { showModifierDialog: 1 })
 
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+})
+
+test('adapter dialog path returns null when the initiative dialog is cancelled', async () => {
+  // RollModifierDialog cancel resolves DCCRoll.createRoll with null;
+  // the adapter forwards that as null so `rollInit` falls back to its
+  // default (no pre-built formula) initiative.
+  dccRollCreateRollMock.mockClear()
+  dccRollCreateRollMock.mockImplementationOnce(() => null)
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = -1
+
+  const result = await actor.getInitiativeRoll(null, { showModifierDialog: true })
+
+  expect(result).toBeNull()
 })
 
 test('adapter path re-appends an additive init-die tail (Mutant Horror 1d20+1d3)', () => {

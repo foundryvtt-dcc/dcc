@@ -127,3 +127,72 @@ test('rollUnder tags the rolled die with roll-under thresholds from the Luck sco
 
   chatMessageCreateSpy.mockRestore()
 })
+
+// Legacy-decom step 2: the modifier dialog no longer routes ability
+// checks to `_rollAbilityCheckLegacy`. The adapter surfaces the unified
+// `RollModifierDialog` via `promptRollModifierDialog`, then folds the
+// user's flattened die + total into a `rollCheck` pass (bare definition
+// + one `dialog-modifier` line, suppressing the lib's auto-ability add
+// since the dialog total already includes the ability mod).
+test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // Simulate the user submitting the dialog with a bumped die (1d24) and
+  // a +3 total (Luck 18 → +3 ability mod). Same Roll shape the real
+  // dialog yields.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d24+3',
+    total: 14,
+    dice: [{ results: [11], total: 11, options: {} }],
+    options: { dcc: {} },
+    terms: [
+      { class: 'Die', formula: '1d24', number: 1, faces: 24 },
+      { class: 'OperatorTerm', operator: '+' },
+      { class: 'NumericTerm', number: 3 }
+    ],
+    _evaluated: true
+  }))
+
+  await actor.rollAbilityCheck('lck', { showModifierDialog: true })
+
+  // The dialog was surfaced adapter-side (through DCCRoll.createRoll).
+  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  const createCall = global.dccRollCreateRollMock.mock.calls[0]
+  const termsArg = createCall[0]
+  expect(Array.isArray(termsArg)).toBe(true)
+  // Action-die term + the Luck ability modifier term are present.
+  expect(termsArg.some(t => t.type === 'Die' && t.formula === '1d20')).toBe(true)
+  expect(termsArg.some(t => t.type === 'Modifier' && t.formula === '+3')).toBe(true)
+  // lck is not str/agl, so NO check-penalty term is offered.
+  expect(termsArg.some(t => t.type === 'CheckPenalty')).toBe(false)
+  expect(createCall[2].showModifierDialog).toBe(true)
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('AbilityCheck')
+  expect(messageData.flags['dcc.Ability']).toBe('lck')
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  // Die was bumped to d24 by the dialog.
+  expect(libResult.die).toBe('d24')
+  // Per-source attribution collapsed to one flat `dialog-modifier` line.
+  const dialogMod = libResult.modifiers.find(m => m.origin?.id === 'dialog-modifier')
+  expect(dialogMod).toBeDefined()
+  expect(dialogMod.kind).toBe('add')
+  expect(dialogMod.value).toBe(3)
+})
+
+test('adapter path returns undefined when the ability-check dialog is cancelled', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // RollModifierDialog cancel resolves with `null`.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => null)
+
+  const result = await actor.rollAbilityCheck('lck', { showModifierDialog: true })
+
+  expect(result).toBeUndefined()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+})

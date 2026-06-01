@@ -108,6 +108,91 @@ test('adapter path returns the Foundry Roll (preserves legacy return shape)', as
   expect(result.total).toBeDefined()
 })
 
+// Legacy-decom step 2: the modifier dialog no longer routes saving
+// throws to `_rollSavingThrowLegacy`. The adapter surfaces the unified
+// `RollModifierDialog` via `promptRollModifierDialog`, then folds the
+// user's flattened die + total into a `rollCheck` pass (bare definition
+// + one `dialog-modifier` line, suppressing the lib's auto-save-value
+// add since the dialog total already includes the save modifier).
+test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // Simulate the user submitting the dialog with a +5 total. Same Roll
+  // shape the real dialog yields.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20+5',
+    total: 15,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [
+      { class: 'Die', formula: '1d20', number: 1, faces: 20 },
+      { class: 'OperatorTerm', operator: '+' },
+      { class: 'NumericTerm', number: 5 }
+    ],
+    _evaluated: true
+  }))
+
+  await actor.rollSavingThrow('wil', { showModifierDialog: true })
+
+  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  const createCall = global.dccRollCreateRollMock.mock.calls[0]
+  const termsArg = createCall[0]
+  expect(Array.isArray(termsArg)).toBe(true)
+  // Fixed 1d20 die + the Will save modifier term (wil = +2).
+  expect(termsArg.some(t => t.type === 'Die' && t.formula === '1d20')).toBe(true)
+  expect(termsArg.some(t => t.type === 'Modifier' && t.formula === '+2')).toBe(true)
+  expect(createCall[2].showModifierDialog).toBe(true)
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SavingThrow')
+  expect(messageData.flags['dcc.Save']).toBe('wil')
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  expect(libResult.die).toBe('d20')
+  // Per-source attribution collapsed to one flat `dialog-modifier` line.
+  const dialogMod = libResult.modifiers.find(m => m.origin?.id === 'dialog-modifier')
+  expect(dialogMod).toBeDefined()
+  expect(dialogMod.kind).toBe('add')
+  expect(dialogMod.value).toBe(5)
+})
+
+test('adapter dialog path still renders the DC success / failure suffix', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // User-submitted dialog total of +0; lib formula totals 10 (mock Roll).
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20',
+    total: 10,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+    _evaluated: true
+  }))
+
+  await actor.rollSavingThrow('ref', { showModifierDialog: true, dc: 15 })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  // Mock Roll totals 10 → DC 15 fails; the suffix rides on the flavor
+  // exactly as the non-dialog adapter path renders it.
+  expect(messageData.flavor).toContain('Failure')
+})
+
+test('adapter path returns undefined when the saving-throw dialog is cancelled', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  global.dccRollCreateRollMock.mockImplementationOnce(() => null)
+
+  const result = await actor.rollSavingThrow('wil', { showModifierDialog: true })
+
+  expect(result).toBeUndefined()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+})
+
 // Regression: Cheesemaker repro — sheet shows Fortitude +1, rolled
 // formula must be `1d20 + 1`. Previously the lib's save definition
 // auto-added the governing ability mod on top of `state.saves.*` (which

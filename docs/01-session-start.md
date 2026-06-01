@@ -40,21 +40,28 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-05-31)
+## Status (2026-06-01)
 
-**Latest — Phase 7 session 21 (legacy-decom step 1 of 5: roll-under in
-the adapter).** All PR #720 *design calls* are closed (the error-boundary
-prerequisite landed session 20: `withRollErrorBoundary` wraps all six
-public dispatchers, fail-loud notify + rethrow). The user-directed
-priority is now the **Legacy decommission** plan (see `00-progress.md`
-*Legacy decommission* subsection). Session 21 did **step 1**: roll-under
-is provably Luck-only, so it routes through `_rollLuckCheckViaAdapter` →
-the lib's `rollLuckCheck` + a dedicated `renderAbilityCheckRollUnder`
-(reproduces the legacy flag/flavor contract + the `terms[0].options.dcc.rollUnder`
-highlight tag). Saves audited as never using roll-under (dead clause
-dropped from both gates). **Next: step 2 — extend `promptRollModifierDialog`
-to ability + save + init** (the biggest single unblock). Repo green:
-**1329 Vitest** / **169 Playwright e2e passed**, zero failures.
+**Latest — Phase 7 session 22 (legacy-decom step 2 of 5: modifier dialog
+for ability + save + init in the adapter).** All PR #720 *design calls*
+are closed (error-boundary prerequisite landed session 20). The
+user-directed priority is the **Legacy decommission** plan (see
+`00-progress.md` *Legacy decommission* subsection). Session 22 did
+**step 2**: each of `rollAbilityCheck` / `rollSavingThrow` /
+`getInitiativeRoll` now surfaces the unified `promptRollModifierDialog`
+adapter-side via three new helpers. Ability/save mirror the skill dialog
+(bare `rollCheck` definition + a single flat `dialog-modifier` line,
+avoiding the auto-add double-count); **init hands back the user's
+dialog-built Roll** (no lib round-trip — Foundry posts the init chat).
+**Init landmine handled:** `getInitiativeRoll` stays *sync* for the combat
+tracker; the async dialog branch is only reached via `rollInit`, which
+awaits. **No lib change** (ability/save lib APIs already accept
+`modifiers`; init already used `rollCheck`). `rollSavingThrow` is now
+single-path adapter; `rollAbilityCheck`'s only legacy gate left is
+non-zero check-penalty. **Next: step 3 — non-zero check-penalty display in
+the adapter** (the last `_rollAbilityCheckLegacy` gate; surface the
+penalty via `buildModifierBreakdownHtml`). Repo green: **1338 Vitest** /
+**172 Playwright e2e passed**, zero failures.
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

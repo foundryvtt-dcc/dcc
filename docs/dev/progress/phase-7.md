@@ -972,3 +972,51 @@
   in the v14 world** (pin-pointed via the boot log — the level pack never
   connected; nothing to do with this slice); re-enabling the module +
   rebooting → fully green.
+
+- **2026-05-31 — Phase 7 session 17: resolve the spellburn floor-1-vs-0
+  design call in favor of RAW fidelity (floor 0) — the load-bearing fix was
+  the *schema*, not the adapter clamp; + an e2e smoke-test fast-fail; + lib
+  0.11.0 synced.** The PR #720 design call asked whether a physical ability
+  burned by spellburn floors at 1 or 0 (legacy + DCC RAW allow 0 — burning
+  Stamina to 0 is lethal, an intentional rules feature). Decided **floor 0**.
+  The floor turned out to live in **three** layers, peeled in order:
+  1. **Adapter write-sites** — two `Math.max(1, …)` clamps flipped to
+     `Math.max(0, …)`: the item-bound `onSpellburnApplied` bridge
+     (`adapter/spell-events.mjs`) and the **naked-cast inline deduct** in
+     `_castNakedViaAdapter` (`actor.js`, easy to miss — a raw check has no
+     `spellItem` to wire `createSpellEvents`, so it deducts inline).
+  2. **Data-model schema** — the *actual* persisted floor: `AbilityField.value`
+     was `NumberField({ min: 1 })`, so Foundry silently clamped the adapter's
+     0-write back to 1. Changed to `min: 0` (`max` keeps `min: 1` — a 0
+     ceiling is nonsensical). **This is the load-bearing change**; the
+     adapter clamps alone were cosmetic without it. The mocked unit tests
+     missed it (they don't run schema validation); the new burn-to-0
+     **browser test caught it live** (read 1, expected 0) — exactly the
+     regression net the suite exists for.
+  3. **Lib utilities** — `validateSpellburn` / `getMaxSpellburn` /
+     `applyBurnToAbility` floors moved 1→0 in `@moonloch/dcc-core-lib`
+     (PR moonloch/dcc-core-lib#8, **merged**, v0.11.0; `631f250`). These are
+     RAW-correctness / landmine-removal — **not in the cast path** (nothing
+     calls them), so behavior never depended on them; fixed per the "fix it
+     in dcc-core-lib" rule for any future consumer. New dedicated
+     `spellburn.test.ts` (10 tests) in the lib.
+  Vendor **synced** (`npm run sync-core-lib` → `module/vendor/dcc-core-lib/`
+  at 0.11.0/`631f250`); the sync also pruned 28 stale `data/classes/*-progression.*`
+  files (pre-registry build artifacts vendored at the Phase 0 `fddcf04` sync,
+  provably unused — `data/classes/index.js` only re-exports `progression-utils.js`).
+  Separately, **added an e2e smoke-test fast-fail** (`browser-tests/e2e/global-setup.js`
+  + a defense-in-depth check in `fixtures.js login()`): when Foundry is down or a
+  GM is already logged in (the "Gamemaster" `/join` option is disabled), the run
+  now aborts in ~10 s with an actionable message instead of letting all ~165 tests
+  each burn the 60 s setup timeout (~25 min). This was prompted by exactly that
+  happening this session. The 20 s picker-wait avoids false-fails on a slow world
+  boot (verified: passes when joinable, fast-fails when blocked). Also corrected the
+  stale `/Users/timwhite` → `/Users/timlwhite` username across CLAUDE.md, the sync
+  script, and docs (this machine's checkout is under `timlwhite`), and cloned the
+  lib source to `/Users/timlwhite/WebstormProjects/dcc-core-lib` (it was absent).
+  Tests: +2 Vitest (item-bridge burn-to-0 + oversized-burn-clamps-at-0, replacing
+  the old floor-1 assertion) +1 Vitest (naked-path burn-to-0) +1 integration
+  (`data-models.test.js`: real-`NumberField` value 0 accepted, −3 clamps to 0,
+  `max` 0→1). +1 Playwright (`adapter-dispatch.spec.js`: live Wizard burns Stamina
+  3 → 0, asserts 0 not 1). **1318 Vitest** (was 1309). **165 Playwright passed**,
+  zero failures (5.9-min full suite, smoke-gated).

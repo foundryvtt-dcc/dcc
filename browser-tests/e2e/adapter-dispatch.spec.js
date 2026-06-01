@@ -205,13 +205,20 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(card.dcc.upperThreshold).toBe(15)
     })
 
-    test('showModifierDialog flag → legacy', async ({ page }) => {
+    // Legacy-decom step 2: the modifier dialog no longer routes ability
+    // checks to legacy. The adapter surfaces the same RollModifierDialog
+    // via `promptRollModifierDialog`, then folds the user's choice into a
+    // `rollCheck` pass. Dispatch fires at the start of
+    // `_rollAbilityCheckViaAdapter` before the (blocking) dialog shows —
+    // fireAndForget dismisses it with Escape so the run continues. (No
+    // armor check penalty on a fresh player, so str stays on the adapter.)
+    test('showModifierDialog flag → adapter (legacy-decom step 2)', async ({ page }) => {
       await makePlayer(page, 'P1 Ability Dialog')
       await fireAndForget(page, async () => {
         game.actors.getName('P1 Ability Dialog').rollAbilityCheck('str', { showModifierDialog: true })
       })
       const line = await waitForAdapterLog('rollAbilityCheck')
-      assertPath(line, 'legacy', { abilityId: 'str' })
+      assertPath(line, 'adapter', { abilityId: 'str' })
     })
 
     // Phase 7 session 14: the per-modifier breakdown the adapter
@@ -292,13 +299,72 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { saveId: 'wil' })
     })
 
-    test('showModifierDialog flag → legacy', async ({ page }) => {
+    // Legacy-decom step 2: the modifier dialog no longer routes saves to
+    // legacy. The adapter surfaces the RollModifierDialog and folds the
+    // user's choice into a `rollCheck` pass; dispatch fires before the
+    // (blocking) dialog, fireAndForget dismisses it with Escape.
+    test('showModifierDialog flag → adapter (legacy-decom step 2)', async ({ page }) => {
       await makePlayer(page, 'P1 Save Dialog')
       await fireAndForget(page, async () => {
         game.actors.getName('P1 Save Dialog').rollSavingThrow('frt', { showModifierDialog: true })
       })
       const line = await waitForAdapterLog('rollSavingThrow')
-      assertPath(line, 'legacy', { saveId: 'frt' })
+      assertPath(line, 'adapter', { saveId: 'frt' })
+    })
+
+    // Stronger end-to-end: drive the dialog to completion (click its
+    // Roll button) rather than cancelling, and assert the posted chat
+    // card carries the flattened `dialog-modifier` in flags.dcc.libResult.
+    // Sta 16 → +2 Fortitude save, so the dialog's Modifier term flattens
+    // to a single +2 dialog-modifier line on submit.
+    test('showModifierDialog completes → adapter chat carries the flattened modifier', async ({ page }) => {
+      await makePlayer(page, 'P1 Save Dialog Done', {
+        abilities: { sta: { value: 16, max: 16 } }
+      })
+      // Fire the roll; it blocks on the modifier dialog.
+      await page.evaluate(() => {
+        window.__saveDialogPromise = game.actors
+          .getName('P1 Save Dialog Done')
+          .rollSavingThrow('frt', { showModifierDialog: true })
+      })
+      // Submit the dialog with its default values.
+      const rollBtn = page.locator('.dcc-roll-modifier button.roll').first()
+      await rollBtn.waitFor({ state: 'visible', timeout: 5000 })
+      await rollBtn.click()
+
+      const line = await waitForAdapterLog('rollSavingThrow')
+      assertPath(line, 'adapter', { saveId: 'frt' })
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 4000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Save Dialog Done' &&
+              m.getFlag('dcc', 'isSave') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) {
+            const libResult = msg.getFlag('dcc', 'libResult')
+            return {
+              die: libResult.die,
+              modifiers: libResult.modifiers ?? null
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(card, 'completed save dialog must post a chat message').not.toBeNull()
+      expect(card.die).toBe('d20')
+      // The per-source save modifier collapsed to one flat dialog-modifier
+      // line carrying the +2 Fortitude bonus the user saw in the dialog.
+      const dialogMod = (card.modifiers || []).find(m => m.origin?.id === 'dialog-modifier')
+      expect(dialogMod, 'dialog must flatten to a dialog-modifier line').toBeDefined()
+      expect(dialogMod.value).toBe(2)
     })
 
     // Cheesemaker repro — sheet shows Fortitude +1 (sta 14 → mod +1,
@@ -546,13 +612,19 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { die: '1d20' })
     })
 
-    test('showModifierDialog flag → legacy', async ({ page }) => {
+    // Legacy-decom step 2: the modifier dialog no longer routes init to
+    // legacy. `getInitiativeRoll` stays synchronous for the combat-tracker
+    // path, but the dialog branch (reached only via `rollInit`, which
+    // awaits) routes through `_getInitiativeRollWithDialogViaAdapter`,
+    // which logs `dialog=true` before the (blocking) dialog opens. The
+    // afterEach hook closes the open dialog window.
+    test('showModifierDialog flag → adapter (legacy-decom step 2)', async ({ page }) => {
       await makePlayer(page, 'P1 Init Dialog')
       await page.evaluate(() => {
         game.actors.getName('P1 Init Dialog').getInitiativeRoll(null, { showModifierDialog: true })
       })
       const line = await waitForAdapterLog('rollInit')
-      assertPath(line, 'legacy')
+      assertPath(line, 'adapter', { dialog: true })
     })
 
     test('pre-built Roll short-circuits without dispatch log', async ({ page }) => {

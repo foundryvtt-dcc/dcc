@@ -965,13 +965,15 @@ class DCCActor extends Actor {
         (abilityId === 'str' || abilityId === 'agl') &&
         checkPenaltyValue !== 0
 
-      // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
-      // which returns 0 or 1, not true/false. Strict === would miss those.
-      const needsLegacyPath =
-        !!options.showModifierDialog ||
-        hasNonZeroCheckPenalty
-
-      if (needsLegacyPath) {
+      // A non-zero armor check penalty (str/agl) still renders its
+      // labelled penalty term via the legacy term-builder; legacy-decom
+      // step 3 moves that display into the adapter. The modifier dialog
+      // itself is now handled adapter-side (step 2) inside
+      // `_rollAbilityCheckViaAdapter`, so `showModifierDialog` no longer
+      // forces the legacy path. When BOTH a penalty and a dialog apply,
+      // legacy still wins and surfaces both (its dialog terms include the
+      // CheckPenalty toggle).
+      if (hasNonZeroCheckPenalty) {
         return this._rollAbilityCheckLegacy(abilityId, options)
       }
 
@@ -991,6 +993,14 @@ class DCCActor extends Actor {
     const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
 
     const character = actorToCharacter(this)
+
+    // Roll-modifier dialog (legacy-decom step 2): mirror the skill-check
+    // adapter dialog. Build the legacy ability-check term list, surface
+    // the unified modifier dialog adapter-side, then route the user's
+    // flattened die + total through the lib via `rollCheck`.
+    if (options.showModifierDialog) {
+      return this._rollAbilityCheckWithDialog(abilityId, options, abilityLabel, character)
+    }
 
     // Pass 1: ask the lib for the formula it wants rolled (no evaluation).
     const plan = libRollAbilityCheck(abilityId, character, {
@@ -1017,6 +1027,109 @@ class DCCActor extends Actor {
       mode: 'evaluate',
       roller: () => natural,
       luckBurn: options.luckBurn
+    })
+
+    return renderAbilityCheck({
+      actor: this,
+      abilityId,
+      abilityLabel,
+      result,
+      foundryRoll
+    })
+  }
+
+  /**
+   * Roll-modifier-dialog branch of the ability-check adapter path
+   * (legacy-decom step 2). The dialog term list mirrors the legacy
+   * `_rollAbilityCheckLegacy` builder (action die + ability modifier,
+   * plus a 0 check-penalty toggle for str/agl when penalties are
+   * computed — a non-zero penalty routes to legacy via the dispatcher
+   * gate, so any penalty reaching here is 0).
+   *
+   * On submit, the user's chosen die overrides the lib definition and
+   * the per-source modifier list collapses to a single flat total — the
+   * dialog flattens every non-die term on submit, losing per-source
+   * attribution, so (like the skill-check dialog) we route through
+   * `rollCheck` with a bare definition + one `dialog-modifier` line
+   * rather than the `rollAbilityCheck` wrapper (which would auto-add the
+   * ability mod the dialog total already includes).
+   * @private
+   */
+  async _rollAbilityCheckWithDialog (abilityId, options, abilityLabel, character) {
+    const ability = this.system.abilities[abilityId]
+    const abilityMod = CONFIG.DCC.abilityModifiers[ability.value] || 0
+    const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+    const die = this.system.attributes.actionDice.value || '1d20'
+
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      },
+      {
+        type: 'Modifier',
+        label: abilityLabel,
+        formula: ensurePlus(abilityMod)
+      }
+    ]
+    if (this.system.config?.computeCheckPenalty && (abilityId === 'str' || abilityId === 'agl')) {
+      terms.push({
+        type: 'CheckPenalty',
+        formula: ensurePlus(this.system.attributes.ac.checkPenalty || '0'),
+        apply: false
+      })
+    }
+
+    const prompt = await promptRollModifierDialog(terms, {
+      rollData: this.getRollData(),
+      title: options.title || flavor,
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+    })
+    if (prompt === null) return
+
+    const libDie = (prompt.actionDie && this._stripDieCount(prompt.actionDie)) ||
+      this._stripDieCount(die) || 'd20'
+
+    const definition = {
+      id: `ability-${abilityId}`,
+      name: abilityLabel,
+      type: 'check',
+      roll: { die: libDie }
+    }
+
+    const modifiers = []
+    if (prompt.modifierTotal !== 0) {
+      modifiers.push({
+        kind: 'add',
+        value: prompt.modifierTotal,
+        origin: {
+          category: 'other',
+          id: 'dialog-modifier',
+          label: options.title || flavor
+        }
+      })
+    }
+
+    logDispatch('rollAbilityCheck', 'adapter', {
+      abilityId,
+      dialog: true,
+      actionDie: prompt.actionDie,
+      modifierTotal: prompt.modifierTotal
+    })
+
+    // Pass 1: lib builds the formula (no evaluation).
+    const plan = libRollCheck(definition, character, { mode: 'formula', modifiers })
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies against the rolled natural.
+    const result = libRollCheck(definition, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      modifiers
     })
 
     return renderAbilityCheck({
@@ -1182,9 +1295,10 @@ class DCCActor extends Actor {
    * crit/fumble semantics, so there's no pass-2 classification; the
    * chat message is emitted by Foundry's core `Combat#rollInitiative`
    * (with the `core.initiativeRoll` flag that `emoteInitiativeRoll`
-   * gates on). The dialog path falls through to the legacy body below,
-   * which preserves the structured-term shape the modifier dialog
-   * relies on.
+   * gates on). The dialog path routes through
+   * `_getInitiativeRollWithDialogViaAdapter`, which surfaces the unified
+   * modifier dialog adapter-side and hands back the user's dialog-built
+   * Roll (legacy-decom step 2).
    *
    * Return shape is unchanged: a Foundry `Roll` the combat tracker
    * evaluates.
@@ -1200,13 +1314,16 @@ class DCCActor extends Actor {
         return formula
       }
 
-      // Truthy check — the sheet's fillRollOptions uses bitwise XOR, which
-      // returns 0 or 1, not true/false. Matches the `needsLegacyPath`
-      // binary-gate idiom in rollAbilityCheck / rollSavingThrow.
-      const needsLegacyPath = !!options.showModifierDialog
-
-      if (needsLegacyPath) {
-        return this._getInitiativeRollLegacy(options)
+      // Roll-modifier dialog (legacy-decom step 2). The dialog is async
+      // and is only ever reached via `rollInit`, which awaits the
+      // returned promise — so the dialog branch returns a Promise<Roll>
+      // through this sync boundary (matching the pre-step-2 legacy path,
+      // which also returned a promise here). The combat-tracker path (no
+      // dialog) stays synchronous so `DCCCombatant.getInitiativeRoll` can
+      // hand back a `Roll` directly. Truthy check — the sheet's
+      // fillRollOptions uses bitwise XOR, which returns 0 or 1.
+      if (options.showModifierDialog) {
+        return this._getInitiativeRollWithDialogViaAdapter(options)
       }
 
       return this._getInitiativeRollViaAdapter(options)
@@ -1294,6 +1411,61 @@ class DCCActor extends Actor {
       : finalFormula
 
     return new Roll(rolledFormula, this.getRollData())
+  }
+
+  /**
+   * Roll-modifier-dialog branch of the initiative adapter path
+   * (legacy-decom step 2). Builds the same structured term list the
+   * legacy `_getInitiativeRollLegacy` body built (init die — including
+   * any additive tail folded into `init.die`, plus weapon-die overrides
+   * — and the flat initiative modifier) and surfaces the unified
+   * modifier dialog adapter-side via `promptRollModifierDialog`.
+   *
+   * Unlike the ability / save dialogs, initiative does NOT round-trip
+   * through the lib: init has no crit/fumble semantics and Foundry's
+   * `Combat#rollInitiative` posts the chat (with the
+   * `flags.core.initiativeRoll` the emote handler gates on), so — exactly
+   * like the legacy path — we hand back the user's dialog-built `Roll`
+   * for Foundry to evaluate. Async; only reached via `rollInit`, which
+   * awaits the returned promise.
+   * @private
+   */
+  async _getInitiativeRollWithDialogViaAdapter (options = {}) {
+    let die = this.system.attributes.init.die || '1d20'
+    const init = ensurePlus(this.system.attributes.init.value)
+    options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
+
+    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    if (twoHandedWeapon) {
+      die = `${twoHandedWeapon.system.initiativeDie}[${game.i18n.localize('DCC.WeaponPropertiesTwoHanded')}]`
+    }
+    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
+    if (customInitDieWeapon) {
+      die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
+    }
+
+    logDispatch('rollInit', 'adapter', { die, dialog: true })
+
+    const terms = [
+      {
+        type: 'Die',
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.Initiative'),
+        formula: init
+      }
+    ]
+
+    const prompt = await promptRollModifierDialog(terms, {
+      rollData: this.getRollData(),
+      title: options.title,
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+    })
+    if (prompt === null) return null
+
+    return prompt.roll
   }
 
   /**
@@ -1457,16 +1629,10 @@ class DCCActor extends Actor {
    */
   async rollSavingThrow (saveId, options = {}) {
     return withRollErrorBoundary('rollSavingThrow', game.i18n.localize('DCC.Save'), () => {
-      // Truthy check — the sheet's fillRollOptions uses bitwise XOR,
-      // which returns 0 or 1, not true/false. Strict === would miss those.
-      // (DCC saves never use roll-under — only Luck *ability* checks do —
-      // so there is no `options.rollUnder` clause here.)
-      const needsLegacyPath = !!options.showModifierDialog
-
-      if (needsLegacyPath) {
-        return this._rollSavingThrowLegacy(saveId, options)
-      }
-
+      // Single-path through the adapter (legacy-decom step 2). The
+      // modifier dialog is handled inside `_rollSavingThrowViaAdapter`;
+      // DCC saves never use roll-under (only Luck *ability* checks do),
+      // so there is no remaining option flag that needs the legacy body.
       return this._rollSavingThrowViaAdapter(saveId, options)
     })
   }
@@ -1482,6 +1648,15 @@ class DCCActor extends Actor {
     logDispatch('rollSavingThrow', 'adapter', { saveId })
     const saveLabel = game.i18n.localize(CONFIG.DCC.saves[saveId])
     const character = actorToCharacter(this)
+
+    // Roll-modifier dialog (legacy-decom step 2): mirror the ability /
+    // skill adapter dialogs — build the legacy save term list, surface
+    // the unified modifier dialog adapter-side, then route the user's
+    // flattened die + total through the lib via `rollCheck`.
+    if (options.showModifierDialog) {
+      return this._rollSavingThrowWithDialog(saveId, options, saveLabel, character)
+    }
+
     const libSaveId = foundrySaveIdToLib(saveId)
 
     // Pass 1: ask the lib for the formula (no evaluation).
@@ -1512,6 +1687,96 @@ class DCCActor extends Actor {
 
     // Legacy rollSavingThrow returned the evaluated Roll; preserve
     // that contract for downstream macros / tests.
+    return foundryRoll
+  }
+
+  /**
+   * Roll-modifier-dialog branch of the saving-throw adapter path
+   * (legacy-decom step 2). The dialog term list mirrors the legacy
+   * `_rollSavingThrowLegacy` builder (fixed 1d20 + save modifier). On
+   * submit, the per-source modifier list collapses to a single flat
+   * total (the dialog flattens attribution), so — like the ability /
+   * skill dialogs — we route through `rollCheck` with a bare definition
+   * + one `dialog-modifier` line rather than the `rollSavingThrow`
+   * wrapper (which would auto-add the save value the dialog total
+   * already includes). The DC success/failure suffix is preserved by
+   * forwarding `options` to `renderSavingThrow`.
+   * @private
+   */
+  async _rollSavingThrowWithDialog (saveId, options, saveLabel, character) {
+    const save = this.system.saves[saveId]
+    const flavor = `${saveLabel} ${game.i18n.localize('DCC.Save')}`
+
+    const terms = [
+      {
+        type: 'Die',
+        formula: '1d20'
+      },
+      {
+        type: 'Modifier',
+        label: saveLabel,
+        formula: ensurePlus(save.value)
+      }
+    ]
+
+    const prompt = await promptRollModifierDialog(terms, {
+      rollData: this.getRollData(),
+      title: options.title || flavor,
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+    })
+    if (prompt === null) return
+
+    const libDie = (prompt.actionDie && this._stripDieCount(prompt.actionDie)) || 'd20'
+
+    const definition = {
+      id: `save-${saveId}`,
+      name: saveLabel,
+      type: 'check',
+      roll: { die: libDie }
+    }
+
+    const modifiers = []
+    if (prompt.modifierTotal !== 0) {
+      modifiers.push({
+        kind: 'add',
+        value: prompt.modifierTotal,
+        origin: {
+          category: 'other',
+          id: 'dialog-modifier',
+          label: options.title || flavor
+        }
+      })
+    }
+
+    logDispatch('rollSavingThrow', 'adapter', {
+      saveId,
+      dialog: true,
+      actionDie: prompt.actionDie,
+      modifierTotal: prompt.modifierTotal
+    })
+
+    // Pass 1: lib builds the formula (no evaluation).
+    const plan = libRollCheck(definition, character, { mode: 'formula', modifiers })
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies against the rolled natural.
+    const result = libRollCheck(definition, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      modifiers
+    })
+
+    await renderSavingThrow({
+      actor: this,
+      saveId,
+      saveLabel,
+      result,
+      foundryRoll,
+      options
+    })
+
     return foundryRoll
   }
 
