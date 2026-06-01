@@ -954,3 +954,59 @@ describe('Active Effects - Custom mode fires applyActiveEffect hook (#736)', () 
     expect(actor.overrides['system.attributes.init.value']).toEqual(99)
   })
 })
+
+describe('Active Effects - native token overrides route to the token (#736)', () => {
+  test('token.* changes are stripped and stashed on tokenActiveEffectChanges, not applied to the actor', () => {
+    // Core Foundry v14 routes `token.*` changes (e.g. token.light.dim) to the
+    // TokenDocument by stripping the prefix and stashing them on the actor's
+    // tokenActiveEffectChanges; TokenDocument#applyActiveEffects applies them. Our
+    // replacement must reproduce that, or these changes crash writing a `token` field
+    // the actor data model doesn't own. This is the module-free, core way (vs ATL).
+    const actor = createPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'token.light.dim', mode: 5, type: 'override', value: '60' },
+        { key: 'token.light.bright', mode: 5, type: 'override', value: '30' }
+      ]
+    }
+    actor.effects = new global.Collection([['torch-effect', mockEffect]])
+
+    expect(() => actor.applyActiveEffects()).not.toThrow()
+
+    const stashed = actor.tokenActiveEffectChanges.initial
+    expect(stashed).toHaveLength(2)
+    expect(stashed[0].key).toEqual('light.dim')
+    expect(stashed[0].value).toEqual('60')
+    expect(stashed[1].key).toEqual('light.bright')
+    expect(stashed[1].value).toEqual('30')
+    // Each routed change keeps an effect reference for core's downstream pipeline.
+    expect(stashed[0].effect).toBe(mockEffect)
+    // Token changes are NOT written to the actor (no phantom `token` field).
+    expect(actor.overrides['token.light.dim']).toBeUndefined()
+    expect(actor.overrides['light.dim']).toBeUndefined()
+  })
+
+  test('actor-targeting changes still apply alongside token.* changes', () => {
+    // A mixed effect: one token override + one real actor change. The actor change
+    // must still land while the token change is routed away.
+    const actor = createPC()
+    actor.system.attributes.init = { value: 0 }
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'token.light.dim', mode: 5, type: 'override', value: '40' },
+        { key: 'system.attributes.init.value', type: 'add', value: '2' }
+      ]
+    }
+    actor.effects = new global.Collection([['mixed-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    expect(actor.tokenActiveEffectChanges.initial).toHaveLength(1)
+    expect(actor.tokenActiveEffectChanges.initial[0].key).toEqual('light.dim')
+    expect(actor.overrides['system.attributes.init.value']).toEqual(2)
+  })
+})
