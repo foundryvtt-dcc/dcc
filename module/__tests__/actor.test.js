@@ -113,22 +113,14 @@ test('roll ability check', async () => {
 
   chatMessageCreateSpy.mockRestore()
 
-  // rollUnder forces the legacy code path.
+  // rollUnder (Luck checks) now routes through the adapter's
+  // _rollLuckCheckViaAdapter → lib rollLuckCheck, NOT the legacy
+  // DCCRoll.createRoll term-builder. The on-message contract is
+  // preserved (roll-under flavor + AbilityCheckRollUnder flags, no
+  // libResult / Fleeting Luck — matching the prior legacy output).
   await actor.rollAbilityCheck('lck', { rollUnder: true })
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        formula: '1d20'
-      }
-    ],
-    {},
-    {
-      rollUnder: true,
-      title: 'Luck Check'
-    }
-  )
+  // Adapter path — DCCRoll.createRoll is never invoked.
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
     flavor: 'Luck CheckRollUnder',
     speaker: actor,
@@ -138,13 +130,11 @@ test('roll ability check', async () => {
     }
   }, { create: false })
 
-  // ...and the non-rollUnder Luck check takes the adapter path (not
-  // str/agl, no dialog, no rollUnder → adapter). DCCRoll.createRoll is
-  // NOT called; the Foundry Roll is constructed inline by
-  // _rollAbilityCheckViaAdapter and passed through chat-renderer.
+  // ...and the non-rollUnder Luck check also takes the adapter path (not
+  // str/agl, no dialog → adapter), producing the standard AbilityCheck
+  // flavor. DCCRoll.createRoll is still never called.
   await actor.rollAbilityCheck('lck', { rollUnder: false })
-  // Still 1 — only the rollUnder call invoked DCCRoll.createRoll.
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
   expect(rollToMessageMock).toHaveBeenLastCalledWith(
     expect.objectContaining({
       flavor: 'Luck Check',

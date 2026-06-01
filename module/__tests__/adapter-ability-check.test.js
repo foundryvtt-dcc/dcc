@@ -77,18 +77,53 @@ test('adapter path invokes lib and renders ChatMessage', async () => {
   chatMessageCreateSpy.mockRestore()
 })
 
-test('adapter path skipped when options.rollUnder is true', async () => {
+test('rollUnder (Luck check) routes through the lib luck-check adapter path', async () => {
   rollToMessageMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
 
-  // rollUnder forces the legacy code path — exercised by the existing
-  // legacy test suite, but confirm here that it still works alongside
-  // the adapter wiring.
+  // Roll-under now flows through _rollLuckCheckViaAdapter → lib
+  // rollLuckCheck (no longer the legacy DCCRoll term-builder).
   await actor.rollAbilityCheck('lck', { rollUnder: true })
 
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
-  const [messageData] = rollToMessageMock.mock.calls[0]
+  const [messageData, toMessageOpts] = rollToMessageMock.mock.calls[0]
+
+  // Roll-under flag + flavor contract (unchanged from the legacy path).
   expect(messageData.flags['dcc.RollType']).toBe('AbilityCheckRollUnder')
+  expect(messageData.flags['dcc.Ability']).toBe('lck')
+  expect(messageData.flags['dcc.isAbilityCheck']).toBe(true)
+  expect(messageData.flavor).toBe('Luck CheckRollUnder')
+
+  // Roll-under is a naked d20 — no modifier breakdown, so (unlike the
+  // standard ability check) it carries NO dcc.libResult flag and does
+  // NOT set checkPenaltyCouldApply.
+  expect(messageData.flags['dcc.libResult']).toBeUndefined()
+  expect(messageData.flags.checkPenaltyCouldApply).toBeUndefined()
+  expect(messageData.system).toEqual({ checkPenaltyRollIndex: null })
+
+  expect(toMessageOpts).toEqual({ create: false })
+  expect(chatMessageCreateSpy).toHaveBeenCalledTimes(1)
+
+  chatMessageCreateSpy.mockRestore()
+})
+
+test('rollUnder tags the rolled die with roll-under thresholds from the Luck score', async () => {
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  await actor.rollAbilityCheck('lck', { rollUnder: true })
+
+  // The Foundry Roll is the `this` of the toMessage call. The renderer
+  // tags terms[0] so module/chat.js's highlight hook swaps the
+  // success/failure classes (roll ≤ score = success). Thresholds derive
+  // from the Luck score the lib classified against (mock lck = 18):
+  // lowerThreshold = 18 (≤ = success/critical), upperThreshold = 19.
+  const foundryRoll = rollToMessageMock.mock.contexts[0]
+  expect(foundryRoll.terms[0].options.dcc).toEqual({
+    rollUnder: true,
+    lowerThreshold: 18,
+    upperThreshold: 19
+  })
 
   chatMessageCreateSpy.mockRestore()
 })

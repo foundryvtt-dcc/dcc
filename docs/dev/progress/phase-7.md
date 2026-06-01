@@ -933,3 +933,42 @@
   row (both modules were still listed "migration opt-in"). Surfaced no
   DCC-system gaps — every enabler (`DCCSheet` export, `sheetClass` on the
   base schema, the progression-load hook) already existed.
+
+- **2026-05-31 — Phase 7 session 16: retire `_rollSpellCheckLegacy` by
+  deriving the caster profile from the spell's castingMode (closes PR #720
+  design-call #1 — silently-dropped spellburn).** The internal legacy
+  spell-check backstop had two reachable triggers, both "the lib can't
+  model this class": the `noCasterProfile` fallback (wizard/cleric-mode
+  spell on a class with no lib profile) and the dispatcher fall-through
+  (unknown castingMode, or a generic-mode spell on a cleric/patron actor).
+  The key realization: the lib already resolves a profile from
+  `castingModeOverride` via `getCasterProfile(mode)` (canonical wizard/
+  cleric regardless of the actor's class), so the adapter can absorb every
+  legacy case — **no lib change needed**, pure routing consolidation.
+  `_rollSpellCheckViaAdapter` now retries `buildSpellCheckArgs` with
+  `castingModeOverride: castingMode` when the class profile is null
+  (logged `reason=profileFromCastingMode`), routing the cast through
+  `_castViaCalculateSpellCheck` with canonical wizard/cleric mechanics
+  driven by the spell — **which honors `options.spellburn`**, the harm in
+  design-call #1 (legacy ignored it, so the player burned ability points
+  for nothing). The dispatcher dropped its `!isCleric && !hasPatron`
+  generic guard (generic spells carry no disapproval / patron taint per
+  RAW) and routes generic + unknown modes to the synthetic-generic
+  `_castViaCastSpell`. `_rollSpellCheckLegacy` deleted; 4 stale comment
+  references (actor.js / roll-dialog.mjs / spell-input.mjs docstrings)
+  cleaned. `DCCItem.rollSpellCheck` / `processSpellCheck` stay (permanent
+  public API, decision #6 — only the internal dispatch wrapper went).
+  Behavior contract change (user-approved 2026-05-31): an unregistered
+  class's wizard/cleric-mode spell now gets canonical lib treatment from
+  the castingMode; unknown-mode spells get a side-effect-free generic
+  cast; the escape hatch for bespoke mechanics is
+  `registerClassProgression`. +1 Vitest (spellburn deducts on an
+  unregistered class) + 4 flipped unit/actor tests to the new contract.
+  +1 Playwright (`spellburn on a class the lib does not know is HONORED` —
+  live STR 12 → 9 after a 3-point burn) + 1 flipped (`noCasterProfile` →
+  `profileFromCastingMode`). **1309 Vitest** (was 1304). **164 Playwright
+  passed**, zero failures. Note: the full e2e run first showed 2
+  `extension-api.spec.js` failures from `dcc-core-book` being **disabled
+  in the v14 world** (pin-pointed via the boot log — the level pack never
+  connected; nothing to do with this slice); re-enabling the module +
+  rebooting → fully green.

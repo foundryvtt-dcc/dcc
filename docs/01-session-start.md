@@ -40,9 +40,25 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-05-29)
+## Status (2026-05-31)
 
-**Latest — Phase 7 session 15** closed the last two PR #720
+**Latest — Phase 7 session 21 (legacy-decom step 1 of 5: roll-under in
+the adapter).** All PR #720 *design calls* are closed (the error-boundary
+prerequisite landed session 20: `withRollErrorBoundary` wraps all six
+public dispatchers, fail-loud notify + rethrow). The user-directed
+priority is now the **Legacy decommission** plan (see `00-progress.md`
+*Legacy decommission* subsection). Session 21 did **step 1**: roll-under
+is provably Luck-only, so it routes through `_rollLuckCheckViaAdapter` →
+the lib's `rollLuckCheck` + a dedicated `renderAbilityCheckRollUnder`
+(reproduces the legacy flag/flavor contract + the `terms[0].options.dcc.rollUnder`
+highlight tag). Saves audited as never using roll-under (dead clause
+dropped from both gates). **Next: step 2 — extend `promptRollModifierDialog`
+to ability + save + init** (the biggest single unblock). Repo green:
+**1329 Vitest** / **169 Playwright e2e passed**, zero failures.
+
+<details><summary>Older status (Phase 7 session 15 and earlier)</summary>
+
+**Phase 7 session 15** closed the last two PR #720
 *resilience/cleanup* items, both with stale framing surfaced rather than
 papered over. (1) Dispatcher gate-style unification: the named
 `_canRouteXxxViaAdapter` predicates the backlog cited were already
@@ -485,6 +501,8 @@ Detail in [phase-4.md](dev/progress/phase-4.md).
 generalized `promptRollModifierDialog` adapter scaffold (skill +
 spell-check, including spellburn) shipped in sessions 26/27. Detail
 in [phase-3.md](dev/progress/phase-3.md).
+
+</details>
 
 ## Standing infrastructure the next session builds on
 

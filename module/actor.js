@@ -8,6 +8,7 @@ import DiceChain from './dice-chain.js'
 import {
   rollAbilityCheck as libRollAbilityCheck,
   rollCheck as libRollCheck,
+  rollLuckCheck as libRollLuckCheck,
   rollSavingThrow as libRollSavingThrow,
   castSpell as libCastSpell,
   calculateSpellCheck as libCalculateSpellCheck,
@@ -20,7 +21,7 @@ import {
   rollFumble as libRollFumble
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
-import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
+import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptRollModifierDialog } from './adapter/roll-dialog.mjs'
@@ -926,6 +927,15 @@ class DCCActor extends Actor {
    */
   async rollAbilityCheck (abilityId, options = {}) {
     return withRollErrorBoundary('rollAbilityCheck', game.i18n.localize('DCC.Check'), () => {
+      // Roll-under (Luck checks): a naked d20 vs the Luck score, no
+      // modifiers and no check-penalty display. Routes through the lib's
+      // dedicated `rollLuckCheck` rather than the standard ability-check
+      // two-pass flow. Truthy check — the sheet's fillRollOptions uses
+      // bitwise XOR, which returns 0 or 1, not true/false.
+      if (options.rollUnder) {
+        return this._rollLuckCheckViaAdapter(abilityId, options)
+      }
+
       const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
       const hasNonZeroCheckPenalty =
         this.system.config?.computeCheckPenalty &&
@@ -935,7 +945,6 @@ class DCCActor extends Actor {
       // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
       // which returns 0 or 1, not true/false. Strict === would miss those.
       const needsLegacyPath =
-        !!options.rollUnder ||
         !!options.showModifierDialog ||
         hasNonZeroCheckPenalty
 
@@ -997,9 +1006,53 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Adapter path for roll-under ability checks (Luck checks). DCC luck
+   * checks use roll-under mechanics — roll 1d20, succeed if the result
+   * is ≤ the Luck score, no modifiers — so this routes through the lib's
+   * dedicated `rollLuckCheck` rather than the standard ability-check
+   * two-pass flow. Foundry owns the d20 (so chat shows the real dice);
+   * the lib classifies success against the same natural.
+   *
+   * Roll-under is Luck-only in practice — the only triggers (`#rollAbilityCheck`,
+   * the `luck-roll-under` template class, the roll-under macro) all gate
+   * on `lck`. The lib's `getLuck` reads the same `system.abilities.lck.value`
+   * the legacy roll-under threshold used, so the success boundary is
+   * unchanged.
+   * @private
+   */
+  async _rollLuckCheckViaAdapter (abilityId, options) {
+    logDispatch('rollAbilityCheck', 'adapter', { abilityId, rollUnder: true })
+    const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
+    const character = actorToCharacter(this)
+
+    // Roll-under is a naked d20 — no modifiers, so no formula pass is
+    // needed. Foundry evaluates the die so chat shows the real result.
+    const foundryRoll = new Roll('1d20')
+    await foundryRoll.evaluate()
+    const primaryDie = foundryRoll.dice?.[0]
+    const natural = primaryDie?.total ?? foundryRoll.total
+
+    // Lib classifies success (roll ≤ Luck score) against the same natural.
+    const result = libRollLuckCheck(character, {
+      roller: () => natural,
+      label: abilityLabel
+    })
+
+    return renderAbilityCheckRollUnder({
+      actor: this,
+      abilityId,
+      abilityLabel,
+      result,
+      foundryRoll
+    })
+  }
+
+  /**
    * Legacy ability-check path. Used when the options flags require
-   * structured terms (modifier dialog, rollUnder, check-penalty
-   * display). Preserved verbatim until later phases migrate these.
+   * structured terms (modifier dialog or check-penalty display).
+   * Preserved verbatim until later phases migrate these. Roll-under
+   * (Luck) now routes through `_rollLuckCheckViaAdapter` and no longer
+   * reaches here.
    * @private
    */
   async _rollAbilityCheckLegacy (abilityId, options = {}) {
@@ -1008,82 +1061,53 @@ class DCCActor extends Actor {
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
-    let flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+    const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
     options.title = flavor
 
-    let roll
     const flags = {}
 
     if (abilityId === 'str' || abilityId === 'agl') {
       flags.checkPenaltyCouldApply = true
     }
 
-    // Allow requesting roll under (for Luck Checks)
-    if (options.rollUnder) {
-      const terms = [
-        {
-          type: 'Die',
-          formula: '1d20'
-        }
-      ]
+    const die = this.system.attributes.actionDice.value || '1d20'
 
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-
-      // Apply custom roll options
-      roll.terms[0].options.dcc = {
-        rollUnder: true,
-        lowerThreshold: ability.value,
-        upperThreshold: ability.value + 1
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      },
+      {
+        type: 'Modifier',
+        label: abilityLabel,
+        formula: ensurePlus(ability.mod)
       }
+    ]
 
-      // Generate flags for the roll
-      Object.assign(flags, {
-        'dcc.RollType': 'AbilityCheckRollUnder',
-        'dcc.Ability': abilityId,
-        'dcc.isAbilityCheck': true
+    if (this.system.config.computeCheckPenalty && flags.checkPenaltyCouldApply) {
+      terms.push({
+        type: 'CheckPenalty',
+        formula: ensurePlus(this.system.attributes.ac.checkPenalty || '0'),
+        apply: false
       })
-
-      flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
-    } else {
-      const die = this.system.attributes.actionDice.value || '1d20'
-
-      // Collate terms for the roll
-      const terms = [
-        {
-          type: 'Die',
-          label: game.i18n.localize('DCC.ActionDie'),
-          formula: die,
-          presets: this.getActionDice({ includeUntrained: true })
-        },
-        {
-          type: 'Modifier',
-          label: abilityLabel,
-          formula: ensurePlus(ability.mod)
-        }
-      ]
-
-      if (this.system.config.computeCheckPenalty && flags.checkPenaltyCouldApply) {
-        terms.push({
-          type: 'CheckPenalty',
-          formula: ensurePlus(this.system.attributes.ac.checkPenalty || '0'),
-          apply: false
-        })
-      }
-
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-
-      // Evaluate the roll so we have a total
-      await roll.evaluate()
-
-      // Generate flags for the roll
-      Object.assign(flags, {
-        'dcc.RollType': 'AbilityCheck',
-        'dcc.Ability': abilityId,
-        'dcc.isAbilityCheck': true
-      })
-      game.dcc.FleetingLuck.updateFlags(flags, roll)
     }
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+
+    // Evaluate the roll so we have a total
+    await roll.evaluate()
+
+    // Generate flags for the roll
+    Object.assign(flags, {
+      'dcc.RollType': 'AbilityCheck',
+      'dcc.Ability': abilityId,
+      'dcc.isAbilityCheck': true
+    })
+    game.dcc.FleetingLuck.updateFlags(flags, roll)
 
     // Calculate what the total would be if check penalty applies
     // Only show this if the check penalty was NOT already applied to the roll
@@ -1410,11 +1434,11 @@ class DCCActor extends Actor {
    */
   async rollSavingThrow (saveId, options = {}) {
     return withRollErrorBoundary('rollSavingThrow', game.i18n.localize('DCC.Save'), () => {
-      // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+      // Truthy check — the sheet's fillRollOptions uses bitwise XOR,
       // which returns 0 or 1, not true/false. Strict === would miss those.
-      const needsLegacyPath =
-        !!options.showModifierDialog ||
-        !!options.rollUnder
+      // (DCC saves never use roll-under — only Luck *ability* checks do —
+      // so there is no `options.rollUnder` clause here.)
+      const needsLegacyPath = !!options.showModifierDialog
 
       if (needsLegacyPath) {
         return this._rollSavingThrowLegacy(saveId, options)
@@ -1470,8 +1494,8 @@ class DCCActor extends Actor {
 
   /**
    * Legacy saving-throw path. Used when the options flags require
-   * structured terms (modifier dialog, rollUnder). Preserved verbatim
-   * until later phases migrate those flows.
+   * structured terms (modifier dialog). Preserved verbatim until later
+   * phases migrate that flow.
    * @private
    */
   async _rollSavingThrowLegacy (saveId, options = {}) {

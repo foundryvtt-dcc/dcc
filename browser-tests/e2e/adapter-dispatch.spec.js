@@ -141,13 +141,68 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { abilityId: 'lck' })
     })
 
-    test('rollUnder flag → legacy', async ({ page }) => {
+    // Phase 7 session 21 (legacy-decom step 1): roll-under (Luck) now
+    // flows through the adapter via the lib's rollLuckCheck instead of
+    // the legacy DCCRoll term-builder.
+    test('rollUnder flag → adapter (Luck check)', async ({ page }) => {
       await makePlayer(page, 'P1 Ability RollUnder')
       await page.evaluate(async () => {
         await game.actors.getName('P1 Ability RollUnder').rollAbilityCheck('lck', { rollUnder: true })
       })
       const line = await waitForAdapterLog('rollAbilityCheck')
-      assertPath(line, 'legacy', { abilityId: 'lck' })
+      assertPath(line, 'adapter', { abilityId: 'lck', rollUnder: true })
+    })
+
+    // The adapter roll-under path must reproduce the legacy chat
+    // contract: the AbilityCheckRollUnder flag + a rolled die tagged
+    // with `options.dcc.rollUnder` and thresholds derived from the Luck
+    // score (so module/chat.js's highlight hook swaps the success /
+    // failure classes — roll ≤ score = success). Naked d20, so no
+    // modifier breakdown and no dcc.libResult.
+    test('adapter roll-under tags the die for roll-under highlighting', async ({ page }) => {
+      await makePlayer(page, 'P1 Ability RollUnderTag', {
+        abilities: { lck: { value: 14, max: 14 } }
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Ability RollUnderTag').rollAbilityCheck('lck', { rollUnder: true })
+      })
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Ability RollUnderTag' &&
+              m.getFlag('dcc', 'RollType') === 'AbilityCheckRollUnder'
+            )
+          if (msg) {
+            const term = msg.rolls?.[0]?.terms?.[0]
+            return {
+              rollType: msg.getFlag('dcc', 'RollType'),
+              ability: msg.getFlag('dcc', 'Ability'),
+              isAbilityCheck: msg.getFlag('dcc', 'isAbilityCheck'),
+              libResult: msg.getFlag('dcc', 'libResult') ?? null,
+              dcc: term?.options?.dcc ?? null
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(card, 'roll-under adapter path must post a chat message').not.toBeNull()
+      expect(card.rollType).toBe('AbilityCheckRollUnder')
+      expect(card.ability).toBe('lck')
+      expect(card.isAbilityCheck).toBe(true)
+      // Naked d20 — no modifier breakdown captured.
+      expect(card.libResult).toBeNull()
+      // Die tagged for roll-under highlighting against the Luck score.
+      expect(card.dcc).not.toBeNull()
+      expect(card.dcc.rollUnder).toBe(true)
+      expect(card.dcc.lowerThreshold).toBe(14)
+      expect(card.dcc.upperThreshold).toBe(15)
     })
 
     test('showModifierDialog flag → legacy', async ({ page }) => {
@@ -224,13 +279,17 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { saveId: 'ref' })
     })
 
-    test('rollUnder flag → legacy', async ({ page }) => {
+    // Phase 7 session 21 (legacy-decom step 1): DCC saves never use
+    // roll-under (only Luck *ability* checks do), so the save gate's
+    // dead `options.rollUnder` clause was dropped. A rollUnder option
+    // on a save is now inert and the save routes through the adapter.
+    test('rollUnder flag is inert on saves → adapter', async ({ page }) => {
       await makePlayer(page, 'P1 Save RollUnder')
       await page.evaluate(async () => {
         await game.actors.getName('P1 Save RollUnder').rollSavingThrow('wil', { rollUnder: true })
       })
       const line = await waitForAdapterLog('rollSavingThrow')
-      assertPath(line, 'legacy', { saveId: 'wil' })
+      assertPath(line, 'adapter', { saveId: 'wil' })
     })
 
     test('showModifierDialog flag → legacy', async ({ page }) => {

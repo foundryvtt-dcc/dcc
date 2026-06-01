@@ -260,6 +260,75 @@ export async function renderAbilityCheck ({
 }
 
 /**
+ * Render a roll-under ability check (Luck checks) as a Foundry
+ * ChatMessage.
+ *
+ * Roll-under is a naked d20 compared against the ability score — no
+ * modifiers and no crit/fumble classification — so it does NOT carry
+ * the `dcc.libResult` modifier breakdown the standard renderers emit,
+ * and (matching the legacy path) it does NOT apply Fleeting Luck: a
+ * natural 1 is a *success* under roll-under and a natural 20 a failure,
+ * so the standard nat-20/nat-1 luck flags would be inverted. Instead it
+ * tags the rolled die with `options.dcc.rollUnder` + thresholds so
+ * `highlightCriticalSuccessFailure` (module/chat.js) swaps the
+ * success/failure highlight classes (roll ≤ score = success).
+ *
+ * Reproduces the legacy `_rollAbilityCheckLegacy` roll-under branch's
+ * flag + flavor contract exactly; only the producing code path changed.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that rolled.
+ * @param {string} params.abilityId - The ability id (always 'lck' in
+ *   practice — roll-under is Luck-only).
+ * @param {string} params.abilityLabel - Localized label e.g. 'Luck'.
+ * @param {Object} params.result - The lib's luck-check result
+ *   (`{ roll, target, success, label }`). `target` is the score the
+ *   lib classified against; the highlight thresholds derive from it so
+ *   highlight and success stay consistent.
+ * @param {Roll} params.foundryRoll - The evaluated Foundry Roll (1d20).
+ * @returns {Promise<ChatMessage>} The created ChatMessage.
+ */
+export async function renderAbilityCheckRollUnder ({
+  actor,
+  abilityId,
+  abilityLabel,
+  result,
+  foundryRoll
+}) {
+  const flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
+
+  // Tag the rolled die so the chat highlight hook treats it as
+  // roll-under: ≤ target highlights as success (critical class),
+  // ≥ target+1 as failure (fumble class).
+  const primaryTerm = foundryRoll.terms?.[0]
+  if (primaryTerm) {
+    primaryTerm.options = primaryTerm.options ?? {}
+    primaryTerm.options.dcc = {
+      rollUnder: true,
+      lowerThreshold: result.target,
+      upperThreshold: result.target + 1
+    }
+  }
+
+  const flags = {
+    'dcc.RollType': 'AbilityCheckRollUnder',
+    'dcc.Ability': abilityId,
+    'dcc.isAbilityCheck': true
+  }
+
+  const messageData = await foundryRoll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags,
+    system: {
+      checkPenaltyRollIndex: null
+    }
+  }, { create: false })
+
+  return ChatMessage.create(messageData)
+}
+
+/**
  * Render a saving-throw result as a Foundry ChatMessage.
  *
  * @param {Object} params

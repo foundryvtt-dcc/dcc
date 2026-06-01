@@ -65,23 +65,27 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 20 (full detail
-in *Recent slices*) added **fail-loud error boundaries** around all six
-public roll dispatchers — closing the **last open PR #720 design call**. A
-shared `withRollErrorBoundary` (+ a sync sibling for `getInitiativeRoll`,
-which must stay sync for Foundry's combat-tracker contract) logs +
-`ui.notifications.error` + rethrows on any adapter throw, so a lib failure
-surfaces visibly instead of as a silent dead click (the two un-awaited
-sheet calls were also fixed). This is the **prerequisite for the
-legacy-decom work** — once the `_xxxLegacy` bodies are gone there's no
-fallback, so the boundary had to land first. (Sessions 17–19 closed the
-spellburn floor, damage-clamp, and `createFoundryRoller` calls.) Repo
-green: **1328 Vitest** / **168 Playwright e2e passed**, zero failures.
+**Phase 7 cleanup → Legacy decommission — latest 2026-05-31.** Phase 7
+session 21 (full detail in *Recent slices*) started the **legacy-decom
+plan**: **step 1 (roll-under in the adapter)** is done. Roll-under is
+provably **Luck-only** (the only triggers gate on `lck`), so the luck
+case now routes through `_rollLuckCheckViaAdapter` → the lib's
+`rollLuckCheck` (naked d20, success ≤ Luck score), with a dedicated
+`renderAbilityCheckRollUnder` reproducing the legacy flag/flavor contract
++ the `options.dcc.rollUnder` die-tag that drives chat highlighting. The
+`!!options.rollUnder` clause was dropped from **both** dispatcher gates;
+**saves never use roll-under** (audited — no caller passes it; the legacy
+save body never even implemented it), so that clause was dead. The
+now-unreachable roll-under branch was removed from `_rollAbilityCheckLegacy`.
+Repo green: **1329 Vitest** / **169 Playwright e2e passed**, zero failures.
 
-**Remaining PR #720 items:** **all design calls closed.** Next up is the
-**Legacy decommission** plan (5 sequenced steps — see backlog subsection +
-*Next steps*; the user-directed priority) plus *test-coverage gaps* +
-*doc hygiene*. The resilience/cleanup sub-list is fully ticked.
+**Remaining legacy-decom steps (2–5):** modifier-dialog for ability +
+save + init (step 2), non-zero check-penalty display (step 3),
+description-only skill items (step 4), then delete the four `_xxxLegacy`
+bodies + `_buildSkillCheckLegacyTerms` (step 5). See the *Legacy
+decommission* backlog subsection + *Next steps*. All PR #720 design calls
+remain closed (the error-boundary prerequisite landed session 20); the
+*test-coverage gaps* + *doc hygiene* lists are still open.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -95,6 +99,46 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 21: roll-under in the adapter
+  (legacy-decom step 1 of 5).** Started the user-directed legacy-decom
+  arc. Roll-under is provably **Luck-only**: the only three triggers
+  (`actor-sheet.js`/`party-sheet.js` clicking the Luck *score*, the
+  `luck-roll-under` template class on the `isLuck` cell, and the
+  roll-under macro) all gate on `lck`; `#rollAbilityCheck` only sets
+  `rollUnder` when `ability === 'lck'`. New `_rollLuckCheckViaAdapter`
+  routes the luck case through the lib's `rollLuckCheck(character, {
+  roller: () => natural })` — a naked d20, success if ≤ the Luck score,
+  no modifiers. Foundry owns the d20 (chat shows real dice); the lib
+  classifies success against the same natural. New exported
+  `renderAbilityCheckRollUnder` in `chat-renderer.mjs` reproduces the
+  legacy roll-under chat contract **exactly**: flavor
+  `${label} ${DCC.CheckRollUnder}`, flags `AbilityCheckRollUnder` /
+  `Ability` / `isAbilityCheck`, `system.checkPenaltyRollIndex: null`, and
+  the load-bearing `terms[0].options.dcc = { rollUnder: true,
+  lowerThreshold: target, upperThreshold: target+1 }` tag that
+  `highlightCriticalSuccessFailure` (`module/chat.js`) reads to swap the
+  success/failure highlight classes. Deliberately **no `dcc.libResult`
+  and no Fleeting Luck** (matching legacy — a naked d20 has no modifier
+  breakdown, and under roll-under a nat-1 is a *success* / nat-20 a
+  failure, so the standard luck flags would be inverted). The
+  `!!options.rollUnder` clause was dropped from **both** dispatcher gates
+  — **saves never use roll-under** (audited: no caller passes it, and the
+  legacy save body never even implemented a roll-under branch, so it was
+  pure dead code; a `rollUnder` option on a save is now inert and routes
+  through the adapter). The now-unreachable roll-under branch was removed
+  from `_rollAbilityCheckLegacy` (it's reached only for
+  `showModifierDialog` / non-zero check-penalty now). No lib change (pure
+  adapter wiring around an existing lib API). +1 Vitest (`adapter-ability-check.test.js`:
+  new die-threshold-tag test via `mock.contexts`) + 2 Vitest flipped
+  (`adapter-ability-check.test.js` + `actor.test.js` rollUnder blocks now
+  assert the adapter contract, not `DCCRoll.createRoll`). +1 Playwright
+  new (`adapter-dispatch.spec.js`: live roll-under chat card asserts the
+  `AbilityCheckRollUnder` flag, no `libResult`, and the die tagged with
+  thresholds 14/15 from a Luck-14 actor) + 2 Playwright flipped (ability
+  rollUnder → adapter; save rollUnder inert → adapter). **1329 Vitest**
+  (was 1328, +1). **169 Playwright passed**, zero failures (was 168, +1;
+  5.6-min full suite).
 
 - **2026-05-31 — Phase 7 session 20: fail-loud error boundaries around
   the public roll dispatchers (closes the last PR #720 design call;
@@ -229,45 +273,6 @@ archives linked above.
   3 → 0, asserts 0 not 1). **1318 Vitest** (was 1309). **165 Playwright passed**,
   zero failures (5.9-min full suite, smoke-gated).
 
-- **2026-05-31 — Phase 7 session 16: retire `_rollSpellCheckLegacy` by
-  deriving the caster profile from the spell's castingMode (closes PR #720
-  design-call #1 — silently-dropped spellburn).** The internal legacy
-  spell-check backstop had two reachable triggers, both "the lib can't
-  model this class": the `noCasterProfile` fallback (wizard/cleric-mode
-  spell on a class with no lib profile) and the dispatcher fall-through
-  (unknown castingMode, or a generic-mode spell on a cleric/patron actor).
-  The key realization: the lib already resolves a profile from
-  `castingModeOverride` via `getCasterProfile(mode)` (canonical wizard/
-  cleric regardless of the actor's class), so the adapter can absorb every
-  legacy case — **no lib change needed**, pure routing consolidation.
-  `_rollSpellCheckViaAdapter` now retries `buildSpellCheckArgs` with
-  `castingModeOverride: castingMode` when the class profile is null
-  (logged `reason=profileFromCastingMode`), routing the cast through
-  `_castViaCalculateSpellCheck` with canonical wizard/cleric mechanics
-  driven by the spell — **which honors `options.spellburn`**, the harm in
-  design-call #1 (legacy ignored it, so the player burned ability points
-  for nothing). The dispatcher dropped its `!isCleric && !hasPatron`
-  generic guard (generic spells carry no disapproval / patron taint per
-  RAW) and routes generic + unknown modes to the synthetic-generic
-  `_castViaCastSpell`. `_rollSpellCheckLegacy` deleted; 4 stale comment
-  references (actor.js / roll-dialog.mjs / spell-input.mjs docstrings)
-  cleaned. `DCCItem.rollSpellCheck` / `processSpellCheck` stay (permanent
-  public API, decision #6 — only the internal dispatch wrapper went).
-  Behavior contract change (user-approved 2026-05-31): an unregistered
-  class's wizard/cleric-mode spell now gets canonical lib treatment from
-  the castingMode; unknown-mode spells get a side-effect-free generic
-  cast; the escape hatch for bespoke mechanics is
-  `registerClassProgression`. +1 Vitest (spellburn deducts on an
-  unregistered class) + 4 flipped unit/actor tests to the new contract.
-  +1 Playwright (`spellburn on a class the lib does not know is HONORED` —
-  live STR 12 → 9 after a 3-point burn) + 1 flipped (`noCasterProfile` →
-  `profileFromCastingMode`). **1309 Vitest** (was 1304). **164 Playwright
-  passed**, zero failures. Note: the full e2e run first showed 2
-  `extension-api.spec.js` failures from `dcc-core-book` being **disabled
-  in the v14 world** (pin-pointed via the boot log — the level pack never
-  connected; nothing to do with this slice); re-enabling the module +
-  rebooting → fully green.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -387,27 +392,28 @@ legacy-branch-retirement principle (decision #7 — Foundry-facing API
 stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
 coverage is exhaustive for their gate). Group D already retired
 attack / crit / fumble / damage; the spell-check legacy wrapper went in
-session 16. **Four `_xxxLegacy` bodies remain**, each kept alive only by
-the option-flag(s) in its dispatcher gate. Retiring them is gated on
-moving those capabilities into the adapter first — sequence the work by
-the shared capability, not by the method, since one capability unblocks
-several gates at once:
+session 16. Step 1 (roll-under) landed session 21; **three `_xxxLegacy`
+bodies plus the ability legacy's two remaining gate-clauses remain**,
+each kept alive only by the option-flag(s) in its dispatcher gate.
+Retiring them is gated on moving those capabilities into the adapter
+first — sequence the work by the shared capability, not by the method,
+since one capability unblocks several gates at once:
 
-1. **Roll-under in the adapter.** Blocks `_rollAbilityCheckLegacy`
-   (luck checks) + `_rollSavingThrowLegacy`. **Partly already in the
-   lib:** `checks/luck-check.js` exports `rollLuckCheck(character,
-   options)` with full roll-under mechanics (1d20, success if ≤ Luck
-   score, no modifiers) — so the ability-check luck case is mostly an
-   adapter-wiring job (build a `_rollLuckCheckViaAdapter` around
-   `rollLuckCheck` + a roll-under render path through chat-renderer; the
-   two-pass `{mode:'formula'}`→evaluate→`roller:()=>natural` pattern
-   applies). **Open for saves:** confirm whether any DCC save actually
-   uses roll-under (the gate has `!!options.rollUnder` on save, but it
-   may be dead in practice — audit the sheet's save options first); if a
-   real save roll-under exists and the lib can't express it, that's the
-   `dcc-core-lib` PR (generalize roll-under beyond luck, land lib-side
-   first, then sync). Once wired, drop the `!!options.rollUnder` clause
-   from both gates.
+1. ~~**Roll-under in the adapter.**~~ **DONE 2026-05-31 (Phase 7 session
+   21).** Roll-under is provably **Luck-only** (all triggers gate on
+   `lck`), so the luck case routes through `_rollLuckCheckViaAdapter` →
+   the lib's `rollLuckCheck(character, { roller: () => natural })` (naked
+   d20, success ≤ Luck score) + a dedicated `renderAbilityCheckRollUnder`
+   that reproduces the legacy flag/flavor contract and the
+   `terms[0].options.dcc.rollUnder` highlight tag. **Saves audited: no
+   caller passes `rollUnder`, and the legacy save body never implemented
+   a roll-under branch** — pure dead code, so the `!!options.rollUnder`
+   clause was dropped from both gates (inert on saves now). The
+   now-unreachable roll-under branch was removed from
+   `_rollAbilityCheckLegacy`. No lib change needed (the lib API already
+   existed). See Recent slices. **`_rollAbilityCheckLegacy` is now kept
+   alive only by step 2 (`showModifierDialog`) + step 3 (check-penalty);
+   `_rollSavingThrowLegacy` only by step 2.**
 2. **Modifier-dialog for ability + save + init.** Blocks the
    `!!options.showModifierDialog` clause in `_rollAbilityCheckLegacy`,
    `_rollSavingThrowLegacy`, and `_getInitiativeRollLegacy`. The
@@ -441,14 +447,12 @@ several gates at once:
    grep at session 19.
 
 Dependency notes / landmines:
-- **`error boundaries` interaction.** The remaining design call (fail-loud
-  notify + rethrow around `_xxxViaAdapter`, chosen 2026-05-31) should land
-  *before or alongside* this — once legacy is gone there's no fallback at
-  all, so a lib throw must surface as a `ui.notifications.error`, not a
-  silent dead click. Two sheet calls are currently **un-awaited**
-  (`rollAbilityCheck` actor-sheet:1477, `rollWeaponAttack` :1622), so a
-  throw there is an unhandled rejection today — fix the await + add the
-  boundary in the same slice.
+- ~~**`error boundaries` interaction.**~~ **RESOLVED — the boundary
+  landed first (Phase 7 session 20).** All six public dispatchers are
+  wrapped in `withRollErrorBoundary` (fail-loud notify + rethrow) and the
+  two un-awaited sheet calls were fixed, so the post-legacy "lib throw
+  must surface, not dead-click" requirement is already satisfied. Steps
+  2–5 can proceed without re-doing this.
 - **Cross-repo.** Any capability the lib can't yet express (roll-under
   result shape, modifier-dialog term threading) lands as a
   `dcc-core-lib` PR first, then `npm run sync-core-lib`, per the
@@ -589,13 +593,18 @@ Dependency notes / landmines:
 
 **PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
 roll paths.** See the *Legacy decommission* subsection in the PR #720
-backlog above for the sequenced 5-step plan (roll-under → modifier-dialog
-→ check-penalty → description-only skill → delete the 4 `_xxxLegacy`
-bodies + `_buildSkillCheckLegacyTerms`). Land the **error-boundaries**
-design call (fail-loud notify + rethrow; fix the two un-awaited sheet
-calls) before/with the deletion so a post-legacy lib throw surfaces
-visibly instead of as a silent dead click. Any lib capability gap
-(roll-under result shape, modifier-dialog term threading) lands as a
+backlog above for the sequenced 5-step plan. **Step 1 (roll-under) +
+the error-boundaries prerequisite are both DONE** (sessions 21 + 20).
+**Next up is step 2 — modifier-dialog for ability + save + init**: extend
+the existing `promptRollModifierDialog` scaffold (Q7 sessions 26–27, today
+serving skill + spell checks) to the three remaining binary gates. It's
+the biggest single unblock — it clears the *only* gate on
+`_getInitiativeRollLegacy` and one of two clauses on both
+`_rollAbilityCheckLegacy` and `_rollSavingThrowLegacy`. Then step 3
+(non-zero check-penalty display, the last ability clause), step 4
+(description-only skill items), step 5 (delete the three remaining
+`_xxxLegacy` bodies + `_buildSkillCheckLegacyTerms` + add retirement-guard
+tests). Any lib capability gap (modifier-dialog term threading) lands as a
 `dcc-core-lib` PR first, then `npm run sync-core-lib`.
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
