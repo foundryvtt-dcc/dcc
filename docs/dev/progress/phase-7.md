@@ -843,3 +843,32 @@
   `extension-api.spec.js:2232` link-fields navigation-race flake passed
   clean this run → 160). Next PR #720 candidates: dispatcher gate-style
   unification; unused crit/fumble predicate params.
+
+- **2026-05-29 — feat(adapter): optional `options.checkLabel` to relabel
+  the raw (no-item) spell-check chat flavor.** Implemented from
+  `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`. A raw spell check rolled from
+  a class cell (`system.class.spellCheck`, not a specific spell item)
+  always read "Spell Check" in chat — MCC reuses the spell-check
+  machinery for **Mutation Check** (mutant / manimal / plantient) and
+  **Wetware Program Check** (shaman), so the flavor was wrong for those.
+  Two small, fully backward-compatible edits: `module/actor-sheet.js`
+  `#rollSpellCheck` now forwards a `data-check-label` cell attribute as
+  `options.checkLabel`; `module/actor.js` `_castNakedViaAdapter` uses it
+  as the flavor base when no spell name is present
+  (`options.spell || (options.checkLabel ? localize(checkLabel) :
+  localize('DCC.SpellCheck'))` — `localize` passes a non-key literal
+  through unchanged, so `checkLabel` works as an i18n key *or* a raw
+  string). The ability suffix (` (Intelligence)`) is preserved; item
+  casts already flavor with the item name and are unaffected (setting
+  `checkLabel` on an item cast is a harmless no-op — `_buildSpellCheckFlavor`,
+  the only other flavor builder, is item-only by construction). +3 Vitest
+  in `module/__tests__/adapter-spell-check.test.js` (raw relabel via a
+  literal; regression without `checkLabel` → still the generic check;
+  item cast ignores `checkLabel` → flavor stays the item name) + 1
+  Playwright in `adapter-dispatch.spec.js` (a live naked check with
+  `checkLabel: 'Mutation Check'` → chat flavor starts with "Mutation
+  Check", never "Spell Check"). Spec doc Status flipped to ✅ landed.
+  Downstream MCC ships the `data-check-label` attributes on its
+  mutation / program-check cells on its own schedule (inert until then).
+  **1302 Vitest** (was 1299, +3). **161 Playwright passed**, zero
+  failures (was 160, +1).

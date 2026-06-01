@@ -332,6 +332,43 @@ test('adapter path logs rollDamage dispatch + returns libDamageResult', async ()
   expect(Array.isArray(result.libDamageResult.breakdown)).toBe(true)
 })
 
+test('libDamageResult.total rides the DCC min-1 floor and matches the displayed total', async () => {
+  // PR #720 design call (resolved upstream): the backlog premise was that
+  // Foundry clamped the displayed total to 1 while the lib left
+  // `libDamageResult.total` un-floored, so `dcc.libDamageResult.total`
+  // could carry 0/negative while chat showed 1. The lib has since gained
+  // its own min-1 clamp (`combat/damage.js`: Math.max(1, baseDamage +
+  // modifierDamage)), so the two totals can no longer diverge. This pins
+  // that contract: a heavy-penalty hit (1d3-4, natural 1 → raw -3) floors
+  // to 1 on BOTH sides. The lib leaves the components raw, so they
+  // intentionally do NOT sum to the floored total.
+  logDispatch.mockClear()
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 1, natural: 1 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'dagger' }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d3-4', {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  // Foundry's displayed total rides the min-1 floor …
+  expect(result.damageRoll.total).toBe(1)
+  // … and the lib flag matches it (no divergence — both clamp).
+  expect(result.libDamageResult.total).toBe(1)
+  expect(result.libDamageResult.total).toBe(result.damageRoll.total)
+  // Components stay raw (the lib's deliberate shape), so on a floored hit
+  // they sum below the clamped total rather than reconciling to it.
+  expect(result.libDamageResult.baseDamage).toBe(1)
+  expect(result.libDamageResult.modifierDamage).toBe(-4)
+})
+
 test('adapter path routes regardless of attack route (single-path post-retirement)', async () => {
   // Pre-retirement, a legacy attack forced the damage side to legacy too
   // (defensive `attackRollResult?.libResult` check). Post-session-19 the

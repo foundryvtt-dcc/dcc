@@ -3701,7 +3701,10 @@ class DCCActor extends Actor {
    * flat negative, or simple flat) or falls back to a lossless
    * passthrough. Foundry remains authoritative for the displayed total
    * + chat anchor — `libDamageResult` only populates `dcc.libDamageResult`
-   * on chat flags.
+   * on chat flags. Both the lib and Foundry apply the DCC min-1 damage
+   * floor, so `libDamageResult.total` already matches the displayed
+   * total (the lib leaves `baseDamage` / `modifierDamage` raw, so they
+   * won't sum to a floored `total`).
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
@@ -3778,9 +3781,14 @@ class DCCActor extends Actor {
 
     const libResult = libRollDamage(structured, sequencedRoller)
 
-    // Foundry clamps `damageRoll.total` at 1 above; lib doesn't, so
-    // compare post-clamp on both sides to avoid a spurious warn on
-    // negative-modifier damage that's just riding the floor.
+    // Both sides apply the DCC min-1 damage floor: Foundry clamps
+    // `damageRoll.total` at 1 above, and the lib clamps its own `total`
+    // (`combat/damage.js`: `Math.max(1, baseDamage + modifierDamage)`).
+    // So `libResult.total` already matches the displayed total — the
+    // `Math.max(1, …)` here is belt-and-suspenders against a future lib
+    // that drops its floor. Note the lib leaves `baseDamage` /
+    // `modifierDamage` raw, so on a floored hit they won't sum to the
+    // clamped `total`; that is the lib's deliberate shape.
     warnIfDivergent('rollDamage', damageRoll.total, Math.max(1, libResult.total), { weapon: weapon?.name })
 
     return {

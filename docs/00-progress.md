@@ -65,23 +65,24 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 17 (full detail
-in *Recent slices*) closed the **spellburn floor-1-vs-0 design call** in
-favor of RAW fidelity: a physical ability may now be burned all the way to
-0 (Stamina to 0 is lethal — an intentional DCC rules feature). The
-load-bearing fix was the **data-model schema** (`AbilityField.value`
-`min: 1` → `min: 0`) — Foundry was silently clamping the adapter's 0-write
-back to 1; the two adapter write-sites (`onSpellburnApplied` bridge +
-naked-cast inline deduct) also flipped to `Math.max(0, …)`, and the lib
-floor was fixed + **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0,
-`631f250`; PR moonloch/dcc-core-lib#8). Also added an **e2e smoke-test
-fast-fail** (`global-setup.js`) so a stale GM login aborts the run in ~10 s
-instead of timing out every test for ~25 min. Repo green: **1318 Vitest** /
-**165 Playwright e2e passed**, zero failures.
+**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 18 (full detail
+in *Recent slices*) closed the PR #720 **damage `_total` clamp-divergence
+design call** — resolved-upstream, the premise was stale. The lib has
+since gained its own min-1 clamp (`combat/damage.js:93`), so the displayed
+total and `dcc.libDamageResult.total` can no longer diverge; an
+investigative `displayTotal` mirror field was tried and backed out as
+redundant. Final change is **doc + test only, zero behavior change** —
+corrected the now-false "lib doesn't clamp" comments + a regression test
+pinning the both-sides-floor contract. (Session 17 had closed the
+**spellburn floor-1-vs-0 design call** in favor of RAW fidelity — floor 0,
+load-bearing fix in the `AbilityField.value` schema `min: 1` → `min: 0`;
+lib v0.11.0 `631f250` synced.) Repo green: **1319 Vitest** / **166
+Playwright e2e passed**, zero failures.
 
-**Remaining PR #720 items:** open *design calls* (3 left) + *test-coverage
-gaps* + *doc hygiene* (see *PR #720 review backlog* below) — the
-resilience/cleanup sub-list is fully ticked.
+**Remaining PR #720 items:** open *design calls* (2 left — damage-clamp
+divergence closed 2026-05-31, resolved-upstream once the lib was found to
+clamp `total` itself) + *test-coverage gaps* + *doc hygiene* (see *PR #720
+review backlog* below) — the resilience/cleanup sub-list is fully ticked.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -95,6 +96,31 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 18: close the PR #720 damage `_total`
+  clamp-divergence design call — resolved-upstream, the premise was
+  stale.** The backlog worried that Foundry floored the *displayed* damage
+  total at 1 while the lib left `dcc.libDamageResult.total` un-floored, so
+  the chat flag could carry `0`/negative while chat showed `1` (latent —
+  no consumer reads the flag; `dcc-qol` reads the pre-clamped
+  `messageData.system.damageRoll.total`). User chose the **hybrid** fix
+  (keep `total` honest + add a clamped `displayTotal`); investigating it
+  surfaced that the **lib has since gained its own min-1 clamp**
+  (`combat/damage.js:93` — `Math.max(1, baseDamage + modifierDamage)`),
+  *proven empirically* when a `1d3-4` test expecting lib `total: -3`
+  returned `1`. That guts the divergence entirely — both sides floor, so
+  `displayTotal` would just duplicate `total`. Backed out the `displayTotal`
+  additions; final change is **doc + test only, zero behavior change**:
+  corrected the now-false "lib doesn't [clamp]" comment at
+  `_buildLibDamageResult` + the `_rollDamage` / `buildPassthroughDamageResult`
+  JSDoc (both now state both sides floor + the lib leaves
+  `baseDamage`/`modifierDamage` raw so they won't sum to a floored total —
+  its deliberate shape). +1 Vitest reworked (`adapter-weapon-damage.test.js`:
+  a 1d3-4 floored hit floors to 1 on *both* sides, components stay raw)
+  +1 Playwright (`adapter-dispatch.spec.js`: live `_rollDamage('1d3-4')`
+  asserts `damageRoll.total === libDamageResult.total === 1`). **1319 Vitest**
+  (was 1318, +1). **166 Playwright passed**, zero failures (was 165, +1;
+  5.5-min full suite). PR #720 design calls: 3 → 2 left.
 
 - **2026-05-31 — Phase 7 session 17: resolve the spellburn floor-1-vs-0
   design call in favor of RAW fidelity (floor 0) — the load-bearing fix was
@@ -244,35 +270,6 @@ archives linked above.
   PR #720 *resilience / cleanup* sub-list is fully drained; only design
   calls, test-coverage gaps, and doc hygiene remain.
 
-- **2026-05-29 — feat(adapter): optional `options.checkLabel` to relabel
-  the raw (no-item) spell-check chat flavor.** Implemented from
-  `docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md`. A raw spell check rolled from
-  a class cell (`system.class.spellCheck`, not a specific spell item)
-  always read "Spell Check" in chat — MCC reuses the spell-check
-  machinery for **Mutation Check** (mutant / manimal / plantient) and
-  **Wetware Program Check** (shaman), so the flavor was wrong for those.
-  Two small, fully backward-compatible edits: `module/actor-sheet.js`
-  `#rollSpellCheck` now forwards a `data-check-label` cell attribute as
-  `options.checkLabel`; `module/actor.js` `_castNakedViaAdapter` uses it
-  as the flavor base when no spell name is present
-  (`options.spell || (options.checkLabel ? localize(checkLabel) :
-  localize('DCC.SpellCheck'))` — `localize` passes a non-key literal
-  through unchanged, so `checkLabel` works as an i18n key *or* a raw
-  string). The ability suffix (` (Intelligence)`) is preserved; item
-  casts already flavor with the item name and are unaffected (setting
-  `checkLabel` on an item cast is a harmless no-op — `_buildSpellCheckFlavor`,
-  the only other flavor builder, is item-only by construction). +3 Vitest
-  in `module/__tests__/adapter-spell-check.test.js` (raw relabel via a
-  literal; regression without `checkLabel` → still the generic check;
-  item cast ignores `checkLabel` → flavor stays the item name) + 1
-  Playwright in `adapter-dispatch.spec.js` (a live naked check with
-  `checkLabel: 'Mutation Check'` → chat flavor starts with "Mutation
-  Check", never "Spell Check"). Spec doc Status flipped to ✅ landed.
-  Downstream MCC ships the `data-check-label` attributes on its
-  mutation / program-check cells on its own schedule (inert until then).
-  **1302 Vitest** (was 1299, +3). **161 Playwright passed**, zero
-  failures (was 160, +1).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -325,12 +322,24 @@ deferred findings still open.
   dialog already permitted `newStat >= 0`, so the input side needed no change.
   Lib **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0, `631f250`;
   PR moonloch/dcc-core-lib#8). See Recent slices.
-- **Damage `_total` clamp divergence** (`actor.js`). Foundry clamps
-  `damageRoll._total = 1` when below; the lib doesn't. `warnIfDivergent`
-  post-clamp normalization stops false-positive warns, but
-  `dcc.libDamageResult.total` can still carry `0`/negative while chat
-  shows `1`. Decide: mirror the clamp on the flag, or document the flag
-  as "lib-native, pre-clamp".
+- ~~**Damage `_total` clamp divergence** (`actor.js`).~~ CLOSED
+  2026-05-31 — **resolved upstream; the premise was stale.** The backlog
+  worried that Foundry clamped the displayed total to 1 while the lib left
+  `dcc.libDamageResult.total` un-floored, so the flag could carry
+  `0`/negative while chat showed `1`. The lib has since gained its own
+  min-1 clamp (`combat/damage.js`: `Math.max(1, baseDamage +
+  modifierDamage)`), so the two totals can no longer diverge —
+  `libDamageResult.total` already matches the displayed total on both the
+  parseable and passthrough paths. Investigated a `displayTotal` mirror
+  field first; backed it out as redundant once the lib clamp was found.
+  Final change is doc + test only: corrected the now-false "lib doesn't
+  [clamp]" comment at `_buildLibDamageResult` / `_rollDamage` JSDoc /
+  `buildPassthroughDamageResult` JSDoc, and added a regression test
+  (`adapter-weapon-damage.test.js`: a 1d3-4 floored hit floors to 1 on
+  both sides; components stay raw — the lib's deliberate shape). No
+  consumer reads the flag today (verified across all four sibling modules;
+  `dcc-qol` reads `messageData.system.damageRoll.total`, the pre-clamped
+  Foundry total).
 - **Error boundaries around `_xxxViaAdapter`.** A lib throw becomes an
   unhandled rejection → the cast silently fails. Wrapping every adapter
   path in `try/catch` + legacy fallback is more forgiving but risks

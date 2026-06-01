@@ -204,6 +204,10 @@ export function parseWeaponMagicBonus (weapon) {
  * consumers read it uniformly — unknown slots are `null`, and
  * `passthrough: true` marks the breakdown as deliberately empty.
  *
+ * `total` carries Foundry's already-clamped total (Foundry floors the
+ * Roll at the DCC min-1 in `_rollDamage` before this is called), so it
+ * matches the lib-native path's likewise-floored `total`.
+ *
  * @param {{total: number}} damageRoll
  * @returns {{damageDie: null, natural: null, baseDamage: null, modifierDamage: null, total: number, breakdown: Array, passthrough: true}}
  */

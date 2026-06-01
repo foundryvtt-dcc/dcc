@@ -1733,6 +1733,37 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(damageLine, 'adapter', { weapon: 'P1-Longsword' })
     })
 
+    test('floored damage: libDamageResult.total rides the min-1 floor and matches the displayed total (PR #720 clamp closure)', async ({ page }) => {
+      // PR #720 design call (closed 2026-05-31, resolved-upstream): the
+      // backlog premise was that Foundry clamped the displayed total to 1
+      // while the lib left `dcc.libDamageResult.total` un-floored, so the
+      // flag could carry 0/negative while chat showed 1. The lib has since
+      // gained its own min-1 clamp, so the two totals can no longer
+      // diverge. `1d3-4` always rolls negative (max 3-4 = -1), so this is a
+      // deterministic floored hit regardless of the die. Invoke
+      // `_rollDamage` directly against live Foundry and assert both totals
+      // floor to 1.
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Floored Damage', type: 'Player' })
+        const weapon = { name: 'P1-PenaltyDagger' }
+        const dispatch = await actor._rollDamage(weapon, '1d3-4', {})
+        return {
+          displayedTotal: dispatch.damageRoll.total,
+          libTotal: dispatch.libDamageResult.total,
+          baseDamage: dispatch.libDamageResult.baseDamage,
+          modifierDamage: dispatch.libDamageResult.modifierDamage
+        }
+      })
+      // Both sides floor to 1 — no divergence.
+      expect(result.displayedTotal).toBe(1)
+      expect(result.libTotal).toBe(1)
+      expect(result.libTotal).toBe(result.displayedTotal)
+      // The lib leaves the components raw (its deliberate shape), so on a
+      // floored hit they sum below the clamped total rather than reconciling.
+      expect(result.modifierDamage).toBe(-4)
+      expect(result.baseDamage + result.modifierDamage).toBeLessThan(result.libTotal)
+    })
+
     test('options.backstab on a thief → adapter (session 9)', async ({ page }) => {
       // Phase 3 session 9: backstab attack + damage flow through the
       // adapter. `isBackstab: true` drives the lib's auto-crit;
