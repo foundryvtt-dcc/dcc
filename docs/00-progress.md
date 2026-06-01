@@ -305,44 +305,24 @@ deferred findings still open.
   Lib **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0, `631f250`;
   PR moonloch/dcc-core-lib#8). See Recent slices.
 - ~~**Damage `_total` clamp divergence** (`actor.js`).~~ CLOSED
-  2026-05-31 — **resolved upstream; the premise was stale.** The backlog
-  worried that Foundry clamped the displayed total to 1 while the lib left
-  `dcc.libDamageResult.total` un-floored, so the flag could carry
-  `0`/negative while chat showed `1`. The lib has since gained its own
-  min-1 clamp (`combat/damage.js`: `Math.max(1, baseDamage +
-  modifierDamage)`), so the two totals can no longer diverge —
-  `libDamageResult.total` already matches the displayed total on both the
-  parseable and passthrough paths. Investigated a `displayTotal` mirror
-  field first; backed it out as redundant once the lib clamp was found.
-  Final change is doc + test only: corrected the now-false "lib doesn't
-  [clamp]" comment at `_buildLibDamageResult` / `_rollDamage` JSDoc /
-  `buildPassthroughDamageResult` JSDoc, and added a regression test
-  (`adapter-weapon-damage.test.js`: a 1d3-4 floored hit floors to 1 on
-  both sides; components stay raw — the lib's deliberate shape). No
-  consumer reads the flag today (verified across all four sibling modules;
-  `dcc-qol` reads `messageData.system.damageRoll.total`, the pre-clamped
-  Foundry total).
-- **Error boundaries around `_xxxViaAdapter`.** A lib throw becomes an
-  unhandled rejection → the cast silently fails. Wrapping every adapter
-  path in `try/catch` + legacy fallback is more forgiving but risks
-  masking the lib bugs the observational refactor is meant to surface.
-  Likely right answer: add the fallback after the adapter paths are
-  proven stable.
+  2026-05-31 (Phase 7 session 18) — resolved-upstream; the premise was
+  stale (the lib gained its own min-1 clamp, so the two totals can't
+  diverge). Doc + test only; no consumer reads the flag. Full narrative
+  in the session-18 Recent-slices entry.
+- **Error boundaries around `_xxxViaAdapter`** — DECIDED 2026-05-31:
+  **fail-loud** (wrap each adapter dispatch; on throw log + show a
+  `ui.notifications.error`, then rethrow — no legacy fallback, preserving
+  the surface-bugs philosophy). Not yet implemented. Sequence it
+  before/with the *Legacy decommission* work below (once legacy is gone
+  there's no fallback at all). Fix the two un-awaited sheet calls
+  (`rollAbilityCheck` actor-sheet:1477, `rollWeaponAttack` :1622) in the
+  same slice — a throw there is an unhandled rejection / silent dead
+  click today.
 - ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
-  (Phase 7 session 19) — **deleted.** Zero consumers (production, tests,
-  or any of the four sibling modules); its stated reason to exist
-  ("later phases may prefer the lib's async roller") is a closed door —
-  Groups A/C/D + the unified modifier dialog all landed on the two-pass
-  *sync* pattern (Foundry evaluates inline, lib classifies), which the
-  async roller fundamentally conflicts with. Wiring it would reverse a
-  deliberate design choice, not finish an unfinished one. Deleted
-  `module/adapter/foundry-roller.mjs` + corrected three stale comments
-  that mischaracterized the ability-check flow as routing through it
-  (`adapter-ability-check.test.js` header, two in `actor.test.js` — the
-  roll is built inline via `new Roll(plan.formula).evaluate()`). Live
-  docs updated (`01-session-start.md` adapter-module list;
-  `ARCHITECTURE_REIMAGINED.md` §5.4 annotated PLANNED/NEVER-ADOPTED).
-  Closes the paired coverage gap below. See Recent slices.
+  (Phase 7 session 19) — **deleted** (zero consumers; its only rationale
+  was a closed door — every dispatcher landed on the two-pass sync
+  pattern the async roller conflicts with). Closes the paired coverage
+  gap below. Full narrative in the session-19 Recent-slices entry.
 
 **Open resilience / cleanup items:**
 
@@ -372,6 +352,88 @@ deferred findings still open.
   programmatic creation in a content-free world still hits it. Remaining:
   document the level-change-dialog dependency for "quick PC" tooling /
   browser-test fixtures.
+
+**Legacy decommission (full `_xxxLegacy` retirement — added 2026-05-31):**
+
+Goal: delete every surviving `_xxxLegacy` branch so the public
+dispatchers are single-path through the adapter, per the
+legacy-branch-retirement principle (decision #7 — Foundry-facing API
+stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
+coverage is exhaustive for their gate). Group D already retired
+attack / crit / fumble / damage; the spell-check legacy wrapper went in
+session 16. **Four `_xxxLegacy` bodies remain**, each kept alive only by
+the option-flag(s) in its dispatcher gate. Retiring them is gated on
+moving those capabilities into the adapter first — sequence the work by
+the shared capability, not by the method, since one capability unblocks
+several gates at once:
+
+1. **Roll-under in the adapter.** Blocks `_rollAbilityCheckLegacy`
+   (luck checks) + `_rollSavingThrowLegacy`. **Partly already in the
+   lib:** `checks/luck-check.js` exports `rollLuckCheck(character,
+   options)` with full roll-under mechanics (1d20, success if ≤ Luck
+   score, no modifiers) — so the ability-check luck case is mostly an
+   adapter-wiring job (build a `_rollLuckCheckViaAdapter` around
+   `rollLuckCheck` + a roll-under render path through chat-renderer; the
+   two-pass `{mode:'formula'}`→evaluate→`roller:()=>natural` pattern
+   applies). **Open for saves:** confirm whether any DCC save actually
+   uses roll-under (the gate has `!!options.rollUnder` on save, but it
+   may be dead in practice — audit the sheet's save options first); if a
+   real save roll-under exists and the lib can't express it, that's the
+   `dcc-core-lib` PR (generalize roll-under beyond luck, land lib-side
+   first, then sync). Once wired, drop the `!!options.rollUnder` clause
+   from both gates.
+2. **Modifier-dialog for ability + save + init.** Blocks the
+   `!!options.showModifierDialog` clause in `_rollAbilityCheckLegacy`,
+   `_rollSavingThrowLegacy`, and `_getInitiativeRollLegacy`. The
+   pattern already exists — Q7 (sessions 26–27) wired
+   `promptRollModifierDialog` adapter-side for skill + spell checks.
+   This extends the same dialog to the three remaining binary gates.
+   Biggest single unblock: clears the only gate on init, and one of
+   two clauses on ability + save.
+3. **Non-zero check-penalty display in the adapter.** Blocks the last
+   clause of `_rollAbilityCheckLegacy` (str/agl with a non-zero armor
+   check penalty render a penalty term). Adapter must surface the
+   penalty as a labelled modifier term in the chat breakdown (the
+   `buildModifierBreakdownHtml` machinery from the chat-renderer slice
+   can likely carry it).
+4. **Description-only skill items in the adapter.** Blocks
+   `_rollSkillCheckLegacy` (the `!resolved.hasDie` gate) — these emit a
+   *description chat message*, not a roll. Either teach
+   `_rollSkillCheckViaAdapter` / a sibling adapter route to emit the
+   description card, or split a tiny `_emitSkillDescription` helper that
+   both the (eventually-deleted) legacy path and the adapter call.
+5. **Delete the bodies + the shared helper.** Once 1–4 land, the four
+   `needsLegacyPath` / gate branches are dead. Delete
+   `_rollAbilityCheckLegacy`, `_getInitiativeRollLegacy`,
+   `_rollSavingThrowLegacy`, `_rollSkillCheckLegacy`, and the shared
+   `_buildSkillCheckLegacyTerms` helper. Collapse each dispatcher to a
+   single `return this._xxxViaAdapter(...)` (mirroring the Group D
+   attack/crit/fumble/damage collapse). Add a retirement-guard test per
+   method (assert the `_xxxLegacy` symbol is `undefined`), matching the
+   D2 `_rollDamageLegacy` guard pattern. Clean the ~15 stale
+   `_rollSkillCheckLegacy` doc/comment references catalogued by the
+   grep at session 19.
+
+Dependency notes / landmines:
+- **`error boundaries` interaction.** The remaining design call (fail-loud
+  notify + rethrow around `_xxxViaAdapter`, chosen 2026-05-31) should land
+  *before or alongside* this — once legacy is gone there's no fallback at
+  all, so a lib throw must surface as a `ui.notifications.error`, not a
+  silent dead click. Two sheet calls are currently **un-awaited**
+  (`rollAbilityCheck` actor-sheet:1477, `rollWeaponAttack` :1622), so a
+  throw there is an unhandled rejection today — fix the await + add the
+  boundary in the same slice.
+- **Cross-repo.** Any capability the lib can't yet express (roll-under
+  result shape, modifier-dialog term threading) lands as a
+  `dcc-core-lib` PR first, then `npm run sync-core-lib`, per the
+  standing lib-fix rule.
+- **Per-slice testing.** Each of 1–5 is its own refactor slice on this
+  branch (auto-commit authorization applies): full Vitest + full e2e +
+  ≥1 new browser assertion exercising the newly-adapter-routed behavior
+  live (e.g. a roll-under luck check, a save with the modifier dialog, a
+  description-only skill item) — these are exactly the branches that
+  *only* the legacy path covered, so the e2e assertions are the
+  regression net proving the adapter now owns them.
 
 **Open test coverage gaps (pr-test-analyzer severity ≥ 6):**
 
@@ -498,6 +560,17 @@ deferred findings still open.
    landed under this principle.
 
 ## Next steps
+
+**PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
+roll paths.** See the *Legacy decommission* subsection in the PR #720
+backlog above for the sequenced 5-step plan (roll-under → modifier-dialog
+→ check-penalty → description-only skill → delete the 4 `_xxxLegacy`
+bodies + `_buildSkillCheckLegacyTerms`). Land the **error-boundaries**
+design call (fail-loud notify + rethrow; fix the two un-awaited sheet
+calls) before/with the deletion so a post-legacy lib throw surfaces
+visibly instead of as a silent dead click. Any lib capability gap
+(roll-under result shape, modifier-dialog term threading) lands as a
+`dcc-core-lib` PR first, then `npm run sync-core-lib`.
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
 fully closed; open questions #2, #3, #4, and #7 all closed
