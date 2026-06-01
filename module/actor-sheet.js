@@ -505,6 +505,20 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           spells[i.system.level] = [i]
         }
       } else if (i.type === 'skill') {
+        // Resolve the die shown in the Skills "Die" column. A skill
+        // with its own die (useDie) shows that die. With useDie off, a
+        // rollable skill (value / ability / level) inherits the actor's
+        // action die — matching what `rollSkillCheck` actually rolls —
+        // so NPC skills no longer display "--" while still rolling the
+        // action die. A pure description-only skill shows nothing.
+        const skillConfig = i.system.config || {}
+        if (skillConfig.useDie && i.system.die) {
+          i.displayDie = i.system.die
+        } else if (!skillConfig.useDie && (skillConfig.useValue || skillConfig.useAbility || skillConfig.useLevel)) {
+          i.displayDie = this.options.document.getActionDice()[0]?.formula || '1d20'
+        } else {
+          i.displayDie = null
+        }
         skills.push(i)
       } else if (i.type === 'treasure') {
         let treatAsCoins = false

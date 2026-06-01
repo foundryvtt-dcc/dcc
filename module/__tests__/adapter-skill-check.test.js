@@ -181,6 +181,56 @@ test('description-only skill item routes to the legacy path', async () => {
   global.itemTypesMock.mockReset()
 })
 
+test('NPC skill item with useDie:false + a value modifier inherits the actor action die', async () => {
+  // Regression: imported NPCs carry skill items configured with
+  // `useDie: false` but a flat `value` (e.g. "Divine Aid +4"). Before
+  // the fix the missing-die fallback only matched built-in slots, so
+  // these rolled with no action die. Now the rollable item inherits the
+  // actor's action die and rolls it (d20 + value) through the adapter.
+  rollToMessageMock.mockClear()
+
+  const npcSkill = new DCCItem({
+    name: 'Divine Aid',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: true,
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false
+      },
+      ability: 'int',
+      die: '1d20',
+      value: '4'
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(npcSkill)
+    }
+  })
+
+  await actor.rollSkillCheck('Divine Aid')
+
+  // Adapter path fired (Roll.toMessage), not the description-only legacy path.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  // Inherited the actor's action die (mock actor: 1d20 -> lib 'd20').
+  expect(libResult.die).toBe('d20')
+  // Flat +4 skill value carried through as a modifier.
+  const valueMod = libResult.modifiers.find((m) => m.origin?.id === 'skill-value')
+  expect(valueMod).toBeDefined()
+  expect(valueMod.value).toBe(4)
+
+  global.itemTypesMock.mockReset()
+})
+
 test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
   rollToMessageMock.mockClear()
   global.dccRollCreateRollMock.mockClear()

@@ -411,6 +411,55 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'legacy', { skillId: 'P1-Lore' })
     })
 
+    test('NPC skill item (useDie:false + value) → adapter, inherits action die', async ({ page }) => {
+      // Regression: imported NPCs carry skill items configured with
+      // `useDie: false` but a flat `value` (e.g. an NPC cleric's
+      // "Divine Aid +4"). The Die column showed "--" and the check
+      // rolled with no action die — it dropped to the legacy
+      // description path / produced a die-less roll. The missing-die
+      // fallback now also covers rollable skill items, so they inherit
+      // the actor's action die and route through the adapter.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'NPC Skill InheritDie', type: 'NPC' })
+        await actor.update({ 'system.config.actionDice': '1d20' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'NPC-DivineAid',
+          type: 'skill',
+          system: {
+            die: '1d20',
+            ability: 'int',
+            value: '4',
+            config: { useSummary: true, useDie: false, useAbility: false, useValue: true, useLevel: false, showLastResult: false, applyCheckPenalty: false }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('NPC Skill InheritDie').rollSkillCheck('NPC-DivineAid')
+      })
+      const line = await waitForAdapterLog('rollSkillCheck')
+      assertPath(line, 'adapter', { skillId: 'NPC-DivineAid' })
+
+      // End-to-end: the emitted roll inherited the actor's action die
+      // (d20) and carried the flat +4 skill value.
+      const result = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m => m.flags?.dcc?.SkillId === 'NPC-DivineAid' && m.flags?.dcc?.libResult)
+          if (msg) return msg.flags.dcc.libResult
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        return null
+      })
+      expect(result, 'NPC skill check must emit a lib roll result').not.toBeNull()
+      expect(result.die).toBe('d20')
+      const valueMod = (result.modifiers || []).find(m => m.origin?.id === 'skill-value')
+      expect(valueMod, 'NPC skill +4 value must carry through').toBeDefined()
+      expect(valueMod.value).toBe(4)
+    })
+
     test('showModifierDialog flag → adapter (session 26 / Q7)', async ({ page }) => {
       // Phase 3 session 26 (open question #7): the
       // `showModifierDialog` clause no longer routes to legacy. The
