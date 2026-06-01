@@ -498,6 +498,7 @@
   "DCC.RolledSkillCheckEmote": "{actorName} rolled {skillCheckInlineRollHTML} for their {skillName} check.",
   "DCC.RollAgilityCheckHint": "Click to roll an Agility check, CMD/CTRL click for more options",
   "DCC.RollDamage": "Roll Damage",
+  "DCC.RollErrorNotification": "The {rollType} roll failed unexpectedly — see the console (F12) for details.",
   "DCC.RollDisapprovalMacroName": "Roll for Disapproval",
   "DCC.RollFumble": "Roll Fumble",
   "DCC.RollIntelligenceCheckHint": "Click to roll an Intelligence check, CMD/CTRL click for more options",

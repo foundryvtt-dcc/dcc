@@ -1474,7 +1474,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollUnder
     })
 
-    this.options.document.rollAbilityCheck(ability, options)
+    await this.options.document.rollAbilityCheck(ability, options)
   }
 
   /**
@@ -1619,7 +1619,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')
     })
-    this.options.document.rollWeaponAttack(itemId, options)
+    await this.options.document.rollWeaponAttack(itemId, options)
   }
 
   /** @override */

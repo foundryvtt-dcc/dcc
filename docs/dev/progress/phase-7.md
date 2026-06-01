@@ -912,3 +912,24 @@
   failures — clean 6.2-min full suite (was 161, +1). With this slice the
   PR #720 *resilience / cleanup* sub-list is fully drained; only design
   calls, test-coverage gaps, and doc hygiene remain.
+
+- **2026-05-29 — §2.8 homebrew extensibility validated by real
+  sibling-module migrations + EXTENSION_API doc refresh (`c76a3a9`).** The
+  Phase 4–6 class-registration stack (`registerClassMixin` /
+  `registerClassDefaults` / `registerSheetPart` / `registerActorSheet`)
+  got its first real-world consumers: `dcc-crawl-classes` (9 classes — PR
+  foundryvtt-dcc/dcc-crawl-classes#40) and `mcc-classes` (7 classes — PR
+  foundryvtt-dcc/mcc-classes#38) were migrated off the legacy
+  monolithic-`dcc.definePlayerSchema` + NPC-base-sheet pattern onto the
+  API, each verified live in the v14 world. This fulfills the Group E
+  "homebrew single-class vertical" candidate with **actual content
+  modules** rather than a synthetic class — crawl collapsed to 5-line
+  `DCCSheet` stubs; mcc kept thin `_prepareContext` overrides for its
+  §9.2/§9.3a one-time data migrations (the `-=`/transform logic
+  `registerClassDefaults` can't express). **No DCC-suite delta** (the
+  migrations live in the sibling repos with their own suites; counts stay
+  1304 Vitest / 162 Playwright). The only DCC-branch artifact is the
+  docs-only `c76a3a9` refreshing the `EXTENSION_API.md` `registerActorSheet`
+  row (both modules were still listed "migration opt-in"). Surfaced no
+  DCC-system gaps — every enabler (`DCCSheet` export, `sheetClass` on the
+  base schema, the progression-load hook) already existed.

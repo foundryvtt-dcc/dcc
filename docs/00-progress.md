@@ -65,23 +65,23 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 19 (full detail
-in *Recent slices*) closed the PR #720 **`createFoundryRoller`
-delete-or-wire design call** — deleted. The async Foundry-Roll wrapper had
-zero consumers and its only rationale (a future phase preferring the lib's
-async roller) is a closed door: every dispatcher landed on the two-pass
-**sync** pattern instead, which the async roller conflicts with. Closed
-both the design call and its paired coverage gap; corrected three stale
-comments + two live docs. (Session 18 closed the **damage `_total`
-clamp-divergence** call as resolved-upstream — the lib now clamps `total`
-itself; session 17 closed the **spellburn floor-1-vs-0** call in favor of
-RAW fidelity.) Repo green: **1319 Vitest** / **166 Playwright e2e passed**,
-zero failures.
+**Phase 7 cleanup — latest 2026-05-31.** Phase 7 session 20 (full detail
+in *Recent slices*) added **fail-loud error boundaries** around all six
+public roll dispatchers — closing the **last open PR #720 design call**. A
+shared `withRollErrorBoundary` (+ a sync sibling for `getInitiativeRoll`,
+which must stay sync for Foundry's combat-tracker contract) logs +
+`ui.notifications.error` + rethrows on any adapter throw, so a lib failure
+surfaces visibly instead of as a silent dead click (the two un-awaited
+sheet calls were also fixed). This is the **prerequisite for the
+legacy-decom work** — once the `_xxxLegacy` bodies are gone there's no
+fallback, so the boundary had to land first. (Sessions 17–19 closed the
+spellburn floor, damage-clamp, and `createFoundryRoller` calls.) Repo
+green: **1328 Vitest** / **168 Playwright e2e passed**, zero failures.
 
-**Remaining PR #720 items:** open *design calls* (1 left — **error
-boundaries around `_xxxViaAdapter`**; damage-clamp + `createFoundryRoller`
-closed 2026-05-31) + *test-coverage gaps* + *doc hygiene* (see *PR #720
-review backlog* below) — the resilience/cleanup sub-list is fully ticked.
+**Remaining PR #720 items:** **all design calls closed.** Next up is the
+**Legacy decommission** plan (5 sequenced steps — see backlog subsection +
+*Next steps*; the user-directed priority) plus *test-coverage gaps* +
+*doc hygiene*. The resilience/cleanup sub-list is fully ticked.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -95,6 +95,43 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-31 — Phase 7 session 20: fail-loud error boundaries around
+  the public roll dispatchers (closes the last PR #720 design call;
+  unblocks legacy-decom).** A throw inside any `_xxxViaAdapter` /
+  `_xxxLegacy` path was an unhandled rejection → silent dead click (worse
+  for the two **un-awaited** sheet calls, `rollAbilityCheck`
+  actor-sheet:1477 + `rollWeaponAttack` :1622). Implemented the
+  **fail-loud** decision: a shared `withRollErrorBoundary(rollType, label,
+  fn)` in `module/adapter/debug.mjs` awaits `fn`, and on throw logs
+  `console.error` + shows `ui.notifications.error`
+  (`DCC.RollErrorNotification`, translated across all 7 langs) then
+  **rethrows** — no swallow, no legacy fallback, so the surface-bugs
+  philosophy stays intact while the failure becomes visible. Wraps all
+  six public dispatchers (`rollAbilityCheck`, `rollSavingThrow`,
+  `rollSkillCheck`, `rollSpellCheck`, `rollWeaponAttack`,
+  `getInitiativeRoll`). **Landmine handled:** `getInitiativeRoll` must
+  stay *synchronous* — `DCCCombatant.getInitiativeRoll` (combatant.js:13)
+  overrides Foundry core's sync `Combatant.getInitiativeRoll` (the combat
+  tracker expects a `Roll`, not a Promise), so it uses a dedicated
+  `withRollErrorBoundarySync` that throws synchronously instead of
+  rejecting a promise. The two big dispatchers (`rollSpellCheck`,
+  `rollWeaponAttack`) were extracted to `_rollSpellCheckDispatch` /
+  `_rollWeaponAttackDispatch` helpers so the public method is a thin
+  one-line boundary wrapper rather than a re-indented 90-line body. Fixed
+  the two un-awaited sheet calls to `await`. No lib change (pure
+  adapter-side concern). +9 Vitest (`adapter-error-boundary.test.js`:
+  async/sync helper contract — happy path, sync throw, async rejection
+  with the await load-bearing, sync-boundary returns-non-promise; plus
+  dispatcher-level `rollAbilityCheck` rejects+notifies and
+  `getInitiativeRoll` throws-sync+notifies). +2 Playwright
+  (`adapter-dispatch.spec.js` `error boundary` block: live forced throw on
+  `rollAbilityCheck` → rejects + `.notification.error` DOM node shown;
+  `getInitiativeRoll` → throws synchronously, no promise handed back).
+  **1328 Vitest** (was 1319, +9). **168 Playwright passed**, zero failures
+  (was 166, +2; 5.6-min full suite). With this, **all PR #720 design
+  calls are closed** — remaining backlog is the legacy-decom plan +
+  test-coverage gaps + doc hygiene.
 
 - **2026-05-31 — Phase 7 session 19: close the PR #720 `createFoundryRoller`
   delete-or-wire design call — deleted (+ its paired coverage gap).** The
@@ -231,27 +268,6 @@ archives linked above.
   connected; nothing to do with this slice); re-enabling the module +
   rebooting → fully green.
 
-- **2026-05-29 — §2.8 homebrew extensibility validated by real
-  sibling-module migrations + EXTENSION_API doc refresh (`c76a3a9`).** The
-  Phase 4–6 class-registration stack (`registerClassMixin` /
-  `registerClassDefaults` / `registerSheetPart` / `registerActorSheet`)
-  got its first real-world consumers: `dcc-crawl-classes` (9 classes — PR
-  foundryvtt-dcc/dcc-crawl-classes#40) and `mcc-classes` (7 classes — PR
-  foundryvtt-dcc/mcc-classes#38) were migrated off the legacy
-  monolithic-`dcc.definePlayerSchema` + NPC-base-sheet pattern onto the
-  API, each verified live in the v14 world. This fulfills the Group E
-  "homebrew single-class vertical" candidate with **actual content
-  modules** rather than a synthetic class — crawl collapsed to 5-line
-  `DCCSheet` stubs; mcc kept thin `_prepareContext` overrides for its
-  §9.2/§9.3a one-time data migrations (the `-=`/transform logic
-  `registerClassDefaults` can't express). **No DCC-suite delta** (the
-  migrations live in the sibling repos with their own suites; counts stay
-  1304 Vitest / 162 Playwright). The only DCC-branch artifact is the
-  docs-only `c76a3a9` refreshing the `EXTENSION_API.md` `registerActorSheet`
-  row (both modules were still listed "migration opt-in"). Surfaced no
-  DCC-system gaps — every enabler (`DCCSheet` export, `sheetClass` on the
-  base schema, the progression-load hook) already existed.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -278,7 +294,9 @@ review. Fixed findings have been pruned — their narratives live in the
 *Recent slices* section / phase archives. The items below are the
 deferred findings still open.
 
-**Open design calls (need a deliberate decision, not a silent fix):**
+**Design calls (need a deliberate decision, not a silent fix) — ALL
+CLOSED as of 2026-05-31 (Phase 7 session 20). Ticks retained below for
+rationale; the section is fully drained.**
 
 - ~~**Spellburn dialog prompts before the adapter knows it can handle the
   cast.**~~ CLOSED 2026-05-31 (Phase 7 session 16). Resolved by retiring
@@ -309,15 +327,23 @@ deferred findings still open.
   stale (the lib gained its own min-1 clamp, so the two totals can't
   diverge). Doc + test only; no consumer reads the flag. Full narrative
   in the session-18 Recent-slices entry.
-- **Error boundaries around `_xxxViaAdapter`** — DECIDED 2026-05-31:
-  **fail-loud** (wrap each adapter dispatch; on throw log + show a
-  `ui.notifications.error`, then rethrow — no legacy fallback, preserving
-  the surface-bugs philosophy). Not yet implemented. Sequence it
-  before/with the *Legacy decommission* work below (once legacy is gone
-  there's no fallback at all). Fix the two un-awaited sheet calls
-  (`rollAbilityCheck` actor-sheet:1477, `rollWeaponAttack` :1622) in the
-  same slice — a throw there is an unhandled rejection / silent dead
-  click today.
+- ~~**Error boundaries around `_xxxViaAdapter`**~~ CLOSED 2026-05-31
+  (Phase 7 session 20) — implemented **fail-loud**: a shared
+  `withRollErrorBoundary` (+ a sync sibling `withRollErrorBoundarySync`
+  for `getInitiativeRoll`, which must stay sync per Foundry's
+  `Combatant.getInitiativeRoll` contract) in `debug.mjs` wraps all six
+  public dispatchers; on a throw it logs `console.error` + shows
+  `ui.notifications.error` (`DCC.RollErrorNotification`, translated ×7),
+  then **rethrows** — no legacy fallback, surface-bugs philosophy intact.
+  Fixed the two un-awaited sheet calls (`rollAbilityCheck`
+  actor-sheet:1477, `rollWeaponAttack` :1622). This unblocks the *Legacy
+  decommission* work (once legacy is gone there's no fallback, so the
+  boundary had to land first). No lib change. See Recent slices.
+- ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
+  (Phase 7 session 19) — **deleted** (zero consumers; its only rationale
+  was a closed door — every dispatcher landed on the two-pass sync
+  pattern the async roller conflicts with). Closes the paired coverage
+  gap below. Full narrative in the session-19 Recent-slices entry.
 - ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
   (Phase 7 session 19) — **deleted** (zero consumers; its only rationale
   was a closed door — every dispatcher landed on the two-pass sync

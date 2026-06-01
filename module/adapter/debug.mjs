@@ -1,3 +1,5 @@
+/* global game, ui */
+
 /**
  * Adapter dispatch logging.
  *
@@ -45,5 +47,77 @@ export function warnIfDivergent (rollType, foundryTotal, libTotal, context = {})
   console.warn(
     `[DCC adapter] ${rollType} lib/foundry total divergence`,
     { foundry: foundryTotal, lib: libTotal, ...context }
+  )
+}
+
+/**
+ * Fail-loud error boundary for the public roll dispatchers.
+ *
+ * The observational refactor deliberately removes legacy fallbacks so
+ * lib bugs surface instead of being silently masked. The failure mode
+ * that leaves behind, though, is bad: an uncaught throw inside an
+ * `_xxxViaAdapter` (or `_xxxLegacy`) path becomes an unhandled promise
+ * rejection, so the player's click just does nothing with no feedback.
+ *
+ * This boundary keeps the surface-bugs philosophy (it does NOT swallow
+ * the error or fall back to legacy) while making the failure visible:
+ * on a throw it logs the full error to the console and shows a
+ * `ui.notifications.error`, then **rethrows** so the rejection still
+ * propagates (and any caller / test still sees it). Wrap the body of
+ * each public dispatcher with `return await withRollErrorBoundary(...)`.
+ *
+ * `await` matters: returning the inner promise without awaiting would
+ * let the rejection escape the try/catch. The wrapped `fn` may itself
+ * be sync (e.g. `getInitiativeRoll` returns a `Roll`) — awaiting a
+ * non-promise is a harmless no-op.
+ *
+ * @param {string} rollType - dispatcher name, e.g. 'rollAbilityCheck'
+ * @param {string} label - already-localized human label for the
+ *   notification (e.g. the result of `game.i18n.localize('DCC.Roll')`)
+ * @param {() => any} fn - the dispatcher body to run
+ * @returns {Promise<any>} whatever `fn` returns
+ */
+export async function withRollErrorBoundary (rollType, label, fn) {
+  try {
+    return await fn()
+  } catch (err) {
+    notifyRollError(rollType, label, err)
+    throw err
+  }
+}
+
+/**
+ * Synchronous sibling of {@link withRollErrorBoundary}, for the one
+ * dispatcher that must stay sync: `getInitiativeRoll` overrides Foundry
+ * core's synchronous `Combatant.getInitiativeRoll` contract (the combat
+ * tracker expects a `Roll`, not a Promise). Same fail-loud behavior —
+ * log + notify + rethrow — without turning the return value into a
+ * promise. Do NOT use this for paths whose `fn` is async: an async `fn`
+ * here would resolve its rejection outside the try, defeating the
+ * boundary. The init path is sync end-to-end, so this is safe.
+ *
+ * @param {string} rollType - dispatcher name, e.g. 'getInitiativeRoll'
+ * @param {string} label - already-localized human label for the notification
+ * @param {() => any} fn - the synchronous dispatcher body to run
+ * @returns {any} whatever `fn` returns
+ */
+export function withRollErrorBoundarySync (rollType, label, fn) {
+  try {
+    return fn()
+  } catch (err) {
+    notifyRollError(rollType, label, err)
+    throw err
+  }
+}
+
+/**
+ * Shared fail-loud reporting for the roll error boundaries: log the full
+ * error to the console and show a localized `ui.notifications.error`.
+ * @private
+ */
+function notifyRollError (rollType, label, err) {
+  console.error(`[DCC adapter] ${rollType} threw — surfacing to the user`, err)
+  ui.notifications.error(
+    game.i18n.format('DCC.RollErrorNotification', { rollType: label })
   )
 }

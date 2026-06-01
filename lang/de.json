@@ -498,6 +498,7 @@
   "DCC.RolledSkillCheckEmote": "{actorName} würfelte {skillCheckInlineRollHTML} für den {skillName}-Wurf.",
   "DCC.RollAgilityCheckHint": "Klicken für Geschicklichkeitswurf, CMD/STRG-Klick für mehr Optionen",
   "DCC.RollDamage": "Schaden würfeln",
+  "DCC.RollErrorNotification": "Der {rollType}-Wurf ist unerwartet fehlgeschlagen — Einzelheiten in der Konsole (F12).",
   "DCC.RollDisapprovalMacroName": "Ungnadewurf ausführen",
   "DCC.RollFumble": "Patzer würfeln",
   "DCC.RollIntelligenceCheckHint": "Klicken für Intelligenzwurf, CMD/STRG-Klick für mehr Optionen",

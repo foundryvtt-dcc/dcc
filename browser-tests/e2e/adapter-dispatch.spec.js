@@ -3372,4 +3372,70 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(state.version, 'V14 worlds store systemMigrationVersion at or above the V14 floor').toBeGreaterThanOrEqual(0.66)
     })
   })
+
+  // ── error boundary (Phase 7 session 20) ────────────────────────────
+  //
+  // The public dispatchers wrap their bodies in `withRollErrorBoundary`
+  // (debug.mjs) so a throw inside an adapter path surfaces to the user
+  // (console.error + ui.notifications.error) + rethrows, instead of
+  // becoming a silent unhandled rejection. These live tests force a
+  // throw on a real actor and assert the user-visible failure.
+  test.describe('error boundary', () => {
+    test('rollAbilityCheck: a thrown adapter error notifies the user + rejects', async ({ page }) => {
+      await makePlayer(page, 'P1 Boundary Ability')
+      const result = await page.evaluate(async () => {
+        const actor = game.actors.getName('P1 Boundary Ability')
+        // Force the adapter sub-path to throw.
+        const original = actor._rollAbilityCheckViaAdapter
+        actor._rollAbilityCheckViaAdapter = () => { throw new Error('forced adapter failure') }
+        let rejected = false
+        try {
+          await actor.rollAbilityCheck('lck')
+        } catch {
+          rejected = true
+        } finally {
+          actor._rollAbilityCheckViaAdapter = original
+        }
+        // The boundary shows a ui.notifications.error — find its DOM node.
+        const errorNote = Array.from(
+          document.querySelectorAll('#notifications .notification.error')
+        ).some(n => n.textContent && n.textContent.length > 0)
+        return { rejected, errorNote }
+      })
+      // Fail-loud: the error propagated (not swallowed) AND the user saw it.
+      expect(result.rejected, 'rollAbilityCheck rejected (rethrow, not swallow)').toBe(true)
+      expect(result.errorNote, 'a ui.notifications.error was shown').toBe(true)
+    })
+
+    test('getInitiativeRoll: a thrown adapter error throws synchronously (combat-tracker contract)', async ({ page }) => {
+      await makePlayer(page, 'P1 Boundary Init')
+      const result = await page.evaluate(async () => {
+        const actor = game.actors.getName('P1 Boundary Init')
+        const original = actor._getInitiativeRollViaAdapter
+        actor._getInitiativeRollViaAdapter = () => { throw new Error('forced init failure') }
+        let threwSync = false
+        let returnedPromise = false
+        try {
+          const ret = actor.getInitiativeRoll()
+          // If we get here it didn't throw synchronously — check whether
+          // it handed back a promise (which would break Foundry's sync
+          // combat-tracker contract).
+          returnedPromise = typeof ret?.then === 'function'
+        } catch {
+          threwSync = true
+        } finally {
+          actor._getInitiativeRollViaAdapter = original
+        }
+        const errorNote = Array.from(
+          document.querySelectorAll('#notifications .notification.error')
+        ).some(n => n.textContent && n.textContent.length > 0)
+        return { threwSync, returnedPromise, errorNote }
+      })
+      // Synchronous throw — NOT a rejected promise — so the combat tracker
+      // sees a thrown error, not an unhandled rejection it never awaits.
+      expect(result.threwSync, 'getInitiativeRoll threw synchronously').toBe(true)
+      expect(result.returnedPromise, 'did not hand back a promise').toBe(false)
+      expect(result.errorNote, 'a ui.notifications.error was shown').toBe(true)
+    })
+  })
 })

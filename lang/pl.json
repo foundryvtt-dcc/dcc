@@ -498,6 +498,7 @@
   "DCC.RolledSkillCheckEmote": "{actorName} rzucił {skillCheckInlineRollHTML} na test {skillName}.",
   "DCC.RollAgilityCheckHint": "Kliknij aby rzucić test Zręczności, klik CMD/CTRL dla więcej opcji",
   "DCC.RollDamage": "Rzuć Obrażenia",
+  "DCC.RollErrorNotification": "Rzut {rollType} nieoczekiwanie się nie powiódł — szczegóły w konsoli (F12).",
   "DCC.RollDisapprovalMacroName": "Rzuć na Dezaprobatę",
   "DCC.RollFumble": "Rzuć Potknięcie",
   "DCC.RollIntelligenceCheckHint": "Kliknij aby rzucić test Inteligencji, klik CMD/CTRL dla więcej opcji",

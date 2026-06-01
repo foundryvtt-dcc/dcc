@@ -498,6 +498,7 @@
   "DCC.RolledSkillCheckEmote": "{actorName} tiró {skillCheckInlineRollHTML} para su chequeo de {skillName}.",
   "DCC.RollAgilityCheckHint": "Click para tirar chequeo de agilidad, CMD/CTRL click para más opciones",
   "DCC.RollDamage": "Tirar daño",
+  "DCC.RollErrorNotification": "La tirada de {rollType} falló inesperadamente — consulta la consola (F12) para más detalles.",
   "DCC.RollDisapprovalMacroName": "Tirar para desaprobación",
   "DCC.RollFumble": "Tirar fallo",
   "DCC.RollIntelligenceCheckHint": "Click para tirar chequeo de inteligencia, CMD/CTRL click para más opciones",

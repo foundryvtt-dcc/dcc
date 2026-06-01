@@ -498,6 +498,7 @@
   "DCC.RolledSkillCheckEmote": "{actorName} 投骰 {skillName} 检定出 {skillCheckInlineRollHTML}",
   "DCC.RollAgilityCheckHint": "点击投骰灵巧检定，⌘\/Ctrl 以获取更多选项",
   "DCC.RollDamage": "投骰伤害",
+  "DCC.RollErrorNotification": "{rollType} 检定意外失败——请按 F12 查看控制台了解详情。",
   "DCC.RollDisapprovalMacroName": "投骰不悦",
   "DCC.RollFumble": "投骰大失败",
   "DCC.RollIntelligenceCheckHint": "点击投骰智力检定，⌘\/Ctrl 以获取更多选项",

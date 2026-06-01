@@ -27,7 +27,7 @@ import { promptRollModifierDialog } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
-import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
+import { logDispatch, warnIfDivergent, withRollErrorBoundary, withRollErrorBoundarySync } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -925,24 +925,26 @@ class DCCActor extends Actor {
    * @param {Object} options    Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
-    const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
-    const hasNonZeroCheckPenalty =
-      this.system.config?.computeCheckPenalty &&
-      (abilityId === 'str' || abilityId === 'agl') &&
-      checkPenaltyValue !== 0
+    return withRollErrorBoundary('rollAbilityCheck', game.i18n.localize('DCC.Check'), () => {
+      const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
+      const hasNonZeroCheckPenalty =
+        this.system.config?.computeCheckPenalty &&
+        (abilityId === 'str' || abilityId === 'agl') &&
+        checkPenaltyValue !== 0
 
-    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
-    // which returns 0 or 1, not true/false. Strict === would miss those.
-    const needsLegacyPath =
-      !!options.rollUnder ||
-      !!options.showModifierDialog ||
-      hasNonZeroCheckPenalty
+      // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+      // which returns 0 or 1, not true/false. Strict === would miss those.
+      const needsLegacyPath =
+        !!options.rollUnder ||
+        !!options.showModifierDialog ||
+        hasNonZeroCheckPenalty
 
-    if (needsLegacyPath) {
-      return this._rollAbilityCheckLegacy(abilityId, options)
-    }
+      if (needsLegacyPath) {
+        return this._rollAbilityCheckLegacy(abilityId, options)
+      }
 
-    return this._rollAbilityCheckViaAdapter(abilityId, options)
+      return this._rollAbilityCheckViaAdapter(abilityId, options)
+    })
   }
 
   /**
@@ -1141,21 +1143,27 @@ class DCCActor extends Actor {
    * evaluates.
    */
   getInitiativeRoll (formula, options = {}) {
-    // Handle coming back from a modifier dialog with a pre-built Roll.
-    if (formula instanceof Roll) {
-      return formula
-    }
+    // SYNC boundary — `getInitiativeRoll` must stay synchronous because
+    // `DCCCombatant.getInitiativeRoll` overrides Foundry core's sync
+    // `Combatant.getInitiativeRoll` contract (combat tracker expects a
+    // `Roll`, not a Promise). The whole init path is sync by design.
+    return withRollErrorBoundarySync('getInitiativeRoll', game.i18n.localize('DCC.Initiative'), () => {
+      // Handle coming back from a modifier dialog with a pre-built Roll.
+      if (formula instanceof Roll) {
+        return formula
+      }
 
-    // Truthy check — the sheet's fillRollOptions uses bitwise XOR, which
-    // returns 0 or 1, not true/false. Matches the `needsLegacyPath`
-    // binary-gate idiom in rollAbilityCheck / rollSavingThrow.
-    const needsLegacyPath = !!options.showModifierDialog
+      // Truthy check — the sheet's fillRollOptions uses bitwise XOR, which
+      // returns 0 or 1, not true/false. Matches the `needsLegacyPath`
+      // binary-gate idiom in rollAbilityCheck / rollSavingThrow.
+      const needsLegacyPath = !!options.showModifierDialog
 
-    if (needsLegacyPath) {
-      return this._getInitiativeRollLegacy(options)
-    }
+      if (needsLegacyPath) {
+        return this._getInitiativeRollLegacy(options)
+      }
 
-    return this._getInitiativeRollViaAdapter(options)
+      return this._getInitiativeRollViaAdapter(options)
+    })
   }
 
   /**
@@ -1401,17 +1409,19 @@ class DCCActor extends Actor {
    * @param {Object} options      Roll options
    */
   async rollSavingThrow (saveId, options = {}) {
-    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
-    // which returns 0 or 1, not true/false. Strict === would miss those.
-    const needsLegacyPath =
-      !!options.showModifierDialog ||
-      !!options.rollUnder
+    return withRollErrorBoundary('rollSavingThrow', game.i18n.localize('DCC.Save'), () => {
+      // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+      // which returns 0 or 1, not true/false. Strict === would miss those.
+      const needsLegacyPath =
+        !!options.showModifierDialog ||
+        !!options.rollUnder
 
-    if (needsLegacyPath) {
-      return this._rollSavingThrowLegacy(saveId, options)
-    }
+      if (needsLegacyPath) {
+        return this._rollSavingThrowLegacy(saveId, options)
+      }
 
-    return this._rollSavingThrowViaAdapter(saveId, options)
+      return this._rollSavingThrowViaAdapter(saveId, options)
+    })
   }
 
   /**
@@ -1540,45 +1550,47 @@ class DCCActor extends Actor {
    * @param {Object} options  Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
-    const resolved = this._resolveSkill(skillId)
+    return withRollErrorBoundary('rollSkillCheck', game.i18n.localize('DCC.Skill'), () => {
+      const resolved = this._resolveSkill(skillId)
 
-    // Unknown skill — no built-in slot, no skill item with this name.
-    // Without this guard the legacy fallback path crashes on
-    // `skill.value` (`_rollSkillCheckLegacy`) because the dispatcher
-    // routes to legacy whenever `!hasDie`. Mirror the
-    // `rollSpellCheck` "no owned item" notification shape so the user
-    // sees a clear warning rather than a console TypeError.
-    if (!resolved.skill) {
-      return ui.notifications.warn(
-        game.i18n.format('DCC.SkillCheckUnknownSkillWarning', { skill: skillId })
-      )
-    }
+      // Unknown skill — no built-in slot, no skill item with this name.
+      // Without this guard the legacy fallback path crashes on
+      // `skill.value` (`_rollSkillCheckLegacy`) because the dispatcher
+      // routes to legacy whenever `!hasDie`. Mirror the
+      // `rollSpellCheck` "no owned item" notification shape so the user
+      // sees a clear warning rather than a console TypeError.
+      if (!resolved.skill) {
+        return ui.notifications.warn(
+          game.i18n.format('DCC.SkillCheckUnknownSkillWarning', { skill: skillId })
+        )
+      }
 
-    // Title for the roll modifier dialog — legacy mutates options,
-    // keep the behavior so the dialog path still sees it.
-    options.title = game.i18n.localize(resolved.skill.label) ||
-      (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
+      // Title for the roll modifier dialog — legacy mutates options,
+      // keep the behavior so the dialog path still sees it.
+      options.title = game.i18n.localize(resolved.skill.label) ||
+        (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
 
-    const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
-    const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
+      const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
+      const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
 
-    // Description-only skill items (no die, no value, no roll) stay on
-    // legacy — that path emits a description chat message rather than a
-    // roll. Phase 3 session 26 (Q7) folded the previous
-    // `!!options.showModifierDialog` clause into the adapter routes:
-    // `_rollSkillCheckViaAdapter` calls `promptRollModifierDialog`
-    // adapter-side, and `_skillTableViaAdapter` already threads
-    // `options` through `DCCRoll.createRoll` which honours
-    // `showModifierDialog` on its own.
-    if (!resolved.hasDie) {
-      return this._rollSkillCheckLegacy(skillId, options, resolved)
-    }
+      // Description-only skill items (no die, no value, no roll) stay on
+      // legacy — that path emits a description chat message rather than a
+      // roll. Phase 3 session 26 (Q7) folded the previous
+      // `!!options.showModifierDialog` clause into the adapter routes:
+      // `_rollSkillCheckViaAdapter` calls `promptRollModifierDialog`
+      // adapter-side, and `_skillTableViaAdapter` already threads
+      // `options` through `DCCRoll.createRoll` which honours
+      // `showModifierDialog` on its own.
+      if (!resolved.hasDie) {
+        return this._rollSkillCheckLegacy(skillId, options, resolved)
+      }
 
-    if (hasSkillTable || useDisapprovalRange) {
-      return this._skillTableViaAdapter(skillId, options, resolved)
-    }
+      if (hasSkillTable || useDisapprovalRange) {
+        return this._skillTableViaAdapter(skillId, options, resolved)
+      }
 
-    return this._rollSkillCheckViaAdapter(skillId, options, resolved)
+      return this._rollSkillCheckViaAdapter(skillId, options, resolved)
+    })
   }
 
   /**
@@ -2257,6 +2269,19 @@ class DCCActor extends Actor {
    * @param options
    */
   async rollSpellCheck (options = {}) {
+    return withRollErrorBoundary('rollSpellCheck', game.i18n.localize('DCC.SpellCheck'), () => {
+      return this._rollSpellCheckDispatch(options)
+    })
+  }
+
+  /**
+   * Internal spell-check dispatch body. Extracted from `rollSpellCheck`
+   * so the public method is a thin `withRollErrorBoundary` wrapper while
+   * the routing logic (no-item naked cast, wizard / cleric castingMode
+   * overrides, generic fall-through) stays readable at one indent level.
+   * @private
+   */
+  async _rollSpellCheckDispatch (options = {}) {
     if (!options.abilityId) {
       options.abilityId = this.system.class.spellCheckAbility || ''
     }
@@ -3186,6 +3211,19 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    return withRollErrorBoundary('rollWeaponAttack', game.i18n.localize('DCC.Attack'), () => {
+      return this._rollWeaponAttackDispatch(weaponId, options)
+    })
+  }
+
+  /**
+   * Internal weapon-attack dispatch body. Extracted from
+   * `rollWeaponAttack` so the public method is a thin
+   * `withRollErrorBoundary` wrapper while the (long) attack / damage /
+   * crit / fumble orchestration stays at one indent level.
+   * @private
+   */
+  async _rollWeaponAttackDispatch (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
     const messageMode = game.settings.get('core', 'messageMode')
 

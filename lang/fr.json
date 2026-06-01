@@ -477,6 +477,7 @@
   "DCC.RollAgilityCheckHint": "Cliquez pour lancer un test d'Agilité, CMD/CTRL clic pour plus d'options",
   "DCC.RollCritical": "Lancer Critique",
   "DCC.RollDamage": "Lancer les Dégâts",
+  "DCC.RollErrorNotification": "Le jet de {rollType} a échoué de façon inattendue — consultez la console (F12) pour plus de détails.",
   "DCC.RollDisapprovalMacroName": "Déterminer la défaveur",
   "DCC.RollFumble": "Lancer Maladresse",
   "DCC.RollIntelligenceCheckHint": "Cliquez pour lancer un test d'Intelligence, CMD/CTRL clic pour plus d'options",
