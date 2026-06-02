@@ -882,6 +882,98 @@ test.describe('DCC Extension API', () => {
     expect(result.spellHasSkillId).toBe(false)
   })
 
+  test('DCC renderDisapprovalRoll / renderMercurialEffect post deterministic chat cards with the expected flags (Phase 7 session 27)', async ({ page }) => {
+    // Phase 7 session 27: the two deterministic chat-emit renderers
+    // `renderDisapprovalRoll` + `renderMercurialEffect` gained direct unit
+    // coverage (PR #720 test-coverage gap — previously only exercised
+    // transitively by the cleric-disapproval / mercurial browser tests).
+    // These renderers are thin wrappers around Foundry's chat pipeline
+    // (build a `${N}d1` Roll → toMessage { create:false } → ChatMessage.create),
+    // so the highest-value end-to-end check runs the DEPLOYED functions
+    // against the live `Roll` + `ChatMessage` and asserts the real message's
+    // flags + flavor. A throwaway Player is the speaker; both created
+    // messages are deleted afterward so the world is left untouched.
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/adapter/chat-renderer.mjs')
+      const actor = await Actor.create({ name: 'P_ChatEmitProbe', type: 'Player' })
+      const created = []
+      try {
+        const disapproval = await mod.renderDisapprovalRoll({
+          actor,
+          disapprovalResult: { roll: 3, description: 'You anger your deity', disapprovalRange: 2 }
+        })
+        created.push(disapproval)
+
+        const mercurial = await mod.renderMercurialEffect({
+          actor,
+          spellItem: { id: 'P_ChatEmit_spell' },
+          effect: { rollValue: 42, summary: 'Spell warps', description: 'A lasting boon', displayOnCast: true }
+        })
+        created.push(mercurial)
+
+        // A falsy mercurial effect must be a true no-op (returns undefined,
+        // posts nothing).
+        const mercurialNoop = await mod.renderMercurialEffect({ actor, effect: null })
+
+        return {
+          fnsAreFunctions:
+            typeof mod.renderDisapprovalRoll === 'function' &&
+            typeof mod.renderMercurialEffect === 'function',
+          disapproval: {
+            rollType: disapproval.getFlag('dcc', 'RollType'),
+            isDisapproval: disapproval.getFlag('dcc', 'isDisapproval'),
+            lib: disapproval.getFlag('dcc', 'libDisapproval'),
+            total: disapproval.rolls?.[0]?.total,
+            flavorHasDescription: (disapproval.flavor || '').includes('You anger your deity')
+          },
+          mercurial: {
+            rollType: mercurial.getFlag('dcc', 'RollType'),
+            isMercurial: mercurial.getFlag('dcc', 'isMercurial'),
+            itemId: mercurial.getFlag('dcc', 'ItemId'),
+            lib: mercurial.getFlag('dcc', 'libMercurial'),
+            total: mercurial.rolls?.[0]?.total,
+            contentHasDescription: (mercurial.content || '').includes('A lasting boon')
+          },
+          mercurialNoopIsUndefined: mercurialNoop === undefined
+        }
+      } finally {
+        for (const m of created) { if (m?.delete) await m.delete() }
+        await actor.delete()
+      }
+    })
+
+    expect(result.fnsAreFunctions).toBe(true)
+
+    // Disapproval: deterministic ${roll}d1 totals to the lib roll, flags +
+    // flavor carry the table draw.
+    expect(result.disapproval.rollType).toBe('Disapproval')
+    expect(result.disapproval.isDisapproval).toBe(true)
+    expect(result.disapproval.total).toBe(3)
+    expect(result.disapproval.flavorHasDescription).toBe(true)
+    expect(result.disapproval.lib).toMatchObject({
+      roll: 3,
+      description: 'You anger your deity',
+      disapprovalRange: 2
+    })
+
+    // Mercurial: deterministic ${rollValue}d1, flags carry the spell item id
+    // + the libMercurial payload, content carries the description.
+    expect(result.mercurial.rollType).toBe('MercurialMagic')
+    expect(result.mercurial.isMercurial).toBe(true)
+    expect(result.mercurial.itemId).toBe('P_ChatEmit_spell')
+    expect(result.mercurial.total).toBe(42)
+    expect(result.mercurial.contentHasDescription).toBe(true)
+    expect(result.mercurial.lib).toMatchObject({
+      rollValue: 42,
+      summary: 'Spell warps',
+      description: 'A lasting boon',
+      displayOnCast: true
+    })
+
+    // Falsy effect → true no-op.
+    expect(result.mercurialNoopIsUndefined).toBe(true)
+  })
+
   test('DCC migrationOutcome gates version-stamping on a clean run + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
     // Phase 7 session 11: `migrateWorld` now accumulates per-document
     // failures and applies the pure `migrationOutcome(failures)` policy

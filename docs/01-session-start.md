@@ -42,31 +42,33 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 26 (PR #720 test-coverage backfill: data-driven
-migration branches).** With the legacy-decom arc closed (sessions 21–25) and
-the slice backlog's active queue drained, session 26 opened the
-test-coverage-backfill arc on the highest-value gap: the *always-run*
-(non-version-gated) data-driven branches in `migrateActorData` /
-`migrateItemData`, which were previously only exercised on a real-world boot
-— chiefly the **V14-critical ActiveEffect numeric-mode → string-type
-converter**. The two internal `const` helpers gained a **test-only export**
-from `migrations.js` (not Foundry-facing — not on `game.dcc`/`DCCActor`;
-mirrors how `classifyMigrationDecision`/`migrationOutcome` are already
-exported). New `module/__tests__/migrations-data-driven.test.js` (+34 Vitest)
-covers every branch: full AE mode map (0→custom … 5→override) + unknown-mode
-fallback + no-op cases + `deepClone`-fallback; `luckyRoll`→`birthAugur`;
-default alignment; `critRange`/`disapproval` string→number incl. fallbacks;
-`sheetClass`-from-`className` 3-way; #739 speed-base seed; owned-item
-recursion. +1 Playwright (`extension-api.spec.js`) runs the deployed helpers
-against the REAL `foundry.utils`/`game.i18n` on synthetic legacy objects.
-**No behavior change — pure test backfill. No lib change.** **Next: continue
-the test-coverage-backfill arc** (remaining gaps: `renderDisapprovalRoll`,
-`roll-dialog.mjs` direct coverage, `onSpellLost` during a real cast,
-`terms[N]` two-pass divergence, the `__mocks__/dcc-roll.js` async/sync
-mismatch) or pick another arc (doc hygiene, programmatic-PC-creation doc,
-Appendix-A file-shrinkage); none on a critical path. See `00-progress.md`
-*Next steps* + the PR #720 backlog subsections. Repo green: **1379 Vitest** /
-**176 Playwright e2e passed**, zero failures (6.0-min full suite).
+**Latest — Phase 7 session 27 (PR #720 test-coverage backfill:
+`renderDisapprovalRoll` + `renderMercurialEffect`).** The
+test-coverage-backfill arc (opened session 26 with the data-driven migration
+branches) continued: session 27 closed the `renderDisapprovalRoll` gap and,
+since it shares the pattern, the sibling `renderMercurialEffect` — the two
+deterministic chat-emit renderers in `module/adapter/chat-renderer.mjs` that
+were previously exercised only *transitively*. Both build a
+`${Math.max(1, value)}d1` `Roll` to carry the lib's already-rolled value
+through Foundry's chat pipeline → `toMessage({ create: false })` →
+`ChatMessage.create`. New `module/__tests__/chat-renderer-emit.test.js` (+16
+Vitest) asserts formulas / clamps / flavor joins / content / the full flag
+payloads, with `Roll`/`ChatMessage`/`game.i18n` stubbed per-test
+(`spell-check-processor.test.js` style; the `Roll` stub records formulas,
+`toMessage` returns its data verbatim). Kept `chat-renderer.test.js`'s
+pure-helper-only scope intact (new file). +1 Playwright
+(`extension-api.spec.js`) runs the **deployed** renderers against the live
+`Roll`/`ChatMessage` on a throwaway Player (messages + actor deleted after),
+asserting real `getFlag` values + `rolls[0].total` + flavor/content. **No
+behavior change — pure test backfill. No lib change.** **Next: continue the
+test-coverage-backfill arc** — remaining gaps: `roll-dialog.mjs`
+(`promptSpellburnCommitment` + `clampBurn`) direct coverage, `onSpellLost`
+during a real cast, `terms[N]` two-pass divergence, the `__mocks__/dcc-roll.js`
+async/sync mismatch — or pick another arc (doc hygiene,
+programmatic-PC-creation doc, Appendix-A file-shrinkage); none on a critical
+path. See `00-progress.md` *Next steps* + the PR #720 backlog subsections.
+Repo green: **1395 Vitest** / **177 Playwright e2e passed**, zero failures
+(6.4-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

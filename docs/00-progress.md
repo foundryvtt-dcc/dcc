@@ -69,19 +69,18 @@ date, then delete them entirely once a whole sub-section is cleared.
 With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
 active queue drained, the open work is the PR #720 *test-coverage gaps* +
 *doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-**Phase 7 session 26** (full detail in *Recent slices*) started that
-backfill with the highest-value gap: the *always-run* data-driven migration
-branches in `migrateActorData` / `migrateItemData`, which previously had no
-isolated coverage (only exercised on a real world boot) — chiefly the
-**V14-critical ActiveEffect numeric-mode → string-type converter**. The two
-internal `const` helpers gained a test-only export (not Foundry-facing); new
-`migrations-data-driven.test.js` covers every branch (full AE mode map +
-fallbacks, `luckyRoll`→`birthAugur`, default alignment, `critRange`/
-`disapproval` string→number, `sheetClass`-from-`className` 3-way, #739
-speed-base seed, owned-item recursion) + a live-Foundry e2e probe runs the
-deployed helpers against the real `foundry.utils`/`game.i18n`. **No behavior
-change — pure test backfill.** Repo green: **1379 Vitest** / **176
-Playwright e2e passed**, zero failures (6.0-min full suite).
+The **test-coverage-backfill arc** is underway: session 26 closed the
+*always-run* data-driven migration-branch gap (the **V14-critical
+ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
+`critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches), via a
+test-only export of the two internal `migrations.js` `const` helpers + the
+new `migrations-data-driven.test.js`. **Session 27** (full detail in *Recent
+slices*) closed the next gap: direct coverage of the two deterministic
+chat-emit renderers `renderDisapprovalRoll` + `renderMercurialEffect` (new
+`chat-renderer-emit.test.js` + a live-Foundry e2e probe running the deployed
+renderers against the real `Roll`/`ChatMessage`). Both slices are **pure test
+backfill — no behavior change, no lib change.** Repo green: **1395 Vitest** /
+**177 Playwright e2e passed**, zero failures (6.4-min full suite).
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -99,6 +98,38 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 27: `renderDisapprovalRoll` +
+  `renderMercurialEffect` direct coverage (PR #720 test-coverage gap;
+  test-coverage-backfill arc).** Backfilled unit coverage of the two
+  deterministic chat-emit renderers in `module/adapter/chat-renderer.mjs`,
+  previously exercised only *transitively* (the cleric-disapproval /
+  mercurial browser tests). Both build a `${Math.max(1, value)}d1` `Roll`
+  to carry the lib's already-rolled value through Foundry's chat pipeline,
+  then post via `roll.toMessage(data, { create: false })` →
+  `ChatMessage.create`. New `module/__tests__/chat-renderer-emit.test.js`
+  (**+16 Vitest**): `renderDisapprovalRoll` — `${roll}d1` formula, `{ create:
+  false }`, em-dash flavor join (with + without description), the
+  `Disapproval`/`isDisapproval`/`libDisapproval` flags, the `max(1,0)`→`1d1`
+  clamp for a zero/missing roll, returned ChatMessage; `renderMercurialEffect`
+  — falsy-effect no-op (returns undefined, posts nothing), `${rollValue}d1`,
+  flavor join, content-only-when-description, the `MercurialMagic` flags incl.
+  `ItemId` + `libMercurial`, `displayOnCast` default-true / explicit-false /
+  missing-spellItem, and the rollValue clamp. Foundry globals (`Roll` /
+  `ChatMessage` / `game.i18n`) stubbed per-test in the
+  `spell-check-processor.test.js` style; the `Roll` stub records each
+  constructed formula and `toMessage` returns its data verbatim so the
+  assertions read the exact flags/flavor/content handed to
+  `ChatMessage.create`. Kept `chat-renderer.test.js`'s stated pure-helper-only
+  scope intact — new emit tests live in a separate file. +1 Playwright
+  (`extension-api.spec.js`): runs the **deployed** renderers against the live
+  `Roll` + `ChatMessage` on a throwaway Player (both created messages + the
+  actor deleted afterward), asserting the real message's flags (`getFlag`),
+  the `rolls[0].total` = the deterministic `${N}d1` value, the joined flavor,
+  and the description content — the highest-value end-to-end check for thin
+  chat-pipeline wrappers. **No behavior change — pure test backfill. No lib
+  change.** **1395 Vitest** (was 1379, +16). **177 Playwright passed**, zero
+  failures (was 176, +1; 6.4-min full suite).
 
 - **2026-06-02 — Phase 7 session 26: data-driven migration coverage
   (PR #720 test-coverage gap, first post-legacy-decom slice).** Backfilled
@@ -248,58 +279,6 @@ archives linked above.
   (was 1338, +4). **173 Playwright passed**, zero failures (was 172, +1;
   5.7-min full suite).
 
-- **2026-06-01 — Phase 7 session 22: modifier dialog for ability + save +
-  init in the adapter (legacy-decom step 2 of 5).** Extended the unified
-  `promptRollModifierDialog` scaffold (Q7, previously serving skill + spell
-  checks) to the three remaining binary gates. **No lib change** — the
-  ability/save lib APIs already accept `options.modifiers`, and the init
-  adapter path already routed through `rollCheck`. Three new private helpers
-  (`_rollAbilityCheckWithDialog`, `_rollSavingThrowWithDialog`,
-  `_getInitiativeRollWithDialogViaAdapter`); each `_xxxViaAdapter` delegates
-  to its helper when `options.showModifierDialog`, after emitting the
-  generic `via adapter` dispatch log (so the e2e cancel-path assertions
-  still see the adapter branch — the helper emits a second `dialog=true`
-  line). **Ability/save** mirror the skill-check pattern exactly: build the
-  legacy-shaped dialog terms (action die + ability/save modifier; ability
-  also offers a 0 check-penalty toggle for str/agl), prompt, then on submit
-  build a **bare `rollCheck` definition** (no `roll.ability`) + a single
-  flat `dialog-modifier` line — bypassing the `rollAbilityCheck` /
-  `rollSavingThrow` convenience wrappers, which would auto-add the ability
-  mod / save value the dialog total *already includes* (the
-  double-count the skill path also avoids). Two-pass formula/evaluate,
-  render via the existing `renderAbilityCheck` / `renderSavingThrow` (the
-  `libRollCheck` result shape is identical to the wrapper's, so the chat
-  flag + DC-suffix contract is unchanged). **Init is simpler** — no lib
-  round-trip: init has no crit/fumble and Foundry's `Combat#rollInitiative`
-  posts the chat (with the `core.initiativeRoll` flag the emote handler
-  gates on), so the dialog path just builds the legacy term list (init die
-  incl. additive tail + weapon overrides, plus the flat init modifier) and
-  hands back **`prompt.roll`** — the user's dialog-built Roll — exactly as
-  `_getInitiativeRollLegacy` returned `DCCRoll.createRoll(...)`. **Init
-  landmine handled:** `getInitiativeRoll` must stay *synchronous* for the
-  combat tracker (`DCCCombatant.getInitiativeRoll` overrides Foundry core's
-  sync contract). The async dialog branch returns a `Promise<Roll>` through
-  the sync `withRollErrorBoundarySync`, but it's only ever reached via
-  `rollInit`, which `await`s it — matching the pre-step-2 legacy path, which
-  also returned a promise there. **Gate flips:** `rollSavingThrow` collapsed
-  to single-path adapter (legacy now fully dead); `rollAbilityCheck`'s only
-  surviving legacy gate is `hasNonZeroCheckPenalty` (step 3 — when a penalty
-  *and* a dialog both apply, legacy still wins and shows both); init's only
-  legacy gate is gone. The three `_xxxLegacy` bodies stay in place (now
-  unreachable for save+init) for the step-5 batch delete. +6 Vitest
-  (ability dialog + cancel; save dialog + DC-suffix + cancel; init flipped
-  ×2 to assert adapter routing + a new cancel test). +1 Playwright new
-  (`adapter-dispatch.spec.js`: a save dialog driven to **completion** —
-  clicks the dialog's Roll button, asserts the chat card's
-  `libResult.modifiers` carries the flattened `dialog-modifier` +2 from a
-  Sta-16 actor) + 3 Playwright flipped (ability/save/init `showModifierDialog
-  → adapter`). **1338 Vitest** (was 1329, +9 — includes dice-gated
-  integration cases that ran this session). **172 Playwright passed**, zero
-  failures (5.8-min full suite). `_rollAbilityCheckLegacy` is now kept alive
-  only by step 3 (check-penalty); `_rollSavingThrowLegacy` +
-  `_getInitiativeRollLegacy` are fully unreachable, awaiting the step-5
-  delete.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -369,8 +348,11 @@ pure adapter-side wiring.
 
 **Open test coverage gaps (pr-test-analyzer severity ≥ 6):**
 
-- `renderDisapprovalRoll` — no unit/integration test (only transitively
-  via the cleric disapproval browser-test).
+- ~~`renderDisapprovalRoll` — no unit/integration test (only transitively
+  via the cleric disapproval browser-test).~~ **CLOSED 2026-06-02 (Phase 7
+  session 27).** `chat-renderer-emit.test.js` covers `renderDisapprovalRoll`
+  + the sibling `renderMercurialEffect` (+16 Vitest) + a live-Foundry e2e
+  probe runs the deployed renderers against the real `Roll`/`ChatMessage`.
 - `promptSpellburnCommitment` + `clampBurn` mocked across every caller;
   `roll-dialog.mjs` has no direct coverage.
 - `onSpellLost` tested as a direct callback but never verified to fire
@@ -499,11 +481,11 @@ adapter (with the `options.rollUnder` and `!hasDie` *adapter* branches the
 respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
-**Test-coverage backfill arc — STARTED 2026-06-02 (session 26).** Session 26
-closed the data-driven migration-branch gap (the V14-critical AE converter +
-the rest). Remaining PR #720 test-coverage gaps (each a self-contained slice,
-none on a critical path):
-- `renderDisapprovalRoll` — no unit/integration test.
+**Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
+Session 26 closed the data-driven migration-branch gap (the V14-critical AE
+converter + the rest); session 27 closed `renderDisapprovalRoll` +
+`renderMercurialEffect`. Remaining PR #720 test-coverage gaps (each a
+self-contained slice, none on a critical path):
 - `roll-dialog.mjs` (`promptSpellburnCommitment` + `clampBurn`) direct
   coverage — mocked across every caller today.
 - `onSpellLost` verified to fire during a real adapter cast.
@@ -512,6 +494,8 @@ none on a critical path):
 - `__mocks__/dcc-roll.js` async/sync mismatch — `createRoll` declared
   `static async` while production is sync; tests install local sync stubs.
 - ~~the data-driven migration branches~~ **done (session 26).**
+- ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
+  covered too).**
 - *Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
   refs, disapproval-chat-ordering comment, the unused
   `_getInitiativeRollViaAdapter` `options` param).

@@ -1017,6 +1017,25 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 27 (2026-06-02): PR #720 test-coverage backfill —
+  `renderDisapprovalRoll` + `renderMercurialEffect` direct coverage.
+  Continuation of the test-coverage-backfill arc (not from the drained
+  active queue). New `module/__tests__/chat-renderer-emit.test.js` (+16
+  Vitest) covers the two deterministic chat-emit renderers in
+  `chat-renderer.mjs` (previously only exercised transitively by the
+  cleric-disapproval / mercurial browser tests): `${Math.max(1,value)}d1`
+  formula + clamp, em-dash flavor joins, content-only-when-description, and
+  the full `Disapproval` / `MercurialMagic` flag payloads incl.
+  `displayOnCast` default/explicit/missing-spellItem cases.
+  `Roll`/`ChatMessage`/`game.i18n` stubbed per-test
+  (`spell-check-processor.test.js` style). Kept `chat-renderer.test.js`'s
+  pure-helper-only scope intact (separate file). +1 Playwright
+  (`extension-api.spec.js`) runs the deployed renderers against the live
+  `Roll`/`ChatMessage` on a throwaway Player (messages + actor cleaned up),
+  asserting real `getFlag` values + `rolls[0].total` + flavor/content. Pure
+  test backfill, no behavior change, no lib change. **1395 Vitest** (was
+  1379, +16) / **177 Playwright** (was 176, +1), zero failures.
+
 - Phase 7 session 26 (2026-06-02): PR #720 test-coverage backfill —
   data-driven migration branches. Not from the (drained) active queue;
   opened the test-coverage-backfill arc after legacy-decom closed.

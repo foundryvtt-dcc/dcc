@@ -1145,3 +1145,55 @@
   rollUnder → adapter; save rollUnder inert → adapter). **1329 Vitest**
   (was 1328, +1). **169 Playwright passed**, zero failures (was 168, +1;
   5.6-min full suite).
+
+- **2026-06-01 — Phase 7 session 22: modifier dialog for ability + save +
+  init in the adapter (legacy-decom step 2 of 5).** Extended the unified
+  `promptRollModifierDialog` scaffold (Q7, previously serving skill + spell
+  checks) to the three remaining binary gates. **No lib change** — the
+  ability/save lib APIs already accept `options.modifiers`, and the init
+  adapter path already routed through `rollCheck`. Three new private helpers
+  (`_rollAbilityCheckWithDialog`, `_rollSavingThrowWithDialog`,
+  `_getInitiativeRollWithDialogViaAdapter`); each `_xxxViaAdapter` delegates
+  to its helper when `options.showModifierDialog`, after emitting the
+  generic `via adapter` dispatch log (so the e2e cancel-path assertions
+  still see the adapter branch — the helper emits a second `dialog=true`
+  line). **Ability/save** mirror the skill-check pattern exactly: build the
+  legacy-shaped dialog terms (action die + ability/save modifier; ability
+  also offers a 0 check-penalty toggle for str/agl), prompt, then on submit
+  build a **bare `rollCheck` definition** (no `roll.ability`) + a single
+  flat `dialog-modifier` line — bypassing the `rollAbilityCheck` /
+  `rollSavingThrow` convenience wrappers, which would auto-add the ability
+  mod / save value the dialog total *already includes* (the
+  double-count the skill path also avoids). Two-pass formula/evaluate,
+  render via the existing `renderAbilityCheck` / `renderSavingThrow` (the
+  `libRollCheck` result shape is identical to the wrapper's, so the chat
+  flag + DC-suffix contract is unchanged). **Init is simpler** — no lib
+  round-trip: init has no crit/fumble and Foundry's `Combat#rollInitiative`
+  posts the chat (with the `core.initiativeRoll` flag the emote handler
+  gates on), so the dialog path just builds the legacy term list (init die
+  incl. additive tail + weapon overrides, plus the flat init modifier) and
+  hands back **`prompt.roll`** — the user's dialog-built Roll — exactly as
+  `_getInitiativeRollLegacy` returned `DCCRoll.createRoll(...)`. **Init
+  landmine handled:** `getInitiativeRoll` must stay *synchronous* for the
+  combat tracker (`DCCCombatant.getInitiativeRoll` overrides Foundry core's
+  sync contract). The async dialog branch returns a `Promise<Roll>` through
+  the sync `withRollErrorBoundarySync`, but it's only ever reached via
+  `rollInit`, which `await`s it — matching the pre-step-2 legacy path, which
+  also returned a promise there. **Gate flips:** `rollSavingThrow` collapsed
+  to single-path adapter (legacy now fully dead); `rollAbilityCheck`'s only
+  surviving legacy gate is `hasNonZeroCheckPenalty` (step 3 — when a penalty
+  *and* a dialog both apply, legacy still wins and shows both); init's only
+  legacy gate is gone. The three `_xxxLegacy` bodies stay in place (now
+  unreachable for save+init) for the step-5 batch delete. +6 Vitest
+  (ability dialog + cancel; save dialog + DC-suffix + cancel; init flipped
+  ×2 to assert adapter routing + a new cancel test). +1 Playwright new
+  (`adapter-dispatch.spec.js`: a save dialog driven to **completion** —
+  clicks the dialog's Roll button, asserts the chat card's
+  `libResult.modifiers` carries the flattened `dialog-modifier` +2 from a
+  Sta-16 actor) + 3 Playwright flipped (ability/save/init `showModifierDialog
+  → adapter`). **1338 Vitest** (was 1329, +9 — includes dice-gated
+  integration cases that ran this session). **172 Playwright passed**, zero
+  failures (5.8-min full suite). `_rollAbilityCheckLegacy` is now kept alive
+  only by step 3 (check-penalty); `_rollSavingThrowLegacy` +
+  `_getInitiativeRollLegacy` are fully unreachable, awaiting the step-5
+  delete.
