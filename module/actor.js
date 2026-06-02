@@ -1269,7 +1269,7 @@ class DCCActor extends Actor {
         return this._getInitiativeRollWithDialogViaAdapter(options)
       }
 
-      return this._getInitiativeRollViaAdapter(options)
+      return this._getInitiativeRollViaAdapter()
     })
   }
 
@@ -1281,9 +1281,15 @@ class DCCActor extends Actor {
    * Weapon-die overrides (two-handed / custom init die) are applied
    * Foundry-side because the `[Two-Handed]` / `[Weapon]` die label is
    * a Foundry display idiom the lib doesn't model.
+   *
+   * Takes no options: the modifier-dialog bridge lives entirely in the
+   * sibling `_getInitiativeRollWithDialogViaAdapter`, which the caller
+   * routes to on `options.showModifierDialog`. This no-dialog path reads
+   * only actor + equipped-weapon state, so there's nothing for an
+   * `options` argument to influence.
    * @private
    */
-  _getInitiativeRollViaAdapter (options = {}) {
+  _getInitiativeRollViaAdapter () {
     let dieFormula = this.system.attributes.init.die || '1d20'
     let weaponLabel = null
 
@@ -3216,8 +3222,15 @@ class DCCActor extends Actor {
     })
 
     // Post the disapproval roll chat after the main spell-check chat,
-    // mirroring the legacy two-message ordering (spell check, then
-    // disapproval roll, then gained-range emote from the callback).
+    // mirroring the legacy ordering: spell check, then disapproval roll.
+    // Both are awaited here, so their relative order IS guaranteed. The
+    // "gained-range" EMOTE is NOT part of that guarantee — it's emitted
+    // by the `onDisapprovalIncreased` callback inside pass 2 above
+    // (`libCalculateSpellCheck(..., events)`), and that callback creates
+    // its ChatMessage fire-and-forget (see `spell-events.mjs` — the lib
+    // doesn't await the callback). So the emote's landing position
+    // relative to these two messages is not deterministic; treat it as
+    // "around the same time," not strictly last.
     if (result.disapprovalResult) {
       await renderDisapprovalRoll({
         actor: this,

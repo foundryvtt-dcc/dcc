@@ -90,6 +90,11 @@ XCC *cannot* use the DCC extension hook because its shape doesn't fit XCC's data
 `styles/dcc.scss` is ~2500 lines in one file. `dcc-qol` uses 40+ `!important` declarations — specificity warfare, not intent.
 
 ### 2.7 God objects and accumulated cruft
+
+*(Baseline figures below are a snapshot at `main @ 2337ec0` — the
+branch-start commit. Mid-refactor deltas are called out inline; don't
+read the baselines as current line counts.)*
+
 - `actor.js` — 2,251 lines (now 3,851 mid-refactor — reversal depends on Phase 4 schema slim + legacy-branch retirement)
 - `actor-sheet.js` — 1,848 lines
 - `dcc.js` — 1,560 lines (bootstrap + settings + hotbar + spell-result processing + patron taint + disapproval drain + migration triggers)
@@ -311,6 +316,18 @@ Port the rolls where the lib's API is a drop-in. Pick the easiest first:
 - `rollSavingThrow` → `rollCheck('save:reflex', …)`
 - `rollSkillCheck` → `resolveSkillCheck(skill, input, events)`
 - `rollInit` → `rollInitiative(…)` from `dcc-core-lib/combat`
+
+> **Landed names (annotation, 2026-06-02).** The sketch above predates
+> the lib's final API. As shipped, the lib exposes **dedicated**
+> `rollAbilityCheck` and `rollSavingThrow` entry points (not the
+> `rollCheck('ability:str', …)` string-tag form), plus a **generic**
+> `rollCheck(definition, character, { mode })` that **subsumed both**
+> the imagined `resolveSkillCheck` and `rollInitiative` — skill checks
+> and initiative are just `rollCheck` calls with a built
+> `SkillDefinition` (`mode: 'formula'` for init). All three are imported
+> in `actor.js` as `libRollAbilityCheck` / `libRollSavingThrow` /
+> `libRollCheck` from `./vendor/dcc-core-lib/index.js`. No
+> `resolveSkillCheck` or `rollInitiative` symbol exists in the lib.
 
 For each one:
 1. Build a `Character` / `SkillDefinition` from the actor via `CharacterAccessors`

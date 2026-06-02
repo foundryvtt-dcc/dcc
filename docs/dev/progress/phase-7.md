@@ -1345,3 +1345,35 @@
   defaults; no `migrateWorld` mutation). **1379 Vitest** (was 1345, +34).
   **176 Playwright passed**, zero failures (was 175, +1; 6.0-min full
   suite).
+
+- **2026-06-02 — Phase 7 session 27: `renderDisapprovalRoll` +
+  `renderMercurialEffect` direct coverage (PR #720 test-coverage gap;
+  test-coverage-backfill arc).** Backfilled unit coverage of the two
+  deterministic chat-emit renderers in `module/adapter/chat-renderer.mjs`,
+  previously exercised only *transitively* (the cleric-disapproval /
+  mercurial browser tests). Both build a `${Math.max(1, value)}d1` `Roll`
+  to carry the lib's already-rolled value through Foundry's chat pipeline,
+  then post via `roll.toMessage(data, { create: false })` →
+  `ChatMessage.create`. New `module/__tests__/chat-renderer-emit.test.js`
+  (**+16 Vitest**): `renderDisapprovalRoll` — `${roll}d1` formula, `{ create:
+  false }`, em-dash flavor join (with + without description), the
+  `Disapproval`/`isDisapproval`/`libDisapproval` flags, the `max(1,0)`→`1d1`
+  clamp for a zero/missing roll, returned ChatMessage; `renderMercurialEffect`
+  — falsy-effect no-op (returns undefined, posts nothing), `${rollValue}d1`,
+  flavor join, content-only-when-description, the `MercurialMagic` flags incl.
+  `ItemId` + `libMercurial`, `displayOnCast` default-true / explicit-false /
+  missing-spellItem, and the rollValue clamp. Foundry globals (`Roll` /
+  `ChatMessage` / `game.i18n`) stubbed per-test in the
+  `spell-check-processor.test.js` style; the `Roll` stub records each
+  constructed formula and `toMessage` returns its data verbatim so the
+  assertions read the exact flags/flavor/content handed to
+  `ChatMessage.create`. Kept `chat-renderer.test.js`'s stated pure-helper-only
+  scope intact — new emit tests live in a separate file. +1 Playwright
+  (`extension-api.spec.js`): runs the **deployed** renderers against the live
+  `Roll` + `ChatMessage` on a throwaway Player (both created messages + the
+  actor deleted afterward), asserting the real message's flags (`getFlag`),
+  the `rolls[0].total` = the deterministic `${N}d1` value, the joined flavor,
+  and the description content — the highest-value end-to-end check for thin
+  chat-pipeline wrappers. **No behavior change — pure test backfill. No lib
+  change.** **1395 Vitest** (was 1379, +16). **177 Playwright passed**, zero
+  failures (was 176, +1; 6.4-min full suite).

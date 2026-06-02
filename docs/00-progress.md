@@ -95,6 +95,18 @@ coverage gap is closed or found-stale.** Repo green: **1402 Vitest** / **181
 Playwright e2e passed**, zero failures (flake-clean since the session-29
 forceCrit fix).
 
+**Doc/comment-hygiene arc — session 32 (2026-06-02) drained the
+*Documentation / comment hygiene* backlog subsection** (now all four items
+struck). Four behavior-neutral edits: the `ARCHITECTURE_REIMAGINED.md` §7
+*Landed names* annotation + §2.7 `main @ 2337ec0` snapshot pin, the softened
+`actor.js` disapproval-chat-ordering comment, and the dropped unused
+`_getInitiativeRollViaAdapter` `options` param. No production behavior change,
+no lib change, no test-count delta (full e2e run per Tim's call since the
+param drop touches a real dispatch path; **1402 Vitest / 181 Playwright**,
+unchanged). What remains off the critical path: the *programmatic-PC-creation*
+doc item, the below-threshold perf "document only" items, or an Appendix-A
+file-shrinkage arc.
+
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
 survives anywhere in the system. All PR #720 design calls remain closed.
@@ -111,6 +123,40 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 32: doc/comment hygiene — `ARCHITECTURE_REIMAGINED.md`
+  §7/§2.7 + the disapproval-chat-ordering comment + drop the unused
+  `_getInitiativeRollViaAdapter` `options` param (PR #720 doc/comment-hygiene
+  backlog).** First slice of the post-coverage doc-hygiene arc; four
+  behavior-neutral edits. (1) **§7 Phase-1 bullets** sketched the lib API as
+  `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` / `rollInitiative(…)`;
+  added a *Landed names* annotation block — as shipped the lib exposes
+  **dedicated** `rollAbilityCheck` + `rollSavingThrow` (not the string-tag
+  form) plus a **generic** `rollCheck(definition, character, { mode })` that
+  **subsumed** both `resolveSkillCheck` and `rollInitiative` (no such symbols
+  exist); all three import into `actor.js` as `libRollAbilityCheck` /
+  `libRollSavingThrow` / `libRollCheck`. (2) **§2.7** file-size figures
+  flagged as a snapshot at `main @ 2337ec0` (verified: those are the exact
+  line counts at that commit — actor.js 2,251 / actor-sheet.js 1,848 / dcc.js
+  1,560 / item.js 966 / item-sheet.js 874). (3) **`actor.js`
+  disapproval-chat-ordering comment** overstated the order — softened: only
+  the two *awaited* messages (spell check, then disapproval roll) are ordered;
+  the "gained-range" EMOTE is emitted **fire-and-forget** by the
+  `onDisapprovalIncreased` callback inside pass 2 (`spell-events.mjs` →
+  `ChatMessage.create` not awaited by the lib), so its landing position
+  relative to the two isn't deterministic. (4) **`_getInitiativeRollViaAdapter`**
+  dropped its never-read `options = {}` param (signature + the one call site
+  at the no-dialog branch) — the modifier-dialog bridge lives entirely in the
+  sibling `_getInitiativeRollWithDialogViaAdapter`; replaced with a doc note.
+  No `resolveSkillCheck`/`rollInitiative` reserved-future framing (that bridge
+  already landed as the separate dialog method). **No production behavior
+  change — pure doc/comment + dead-param removal. No lib change. No test count
+  delta** (the param was already covered by the live init dispatch test + the
+  error-boundary mock; the existence assertion in `actor.test.js` still holds).
+  Full e2e run per Tim's call (the param drop touches a real dispatch path):
+  **1402 Vitest** (unchanged) / **181 Playwright passed**, zero failures
+  (unchanged; 6.4-min full suite). Served system verified to reflect the
+  no-arg signature before the run.
 
 - **2026-06-02 — Phase 7 session 31: NPC `rollToHit` branches — adjustment
   injection + `Roll.validate` early-return (PR #720 test-coverage gap;
@@ -239,38 +285,6 @@ archives linked above.
   live). **1399 Vitest** (was 1395, +4). **178 Playwright passed**, zero
   failures (was 177, +1; 6.2-min full suite).
 
-- **2026-06-02 — Phase 7 session 27: `renderDisapprovalRoll` +
-  `renderMercurialEffect` direct coverage (PR #720 test-coverage gap;
-  test-coverage-backfill arc).** Backfilled unit coverage of the two
-  deterministic chat-emit renderers in `module/adapter/chat-renderer.mjs`,
-  previously exercised only *transitively* (the cleric-disapproval /
-  mercurial browser tests). Both build a `${Math.max(1, value)}d1` `Roll`
-  to carry the lib's already-rolled value through Foundry's chat pipeline,
-  then post via `roll.toMessage(data, { create: false })` →
-  `ChatMessage.create`. New `module/__tests__/chat-renderer-emit.test.js`
-  (**+16 Vitest**): `renderDisapprovalRoll` — `${roll}d1` formula, `{ create:
-  false }`, em-dash flavor join (with + without description), the
-  `Disapproval`/`isDisapproval`/`libDisapproval` flags, the `max(1,0)`→`1d1`
-  clamp for a zero/missing roll, returned ChatMessage; `renderMercurialEffect`
-  — falsy-effect no-op (returns undefined, posts nothing), `${rollValue}d1`,
-  flavor join, content-only-when-description, the `MercurialMagic` flags incl.
-  `ItemId` + `libMercurial`, `displayOnCast` default-true / explicit-false /
-  missing-spellItem, and the rollValue clamp. Foundry globals (`Roll` /
-  `ChatMessage` / `game.i18n`) stubbed per-test in the
-  `spell-check-processor.test.js` style; the `Roll` stub records each
-  constructed formula and `toMessage` returns its data verbatim so the
-  assertions read the exact flags/flavor/content handed to
-  `ChatMessage.create`. Kept `chat-renderer.test.js`'s stated pure-helper-only
-  scope intact — new emit tests live in a separate file. +1 Playwright
-  (`extension-api.spec.js`): runs the **deployed** renderers against the live
-  `Roll` + `ChatMessage` on a throwaway Player (both created messages + the
-  actor deleted afterward), asserting the real message's flags (`getFlag`),
-  the `rolls[0].total` = the deterministic `${N}d1` value, the joined flavor,
-  and the description content — the highest-value end-to-end check for thin
-  chat-pipeline wrappers. **No behavior change — pure test backfill. No lib
-  change.** **1395 Vitest** (was 1379, +16). **177 Playwright passed**, zero
-  failures (was 176, +1; 6.4-min full suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -397,20 +411,31 @@ pure adapter-side wiring.
   fixture per branch, full AE mode map, +34 Vitest) + a live-Foundry e2e
   probe. The #739 speed-base seed and owned-item recursion are covered too.
 
-**Documentation / comment hygiene:**
+**Documentation / comment hygiene — ALL CLOSED 2026-06-02 (Phase 7 session 32).**
 
-- `ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference lib APIs
+- ~~`ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference lib APIs
   `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` /
   `rollInitiative(…)` but the adapter landed `rollAbilityCheck` /
   `rollSavingThrow` / `rollCheck` (subsumed skill + init). Annotate with
-  the landed names.
-- `ARCHITECTURE_REIMAGINED.md` §2.7 file-size snapshot is pinned to
-  branch start; prefix with `(Snapshot at main @ 2337ec0)`.
-- `actor.js` disapproval-chat-ordering comment overstates ordering
+  the landed names.~~ **DONE (session 32).** Added a *Landed names*
+  annotation block; no `resolveSkillCheck`/`rollInitiative` symbol exists
+  (both subsumed by generic `rollCheck`).
+- ~~`ARCHITECTURE_REIMAGINED.md` §2.7 file-size snapshot is pinned to
+  branch start; prefix with `(Snapshot at main @ 2337ec0)`.~~ **DONE
+  (session 32).** Verified the figures are the exact line counts at
+  `2337ec0`.
+- ~~`actor.js` disapproval-chat-ordering comment overstates ordering
   guarantees (`onDisapprovalIncreased` fires fire-and-forget inside
-  pass 2). Soften the claim or `await` the chat-message creation.
-- `_getInitiativeRollViaAdapter` accepts an `options = {}` param it never
-  reads — drop, or document "reserved for future modifier-dialog bridge."
+  pass 2). Soften the claim or `await` the chat-message creation.~~
+  **DONE (session 32).** Softened — only the two awaited messages are
+  ordered; the EMOTE is fire-and-forget so its position isn't guaranteed
+  (awaiting would require changing the lib's non-awaiting callback
+  protocol, so soften was the right call).
+- ~~`_getInitiativeRollViaAdapter` accepts an `options = {}` param it never
+  reads — drop, or document "reserved for future modifier-dialog bridge."~~
+  **DONE (session 32).** Dropped (the dialog bridge already lives in the
+  sibling `_getInitiativeRollWithDialogViaAdapter`, so there's nothing to
+  reserve for).
 
 **Performance (below measurement threshold; document only):**
 
@@ -509,11 +534,16 @@ PR #720 severity-≥6 coverage gap is now closed or found-stale. Sessions:
 `withSyncCreateRoll`), 29 (`onSpellLost` real-cast + the forceCrit dice-flake
 fix), 30 (`terms[N]` two-pass-divergence boundary guard), 31 (NPC `rollToHit`
 adjustment injection + `Roll.validate` early-return). The `roll-dialog.mjs`
-gap was found stale (helpers retired + already covered). **Next arc** (none on
-a critical path): doc/comment hygiene (`ARCHITECTURE_REIMAGINED.md` §7/§2.7
-stale refs, the disapproval-chat-ordering comment, the unused
-`_getInitiativeRollViaAdapter` `options` param), the programmatic-PC-creation
-doc item, or an Appendix-A file-shrinkage arc.
+gap was found stale (helpers retired + already covered).
+
+**Doc/comment-hygiene arc — the *Documentation / comment hygiene* subsection
+is drained (session 32, 2026-06-02).** All four items closed: §7 *Landed
+names* annotation, §2.7 `main @ 2337ec0` snapshot pin, the softened
+disapproval-chat-ordering comment, and the dropped unused
+`_getInitiativeRollViaAdapter` `options` param. **Next arc** (none on a
+critical path): the programmatic-PC-creation doc item, the below-threshold
+perf "document only" items (hoist `getActionDice`, fold the `items.find`
+double-iteration), or an Appendix-A file-shrinkage arc.
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**
@@ -527,9 +557,10 @@ doc item, or an Appendix-A file-shrinkage arc.
   (`promptSpellburnCommitment`/`clampBurn`) were retired and
   `adapter-roll-dialog.test.js` already covers both current exports
   (verified session 27 follow-up).**
-- *Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
+- ~~*Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
   refs, disapproval-chat-ordering comment, the unused
-  `_getInitiativeRollViaAdapter` `options` param).
+  `_getInitiativeRollViaAdapter` `options` param).~~ **done (session 32;
+  all four items closed).**
 - *Programmatic-PC-creation* documentation item.
 - Or an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
   `item.js` / `config.js`) — each a multi-session project, not a slice.
