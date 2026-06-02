@@ -69,26 +69,30 @@ date, then delete them entirely once a whole sub-section is cleared.
 With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
 active queue drained, the open work is the PR #720 *test-coverage gaps* +
 *doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-The **test-coverage-backfill arc** is underway (sessions 26–29): session 26
+The **test-coverage-backfill arc** is underway (sessions 26–30): session 26
 closed the *always-run* data-driven migration-branch gap (the **V14-critical
 ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
 `critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches);
 session 27 closed the two deterministic chat-emit renderers
 `renderDisapprovalRoll` + `renderMercurialEffect`; session 28 fixed the
 `__mocks__/dcc-roll.js` async/sync mismatch (shared `withSyncCreateRoll`;
-footprint was 2 files, not the backlog's estimated 13); **session 29** (full
-detail in *Recent slices*) verified `onSpellLost` fires during a real wizard
-cast via a new e2e (deterministic d3+low-INT fail-to-lost, polled for
-`system.lost`). All four are **pure test-infra / coverage backfill — no
-production behavior change, no lib change.** Session 29's full-suite run also
+footprint was 2 files, not the backlog's estimated 13); session 29 verified
+`onSpellLost` fires during a real wizard cast (deterministic d3+low-INT
+fail-to-lost); **session 30** (full detail in *Recent slices*) added the
+`terms[N]` two-pass-divergence boundary guard (re-scoped: the only genuine gap
+was the documented "in-place `terms[N>0]` mutation reaches Foundry but not
+`libResult`" boundary — Vitest + live e2e). All five are **pure test-infra /
+coverage backfill — no production behavior change, no lib change.** Session
+29's full-suite run also
 surfaced + fixed the long-standing **forceCrit test flake** — root-caused as a
 *dice-probability* flake (the test expected a forced natural-20 but
 `applyForceCritToFoundryRoll` intentionally skips a natural 1, so an
 uncontrolled d20 failed ~1/20), NOT the "suite-only state pollution" the docs
 long assumed; fixed by retrying past the nat-1 (verified 10/10). Remaining
 gaps (`terms[N]` two-pass divergence, the NPC `_rollToHitViaAdapter` branches)
-are in progress with Tim engaged. Repo green: **1399 Vitest** / **179
-Playwright e2e passed**, zero failures (7.1-min full suite — now flake-clean).
+are in progress with Tim engaged. Repo green: **1400 Vitest** / **180
+Playwright e2e passed**, zero failures (flake-clean since the session-29
+forceCrit fix).
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -106,6 +110,31 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 30: `terms[N]` two-pass-divergence boundary
+  guard (PR #720 test-coverage gap; test-coverage-backfill arc).**
+  Investigation first re-scoped the gap: the `dcc.modifyAttackRollTerms`
+  post-hook re-read is already well covered — `hookTermsToBonuses` has direct
+  unit tests (translate-Modifier / skip-non-Modifier / empty), plus the live
+  `terms[0]` die-bump (`adapter-weapon-attack.test.js:588`) and the appended-
+  Modifier→`libResult.bonuses` test (507). The one genuinely-uncovered case is
+  the **documented boundary** (`attack-input.mjs:139`): an **in-place mutation
+  of an existing `terms[N]` (N>0)** is captured by *neither* the `terms[0]`
+  die re-read *nor* the appended-Modifier→bonus slice — it flows through the
+  Foundry Roll natively (chat total stays authoritative) and surfaces only as
+  a divergence, never as a `libResult` bonus. Tim chose to add the guard
+  (over skipping). +1 Vitest (`adapter-weapon-attack.test.js`): a hook mutates
+  the existing Compound to-hit term `terms[1].formula` in place (asserting it
+  mutated a real Compound + appended nothing, so the test exercises the real
+  path) → `libResult.die` unchanged (`d20`) + `libResult.bonuses` `[]`. +1
+  Playwright (`adapter-dispatch.spec.js`, `rollWeaponAttack`): the same in
+  **live** Foundry — a real `Hooks.on('dcc.modifyAttackRollTerms')` listener
+  mutates `terms[1]` to `+99` during a live attack, then asserts the chat
+  `libResult` carries no hook bonus + unchanged die AND the Foundry roll total
+  **exceeds** `libResult.total` (the `+99` reached Foundry but not the lib —
+  the divergence the boundary produces). **No production change — pure
+  coverage backfill of an intentional, documented boundary.** **1400 Vitest**
+  (was 1399, +1). **180 Playwright passed**, zero failures (was 179, +1).
 
 - **2026-06-02 — Phase 7 session 29: `onSpellLost` verified during a real
   adapter cast (PR #720 test-coverage gap; test-coverage-backfill arc).**
@@ -250,39 +279,6 @@ archives linked above.
   **176 Playwright passed**, zero failures (was 175, +1; 6.0-min full
   suite).
 
-- **2026-06-02 — Phase 7 session 25: the batch delete (legacy-decom step
-  5 of 5 — arc COMPLETE).** Deleted the four now-dead `_xxxLegacy` roll
-  bodies (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
-  `_getInitiativeRollLegacy`, `_rollSkillCheckLegacy` — ~290 lines), all
-  fully unreachable after steps 1–4 moved every gate into the adapter.
-  Every public roll dispatcher is now **single-path through the adapter**.
-  The four dispatchers were already collapsed in prior sessions (sessions
-  21–24 each flipped its last gate), so this slice is the deletion + the
-  surviving-branch verification: `rollAbilityCheck` keeps its
-  `options.rollUnder` → `_rollLuckCheckViaAdapter` branch; `rollSkillCheck`
-  keeps its three-way `!hasDie` → `_emitSkillDescriptionViaAdapter` /
-  `_skillTableViaAdapter` / `_rollSkillCheckViaAdapter` routing (both are
-  *adapter* branches, not legacy gates). **Rename, not delete:** the shared
-  `_buildSkillCheckLegacyTerms` term-descriptor builder → `_buildSkillCheckRollTerms`
-  — it still backs `_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s
-  dialog branch (the "Legacy" named the DCCRoll term-descriptor *format*
-  the Foundry dialog consumes, not a code path), so deleting it was never
-  on the table; the rename drops the misleading token now its last legacy
-  caller is gone. Cleaned ~12 stale doc/comment references to the deleted
-  methods across `actor.js` (dispatcher JSDocs, the check-penalty / dialog
-  provenance comments softened to "former legacy", the unknown-skill guard
-  comment) + 5 test-file comments. No lib change. `actor.js` shed ~218 net
-  lines (441 touched). +2 Vitest retirement guards (`actor.test.js`: all
-  four `_xxxLegacy` symbols `undefined` on the prototype + dispatchers/adapter
-  routes present; old term-builder name retired + renamed one present). +1
-  Playwright live guard (`adapter-dispatch.spec.js`, beside the D1 guard:
-  the four legacy bodies + old term-builder absent from the live
-  prototype, dispatchers + `_emitSkillDescriptionViaAdapter` +
-  `_buildSkillCheckRollTerms` present). **1345 Vitest** (was 1343, +2).
-  **175 Playwright passed**, zero failures (was 174, +1; 6.0-min full
-  suite). **Legacy-decom arc complete** — no `_xxxLegacy` roll body
-  survives anywhere in the system.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -375,8 +371,14 @@ pure adapter-side wiring.
   to deterministically fail-to-lost (`config.inheritActionDie:false` + d3 die
   + INT 3 + level 1 → total ≤ 1 → tier 'lost') and polls the spell item until
   `system.lost` flips true; cleans up its actor afterward.
-- Two-pass divergence: only the `terms[0]` die-bump case is covered;
-  `terms[N]` Compound / Modifier in-place mutations are not.
+- ~~Two-pass divergence: only the `terms[0]` die-bump case is covered;
+  `terms[N]` Compound / Modifier in-place mutations are not.~~ **CLOSED
+  2026-06-02 (Phase 7 session 30).** Re-scoped: `hookTermsToBonuses` +
+  terms[0]-bump + appended-Modifier→bonus were already covered; the one
+  genuine gap was the *documented boundary* that an in-place mutation of an
+  existing `terms[N]` (N>0) reaches Foundry but NOT `libResult`. +1 Vitest
+  (in-place `terms[1]` mutation → die unchanged + bonuses `[]`) + 1 live
+  Playwright (real hook → Foundry total > libResult.total divergence).
 - `_canRouteAttackViaAdapter` untested branches (dice-bearing
   `weapon.toHit`, `twoWeaponSecondary`, settings try/catch). Gate retired
   at session 15 — assertions moved to the single-path body.
@@ -504,15 +506,13 @@ respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
 **Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
-Sessions 26–29 cleared the data-driven migration branches, the two chat
-renderers, the `dcc-roll.js` mock async/sync mismatch, and the `onSpellLost`
-real-cast verification. Tim is engaged for the remaining (trickier) gaps;
-agreed approaches noted inline:
-- `terms[N]` two-pass divergence (Compound / Modifier in-place mutations;
-  only the `terms[0]` die-bump case is covered) — Tim: "yes, just be careful"
-  (avoid a test that passes without exercising the real two-pass path).
+Sessions 26–30 cleared the data-driven migration branches, the two chat
+renderers, the `dcc-roll.js` mock async/sync mismatch, the `onSpellLost`
+real-cast verification, and the `terms[N]` two-pass-divergence boundary. One
+gap remains, Tim engaged:
 - `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
-  injection + the `Roll.validate(toHit) === false` early-return path.
+  injection + the `Roll.validate(toHit) === false` early-return path. **(Next
+  up.)**
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**
@@ -520,6 +520,8 @@ agreed approaches noted inline:
   `withSyncCreateRoll`; footprint was 2 files, not 13).**
 - ~~`onSpellLost` during a real cast~~ **done (session 29; deterministic
   d3+low-INT fail-to-lost, polled for `system.lost`).**
+- ~~`terms[N]` two-pass divergence~~ **done (session 30; in-place
+  `terms[N>0]` mutation boundary guard — Vitest + live e2e).**
 - ~~`roll-dialog.mjs` direct coverage~~ **STALE — the named helpers
   (`promptSpellburnCommitment`/`clampBurn`) were retired and
   `adapter-roll-dialog.test.js` already covers both current exports

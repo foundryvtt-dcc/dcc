@@ -2266,6 +2266,75 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(backstabEntry.effect.value).toBe(7)
     })
 
+    test('in-place mutation of an existing terms[N] flows through Foundry but is NOT captured on libResult (two-pass boundary, Phase 7 session 30)', async ({ page }) => {
+      // PR #720 test-coverage gap (terms[N] two-pass divergence). The
+      // post-hook re-read captures only terms[0].formula (→ lib action die)
+      // and APPENDED Modifier terms (→ lib bonuses, via hookTermsToBonuses on
+      // `terms.slice(termsLengthBefore)`). An IN-PLACE mutation of an existing
+      // terms[N] (N>0) is captured by NEITHER (documented at
+      // attack-input.mjs:139): it flows through the live Foundry Roll (so the
+      // chat total reflects it) but never reaches the lib — surfacing only as
+      // a divergence. This probe drives that boundary end-to-end with a real
+      // hook on a live attack.
+      const out = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 InPlaceMut', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-InPlace-Sword',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+2', critRange: 20, damage: '1d8', melee: true, equipped: true }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        const id = actor.items.getName('P1-InPlace-Sword').id
+
+        // The Compound to-hit term sits at terms[1] (terms[0] is the action
+        // die). Mutate it IN PLACE — do not append a term, do not touch
+        // terms[0]. Hooks.call passes (terms, actor, weapon, options).
+        const observed = { ran: false, term1Type: null, appendedNothing: null }
+        const hookId = Hooks.on('dcc.modifyAttackRollTerms', (terms) => {
+          observed.ran = true
+          observed.term1Type = terms[1]?.type
+          const before = terms.length
+          terms[1].formula = '+99'
+          observed.appendedNothing = terms.length === before
+          return true
+        })
+
+        try {
+          await actor.rollWeaponAttack(id)
+        } finally {
+          Hooks.off('dcc.modifyAttackRollTerms', hookId)
+        }
+
+        let lib = null
+        let foundryTotal = null
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse().find(m =>
+            m.speaker?.alias === 'P1 InPlaceMut' &&
+            m.getFlag('dcc', 'isToHit') &&
+            m.getFlag('dcc', 'libResult'))
+          if (msg) { lib = msg.getFlag('dcc', 'libResult'); foundryTotal = msg.rolls?.[0]?.total; break }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        await actor.delete()
+        return { observed, lib, foundryTotal }
+      })
+
+      // The hook genuinely mutated an existing Compound term in place (proves
+      // the probe exercises the real in-place path, not a no-op).
+      expect(out.observed.ran).toBe(true)
+      expect(out.observed.term1Type).toBe('Compound')
+      expect(out.observed.appendedNothing).toBe(true)
+      // Lib side captured nothing from the in-place mutation:
+      expect(out.lib, 'attack must set dcc.libResult').not.toBeNull()
+      expect(out.lib.die).toBe('d20') // terms[0] untouched
+      expect((out.lib.bonuses || []).some(b => /hook/i.test(b.id || '')),
+        'an in-place mutation must NOT create a hook-injected bonus').toBe(false)
+      // The +99 flowed through the Foundry Roll (chat-authoritative total) but
+      // NOT the lib total — the documented divergence the boundary produces.
+      expect(out.foundryTotal).toBeGreaterThan(out.lib.total)
+    })
+
     test('showModifierDialog flag → adapter (session 13 / A6)', async ({ page }) => {
       // A6: modifier-dialog case now routes via adapter with
       // `damageTerms` threaded into `DCCRoll.createRoll`. Dispatch log

@@ -642,6 +642,55 @@ test('adapter path keeps libResult.die on the original action die when the hook 
   expect(result.libResult.die).toBe('d20')
 })
 
+test('adapter path does NOT capture an in-place mutation of an existing terms[N] (N>0) — two-pass boundary', async () => {
+  // Two-pass boundary (documented at attack-input.mjs:139): the post-hook
+  // re-read captures only (a) terms[0].formula → the lib action die, and
+  // (b) APPENDED Modifier terms → lib bonuses (hookTermsToBonuses operates on
+  // `terms.slice(termsLengthBefore)`). An IN-PLACE mutation of an existing
+  // terms[N] (N>0) is captured by NEITHER — it flows through the Foundry Roll
+  // natively (Foundry total stays chat-authoritative) and surfaces only as a
+  // divergence. This guards that boundary, complementing the terms[0]-bump
+  // test above and the appended-Modifier→bonus test below.
+  logDispatch.mockClear()
+  const observed = {}
+  const originalCall = Hooks.call
+  Hooks.call = (hook, terms) => {
+    if (hook === 'dcc.modifyAttackRollTerms') {
+      // The Compound to-hit term sits at terms[1] (terms[0] is the action
+      // die). Mutate it in place — do NOT append a term and do NOT touch
+      // terms[0].
+      observed.lengthBefore = terms.length
+      observed.term1Type = terms[1]?.type
+      terms[1].formula = '+99'
+      observed.appendedNothing = terms.length === observed.lengthBefore
+    }
+    return true
+  }
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon() // toHit '+2'
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+    Hooks.call = originalCall
+  }
+
+  // The hook genuinely mutated an existing Compound term in place (not an
+  // append) — so the test exercises the real in-place path, not a no-op.
+  expect(observed.term1Type).toBe('Compound')
+  expect(observed.appendedNothing).toBe(true)
+  // Lib side captured nothing from the in-place mutation:
+  //  - die unchanged (the mutation was to terms[1], not the terms[0] die)
+  expect(result.libResult.die).toBe('d20')
+  //  - no hook bonus (nothing was appended, so hookTermsToBonuses saw [])
+  expect(result.libResult.bonuses).toEqual([])
+})
+
 test('parseDeedAttackBonus matches deed-die formulas with optional count + multiple flat mods', () => {
   expect(parseDeedAttackBonus('+1d3+0')).toEqual({ deedDie: 'd3', attackBonus: 0 })
   expect(parseDeedAttackBonus('+1d3+2')).toEqual({ deedDie: 'd3', attackBonus: 2 })

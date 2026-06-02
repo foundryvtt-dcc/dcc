@@ -1017,6 +1017,20 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 30 (2026-06-02): PR #720 test-coverage backfill —
+  `terms[N]` two-pass-divergence boundary guard. Re-scoped during
+  investigation: `hookTermsToBonuses` + the `terms[0]` die-bump + the
+  appended-Modifier→`libResult.bonuses` path were already covered; the one
+  genuine gap was the documented boundary (`attack-input.mjs:139`) that an
+  in-place mutation of an existing `terms[N]` (N>0) reaches Foundry but NOT
+  `libResult`. +1 Vitest (`adapter-weapon-attack.test.js`: in-place `terms[1]`
+  Compound mutation → die unchanged + `bonuses` `[]`, asserting it mutated a
+  real Compound + appended nothing) + 1 live Playwright
+  (`adapter-dispatch.spec.js` `rollWeaponAttack`: real `Hooks.on` mutates
+  `terms[1]`→`+99` → chat `libResult` has no hook bonus + Foundry total >
+  `libResult.total`). No production change. **1400 Vitest** (was 1399, +1) /
+  **180 Playwright** (was 179, +1), zero failures.
+
 - Phase 7 session 29 (2026-06-02): PR #720 test-coverage backfill —
   `onSpellLost` verified during a real adapter cast. e2e-only (the gap was
   real-cast verification; the direct-callback unit test already exists). New

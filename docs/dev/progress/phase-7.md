@@ -1279,3 +1279,36 @@
   description-*less* item case asserts adapter dispatch with no chat card
   posted). **1343 Vitest** (was 1342, +1 net). **174 Playwright passed**,
   zero failures (was 173, +1; 6.2-min full suite).
+
+- **2026-06-02 — Phase 7 session 25: the batch delete (legacy-decom step
+  5 of 5 — arc COMPLETE).** Deleted the four now-dead `_xxxLegacy` roll
+  bodies (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
+  `_getInitiativeRollLegacy`, `_rollSkillCheckLegacy` — ~290 lines), all
+  fully unreachable after steps 1–4 moved every gate into the adapter.
+  Every public roll dispatcher is now **single-path through the adapter**.
+  The four dispatchers were already collapsed in prior sessions (sessions
+  21–24 each flipped its last gate), so this slice is the deletion + the
+  surviving-branch verification: `rollAbilityCheck` keeps its
+  `options.rollUnder` → `_rollLuckCheckViaAdapter` branch; `rollSkillCheck`
+  keeps its three-way `!hasDie` → `_emitSkillDescriptionViaAdapter` /
+  `_skillTableViaAdapter` / `_rollSkillCheckViaAdapter` routing (both are
+  *adapter* branches, not legacy gates). **Rename, not delete:** the shared
+  `_buildSkillCheckLegacyTerms` term-descriptor builder → `_buildSkillCheckRollTerms`
+  — it still backs `_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s
+  dialog branch (the "Legacy" named the DCCRoll term-descriptor *format*
+  the Foundry dialog consumes, not a code path), so deleting it was never
+  on the table; the rename drops the misleading token now its last legacy
+  caller is gone. Cleaned ~12 stale doc/comment references to the deleted
+  methods across `actor.js` (dispatcher JSDocs, the check-penalty / dialog
+  provenance comments softened to "former legacy", the unknown-skill guard
+  comment) + 5 test-file comments. No lib change. `actor.js` shed ~218 net
+  lines (441 touched). +2 Vitest retirement guards (`actor.test.js`: all
+  four `_xxxLegacy` symbols `undefined` on the prototype + dispatchers/adapter
+  routes present; old term-builder name retired + renamed one present). +1
+  Playwright live guard (`adapter-dispatch.spec.js`, beside the D1 guard:
+  the four legacy bodies + old term-builder absent from the live
+  prototype, dispatchers + `_emitSkillDescriptionViaAdapter` +
+  `_buildSkillCheckRollTerms` present). **1345 Vitest** (was 1343, +2).
+  **175 Playwright passed**, zero failures (was 174, +1; 6.0-min full
+  suite). **Legacy-decom arc complete** — no `_xxxLegacy` roll body
+  survives anywhere in the system.

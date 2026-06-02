@@ -42,7 +42,29 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 29 (PR #720 test-coverage backfill: `onSpellLost`
+**Latest — Phase 7 session 30 (PR #720 test-coverage backfill: `terms[N]`
+two-pass-divergence boundary guard).** Investigation re-scoped the gap: the
+`dcc.modifyAttackRollTerms` post-hook re-read is already well covered
+(`hookTermsToBonuses` unit tests + the live `terms[0]` die-bump + the
+appended-Modifier→`libResult.bonuses` test). The one genuine gap was the
+*documented boundary* (`attack-input.mjs:139`): an **in-place mutation of an
+existing `terms[N]` (N>0)** reaches the Foundry Roll (chat total authoritative)
+but NOT `libResult` — surfacing only as a divergence. +1 Vitest
+(`adapter-weapon-attack.test.js`: in-place `terms[1]` Compound mutation → die
+unchanged + `bonuses` `[]`) + 1 live Playwright (`adapter-dispatch.spec.js`
+`rollWeaponAttack`: real `Hooks.on` mutates `terms[1]` to `+99` → chat
+`libResult` has no hook bonus + Foundry total > `libResult.total`). No
+production change — pure backfill of an intentional boundary. **1400 Vitest** /
+**180 Playwright**, zero failures. **Next: the last test-coverage gap — NPC
+`_rollToHitViaAdapter` (`attackHitBonus.melee.adjustment` Modifier injection +
+the `Roll.validate(toHit) === false` early-return).** Prior sessions: 26
+(migration branches), 27 (`renderDisapprovalRoll`/`renderMercurialEffect`), 28
+(`dcc-roll.js` mock async/sync), 29 (`onSpellLost` real-cast + the forceCrit
+dice-flake fix).
+
+<details><summary>Phase 7 session 29 (onSpellLost + forceCrit flake fix)</summary>
+
+**Phase 7 session 29 (PR #720 test-coverage backfill: `onSpellLost`
 verified during a real adapter cast).** The test-coverage-backfill arc
 (sessions 26–29) continued: session 29 added an e2e proving `onSpellLost`
 fires end-to-end during a real wizard cast (it previously had only a
@@ -75,8 +97,10 @@ two-pass divergence (be careful to exercise the real path), and the NPC
 `_rollToHitViaAdapter` `attackHitBonus.melee.adjustment` + `Roll.validate`
 early-return branches. (`roll-dialog.mjs` direct-coverage gap was found STALE
 — helpers retired + already covered.) See `00-progress.md` *Next steps* + the
-PR #720 backlog subsections. Repo green: **1399 Vitest** / **179 Playwright
-e2e passed**, zero failures (~6-min full suite).
+PR #720 backlog subsections. Repo green at session-29 close: **1399 Vitest** /
+**179 Playwright e2e passed**, zero failures.
+
+</details>
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 
