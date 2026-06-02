@@ -65,35 +65,37 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup → Legacy decommission — latest 2026-06-01.** Phase 7
-session 23 (full detail in *Recent slices*) landed **legacy-decom step 3
-— non-zero armor check-penalty display for str/agl ability checks in the
-adapter**. The penalty is *not* applied to the result (DCC shows it as an
-informational alternative total — the GM decides per check); the adapter
-reproduces the legacy contract **faithfully** (Tim's call, "keep the
-note"): a new `_buildCheckPenaltyAltRoll` builds a bare Roll wrapping
-`mainTotal + penalty`, and `renderAbilityCheck` pushes it as `rolls[1]` +
-sets `system.checkPenaltyRollIndex: 1`, so the existing `emoteAbilityRoll`
-(`module/chat.js`) renders the unchanged "If check penalty applies, total
-is X" note. **No chat.js / i18n change** — the note derives purely from
-those two fields. Both adapter paths feed it: the non-dialog path always
-shows it (lib roll is clean), the dialog path mirrors legacy's
-`prompt.formula.includes(ensurePlus(penalty))` to suppress the note when
-the user toggled the penalty into the roll. **Gate flip:** the
-`hasNonZeroCheckPenalty` legacy gate is gone — `rollAbilityCheck` is now
-**single-path adapter**, joining `rollSavingThrow`. No lib change. Repo
-green: **1342 Vitest** / **173 Playwright e2e passed**, zero failures
-(5.7-min full suite).
+**Phase 7 cleanup → Legacy decommission — latest 2026-06-02.** Phase 7
+session 24 (full detail in *Recent slices*) landed **legacy-decom step 4
+— description-only skill items in the adapter**. A skill item with
+`useDie`/`useValue`/`useAbility`/`useLevel` all off (the `!resolved.hasDie`
+gate) has nothing to roll — it emits a *description chat card*. New
+`_emitSkillDescriptionViaAdapter(skillId, resolved)` reproduces the legacy
+early-return branch **exactly** (same `.skill-description` content, flavor,
+`SkillCheck`/`ItemId`/`SkillId`/`isSkillCheck` flags, `system` payload), and
+emits nothing when the item carries no description. It's a pure Foundry-side
+chat emit (no lib round-trip — there's no formula to hand the lib); the
+`mode: 'description'` dispatch field distinguishes it from the rolling
+adapter routes. **Gate flip:** the `!resolved.hasDie` gate now routes to the
+adapter — **`_rollSkillCheckLegacy` is fully unreachable**, so *all four*
+`_xxxLegacy` bodies are now dead (joining `_rollAbilityCheckLegacy` +
+`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy`), awaiting the step-5
+batch delete. No lib change. Repo green: **1343 Vitest** / **174 Playwright
+e2e passed**, zero failures (6.2-min full suite).
 
-**Remaining legacy-decom steps (4–5):** description-only skill items
-(step 4, the last `_rollSkillCheckLegacy` gate), then delete the now-dead
-`_rollAbilityCheckLegacy` + `_rollSavingThrowLegacy` +
-`_getInitiativeRollLegacy` (all fully unreachable after step 3) plus the
-remaining `_rollSkillCheckLegacy` + `_buildSkillCheckLegacyTerms`
-(step 5). See the *Legacy decommission* backlog subsection + *Next steps*.
-All PR #720 design calls remain closed (the error-boundary prerequisite
-landed session 20); the *test-coverage gaps* + *doc hygiene* lists are
-still open.
+**Remaining legacy-decom step (5):** delete the four now-dead
+`_xxxLegacy` bodies (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
+`_getInitiativeRollLegacy`, `_rollSkillCheckLegacy`), collapse each
+dispatcher to a single `return this._xxxViaAdapter(...)` (`rollAbilityCheck`
+keeps its `options.rollUnder` branch; `rollSkillCheck` keeps its
+skill-table + description routing), add retirement-guard tests, and clean
+the stale `_rollSkillCheckLegacy` doc/comment references. Note
+`_buildSkillCheckLegacyTerms` is **not** deletable — it's still consumed by
+`_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s dialog branch (a
+step-5 rename is the most it warrants). See the *Legacy decommission*
+backlog subsection + *Next steps*. All PR #720 design calls remain closed
+(the error-boundary prerequisite landed session 20); the *test-coverage
+gaps* + *doc hygiene* lists are still open.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -107,6 +109,46 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 24: description-only skill items in the
+  adapter (legacy-decom step 4 of 5).** The last gate keeping
+  `_rollSkillCheckLegacy` reachable. A skill item with
+  `useDie`/`useValue`/`useAbility`/`useLevel` all off resolves to
+  `!hasDie` (built-in slots + rollable items always inherit the action
+  die, so this is reached *only* for skill items with nothing to roll) and
+  emits a *description chat card*, not a roll. New private
+  `_emitSkillDescriptionViaAdapter(skillId, resolved)` logs
+  `logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'description' })`
+  then reproduces the legacy `_rollSkillCheckLegacy` early-return branch
+  **exactly**: a `<div class="skill-description">…</div>` content, flavor
+  `${label}${abilityLabel}`, flags `SkillCheck`/`ItemId`/`SkillId`/
+  `isSkillCheck`, and `system: { skillId, skillDescription }` — and emits
+  **nothing** when the item carries no description value (faithful to the
+  legacy guard). It's a **pure Foundry-side chat emit, no lib round-trip**
+  (a description-only skill has no formula to hand the lib); the
+  `mode: 'description'` dispatch field distinguishes it from the rolling
+  adapter routes (`_rollSkillCheckViaAdapter` / `_skillTableViaAdapter`).
+  **Why the legacy roll branch was provably dead:** `!hasDie` ⟹ a skill
+  *item* (not a built-in slot) with `useValue`/`useAbility`/`useLevel` all
+  off ⟹ `_buildSkillCheckLegacyTerms` produces no die/value/level/deed
+  terms, and the check-penalty term can't fire on the synthesized
+  skill-item object (no `config`, and `skillId` is the item name) — so the
+  legacy method's only reachable behavior from this gate was the
+  description emit. **Gate flip:** `rollSkillCheck`'s `!resolved.hasDie`
+  branch now calls `_emitSkillDescriptionViaAdapter`; `_rollSkillCheckLegacy`
+  is fully unreachable, joining the three already-dead bodies for the
+  step-5 batch delete. No lib change (pure adapter wiring — no formula
+  crosses the lib boundary). +2 Vitest (`adapter-skill-check.test.js`:
+  description-only item → adapter posts the card with the exact
+  content/flags/system; description-*less* item → no chat message) — the
+  former replaces the old "routes to the legacy path" assertion. +1
+  Playwright new + 1 flipped (`adapter-dispatch.spec.js`: the
+  `description-only skill item (no die)` test flips `→ legacy` to
+  `→ adapter` + `mode: 'description'` and now asserts the live card's
+  flags/content + that it carries no `libResult` and no rolls; a new
+  description-*less* item case asserts adapter dispatch with no chat card
+  posted). **1343 Vitest** (was 1342, +1 net). **174 Playwright passed**,
+  zero failures (was 173, +1; 6.2-min full suite).
 
 - **2026-06-01 — Phase 7 session 23: non-zero armor check-penalty display
   for str/agl ability checks in the adapter (legacy-decom step 3 of 5).**
@@ -279,29 +321,6 @@ archives linked above.
   calls are closed** — remaining backlog is the legacy-decom plan +
   test-coverage gaps + doc hygiene.
 
-- **2026-05-31 — Phase 7 session 19: close the PR #720 `createFoundryRoller`
-  delete-or-wire design call — deleted (+ its paired coverage gap).** The
-  async Foundry-Roll wrapper (`module/adapter/foundry-roller.mjs`,
-  39 lines) had **zero consumers** — production, tests, and all four
-  sibling modules. Its stated future-use ("later phases may prefer the
-  lib's async roller") is a *closed door*: Groups A/C/D + the unified
-  modifier dialog all landed on the two-pass **sync** pattern (Foundry
-  evaluates the formula inline via `new Roll(plan.formula).evaluate()`,
-  the lib classifies the natural in a second `{mode:'evaluate'}` pass),
-  which the async roller fundamentally conflicts with — wiring it would
-  *reverse* a deliberate design choice, not finish an unfinished one.
-  `git rm`'d the file + corrected three stale comments that
-  mischaracterized the ability-check flow as routing through it
-  (`adapter-ability-check.test.js` header flow-diagram; two in
-  `actor.test.js`). Live docs updated (`01-session-start.md` adapter
-  list; `ARCHITECTURE_REIMAGINED.md` §5.4 annotated PLANNED/NEVER-ADOPTED);
-  the `phase-0-1.md` archive references stay (accurate history — the file
-  existed then). Zero behavior change (nothing imported it). Closes both
-  the design call and its paired test-coverage gap. **1319 Vitest**
-  (unchanged — no tests removed; the file had none). Full e2e re-run as
-  the regression net (the deleted path's stale comments referenced the
-  live ability-check dispatch, already covered).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -357,14 +376,13 @@ stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
 coverage is exhaustive for their gate). Group D already retired
 attack / crit / fumble / damage; the spell-check legacy wrapper went in
 session 16. Step 1 (roll-under) landed session 21; step 2 (modifier
-dialog) landed session 22; step 3 (check-penalty) landed session 23.
-**After step 3, `_rollAbilityCheckLegacy` + `_rollSavingThrowLegacy` +
-`_getInitiativeRollLegacy` are all fully unreachable (awaiting the step-5
-delete); `_rollSkillCheckLegacy` is the only legacy body still reachable,
-kept alive by step 4 (description-only skill items).** Retiring them is
-gated on moving those capabilities into the adapter first — sequence the
-work by the shared capability, not by the method, since one capability
-unblocks several gates at once:
+dialog) landed session 22; step 3 (check-penalty) landed session 23;
+step 4 (description-only skill items) landed session 24.
+**After step 4, all four `_xxxLegacy` bodies (`_rollAbilityCheckLegacy`,
+`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`,
+`_rollSkillCheckLegacy`) are fully unreachable — step 5 (delete) is the
+only remaining work.** The capabilities are all in the adapter now;
+step 5 is pure deletion + dispatcher collapse:
 
 1. ~~**Roll-under in the adapter.**~~ **DONE — Phase 7 session 21**
    (`_rollLuckCheckViaAdapter` → lib `rollLuckCheck` +
@@ -379,24 +397,27 @@ unblocks several gates at once:
    session 23** (`_buildCheckPenaltyAltRoll` + `renderAbilityCheck`'s
    `checkPenaltyRoll` param reproduce the legacy "If check penalty applies,
    total is X" note faithfully — Tim's call). Detail in Recent slices.
-4. **Description-only skill items in the adapter.** Blocks
-   `_rollSkillCheckLegacy` (the `!resolved.hasDie` gate) — these emit a
-   *description chat message*, not a roll. Either teach
-   `_rollSkillCheckViaAdapter` / a sibling adapter route to emit the
-   description card, or split a tiny `_emitSkillDescription` helper that
-   both the (eventually-deleted) legacy path and the adapter call.
-5. **Delete the bodies + the shared helper.** After step 4 lands, all
-   four legacy bodies are dead (`_rollAbilityCheckLegacy`,
-   `_rollSavingThrowLegacy`, `_getInitiativeRollLegacy` already unreachable
-   as of step 3; `_rollSkillCheckLegacy` after step 4). Delete them + the
-   shared `_buildSkillCheckLegacyTerms` helper. Collapse each dispatcher to
-   a single `return this._xxxViaAdapter(...)` (mirroring the Group D
-   attack/crit/fumble/damage collapse; `rollAbilityCheck` keeps the
-   `options.rollUnder` → `_rollLuckCheckViaAdapter` branch). Add a
-   retirement-guard test per method (assert the `_xxxLegacy` symbol is
-   `undefined`), matching the D2 `_rollDamageLegacy` guard pattern. Clean
-   the ~15 stale `_rollSkillCheckLegacy` doc/comment references catalogued
-   by the grep at session 19.
+4. ~~**Description-only skill items in the adapter.**~~ **DONE — Phase 7
+   session 24** (`_emitSkillDescriptionViaAdapter` reproduces the legacy
+   `_rollSkillCheckLegacy` early-return branch faithfully — pure
+   Foundry-side chat emit, `mode: 'description'` dispatch). Detail in
+   Recent slices.
+5. **Delete the bodies.** All four legacy bodies are now dead
+   (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
+   `_getInitiativeRollLegacy` unreachable as of step 3;
+   `_rollSkillCheckLegacy` as of step 4). Delete them. Collapse each
+   dispatcher to a single `return this._xxxViaAdapter(...)` (mirroring the
+   Group D attack/crit/fumble/damage collapse; `rollAbilityCheck` keeps the
+   `options.rollUnder` → `_rollLuckCheckViaAdapter` branch; `rollSkillCheck`
+   keeps its three-way `!hasDie` → description / skill-table /
+   `_rollSkillCheckViaAdapter` routing). Add a retirement-guard test per
+   method (assert the `_xxxLegacy` symbol is `undefined`), matching the D2
+   `_rollDamageLegacy` guard pattern. Clean the ~15 stale
+   `_rollSkillCheckLegacy` doc/comment references catalogued by the grep at
+   session 19. **Note:** `_buildSkillCheckLegacyTerms` is **not** deletable
+   — it's still consumed by `_skillTableViaAdapter` +
+   `_rollSkillCheckViaAdapter`'s dialog branch; a rename (drop the
+   "Legacy" token) is the most it warrants.
 
 Dependency notes / landmines:
 - ~~**`error boundaries` interaction.**~~ **RESOLVED (Phase 7 session
@@ -541,22 +562,23 @@ Dependency notes / landmines:
 **PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
 roll paths.** See the *Legacy decommission* subsection in the PR #720
 backlog above for the sequenced 5-step plan. **Steps 1 (roll-under) + 2
-(modifier dialog) + 3 (check-penalty) + the error-boundaries prerequisite
-are all DONE** (sessions 21 + 22 + 23 + 20). **Next up is step 4 —
-description-only skill items in the adapter**: this is the *only* surviving
-gate on `_rollSkillCheckLegacy` (the `!resolved.hasDie` case — a skill
-item with `useDie: false` emits a *description chat message*, not a roll).
-Either teach `_rollSkillCheckViaAdapter` / a sibling adapter route to emit
-the description card, or split a tiny `_emitSkillDescription` helper both
-the (eventually-deleted) legacy path and the adapter call. The live e2e
-`description-only skill item (no die) → legacy` test in
-`adapter-dispatch.spec.js:461` flips to `→ adapter` once it lands. Then
-step 5 (delete the now-dead `_rollAbilityCheckLegacy` +
-`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` + `_rollSkillCheckLegacy`
-+ `_buildSkillCheckLegacyTerms`, collapse each dispatcher, add
-retirement-guard tests). Any lib capability gap lands as a `dcc-core-lib`
-PR first, then `npm run sync-core-lib` (steps 1–3 needed none — all pure
-adapter-side wiring).
+(modifier dialog) + 3 (check-penalty) + 4 (description-only skill items) +
+the error-boundaries prerequisite are all DONE** (sessions 21 + 22 + 23 +
+24 + 20). **Next up is step 5 — the batch delete**, and it's the last step:
+all four `_xxxLegacy` bodies (`_rollAbilityCheckLegacy`,
+`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`,
+`_rollSkillCheckLegacy`) are now fully unreachable. Delete them; collapse
+each public dispatcher to a single `return this._xxxViaAdapter(...)` —
+`rollAbilityCheck` keeps its `options.rollUnder` → `_rollLuckCheckViaAdapter`
+branch, and `rollSkillCheck` keeps its three-way `!hasDie` → description /
+skill-table / `_rollSkillCheckViaAdapter` routing (these are *adapter*
+branches, not legacy gates, so they stay). Add a retirement-guard test per
+method (assert each `_xxxLegacy` symbol is `undefined`, matching the D2
+`_rollDamageLegacy` guard). Clean the stale `_rollSkillCheckLegacy`
+doc/comment references. **Do NOT delete `_buildSkillCheckLegacyTerms`** — it
+still backs `_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s dialog
+branch; a rename (drop "Legacy") is the most it warrants. This step is pure
+deletion + collapse — no lib change, no new capability.
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
 fully closed; open questions #2, #3, #4, and #7 all closed

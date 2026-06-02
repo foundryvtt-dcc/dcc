@@ -516,7 +516,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { skillId: 'P1-Backstab' })
     })
 
-    test('description-only skill item (no die) → legacy', async ({ page }) => {
+    test('description-only skill item (no die) → adapter (legacy-decom step 4)', async ({ page }) => {
+      // Legacy-decom step 4: a skill item with `useDie:false` and no
+      // value/ability/level has nothing to roll — it emits a description
+      // chat card. This was the last gate keeping `_rollSkillCheckLegacy`
+      // reachable; it now routes through `_emitSkillDescriptionViaAdapter`
+      // with `mode: 'description'`.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Skill Item NoDie', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -524,6 +529,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           type: 'skill',
           system: {
             die: '',
+            description: { value: 'Forbidden lore about cosmic indifference.' },
             config: { useDie: false, useAbility: false, useValue: false, useLevel: false }
           }
         }])
@@ -532,7 +538,71 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Skill Item NoDie').rollSkillCheck('P1-Lore')
       })
       const line = await waitForAdapterLog('rollSkillCheck')
-      assertPath(line, 'legacy', { skillId: 'P1-Lore' })
+      assertPath(line, 'adapter', { skillId: 'P1-Lore', mode: 'description' })
+
+      // End-to-end: the adapter posted a description chat card (not a
+      // roll) carrying the legacy flags + skill description.
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m => m.flags?.dcc?.SkillId === 'P1-Lore')
+          if (msg) {
+            return {
+              rollType: msg.flags?.dcc?.RollType,
+              itemId: msg.flags?.dcc?.ItemId,
+              isSkillCheck: msg.flags?.dcc?.isSkillCheck,
+              hasLibResult: !!msg.flags?.dcc?.libResult,
+              rollCount: msg.rolls?.length ?? 0,
+              content: msg.content
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        return null
+      })
+      expect(card, 'description-only skill check must post a chat card').not.toBeNull()
+      expect(card.rollType).toBe('SkillCheck')
+      expect(card.itemId).toBe('P1-Lore')
+      expect(card.isSkillCheck).toBe(true)
+      // It is a description card, not a roll — no dice, no lib result.
+      expect(card.hasLibResult).toBe(false)
+      expect(card.rollCount).toBe(0)
+      expect(card.content).toContain('skill-description')
+      expect(card.content).toContain('Forbidden lore about cosmic indifference.')
+    })
+
+    test('description-only skill item with no description → adapter, posts nothing', async ({ page }) => {
+      // Faithful to the legacy early-return: a useDie:false skill item
+      // carrying no description value has nothing to roll AND nothing to
+      // show, so the adapter route logs dispatch but creates no chat
+      // message.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Skill Item Blank', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Blank',
+          type: 'skill',
+          system: {
+            die: '',
+            description: { value: '' },
+            config: { useDie: false, useAbility: false, useValue: false, useLevel: false }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Skill Item Blank').rollSkillCheck('P1-Blank')
+      })
+      const line = await waitForAdapterLog('rollSkillCheck')
+      assertPath(line, 'adapter', { skillId: 'P1-Blank', mode: 'description' })
+
+      // No chat card for this skill — give any async create a moment, then assert absence.
+      const posted = await page.evaluate(async () => {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        return game.messages.contents.some(m => m.flags?.dcc?.SkillId === 'P1-Blank')
+      })
+      expect(posted, 'a description-less skill item must not post a chat card').toBe(false)
     })
 
     test('NPC skill item (useDie:false + value) → adapter, inherits action die', async ({ page }) => {

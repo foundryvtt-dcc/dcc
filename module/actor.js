@@ -1930,16 +1930,17 @@ class DCCActor extends Actor {
       const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
       const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
 
-      // Description-only skill items (no die, no value, no roll) stay on
-      // legacy — that path emits a description chat message rather than a
-      // roll. Phase 3 session 26 (Q7) folded the previous
+      // Description-only skill items (no die, no value, no roll) route
+      // through the adapter's `_emitSkillDescriptionViaAdapter`, which
+      // posts a description chat card rather than a roll (legacy-decom
+      // step 4). Phase 3 session 26 (Q7) folded the previous
       // `!!options.showModifierDialog` clause into the adapter routes:
       // `_rollSkillCheckViaAdapter` calls `promptRollModifierDialog`
       // adapter-side, and `_skillTableViaAdapter` already threads
       // `options` through `DCCRoll.createRoll` which honours
       // `showModifierDialog` on its own.
       if (!resolved.hasDie) {
-        return this._rollSkillCheckLegacy(skillId, options, resolved)
+        return this._emitSkillDescriptionViaAdapter(skillId, resolved)
       }
 
       if (hasSkillTable || useDisapprovalRange) {
@@ -2402,6 +2403,47 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Adapter path for description-only skill items — a skill item with
+   * `useDie` / `useValue` / `useAbility` / `useLevel` all off (the
+   * `!resolved.hasDie` gate; built-in slots and rollable items always
+   * inherit the action die, so this is reached only for skill items
+   * with nothing to roll). These emit a description chat card, not a
+   * roll: there is no formula to hand the lib, so this is a pure
+   * Foundry-side chat emit rather than a lib round-trip.
+   *
+   * Reproduces the legacy `_rollSkillCheckLegacy` early-return branch
+   * exactly — same content (`.skill-description` div), flavor
+   * (`<label><ability>`), flags (`SkillCheck` / `ItemId` / `SkillId` /
+   * `isSkillCheck`), and `system` payload. Emits nothing when the item
+   * carries no description (matching legacy). The `mode: 'description'`
+   * dispatch field distinguishes it from the rolling adapter routes.
+   *
+   * Legacy-decom step 4: this is the last gate that kept
+   * `_rollSkillCheckLegacy` reachable. With it flipped to the adapter,
+   * that body is fully dead, awaiting the step-5 batch delete.
+   * @private
+   */
+  _emitSkillDescriptionViaAdapter (skillId, resolved) {
+    logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'description' })
+    const { skill, skillItem, abilityLabel } = resolved
+
+    if (skillItem && skillItem.system.description.value) {
+      return ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        content: `<div class="skill-description">${skillItem.system.description.value}</div>`,
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+        flags: {
+          'dcc.RollType': 'SkillCheck',
+          'dcc.ItemId': skillId,
+          'dcc.SkillId': skillId,
+          'dcc.isSkillCheck': true
+        },
+        system: { skillId, skillDescription: skillItem.system.description.value }
+      })
+    }
+  }
+
+  /**
    * Build the legacy `DCCRoll.createRoll` term-descriptor array for a
    * resolved skill. Shared by `_rollSkillCheckLegacy` (description-only
    * fallback), `_skillTableViaAdapter` (table + disapproval-range
@@ -2470,12 +2512,15 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Legacy skill-check path. Used when the dispatcher detects a
-   * no-die / description-only case (no skill.die config + no fallback
-   * action-die slot, i.e. a skill item with `useDie: false`). Phase 3
-   * session 26 (Q7) folded the `showModifierDialog` branch into the
-   * adapter routes — both `_rollSkillCheckViaAdapter` and
-   * `_skillTableViaAdapter` now handle the dialog adapter-side.
+   * Legacy skill-check path. **Fully unreachable as of Phase 7 session
+   * 24 (legacy-decom step 4)** — the description-only `!resolved.hasDie`
+   * gate that was its last live caller now routes through
+   * `_emitSkillDescriptionViaAdapter`. Kept in place (with
+   * `_rollAbilityCheckLegacy` / `_rollSavingThrowLegacy` /
+   * `_getInitiativeRollLegacy`) for the step-5 batch delete + retirement
+   * guards. Phase 3 session 26 (Q7) folded the `showModifierDialog`
+   * branch into the adapter routes — both `_rollSkillCheckViaAdapter`
+   * and `_skillTableViaAdapter` now handle the dialog adapter-side.
    * @private
    */
   async _rollSkillCheckLegacy (skillId, options, resolved) {

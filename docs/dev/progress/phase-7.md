@@ -1045,3 +1045,26 @@
   asserts `damageRoll.total === libDamageResult.total === 1`). **1319 Vitest**
   (was 1318, +1). **166 Playwright passed**, zero failures (was 165, +1;
   5.5-min full suite). PR #720 design calls: 3 → 2 left.
+
+- **2026-05-31 — Phase 7 session 19: close the PR #720 `createFoundryRoller`
+  delete-or-wire design call — deleted (+ its paired coverage gap).** The
+  async Foundry-Roll wrapper (`module/adapter/foundry-roller.mjs`,
+  39 lines) had **zero consumers** — production, tests, and all four
+  sibling modules. Its stated future-use ("later phases may prefer the
+  lib's async roller") is a *closed door*: Groups A/C/D + the unified
+  modifier dialog all landed on the two-pass **sync** pattern (Foundry
+  evaluates the formula inline via `new Roll(plan.formula).evaluate()`,
+  the lib classifies the natural in a second `{mode:'evaluate'}` pass),
+  which the async roller fundamentally conflicts with — wiring it would
+  *reverse* a deliberate design choice, not finish an unfinished one.
+  `git rm`'d the file + corrected three stale comments that
+  mischaracterized the ability-check flow as routing through it
+  (`adapter-ability-check.test.js` header flow-diagram; two in
+  `actor.test.js`). Live docs updated (`01-session-start.md` adapter
+  list; `ARCHITECTURE_REIMAGINED.md` §5.4 annotated PLANNED/NEVER-ADOPTED);
+  the `phase-0-1.md` archive references stay (accurate history — the file
+  existed then). Zero behavior change (nothing imported it). Closes both
+  the design call and its paired test-coverage gap. **1319 Vitest**
+  (unchanged — no tests removed; the file had none). Full e2e re-run as
+  the regression net (the deleted path's stale comments referenced the
+  live ability-check dispatch, already covered).

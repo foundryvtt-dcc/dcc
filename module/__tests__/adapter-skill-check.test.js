@@ -136,13 +136,15 @@ test('adapter path handles a skill item (useDie, useValue, useAbility, useLevel)
   global.itemTypesMock.mockReset()
 })
 
-test('description-only skill item routes to the legacy path', async () => {
+test('description-only skill item routes to the adapter and posts the description card', async () => {
+  // Legacy-decom step 4: the `!resolved.hasDie` description-only gate
+  // now routes through `_emitSkillDescriptionViaAdapter` (was legacy).
+  // It posts a plain ChatMessage.create with the description — no
+  // Roll.toMessage call, no lib round-trip — preserving the legacy
+  // content / flavor / flags / system payload exactly.
   rollToMessageMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
 
-  // Skill item with NO die and NO value — nothing to roll, just a
-  // description. Dispatcher routes to legacy; legacy posts a plain
-  // ChatMessage.create with the description, no Roll.toMessage call.
   const descOnlyItem = new DCCItem({
     name: 'loreOnly',
     type: 'skill',
@@ -166,16 +168,61 @@ test('description-only skill item routes to the legacy path', async () => {
 
   await actor.rollSkillCheck('loreOnly')
 
-  // No Roll.toMessage — the legacy path calls ChatMessage.create directly.
+  // No Roll.toMessage — the description path calls ChatMessage.create directly.
   expect(rollToMessageMock).not.toHaveBeenCalled()
-  // Legacy path created one message with the description and legacy flags.
+  // One message created with the description, legacy flags, and system payload.
   const createCalls = chatMessageCreateSpy.mock.calls.filter(
     (call) => call[0]?.flags?.['dcc.SkillId'] === 'loreOnly'
   )
   expect(createCalls.length).toBe(1)
-  expect(createCalls[0][0].flags['dcc.RollType']).toBe('SkillCheck')
-  expect(createCalls[0][0].flags['dcc.ItemId']).toBe('loreOnly')
-  expect(createCalls[0][0].flags['dcc.isSkillCheck']).toBe(true)
+  const messageData = createCalls[0][0]
+  expect(messageData.flags['dcc.RollType']).toBe('SkillCheck')
+  expect(messageData.flags['dcc.ItemId']).toBe('loreOnly')
+  expect(messageData.flags['dcc.isSkillCheck']).toBe(true)
+  expect(messageData.content).toContain('Forbidden lore about cosmic indifference.')
+  expect(messageData.content).toContain('skill-description')
+  expect(messageData.system.skillId).toBe('loreOnly')
+  expect(messageData.system.skillDescription).toBe(
+    'Forbidden lore about cosmic indifference.'
+  )
+
+  chatMessageCreateSpy.mockRestore()
+  global.itemTypesMock.mockReset()
+})
+
+test('description-only skill item with no description emits nothing', async () => {
+  // Faithful to the legacy early-return: when the item carries no
+  // description value there is nothing to roll and nothing to show,
+  // so no chat message is created (only the dispatch log fires).
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  const blankItem = new DCCItem({
+    name: 'blankSkill',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: false
+      },
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(blankItem)
+    }
+  })
+
+  await actor.rollSkillCheck('blankSkill')
+
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  const createCalls = chatMessageCreateSpy.mock.calls.filter(
+    (call) => call[0]?.flags?.['dcc.SkillId'] === 'blankSkill'
+  )
+  expect(createCalls.length).toBe(0)
 
   chatMessageCreateSpy.mockRestore()
   global.itemTypesMock.mockReset()

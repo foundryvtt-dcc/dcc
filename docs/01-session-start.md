@@ -40,35 +40,39 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-06-01)
+## Status (2026-06-02)
 
-**Latest — Phase 7 session 23 (legacy-decom step 3 of 5: non-zero armor
-check-penalty display for str/agl ability checks in the adapter).** All
-PR #720 *design calls* are closed (error-boundary prerequisite landed
-session 20). The user-directed priority is the **Legacy decommission**
-plan (see `00-progress.md` *Legacy decommission* subsection). Session 23
-did **step 3**, the last gate keeping `_rollAbilityCheckLegacy` reachable.
-DCC shows the armor check penalty on a Str/Agl ability check as an
-*informational alternative total* ("If check penalty applies, total is X")
-— it is NOT applied to the result. **Tim chose faithful reproduction**
-("keep the note") over the handoff's tentatively-planned breakdown-row
-approach: new `_buildCheckPenaltyAltRoll` builds a bare `new Roll(mainTotal
-+ penalty)` and `renderAbilityCheck` pushes it as `rolls[1]` + sets
-`system.checkPenaltyRollIndex: 1`, so the **unchanged** `emoteAbilityRoll`
-(`module/chat.js`) renders the legacy note — **no `chat.js` / i18n /
-template change**. Non-dialog path always shows it (clean lib roll); dialog
-path mirrors legacy's `formula.includes(ensurePlus(penalty))` to suppress
-it when the user toggled the penalty on. **Gate flip:** the
-`hasNonZeroCheckPenalty` legacy gate is deleted — `rollAbilityCheck` is now
-single-path adapter (only `options.rollUnder` branches, to the Luck-check
-route), joining `rollSavingThrow`. `_rollAbilityCheckLegacy` is now fully
-unreachable, awaiting the step-5 batch delete. **No lib change.** **Next:
-step 4 — description-only skill items in the adapter** (the last
-`_rollSkillCheckLegacy` gate — a `useDie:false` skill item emits a
-description chat message, not a roll; the live e2e
-`description-only skill item (no die) → legacy` test flips to `→ adapter`).
-Repo green: **1342 Vitest** / **173 Playwright e2e passed**, zero failures
-(5.7-min full suite).
+**Latest — Phase 7 session 24 (legacy-decom step 4 of 5: description-only
+skill items in the adapter).** All PR #720 *design calls* are closed
+(error-boundary prerequisite landed session 20). The user-directed
+priority is the **Legacy decommission** plan (see `00-progress.md` *Legacy
+decommission* subsection). Session 24 did **step 4**, the last gate keeping
+`_rollSkillCheckLegacy` reachable. A skill item with
+`useDie`/`useValue`/`useAbility`/`useLevel` all off resolves to `!hasDie`
+(built-in slots + rollable items always inherit the action die, so this is
+reached *only* for skill items with nothing to roll) and emits a
+*description chat card*, not a roll. New private
+`_emitSkillDescriptionViaAdapter(skillId, resolved)` logs
+`logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'description' })`
+then reproduces the legacy `_rollSkillCheckLegacy` early-return branch
+**exactly** (`.skill-description` content, `${label}${abilityLabel}` flavor,
+`SkillCheck`/`ItemId`/`SkillId`/`isSkillCheck` flags, `system: { skillId,
+skillDescription }`) — and emits **nothing** when the item has no
+description (faithful to the legacy guard). It's a **pure Foundry-side chat
+emit, no lib round-trip**. **Gate flip:** `rollSkillCheck`'s
+`!resolved.hasDie` branch now routes to the adapter; `_rollSkillCheckLegacy`
+is fully unreachable, so **all four `_xxxLegacy` bodies are now dead**
+(joining `_rollAbilityCheckLegacy` + `_rollSavingThrowLegacy` +
+`_getInitiativeRollLegacy`), awaiting the step-5 batch delete. **No lib
+change.** **Next: step 5 — the batch delete** (the LAST step): delete the
+four dead `_xxxLegacy` bodies, collapse each dispatcher to a single
+`return this._xxxViaAdapter(...)` (`rollAbilityCheck` keeps its
+`options.rollUnder` branch; `rollSkillCheck` keeps its three-way `!hasDie`
+→ description / skill-table / via-adapter routing), add retirement-guard
+tests, clean stale `_rollSkillCheckLegacy` doc references. Do **not** delete
+`_buildSkillCheckLegacyTerms` — still used by the skill-table + dialog
+adapter routes (rename only). Repo green: **1343 Vitest** / **174 Playwright
+e2e passed**, zero failures (6.2-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 
