@@ -866,6 +866,78 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { spell: 'P1-Wizard-Spell', mode: 'wizard' })
     })
 
+    test('failed wizard cast fires onSpellLost → spell item system.lost becomes true (Phase 7 session 29)', async ({ page }) => {
+      // PR #720 test-coverage gap: `onSpellLost` was tested as a direct
+      // callback (adapter-spell-check.test.js) but never verified to fire
+      // during a REAL adapter cast.
+      //
+      // Forcing a deterministic spell-loss: the adapter builds no per-spell
+      // result table (`results: []`), so the lib uses its default tier ladder
+      // where total <= 1 → tier 'lost' (cast.js:130). We make the total <= 1
+      // for EVERY die outcome. `spellCheck.die` is a DiceField, so it must be
+      // a valid chain die (`1d1` would be coerced to the 1d20 default) — use
+      // `1d3` (natural 1-3). With INT 3 (modifier -3) and level 1 the
+      // wizard's spell-check total is natural + level + intMod = natural - 2
+      // ∈ {-1, 0, 1}, all <= 1 → tier 'lost'. (A natural 1 additionally forces
+      // a fumble with total → 1, cast.js:252 — still 'lost'.) `spellLost` →
+      // the adapter's `createSpellEvents.onSpellLost` runs
+      // `spellItem.update({ system.lost: true })`. (`createSpellEvents` wires
+      // only onSpellLost / disapproval / spellburn / patronTaint; with no
+      // patron and no spellburn, onSpellLost is the only handler that fires.)
+      // The update is fire-and-forget (the lib doesn't await it), so poll the
+      // item for the flag rather than reading it immediately.
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 SpellLost Wizard',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard' },
+            details: { level: { value: 1 } },
+            abilities: { int: { value: 3 } }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Lost-Spell',
+          type: 'spell',
+          system: {
+            // inheritActionDie:false keeps our small spellCheck.die — otherwise
+            // item.js:231 overwrites it with the actor's action die (1d20).
+            config: { castingMode: 'wizard', inheritCheckPenalty: true, inheritActionDie: false },
+            level: 1,
+            spellCheck: { die: '1d3', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+
+        const lostBefore = actor.items.getName('P1-Lost-Spell').system.lost
+
+        let lostAfter = false
+        try {
+          await actor.rollSpellCheck({ spell: 'P1-Lost-Spell' })
+
+          // onSpellLost → spellItem.update(...) is fire-and-forget (the lib
+          // doesn't await it), so poll the item for the flag up to ~3s.
+          for (let i = 0; i < 60; i++) {
+            if (actor.items.getName('P1-Lost-Spell')?.system?.lost === true) { lostAfter = true; break }
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+        } finally {
+          // Clean up so the leftover wizard + lost spell can't pollute later
+          // tests sharing this world.
+          await actor.delete()
+        }
+        return { lostBefore, lostAfter }
+      })
+
+      // Confirm the cast routed through the adapter — onSpellLost lives in
+      // createSpellEvents (adapter), not the legacy actor.loseSpell path.
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Lost-Spell', mode: 'wizard' })
+
+      expect(result.lostBefore).toBe(false)
+      expect(result.lostAfter, 'onSpellLost should flip the spell item system.lost to true after a failed wizard cast').toBe(true)
+    })
+
     test('wizard-castingMode spell item on a patron-bound wizard → adapter (session 4)', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({
@@ -1320,30 +1392,43 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           }
         }])
       })
-      await page.evaluate(async () => {
-        await game.actors.getName('P1 Spell ForceCrit').rollSpellCheck({
-          spell: 'P1-ForceCrit-Spell',
-          forceCrit: true
-        })
+      // `applyForceCritToFoundryRoll` (actor.js:51) forces the natural to 20
+      // for every underlying d20 roll EXCEPT a natural 1 — a fumble overrides
+      // a forced crit, so the helper returns the natural unchanged. The test
+      // casts a real (uncontrolled) d20, so a ~1/20 natural-1 leaves the
+      // natural at 1 and the assertion would fail. Retry past that case so the
+      // assertion is deterministic. (Before this fix the test failed ~5% of
+      // runs; it was mislabeled a "suite-only state-pollution flake" — it's a
+      // dice-probability flake, full-suite runs just gave more observations.)
+      const libNatural = await page.evaluate(async () => {
+        const actor = game.actors.getName('P1 Spell ForceCrit')
+        // The forceCrit success can trigger a follow-up Mercurial Magic chat
+        // message (success-major tier on a first-cast wizard spell), so read
+        // the spell-check message explicitly via its `RollType` flag, scoped
+        // to THIS actor (immune to other tests' stale messages).
+        const readNatural = () => {
+          const spellMsg = [...game.messages.contents].reverse().find(m =>
+            m.flags?.dcc?.RollType === 'SpellCheck' &&
+            m.flags?.dcc?.libResult &&
+            m.speaker?.actor === actor.id
+          )
+          return spellMsg?.flags?.dcc?.libResult?.natural
+        }
+        let natural
+        for (let i = 0; i < 16; i++) {
+          // A retried attempt only happens after a natural-1 fumble, which
+          // loses the wizard spell — clear the lost flag so the next cast is
+          // not declined.
+          await actor.items.getName('P1-ForceCrit-Spell').update({ 'system.lost': false })
+          await actor.rollSpellCheck({ spell: 'P1-ForceCrit-Spell', forceCrit: true })
+          natural = readNatural()
+          if (natural === 20) break // forceCrit applied (underlying roll was 2-20)
+        }
+        await actor.delete()
+        return natural
       })
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-ForceCrit-Spell', mode: 'wizard' })
-      // The spell-check chat message should carry a libResult with
-      // natural === 20 because `applyForceCritToFoundryRoll` mutates
-      // the Foundry Roll and the lib roller closure feeds 20 back
-      // into pass-2. The forceCrit success can trigger a follow-up
-      // Mercurial Magic chat message (success-major tier on a
-      // first-cast wizard spell), so we look for the spell-check
-      // message explicitly via its `RollType` flag rather than
-      // reading the last message.
-      const libNatural = await page.evaluate(() => {
-        const messages = game.messages.contents
-        const spellMsg = [...messages].reverse().find(m =>
-          m.flags?.dcc?.RollType === 'SpellCheck' &&
-          m.flags?.dcc?.libResult
-        )
-        return spellMsg?.flags?.dcc?.libResult?.natural
-      })
       expect(libNatural).toBe(20)
     })
 

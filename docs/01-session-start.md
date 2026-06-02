@@ -42,32 +42,41 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 28 (PR #720 test-coverage backfill:
-`__mocks__/dcc-roll.js` async/sync parity fix).** The test-coverage-backfill
-arc (sessions 26–28) continued: session 28 fixed the long-standing mismatch
-where the shared DCCRoll mock declared `createRoll` as `static async` while
-production (`module/dcc-roll.js:17`) is a *sync-declared* function. The mock's
-`createRoll` is now sync (matching production), and one **shared**
-`withSyncCreateRoll(rollFactory)` helper exported from the mock replaces the
-duplicated per-file sync overrides that adapter dispatch-path tests installed
-to compensate (the footprint was **2 files** —
-`adapter-weapon-crit-fumble.test.js` + `adapter-weapon-damage.test.js` — not
-the backlog's estimated 13). +4 Vitest parity guards in `dcc-roll.test.js`
-(production + mock `createRoll` are sync-declared `constructor.name ===
-'Function'`; `withSyncCreateRoll` installs/restores/forwards-args) + 1
-Playwright (`extension-api.spec.js`: deployed `game.dcc.DCCRoll.createRoll`
-stays a sync-declared function). **No production change — test-infra only.**
-Sessions 26 (data-driven migration branches) + 27 (`renderDisapprovalRoll` +
-`renderMercurialEffect`) preceded it. **Next: continue the
-test-coverage-backfill arc** with Tim engaged — remaining gaps: `onSpellLost`
-during a real cast (**agreed approach:** force spell-lost in e2e via a tiny
-action die, e.g. `1d2`/`1d1`), `terms[N]` two-pass divergence (be careful to
-exercise the real path), and the NPC `_rollToHitViaAdapter`
-`attackHitBonus.melee.adjustment` + `Roll.validate` early-return branches.
-(`roll-dialog.mjs` direct-coverage gap was found STALE — helpers retired +
-already covered.) See `00-progress.md` *Next steps* + the PR #720 backlog
-subsections. Repo green: **1399 Vitest** / **178 Playwright e2e passed**, zero
-failures (6.2-min full suite).
+**Latest — Phase 7 session 29 (PR #720 test-coverage backfill: `onSpellLost`
+verified during a real adapter cast).** The test-coverage-backfill arc
+(sessions 26–29) continued: session 29 added an e2e proving `onSpellLost`
+fires end-to-end during a real wizard cast (it previously had only a
+direct-callback unit test). New case in `adapter-dispatch.spec.js`
+(`rollSpellCheck` describe): a wizard casts a spell engineered to
+**deterministically** fail-to-lost, and the test polls the spell item until
+`system.lost` flips true (the `onSpellLost` → `spellItem.update` bridge),
+also asserting adapter routing. **Deterministic-loss trick (two gotchas):**
+(1) the adapter builds no per-spell result table (`results: []`), so the
+lib's default ladder applies (`total <= 1` → tier 'lost', `cast.js:130`); (2)
+a spell's `spellCheck.die` inherits the actor's action die in prepareData
+(`item.js:231`) unless `config.inheritActionDie:false` — so set that to keep a
+small die. With `1d3` (natural 1–3) + INT 3 (mod −3) + level 1 → total =
+natural − 2 ∈ {−1,0,1}, all ≤ 1 → 'lost' for every outcome. (The
+d20-inherited die only lost on a 1/20 nat-1 fumble — a latent flake the
+debugging caught.) Test cleans up its actor. e2e-only (the gap is real-cast
+verification; the unit callback test already exists). **No production change,
+no lib change.** Session 29's full-suite run also surfaced + fixed the
+long-standing **forceCrit test flake** (`adapter-dispatch.spec.js:1370`):
+root-caused as a *dice-probability* flake — `applyForceCritToFoundryRoll`
+(`actor.js:51`) intentionally does NOT override a natural 1, but the test cast
+an uncontrolled d20 expecting natural 20, failing ~1/20 in any context (NOT
+the "suite-only state pollution" long assumed). Fixed by retrying past the
+nat-1 (reset `system.lost` between attempts; verified `--repeat-each=10`). No
+production change. Sessions 26
+(migration branches) + 27 (`renderDisapprovalRoll`/`renderMercurialEffect`) +
+28 (`dcc-roll.js` mock async/sync) preceded it. **Next: continue the
+test-coverage-backfill arc** with Tim engaged — remaining gaps: `terms[N]`
+two-pass divergence (be careful to exercise the real path), and the NPC
+`_rollToHitViaAdapter` `attackHitBonus.melee.adjustment` + `Roll.validate`
+early-return branches. (`roll-dialog.mjs` direct-coverage gap was found STALE
+— helpers retired + already covered.) See `00-progress.md` *Next steps* + the
+PR #720 backlog subsections. Repo green: **1399 Vitest** / **179 Playwright
+e2e passed**, zero failures (~6-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

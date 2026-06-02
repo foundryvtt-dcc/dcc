@@ -69,21 +69,26 @@ date, then delete them entirely once a whole sub-section is cleared.
 With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
 active queue drained, the open work is the PR #720 *test-coverage gaps* +
 *doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-The **test-coverage-backfill arc** is underway (sessions 26–28): session 26
+The **test-coverage-backfill arc** is underway (sessions 26–29): session 26
 closed the *always-run* data-driven migration-branch gap (the **V14-critical
 ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
 `critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches);
 session 27 closed the two deterministic chat-emit renderers
-`renderDisapprovalRoll` + `renderMercurialEffect`; **session 28** (full detail
-in *Recent slices*) fixed the `__mocks__/dcc-roll.js` async/sync mismatch —
-the mock's `createRoll` now matches production's sync declaration, with one
-shared `withSyncCreateRoll` helper replacing the duplicated per-file sync
-overrides (footprint was 2 files, not the backlog's estimated 13). All three
-are **pure test-infra / coverage backfill — no production behavior change, no
-lib change.** Remaining gaps (`onSpellLost` real-cast e2e, `terms[N]`
-two-pass, the NPC `_rollToHitViaAdapter` branches) are in progress with Tim
-engaged. Repo green: **1399 Vitest** / **178 Playwright e2e passed**, zero
-failures (6.2-min full suite).
+`renderDisapprovalRoll` + `renderMercurialEffect`; session 28 fixed the
+`__mocks__/dcc-roll.js` async/sync mismatch (shared `withSyncCreateRoll`;
+footprint was 2 files, not the backlog's estimated 13); **session 29** (full
+detail in *Recent slices*) verified `onSpellLost` fires during a real wizard
+cast via a new e2e (deterministic d3+low-INT fail-to-lost, polled for
+`system.lost`). All four are **pure test-infra / coverage backfill — no
+production behavior change, no lib change.** Session 29's full-suite run also
+surfaced + fixed the long-standing **forceCrit test flake** — root-caused as a
+*dice-probability* flake (the test expected a forced natural-20 but
+`applyForceCritToFoundryRoll` intentionally skips a natural 1, so an
+uncontrolled d20 failed ~1/20), NOT the "suite-only state pollution" the docs
+long assumed; fixed by retrying past the nat-1 (verified 10/10). Remaining
+gaps (`terms[N]` two-pass divergence, the NPC `_rollToHitViaAdapter` branches)
+are in progress with Tim engaged. Repo green: **1399 Vitest** / **179
+Playwright e2e passed**, zero failures (7.1-min full suite — now flake-clean).
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -101,6 +106,55 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 29: `onSpellLost` verified during a real
+  adapter cast (PR #720 test-coverage gap; test-coverage-backfill arc).**
+  `onSpellLost` had a direct-callback unit test but was never verified to
+  fire end-to-end during a real wizard cast. New e2e
+  (`adapter-dispatch.spec.js`, `rollSpellCheck` describe): a wizard casts a
+  spell engineered to **deterministically** fail-to-lost, and the test polls
+  the spell item until `system.lost` flips `true` (the `onSpellLost` →
+  `spellItem.update({ system.lost: true })` bridge), also asserting the cast
+  routed through the **adapter** (the legacy path used `actor.loseSpell`
+  instead). **Deterministic-loss construction** (the fiddly part, two
+  gotchas): (1) the adapter builds no per-spell result table (`results: []`),
+  so the lib's default tier ladder applies — `total <= 1` → tier `'lost'`
+  (`spells/cast.js:130`). (2) A spell's `spellCheck.die` **inherits the
+  actor's action die** in `prepareData` (`item.js:231`) when
+  `config.inheritActionDie` is true (the default), silently overwriting any
+  small die with the actor's `1d20` — so the test sets
+  `config.inheritActionDie: false` to keep `spellCheck.die: '1d3'`. With the
+  d3 die (natural 1–3), INT 3 (mod −3) and level 1, the wizard total =
+  natural + level + intMod = natural − 2 ∈ {−1, 0, 1}, all `<= 1` → `'lost'`
+  for **every** outcome (and a natural 1 additionally forces a fumble → total
+  1, still lost). The earlier d20-inherited die only "lost" on a 1/20
+  natural-1 fumble — a latent flake the debugging caught.
+  `createSpellEvents` wires only `onSpellLost`/disapproval/spellburn/
+  patronTaint — `onCritical`/`onFumble` are unwired, and with no patron/
+  spellburn `onSpellLost` is the only handler that fires. The lib's
+  `calculateSpellCheck` reaches `onSpellLost` via its internal
+  `castSpell(castInput, options, events)` call (`spells/spell-check.js:218` →
+  `cast.js:346`). The bridge's `spellItem.update` is fire-and-forget (the lib
+  doesn't await it), hence the poll. **No production change, no lib change —
+  test-only.** e2e-only slice (the gap is real-cast verification; the unit
+  callback test in `adapter-spell-check.test.js` already covers the bridge).
+  **Plus — forceCrit dice-flake fix (found during this session's full-suite
+  run, per Tim's "investigate the flake" call).** The session-25 forceCrit
+  test (`adapter-dispatch.spec.js:1370`, `forceCrit shift-click → natural 20`)
+  failed in the full run. Root-caused **not** as the long-assumed "suite-only
+  state-pollution flake" but as a **dice-probability** flake:
+  `applyForceCritToFoundryRoll` (`actor.js:51`) deliberately does **not**
+  override a natural 1 (`if (!forceCrit || natural === 1) return natural` — a
+  fumble beats a forced crit), yet the test cast an uncontrolled real d20 and
+  unconditionally expected natural 20, so it failed ~1/20 in *any* context
+  (full-suite runs just gave more observations). Fixed the test to retry past
+  the rare nat-1 (resetting `system.lost` between attempts, since a nat-1
+  fumble loses the wizard spell), scope the message read to its own actor, and
+  clean up the actor afterward — verified 10/10 via `--repeat-each=10`. No
+  production change (the nat-1 exception is intentional behavior). **1399
+  Vitest** (unchanged). **179 Playwright passed**, zero failures (was 178, +1
+  net from onSpellLost; the forceCrit fix is net-zero test count; 7.1-min full
+  suite — and the suite is now flake-clean, not 178+flake).
 
 - **2026-06-02 — Phase 7 session 28: `__mocks__/dcc-roll.js` async/sync
   parity fix + shared `withSyncCreateRoll` helper (PR #720 test-coverage gap;
@@ -229,46 +283,6 @@ archives linked above.
   suite). **Legacy-decom arc complete** — no `_xxxLegacy` roll body
   survives anywhere in the system.
 
-- **2026-06-02 — Phase 7 session 24: description-only skill items in the
-  adapter (legacy-decom step 4 of 5).** The last gate keeping
-  `_rollSkillCheckLegacy` reachable. A skill item with
-  `useDie`/`useValue`/`useAbility`/`useLevel` all off resolves to
-  `!hasDie` (built-in slots + rollable items always inherit the action
-  die, so this is reached *only* for skill items with nothing to roll) and
-  emits a *description chat card*, not a roll. New private
-  `_emitSkillDescriptionViaAdapter(skillId, resolved)` logs
-  `logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'description' })`
-  then reproduces the legacy `_rollSkillCheckLegacy` early-return branch
-  **exactly**: a `<div class="skill-description">…</div>` content, flavor
-  `${label}${abilityLabel}`, flags `SkillCheck`/`ItemId`/`SkillId`/
-  `isSkillCheck`, and `system: { skillId, skillDescription }` — and emits
-  **nothing** when the item carries no description value (faithful to the
-  legacy guard). It's a **pure Foundry-side chat emit, no lib round-trip**
-  (a description-only skill has no formula to hand the lib); the
-  `mode: 'description'` dispatch field distinguishes it from the rolling
-  adapter routes (`_rollSkillCheckViaAdapter` / `_skillTableViaAdapter`).
-  **Why the legacy roll branch was provably dead:** `!hasDie` ⟹ a skill
-  *item* (not a built-in slot) with `useValue`/`useAbility`/`useLevel` all
-  off ⟹ `_buildSkillCheckLegacyTerms` produces no die/value/level/deed
-  terms, and the check-penalty term can't fire on the synthesized
-  skill-item object (no `config`, and `skillId` is the item name) — so the
-  legacy method's only reachable behavior from this gate was the
-  description emit. **Gate flip:** `rollSkillCheck`'s `!resolved.hasDie`
-  branch now calls `_emitSkillDescriptionViaAdapter`; `_rollSkillCheckLegacy`
-  is fully unreachable, joining the three already-dead bodies for the
-  step-5 batch delete. No lib change (pure adapter wiring — no formula
-  crosses the lib boundary). +2 Vitest (`adapter-skill-check.test.js`:
-  description-only item → adapter posts the card with the exact
-  content/flags/system; description-*less* item → no chat message) — the
-  former replaces the old "routes to the legacy path" assertion. +1
-  Playwright new + 1 flipped (`adapter-dispatch.spec.js`: the
-  `description-only skill item (no die)` test flips `→ legacy` to
-  `→ adapter` + `mode: 'description'` and now asserts the live card's
-  flags/content + that it carries no `libResult` and no rolls; a new
-  description-*less* item case asserts adapter dispatch with no chat card
-  posted). **1343 Vitest** (was 1342, +1 net). **174 Playwright passed**,
-  zero failures (was 173, +1; 6.2-min full suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -355,8 +369,12 @@ pure adapter-side wiring.
   (terms+rollData forwarding, user-cancel → null, throw → null, default
   rollData, the spellburn descriptor incl. the negative-burn → 0 clamp that
   superseded `clampBurn`). No work needed.
-- `onSpellLost` tested as a direct callback but never verified to fire
-  during a real adapter cast.
+- ~~`onSpellLost` tested as a direct callback but never verified to fire
+  during a real adapter cast.~~ **CLOSED 2026-06-02 (Phase 7 session 29).**
+  New e2e in `adapter-dispatch.spec.js` drives a real wizard cast engineered
+  to deterministically fail-to-lost (`config.inheritActionDie:false` + d3 die
+  + INT 3 + level 1 → total ≤ 1 → tier 'lost') and polls the spell item until
+  `system.lost` flips true; cleans up its actor afterward.
 - Two-pass divergence: only the `terms[0]` die-bump case is covered;
   `terms[N]` Compound / Modifier in-place mutations are not.
 - `_canRouteAttackViaAdapter` untested branches (dice-bearing
@@ -486,12 +504,10 @@ respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
 **Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
-Sessions 26–28 cleared the data-driven migration branches, the two chat
-renderers, and the `dcc-roll.js` mock async/sync mismatch. Tim is engaged for
-the remaining (trickier) gaps; agreed approaches noted inline:
-- `onSpellLost` verified to fire during a real adapter cast — **approach
-  agreed:** force a spell-lost outcome in e2e by setting the caster's action
-  die to a tiny die (e.g. `1d2`/`1d1`) so the check fails low.
+Sessions 26–29 cleared the data-driven migration branches, the two chat
+renderers, the `dcc-roll.js` mock async/sync mismatch, and the `onSpellLost`
+real-cast verification. Tim is engaged for the remaining (trickier) gaps;
+agreed approaches noted inline:
 - `terms[N]` two-pass divergence (Compound / Modifier in-place mutations;
   only the `terms[0]` die-bump case is covered) — Tim: "yes, just be careful"
   (avoid a test that passes without exercising the real two-pass path).
@@ -502,6 +518,8 @@ the remaining (trickier) gaps; agreed approaches noted inline:
   covered too).**
 - ~~`__mocks__/dcc-roll.js` async/sync mismatch~~ **done (session 28; shared
   `withSyncCreateRoll`; footprint was 2 files, not 13).**
+- ~~`onSpellLost` during a real cast~~ **done (session 29; deterministic
+  d3+low-INT fail-to-lost, polled for `system.lost`).**
 - ~~`roll-dialog.mjs` direct coverage~~ **STALE — the named helpers
   (`promptSpellburnCommitment`/`clampBurn`) were retired and
   `adapter-roll-dialog.test.js` already covers both current exports

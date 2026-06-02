@@ -1239,3 +1239,43 @@
   === 1` + `rolls[1].total === rolls[0].total + penalty`). **1342 Vitest**
   (was 1338, +4). **173 Playwright passed**, zero failures (was 172, +1;
   5.7-min full suite).
+
+- **2026-06-02 — Phase 7 session 24: description-only skill items in the
+  adapter (legacy-decom step 4 of 5).** The last gate keeping
+  `_rollSkillCheckLegacy` reachable. A skill item with
+  `useDie`/`useValue`/`useAbility`/`useLevel` all off resolves to
+  `!hasDie` (built-in slots + rollable items always inherit the action
+  die, so this is reached *only* for skill items with nothing to roll) and
+  emits a *description chat card*, not a roll. New private
+  `_emitSkillDescriptionViaAdapter(skillId, resolved)` logs
+  `logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'description' })`
+  then reproduces the legacy `_rollSkillCheckLegacy` early-return branch
+  **exactly**: a `<div class="skill-description">…</div>` content, flavor
+  `${label}${abilityLabel}`, flags `SkillCheck`/`ItemId`/`SkillId`/
+  `isSkillCheck`, and `system: { skillId, skillDescription }` — and emits
+  **nothing** when the item carries no description value (faithful to the
+  legacy guard). It's a **pure Foundry-side chat emit, no lib round-trip**
+  (a description-only skill has no formula to hand the lib); the
+  `mode: 'description'` dispatch field distinguishes it from the rolling
+  adapter routes (`_rollSkillCheckViaAdapter` / `_skillTableViaAdapter`).
+  **Why the legacy roll branch was provably dead:** `!hasDie` ⟹ a skill
+  *item* (not a built-in slot) with `useValue`/`useAbility`/`useLevel` all
+  off ⟹ `_buildSkillCheckLegacyTerms` produces no die/value/level/deed
+  terms, and the check-penalty term can't fire on the synthesized
+  skill-item object (no `config`, and `skillId` is the item name) — so the
+  legacy method's only reachable behavior from this gate was the
+  description emit. **Gate flip:** `rollSkillCheck`'s `!resolved.hasDie`
+  branch now calls `_emitSkillDescriptionViaAdapter`; `_rollSkillCheckLegacy`
+  is fully unreachable, joining the three already-dead bodies for the
+  step-5 batch delete. No lib change (pure adapter wiring — no formula
+  crosses the lib boundary). +2 Vitest (`adapter-skill-check.test.js`:
+  description-only item → adapter posts the card with the exact
+  content/flags/system; description-*less* item → no chat message) — the
+  former replaces the old "routes to the legacy path" assertion. +1
+  Playwright new + 1 flipped (`adapter-dispatch.spec.js`: the
+  `description-only skill item (no die)` test flips `→ legacy` to
+  `→ adapter` + `mode: 'description'` and now asserts the live card's
+  flags/content + that it carries no `libResult` and no rolls; a new
+  description-*less* item case asserts adapter dispatch with no chat card
+  posted). **1343 Vitest** (was 1342, +1 net). **174 Playwright passed**,
+  zero failures (was 173, +1; 6.2-min full suite).

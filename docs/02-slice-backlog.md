@@ -1017,6 +1017,24 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 29 (2026-06-02): PR #720 test-coverage backfill —
+  `onSpellLost` verified during a real adapter cast. e2e-only (the gap was
+  real-cast verification; the direct-callback unit test already exists). New
+  case in `adapter-dispatch.spec.js` (`rollSpellCheck`): a wizard casts a
+  spell engineered to deterministically fail-to-lost and the test polls the
+  item until `system.lost` flips true (the onSpellLost → spellItem.update
+  bridge) + asserts adapter routing. Deterministic loss: adapter builds no
+  result table → default ladder (total ≤ 1 → 'lost'); spellCheck.die inherits
+  the actor action die (item.js:231) unless config.inheritActionDie:false, so
+  set that to keep 1d3 + INT 3 (mod −3) + level 1 → total = natural − 2 ∈
+  {−1,0,1}, all ≤ 1. Test cleans up its actor. No production/lib change. Also
+  fixed the long-standing forceCrit test flake found during this session's
+  full run — a *dice-probability* flake (the test expected a forced natural-20
+  but `applyForceCritToFoundryRoll` skips a natural 1; uncontrolled d20 failed
+  ~1/20), fixed by retrying past the nat-1 (verified --repeat-each=10). **1399
+  Vitest** (unchanged) / **179 Playwright** (was 178, +1), zero failures, now
+  flake-clean.
+
 - Phase 7 session 28 (2026-06-02): PR #720 test-coverage backfill —
   `__mocks__/dcc-roll.js` async/sync parity fix + shared `withSyncCreateRoll`
   helper. The mock declared `createRoll` `static async` while production
