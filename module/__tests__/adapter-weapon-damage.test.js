@@ -22,17 +22,19 @@
  *     flags. For passthrough inputs, `libDamageResult.passthrough` is
  *     `true` and the breakdown is deliberately empty.
  *
- * Note on the mock: `__mocks__/dcc-roll.js` declares `createRoll` as
- * `static async`, but production `module/dcc-roll.js:17` is sync (returns
- * the Roll directly). The `rollWeaponAttack` damage block uses
- * `damageRoll = DCCRoll.createRoll(...)` without awaiting, relying on
- * production's sync behavior. Rather than touch the shared mock, each
- * test that exercises the damage path installs a sync stub on
- * `game.dcc.DCCRoll.createRoll` that mirrors the production contract.
+ * Note on the mock: `__mocks__/dcc-roll.js` `createRoll` is now SYNC,
+ * matching production `module/dcc-roll.js:17` (which returns the Roll
+ * directly). The `rollWeaponAttack` damage block uses
+ * `damageRoll = DCCRoll.createRoll(...)` without awaiting, relying on that
+ * sync behavior. Tests that exercise the damage path use the shared
+ * `withSyncCreateRoll` helper (exported from `__mocks__/dcc-roll.js`) to
+ * supply a specific stub Roll; the per-file copy was retired once the
+ * shared mock stopped declaring `createRoll` as `static async`.
  */
 
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
+import { withSyncCreateRoll } from '../__mocks__/dcc-roll.js'
 import DCCActor from '../actor.js'
 import {
   buildDamageInput,
@@ -73,12 +75,6 @@ function makeStubRoll ({ total = 4, dice = null, natural = 4 } = {}) {
     evaluate: async () => {},
     toAnchor: () => ({ outerHTML: '<a>damage</a>' })
   }
-}
-
-function withSyncCreateRoll (rollFactory) {
-  const original = global.game.dcc.DCCRoll.createRoll
-  global.game.dcc.DCCRoll.createRoll = vi.fn((...args) => rollFactory(...args))
-  return () => { global.game.dcc.DCCRoll.createRoll = original }
 }
 
 function assertDispatched (path, rollType = 'rollDamage') {
@@ -570,14 +566,10 @@ test('adapter path attributes +1 weapon bonus as magic, not Strength', async () 
 test('adapter path peels trailing flavor bracket into Compound term + libDamageResult', async () => {
   logDispatch.mockClear()
   const createRollCalls = []
-  const restoreRoll = (() => {
-    const original = global.game.dcc.DCCRoll.createRoll
-    global.game.dcc.DCCRoll.createRoll = vi.fn((termSpecs) => {
-      createRollCalls.push(termSpecs)
-      return makeStubRoll({ total: 6, natural: 4 })
-    })
-    return () => { global.game.dcc.DCCRoll.createRoll = original }
-  })()
+  const restoreRoll = withSyncCreateRoll((termSpecs) => {
+    createRollCalls.push(termSpecs)
+    return makeStubRoll({ total: 6, natural: 4 })
+  })
   const restore = withAutomate(true)
 
   // noinspection JSCheckFunctionSignatures

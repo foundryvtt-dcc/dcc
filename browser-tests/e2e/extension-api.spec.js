@@ -974,6 +974,26 @@ test.describe('DCC Extension API', () => {
     expect(result.mercurialNoopIsUndefined).toBe(true)
   })
 
+  test('DCC game.dcc.DCCRoll.createRoll is a synchronous-declared function (Phase 7 session 28)', async ({ page }) => {
+    // Phase 7 session 28: the shared `__mocks__/dcc-roll.js` `createRoll` was
+    // declared `static async` while production (module/dcc-roll.js:17) is a
+    // sync-declared function returning the Roll directly — the mismatch that
+    // forced adapter dispatch-path tests to install per-file sync overrides.
+    // The mock is now sync, and the Vitest suite guards mock↔production
+    // parity. This probe locks the *production* half of that contract against
+    // live Foundry: the deployed `game.dcc.DCCRoll.createRoll` must remain a
+    // sync-declared function (constructor.name 'Function', not
+    // 'AsyncFunction') so callers like `rollWeaponAttack`'s damage block
+    // (`damageRoll = DCCRoll.createRoll(...)`, no await) keep working.
+    const result = await page.evaluate(() => ({
+      isFunction: typeof game.dcc?.DCCRoll?.createRoll === 'function',
+      ctorName: game.dcc?.DCCRoll?.createRoll?.constructor?.name
+    }))
+    expect(result.isFunction).toBe(true)
+    expect(result.ctorName).toBe('Function')
+    expect(result.ctorName).not.toBe('AsyncFunction')
+  })
+
   test('DCC migrationOutcome gates version-stamping on a clean run + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
     // Phase 7 session 11: `migrateWorld` now accumulates per-document
     // failures and applies the pure `migrationOutcome(failures)` policy

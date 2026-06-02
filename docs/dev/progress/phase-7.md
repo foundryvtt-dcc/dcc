@@ -1197,3 +1197,45 @@
   only by step 3 (check-penalty); `_rollSavingThrowLegacy` +
   `_getInitiativeRollLegacy` are fully unreachable, awaiting the step-5
   delete.
+
+- **2026-06-01 — Phase 7 session 23: non-zero armor check-penalty display
+  for str/agl ability checks in the adapter (legacy-decom step 3 of 5).**
+  The last gate keeping `_rollAbilityCheckLegacy` reachable. DCC shows the
+  armor check penalty on a Str/Agl ability check as an *informational
+  alternative total* ("If check penalty applies, total is X") — it is NOT
+  applied to the result; the GM decides per check whether it bites. Tim
+  chose **faithful reproduction** ("keep the note") over the handoff's
+  tentatively-planned breakdown-row approach, after I surfaced that the two
+  produce visibly different chat output (a pre-computed alt total vs. a
+  `Check Penalty -2` modifier row) — the breakdown row would have dropped
+  the pre-computed total + retired `DCC.AbilityCheckPenaltyNote` /
+  `checkPenaltyRollIndex` / the `emoteAbilityRoll` note path. So this slice
+  is **zero behavior change**: new private `_buildCheckPenaltyAltRoll(abilityId,
+  mainTotal, { alreadyApplied })` builds a bare `new Roll((mainTotal +
+  penalty).toString())` (returns null for non-str/agl, `computeCheckPenalty`
+  off, zero penalty, or when already applied), and `renderAbilityCheck`
+  gained an optional `checkPenaltyRoll` param — when present it sets
+  `system.checkPenaltyRollIndex: 1` and pushes the roll as `rolls[1]` after
+  `toMessage`, exactly as `_rollAbilityCheckLegacy` did. **No `chat.js` /
+  i18n / template change** — `emoteAbilityRoll` already renders the note
+  purely off those two fields. Both adapter paths feed it: the non-dialog
+  `_rollAbilityCheckViaAdapter` always shows it (the lib roll is clean — we
+  never pass the penalty to the lib, so no double-count); the dialog
+  `_rollAbilityCheckWithDialog` mirrors legacy's
+  `prompt.formula.includes(ensurePlus(penalty))` to suppress the note when
+  the user toggled the penalty into the roll. **Gate flip:** the
+  `hasNonZeroCheckPenalty` legacy gate is deleted — `rollAbilityCheck` is
+  now single-path adapter (only `options.rollUnder` branches, to the
+  Luck-check adapter route). `_rollAbilityCheckLegacy` is now fully
+  unreachable, awaiting the step-5 batch delete (joining
+  `_rollSavingThrowLegacy` + `_getInitiativeRollLegacy`). No lib change
+  (the penalty display is a pure Foundry-side concern — the lib never sees
+  it). +4 Vitest (`adapter-ability-check.test.js`: non-dialog str penalty →
+  `checkPenaltyRollIndex=1` + `rolls[1].formula` = mainTotal+penalty;
+  non-str/agl ability with a penalty → no note; dialog penalty-unapplied →
+  note; dialog penalty-applied → no note). +1 Playwright new
+  (`adapter-dispatch.spec.js`: a live str check on an actor wearing armor
+  with a `-4` check penalty asserts adapter dispatch + `checkPenaltyRollIndex
+  === 1` + `rolls[1].total === rolls[0].total + penalty`). **1342 Vitest**
+  (was 1338, +4). **173 Playwright passed**, zero failures (was 172, +1;
+  5.7-min full suite).

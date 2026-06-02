@@ -69,18 +69,21 @@ date, then delete them entirely once a whole sub-section is cleared.
 With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
 active queue drained, the open work is the PR #720 *test-coverage gaps* +
 *doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-The **test-coverage-backfill arc** is underway: session 26 closed the
-*always-run* data-driven migration-branch gap (the **V14-critical
+The **test-coverage-backfill arc** is underway (sessions 26–28): session 26
+closed the *always-run* data-driven migration-branch gap (the **V14-critical
 ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
-`critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches), via a
-test-only export of the two internal `migrations.js` `const` helpers + the
-new `migrations-data-driven.test.js`. **Session 27** (full detail in *Recent
-slices*) closed the next gap: direct coverage of the two deterministic
-chat-emit renderers `renderDisapprovalRoll` + `renderMercurialEffect` (new
-`chat-renderer-emit.test.js` + a live-Foundry e2e probe running the deployed
-renderers against the real `Roll`/`ChatMessage`). Both slices are **pure test
-backfill — no behavior change, no lib change.** Repo green: **1395 Vitest** /
-**177 Playwright e2e passed**, zero failures (6.4-min full suite).
+`critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches);
+session 27 closed the two deterministic chat-emit renderers
+`renderDisapprovalRoll` + `renderMercurialEffect`; **session 28** (full detail
+in *Recent slices*) fixed the `__mocks__/dcc-roll.js` async/sync mismatch —
+the mock's `createRoll` now matches production's sync declaration, with one
+shared `withSyncCreateRoll` helper replacing the duplicated per-file sync
+overrides (footprint was 2 files, not the backlog's estimated 13). All three
+are **pure test-infra / coverage backfill — no production behavior change, no
+lib change.** Remaining gaps (`onSpellLost` real-cast e2e, `terms[N]`
+two-pass, the NPC `_rollToHitViaAdapter` branches) are in progress with Tim
+engaged. Repo green: **1399 Vitest** / **178 Playwright e2e passed**, zero
+failures (6.2-min full suite).
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -98,6 +101,35 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 28: `__mocks__/dcc-roll.js` async/sync
+  parity fix + shared `withSyncCreateRoll` helper (PR #720 test-coverage gap;
+  test-coverage-backfill arc).** The shared DCCRoll mock declared
+  `createRoll` as `static async` while **production** `module/dcc-roll.js:17`
+  is a *sync-declared* function (returns the Roll directly). Adapter dispatch
+  paths that consume `createRoll(...)` synchronously (`rollWeaponAttack`'s
+  damage block: `damageRoll = DCCRoll.createRoll(...)`, no `await`) therefore
+  saw a Promise under test, so each affected test installed its own local
+  sync override. **Fix:** made the mock's `createRoll` sync (matching
+  production) and added one **shared** `withSyncCreateRoll(rollFactory)`
+  helper exported from the mock — it save/replace/restores
+  `game.dcc.DCCRoll.createRoll` with a sync `vi.fn` returning the factory's
+  roll (forwards args). Deleted the duplicated per-file `withSyncCreateRoll`
+  copies in `adapter-weapon-crit-fumble.test.js` +
+  `adapter-weapon-damage.test.js` and folded the one inline override
+  (damage's "trailing flavor bracket" test) onto the shared helper; both
+  files' now-stale "we don't touch the shared mock" docstrings refreshed.
+  **Scope reality check:** the backlog estimated "13+ files"; the actual
+  duplicated-stub footprint was **2 files** (the other createRoll references
+  are ordinary mock uses), so the change is contained. **No production
+  change — test-infra only.** +4 Vitest (`dcc-roll.test.js`: production +
+  mock `createRoll` are sync-declared `constructor.name === 'Function'`, not
+  `'AsyncFunction'`; `withSyncCreateRoll` installs a sync override returning
+  the factory roll + restores; forwards the createRoll args). +1 Playwright
+  (`extension-api.spec.js`: the deployed `game.dcc.DCCRoll.createRoll` is a
+  sync-declared function — locks the production half of the parity contract
+  live). **1399 Vitest** (was 1395, +4). **178 Playwright passed**, zero
+  failures (was 177, +1; 6.2-min full suite).
 
 - **2026-06-02 — Phase 7 session 27: `renderDisapprovalRoll` +
   `renderMercurialEffect` direct coverage (PR #720 test-coverage gap;
@@ -237,48 +269,6 @@ archives linked above.
   posted). **1343 Vitest** (was 1342, +1 net). **174 Playwright passed**,
   zero failures (was 173, +1; 6.2-min full suite).
 
-- **2026-06-01 — Phase 7 session 23: non-zero armor check-penalty display
-  for str/agl ability checks in the adapter (legacy-decom step 3 of 5).**
-  The last gate keeping `_rollAbilityCheckLegacy` reachable. DCC shows the
-  armor check penalty on a Str/Agl ability check as an *informational
-  alternative total* ("If check penalty applies, total is X") — it is NOT
-  applied to the result; the GM decides per check whether it bites. Tim
-  chose **faithful reproduction** ("keep the note") over the handoff's
-  tentatively-planned breakdown-row approach, after I surfaced that the two
-  produce visibly different chat output (a pre-computed alt total vs. a
-  `Check Penalty -2` modifier row) — the breakdown row would have dropped
-  the pre-computed total + retired `DCC.AbilityCheckPenaltyNote` /
-  `checkPenaltyRollIndex` / the `emoteAbilityRoll` note path. So this slice
-  is **zero behavior change**: new private `_buildCheckPenaltyAltRoll(abilityId,
-  mainTotal, { alreadyApplied })` builds a bare `new Roll((mainTotal +
-  penalty).toString())` (returns null for non-str/agl, `computeCheckPenalty`
-  off, zero penalty, or when already applied), and `renderAbilityCheck`
-  gained an optional `checkPenaltyRoll` param — when present it sets
-  `system.checkPenaltyRollIndex: 1` and pushes the roll as `rolls[1]` after
-  `toMessage`, exactly as `_rollAbilityCheckLegacy` did. **No `chat.js` /
-  i18n / template change** — `emoteAbilityRoll` already renders the note
-  purely off those two fields. Both adapter paths feed it: the non-dialog
-  `_rollAbilityCheckViaAdapter` always shows it (the lib roll is clean — we
-  never pass the penalty to the lib, so no double-count); the dialog
-  `_rollAbilityCheckWithDialog` mirrors legacy's
-  `prompt.formula.includes(ensurePlus(penalty))` to suppress the note when
-  the user toggled the penalty into the roll. **Gate flip:** the
-  `hasNonZeroCheckPenalty` legacy gate is deleted — `rollAbilityCheck` is
-  now single-path adapter (only `options.rollUnder` branches, to the
-  Luck-check adapter route). `_rollAbilityCheckLegacy` is now fully
-  unreachable, awaiting the step-5 batch delete (joining
-  `_rollSavingThrowLegacy` + `_getInitiativeRollLegacy`). No lib change
-  (the penalty display is a pure Foundry-side concern — the lib never sees
-  it). +4 Vitest (`adapter-ability-check.test.js`: non-dialog str penalty →
-  `checkPenaltyRollIndex=1` + `rolls[1].formula` = mainTotal+penalty;
-  non-str/agl ability with a penalty → no note; dialog penalty-unapplied →
-  note; dialog penalty-applied → no note). +1 Playwright new
-  (`adapter-dispatch.spec.js`: a live str check on an actor wearing armor
-  with a `-4` check penalty asserts adapter dispatch + `checkPenaltyRollIndex
-  === 1` + `rolls[1].total === rolls[0].total + penalty`). **1342 Vitest**
-  (was 1338, +4). **173 Playwright passed**, zero failures (was 172, +1;
-  5.7-min full suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -375,9 +365,13 @@ pure adapter-side wiring.
 - `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
   injection (PC-only tests) + the `Roll.validate(toHit) === false`
   early-return path.
-- `__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
+- ~~`__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
   production is sync; tests install local sync stubs — fix the shared
-  mock, delete the stubs.
+  mock, delete the stubs.~~ **CLOSED 2026-06-02 (Phase 7 session 28).** Mock
+  `createRoll` made sync (matches production); one shared
+  `withSyncCreateRoll` helper exported from the mock replaced the duplicated
+  per-file copies (footprint was 2 files, not the estimated 13). +4 Vitest
+  parity guards + 1 e2e (production createRoll stays sync-declared).
 - ~~Surviving data-driven migration branches (`migrateActorData` /
   `migrateItemData`: V14 AE numeric-mode → string-type converter,
   `sheetClass`-from-localized-`className`, `critRange` / `disapproval`
@@ -492,26 +486,22 @@ respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
 **Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
-Session 26 closed the data-driven migration-branch gap (the V14-critical AE
-converter + the rest); session 27 closed `renderDisapprovalRoll` +
-`renderMercurialEffect`. The clean test-coverage gaps are now done; the
-remaining ones are **trickier / higher-blast-radius** — better tackled with
-the user available to validate, not autonomously:
-- `onSpellLost` verified to fire during a real adapter cast — needs an e2e
-  that deterministically forces a spell-lost outcome (no force-low analogue
-  to `forceCrit` today), so it's fiddly to trigger reliably.
+Sessions 26–28 cleared the data-driven migration branches, the two chat
+renderers, and the `dcc-roll.js` mock async/sync mismatch. Tim is engaged for
+the remaining (trickier) gaps; agreed approaches noted inline:
+- `onSpellLost` verified to fire during a real adapter cast — **approach
+  agreed:** force a spell-lost outcome in e2e by setting the caster's action
+  die to a tiny die (e.g. `1d2`/`1d1`) so the check fails low.
 - `terms[N]` two-pass divergence (Compound / Modifier in-place mutations;
-  only the `terms[0]` die-bump case is covered) — needs deep two-pass-roller
-  understanding to avoid a false-positive test.
-- `__mocks__/dcc-roll.js` async/sync mismatch — `createRoll` declared
-  `static async` while production is sync; fixing the shared mock + deleting
-  the local sync stubs touches **13+ test files** (broad cross-cutting
-  refactor; full-suite net catches breakage but warrants human review).
+  only the `terms[0]` die-bump case is covered) — Tim: "yes, just be careful"
+  (avoid a test that passes without exercising the real two-pass path).
 - `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
   injection + the `Roll.validate(toHit) === false` early-return path.
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**
+- ~~`__mocks__/dcc-roll.js` async/sync mismatch~~ **done (session 28; shared
+  `withSyncCreateRoll`; footprint was 2 files, not 13).**
 - ~~`roll-dialog.mjs` direct coverage~~ **STALE — the named helpers
   (`promptSpellburnCommitment`/`clampBurn`) were retired and
   `adapter-roll-dialog.test.js` already covers both current exports

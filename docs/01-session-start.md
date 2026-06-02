@@ -42,33 +42,32 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 27 (PR #720 test-coverage backfill:
-`renderDisapprovalRoll` + `renderMercurialEffect`).** The
-test-coverage-backfill arc (opened session 26 with the data-driven migration
-branches) continued: session 27 closed the `renderDisapprovalRoll` gap and,
-since it shares the pattern, the sibling `renderMercurialEffect` — the two
-deterministic chat-emit renderers in `module/adapter/chat-renderer.mjs` that
-were previously exercised only *transitively*. Both build a
-`${Math.max(1, value)}d1` `Roll` to carry the lib's already-rolled value
-through Foundry's chat pipeline → `toMessage({ create: false })` →
-`ChatMessage.create`. New `module/__tests__/chat-renderer-emit.test.js` (+16
-Vitest) asserts formulas / clamps / flavor joins / content / the full flag
-payloads, with `Roll`/`ChatMessage`/`game.i18n` stubbed per-test
-(`spell-check-processor.test.js` style; the `Roll` stub records formulas,
-`toMessage` returns its data verbatim). Kept `chat-renderer.test.js`'s
-pure-helper-only scope intact (new file). +1 Playwright
-(`extension-api.spec.js`) runs the **deployed** renderers against the live
-`Roll`/`ChatMessage` on a throwaway Player (messages + actor deleted after),
-asserting real `getFlag` values + `rolls[0].total` + flavor/content. **No
-behavior change — pure test backfill. No lib change.** **Next: continue the
-test-coverage-backfill arc** — remaining gaps: `roll-dialog.mjs`
-(`promptSpellburnCommitment` + `clampBurn`) direct coverage, `onSpellLost`
-during a real cast, `terms[N]` two-pass divergence, the `__mocks__/dcc-roll.js`
-async/sync mismatch — or pick another arc (doc hygiene,
-programmatic-PC-creation doc, Appendix-A file-shrinkage); none on a critical
-path. See `00-progress.md` *Next steps* + the PR #720 backlog subsections.
-Repo green: **1395 Vitest** / **177 Playwright e2e passed**, zero failures
-(6.4-min full suite).
+**Latest — Phase 7 session 28 (PR #720 test-coverage backfill:
+`__mocks__/dcc-roll.js` async/sync parity fix).** The test-coverage-backfill
+arc (sessions 26–28) continued: session 28 fixed the long-standing mismatch
+where the shared DCCRoll mock declared `createRoll` as `static async` while
+production (`module/dcc-roll.js:17`) is a *sync-declared* function. The mock's
+`createRoll` is now sync (matching production), and one **shared**
+`withSyncCreateRoll(rollFactory)` helper exported from the mock replaces the
+duplicated per-file sync overrides that adapter dispatch-path tests installed
+to compensate (the footprint was **2 files** —
+`adapter-weapon-crit-fumble.test.js` + `adapter-weapon-damage.test.js` — not
+the backlog's estimated 13). +4 Vitest parity guards in `dcc-roll.test.js`
+(production + mock `createRoll` are sync-declared `constructor.name ===
+'Function'`; `withSyncCreateRoll` installs/restores/forwards-args) + 1
+Playwright (`extension-api.spec.js`: deployed `game.dcc.DCCRoll.createRoll`
+stays a sync-declared function). **No production change — test-infra only.**
+Sessions 26 (data-driven migration branches) + 27 (`renderDisapprovalRoll` +
+`renderMercurialEffect`) preceded it. **Next: continue the
+test-coverage-backfill arc** with Tim engaged — remaining gaps: `onSpellLost`
+during a real cast (**agreed approach:** force spell-lost in e2e via a tiny
+action die, e.g. `1d2`/`1d1`), `terms[N]` two-pass divergence (be careful to
+exercise the real path), and the NPC `_rollToHitViaAdapter`
+`attackHitBonus.melee.adjustment` + `Roll.validate` early-return branches.
+(`roll-dialog.mjs` direct-coverage gap was found STALE — helpers retired +
+already covered.) See `00-progress.md` *Next steps* + the PR #720 backlog
+subsections. Repo green: **1399 Vitest** / **178 Playwright e2e passed**, zero
+failures (6.2-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

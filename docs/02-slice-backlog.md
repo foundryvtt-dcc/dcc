@@ -1017,6 +1017,21 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 28 (2026-06-02): PR #720 test-coverage backfill —
+  `__mocks__/dcc-roll.js` async/sync parity fix + shared `withSyncCreateRoll`
+  helper. The mock declared `createRoll` `static async` while production
+  (`module/dcc-roll.js:17`) is sync-declared; made the mock sync and added
+  one shared `withSyncCreateRoll(rollFactory)` helper (exported from the
+  mock; save/replace/restores `game.dcc.DCCRoll.createRoll` with a sync
+  `vi.fn`, forwards args), deleting the duplicated per-file copies in
+  `adapter-weapon-crit-fumble.test.js` + `adapter-weapon-damage.test.js` and
+  folding the one inline override onto it. Backlog estimated "13+ files"; the
+  real duplicated-stub footprint was 2. Test-infra only, no production
+  change. +4 Vitest (`dcc-roll.test.js` sync-contract parity guards) + 1
+  Playwright (`extension-api.spec.js`: deployed createRoll stays
+  sync-declared). **1399 Vitest** (was 1395, +4) / **178 Playwright** (was
+  177, +1), zero failures.
+
 - Phase 7 session 27 (2026-06-02): PR #720 test-coverage backfill —
   `renderDisapprovalRoll` + `renderMercurialEffect` direct coverage.
   Continuation of the test-coverage-backfill arc (not from the drained

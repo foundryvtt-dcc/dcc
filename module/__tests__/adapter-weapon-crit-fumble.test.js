@@ -22,14 +22,16 @@
  *   - With `automate` off, neither lib result nor Foundry Roll is
  *     produced — caller falls back to inline-roll-template chat.
  *
- * Note on the mock: see `adapter-weapon-damage.test.js` docstring for
- * the sync-stub rationale — the shared `__mocks__/dcc-roll.js` declares
- * `createRoll` as `static async` but production is sync. Each test
- * installs a sync stub rather than touching the shared mock.
+ * Note on the mock: the shared `__mocks__/dcc-roll.js` `createRoll` is
+ * SYNC (matching production, module/dcc-roll.js:17). Tests that need a
+ * specific stub Roll use the shared `withSyncCreateRoll` helper exported
+ * from that mock; the per-file copy that used to live here was retired
+ * once the shared mock stopped declaring `createRoll` as `static async`.
  */
 
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
+import { withSyncCreateRoll } from '../__mocks__/dcc-roll.js'
 import DCCActor from '../actor.js'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { getCritTableResult } from '../utilities.js'
@@ -74,12 +76,6 @@ function makeStubRoll ({ total = 7, natural = 7 } = {}) {
     evaluate: async () => {},
     toAnchor: () => ({ outerHTML: '<a>roll</a>' })
   }
-}
-
-function withSyncCreateRoll (rollFactory) {
-  const original = global.game.dcc.DCCRoll.createRoll
-  global.game.dcc.DCCRoll.createRoll = vi.fn(() => rollFactory())
-  return () => { global.game.dcc.DCCRoll.createRoll = original }
 }
 
 function assertDispatched (rollType, path) {
