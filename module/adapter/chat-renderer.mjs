@@ -210,6 +210,12 @@ export function buildModifierBreakdownHtml (modifiers, heading = '') {
  * @param {Object} params.result - The lib's SkillCheckResult
  * @param {Roll} params.foundryRoll - The Foundry Roll instance that
  *   produced the dice. Attached to the ChatMessage for DSN / breakdown.
+ * @param {Roll} [params.checkPenaltyRoll] - Optional secondary Roll
+ *   wrapping the would-be total if the armor check penalty applied
+ *   (str/agl). When present it is pushed onto `messageData.rolls` and
+ *   flagged via `system.checkPenaltyRollIndex` so `emoteAbilityRoll`
+ *   (module/chat.js) renders the "If check penalty applies, total is X"
+ *   note. The penalty is informational — it is NOT in the primary roll.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheck ({
@@ -217,7 +223,8 @@ export async function renderAbilityCheck ({
   abilityId,
   abilityLabel,
   result,
-  foundryRoll
+  foundryRoll,
+  checkPenaltyRoll = null
 }) {
   const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
@@ -241,7 +248,9 @@ export async function renderAbilityCheck ({
     flavor,
     flags,
     system: {
-      checkPenaltyRollIndex: null
+      // The penalty alt-total roll is pushed below as rolls[1]; the
+      // primary roll is rolls[0].
+      checkPenaltyRollIndex: checkPenaltyRoll ? 1 : null
     }
   }
 
@@ -255,6 +264,10 @@ export async function renderAbilityCheck ({
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+
+  if (checkPenaltyRoll) {
+    messageData.rolls.push(checkPenaltyRoll)
+  }
 
   return ChatMessage.create(messageData)
 }

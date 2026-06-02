@@ -66,34 +66,34 @@ date, then delete them entirely once a whole sub-section is cleared.
 ## Current phase
 
 **Phase 7 cleanup → Legacy decommission — latest 2026-06-01.** Phase 7
-session 22 (full detail in *Recent slices*) landed **legacy-decom step 2
-— the modifier dialog for ability + save + init in the adapter**. Each
-dispatcher now surfaces the unified `promptRollModifierDialog` adapter-side
-(mirroring the skill-check dialog from Q7): on submit the user's flattened
-die + total route through the lib via `rollCheck` with a bare definition +
-a single `dialog-modifier` line (ability/save — bypassing the auto-add
-wrapper that would double-count the ability mod / save value the dialog
-total already includes), while **init returns the user's dialog-built Roll
-directly** (no lib round-trip — init has no crit/fumble and Foundry's
-`Combat#rollInitiative` posts the chat). The init landmine was handled:
-`getInitiativeRoll` stays **synchronous** for the combat tracker, and the
-async dialog branch (`_getInitiativeRollWithDialogViaAdapter`) is only
-reached via `rollInit`, which awaits. **Gate flips:** `rollSavingThrow` is
-now single-path adapter; `rollAbilityCheck`'s only surviving legacy gate is
-non-zero check-penalty (step 3); init's only legacy gate is gone. No lib
-change (ability/save lib APIs already accept `modifiers`; the init adapter
-path already used `rollCheck`). Repo green: **1338 Vitest** / **172
-Playwright e2e passed**, zero failures.
+session 23 (full detail in *Recent slices*) landed **legacy-decom step 3
+— non-zero armor check-penalty display for str/agl ability checks in the
+adapter**. The penalty is *not* applied to the result (DCC shows it as an
+informational alternative total — the GM decides per check); the adapter
+reproduces the legacy contract **faithfully** (Tim's call, "keep the
+note"): a new `_buildCheckPenaltyAltRoll` builds a bare Roll wrapping
+`mainTotal + penalty`, and `renderAbilityCheck` pushes it as `rolls[1]` +
+sets `system.checkPenaltyRollIndex: 1`, so the existing `emoteAbilityRoll`
+(`module/chat.js`) renders the unchanged "If check penalty applies, total
+is X" note. **No chat.js / i18n change** — the note derives purely from
+those two fields. Both adapter paths feed it: the non-dialog path always
+shows it (lib roll is clean), the dialog path mirrors legacy's
+`prompt.formula.includes(ensurePlus(penalty))` to suppress the note when
+the user toggled the penalty into the roll. **Gate flip:** the
+`hasNonZeroCheckPenalty` legacy gate is gone — `rollAbilityCheck` is now
+**single-path adapter**, joining `rollSavingThrow`. No lib change. Repo
+green: **1342 Vitest** / **173 Playwright e2e passed**, zero failures
+(5.7-min full suite).
 
-**Remaining legacy-decom steps (3–5):** non-zero check-penalty display
-(step 3, the last `_rollAbilityCheckLegacy` gate), description-only skill
-items (step 4), then delete the now-dead `_rollSavingThrowLegacy` +
-`_getInitiativeRollLegacy` (fully unreachable after step 2) plus the
-remaining `_rollAbilityCheckLegacy` / `_rollSkillCheckLegacy` +
-`_buildSkillCheckLegacyTerms` (step 5). See the *Legacy decommission*
-backlog subsection + *Next steps*. All PR #720 design calls remain closed
-(the error-boundary prerequisite landed session 20); the *test-coverage
-gaps* + *doc hygiene* lists are still open.
+**Remaining legacy-decom steps (4–5):** description-only skill items
+(step 4, the last `_rollSkillCheckLegacy` gate), then delete the now-dead
+`_rollAbilityCheckLegacy` + `_rollSavingThrowLegacy` +
+`_getInitiativeRollLegacy` (all fully unreachable after step 3) plus the
+remaining `_rollSkillCheckLegacy` + `_buildSkillCheckLegacyTerms`
+(step 5). See the *Legacy decommission* backlog subsection + *Next steps*.
+All PR #720 design calls remain closed (the error-boundary prerequisite
+landed session 20); the *test-coverage gaps* + *doc hygiene* lists are
+still open.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -107,6 +107,48 @@ consumers). See top *Recent slices* entry + *Sibling-module status*.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-01 — Phase 7 session 23: non-zero armor check-penalty display
+  for str/agl ability checks in the adapter (legacy-decom step 3 of 5).**
+  The last gate keeping `_rollAbilityCheckLegacy` reachable. DCC shows the
+  armor check penalty on a Str/Agl ability check as an *informational
+  alternative total* ("If check penalty applies, total is X") — it is NOT
+  applied to the result; the GM decides per check whether it bites. Tim
+  chose **faithful reproduction** ("keep the note") over the handoff's
+  tentatively-planned breakdown-row approach, after I surfaced that the two
+  produce visibly different chat output (a pre-computed alt total vs. a
+  `Check Penalty -2` modifier row) — the breakdown row would have dropped
+  the pre-computed total + retired `DCC.AbilityCheckPenaltyNote` /
+  `checkPenaltyRollIndex` / the `emoteAbilityRoll` note path. So this slice
+  is **zero behavior change**: new private `_buildCheckPenaltyAltRoll(abilityId,
+  mainTotal, { alreadyApplied })` builds a bare `new Roll((mainTotal +
+  penalty).toString())` (returns null for non-str/agl, `computeCheckPenalty`
+  off, zero penalty, or when already applied), and `renderAbilityCheck`
+  gained an optional `checkPenaltyRoll` param — when present it sets
+  `system.checkPenaltyRollIndex: 1` and pushes the roll as `rolls[1]` after
+  `toMessage`, exactly as `_rollAbilityCheckLegacy` did. **No `chat.js` /
+  i18n / template change** — `emoteAbilityRoll` already renders the note
+  purely off those two fields. Both adapter paths feed it: the non-dialog
+  `_rollAbilityCheckViaAdapter` always shows it (the lib roll is clean — we
+  never pass the penalty to the lib, so no double-count); the dialog
+  `_rollAbilityCheckWithDialog` mirrors legacy's
+  `prompt.formula.includes(ensurePlus(penalty))` to suppress the note when
+  the user toggled the penalty into the roll. **Gate flip:** the
+  `hasNonZeroCheckPenalty` legacy gate is deleted — `rollAbilityCheck` is
+  now single-path adapter (only `options.rollUnder` branches, to the
+  Luck-check adapter route). `_rollAbilityCheckLegacy` is now fully
+  unreachable, awaiting the step-5 batch delete (joining
+  `_rollSavingThrowLegacy` + `_getInitiativeRollLegacy`). No lib change
+  (the penalty display is a pure Foundry-side concern — the lib never sees
+  it). +4 Vitest (`adapter-ability-check.test.js`: non-dialog str penalty →
+  `checkPenaltyRollIndex=1` + `rolls[1].formula` = mainTotal+penalty;
+  non-str/agl ability with a penalty → no note; dialog penalty-unapplied →
+  note; dialog penalty-applied → no note). +1 Playwright new
+  (`adapter-dispatch.spec.js`: a live str check on an actor wearing armor
+  with a `-4` check penalty asserts adapter dispatch + `checkPenaltyRollIndex
+  === 1` + `rolls[1].total === rolls[0].total + penalty`). **1342 Vitest**
+  (was 1338, +4). **173 Playwright passed**, zero failures (was 172, +1;
+  5.7-min full suite).
 
 - **2026-06-01 — Phase 7 session 22: modifier dialog for ability + save +
   init in the adapter (legacy-decom step 2 of 5).** Extended the unified
@@ -260,31 +302,6 @@ archives linked above.
   the regression net (the deleted path's stale comments referenced the
   live ability-check dispatch, already covered).
 
-- **2026-05-31 — Phase 7 session 18: close the PR #720 damage `_total`
-  clamp-divergence design call — resolved-upstream, the premise was
-  stale.** The backlog worried that Foundry floored the *displayed* damage
-  total at 1 while the lib left `dcc.libDamageResult.total` un-floored, so
-  the chat flag could carry `0`/negative while chat showed `1` (latent —
-  no consumer reads the flag; `dcc-qol` reads the pre-clamped
-  `messageData.system.damageRoll.total`). User chose the **hybrid** fix
-  (keep `total` honest + add a clamped `displayTotal`); investigating it
-  surfaced that the **lib has since gained its own min-1 clamp**
-  (`combat/damage.js:93` — `Math.max(1, baseDamage + modifierDamage)`),
-  *proven empirically* when a `1d3-4` test expecting lib `total: -3`
-  returned `1`. That guts the divergence entirely — both sides floor, so
-  `displayTotal` would just duplicate `total`. Backed out the `displayTotal`
-  additions; final change is **doc + test only, zero behavior change**:
-  corrected the now-false "lib doesn't [clamp]" comment at
-  `_buildLibDamageResult` + the `_rollDamage` / `buildPassthroughDamageResult`
-  JSDoc (both now state both sides floor + the lib leaves
-  `baseDamage`/`modifierDamage` raw so they won't sum to a floored total —
-  its deliberate shape). +1 Vitest reworked (`adapter-weapon-damage.test.js`:
-  a 1d3-4 floored hit floors to 1 on *both* sides, components stay raw)
-  +1 Playwright (`adapter-dispatch.spec.js`: live `_rollDamage('1d3-4')`
-  asserts `damageRoll.total === libDamageResult.total === 1`). **1319 Vitest**
-  (was 1318, +1). **166 Playwright passed**, zero failures (was 165, +1;
-  5.5-min full suite). PR #720 design calls: 3 → 2 left.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -361,11 +378,6 @@ rationale; the section is fully drained.**
   was a closed door — every dispatcher landed on the two-pass sync
   pattern the async roller conflicts with). Closes the paired coverage
   gap below. Full narrative in the session-19 Recent-slices entry.
-- ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
-  (Phase 7 session 19) — **deleted** (zero consumers; its only rationale
-  was a closed door — every dispatcher landed on the two-pass sync
-  pattern the async roller conflicts with). Closes the paired coverage
-  gap below. Full narrative in the session-19 Recent-slices entry.
 
 **Open resilience / cleanup items:**
 
@@ -405,14 +417,14 @@ stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
 coverage is exhaustive for their gate). Group D already retired
 attack / crit / fumble / damage; the spell-check legacy wrapper went in
 session 16. Step 1 (roll-under) landed session 21; step 2 (modifier
-dialog) landed session 22. **After step 2, `_rollSavingThrowLegacy` +
-`_getInitiativeRollLegacy` are fully unreachable (awaiting the step-5
-delete); `_rollAbilityCheckLegacy` is kept alive only by step 3
-(check-penalty); `_rollSkillCheckLegacy` only by step 4
-(description-only skill items).** Retiring them is gated on moving those
-capabilities into the adapter first — sequence the work by the shared
-capability, not by the method, since one capability unblocks several
-gates at once:
+dialog) landed session 22; step 3 (check-penalty) landed session 23.
+**After step 3, `_rollAbilityCheckLegacy` + `_rollSavingThrowLegacy` +
+`_getInitiativeRollLegacy` are all fully unreachable (awaiting the step-5
+delete); `_rollSkillCheckLegacy` is the only legacy body still reachable,
+kept alive by step 4 (description-only skill items).** Retiring them is
+gated on moving those capabilities into the adapter first — sequence the
+work by the shared capability, not by the method, since one capability
+unblocks several gates at once:
 
 1. ~~**Roll-under in the adapter.**~~ **DONE 2026-05-31 (Phase 7 session
    21).** Roll-under is provably **Luck-only** (all triggers gate on
@@ -450,29 +462,44 @@ gates at once:
    (save dialog driven to completion) + 3 flipped. See Recent slices.
    **`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` are now fully
    unreachable; `_rollAbilityCheckLegacy` is kept alive only by step 3.**
-3. **Non-zero check-penalty display in the adapter.** Blocks the last
-   clause of `_rollAbilityCheckLegacy` (str/agl with a non-zero armor
-   check penalty render a penalty term). Adapter must surface the
-   penalty as a labelled modifier term in the chat breakdown (the
-   `buildModifierBreakdownHtml` machinery from the chat-renderer slice
-   can likely carry it).
+3. ~~**Non-zero check-penalty display in the adapter.**~~ **DONE
+   2026-06-01 (Phase 7 session 23).** The last `_rollAbilityCheckLegacy`
+   gate. DCC shows the str/agl armor check penalty as an *informational
+   alternative total* ("If check penalty applies, total is X") — NOT
+   applied to the result. **Tim chose faithful reproduction** over the
+   originally-planned `display`-modifier breakdown row (the two produce
+   visibly different chat: a pre-computed alt total vs. a `-2` modifier
+   line; the breakdown approach would have dropped the pre-computed total
+   + `DCC.AbilityCheckPenaltyNote` / `checkPenaltyRollIndex` /
+   `emoteAbilityRoll`). New `_buildCheckPenaltyAltRoll` builds a bare
+   `new Roll(mainTotal + penalty)`; `renderAbilityCheck` gained an
+   optional `checkPenaltyRoll` param that sets
+   `system.checkPenaltyRollIndex: 1` + pushes it as `rolls[1]` — so the
+   **unchanged** `emoteAbilityRoll` renders the legacy note (no `chat.js`
+   / i18n / template change). Non-dialog path always shows it (clean lib
+   roll); dialog path mirrors legacy's `formula.includes(ensurePlus(
+   penalty))` to suppress it when the user toggled the penalty on. Gate
+   flip: `hasNonZeroCheckPenalty` deleted → `rollAbilityCheck` is
+   single-path adapter. No lib change. +4 Vitest, +1 Playwright. See
+   Recent slices.
 4. **Description-only skill items in the adapter.** Blocks
    `_rollSkillCheckLegacy` (the `!resolved.hasDie` gate) — these emit a
    *description chat message*, not a roll. Either teach
    `_rollSkillCheckViaAdapter` / a sibling adapter route to emit the
    description card, or split a tiny `_emitSkillDescription` helper that
    both the (eventually-deleted) legacy path and the adapter call.
-5. **Delete the bodies + the shared helper.** Once 1–4 land, the four
-   `needsLegacyPath` / gate branches are dead. Delete
-   `_rollAbilityCheckLegacy`, `_getInitiativeRollLegacy`,
-   `_rollSavingThrowLegacy`, `_rollSkillCheckLegacy`, and the shared
-   `_buildSkillCheckLegacyTerms` helper. Collapse each dispatcher to a
-   single `return this._xxxViaAdapter(...)` (mirroring the Group D
-   attack/crit/fumble/damage collapse). Add a retirement-guard test per
-   method (assert the `_xxxLegacy` symbol is `undefined`), matching the
-   D2 `_rollDamageLegacy` guard pattern. Clean the ~15 stale
-   `_rollSkillCheckLegacy` doc/comment references catalogued by the
-   grep at session 19.
+5. **Delete the bodies + the shared helper.** After step 4 lands, all
+   four legacy bodies are dead (`_rollAbilityCheckLegacy`,
+   `_rollSavingThrowLegacy`, `_getInitiativeRollLegacy` already unreachable
+   as of step 3; `_rollSkillCheckLegacy` after step 4). Delete them + the
+   shared `_buildSkillCheckLegacyTerms` helper. Collapse each dispatcher to
+   a single `return this._xxxViaAdapter(...)` (mirroring the Group D
+   attack/crit/fumble/damage collapse; `rollAbilityCheck` keeps the
+   `options.rollUnder` → `_rollLuckCheckViaAdapter` branch). Add a
+   retirement-guard test per method (assert the `_xxxLegacy` symbol is
+   `undefined`), matching the D2 `_rollDamageLegacy` guard pattern. Clean
+   the ~15 stale `_rollSkillCheckLegacy` doc/comment references catalogued
+   by the grep at session 19.
 
 Dependency notes / landmines:
 - ~~**`error boundaries` interaction.**~~ **RESOLVED — the boundary
@@ -622,21 +649,22 @@ Dependency notes / landmines:
 **PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
 roll paths.** See the *Legacy decommission* subsection in the PR #720
 backlog above for the sequenced 5-step plan. **Steps 1 (roll-under) + 2
-(modifier dialog) + the error-boundaries prerequisite are all DONE**
-(sessions 21 + 22 + 20). **Next up is step 3 — non-zero check-penalty
-display in the adapter**: this is the *only* surviving gate on
-`_rollAbilityCheckLegacy` (str/agl with a non-zero armor check penalty
-render a labelled penalty term). The adapter must surface that penalty as
-a modifier in the chat breakdown — the `buildModifierBreakdownHtml`
-machinery (chat-renderer) can likely carry it; the lib's `rollCheck`
-accepts a `display`-kind modifier the renderer already knows how to
-render. Then step 4 (description-only skill items, the last
-`_rollSkillCheckLegacy` gate), then step 5 (delete the now-dead
-`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` + the remaining
-`_rollAbilityCheckLegacy` / `_rollSkillCheckLegacy` +
-`_buildSkillCheckLegacyTerms`, collapse each dispatcher, add
+(modifier dialog) + 3 (check-penalty) + the error-boundaries prerequisite
+are all DONE** (sessions 21 + 22 + 23 + 20). **Next up is step 4 —
+description-only skill items in the adapter**: this is the *only* surviving
+gate on `_rollSkillCheckLegacy` (the `!resolved.hasDie` case — a skill
+item with `useDie: false` emits a *description chat message*, not a roll).
+Either teach `_rollSkillCheckViaAdapter` / a sibling adapter route to emit
+the description card, or split a tiny `_emitSkillDescription` helper both
+the (eventually-deleted) legacy path and the adapter call. The live e2e
+`description-only skill item (no die) → legacy` test in
+`adapter-dispatch.spec.js:461` flips to `→ adapter` once it lands. Then
+step 5 (delete the now-dead `_rollAbilityCheckLegacy` +
+`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` + `_rollSkillCheckLegacy`
++ `_buildSkillCheckLegacyTerms`, collapse each dispatcher, add
 retirement-guard tests). Any lib capability gap lands as a `dcc-core-lib`
-PR first, then `npm run sync-core-lib` (step 2 needed none).
+PR first, then `npm run sync-core-lib` (steps 1–3 needed none — all pure
+adapter-side wiring).
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
 fully closed; open questions #2, #3, #4, and #7 all closed

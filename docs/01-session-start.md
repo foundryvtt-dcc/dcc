@@ -42,26 +42,33 @@ session's context):
 
 ## Status (2026-06-01)
 
-**Latest — Phase 7 session 22 (legacy-decom step 2 of 5: modifier dialog
-for ability + save + init in the adapter).** All PR #720 *design calls*
-are closed (error-boundary prerequisite landed session 20). The
-user-directed priority is the **Legacy decommission** plan (see
-`00-progress.md` *Legacy decommission* subsection). Session 22 did
-**step 2**: each of `rollAbilityCheck` / `rollSavingThrow` /
-`getInitiativeRoll` now surfaces the unified `promptRollModifierDialog`
-adapter-side via three new helpers. Ability/save mirror the skill dialog
-(bare `rollCheck` definition + a single flat `dialog-modifier` line,
-avoiding the auto-add double-count); **init hands back the user's
-dialog-built Roll** (no lib round-trip — Foundry posts the init chat).
-**Init landmine handled:** `getInitiativeRoll` stays *sync* for the combat
-tracker; the async dialog branch is only reached via `rollInit`, which
-awaits. **No lib change** (ability/save lib APIs already accept
-`modifiers`; init already used `rollCheck`). `rollSavingThrow` is now
-single-path adapter; `rollAbilityCheck`'s only legacy gate left is
-non-zero check-penalty. **Next: step 3 — non-zero check-penalty display in
-the adapter** (the last `_rollAbilityCheckLegacy` gate; surface the
-penalty via `buildModifierBreakdownHtml`). Repo green: **1338 Vitest** /
-**172 Playwright e2e passed**, zero failures.
+**Latest — Phase 7 session 23 (legacy-decom step 3 of 5: non-zero armor
+check-penalty display for str/agl ability checks in the adapter).** All
+PR #720 *design calls* are closed (error-boundary prerequisite landed
+session 20). The user-directed priority is the **Legacy decommission**
+plan (see `00-progress.md` *Legacy decommission* subsection). Session 23
+did **step 3**, the last gate keeping `_rollAbilityCheckLegacy` reachable.
+DCC shows the armor check penalty on a Str/Agl ability check as an
+*informational alternative total* ("If check penalty applies, total is X")
+— it is NOT applied to the result. **Tim chose faithful reproduction**
+("keep the note") over the handoff's tentatively-planned breakdown-row
+approach: new `_buildCheckPenaltyAltRoll` builds a bare `new Roll(mainTotal
++ penalty)` and `renderAbilityCheck` pushes it as `rolls[1]` + sets
+`system.checkPenaltyRollIndex: 1`, so the **unchanged** `emoteAbilityRoll`
+(`module/chat.js`) renders the legacy note — **no `chat.js` / i18n /
+template change**. Non-dialog path always shows it (clean lib roll); dialog
+path mirrors legacy's `formula.includes(ensurePlus(penalty))` to suppress
+it when the user toggled the penalty on. **Gate flip:** the
+`hasNonZeroCheckPenalty` legacy gate is deleted — `rollAbilityCheck` is now
+single-path adapter (only `options.rollUnder` branches, to the Luck-check
+route), joining `rollSavingThrow`. `_rollAbilityCheckLegacy` is now fully
+unreachable, awaiting the step-5 batch delete. **No lib change.** **Next:
+step 4 — description-only skill items in the adapter** (the last
+`_rollSkillCheckLegacy` gate — a `useDie:false` skill item emits a
+description chat message, not a roll; the live e2e
+`description-only skill item (no die) → legacy` test flips to `→ adapter`).
+Repo green: **1342 Vitest** / **173 Playwright e2e passed**, zero failures
+(5.7-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

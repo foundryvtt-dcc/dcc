@@ -933,13 +933,14 @@ class DCCActor extends Actor {
   /**
    * Roll an Ability Check.
    *
-   * Phase 1 of the adapter refactor: the simple path (no dialog,
-   * no rollUnder) flows through the lib via character-accessors →
-   * two-pass `libRollAbilityCheck` (mode: 'formula' / 'evaluate') →
-   * chat-renderer. The dialog / rollUnder / CheckPenalty-display
-   * paths fall through to the legacy implementation below, which
-   * remains the source of truth for those UX flows until later
-   * phases migrate them.
+   * Single-path through the adapter (legacy-decom complete for this
+   * dispatcher as of step 3): every flavour — the simple two-pass
+   * `libRollAbilityCheck` flow, the roll-under (Luck) flow, the
+   * modifier dialog (step 2), and the non-zero armor check-penalty
+   * display (step 3) — is now handled adapter-side in
+   * `_rollAbilityCheckViaAdapter`. `_rollAbilityCheckLegacy` is
+   * retained only until the step-5 batch delete (it is no longer
+   * reachable).
    *
    * Signature and emitted chat-message flags are preserved — dcc-qol
    * and token-action-hud-dcc depend on the public shape of this
@@ -957,24 +958,6 @@ class DCCActor extends Actor {
       // bitwise XOR, which returns 0 or 1, not true/false.
       if (options.rollUnder) {
         return this._rollLuckCheckViaAdapter(abilityId, options)
-      }
-
-      const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
-      const hasNonZeroCheckPenalty =
-        this.system.config?.computeCheckPenalty &&
-        (abilityId === 'str' || abilityId === 'agl') &&
-        checkPenaltyValue !== 0
-
-      // A non-zero armor check penalty (str/agl) still renders its
-      // labelled penalty term via the legacy term-builder; legacy-decom
-      // step 3 moves that display into the adapter. The modifier dialog
-      // itself is now handled adapter-side (step 2) inside
-      // `_rollAbilityCheckViaAdapter`, so `showModifierDialog` no longer
-      // forces the legacy path. When BOTH a penalty and a dialog apply,
-      // legacy still wins and surfaces both (its dialog terms include the
-      // CheckPenalty toggle).
-      if (hasNonZeroCheckPenalty) {
-        return this._rollAbilityCheckLegacy(abilityId, options)
       }
 
       return this._rollAbilityCheckViaAdapter(abilityId, options)
@@ -1029,22 +1012,70 @@ class DCCActor extends Actor {
       luckBurn: options.luckBurn
     })
 
+    // Non-zero armor check penalty (str/agl) display (legacy-decom
+    // step 3). The penalty is NOT applied to the result — the lib roll
+    // is clean — so we show the would-be total as a secondary roll the
+    // chat handler (`emoteAbilityRoll`) renders as the "If check penalty
+    // applies, total is X" note, reproducing the legacy contract.
+    const checkPenaltyRoll = await this._buildCheckPenaltyAltRoll(abilityId, foundryRoll.total)
+
     return renderAbilityCheck({
       actor: this,
       abilityId,
       abilityLabel,
       result,
-      foundryRoll
+      foundryRoll,
+      checkPenaltyRoll
     })
+  }
+
+  /**
+   * Build the secondary "would-be total" Roll for a non-zero armor
+   * check penalty on a str/agl ability check (legacy-decom step 3).
+   *
+   * DCC shows the armor check penalty on Str/Agl ability checks as an
+   * informational alternative total ("If check penalty applies, total
+   * is X") rather than applying it to the result — the GM decides per
+   * check whether the penalty bites. This reproduces the legacy
+   * `_rollAbilityCheckLegacy` behaviour: a bare Roll wrapping
+   * `mainTotal + penalty`, surfaced via `checkPenaltyRollIndex` and
+   * rendered by `emoteAbilityRoll` (module/chat.js).
+   *
+   * Returns null (no note) when the penalty doesn't apply: a non-str/agl
+   * ability, check-penalty computation disabled, a zero penalty, or
+   * (dialog path) the user already toggled the penalty into the roll.
+   *
+   * @param {string} abilityId   The ability id (e.g. 'str').
+   * @param {number} mainTotal   The clean rolled total to add the
+   *                             penalty to.
+   * @param {Object} [opts]
+   * @param {boolean} [opts.alreadyApplied]  When true the penalty was
+   *                             already folded into the roll (dialog
+   *                             path) so no alternative is shown.
+   * @returns {Promise<Roll|null>}
+   * @private
+   */
+  async _buildCheckPenaltyAltRoll (abilityId, mainTotal, { alreadyApplied = false } = {}) {
+    if (alreadyApplied) return null
+    if (abilityId !== 'str' && abilityId !== 'agl') return null
+    if (!this.system.config?.computeCheckPenalty) return null
+    const penalty = parseInt(this.system.attributes?.ac?.checkPenalty || 0)
+    if (!penalty) return null
+    const altRoll = new Roll((mainTotal + penalty).toString())
+    await altRoll.evaluate()
+    return altRoll
   }
 
   /**
    * Roll-modifier-dialog branch of the ability-check adapter path
    * (legacy-decom step 2). The dialog term list mirrors the legacy
    * `_rollAbilityCheckLegacy` builder (action die + ability modifier,
-   * plus a 0 check-penalty toggle for str/agl when penalties are
-   * computed — a non-zero penalty routes to legacy via the dispatcher
-   * gate, so any penalty reaching here is 0).
+   * plus a check-penalty toggle for str/agl when penalties are
+   * computed). Since step 3 the penalty may be non-zero here: if the
+   * user toggles it on it folds into `modifierTotal` and applies to the
+   * roll; if left off, the would-be total is shown as the alternative
+   * note (matching the non-dialog path), detected via the same
+   * `formula.includes(penalty)` check the legacy path used.
    *
    * On submit, the user's chosen die overrides the lib definition and
    * the per-source modifier list collapses to a single flat total — the
@@ -1132,12 +1163,26 @@ class DCCActor extends Actor {
       modifiers
     })
 
+    // Non-zero check-penalty note (legacy-decom step 3). If the user
+    // toggled the CheckPenalty term on, the penalty is already in the
+    // dialog roll's formula (and thus in the lib total) — show no
+    // alternative. Otherwise surface the would-be total, mirroring the
+    // legacy `roll.formula.includes(ensurePlus(checkPenalty))` check.
+    const penalty = parseInt(this.system.attributes?.ac?.checkPenalty || 0)
+    const penaltyApplied = penalty !== 0 && prompt.formula.includes(ensurePlus(penalty))
+    const checkPenaltyRoll = await this._buildCheckPenaltyAltRoll(
+      abilityId,
+      foundryRoll.total,
+      { alreadyApplied: penaltyApplied }
+    )
+
     return renderAbilityCheck({
       actor: this,
       abilityId,
       abilityLabel,
       result,
-      foundryRoll
+      foundryRoll,
+      checkPenaltyRoll
     })
   }
 

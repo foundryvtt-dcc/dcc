@@ -272,6 +272,64 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // manual roll render).
       expect(card.content.match(/class="dcc-modifier-breakdown"/g)).toHaveLength(1)
     })
+
+    // Phase 7 session 23 (legacy-decom step 3): a non-zero armor check
+    // penalty on a str/agl ability check now renders adapter-side. The
+    // penalty is NOT applied to the roll — the would-be total is pushed
+    // as a secondary roll (rolls[1]) flagged via
+    // `system.checkPenaltyRollIndex`, which `emoteAbilityRoll`
+    // (module/chat.js) renders as the "If check penalty applies, total is
+    // X" note. This was the last gate keeping `_rollAbilityCheckLegacy`
+    // reachable; it is the branch only the legacy path previously covered.
+    test('non-zero armor check penalty (str) emits the alt-total roll via the adapter', async ({ page }) => {
+      const penalty = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Ability CheckPenalty', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1 Heavy Plate',
+          type: 'armor',
+          system: { equipped: true, checkPenalty: '-4' }
+        }])
+        // prepareData recomputes ac.checkPenalty from equipped armor
+        // (computeCheckPenalty defaults on for a Player).
+        return actor.system.attributes.ac.checkPenalty
+      })
+      expect(Number(penalty), 'equipped armor must yield a non-zero check penalty').not.toBe(0)
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Ability CheckPenalty').rollAbilityCheck('str')
+      })
+
+      const line = await waitForAdapterLog('rollAbilityCheck')
+      assertPath(line, 'adapter', { abilityId: 'str' })
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Ability CheckPenalty' &&
+              m.getFlag('dcc', 'isAbilityCheck')
+            )
+          if (msg) {
+            return {
+              checkPenaltyRollIndex: msg.system?.checkPenaltyRollIndex ?? null,
+              rollTotals: msg.rolls.map(r => r.total)
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(card, 'ability-check adapter path must post a chat message').not.toBeNull()
+      // The penalty is informational — the primary roll (rolls[0]) is
+      // clean; the secondary roll (rolls[1]) carries the would-be total.
+      expect(card.checkPenaltyRollIndex).toBe(1)
+      expect(card.rollTotals).toHaveLength(2)
+      expect(card.rollTotals[1]).toBe(card.rollTotals[0] + Number(penalty))
+    })
   })
 
   // ── rollSavingThrow ─────────────────────────────────────────────────

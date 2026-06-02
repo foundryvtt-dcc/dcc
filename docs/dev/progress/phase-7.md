@@ -1020,3 +1020,28 @@
   `max` 0→1). +1 Playwright (`adapter-dispatch.spec.js`: live Wizard burns Stamina
   3 → 0, asserts 0 not 1). **1318 Vitest** (was 1309). **165 Playwright passed**,
   zero failures (5.9-min full suite, smoke-gated).
+
+- **2026-05-31 — Phase 7 session 18: close the PR #720 damage `_total`
+  clamp-divergence design call — resolved-upstream, the premise was
+  stale.** The backlog worried that Foundry floored the *displayed* damage
+  total at 1 while the lib left `dcc.libDamageResult.total` un-floored, so
+  the chat flag could carry `0`/negative while chat showed `1` (latent —
+  no consumer reads the flag; `dcc-qol` reads the pre-clamped
+  `messageData.system.damageRoll.total`). User chose the **hybrid** fix
+  (keep `total` honest + add a clamped `displayTotal`); investigating it
+  surfaced that the **lib has since gained its own min-1 clamp**
+  (`combat/damage.js:93` — `Math.max(1, baseDamage + modifierDamage)`),
+  *proven empirically* when a `1d3-4` test expecting lib `total: -3`
+  returned `1`. That guts the divergence entirely — both sides floor, so
+  `displayTotal` would just duplicate `total`. Backed out the `displayTotal`
+  additions; final change is **doc + test only, zero behavior change**:
+  corrected the now-false "lib doesn't [clamp]" comment at
+  `_buildLibDamageResult` + the `_rollDamage` / `buildPassthroughDamageResult`
+  JSDoc (both now state both sides floor + the lib leaves
+  `baseDamage`/`modifierDamage` raw so they won't sum to a floored total —
+  its deliberate shape). +1 Vitest reworked (`adapter-weapon-damage.test.js`:
+  a 1d3-4 floored hit floors to 1 on *both* sides, components stay raw)
+  +1 Playwright (`adapter-dispatch.spec.js`: live `_rollDamage('1d3-4')`
+  asserts `damageRoll.total === libDamageResult.total === 1`). **1319 Vitest**
+  (was 1318, +1). **166 Playwright passed**, zero failures (was 165, +1;
+  5.5-min full suite). PR #720 design calls: 3 → 2 left.
