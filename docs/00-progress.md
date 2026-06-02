@@ -69,7 +69,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
 active queue drained, the open work is the PR #720 *test-coverage gaps* +
 *doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-The **test-coverage-backfill arc** is underway (sessions 26–30): session 26
+The **test-coverage-backfill arc is COMPLETE** (sessions 26–31): session 26
 closed the *always-run* data-driven migration-branch gap (the **V14-critical
 ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
 `critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches);
@@ -78,19 +78,20 @@ session 27 closed the two deterministic chat-emit renderers
 `__mocks__/dcc-roll.js` async/sync mismatch (shared `withSyncCreateRoll`;
 footprint was 2 files, not the backlog's estimated 13); session 29 verified
 `onSpellLost` fires during a real wizard cast (deterministic d3+low-INT
-fail-to-lost); **session 30** (full detail in *Recent slices*) added the
-`terms[N]` two-pass-divergence boundary guard (re-scoped: the only genuine gap
-was the documented "in-place `terms[N>0]` mutation reaches Foundry but not
-`libResult`" boundary — Vitest + live e2e). All five are **pure test-infra /
+fail-to-lost); session 30 added the `terms[N]` two-pass-divergence boundary
+guard (re-scoped: the only genuine gap was the documented "in-place
+`terms[N>0]` mutation reaches Foundry but not `libResult`" boundary);
+**session 31** (full detail in *Recent slices*) closed the last gap — the NPC
+`rollToHit` `attackHitBonus.<type>.adjustment` Modifier injection + the
+`Roll.validate(toHit) === false` early-return. All six are **pure test-infra /
 coverage backfill — no production behavior change, no lib change.** Session
-29's full-suite run also
-surfaced + fixed the long-standing **forceCrit test flake** — root-caused as a
-*dice-probability* flake (the test expected a forced natural-20 but
-`applyForceCritToFoundryRoll` intentionally skips a natural 1, so an
-uncontrolled d20 failed ~1/20), NOT the "suite-only state pollution" the docs
-long assumed; fixed by retrying past the nat-1 (verified 10/10). Remaining
-gaps (`terms[N]` two-pass divergence, the NPC `_rollToHitViaAdapter` branches)
-are in progress with Tim engaged. Repo green: **1400 Vitest** / **180
+29's full-suite run also surfaced + fixed the long-standing **forceCrit test
+flake** — root-caused as a *dice-probability* flake (the test expected a
+forced natural-20 but `applyForceCritToFoundryRoll` intentionally skips a
+natural 1, so an uncontrolled d20 failed ~1/20), NOT the "suite-only state
+pollution" the docs long assumed; fixed by retrying past the nat-1 (verified
+10/10). With session 31 the **arc is complete — every PR #720 severity-≥6
+coverage gap is closed or found-stale.** Repo green: **1402 Vitest** / **181
 Playwright e2e passed**, zero failures (flake-clean since the session-29
 forceCrit fix).
 
@@ -110,6 +111,30 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 31: NPC `rollToHit` branches — adjustment
+  injection + `Roll.validate` early-return (PR #720 test-coverage gap;
+  closes the test-coverage-backfill arc).** The last two uncovered
+  `rollToHit` branches, both NPC/edge: (1) **NPC melee/missile
+  `attackHitBonus.<type>.adjustment` Modifier injection** (`actor.js:3669`) —
+  prior coverage exercised only a *test-local reimplementation*
+  (`buildNPCAttackTerms` in `active-effects.test.js`), not the real path; (2)
+  the **`Roll.validate(toHit) === false` early-return** (`actor.js:3634`) —
+  unit-untested because the shared Roll mock's `validate` returns `true`
+  unconditionally. +2 Vitest (`adapter-weapon-attack.test.js`): a `new
+  DCCActor()` flipped to NPC (mirroring `createNPC`) with `melee.adjustment:
+  3` → the captured `createRoll` terms carry exactly one Modifier term
+  (formula 3), the zero missile adjustment adds none; and a weapon with an
+  invalid `toHit` + a forced `Roll.validate=()=>false` → `rollToHit` returns
+  `{ rolled: false, formula }`, `logDispatch` still fired (it precedes the
+  gate), `createRoll` never called. +1 Playwright (`adapter-dispatch.spec.js`
+  `rollWeaponAttack`): a **live** NPC with a `+50` melee adjustment casts a
+  real attack and the `isToHit` card's `rolls[0].total >= 51` (only reachable
+  if the +50 reached the live roll). **No production change — pure coverage
+  backfill.** **1402 Vitest** (was 1400, +2). **181 Playwright passed**, zero
+  failures (was 180, +1). **Test-coverage-backfill arc COMPLETE** (sessions
+  26–31): every PR #720 severity-≥6 coverage gap is now closed or
+  found-stale.
 
 - **2026-06-02 — Phase 7 session 30: `terms[N]` two-pass-divergence boundary
   guard (PR #720 test-coverage gap; test-coverage-backfill arc).**
@@ -246,39 +271,6 @@ archives linked above.
   change.** **1395 Vitest** (was 1379, +16). **177 Playwright passed**, zero
   failures (was 176, +1; 6.4-min full suite).
 
-- **2026-06-02 — Phase 7 session 26: data-driven migration coverage
-  (PR #720 test-coverage gap, first post-legacy-decom slice).** Backfilled
-  unit coverage of the *always-run* (non-version-gated) data-driven branches
-  in `migrateActorData` / `migrateItemData` — before this they were only
-  exercised when Foundry booted a real world, and the **V14-critical
-  ActiveEffect numeric-mode → string-type converter** had no isolated test.
-  Test-only export of the two internal `const` helpers from `migrations.js`
-  (not Foundry-facing — not on `game.dcc`/`DCCActor`; mirrors how
-  `classifyMigrationDecision` / `migrationOutcome` are already exported for
-  testing). New `module/__tests__/migrations-data-driven.test.js` (**+34
-  Vitest**): one fixture per branch — the full AE mode→type map (0→custom …
-  5→override) + unknown-mode→`add` fallback + no-op-when-string-typed +
-  no-op-when-mode-and-type-coexist + `deepClone`-fallback for an effect
-  lacking `toObject()`; `luckyRoll`→`birthAugur`; default alignment;
-  `critRange`/`disapproval` string→number incl. unparseable→20/1 fallbacks;
-  `sheetClass`-from-`className` (English-key / locale-match via stubbed
-  `localize` / third-party-fallback via stubbed `fetch`); the #739
-  speed-base seed (seeds from displayed value when base is the 30 default
-  *or* unset, preserves a custom base, no-ops when value==base); owned-item
-  recursion. Mocks `foundry.utils` (`deepClone`/`isEmpty`/`mergeObject`) +
-  `game.i18n` per-test in the `check-migrations.test.js` style. **No
-  behavior change — pure test backfill.** +1 Playwright
-  (`extension-api.spec.js`: imports the live-served `migrations.js`, runs
-  the deployed `migrateItemData`/`migrateActorData` against the REAL
-  `foundry.utils` + live `game.i18n` on synthetic legacy objects — a
-  multi-branch actor pass asserting AE mode 5→`override`, `luckyRoll`→
-  `birthAugur`, `critRange '18'`→18; synthetic objects, not live documents,
-  so the legacy shapes the converter targets are reproduced
-  deterministically rather than depending on current v14 AE schema
-  defaults; no `migrateWorld` mutation). **1379 Vitest** (was 1345, +34).
-  **176 Playwright passed**, zero failures (was 175, +1; 6.0-min full
-  suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -382,9 +374,13 @@ pure adapter-side wiring.
 - `_canRouteAttackViaAdapter` untested branches (dice-bearing
   `weapon.toHit`, `twoWeaponSecondary`, settings try/catch). Gate retired
   at session 15 — assertions moved to the single-path body.
-- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
+- ~~`_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
   injection (PC-only tests) + the `Roll.validate(toHit) === false`
-  early-return path.
+  early-return path.~~ **CLOSED 2026-06-02 (Phase 7 session 31).** +2 Vitest
+  (real NPC `rollToHit` adjustment injection; forced-`Roll.validate=false`
+  early-return) + 1 live Playwright (NPC `+50` adjustment → attack total
+  ≥ 51). The prior NPC coverage was a test-local reimplementation, not the
+  real path.
 - ~~`__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
   production is sync; tests install local sync stubs — fix the shared
   mock, delete the stubs.~~ **CLOSED 2026-06-02 (Phase 7 session 28).** Mock
@@ -506,13 +502,18 @@ respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
 **Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
-Sessions 26–30 cleared the data-driven migration branches, the two chat
-renderers, the `dcc-roll.js` mock async/sync mismatch, the `onSpellLost`
-real-cast verification, and the `terms[N]` two-pass-divergence boundary. One
-gap remains, Tim engaged:
-- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
-  injection + the `Roll.validate(toHit) === false` early-return path. **(Next
-  up.)**
+**Test-coverage-backfill arc COMPLETE (sessions 26–31, 2026-06-02).** Every
+PR #720 severity-≥6 coverage gap is now closed or found-stale. Sessions:
+26 (data-driven migration branches), 27 (`renderDisapprovalRoll` +
+`renderMercurialEffect`), 28 (`dcc-roll.js` mock async/sync + shared
+`withSyncCreateRoll`), 29 (`onSpellLost` real-cast + the forceCrit dice-flake
+fix), 30 (`terms[N]` two-pass-divergence boundary guard), 31 (NPC `rollToHit`
+adjustment injection + `Roll.validate` early-return). The `roll-dialog.mjs`
+gap was found stale (helpers retired + already covered). **Next arc** (none on
+a critical path): doc/comment hygiene (`ARCHITECTURE_REIMAGINED.md` §7/§2.7
+stale refs, the disapproval-chat-ordering comment, the unused
+`_getInitiativeRollViaAdapter` `options` param), the programmatic-PC-creation
+doc item, or an Appendix-A file-shrinkage arc.
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**

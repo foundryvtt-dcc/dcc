@@ -1017,6 +1017,21 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 31 (2026-06-02): PR #720 test-coverage backfill — NPC
+  `rollToHit` branches (closes the arc). Two uncovered branches: (1) NPC
+  melee/missile `attackHitBonus.<type>.adjustment` Modifier injection
+  (`actor.js:3669`) — prior coverage was a test-local reimplementation
+  (`buildNPCAttackTerms`), not the real path; (2) the `Roll.validate(toHit)
+  === false` early-return (`actor.js:3634`) — unit-untested because the Roll
+  mock's `validate` always returns true. +2 Vitest
+  (`adapter-weapon-attack.test.js`: NPC `melee.adjustment:3` → one Modifier
+  term in the captured `createRoll` terms, zero missile adds none; invalid
+  `toHit` + forced `Roll.validate=false` → `{ rolled:false }`, no createRoll)
+  + 1 live Playwright (`adapter-dispatch.spec.js` `rollWeaponAttack`: NPC
+  `+50` adjustment → `isToHit` card `rolls[0].total >= 51`). No production
+  change. **1402 Vitest** (was 1400, +2) / **181 Playwright** (was 180, +1),
+  zero failures. **Test-coverage-backfill arc COMPLETE (sessions 26–31).**
+
 - Phase 7 session 30 (2026-06-02): PR #720 test-coverage backfill —
   `terms[N]` two-pass-divergence boundary guard. Re-scoped during
   investigation: `hookTermsToBonuses` + the `terms[0]` die-bump + the

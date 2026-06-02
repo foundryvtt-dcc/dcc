@@ -1312,3 +1312,36 @@
   **175 Playwright passed**, zero failures (was 174, +1; 6.0-min full
   suite). **Legacy-decom arc complete** — no `_xxxLegacy` roll body
   survives anywhere in the system.
+
+- **2026-06-02 — Phase 7 session 26: data-driven migration coverage
+  (PR #720 test-coverage gap, first post-legacy-decom slice).** Backfilled
+  unit coverage of the *always-run* (non-version-gated) data-driven branches
+  in `migrateActorData` / `migrateItemData` — before this they were only
+  exercised when Foundry booted a real world, and the **V14-critical
+  ActiveEffect numeric-mode → string-type converter** had no isolated test.
+  Test-only export of the two internal `const` helpers from `migrations.js`
+  (not Foundry-facing — not on `game.dcc`/`DCCActor`; mirrors how
+  `classifyMigrationDecision` / `migrationOutcome` are already exported for
+  testing). New `module/__tests__/migrations-data-driven.test.js` (**+34
+  Vitest**): one fixture per branch — the full AE mode→type map (0→custom …
+  5→override) + unknown-mode→`add` fallback + no-op-when-string-typed +
+  no-op-when-mode-and-type-coexist + `deepClone`-fallback for an effect
+  lacking `toObject()`; `luckyRoll`→`birthAugur`; default alignment;
+  `critRange`/`disapproval` string→number incl. unparseable→20/1 fallbacks;
+  `sheetClass`-from-`className` (English-key / locale-match via stubbed
+  `localize` / third-party-fallback via stubbed `fetch`); the #739
+  speed-base seed (seeds from displayed value when base is the 30 default
+  *or* unset, preserves a custom base, no-ops when value==base); owned-item
+  recursion. Mocks `foundry.utils` (`deepClone`/`isEmpty`/`mergeObject`) +
+  `game.i18n` per-test in the `check-migrations.test.js` style. **No
+  behavior change — pure test backfill.** +1 Playwright
+  (`extension-api.spec.js`: imports the live-served `migrations.js`, runs
+  the deployed `migrateItemData`/`migrateActorData` against the REAL
+  `foundry.utils` + live `game.i18n` on synthetic legacy objects — a
+  multi-branch actor pass asserting AE mode 5→`override`, `luckyRoll`→
+  `birthAugur`, `critRange '18'`→18; synthetic objects, not live documents,
+  so the legacy shapes the converter targets are reproduced
+  deterministically rather than depending on current v14 AE schema
+  defaults; no `migrateWorld` mutation). **1379 Vitest** (was 1345, +34).
+  **176 Playwright passed**, zero failures (was 175, +1; 6.0-min full
+  suite).

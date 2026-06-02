@@ -1,4 +1,4 @@
-/* global Hooks, gameSettingsGetMock, dccRollCreateRollMock */
+/* global Hooks, gameSettingsGetMock, dccRollCreateRollMock, Roll */
 /**
  * Adapter round-trip test — weapon attack (Phase 3 sessions 2–14,
  * D1 session 15).
@@ -689,6 +689,69 @@ test('adapter path does NOT capture an in-place mutation of an existing terms[N]
   expect(result.libResult.die).toBe('d20')
   //  - no hook bonus (nothing was appended, so hookTermsToBonuses saw [])
   expect(result.libResult.bonuses).toEqual([])
+})
+
+test('rollToHit returns { rolled: false } without building a roll when toHit is not a valid Roll formula', async () => {
+  // actor.js:3634 early-returns when `Roll.validate(toHit)` is false. The
+  // shared Roll mock returns true unconditionally (which is why this branch
+  // was unit-untested), so force it false to exercise the production gate a
+  // genuinely-invalid toHit would hit live.
+  logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
+  const origValidate = Roll.validate
+  Roll.validate = () => false
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({ toHit: 'not-a-formula' })
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    Roll.validate = origValidate
+    restore()
+  }
+
+  expect(result).toEqual({ rolled: false, formula: 'not-a-formula' })
+  // logDispatch fires before the validate gate; the roll itself never builds.
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+})
+
+test('NPC melee attack injects attackHitBonus.melee.adjustment as a Modifier term', async () => {
+  // actor.js:3669-3681 — an NPC's non-zero melee (or missile) attack
+  // adjustment is pushed as a Modifier term so the Foundry Roll reflects it.
+  // Prior coverage exercised a test-local reimplementation; this drives the
+  // real rollToHit NPC branch and captures the terms handed to createRoll.
+  logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.type = 'NPC'
+  actor.isNPC = true
+  actor.isPC = false
+  actor.system.details.attackHitBonus = {
+    melee: { value: '+0', adjustment: 3 },
+    missile: { value: '+0', adjustment: 0 }
+  }
+  const weapon = makeSimpleWeapon({ toHit: '+0' })
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  const terms = dccRollCreateRollMock.mock.calls[0][0]
+  const adjTerm = terms.find(t => t.type === 'Modifier' && t.formula === 3)
+  expect(adjTerm, 'NPC melee adjustment must be injected as a Modifier term').toBeDefined()
+  // The zero missile adjustment must NOT add a term (only the melee +3).
+  const modifierTerms = terms.filter(t => t.type === 'Modifier')
+  expect(modifierTerms).toHaveLength(1)
 })
 
 test('parseDeedAttackBonus matches deed-die formulas with optional count + multiple flat mods', () => {

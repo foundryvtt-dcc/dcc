@@ -42,25 +42,27 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 30 (PR #720 test-coverage backfill: `terms[N]`
-two-pass-divergence boundary guard).** Investigation re-scoped the gap: the
-`dcc.modifyAttackRollTerms` post-hook re-read is already well covered
-(`hookTermsToBonuses` unit tests + the live `terms[0]` die-bump + the
-appended-Modifier→`libResult.bonuses` test). The one genuine gap was the
-*documented boundary* (`attack-input.mjs:139`): an **in-place mutation of an
-existing `terms[N]` (N>0)** reaches the Foundry Roll (chat total authoritative)
-but NOT `libResult` — surfacing only as a divergence. +1 Vitest
-(`adapter-weapon-attack.test.js`: in-place `terms[1]` Compound mutation → die
-unchanged + `bonuses` `[]`) + 1 live Playwright (`adapter-dispatch.spec.js`
-`rollWeaponAttack`: real `Hooks.on` mutates `terms[1]` to `+99` → chat
-`libResult` has no hook bonus + Foundry total > `libResult.total`). No
-production change — pure backfill of an intentional boundary. **1400 Vitest** /
-**180 Playwright**, zero failures. **Next: the last test-coverage gap — NPC
-`_rollToHitViaAdapter` (`attackHitBonus.melee.adjustment` Modifier injection +
-the `Roll.validate(toHit) === false` early-return).** Prior sessions: 26
-(migration branches), 27 (`renderDisapprovalRoll`/`renderMercurialEffect`), 28
-(`dcc-roll.js` mock async/sync), 29 (`onSpellLost` real-cast + the forceCrit
-dice-flake fix).
+**The PR #720 test-coverage-backfill arc is COMPLETE (sessions 26–31,
+2026-06-02).** Every severity-≥6 coverage gap is now closed or found-stale.
+Sessions: **26** data-driven migration branches (the V14-critical AE
+numeric-mode→string-type converter + the rest); **27**
+`renderDisapprovalRoll` + `renderMercurialEffect`; **28** `dcc-roll.js` mock
+async/sync parity + shared `withSyncCreateRoll`; **29** `onSpellLost`
+real-cast verification **+ the forceCrit dice-flake fix** (a dice-probability
+flake, not the long-assumed state pollution — `applyForceCritToFoundryRoll`
+skips a natural 1; fixed by retrying past it); **30** `terms[N]`
+two-pass-divergence boundary guard (in-place `terms[N>0]` mutation reaches
+Foundry but not `libResult`); **31** NPC `rollToHit`
+`attackHitBonus.<type>.adjustment` Modifier injection + the
+`Roll.validate(toHit)===false` early-return (the prior NPC coverage was a
+test-local reimplementation, not the real path). All test-only / no production
+or lib change. The `roll-dialog.mjs` gap was found stale (helpers retired +
+already covered). **Next arc** (none on a critical path): doc/comment hygiene
+(`ARCHITECTURE_REIMAGINED.md` §7/§2.7 stale refs, the disapproval-chat-ordering
+comment, the unused `_getInitiativeRollViaAdapter` `options` param), the
+programmatic-PC-creation doc item, or an Appendix-A file-shrinkage arc. Repo
+green: **1402 Vitest** / **181 Playwright e2e passed**, zero failures
+(flake-clean since the session-29 forceCrit fix).
 
 <details><summary>Phase 7 session 29 (onSpellLost + forceCrit flake fix)</summary>
 

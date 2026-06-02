@@ -2335,6 +2335,55 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(out.foundryTotal).toBeGreaterThan(out.lib.total)
     })
 
+    test('NPC melee attack applies attackHitBonus.melee.adjustment to the live roll (Phase 7 session 31)', async ({ page }) => {
+      // PR #720 test-coverage gap: the rollToHit NPC branch (actor.js:3669)
+      // injects a non-zero NPC melee adjustment as a Modifier term. Prior
+      // coverage exercised a test-local reimplementation; this drives the real
+      // NPC path end-to-end. A large +50 adjustment makes the assertion robust
+      // regardless of the d20 natural: attack total = natural(1-20) + toHit(0)
+      // + 50 ≥ 51, whereas an unadjusted attack tops out near 22.
+      const out = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 NPCAdj',
+          type: 'NPC',
+          system: {
+            details: {
+              attackHitBonus: {
+                melee: { value: '+0', adjustment: 50 },
+                missile: { value: '+0', adjustment: 0 }
+              }
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-NPCAdj-Claw',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d4', melee: true, equipped: true }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        const id = actor.items.getName('P1-NPCAdj-Claw').id
+        await actor.rollWeaponAttack(id)
+
+        // The combined attack card carries dcc.isToHit; its rolls[0] is the
+        // attack roll (with the adjustment), distinct from the damage roll.
+        let total = null
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse().find(m =>
+            m.speaker?.alias === 'P1 NPCAdj' && m.getFlag('dcc', 'isToHit'))
+          if (msg) { total = msg.rolls?.[0]?.total; break }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        await actor.delete()
+        return { total }
+      })
+
+      expect(out.total, 'NPC attack must post an isToHit card with the attack roll').not.toBeNull()
+      // total ≥ 51 ⟹ the +50 adjustment reached the live roll (only possible
+      // via the NPC adjustment Modifier term).
+      expect(out.total).toBeGreaterThanOrEqual(51)
+    })
+
     test('showModifierDialog flag → adapter (session 13 / A6)', async ({ page }) => {
       // A6: modifier-dialog case now routes via adapter with
       // `damageTerms` threaded into `DCCRoll.createRoll`. Dispatch log
