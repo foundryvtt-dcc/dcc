@@ -310,10 +310,17 @@ const migrateCompendium = async function (pack) {
 /**
  * Migrate a single Actor document to incorporate latest data model changes
  * Return an Object of updateData to be applied
+ *
+ * Exported for unit testing of its data-driven branches (V14 AE
+ * numeric-mode → string-type conversion, `sheetClass`-from-`className`,
+ * `critRange` / `disapproval` string→number, `luckyRoll` → `birthAugur`,
+ * default alignment, #739 speed-base seed). Not part of the Foundry-facing
+ * API — internal migration helper only.
+ *
  * @param {Actor} actor   The actor to Update
  * @return {Promise<Object>}       The updateData to apply
  */
-const migrateActorData = async function (actor) {
+export const migrateActorData = async function (actor) {
   const updateData = {}
 
   if (actor.system.details.luckyRoll) {
@@ -429,9 +436,14 @@ const migrateActorData = async function (actor) {
 
 /**
  * Migrate a single Item document to incorporate latest data model changes
+ *
+ * Exported for unit testing of its V14 AE numeric-mode → string-type
+ * conversion branch. Not part of the Foundry-facing API — internal
+ * migration helper only.
+ *
  * @param item
  */
-const migrateItemData = function (item) {
+export const migrateItemData = function (item) {
   const updateData = {}
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)

@@ -42,29 +42,31 @@ session's context):
 
 ## Status (2026-06-02)
 
-**Latest — Phase 7 session 25 (legacy-decom step 5 of 5: the batch delete —
-ARC COMPLETE).** The entire user-directed **Legacy decommission** arc is
-done. Sessions 21–24 moved every gate (roll-under, modifier dialog,
-check-penalty, description-only skill items) into the adapter; session 25
-deleted the four now-dead `_xxxLegacy` roll bodies
-(`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
-`_getInitiativeRollLegacy`, `_rollSkillCheckLegacy` — ~290 lines). **Every
-public roll dispatcher is now single-path through the adapter**, retaining
-only *adapter* branches: `rollAbilityCheck`'s `options.rollUnder` →
-`_rollLuckCheckViaAdapter`, and `rollSkillCheck`'s three-way `!hasDie` →
-`_emitSkillDescriptionViaAdapter` / `_skillTableViaAdapter` /
-`_rollSkillCheckViaAdapter`. The shared `_buildSkillCheckLegacyTerms`
-term-descriptor builder was **renamed** to `_buildSkillCheckRollTerms` (not
-deleted — it still backs the skill-table + dialog adapter routes; "Legacy"
-named the DCCRoll term-descriptor *format*, not a code path). Two Vitest
-retirement guards + one live e2e guard assert the four legacy symbols are
-`undefined` on the prototype; stale doc/comment references cleaned across
-`actor.js` + test files. `actor.js` shed ~218 net lines. **No lib change.**
-**Next: pick a new arc** — the open PR #720 backlog (test-coverage gaps, doc
-hygiene, programmatic-PC-creation doc) or an Appendix-A file-shrinkage arc;
-none are on a critical path. See `00-progress.md` *Next steps* + the PR #720
-backlog subsections. Repo green: **1345 Vitest** / **175 Playwright e2e
-passed**, zero failures (6.0-min full suite).
+**Latest — Phase 7 session 26 (PR #720 test-coverage backfill: data-driven
+migration branches).** With the legacy-decom arc closed (sessions 21–25) and
+the slice backlog's active queue drained, session 26 opened the
+test-coverage-backfill arc on the highest-value gap: the *always-run*
+(non-version-gated) data-driven branches in `migrateActorData` /
+`migrateItemData`, which were previously only exercised on a real-world boot
+— chiefly the **V14-critical ActiveEffect numeric-mode → string-type
+converter**. The two internal `const` helpers gained a **test-only export**
+from `migrations.js` (not Foundry-facing — not on `game.dcc`/`DCCActor`;
+mirrors how `classifyMigrationDecision`/`migrationOutcome` are already
+exported). New `module/__tests__/migrations-data-driven.test.js` (+34 Vitest)
+covers every branch: full AE mode map (0→custom … 5→override) + unknown-mode
+fallback + no-op cases + `deepClone`-fallback; `luckyRoll`→`birthAugur`;
+default alignment; `critRange`/`disapproval` string→number incl. fallbacks;
+`sheetClass`-from-`className` 3-way; #739 speed-base seed; owned-item
+recursion. +1 Playwright (`extension-api.spec.js`) runs the deployed helpers
+against the REAL `foundry.utils`/`game.i18n` on synthetic legacy objects.
+**No behavior change — pure test backfill. No lib change.** **Next: continue
+the test-coverage-backfill arc** (remaining gaps: `renderDisapprovalRoll`,
+`roll-dialog.mjs` direct coverage, `onSpellLost` during a real cast,
+`terms[N]` two-pass divergence, the `__mocks__/dcc-roll.js` async/sync
+mismatch) or pick another arc (doc hygiene, programmatic-PC-creation doc,
+Appendix-A file-shrinkage); none on a critical path. See `00-progress.md`
+*Next steps* + the PR #720 backlog subsections. Repo green: **1379 Vitest** /
+**176 Playwright e2e passed**, zero failures (6.0-min full suite).
 
 <details><summary>Older status (Phase 7 session 15 and earlier)</summary>
 

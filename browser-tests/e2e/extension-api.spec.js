@@ -1036,6 +1036,75 @@ test.describe('DCC Extension API', () => {
     expect(result.strip.garbage).toBe(null)
   })
 
+  test('DCC migrateActorData / migrateItemData data-driven branches run against live foundry.utils (Phase 7 session 26)', async ({ page }) => {
+    // Phase 7 session 26: the data-driven migration helpers `migrateActorData`
+    // / `migrateItemData` are exported from `migrations.js` for unit testing
+    // of their always-run (non-version-gated) branches — the V14-critical
+    // ActiveEffect numeric-mode → string-type converter chief among them.
+    // The Vitest suite exercises every branch against a mocked `foundry.utils`;
+    // this probe imports the live-served module and runs the deployed helpers
+    // against the REAL `foundry.utils.deepClone` / `isEmpty` / `mergeObject`
+    // and the live `game.i18n`, confirming the unit mocks' assumptions hold
+    // end-to-end. Synthetic plain objects are used (not live documents) so the
+    // legacy data shapes the converter targets are reproduced deterministically
+    // rather than depending on the current v14 ActiveEffect schema defaults.
+    // It does NOT run migrateWorld (no live-world mutation).
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/migrations.js')
+
+      const exportsAreFunctions =
+        typeof mod.migrateActorData === 'function' &&
+        typeof mod.migrateItemData === 'function'
+
+      // migrateItemData (sync): a legacy item-like object with a numeric
+      // ActiveEffect mode is converted; a string-typed one is a no-op.
+      const itemNumeric = mod.migrateItemData({
+        effects: [{ toObject: () => ({ changes: [{ key: 'system.config.actionDice', mode: 2, value: '1' }] }) }]
+      })
+      const itemStringTyped = mod.migrateItemData({
+        effects: [{ toObject: () => ({ changes: [{ key: 'k', type: 'override', value: '1' }] }) }]
+      })
+
+      // migrateActorData (async): a legacy actor-like object exercising the
+      // AE converter (mode 5 → override) alongside the luckyRoll → birthAugur
+      // and critRange string → number branches in one pass. sheetClass is set
+      // so the className → sheetClass / locale-lookup branch stays a no-op.
+      const actorUpdate = await mod.migrateActorData({
+        system: {
+          details: { alignment: 'n', sheetClass: 'Wizard', luckyRoll: 'Lived through famine', critRange: '18' },
+          class: { className: 'Wizard', disapproval: 1 }
+        },
+        effects: [{ toObject: () => ({ changes: [{ key: 'system.abilities.str.value', mode: 5, value: '2' }] }) }]
+      })
+      const actorChange = actorUpdate.effects?.[0]?.changes?.[0]
+
+      return {
+        exportsAreFunctions,
+        itemNumericType: itemNumeric.effects?.[0]?.changes?.[0]?.type,
+        itemNumericHasMode: Object.prototype.hasOwnProperty.call(itemNumeric.effects?.[0]?.changes?.[0] ?? {}, 'mode'),
+        itemStringTypedNoop: Object.keys(itemStringTyped).length === 0,
+        actorBirthAugur: actorUpdate['system.details.birthAugur'],
+        actorCritRange: actorUpdate['system.details.critRange'],
+        actorHasEffectUpdate: Array.isArray(actorUpdate.effects),
+        actorChangeType: actorChange?.type,
+        actorChangeHasMode: Object.prototype.hasOwnProperty.call(actorChange ?? {}, 'mode')
+      }
+    })
+
+    expect(result.exportsAreFunctions).toBe(true)
+    // migrateItemData: numeric mode 2 → 'add', mode field stripped.
+    expect(result.itemNumericType).toBe('add')
+    expect(result.itemNumericHasMode).toBe(false)
+    // Already-string-typed change is a no-op.
+    expect(result.itemStringTypedNoop).toBe(true)
+    // migrateActorData multi-branch pass against live foundry.utils:
+    expect(result.actorBirthAugur).toBe('Lived through famine')
+    expect(result.actorCritRange).toBe(18)
+    expect(result.actorHasEffectUpdate).toBe(true)
+    expect(result.actorChangeType).toBe('override')
+    expect(result.actorChangeHasMode).toBe(false)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

@@ -1105,3 +1105,43 @@
   (was 166, +2; 5.6-min full suite). With this, **all PR #720 design
   calls are closed** — remaining backlog is the legacy-decom plan +
   test-coverage gaps + doc hygiene.
+
+- **2026-05-31 — Phase 7 session 21: roll-under in the adapter
+  (legacy-decom step 1 of 5).** Started the user-directed legacy-decom
+  arc. Roll-under is provably **Luck-only**: the only three triggers
+  (`actor-sheet.js`/`party-sheet.js` clicking the Luck *score*, the
+  `luck-roll-under` template class on the `isLuck` cell, and the
+  roll-under macro) all gate on `lck`; `#rollAbilityCheck` only sets
+  `rollUnder` when `ability === 'lck'`. New `_rollLuckCheckViaAdapter`
+  routes the luck case through the lib's `rollLuckCheck(character, {
+  roller: () => natural })` — a naked d20, success if ≤ the Luck score,
+  no modifiers. Foundry owns the d20 (chat shows real dice); the lib
+  classifies success against the same natural. New exported
+  `renderAbilityCheckRollUnder` in `chat-renderer.mjs` reproduces the
+  legacy roll-under chat contract **exactly**: flavor
+  `${label} ${DCC.CheckRollUnder}`, flags `AbilityCheckRollUnder` /
+  `Ability` / `isAbilityCheck`, `system.checkPenaltyRollIndex: null`, and
+  the load-bearing `terms[0].options.dcc = { rollUnder: true,
+  lowerThreshold: target, upperThreshold: target+1 }` tag that
+  `highlightCriticalSuccessFailure` (`module/chat.js`) reads to swap the
+  success/failure highlight classes. Deliberately **no `dcc.libResult`
+  and no Fleeting Luck** (matching legacy — a naked d20 has no modifier
+  breakdown, and under roll-under a nat-1 is a *success* / nat-20 a
+  failure, so the standard luck flags would be inverted). The
+  `!!options.rollUnder` clause was dropped from **both** dispatcher gates
+  — **saves never use roll-under** (audited: no caller passes it, and the
+  legacy save body never even implemented a roll-under branch, so it was
+  pure dead code; a `rollUnder` option on a save is now inert and routes
+  through the adapter). The now-unreachable roll-under branch was removed
+  from `_rollAbilityCheckLegacy` (it's reached only for
+  `showModifierDialog` / non-zero check-penalty now). No lib change (pure
+  adapter wiring around an existing lib API). +1 Vitest (`adapter-ability-check.test.js`:
+  new die-threshold-tag test via `mock.contexts`) + 2 Vitest flipped
+  (`adapter-ability-check.test.js` + `actor.test.js` rollUnder blocks now
+  assert the adapter contract, not `DCCRoll.createRoll`). +1 Playwright
+  new (`adapter-dispatch.spec.js`: live roll-under chat card asserts the
+  `AbilityCheckRollUnder` flag, no `libResult`, and the die tagged with
+  thresholds 14/15 from a Luck-14 actor) + 2 Playwright flipped (ability
+  rollUnder → adapter; save rollUnder inert → adapter). **1329 Vitest**
+  (was 1328, +1). **169 Playwright passed**, zero failures (was 168, +1;
+  5.6-min full suite).

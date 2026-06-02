@@ -1017,6 +1017,24 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 26 (2026-06-02): PR #720 test-coverage backfill —
+  data-driven migration branches. Not from the (drained) active queue;
+  opened the test-coverage-backfill arc after legacy-decom closed.
+  Test-only export of the two internal `const` helpers `migrateActorData`
+  / `migrateItemData` from `migrations.js`; new
+  `module/__tests__/migrations-data-driven.test.js` (+34 Vitest) with one
+  fixture per always-run branch — full V14 AE numeric-mode→string-type map
+  (0→custom … 5→override) + unknown-mode→`add` fallback + no-op cases +
+  `deepClone` fallback; `luckyRoll`→`birthAugur`; default alignment;
+  `critRange`/`disapproval` string→number incl. unparseable→20/1;
+  `sheetClass`-from-`className` (English-key / locale-match / third-party
+  fallback); #739 speed-base seed; owned-item recursion. +1 Playwright
+  (`extension-api.spec.js`) runs the deployed helpers against the real
+  `foundry.utils`/`game.i18n` on synthetic legacy objects (deterministic,
+  no `migrateWorld` mutation). Pure test backfill, no behavior change, no
+  lib change. **1379 Vitest** (was 1345, +34) / **176 Playwright** (was
+  175, +1), zero failures.
+
 - Phase 7 session 12 (2026-05-29): consolidate the three
   `normalizeLibDie` / `_stripDieCount` die-normalize copies onto one
   canonical helper (closes the PR #720 "three copies of strip die

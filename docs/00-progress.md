@@ -65,32 +65,27 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup → Legacy decommission COMPLETE — latest 2026-06-02.**
-Phase 7 session 25 (full detail in *Recent slices*) landed **legacy-decom
-step 5 — the batch delete**, closing the entire user-directed legacy-decom
-arc. The four now-dead `_xxxLegacy` roll bodies (`_rollAbilityCheckLegacy`,
-`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`, `_rollSkillCheckLegacy`
-— ~290 lines) are deleted; every public roll dispatcher is now **single-path
-through the adapter** (`rollAbilityCheck` keeps its `options.rollUnder` →
-`_rollLuckCheckViaAdapter` branch; `rollSkillCheck` keeps its three-way
-`!hasDie` → description / skill-table / `_rollSkillCheckViaAdapter` routing —
-both are *adapter* branches, not legacy gates). The shared
-`_buildSkillCheckLegacyTerms` term-builder was **renamed** (not deleted) to
-`_buildSkillCheckRollTerms` — it still backs `_skillTableViaAdapter` +
-`_rollSkillCheckViaAdapter`'s dialog branch (the "Legacy" referred to the
-DCCRoll term-descriptor *format*, not a code path). Two Vitest retirement
-guards + one live e2e guard assert all four legacy symbols are `undefined`
-on the prototype and the dispatchers/adapter routes remain. Stale
-doc/comment references to the deleted methods cleaned across `actor.js` +
-test files. No lib change. `actor.js` shed ~218 net lines. Repo green:
-**1345 Vitest** / **175 Playwright e2e passed**, zero failures (6.0-min full
-suite).
+**Phase 7 cleanup → PR #720 test-coverage backfill — latest 2026-06-02.**
+With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
+active queue drained, the open work is the PR #720 *test-coverage gaps* +
+*doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
+**Phase 7 session 26** (full detail in *Recent slices*) started that
+backfill with the highest-value gap: the *always-run* data-driven migration
+branches in `migrateActorData` / `migrateItemData`, which previously had no
+isolated coverage (only exercised on a real world boot) — chiefly the
+**V14-critical ActiveEffect numeric-mode → string-type converter**. The two
+internal `const` helpers gained a test-only export (not Foundry-facing); new
+`migrations-data-driven.test.js` covers every branch (full AE mode map +
+fallbacks, `luckyRoll`→`birthAugur`, default alignment, `critRange`/
+`disapproval` string→number, `sheetClass`-from-`className` 3-way, #739
+speed-base seed, owned-item recursion) + a live-Foundry e2e probe runs the
+deployed helpers against the real `foundry.utils`/`game.i18n`. **No behavior
+change — pure test backfill.** Repo green: **1379 Vitest** / **176
+Playwright e2e passed**, zero failures (6.0-min full suite).
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
-survives anywhere in the system. The remaining open PR #720 backlog is the
-*test-coverage gaps* + *doc hygiene* + *programmatic-PC-creation* items (none
-on the legacy path). All PR #720 design calls remain closed.
+survives anywhere in the system. All PR #720 design calls remain closed.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -104,6 +99,39 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 26: data-driven migration coverage
+  (PR #720 test-coverage gap, first post-legacy-decom slice).** Backfilled
+  unit coverage of the *always-run* (non-version-gated) data-driven branches
+  in `migrateActorData` / `migrateItemData` — before this they were only
+  exercised when Foundry booted a real world, and the **V14-critical
+  ActiveEffect numeric-mode → string-type converter** had no isolated test.
+  Test-only export of the two internal `const` helpers from `migrations.js`
+  (not Foundry-facing — not on `game.dcc`/`DCCActor`; mirrors how
+  `classifyMigrationDecision` / `migrationOutcome` are already exported for
+  testing). New `module/__tests__/migrations-data-driven.test.js` (**+34
+  Vitest**): one fixture per branch — the full AE mode→type map (0→custom …
+  5→override) + unknown-mode→`add` fallback + no-op-when-string-typed +
+  no-op-when-mode-and-type-coexist + `deepClone`-fallback for an effect
+  lacking `toObject()`; `luckyRoll`→`birthAugur`; default alignment;
+  `critRange`/`disapproval` string→number incl. unparseable→20/1 fallbacks;
+  `sheetClass`-from-`className` (English-key / locale-match via stubbed
+  `localize` / third-party-fallback via stubbed `fetch`); the #739
+  speed-base seed (seeds from displayed value when base is the 30 default
+  *or* unset, preserves a custom base, no-ops when value==base); owned-item
+  recursion. Mocks `foundry.utils` (`deepClone`/`isEmpty`/`mergeObject`) +
+  `game.i18n` per-test in the `check-migrations.test.js` style. **No
+  behavior change — pure test backfill.** +1 Playwright
+  (`extension-api.spec.js`: imports the live-served `migrations.js`, runs
+  the deployed `migrateItemData`/`migrateActorData` against the REAL
+  `foundry.utils` + live `game.i18n` on synthetic legacy objects — a
+  multi-branch actor pass asserting AE mode 5→`override`, `luckyRoll`→
+  `birthAugur`, `critRange '18'`→18; synthetic objects, not live documents,
+  so the legacy shapes the converter targets are reproduced
+  deterministically rather than depending on current v14 AE schema
+  defaults; no `migrateWorld` mutation). **1379 Vitest** (was 1345, +34).
+  **176 Playwright passed**, zero failures (was 175, +1; 6.0-min full
+  suite).
 
 - **2026-06-02 — Phase 7 session 25: the batch delete (legacy-decom step
   5 of 5 — arc COMPLETE).** Deleted the four now-dead `_xxxLegacy` roll
@@ -272,46 +300,6 @@ archives linked above.
   `_getInitiativeRollLegacy` are fully unreachable, awaiting the step-5
   delete.
 
-- **2026-05-31 — Phase 7 session 21: roll-under in the adapter
-  (legacy-decom step 1 of 5).** Started the user-directed legacy-decom
-  arc. Roll-under is provably **Luck-only**: the only three triggers
-  (`actor-sheet.js`/`party-sheet.js` clicking the Luck *score*, the
-  `luck-roll-under` template class on the `isLuck` cell, and the
-  roll-under macro) all gate on `lck`; `#rollAbilityCheck` only sets
-  `rollUnder` when `ability === 'lck'`. New `_rollLuckCheckViaAdapter`
-  routes the luck case through the lib's `rollLuckCheck(character, {
-  roller: () => natural })` — a naked d20, success if ≤ the Luck score,
-  no modifiers. Foundry owns the d20 (chat shows real dice); the lib
-  classifies success against the same natural. New exported
-  `renderAbilityCheckRollUnder` in `chat-renderer.mjs` reproduces the
-  legacy roll-under chat contract **exactly**: flavor
-  `${label} ${DCC.CheckRollUnder}`, flags `AbilityCheckRollUnder` /
-  `Ability` / `isAbilityCheck`, `system.checkPenaltyRollIndex: null`, and
-  the load-bearing `terms[0].options.dcc = { rollUnder: true,
-  lowerThreshold: target, upperThreshold: target+1 }` tag that
-  `highlightCriticalSuccessFailure` (`module/chat.js`) reads to swap the
-  success/failure highlight classes. Deliberately **no `dcc.libResult`
-  and no Fleeting Luck** (matching legacy — a naked d20 has no modifier
-  breakdown, and under roll-under a nat-1 is a *success* / nat-20 a
-  failure, so the standard luck flags would be inverted). The
-  `!!options.rollUnder` clause was dropped from **both** dispatcher gates
-  — **saves never use roll-under** (audited: no caller passes it, and the
-  legacy save body never even implemented a roll-under branch, so it was
-  pure dead code; a `rollUnder` option on a save is now inert and routes
-  through the adapter). The now-unreachable roll-under branch was removed
-  from `_rollAbilityCheckLegacy` (it's reached only for
-  `showModifierDialog` / non-zero check-penalty now). No lib change (pure
-  adapter wiring around an existing lib API). +1 Vitest (`adapter-ability-check.test.js`:
-  new die-threshold-tag test via `mock.contexts`) + 2 Vitest flipped
-  (`adapter-ability-check.test.js` + `actor.test.js` rollUnder blocks now
-  assert the adapter contract, not `DCCRoll.createRoll`). +1 Playwright
-  new (`adapter-dispatch.spec.js`: live roll-under chat card asserts the
-  `AbilityCheckRollUnder` flag, no `libResult`, and the die tagged with
-  thresholds 14/15 from a Luck-14 actor) + 2 Playwright flipped (ability
-  rollUnder → adapter; save rollUnder inert → adapter). **1329 Vitest**
-  (was 1328, +1). **169 Playwright passed**, zero failures (was 168, +1;
-  5.6-min full suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -398,14 +386,14 @@ pure adapter-side wiring.
 - `__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
   production is sync; tests install local sync stubs — fix the shared
   mock, delete the stubs.
-- Surviving data-driven migration branches (`migrateActorData` /
+- ~~Surviving data-driven migration branches (`migrateActorData` /
   `migrateItemData`: V14 AE numeric-mode → string-type converter,
   `sheetClass`-from-localized-`className`, `critRange` / `disapproval`
   string→number, `luckyRoll` → `birthAugur`, default alignment) have no
-  fixture tests — only exercised when Foundry boots a real world. The V14
-  AE converter is V14-critical. Proposed: `migrations-data-driven.test.js`
-  with one fixture per branch (needs a test-only export of the two
-  module-local `const` helpers).
+  fixture tests.~~ **CLOSED 2026-06-02 (Phase 7 session 26).** Test-only
+  export of the two `const` helpers + `migrations-data-driven.test.js` (one
+  fixture per branch, full AE mode map, +34 Vitest) + a live-Foundry e2e
+  probe. The #739 speed-base seed and owned-item recursion are covered too.
 
 **Documentation / comment hygiene:**
 
@@ -511,13 +499,19 @@ adapter (with the `options.rollUnder` and `!hasDie` *adapter* branches the
 respective dispatchers retain). Vitest + e2e retirement guards lock it in.
 The user-directed priority that opened this arc is fully discharged.
 
-**Pick the next arc.** With legacy-decom done, the open work is the
-remaining PR #720 backlog (no longer on any critical path):
-- *Test-coverage gaps* (severity ≥ 6) — `renderDisapprovalRoll`,
-  `roll-dialog.mjs` direct coverage, `onSpellLost` during a real cast,
-  `terms[N]` two-pass divergence, the data-driven migration branches
-  (V14 AE converter is V14-critical), the `__mocks__/dcc-roll.js`
-  async/sync mismatch. Each is a self-contained slice.
+**Test-coverage backfill arc — STARTED 2026-06-02 (session 26).** Session 26
+closed the data-driven migration-branch gap (the V14-critical AE converter +
+the rest). Remaining PR #720 test-coverage gaps (each a self-contained slice,
+none on a critical path):
+- `renderDisapprovalRoll` — no unit/integration test.
+- `roll-dialog.mjs` (`promptSpellburnCommitment` + `clampBurn`) direct
+  coverage — mocked across every caller today.
+- `onSpellLost` verified to fire during a real adapter cast.
+- `terms[N]` two-pass divergence (Compound / Modifier in-place mutations;
+  only the `terms[0]` die-bump case is covered).
+- `__mocks__/dcc-roll.js` async/sync mismatch — `createRoll` declared
+  `static async` while production is sync; tests install local sync stubs.
+- ~~the data-driven migration branches~~ **done (session 26).**
 - *Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
   refs, disapproval-chat-ordering comment, the unused
   `_getInitiativeRollViaAdapter` `options` param).
