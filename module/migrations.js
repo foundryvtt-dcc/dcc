@@ -497,7 +497,7 @@ const migrateSceneData = async function (scene) {
     } else if (!game.actors.has(t.actorId)) {
       t.actorId = null
       t.actorData = {}
-    } else if (!t.actorLink) {
+    } else if (!t.actorLink && t.actorData) {
       const actorData = foundry.utils.deepClone(t.actorData)
       actorData.type = token.actor?.type
       const actorUpdate = await migrateActorData(actorData);
