@@ -353,8 +353,18 @@ pure adapter-side wiring.
   session 27).** `chat-renderer-emit.test.js` covers `renderDisapprovalRoll`
   + the sibling `renderMercurialEffect` (+16 Vitest) + a live-Foundry e2e
   probe runs the deployed renderers against the real `Roll`/`ChatMessage`.
-- `promptSpellburnCommitment` + `clampBurn` mocked across every caller;
-  `roll-dialog.mjs` has no direct coverage.
+- ~~`promptSpellburnCommitment` + `clampBurn` mocked across every caller;
+  `roll-dialog.mjs` has no direct coverage.~~ **STALE — entry obsolete
+  (verified 2026-06-02, session 27 follow-up).** Both helpers were *retired*
+  in the Q7-phase2 spellburn-dialog unification (they no longer exist in
+  `roll-dialog.mjs`; its only exports are `promptRollModifierDialog` +
+  `parseRollIntoDieAndModifier`). `roll-dialog.mjs` already has **direct**
+  coverage: `module/__tests__/adapter-roll-dialog.test.js` exercises
+  `parseRollIntoDieAndModifier` (die extraction, signed/positive sums,
+  no-die, falsy-terms, no-formula-field) and `promptRollModifierDialog`
+  (terms+rollData forwarding, user-cancel → null, throw → null, default
+  rollData, the spellburn descriptor incl. the negative-burn → 0 clamp that
+  superseded `clampBurn`). No work needed.
 - `onSpellLost` tested as a direct callback but never verified to fire
   during a real adapter cast.
 - Two-pass divergence: only the `terms[0]` die-bump case is covered;
@@ -484,18 +494,28 @@ The user-directed priority that opened this arc is fully discharged.
 **Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
 Session 26 closed the data-driven migration-branch gap (the V14-critical AE
 converter + the rest); session 27 closed `renderDisapprovalRoll` +
-`renderMercurialEffect`. Remaining PR #720 test-coverage gaps (each a
-self-contained slice, none on a critical path):
-- `roll-dialog.mjs` (`promptSpellburnCommitment` + `clampBurn`) direct
-  coverage — mocked across every caller today.
-- `onSpellLost` verified to fire during a real adapter cast.
+`renderMercurialEffect`. The clean test-coverage gaps are now done; the
+remaining ones are **trickier / higher-blast-radius** — better tackled with
+the user available to validate, not autonomously:
+- `onSpellLost` verified to fire during a real adapter cast — needs an e2e
+  that deterministically forces a spell-lost outcome (no force-low analogue
+  to `forceCrit` today), so it's fiddly to trigger reliably.
 - `terms[N]` two-pass divergence (Compound / Modifier in-place mutations;
-  only the `terms[0]` die-bump case is covered).
+  only the `terms[0]` die-bump case is covered) — needs deep two-pass-roller
+  understanding to avoid a false-positive test.
 - `__mocks__/dcc-roll.js` async/sync mismatch — `createRoll` declared
-  `static async` while production is sync; tests install local sync stubs.
+  `static async` while production is sync; fixing the shared mock + deleting
+  the local sync stubs touches **13+ test files** (broad cross-cutting
+  refactor; full-suite net catches breakage but warrants human review).
+- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
+  injection + the `Roll.validate(toHit) === false` early-return path.
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**
+- ~~`roll-dialog.mjs` direct coverage~~ **STALE — the named helpers
+  (`promptSpellburnCommitment`/`clampBurn`) were retired and
+  `adapter-roll-dialog.test.js` already covers both current exports
+  (verified session 27 follow-up).**
 - *Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
   refs, disapproval-chat-ordering comment, the unused
   `_getInitiativeRollViaAdapter` `options` param).
