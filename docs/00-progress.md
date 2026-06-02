@@ -101,7 +101,7 @@ still open.
 API — `dcc-crawl-classes` (9 classes, PR #40) and `mcc-classes` (7
 classes, PR #38). No further DCC-side Group E work is needed (the
 registries already shipped in Phases 4–6; these are downstream
-consumers). See top *Recent slices* entry + *Sibling-module status*.
+consumers). See *Sibling-module status* below.
 
 ## Recent slices
 
@@ -328,75 +328,15 @@ review. Fixed findings have been pruned — their narratives live in the
 *Recent slices* section / phase archives. The items below are the
 deferred findings still open.
 
-**Design calls (need a deliberate decision, not a silent fix) — ALL
-CLOSED as of 2026-05-31 (Phase 7 session 20). Ticks retained below for
-rationale; the section is fully drained.**
-
-- ~~**Spellburn dialog prompts before the adapter knows it can handle the
-  cast.**~~ CLOSED 2026-05-31 (Phase 7 session 16). Resolved by retiring
-  `_rollSpellCheckLegacy` itself rather than guarding the dialog: when the
-  actor's class has no lib profile, `_rollSpellCheckViaAdapter` now derives
-  the profile from the spell's own castingMode (`castingModeOverride:
-  castingMode` → canonical wizard/cleric) and routes through
-  `_castViaCalculateSpellCheck`, **which honors `options.spellburn`**.
-  There is no longer a `noCasterProfile`→legacy path to drop the
-  commitment. See Recent slices.
-- ~~**Spellburn clamp: `1` vs `0`.**~~ CLOSED 2026-05-31 (Phase 7 session
-  17). Decided in favor of **RAW fidelity (floor 0)** — a physical ability
-  may be burned all the way to 0 (burning Stamina to 0 is lethal, an
-  intentional DCC rules feature). The floor lived in **three** layers, all
-  flipped: (1) the **data-model schema** `AbilityField.value`
-  (`min: 1` → `min: 0`) — the actual persisted floor; Foundry was silently
-  clamping the 0-write to 1 (caught live by the new burn-to-0 browser test,
-  missed by the mocked unit tests); (2) both adapter write-sites — the
-  item-bound `onSpellburnApplied` bridge and the naked-cast inline deduct
-  in `_castNakedViaAdapter` (`Math.max(1,…)` → `Math.max(0,…)`); (3) the
-  lib utilities `validateSpellburn` / `getMaxSpellburn` / `applyBurnToAbility`
-  (RAW-correctness only — not in the cast path). The legacy `#modifySpellburn`
-  dialog already permitted `newStat >= 0`, so the input side needed no change.
-  Lib **merged + synced** (`@moonloch/dcc-core-lib` v0.11.0, `631f250`;
-  PR moonloch/dcc-core-lib#8). See Recent slices.
-- ~~**Damage `_total` clamp divergence** (`actor.js`).~~ CLOSED
-  2026-05-31 (Phase 7 session 18) — resolved-upstream; the premise was
-  stale (the lib gained its own min-1 clamp, so the two totals can't
-  diverge). Doc + test only; no consumer reads the flag. Full narrative
-  in the session-18 Recent-slices entry.
-- ~~**Error boundaries around `_xxxViaAdapter`**~~ CLOSED 2026-05-31
-  (Phase 7 session 20) — implemented **fail-loud**: a shared
-  `withRollErrorBoundary` (+ a sync sibling `withRollErrorBoundarySync`
-  for `getInitiativeRoll`, which must stay sync per Foundry's
-  `Combatant.getInitiativeRoll` contract) in `debug.mjs` wraps all six
-  public dispatchers; on a throw it logs `console.error` + shows
-  `ui.notifications.error` (`DCC.RollErrorNotification`, translated ×7),
-  then **rethrows** — no legacy fallback, surface-bugs philosophy intact.
-  Fixed the two un-awaited sheet calls (`rollAbilityCheck`
-  actor-sheet:1477, `rollWeaponAttack` :1622). This unblocks the *Legacy
-  decommission* work (once legacy is gone there's no fallback, so the
-  boundary had to land first). No lib change. See Recent slices.
-- ~~**`createFoundryRoller` — delete or wire.**~~ CLOSED 2026-05-31
-  (Phase 7 session 19) — **deleted** (zero consumers; its only rationale
-  was a closed door — every dispatcher landed on the two-pass sync
-  pattern the async roller conflicts with). Closes the paired coverage
-  gap below. Full narrative in the session-19 Recent-slices entry.
+**Design calls — ALL CLOSED, section drained.** The five review-flagged
+design calls (spellburn dialog-ordering, spellburn floor 0-vs-1, damage
+`_total` clamp divergence, error boundaries around `_xxxViaAdapter`,
+`createFoundryRoller` delete-or-wire) were all resolved in Phase 7
+sessions 16–20. Full rationale lives in those Recent-slices / phase-7
+archive entries.
 
 **Open resilience / cleanup items:**
 
-- ~~**Dispatcher gate style inconsistency.**~~ CLOSED 2026-05-29 (Phase 7
-  session 15). The premise was stale: the named `_canRouteXxxViaAdapter`
-  predicates were already retired in D1/D2 (sessions 15–16), so
-  attack/damage/crit/fumble are single-path with no gate. The only
-  surviving binary legacy-vs-adapter gates were ability + save (named
-  `const needsLegacyPath`) and init (a bare `if`). Normalized init to the
-  named-boolean idiom so all three read identically; skill + spell are
-  intentionally left multi-way (they dispatch to several adapter
-  sub-routes, not a binary legacy gate). See Recent slices.
-- ~~**Unused `weapon` / `attackRollResult` parameters.**~~ CLOSED
-  2026-05-29 (Phase 7 session 15). The `_canRouteCrit/FumbleViaAdapter`
-  predicates this referenced were retired in D2; the surviving vestigial
-  param was `attackRollResult` on `_rollDamage` / `_rollCritical` /
-  `_rollFumble` (unused since session 19, no external/sibling callers,
-  `_`-prefixed private). Dropped from all three signatures + call sites +
-  tests. See Recent slices.
 - **Programmatic PC creation produces inconsistent class config.**
   `Actor.create({ system: { class: { className: 'Wizard' } } })` doesn't
   set `spellCheckAbility`, `details.sheetClass`, save `classBonus`, crit
@@ -426,62 +366,19 @@ gated on moving those capabilities into the adapter first — sequence the
 work by the shared capability, not by the method, since one capability
 unblocks several gates at once:
 
-1. ~~**Roll-under in the adapter.**~~ **DONE 2026-05-31 (Phase 7 session
-   21).** Roll-under is provably **Luck-only** (all triggers gate on
-   `lck`), so the luck case routes through `_rollLuckCheckViaAdapter` →
-   the lib's `rollLuckCheck(character, { roller: () => natural })` (naked
-   d20, success ≤ Luck score) + a dedicated `renderAbilityCheckRollUnder`
-   that reproduces the legacy flag/flavor contract and the
-   `terms[0].options.dcc.rollUnder` highlight tag. **Saves audited: no
-   caller passes `rollUnder`, and the legacy save body never implemented
-   a roll-under branch** — pure dead code, so the `!!options.rollUnder`
-   clause was dropped from both gates (inert on saves now). The
-   now-unreachable roll-under branch was removed from
-   `_rollAbilityCheckLegacy`. No lib change needed (the lib API already
-   existed). See Recent slices.
-2. ~~**Modifier-dialog for ability + save + init.**~~ **DONE 2026-06-01
-   (Phase 7 session 22).** Extended the unified `promptRollModifierDialog`
-   scaffold (Q7) to the three remaining binary gates via three new private
-   helpers (`_rollAbilityCheckWithDialog`, `_rollSavingThrowWithDialog`,
-   `_getInitiativeRollWithDialogViaAdapter`). Ability/save mirror the
-   skill-check pattern: legacy-shaped dialog terms → prompt → **bare
-   `rollCheck` definition** (no `roll.ability`) + a single flat
-   `dialog-modifier` line, bypassing the auto-add wrapper that would
-   double-count the ability mod / save value the dialog total already
-   includes. **Init takes no lib round-trip** — no crit/fumble + Foundry
-   posts the chat — so it hands back the user's dialog-built `Roll`
-   (`prompt.roll`), exactly as the legacy path returned `DCCRoll.createRoll`.
-   **Init landmine:** `getInitiativeRoll` stays *sync* for the combat
-   tracker; the async dialog branch returns a `Promise<Roll>` and is only
-   reached via `rollInit`, which awaits (matching the pre-step-2 legacy
-   contract). **No lib change** — ability/save lib APIs already accept
-   `options.modifiers`, and the init adapter path already used `rollCheck`.
-   **Gate flips:** `rollSavingThrow` is single-path adapter;
-   `rollAbilityCheck`'s only surviving legacy gate is `hasNonZeroCheckPenalty`
-   (step 3); init's only legacy gate is gone. +6 Vitest, +1 Playwright new
-   (save dialog driven to completion) + 3 flipped. See Recent slices.
-   **`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy` are now fully
-   unreachable; `_rollAbilityCheckLegacy` is kept alive only by step 3.**
-3. ~~**Non-zero check-penalty display in the adapter.**~~ **DONE
-   2026-06-01 (Phase 7 session 23).** The last `_rollAbilityCheckLegacy`
-   gate. DCC shows the str/agl armor check penalty as an *informational
-   alternative total* ("If check penalty applies, total is X") — NOT
-   applied to the result. **Tim chose faithful reproduction** over the
-   originally-planned `display`-modifier breakdown row (the two produce
-   visibly different chat: a pre-computed alt total vs. a `-2` modifier
-   line; the breakdown approach would have dropped the pre-computed total
-   + `DCC.AbilityCheckPenaltyNote` / `checkPenaltyRollIndex` /
-   `emoteAbilityRoll`). New `_buildCheckPenaltyAltRoll` builds a bare
-   `new Roll(mainTotal + penalty)`; `renderAbilityCheck` gained an
-   optional `checkPenaltyRoll` param that sets
-   `system.checkPenaltyRollIndex: 1` + pushes it as `rolls[1]` — so the
-   **unchanged** `emoteAbilityRoll` renders the legacy note (no `chat.js`
-   / i18n / template change). Non-dialog path always shows it (clean lib
-   roll); dialog path mirrors legacy's `formula.includes(ensurePlus(
-   penalty))` to suppress it when the user toggled the penalty on. Gate
-   flip: `hasNonZeroCheckPenalty` deleted → `rollAbilityCheck` is
-   single-path adapter. No lib change. +4 Vitest, +1 Playwright. See
-   Recent slices.
+1. ~~**Roll-under in the adapter.**~~ **DONE — Phase 7 session 21**
+   (`_rollLuckCheckViaAdapter` → lib `rollLuckCheck` +
+   `renderAbilityCheckRollUnder`; roll-under proven Luck-only). Detail in
+   the phase-7 archive.
+2. ~~**Modifier-dialog for ability + save + init.**~~ **DONE — Phase 7
+   session 22** (unified `promptRollModifierDialog` extended via
+   `_rollAbilityCheckWithDialog` / `_rollSavingThrowWithDialog` /
+   `_getInitiativeRollWithDialogViaAdapter`; init stays sync for the combat
+   tracker). Detail in the phase-7 archive.
+3. ~~**Non-zero check-penalty display in the adapter.**~~ **DONE — Phase 7
+   session 23** (`_buildCheckPenaltyAltRoll` + `renderAbilityCheck`'s
+   `checkPenaltyRoll` param reproduce the legacy "If check penalty applies,
+   total is X" note faithfully — Tim's call). Detail in Recent slices.
 4. **Description-only skill items in the adapter.** Blocks
    `_rollSkillCheckLegacy` (the `!resolved.hasDie` gate) — these emit a
    *description chat message*, not a roll. Either teach
@@ -502,12 +399,10 @@ unblocks several gates at once:
    by the grep at session 19.
 
 Dependency notes / landmines:
-- ~~**`error boundaries` interaction.**~~ **RESOLVED — the boundary
-  landed first (Phase 7 session 20).** All six public dispatchers are
-  wrapped in `withRollErrorBoundary` (fail-loud notify + rethrow) and the
-  two un-awaited sheet calls were fixed, so the post-legacy "lib throw
-  must surface, not dead-click" requirement is already satisfied. Steps
-  2–5 can proceed without re-doing this.
+- ~~**`error boundaries` interaction.**~~ **RESOLVED (Phase 7 session
+  20)** — all six dispatchers are wrapped in `withRollErrorBoundary`
+  (fail-loud notify + rethrow), so the post-legacy "lib throw must
+  surface, not dead-click" requirement is already satisfied.
 - **Cross-repo.** Any capability the lib can't yet express (roll-under
   result shape, modifier-dialog term threading) lands as a
   `dcc-core-lib` PR first, then `npm run sync-core-lib`, per the
@@ -536,9 +431,6 @@ Dependency notes / landmines:
 - `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
   injection (PC-only tests) + the `Roll.validate(toHit) === false`
   early-return path.
-- ~~`createFoundryRoller` — no direct unit test~~ CLOSED 2026-05-31
-  (Phase 7 session 19) — moot; the file was deleted (see the design-call
-  closure above), so there is nothing left to cover.
 - `__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
   production is sync; tests install local sync stubs — fix the shared
   mock, delete the stubs.
@@ -687,13 +579,6 @@ viable next):
 
 (Mercurial-magic, originally listed here as the third candidate,
 landed as Group E session 1 — see Recent slices.)
-
-**~~Pending feature — optional label override for raw spell checks
-(`options.checkLabel`).~~ LANDED 2026-05-29.** Implemented from the spec
-([docs/dev/SPELL_CHECK_LABEL_OVERRIDE.md](dev/SPELL_CHECK_LABEL_OVERRIDE.md),
-Status now ✅ landed) — see Recent slices. Downstream: MCC still needs to
-add the `data-check-label` attributes on its mutation / program-check
-cells (inert until MCC ships them; no DCC-side work remaining).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
