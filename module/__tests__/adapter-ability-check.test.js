@@ -128,8 +128,9 @@ test('rollUnder tags the rolled die with roll-under thresholds from the Luck sco
   chatMessageCreateSpy.mockRestore()
 })
 
-// Legacy-decom step 2: the modifier dialog no longer routes ability
-// checks to `_rollAbilityCheckLegacy`. The adapter surfaces the unified
+// Legacy-decom step 2: the modifier dialog is handled adapter-side (the
+// former legacy ability-check body was deleted at session 25). The
+// adapter surfaces the unified
 // `RollModifierDialog` via `promptRollModifierDialog`, then folds the
 // user's flattened die + total into a `rollCheck` pass (bare definition
 // + one `dialog-modifier` line, suppressing the lib's auto-ability add

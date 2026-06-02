@@ -350,10 +350,9 @@ test('adapter path returns undefined when user cancels the dialog', async () => 
 
 // Regression: rollSkillCheck must NOT crash when the requested skill
 // can't be resolved. Pre-fix, an unknown id (no built-in slot, no
-// matching skill item) routed to legacy and crashed on
-// `_rollSkillCheckLegacy:1694` (`skill.value` on an undefined skill).
-// Now mirrors the rollSpellCheck shape: warns the user and returns
-// without rolling.
+// matching skill item) crashed on `skill.value` against an undefined
+// skill. Now mirrors the rollSpellCheck shape: warns the user and
+// returns without rolling.
 test('rollSkillCheck warns and returns when the skill is unknown', async () => {
   rollToMessageMock.mockClear()
   global.uiNotificationsWarnMock.mockClear()

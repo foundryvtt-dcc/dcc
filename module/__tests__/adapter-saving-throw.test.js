@@ -108,8 +108,9 @@ test('adapter path returns the Foundry Roll (preserves legacy return shape)', as
   expect(result.total).toBeDefined()
 })
 
-// Legacy-decom step 2: the modifier dialog no longer routes saving
-// throws to `_rollSavingThrowLegacy`. The adapter surfaces the unified
+// Legacy-decom step 2: the modifier dialog is handled adapter-side (the
+// former legacy saving-throw body was deleted at session 25). The
+// adapter surfaces the unified
 // `RollModifierDialog` via `promptRollModifierDialog`, then folds the
 // user's flattened die + total into a `rollCheck` pass (bare definition
 // + one `dialog-modifier` line, suppressing the lib's auto-save-value

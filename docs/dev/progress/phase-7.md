@@ -1068,3 +1068,40 @@
   (unchanged — no tests removed; the file had none). Full e2e re-run as
   the regression net (the deleted path's stale comments referenced the
   live ability-check dispatch, already covered).
+
+- **2026-05-31 — Phase 7 session 20: fail-loud error boundaries around
+  the public roll dispatchers (closes the last PR #720 design call;
+  unblocks legacy-decom).** A throw inside any `_xxxViaAdapter` /
+  `_xxxLegacy` path was an unhandled rejection → silent dead click (worse
+  for the two **un-awaited** sheet calls, `rollAbilityCheck`
+  actor-sheet:1477 + `rollWeaponAttack` :1622). Implemented the
+  **fail-loud** decision: a shared `withRollErrorBoundary(rollType, label,
+  fn)` in `module/adapter/debug.mjs` awaits `fn`, and on throw logs
+  `console.error` + shows `ui.notifications.error`
+  (`DCC.RollErrorNotification`, translated across all 7 langs) then
+  **rethrows** — no swallow, no legacy fallback, so the surface-bugs
+  philosophy stays intact while the failure becomes visible. Wraps all
+  six public dispatchers (`rollAbilityCheck`, `rollSavingThrow`,
+  `rollSkillCheck`, `rollSpellCheck`, `rollWeaponAttack`,
+  `getInitiativeRoll`). **Landmine handled:** `getInitiativeRoll` must
+  stay *synchronous* — `DCCCombatant.getInitiativeRoll` (combatant.js:13)
+  overrides Foundry core's sync `Combatant.getInitiativeRoll` (the combat
+  tracker expects a `Roll`, not a Promise), so it uses a dedicated
+  `withRollErrorBoundarySync` that throws synchronously instead of
+  rejecting a promise. The two big dispatchers (`rollSpellCheck`,
+  `rollWeaponAttack`) were extracted to `_rollSpellCheckDispatch` /
+  `_rollWeaponAttackDispatch` helpers so the public method is a thin
+  one-line boundary wrapper rather than a re-indented 90-line body. Fixed
+  the two un-awaited sheet calls to `await`. No lib change (pure
+  adapter-side concern). +9 Vitest (`adapter-error-boundary.test.js`:
+  async/sync helper contract — happy path, sync throw, async rejection
+  with the await load-bearing, sync-boundary returns-non-promise; plus
+  dispatcher-level `rollAbilityCheck` rejects+notifies and
+  `getInitiativeRoll` throws-sync+notifies). +2 Playwright
+  (`adapter-dispatch.spec.js` `error boundary` block: live forced throw on
+  `rollAbilityCheck` → rejects + `.notification.error` DOM node shown;
+  `getInitiativeRoll` → throws synchronously, no promise handed back).
+  **1328 Vitest** (was 1319, +9). **168 Playwright passed**, zero failures
+  (was 166, +2; 5.6-min full suite). With this, **all PR #720 design
+  calls are closed** — remaining backlog is the legacy-decom plan +
+  test-coverage gaps + doc hygiene.

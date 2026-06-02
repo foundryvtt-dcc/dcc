@@ -65,37 +65,32 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup → Legacy decommission — latest 2026-06-02.** Phase 7
-session 24 (full detail in *Recent slices*) landed **legacy-decom step 4
-— description-only skill items in the adapter**. A skill item with
-`useDie`/`useValue`/`useAbility`/`useLevel` all off (the `!resolved.hasDie`
-gate) has nothing to roll — it emits a *description chat card*. New
-`_emitSkillDescriptionViaAdapter(skillId, resolved)` reproduces the legacy
-early-return branch **exactly** (same `.skill-description` content, flavor,
-`SkillCheck`/`ItemId`/`SkillId`/`isSkillCheck` flags, `system` payload), and
-emits nothing when the item carries no description. It's a pure Foundry-side
-chat emit (no lib round-trip — there's no formula to hand the lib); the
-`mode: 'description'` dispatch field distinguishes it from the rolling
-adapter routes. **Gate flip:** the `!resolved.hasDie` gate now routes to the
-adapter — **`_rollSkillCheckLegacy` is fully unreachable**, so *all four*
-`_xxxLegacy` bodies are now dead (joining `_rollAbilityCheckLegacy` +
-`_rollSavingThrowLegacy` + `_getInitiativeRollLegacy`), awaiting the step-5
-batch delete. No lib change. Repo green: **1343 Vitest** / **174 Playwright
-e2e passed**, zero failures (6.2-min full suite).
+**Phase 7 cleanup → Legacy decommission COMPLETE — latest 2026-06-02.**
+Phase 7 session 25 (full detail in *Recent slices*) landed **legacy-decom
+step 5 — the batch delete**, closing the entire user-directed legacy-decom
+arc. The four now-dead `_xxxLegacy` roll bodies (`_rollAbilityCheckLegacy`,
+`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`, `_rollSkillCheckLegacy`
+— ~290 lines) are deleted; every public roll dispatcher is now **single-path
+through the adapter** (`rollAbilityCheck` keeps its `options.rollUnder` →
+`_rollLuckCheckViaAdapter` branch; `rollSkillCheck` keeps its three-way
+`!hasDie` → description / skill-table / `_rollSkillCheckViaAdapter` routing —
+both are *adapter* branches, not legacy gates). The shared
+`_buildSkillCheckLegacyTerms` term-builder was **renamed** (not deleted) to
+`_buildSkillCheckRollTerms` — it still backs `_skillTableViaAdapter` +
+`_rollSkillCheckViaAdapter`'s dialog branch (the "Legacy" referred to the
+DCCRoll term-descriptor *format*, not a code path). Two Vitest retirement
+guards + one live e2e guard assert all four legacy symbols are `undefined`
+on the prototype and the dispatchers/adapter routes remain. Stale
+doc/comment references to the deleted methods cleaned across `actor.js` +
+test files. No lib change. `actor.js` shed ~218 net lines. Repo green:
+**1345 Vitest** / **175 Playwright e2e passed**, zero failures (6.0-min full
+suite).
 
-**Remaining legacy-decom step (5):** delete the four now-dead
-`_xxxLegacy` bodies (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
-`_getInitiativeRollLegacy`, `_rollSkillCheckLegacy`), collapse each
-dispatcher to a single `return this._xxxViaAdapter(...)` (`rollAbilityCheck`
-keeps its `options.rollUnder` branch; `rollSkillCheck` keeps its
-skill-table + description routing), add retirement-guard tests, and clean
-the stale `_rollSkillCheckLegacy` doc/comment references. Note
-`_buildSkillCheckLegacyTerms` is **not** deletable — it's still consumed by
-`_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s dialog branch (a
-step-5 rename is the most it warrants). See the *Legacy decommission*
-backlog subsection + *Next steps*. All PR #720 design calls remain closed
-(the error-boundary prerequisite landed session 20); the *test-coverage
-gaps* + *doc hygiene* lists are still open.
+**Legacy decommission arc — done.** All five steps landed (sessions 21–25)
+plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
+survives anywhere in the system. The remaining open PR #720 backlog is the
+*test-coverage gaps* + *doc hygiene* + *programmatic-PC-creation* items (none
+on the legacy path). All PR #720 design calls remain closed.
 
 **Group E / §2.8 validated by real consumers (2026-05-29).** The
 "homebrew single-class vertical" candidate is fulfilled by migrating two
@@ -109,6 +104,39 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 25: the batch delete (legacy-decom step
+  5 of 5 — arc COMPLETE).** Deleted the four now-dead `_xxxLegacy` roll
+  bodies (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
+  `_getInitiativeRollLegacy`, `_rollSkillCheckLegacy` — ~290 lines), all
+  fully unreachable after steps 1–4 moved every gate into the adapter.
+  Every public roll dispatcher is now **single-path through the adapter**.
+  The four dispatchers were already collapsed in prior sessions (sessions
+  21–24 each flipped its last gate), so this slice is the deletion + the
+  surviving-branch verification: `rollAbilityCheck` keeps its
+  `options.rollUnder` → `_rollLuckCheckViaAdapter` branch; `rollSkillCheck`
+  keeps its three-way `!hasDie` → `_emitSkillDescriptionViaAdapter` /
+  `_skillTableViaAdapter` / `_rollSkillCheckViaAdapter` routing (both are
+  *adapter* branches, not legacy gates). **Rename, not delete:** the shared
+  `_buildSkillCheckLegacyTerms` term-descriptor builder → `_buildSkillCheckRollTerms`
+  — it still backs `_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s
+  dialog branch (the "Legacy" named the DCCRoll term-descriptor *format*
+  the Foundry dialog consumes, not a code path), so deleting it was never
+  on the table; the rename drops the misleading token now its last legacy
+  caller is gone. Cleaned ~12 stale doc/comment references to the deleted
+  methods across `actor.js` (dispatcher JSDocs, the check-penalty / dialog
+  provenance comments softened to "former legacy", the unknown-skill guard
+  comment) + 5 test-file comments. No lib change. `actor.js` shed ~218 net
+  lines (441 touched). +2 Vitest retirement guards (`actor.test.js`: all
+  four `_xxxLegacy` symbols `undefined` on the prototype + dispatchers/adapter
+  routes present; old term-builder name retired + renamed one present). +1
+  Playwright live guard (`adapter-dispatch.spec.js`, beside the D1 guard:
+  the four legacy bodies + old term-builder absent from the live
+  prototype, dispatchers + `_emitSkillDescriptionViaAdapter` +
+  `_buildSkillCheckRollTerms` present). **1345 Vitest** (was 1343, +2).
+  **175 Playwright passed**, zero failures (was 174, +1; 6.0-min full
+  suite). **Legacy-decom arc complete** — no `_xxxLegacy` roll body
+  survives anywhere in the system.
 
 - **2026-06-02 — Phase 7 session 24: description-only skill items in the
   adapter (legacy-decom step 4 of 5).** The last gate keeping
@@ -284,43 +312,6 @@ archives linked above.
   (was 1328, +1). **169 Playwright passed**, zero failures (was 168, +1;
   5.6-min full suite).
 
-- **2026-05-31 — Phase 7 session 20: fail-loud error boundaries around
-  the public roll dispatchers (closes the last PR #720 design call;
-  unblocks legacy-decom).** A throw inside any `_xxxViaAdapter` /
-  `_xxxLegacy` path was an unhandled rejection → silent dead click (worse
-  for the two **un-awaited** sheet calls, `rollAbilityCheck`
-  actor-sheet:1477 + `rollWeaponAttack` :1622). Implemented the
-  **fail-loud** decision: a shared `withRollErrorBoundary(rollType, label,
-  fn)` in `module/adapter/debug.mjs` awaits `fn`, and on throw logs
-  `console.error` + shows `ui.notifications.error`
-  (`DCC.RollErrorNotification`, translated across all 7 langs) then
-  **rethrows** — no swallow, no legacy fallback, so the surface-bugs
-  philosophy stays intact while the failure becomes visible. Wraps all
-  six public dispatchers (`rollAbilityCheck`, `rollSavingThrow`,
-  `rollSkillCheck`, `rollSpellCheck`, `rollWeaponAttack`,
-  `getInitiativeRoll`). **Landmine handled:** `getInitiativeRoll` must
-  stay *synchronous* — `DCCCombatant.getInitiativeRoll` (combatant.js:13)
-  overrides Foundry core's sync `Combatant.getInitiativeRoll` (the combat
-  tracker expects a `Roll`, not a Promise), so it uses a dedicated
-  `withRollErrorBoundarySync` that throws synchronously instead of
-  rejecting a promise. The two big dispatchers (`rollSpellCheck`,
-  `rollWeaponAttack`) were extracted to `_rollSpellCheckDispatch` /
-  `_rollWeaponAttackDispatch` helpers so the public method is a thin
-  one-line boundary wrapper rather than a re-indented 90-line body. Fixed
-  the two un-awaited sheet calls to `await`. No lib change (pure
-  adapter-side concern). +9 Vitest (`adapter-error-boundary.test.js`:
-  async/sync helper contract — happy path, sync throw, async rejection
-  with the await load-bearing, sync-boundary returns-non-promise; plus
-  dispatcher-level `rollAbilityCheck` rejects+notifies and
-  `getInitiativeRoll` throws-sync+notifies). +2 Playwright
-  (`adapter-dispatch.spec.js` `error boundary` block: live forced throw on
-  `rollAbilityCheck` → rejects + `.notification.error` DOM node shown;
-  `getInitiativeRoll` → throws synchronously, no promise handed back).
-  **1328 Vitest** (was 1319, +9). **168 Playwright passed**, zero failures
-  (was 166, +2; 5.6-min full suite). With this, **all PR #720 design
-  calls are closed** — remaining backlog is the legacy-decom plan +
-  test-coverage gaps + doc hygiene.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -367,74 +358,26 @@ archive entries.
   document the level-change-dialog dependency for "quick PC" tooling /
   browser-test fixtures.
 
-**Legacy decommission (full `_xxxLegacy` retirement — added 2026-05-31):**
-
-Goal: delete every surviving `_xxxLegacy` branch so the public
-dispatchers are single-path through the adapter, per the
-legacy-branch-retirement principle (decision #7 — Foundry-facing API
-stays as thin wrappers; internal `_xxxLegacy` bodies retire once adapter
-coverage is exhaustive for their gate). Group D already retired
-attack / crit / fumble / damage; the spell-check legacy wrapper went in
-session 16. Step 1 (roll-under) landed session 21; step 2 (modifier
-dialog) landed session 22; step 3 (check-penalty) landed session 23;
-step 4 (description-only skill items) landed session 24.
-**After step 4, all four `_xxxLegacy` bodies (`_rollAbilityCheckLegacy`,
-`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`,
-`_rollSkillCheckLegacy`) are fully unreachable — step 5 (delete) is the
-only remaining work.** The capabilities are all in the adapter now;
-step 5 is pure deletion + dispatcher collapse:
-
-1. ~~**Roll-under in the adapter.**~~ **DONE — Phase 7 session 21**
-   (`_rollLuckCheckViaAdapter` → lib `rollLuckCheck` +
-   `renderAbilityCheckRollUnder`; roll-under proven Luck-only). Detail in
-   the phase-7 archive.
-2. ~~**Modifier-dialog for ability + save + init.**~~ **DONE — Phase 7
-   session 22** (unified `promptRollModifierDialog` extended via
-   `_rollAbilityCheckWithDialog` / `_rollSavingThrowWithDialog` /
-   `_getInitiativeRollWithDialogViaAdapter`; init stays sync for the combat
-   tracker). Detail in the phase-7 archive.
-3. ~~**Non-zero check-penalty display in the adapter.**~~ **DONE — Phase 7
-   session 23** (`_buildCheckPenaltyAltRoll` + `renderAbilityCheck`'s
-   `checkPenaltyRoll` param reproduce the legacy "If check penalty applies,
-   total is X" note faithfully — Tim's call). Detail in Recent slices.
-4. ~~**Description-only skill items in the adapter.**~~ **DONE — Phase 7
-   session 24** (`_emitSkillDescriptionViaAdapter` reproduces the legacy
-   `_rollSkillCheckLegacy` early-return branch faithfully — pure
-   Foundry-side chat emit, `mode: 'description'` dispatch). Detail in
-   Recent slices.
-5. **Delete the bodies.** All four legacy bodies are now dead
-   (`_rollAbilityCheckLegacy`, `_rollSavingThrowLegacy`,
-   `_getInitiativeRollLegacy` unreachable as of step 3;
-   `_rollSkillCheckLegacy` as of step 4). Delete them. Collapse each
-   dispatcher to a single `return this._xxxViaAdapter(...)` (mirroring the
-   Group D attack/crit/fumble/damage collapse; `rollAbilityCheck` keeps the
-   `options.rollUnder` → `_rollLuckCheckViaAdapter` branch; `rollSkillCheck`
-   keeps its three-way `!hasDie` → description / skill-table /
-   `_rollSkillCheckViaAdapter` routing). Add a retirement-guard test per
-   method (assert the `_xxxLegacy` symbol is `undefined`), matching the D2
-   `_rollDamageLegacy` guard pattern. Clean the ~15 stale
-   `_rollSkillCheckLegacy` doc/comment references catalogued by the grep at
-   session 19. **Note:** `_buildSkillCheckLegacyTerms` is **not** deletable
-   — it's still consumed by `_skillTableViaAdapter` +
-   `_rollSkillCheckViaAdapter`'s dialog branch; a rename (drop the
-   "Legacy" token) is the most it warrants.
-
-Dependency notes / landmines:
-- ~~**`error boundaries` interaction.**~~ **RESOLVED (Phase 7 session
-  20)** — all six dispatchers are wrapped in `withRollErrorBoundary`
-  (fail-loud notify + rethrow), so the post-legacy "lib throw must
-  surface, not dead-click" requirement is already satisfied.
-- **Cross-repo.** Any capability the lib can't yet express (roll-under
-  result shape, modifier-dialog term threading) lands as a
-  `dcc-core-lib` PR first, then `npm run sync-core-lib`, per the
-  standing lib-fix rule.
-- **Per-slice testing.** Each of 1–5 is its own refactor slice on this
-  branch (auto-commit authorization applies): full Vitest + full e2e +
-  ≥1 new browser assertion exercising the newly-adapter-routed behavior
-  live (e.g. a roll-under luck check, a save with the modifier dialog, a
-  description-only skill item) — these are exactly the branches that
-  *only* the legacy path covered, so the e2e assertions are the
-  regression net proving the adapter now owns them.
+**Legacy decommission — COMPLETE (2026-06-02; arc ran 2026-05-31 → 06-02).**
+Goal (achieved): delete every surviving `_xxxLegacy` roll branch so the
+public dispatchers are single-path through the adapter, per the
+legacy-branch-retirement principle (decision #7). Group D had already
+retired attack / crit / fumble / damage; the spell-check wrapper went in
+session 16. The ability/save/init/skill arc then landed across five slices:
+step 1 roll-under (session 21), step 2 modifier dialog (22), step 3
+check-penalty (23), step 4 description-only skill items (24), step 5 the
+batch delete (25) — plus the session-20 fail-loud error-boundary
+prerequisite. **No `_xxxLegacy` roll body survives anywhere in the system;
+every public roll dispatcher is single-path through the adapter**, retaining
+only the `options.rollUnder` (`rollAbilityCheck`) and `!hasDie`
+(`rollSkillCheck`) *adapter* branches. `_buildSkillCheckLegacyTerms` →
+renamed `_buildSkillCheckRollTerms` (still backs the skill-table + dialog
+adapter routes). Vitest + live e2e retirement guards lock it in. Full
+per-session detail in Recent slices (sessions 24–25) + the
+[phase-7 archive](dev/progress/phase-7.md) (sessions 19–23). The standing
+lib-fix rule (any lib-capability gap → `dcc-core-lib` PR first, then
+`npm run sync-core-lib`) applied throughout; steps 1–5 needed none — all
+pure adapter-side wiring.
 
 **Open test coverage gaps (pr-test-analyzer severity ≥ 6):**
 
@@ -559,26 +502,29 @@ Dependency notes / landmines:
 
 ## Next steps
 
-**PRIORITY (2026-05-31, user-directed) — fully decommission the legacy
-roll paths.** See the *Legacy decommission* subsection in the PR #720
-backlog above for the sequenced 5-step plan. **Steps 1 (roll-under) + 2
-(modifier dialog) + 3 (check-penalty) + 4 (description-only skill items) +
-the error-boundaries prerequisite are all DONE** (sessions 21 + 22 + 23 +
-24 + 20). **Next up is step 5 — the batch delete**, and it's the last step:
-all four `_xxxLegacy` bodies (`_rollAbilityCheckLegacy`,
-`_rollSavingThrowLegacy`, `_getInitiativeRollLegacy`,
-`_rollSkillCheckLegacy`) are now fully unreachable. Delete them; collapse
-each public dispatcher to a single `return this._xxxViaAdapter(...)` —
-`rollAbilityCheck` keeps its `options.rollUnder` → `_rollLuckCheckViaAdapter`
-branch, and `rollSkillCheck` keeps its three-way `!hasDie` → description /
-skill-table / `_rollSkillCheckViaAdapter` routing (these are *adapter*
-branches, not legacy gates, so they stay). Add a retirement-guard test per
-method (assert each `_xxxLegacy` symbol is `undefined`, matching the D2
-`_rollDamageLegacy` guard). Clean the stale `_rollSkillCheckLegacy`
-doc/comment references. **Do NOT delete `_buildSkillCheckLegacyTerms`** — it
-still backs `_skillTableViaAdapter` + `_rollSkillCheckViaAdapter`'s dialog
-branch; a rename (drop "Legacy") is the most it warrants. This step is pure
-deletion + collapse — no lib change, no new capability.
+**Legacy decommission arc — COMPLETE (2026-06-02, sessions 21–25 + the
+session-20 error-boundary prerequisite).** All five steps landed: roll-under
+(21), modifier dialog (22), check-penalty (23), description-only skill items
+(24), and the batch delete (25). No `_xxxLegacy` roll body survives anywhere
+in the system; every public roll dispatcher is single-path through the
+adapter (with the `options.rollUnder` and `!hasDie` *adapter* branches the
+respective dispatchers retain). Vitest + e2e retirement guards lock it in.
+The user-directed priority that opened this arc is fully discharged.
+
+**Pick the next arc.** With legacy-decom done, the open work is the
+remaining PR #720 backlog (no longer on any critical path):
+- *Test-coverage gaps* (severity ≥ 6) — `renderDisapprovalRoll`,
+  `roll-dialog.mjs` direct coverage, `onSpellLost` during a real cast,
+  `terms[N]` two-pass divergence, the data-driven migration branches
+  (V14 AE converter is V14-critical), the `__mocks__/dcc-roll.js`
+  async/sync mismatch. Each is a self-contained slice.
+- *Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
+  refs, disapproval-chat-ordering comment, the unused
+  `_getInitiativeRollViaAdapter` `options` param).
+- *Programmatic-PC-creation* documentation item.
+- Or an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
+  `item.js` / `config.js`) — each a multi-session project, not a slice.
+See the PR #720 backlog subsections above for the itemized lists.
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
 fully closed; open questions #2, #3, #4, and #7 all closed

@@ -1213,7 +1213,7 @@ test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D
   expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
   // drainDisapproval still applies via the adapter's
   // `actor.applyDisapproval(skill.drainDisapproval)` call — mirrors
-  // the legacy _rollSkillCheckLegacy:1816-1818 post-step.
+  // the former legacy skill-check post-step.
   expect(actorUpdateMock).toHaveBeenCalledWith({
     'system.class.disapproval': 11
   })
@@ -1620,4 +1620,40 @@ test('_applyAddEffect treats null initial values as zero', () => {
   // Should treat null as 0 and add 2
   expect(actor.system.class.spellCheckOtherMod).toEqual(2)
   expect(overrides['system.class.spellCheckOtherMod']).toEqual(2)
+})
+
+// ============================================================================
+// Phase 7 session 25 — legacy-decom step 5 retirement guard
+// ============================================================================
+
+test('legacy-decom step 5: all four _xxxLegacy roll bodies are absent from the prototype', () => {
+  // Steps 1–4 moved every gate (roll-under, modifier dialog, check-penalty,
+  // description-only skill items) into the adapter; step 5 deleted the now-dead
+  // bodies. Each public dispatcher is single-path through the adapter. This
+  // guard fails loudly if any legacy body is ever reintroduced.
+  const proto = DCCActor.prototype
+  expect(typeof proto._rollAbilityCheckLegacy, '_rollAbilityCheckLegacy retired in step 5').toBe('undefined')
+  expect(typeof proto._rollSavingThrowLegacy, '_rollSavingThrowLegacy retired in step 5').toBe('undefined')
+  expect(typeof proto._getInitiativeRollLegacy, '_getInitiativeRollLegacy retired in step 5').toBe('undefined')
+  expect(typeof proto._rollSkillCheckLegacy, '_rollSkillCheckLegacy retired in step 5').toBe('undefined')
+
+  // The public dispatchers + their adapter routes remain.
+  expect(typeof proto.rollAbilityCheck, 'rollAbilityCheck dispatcher remains').toBe('function')
+  expect(typeof proto._rollAbilityCheckViaAdapter).toBe('function')
+  expect(typeof proto.rollSavingThrow, 'rollSavingThrow dispatcher remains').toBe('function')
+  expect(typeof proto._rollSavingThrowViaAdapter).toBe('function')
+  expect(typeof proto.getInitiativeRoll, 'getInitiativeRoll dispatcher remains').toBe('function')
+  expect(typeof proto._getInitiativeRollViaAdapter).toBe('function')
+  expect(typeof proto.rollSkillCheck, 'rollSkillCheck dispatcher remains').toBe('function')
+  expect(typeof proto._rollSkillCheckViaAdapter).toBe('function')
+  expect(typeof proto._emitSkillDescriptionViaAdapter, 'description route from step 4 remains').toBe('function')
+})
+
+test('legacy-decom step 5: the shared skill-term builder was renamed off the "Legacy" token', () => {
+  const proto = DCCActor.prototype
+  // The DCCRoll term-descriptor builder is still needed by the skill-table +
+  // dialog adapter routes, so it was renamed (not deleted) once the last
+  // legacy caller went away.
+  expect(typeof proto._buildSkillCheckLegacyTerms, 'old name retired').toBe('undefined')
+  expect(typeof proto._buildSkillCheckRollTerms, 'renamed builder present').toBe('function')
 })

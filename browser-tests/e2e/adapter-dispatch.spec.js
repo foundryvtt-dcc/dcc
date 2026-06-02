@@ -2770,6 +2770,44 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(surface.hasAdapterAlias, '_rollToHitViaAdapter folded into rollToHit').toBe(false)
     })
 
+    test('legacy-decom step 5: the four _xxxLegacy roll bodies are gone from the live prototype (session 25)', async ({ page }) => {
+      // Steps 1–4 moved every gate (roll-under, modifier dialog,
+      // check-penalty, description-only skill items) into the adapter;
+      // step 5 deleted the now-dead legacy bodies. Each public dispatcher
+      // is single-path through the adapter. Guard against regressions that
+      // reintroduce a legacy body, verified against the live class.
+      const surface = await page.evaluate(() => {
+        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
+          CONFIG.Actor.documentClass?.prototype
+        return {
+          // Deleted bodies.
+          hasAbilityLegacy: typeof proto._rollAbilityCheckLegacy === 'function',
+          hasSaveLegacy: typeof proto._rollSavingThrowLegacy === 'function',
+          hasInitLegacy: typeof proto._getInitiativeRollLegacy === 'function',
+          hasSkillLegacy: typeof proto._rollSkillCheckLegacy === 'function',
+          hasOldTermBuilder: typeof proto._buildSkillCheckLegacyTerms === 'function',
+          // Surviving public dispatchers + adapter routes.
+          hasAbilityDispatch: typeof proto.rollAbilityCheck === 'function',
+          hasSaveDispatch: typeof proto.rollSavingThrow === 'function',
+          hasInitDispatch: typeof proto.getInitiativeRoll === 'function',
+          hasSkillDispatch: typeof proto.rollSkillCheck === 'function',
+          hasDescriptionRoute: typeof proto._emitSkillDescriptionViaAdapter === 'function',
+          hasRenamedTermBuilder: typeof proto._buildSkillCheckRollTerms === 'function'
+        }
+      })
+      expect(surface.hasAbilityLegacy, '_rollAbilityCheckLegacy retired').toBe(false)
+      expect(surface.hasSaveLegacy, '_rollSavingThrowLegacy retired').toBe(false)
+      expect(surface.hasInitLegacy, '_getInitiativeRollLegacy retired').toBe(false)
+      expect(surface.hasSkillLegacy, '_rollSkillCheckLegacy retired').toBe(false)
+      expect(surface.hasOldTermBuilder, '_buildSkillCheckLegacyTerms renamed away').toBe(false)
+      expect(surface.hasAbilityDispatch, 'rollAbilityCheck dispatcher remains').toBe(true)
+      expect(surface.hasSaveDispatch, 'rollSavingThrow dispatcher remains').toBe(true)
+      expect(surface.hasInitDispatch, 'getInitiativeRoll dispatcher remains').toBe(true)
+      expect(surface.hasSkillDispatch, 'rollSkillCheck dispatcher remains').toBe(true)
+      expect(surface.hasDescriptionRoute, 'step-4 description route remains').toBe(true)
+      expect(surface.hasRenamedTermBuilder, '_buildSkillCheckRollTerms present').toBe(true)
+    })
+
     test('crit with no available table surfaces a look-it-up hint, not a silent miss', async ({ page }) => {
       // Reproduces the "core book module disabled" scenario: with the
       // crit roll automated but no crit table resolvable, the result

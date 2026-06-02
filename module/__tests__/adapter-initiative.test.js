@@ -101,11 +101,11 @@ test('adapter path annotates the die with the two-handed label when such a weapo
 })
 
 test('showModifierDialog routes to the adapter dialog and builds DCCRoll terms', async () => {
-  // Legacy-decom step 2: the dialog no longer routes to
-  // `_getInitiativeRollLegacy`. The adapter surfaces the same modifier
-  // dialog via `promptRollModifierDialog` (which wraps DCCRoll.createRoll)
-  // and hands back the user's dialog-built Roll. The term shape + dialog
-  // request are unchanged — only the dispatch path moved.
+  // Legacy-decom step 2: the dialog is handled adapter-side (the former
+  // legacy initiative body was deleted at session 25). The adapter
+  // surfaces the same modifier dialog via `promptRollModifierDialog`
+  // (which wraps DCCRoll.createRoll) and hands back the user's
+  // dialog-built Roll. The term shape + dialog request are unchanged.
   dccRollCreateRollMock.mockClear()
   actor.system.attributes.init.die = '1d20'
   actor.system.attributes.init.value = -1
