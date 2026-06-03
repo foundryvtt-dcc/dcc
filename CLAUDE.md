@@ -134,6 +134,7 @@ don't commit.
 - [V13](docs/dev/V13.md) - ApplicationV2 patterns reference
 - [Test Coverage](docs/dev/TEST_COVERAGE.md) - Detailed testing strategy
 - [Release Process](docs/dev/RELEASE_PROCESS.md) - How to release
+- [Pre-Release Process](docs/dev/PRERELEASE_PROCESS.md) - Foundry-installable test builds off a feature branch (manual, off-`main`)
 
 ### User Guides
 - [Active Effects](docs/user-guide/Active-Effects.md) - Using effects, attribute keys

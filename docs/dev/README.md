@@ -34,6 +34,7 @@ This directory contains developer documentation for the DCC system for FoundryVT
 |----------|-------------|
 | [Test Coverage](TEST_COVERAGE.md) | Detailed testing strategy and coverage goals |
 | [Release Process](RELEASE_PROCESS.md) | How to create releases |
+| [Pre-Release Process](PRERELEASE_PROCESS.md) | Foundry-installable test builds off a feature branch (not `main`) |
 | [LevelDB Workflow](LEVELDB_WORKFLOW.md) | Detailed pack workflow |
 | [Module Conversion](MODULE_CONVERSION.md) | End-to-end guide for converting an adventure module |
 
