@@ -1577,3 +1577,45 @@
   shipped present tense. **No production behavior change, no lib change, no
   test-count delta.** Full e2e suite run deferred to Tim's call (see Notes)
   — zero code touched, so the Playwright net asserts nothing new.
+
+- **2026-06-02 — Phase 7 session 34: below-threshold perf cleanups — hoist
+  `getActionDice` in `rollToHit` + fold the double `items.find` in both
+  initiative methods (PR #720 Performance "document only" backlog).** Drained
+  the two remaining itemized Performance items (both were tagged
+  *below-measurement-threshold; document only*, but each removes a genuinely
+  redundant call so they were worth doing, not just documenting). (1)
+  **`rollToHit` hoist** — `getActionDice({ includeUntrained: true })` was
+  called **3×** per attack (the `die` [0]-formula read, the action-die term
+  `presets`, and inside `buildAttackInput`). `getActionDice` is not pure: it
+  runs a regex/split **and** performs a side-effecting implicit
+  `config.actionDice` migration write, so the repeats redid that work. Hoisted
+  to one `const actionDicePresets = this.getActionDice({ includeUntrained:
+  true })`; `actorActionDice = actionDicePresets[0].formula` feeds all three
+  consumers, and `buildAttackInput(this, weapon, actorActionDice)` now takes an
+  **optional** third `actorActionDiceFormula` param (`attack-input.mjs`) — when
+  omitted, standalone callers still self-compute via the prior
+  `actor.getActionDice(...)[0]?.formula || '1d20'` fallback, so the public
+  helper signature stays back-compatible. (2) **initiative fold** — both
+  `_getInitiativeRollViaAdapter` and `_getInitiativeRollWithDialogViaAdapter`
+  scanned `this.items` **twice** (`find` for the first equipped two-handed
+  weapon, then again for the first equipped custom-init-die weapon). Folded
+  into a single `for…of` pass collecting both, **preserving apply order** —
+  two-handed applied first, custom-init-die applied last so it still WINS when
+  both are equipped. Tests: +2 Vitest — a `rollToHit` hoist regression guard
+  (`vi.spyOn(actor, 'getActionDice')` → `toHaveBeenCalledTimes(1)`), and a
+  `getInitiativeRoll` fold-order guard that injects a real two-weapon
+  Collection (two-handed listed first) and asserts the custom-init die +
+  `[Weapon]` label win over the d16/two-handed label. Also **rewrote 3
+  `.find`-mock tests** (`actor.test.js` + 2 in `adapter-initiative.test.js`)
+  to inject a real `global.Collection` instead of `vi.spyOn(actor.items,
+  'find')` — the fold no longer calls `.find`, so the old mocks were dead; the
+  rewrites now also assert the d16 die actually reaches the formula, not just
+  that a Roll comes back. +1 Playwright (`adapter-dispatch.spec.js`): a **live**
+  actor equipped with BOTH a two-handed `1d16`-init weapon (created first) and
+  a custom-init `1d24`-override weapon → the adapter log + produced Roll carry
+  the custom die + `[Weapon]` label, not the two-handed die/label (guards the
+  single-pass apply order end-to-end). **No behavior change — pure perf +
+  test-infra. No lib change.** **1404 Vitest** (was 1402, +2). **182 Playwright
+  passed**, zero failures (was 181, +1; 6.5-min full suite). Picked up
+  uncommitted from a prior session and finished (docs + full e2e run); Foundry
+  was relaunched mid-session after the GM tab freed.

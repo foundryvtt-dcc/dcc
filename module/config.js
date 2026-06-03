@@ -18,6 +18,13 @@ import {
   effectChangeTypes
 } from './config/dice.mjs'
 import { activeEffectKeys } from './config/active-effect-keys.mjs'
+import {
+  actorImporterItemPacks,
+  actorImporterNameMap,
+  actorImporterPromptThreshold,
+  birthAugurEffectsPack,
+  importTypes
+} from './config/actor-importer.mjs'
 
 const DCC = {}
 
@@ -290,11 +297,12 @@ DCC.giantsNotGiants = giantsNotGiants
 DCC.humanoidHints = humanoidHints
 DCC.monsterCriticalHits = monsterCriticalHits
 
-// Import Types
-DCC.importTypes = {
-  Player: 'DCC.ActorTypePlayer',
-  NPC: 'DCC.ActorTypeNPC'
-}
+// Actor-importer config (importTypes / actorImporterPromptThreshold /
+// actorImporterItemPacks / birthAugurEffectsPack / actorImporterNameMap) is
+// extracted into ./config/actor-importer.mjs and re-composed onto DCC here so
+// the public CONFIG.DCC shape is unchanged. Consumed by module/parser.js
+// (+ its import dialog template).
+DCC.importTypes = importTypes
 
 // Languages
 DCC.languages = {
@@ -431,51 +439,13 @@ DCC.defaultActorImages = defaultActorImages
 DCC.defaultItemImages = defaultItemImages
 DCC.macroImages = macroImages
 
-// Actor importer warning threshold
-DCC.actorImporterPromptThreshold = 25
-
-// Packs for finding items when importing actors
-DCC.actorImporterItemPacks = [
-  'dcc-core-book.dcc-core-ammunition',
-  'dcc-core-book.dcc-core-armor',
-  'dcc-core-book.dcc-core-equipment',
-  'dcc-core-book.dcc-core-weapons',
-  'dcc-core-book.dcc-core-mounts',
-  'dcc-core-book.dcc-core-spells-wizard-1',
-  'dcc-core-book.dcc-core-spells-wizard-2',
-  'dcc-core-book.dcc-core-spells-wizard-3',
-  'dcc-core-book.dcc-core-spells-wizard-4',
-  'dcc-core-book.dcc-core-spells-wizard-5',
-  'dcc-core-book.dcc-core-spells-cleric-1',
-  'dcc-core-book.dcc-core-spells-cleric-2',
-  'dcc-core-book.dcc-core-spells-cleric-3',
-  'dcc-core-book.dcc-core-spells-cleric-4',
-  'dcc-core-book.dcc-core-spells-cleric-5',
-  'dcc-core-book.dcc-core-spells-patron'
-]
-
-// Compendium pack for birth augur active effects used by the actor importer
-DCC.birthAugurEffectsPack = 'dcc-core-book.dcc-core-birth-augur-effects'
-
-// Name re-mappings for the actor importer
-DCC.actorImporterNameMap = {
-  'Hammer (as club)': ['Club'],
-  'Razor (as dagger)': ['Dagger'],
-  'Cleaver (as axe)': ['Axe'],
-  'Cudgel (as staff)': ['Staff'],
-  'Awl (as dagger)': ['Dagger'],
-  'Crowbar (as club)': ['Club'],
-  'Shovel (as staff)': ['Staff'],
-  'Pick (as club)': ['Club'],
-  'Quill (as dart)': ['Dart'],
-  'Scissors (as dagger)': ['Dagger'],
-  'Pitchfork (as spear)': ['Spear'],
-  'Trowel (as dagger)': ['Dagger'],
-  'Knife (as dagger)': ['Dagger'],
-  'Stick (as club)': ['Club'],
-  'Patron Bond/Invoke Patron': ['Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron'],
-  'Demon Summoning': ['Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name'],
-  Blessing: ['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object']
-}
+// Remaining actor-importer tables (threshold / item packs / birth-augur pack /
+// name map) extracted into ./config/actor-importer.mjs and re-composed onto DCC
+// here so the public CONFIG.DCC shape is unchanged. Consumed by
+// module/parser.js.
+DCC.actorImporterPromptThreshold = actorImporterPromptThreshold
+DCC.actorImporterItemPacks = actorImporterItemPacks
+DCC.birthAugurEffectsPack = birthAugurEffectsPack
+DCC.actorImporterNameMap = actorImporterNameMap
 
 export default DCC

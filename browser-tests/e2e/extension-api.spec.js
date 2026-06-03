@@ -286,6 +286,32 @@ test.describe('DCC Extension API', () => {
     expect(result.allWellFormed).toBe(true)
   })
 
+  test('DCC actor-importer config (importTypes / actorImporter* / birthAugurEffectsPack) survives config/actor-importer.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A config.js shrinkage): the actor-importer tables were
+    // moved out of module/config.js into module/config/actor-importer.mjs and
+    // re-composed onto DCC. module/parser.js reads these live off CONFIG.DCC
+    // (the pack search list, the name remap, the birth-augur AE pack, and the
+    // bulk-import threshold) and the import dialog template reads
+    // config.importTypes — a broken compose would silently break stat-block
+    // import, so this probe guards the live CONFIG.DCC shape end-to-end.
+    const result = await page.evaluate(() => ({
+      importTypes: CONFIG.DCC.importTypes,
+      promptThreshold: CONFIG.DCC.actorImporterPromptThreshold,
+      itemPackCount: (CONFIG.DCC.actorImporterItemPacks ?? []).length,
+      hasWeaponsPack: (CONFIG.DCC.actorImporterItemPacks ?? []).includes('dcc-core-book.dcc-core-weapons'),
+      birthAugurPack: CONFIG.DCC.birthAugurEffectsPack,
+      hammerRemap: CONFIG.DCC.actorImporterNameMap?.['Hammer (as club)'],
+      blessingRemap: CONFIG.DCC.actorImporterNameMap?.Blessing
+    }))
+    expect(result.importTypes).toEqual({ Player: 'DCC.ActorTypePlayer', NPC: 'DCC.ActorTypeNPC' })
+    expect(result.promptThreshold).toBe(25)
+    expect(result.itemPackCount).toBe(16)
+    expect(result.hasWeaponsPack).toBe(true)
+    expect(result.birthAugurPack).toBe('dcc-core-book.dcc-core-birth-augur-effects')
+    expect(result.hammerRemap).toEqual(['Club'])
+    expect(result.blessingRemap).toEqual(['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object'])
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

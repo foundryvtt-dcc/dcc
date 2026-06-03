@@ -65,30 +65,35 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-02 (session 38).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-03 (session 39).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). **Sessions 35–38 opened the Appendix-A
-file-shrinkage arc** with four `config.js` slices (monster tables →
+below-threshold perf items (34). **Sessions 35–39 ran the Appendix-A
+file-shrinkage arc** with five `config.js` slices (monster tables →
 `module/config/monster-data.mjs`; default-image tables →
 `module/config/images.mjs`; dice config → `module/config/dice.mjs`;
-`activeEffectKeys` → `module/config/active-effect-keys.mjs`). All were
-behavior-neutral with no lib change. Repo green: **1421 Vitest / 186 Playwright
-e2e passed**, zero failures (flake-clean since the session-29 fix). Per-session
-detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
-the itemized close-outs are in the *PR #720 review backlog* below.
+`activeEffectKeys` → `module/config/active-effect-keys.mjs`; actor-importer
+block → `module/config/actor-importer.mjs`). All were behavior-neutral with no
+lib change. Repo green: **1427 Vitest / 187 Playwright e2e passed**, zero
+failures (flake-clean since the session-29 fix). Per-session detail lives in
+*Recent slices* + the [phase-7 archive](dev/progress/phase-7.md); the itemized
+close-outs are in the *PR #720 review backlog* below.
 
-**Appendix-A file-shrinkage arc is now active (started session 35).** The
-pattern mirrors the Phase-7 `dcc.js` split: break the big self-contained data
-tables in `config.js` into focused `module/config/*.mjs` modules and let
-`config.js` import + re-compose them onto the `DCC` object, keeping the public
-`CONFIG.DCC` shape byte-identical. So far: `monster-data.mjs` (35) +
-`images.mjs` (36) + `dice.mjs` (37) + `active-effect-keys.mjs` (38) —
-`config.js` 845 → 481 lines (−364). The other Appendix-A targets (`actor.js` /
-`actor-sheet.js` / `item.js`) remain multi-session projects, not slices.
+**Appendix-A `config.js` data-table extraction is effectively complete (arc ran
+sessions 35–39).** The pattern mirrored the Phase-7 `dcc.js` split: break the
+big self-contained data tables in `config.js` into focused
+`module/config/*.mjs` modules and let `config.js` import + re-compose them onto
+the `DCC` object, keeping the public `CONFIG.DCC` shape byte-identical. Done:
+`monster-data.mjs` (35) + `images.mjs` (36) + `dice.mjs` (37) +
+`active-effect-keys.mjs` (38) + `actor-importer.mjs` (39) — `config.js` 845 →
+451 lines (−394). What remains in `config.js` is small scalar enums + the
+Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
+`variants` / …); those stay — they're tiny and are the file's reason to exist.
+The other Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
+multi-session projects, not slices.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -99,6 +104,37 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-03 — Phase 7 session 39: Appendix-A `config.js` shrinkage —
+  extract the actor-importer block into `module/config/actor-importer.mjs`.**
+  Fifth slice of the Appendix-A arc, same extract-and-compose pattern. The
+  five actor-importer symbols — `importTypes` (actor-type select options,
+  read by `templates/dialog-actor-import.html` via the `config.importTypes`
+  context), `actorImporterPromptThreshold` (bulk-import warning count),
+  `actorImporterItemPacks` (16 dcc-core-book search packs),
+  `birthAugurEffectsPack`, and `actorImporterNameMap` (stat-block→canonical
+  name remap) — moved into a new `module/config/actor-importer.mjs` as named
+  exports; `config.js` imports + re-composes them onto `DCC` so the public
+  `CONFIG.DCC` shape is **byte-identical**. The **only** runtime consumer is
+  `module/parser.js` (the stat-block importer, reading `CONFIG.DCC.*`) + its
+  dialog template — one cohesive concern, so all five grouped into one module
+  (incl. `importTypes`, which had been sitting separately up-file at the old
+  line 294). Verified byte-identical to git HEAD (`JSON.stringify` diff against
+  a temp HEAD copy written inside `module/`) + same-reference composition
+  (`DCC.x === module.x`). `config.js` 481 → 451 lines (−30; cumulative 845 →
+  451, −394 across sessions 35–39). **No behavior change, no lib change.**
+  Tests: +6 Vitest (new `module/__tests__/config-actor-importer.test.js` —
+  values, the every-pack-is-`dcc-core-book.*` invariant, the
+  every-remap-is-a-non-empty-string-array invariant, the `DCC.x === module.x`
+  composition guard); +1 Playwright (`extension-api.spec.js` "survives
+  extraction" probe — reads `CONFIG.DCC.importTypes`/`actorImporter*`/
+  `birthAugurEffectsPack` live, asserts the 16-pack count + known remaps).
+  **1427 Vitest** (was 1421, +6). **187 Playwright passed**, zero failures
+  (was 186, +1; 6.5-min full suite). Next `config.js` work: the remaining
+  bulk is small scalar enums + the Phase 4–6 registry seeds (`classMixins` /
+  `classDefaults` / `sheetParts` / `variants` / …) — leave those in
+  `config.js`; they're tiny and are the file's actual reason to exist. The
+  data-table extraction arc for `config.js` is effectively complete.
 
 - **2026-06-02 — Phase 7 session 38: Appendix-A `config.js` shrinkage —
   extract the `activeEffectKeys` reference table into
@@ -205,48 +241,6 @@ archives linked above.
   `module/config/` directory + the extract-and-compose pattern for the rest of
   the arc (`macroImages`, `diceTypes`/`DICE_CHAIN`, `activeEffectKeys`, the
   actor-importer block are the natural next chunks).
-
-- **2026-06-02 — Phase 7 session 34: below-threshold perf cleanups — hoist
-  `getActionDice` in `rollToHit` + fold the double `items.find` in both
-  initiative methods (PR #720 Performance "document only" backlog).** Drained
-  the two remaining itemized Performance items (both were tagged
-  *below-measurement-threshold; document only*, but each removes a genuinely
-  redundant call so they were worth doing, not just documenting). (1)
-  **`rollToHit` hoist** — `getActionDice({ includeUntrained: true })` was
-  called **3×** per attack (the `die` [0]-formula read, the action-die term
-  `presets`, and inside `buildAttackInput`). `getActionDice` is not pure: it
-  runs a regex/split **and** performs a side-effecting implicit
-  `config.actionDice` migration write, so the repeats redid that work. Hoisted
-  to one `const actionDicePresets = this.getActionDice({ includeUntrained:
-  true })`; `actorActionDice = actionDicePresets[0].formula` feeds all three
-  consumers, and `buildAttackInput(this, weapon, actorActionDice)` now takes an
-  **optional** third `actorActionDiceFormula` param (`attack-input.mjs`) — when
-  omitted, standalone callers still self-compute via the prior
-  `actor.getActionDice(...)[0]?.formula || '1d20'` fallback, so the public
-  helper signature stays back-compatible. (2) **initiative fold** — both
-  `_getInitiativeRollViaAdapter` and `_getInitiativeRollWithDialogViaAdapter`
-  scanned `this.items` **twice** (`find` for the first equipped two-handed
-  weapon, then again for the first equipped custom-init-die weapon). Folded
-  into a single `for…of` pass collecting both, **preserving apply order** —
-  two-handed applied first, custom-init-die applied last so it still WINS when
-  both are equipped. Tests: +2 Vitest — a `rollToHit` hoist regression guard
-  (`vi.spyOn(actor, 'getActionDice')` → `toHaveBeenCalledTimes(1)`), and a
-  `getInitiativeRoll` fold-order guard that injects a real two-weapon
-  Collection (two-handed listed first) and asserts the custom-init die +
-  `[Weapon]` label win over the d16/two-handed label. Also **rewrote 3
-  `.find`-mock tests** (`actor.test.js` + 2 in `adapter-initiative.test.js`)
-  to inject a real `global.Collection` instead of `vi.spyOn(actor.items,
-  'find')` — the fold no longer calls `.find`, so the old mocks were dead; the
-  rewrites now also assert the d16 die actually reaches the formula, not just
-  that a Roll comes back. +1 Playwright (`adapter-dispatch.spec.js`): a **live**
-  actor equipped with BOTH a two-handed `1d16`-init weapon (created first) and
-  a custom-init `1d24`-override weapon → the adapter log + produced Roll carry
-  the custom die + `[Weapon]` label, not the two-handed die/label (guards the
-  single-pass apply order end-to-end). **No behavior change — pure perf +
-  test-infra. No lib change.** **1404 Vitest** (was 1402, +2). **182 Playwright
-  passed**, zero failures (was 181, +1; 6.5-min full suite). Picked up
-  uncommitted from a prior session and finished (docs + full e2e run); Foundry
-  was relaunched mid-session after the GM tab freed.
 
 ## Closed questions
 
@@ -394,27 +388,25 @@ chat could read cleaner as `Roll.fromTerms([new NumericTerm(...)])` (no measurab
 
 ## Next steps
 
-**The Appendix-A file-shrinkage arc is active** (started session 35; all
-PR #720 cleanup arcs are closed — legacy-decom 21–25, test-coverage 26–31,
-doc-hygiene 32, programmatic-PC doc 33, perf 34). Continue the `config.js`
-shrinkage by extracting the next self-contained data chunks into
-`module/config/*.mjs`, each as its own slice, re-composing onto `DCC` so
-`CONFIG.DCC` stays byte-identical:
+**The Appendix-A `config.js` data-table extraction arc is done** (sessions
+35–39; all PR #720 cleanup arcs were closed first — legacy-decom 21–25,
+test-coverage 26–31, doc-hygiene 32, programmatic-PC doc 33, perf 34). Every
+self-contained data table is now its own `module/config/*.mjs` module
+re-composed onto `DCC` byte-identically:
 
-- **`config.js` (in progress, 845 → 481 after session 38).** Done:
-  `monster-data.mjs` (35), `images.mjs` (36), `dice.mjs` (37),
-  `active-effect-keys.mjs` (38). Next natural chunk: the **actor-importer
-  block** (`actorImporterItemPacks` / `actorImporterNameMap` /
-  `birthAugurEffectsPack` / `importTypes` / `actorImporterPromptThreshold` —
-  consumed by the pc/npc parsers + importer; ~40 lines). After that, the
-  remaining bulk is small scalar enums + the Phase 4–6 registry seeds
-  (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) — leave
-  those in `config.js`; they're tiny and are the file's actual reason to exist.
-  Open question to revisit once the data tables are out: whether the
-  unconsumed `activeEffectKeys` table (extracted session 38) should be
-  deprecated/removed — deferred per Tim, see the session-38 slice.
-- **`actor.js` / `actor-sheet.js` / `item.js`** — each a multi-session project,
-  not a slice; start one only with budget for it.
+- **`config.js` (845 → 451 after session 39).** Done: `monster-data.mjs` (35),
+  `images.mjs` (36), `dice.mjs` (37), `active-effect-keys.mjs` (38),
+  `actor-importer.mjs` (39). What's left in `config.js` is small scalar enums
+  (`abilities` / `saves` / `items` / `currencies` / `critRanges` / …) + the
+  Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
+  `variants` / …) — **leave those in place**; they're tiny and are the file's
+  actual reason to exist. No further `config.js` slice is warranted. Open
+  question still deferred: whether the unconsumed `activeEffectKeys` table
+  (extracted session 38) should be deprecated/removed — see the session-38
+  slice.
+- **`actor.js` / `actor-sheet.js` / `item.js`** — the remaining Appendix-A
+  file-shrinkage targets; each a multi-session project, not a slice; start one
+  only with budget for it.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now
