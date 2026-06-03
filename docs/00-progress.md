@@ -65,85 +65,25 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup → PR #720 test-coverage backfill — latest 2026-06-02.**
-With the legacy-decom arc closed (sessions 21–25) and the slice backlog's
-active queue drained, the open work is the PR #720 *test-coverage gaps* +
-*doc hygiene* + *programmatic-PC-creation* items (none on a critical path).
-The **test-coverage-backfill arc is COMPLETE** (sessions 26–31): session 26
-closed the *always-run* data-driven migration-branch gap (the **V14-critical
-ActiveEffect numeric-mode → string-type converter** + `luckyRoll`/alignment/
-`critRange`/`disapproval`/`sheetClass`/#739-speed/owned-item branches);
-session 27 closed the two deterministic chat-emit renderers
-`renderDisapprovalRoll` + `renderMercurialEffect`; session 28 fixed the
-`__mocks__/dcc-roll.js` async/sync mismatch (shared `withSyncCreateRoll`;
-footprint was 2 files, not the backlog's estimated 13); session 29 verified
-`onSpellLost` fires during a real wizard cast (deterministic d3+low-INT
-fail-to-lost); session 30 added the `terms[N]` two-pass-divergence boundary
-guard (re-scoped: the only genuine gap was the documented "in-place
-`terms[N>0]` mutation reaches Foundry but not `libResult`" boundary);
-**session 31** (full detail in *Recent slices*) closed the last gap — the NPC
-`rollToHit` `attackHitBonus.<type>.adjustment` Modifier injection + the
-`Roll.validate(toHit) === false` early-return. All six are **pure test-infra /
-coverage backfill — no production behavior change, no lib change.** Session
-29's full-suite run also surfaced + fixed the long-standing **forceCrit test
-flake** — root-caused as a *dice-probability* flake (the test expected a
-forced natural-20 but `applyForceCritToFoundryRoll` intentionally skips a
-natural 1, so an uncontrolled d20 failed ~1/20), NOT the "suite-only state
-pollution" the docs long assumed; fixed by retrying past the nat-1 (verified
-10/10). With session 31 the **arc is complete — every PR #720 severity-≥6
-coverage gap is closed or found-stale.** Repo green: **1402 Vitest** / **181
-Playwright e2e passed**, zero failures (flake-clean since the session-29
-forceCrit fix).
+**Phase 7 cleanup — latest 2026-06-02 (session 34).** Every major arc is
+closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
+survives; every public dispatcher is single-path through the adapter),
+test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
+found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
+hygiene (32), the programmatic-PC-creation doc (33), and the two
+below-threshold perf items (34). All were behavior-neutral with no lib
+change. Repo green: **1404 Vitest / 182 Playwright e2e passed**, zero
+failures (flake-clean since the session-29 fix). Per-session detail lives
+in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md); the
+itemized close-outs are in the *PR #720 review backlog* below.
 
-**Doc/comment-hygiene arc — session 32 (2026-06-02) drained the
-*Documentation / comment hygiene* backlog subsection** (now all four items
-struck). Four behavior-neutral edits: the `ARCHITECTURE_REIMAGINED.md` §7
-*Landed names* annotation + §2.7 `main @ 2337ec0` snapshot pin, the softened
-`actor.js` disapproval-chat-ordering comment, and the dropped unused
-`_getInitiativeRollViaAdapter` `options` param. No production behavior change,
-no lib change, no test-count delta (full e2e run per Tim's call since the
-param drop touches a real dispatch path; **1402 Vitest / 181 Playwright**,
-unchanged).
-
-**Programmatic-PC-creation doc — session 33 (2026-06-02) drained the last open
-*resilience/cleanup* backlog item.** Pure-doc slice (zero code/test/lib change):
-new `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` documents the three mechanisms a
-bare `Actor.create()` bypasses (sheet-open `applyClassDefaults`, the
-level-change dialog's compendium-driven writes, the Phase-6 lib-progression
-registry) + the quick-PC/fixture guidance + the content-free-world caveat;
-cross-linked from `EXTENSION_API.md` / `README.md` / `CLASS_DECOMPOSITION.md`
-(§3.5 + §3.3 also refreshed from their stale "Planned"/"once Phase 6 wires"
-framing). The backlog item's open option was always "document the dependency"
-(no consumer needs an actual quick-PC helper). **Full e2e run deferred to Tim's
-call** — no code touched, so the Playwright net asserts nothing new.
-
-**Perf cleanups — session 34 (2026-06-02) drained the two itemized PR #720
-Performance "document only" items.** Behavior-neutral perf slice: (1) hoisted
-the **3×** `getActionDice` call in `rollToHit` to one `const actionDicePresets`
-(the call also does a side-effecting `config.actionDice` migration write, so the
-repeats redid that work) — threaded into `buildAttackInput` via a new optional
-`actorActionDiceFormula` param so the standalone helper stays back-compatible;
-(2) folded the **2×** `items.find` scan in both `_getInitiativeRollViaAdapter`
-and `_getInitiativeRollWithDialogViaAdapter` into one `for…of` pass, apply order
-preserved (custom-init-die weapon still wins over two-handed). +2 Vitest (hoist
-guard + fold-order guard; 3 dead `.find`-mock tests rewritten to inject real
-Collections) + 1 live Playwright (both-equipped order probe). **No behavior
-change, no lib change.** **1404 Vitest** (was 1402, +2). **182 Playwright
-passed**, zero failures (was 181, +1; 6.5-min full suite). Slice was picked up
-uncommitted from a prior session and finished here. The remaining off-critical-
-path candidate is the Appendix-A file-shrinkage arc.
-
-**Legacy decommission arc — done.** All five steps landed (sessions 21–25)
-plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
-survives anywhere in the system. All PR #720 design calls remain closed.
-
-**Group E / §2.8 validated by real consumers (2026-05-29).** The
-"homebrew single-class vertical" candidate is fulfilled by migrating two
-*actual* sibling content modules onto the Phase 4–6 class-registration
-API — `dcc-crawl-classes` (9 classes, PR #40) and `mcc-classes` (7
-classes, PR #38). No further DCC-side Group E work is needed (the
-registries already shipped in Phases 4–6; these are downstream
-consumers). See *Sibling-module status* below.
+**No arc remains on a critical path.** The only off-critical-path candidate
+left is an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
+`item.js` / `config.js` — each a multi-session project, not a slice). Group E /
+§2.8 homebrew extensibility was validated 2026-05-29 by migrating two real
+sibling content modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto
+the Phase 4–6 class-registration API; no further DCC-side Group E work is
+needed (see *Sibling-module status*).
 
 ## Recent slices
 
@@ -347,149 +287,49 @@ design calls (spellburn dialog-ordering, spellburn floor 0-vs-1, damage
 sessions 16–20. Full rationale lives in those Recent-slices / phase-7
 archive entries.
 
-**Open resilience / cleanup items:**
+**Open resilience / cleanup items — section drained.** The one item
+(programmatic PC creation produces inconsistent class config) was DOCUMENTED
+2026-06-02 (session 33): `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the
+three population mechanisms a bare `Actor.create()` misses, the quick-PC /
+fixture guidance, and the content-free-world caveat; cross-linked from
+`EXTENSION_API.md` / `CLASS_DECOMPOSITION.md` §3.3+§3.5 / `docs/dev/README.md`.
+A "quick PC" helper stays unbuilt by design — no consumer needs it.
 
-- ~~**Programmatic PC creation produces inconsistent class config.**
-  `Actor.create({ system: { class: { className: 'Wizard' } } })` doesn't
-  set `spellCheckAbility`, `details.sheetClass`, save `classBonus`, crit
-  / luck die, etc. — real users get these from the level-change dialog.~~
-  **DOCUMENTED 2026-06-02 (Phase 7 session 33).** New dev guide
-  `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the three population
-  mechanisms (sheet-open `applyClassDefaults`, the level-change dialog's
-  compendium-driven `actor.update`, and the Phase-6 lib-progression
-  registry consumed at roll time), what a bare `Actor.create()` misses,
-  the quick-PC / fixture guidance, and the content-free-world caveat.
-  Cross-linked from `EXTENSION_API.md` (`registerClassProgression`),
-  `CLASS_DECOMPOSITION.md` §3.3/§3.5 (also refreshed §3.5 from "Planned"
-  to "Shipped" + §3.3's stale "once Phase 6 wires" overlap note), and
-  `docs/dev/README.md`. The remaining engineering option (a "quick PC"
-  helper that drives the dialog / sets the fields) stays unbuilt by
-  design — no consumer needs it; the doc records the dependency so any
-  future tooling knows what to populate.
+**Legacy decommission — COMPLETE (arc ran 2026-05-31 → 06-02).** Every
+`_xxxLegacy` roll branch is gone; every public dispatcher is single-path
+through the adapter (retaining only the `options.rollUnder` and `!hasDie`
+*adapter* branches). Landed across sessions 16, 21–25 + the session-20
+error-boundary prerequisite; `_buildSkillCheckLegacyTerms` →
+`_buildSkillCheckRollTerms`. Vitest + live e2e retirement guards lock it in.
+Per-session detail in the [phase-7 archive](dev/progress/phase-7.md).
 
-**Legacy decommission — COMPLETE (2026-06-02; arc ran 2026-05-31 → 06-02).**
-Goal (achieved): delete every surviving `_xxxLegacy` roll branch so the
-public dispatchers are single-path through the adapter, per the
-legacy-branch-retirement principle (decision #7). Group D had already
-retired attack / crit / fumble / damage; the spell-check wrapper went in
-session 16. The ability/save/init/skill arc then landed across five slices:
-step 1 roll-under (session 21), step 2 modifier dialog (22), step 3
-check-penalty (23), step 4 description-only skill items (24), step 5 the
-batch delete (25) — plus the session-20 fail-loud error-boundary
-prerequisite. **No `_xxxLegacy` roll body survives anywhere in the system;
-every public roll dispatcher is single-path through the adapter**, retaining
-only the `options.rollUnder` (`rollAbilityCheck`) and `!hasDie`
-(`rollSkillCheck`) *adapter* branches. `_buildSkillCheckLegacyTerms` →
-renamed `_buildSkillCheckRollTerms` (still backs the skill-table + dialog
-adapter routes). Vitest + live e2e retirement guards lock it in. Full
-per-session detail in Recent slices (sessions 24–25) + the
-[phase-7 archive](dev/progress/phase-7.md) (sessions 19–23). The standing
-lib-fix rule (any lib-capability gap → `dcc-core-lib` PR first, then
-`npm run sync-core-lib`) applied throughout; steps 1–5 needed none — all
-pure adapter-side wiring.
+**Open test coverage gaps (pr-test-analyzer severity ≥ 6) — ALL CLOSED /
+found-stale 2026-06-02 (sessions 26–31).** Each closed with Vitest + (where the
+gap was real-world behavior) a live Playwright probe: data-driven migration
+branches incl. the V14-critical AE numeric-mode→string-type converter (26),
+`renderDisapprovalRoll` + `renderMercurialEffect` (27), the `dcc-roll.js`
+mock async/sync mismatch + shared `withSyncCreateRoll` (28), `onSpellLost`
+during a real cast (29), the `terms[N>0]` two-pass-divergence boundary (30),
+NPC `rollToHit` adjustment injection + `Roll.validate` early-return (31). The
+`roll-dialog.mjs` / `promptSpellburnCommitment` gap was found stale (helpers
+retired in the Q7 dialog unification; `adapter-roll-dialog.test.js` already
+covers both current exports). `_canRouteAttackViaAdapter` gate was retired at
+session 15 (assertions moved to the single-path body). Full per-session detail
+in the phase-7 archive.
 
-**Open test coverage gaps (pr-test-analyzer severity ≥ 6):**
+**Documentation / comment hygiene — ALL CLOSED 2026-06-02 (session 32).** Four
+behavior-neutral edits: `ARCHITECTURE_REIMAGINED.md` §7 *Landed names*
+annotation (lib shipped `rollAbilityCheck`/`rollSavingThrow`/generic `rollCheck`,
+not the sketched `resolveSkillCheck`/`rollInitiative`), §2.7 `main @ 2337ec0`
+snapshot pin, the softened `actor.js` disapproval-chat-ordering comment, and the
+dropped unused `_getInitiativeRollViaAdapter` `options` param.
 
-- ~~`renderDisapprovalRoll` — no unit/integration test (only transitively
-  via the cleric disapproval browser-test).~~ **CLOSED 2026-06-02 (Phase 7
-  session 27).** `chat-renderer-emit.test.js` covers `renderDisapprovalRoll`
-  + the sibling `renderMercurialEffect` (+16 Vitest) + a live-Foundry e2e
-  probe runs the deployed renderers against the real `Roll`/`ChatMessage`.
-- ~~`promptSpellburnCommitment` + `clampBurn` mocked across every caller;
-  `roll-dialog.mjs` has no direct coverage.~~ **STALE — entry obsolete
-  (verified 2026-06-02, session 27 follow-up).** Both helpers were *retired*
-  in the Q7-phase2 spellburn-dialog unification (they no longer exist in
-  `roll-dialog.mjs`; its only exports are `promptRollModifierDialog` +
-  `parseRollIntoDieAndModifier`). `roll-dialog.mjs` already has **direct**
-  coverage: `module/__tests__/adapter-roll-dialog.test.js` exercises
-  `parseRollIntoDieAndModifier` (die extraction, signed/positive sums,
-  no-die, falsy-terms, no-formula-field) and `promptRollModifierDialog`
-  (terms+rollData forwarding, user-cancel → null, throw → null, default
-  rollData, the spellburn descriptor incl. the negative-burn → 0 clamp that
-  superseded `clampBurn`). No work needed.
-- ~~`onSpellLost` tested as a direct callback but never verified to fire
-  during a real adapter cast.~~ **CLOSED 2026-06-02 (Phase 7 session 29).**
-  New e2e in `adapter-dispatch.spec.js` drives a real wizard cast engineered
-  to deterministically fail-to-lost (`config.inheritActionDie:false` + d3 die
-  + INT 3 + level 1 → total ≤ 1 → tier 'lost') and polls the spell item until
-  `system.lost` flips true; cleans up its actor afterward.
-- ~~Two-pass divergence: only the `terms[0]` die-bump case is covered;
-  `terms[N]` Compound / Modifier in-place mutations are not.~~ **CLOSED
-  2026-06-02 (Phase 7 session 30).** Re-scoped: `hookTermsToBonuses` +
-  terms[0]-bump + appended-Modifier→bonus were already covered; the one
-  genuine gap was the *documented boundary* that an in-place mutation of an
-  existing `terms[N]` (N>0) reaches Foundry but NOT `libResult`. +1 Vitest
-  (in-place `terms[1]` mutation → die unchanged + bonuses `[]`) + 1 live
-  Playwright (real hook → Foundry total > libResult.total divergence).
-- `_canRouteAttackViaAdapter` untested branches (dice-bearing
-  `weapon.toHit`, `twoWeaponSecondary`, settings try/catch). Gate retired
-  at session 15 — assertions moved to the single-path body.
-- ~~`_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment` Modifier
-  injection (PC-only tests) + the `Roll.validate(toHit) === false`
-  early-return path.~~ **CLOSED 2026-06-02 (Phase 7 session 31).** +2 Vitest
-  (real NPC `rollToHit` adjustment injection; forced-`Roll.validate=false`
-  early-return) + 1 live Playwright (NPC `+50` adjustment → attack total
-  ≥ 51). The prior NPC coverage was a test-local reimplementation, not the
-  real path.
-- ~~`__mocks__/dcc-roll.js` declares `createRoll` as `static async` while
-  production is sync; tests install local sync stubs — fix the shared
-  mock, delete the stubs.~~ **CLOSED 2026-06-02 (Phase 7 session 28).** Mock
-  `createRoll` made sync (matches production); one shared
-  `withSyncCreateRoll` helper exported from the mock replaced the duplicated
-  per-file copies (footprint was 2 files, not the estimated 13). +4 Vitest
-  parity guards + 1 e2e (production createRoll stays sync-declared).
-- ~~Surviving data-driven migration branches (`migrateActorData` /
-  `migrateItemData`: V14 AE numeric-mode → string-type converter,
-  `sheetClass`-from-localized-`className`, `critRange` / `disapproval`
-  string→number, `luckyRoll` → `birthAugur`, default alignment) have no
-  fixture tests.~~ **CLOSED 2026-06-02 (Phase 7 session 26).** Test-only
-  export of the two `const` helpers + `migrations-data-driven.test.js` (one
-  fixture per branch, full AE mode map, +34 Vitest) + a live-Foundry e2e
-  probe. The #739 speed-base seed and owned-item recursion are covered too.
-
-**Documentation / comment hygiene — ALL CLOSED 2026-06-02 (Phase 7 session 32).**
-
-- ~~`ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference lib APIs
-  `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` /
-  `rollInitiative(…)` but the adapter landed `rollAbilityCheck` /
-  `rollSavingThrow` / `rollCheck` (subsumed skill + init). Annotate with
-  the landed names.~~ **DONE (session 32).** Added a *Landed names*
-  annotation block; no `resolveSkillCheck`/`rollInitiative` symbol exists
-  (both subsumed by generic `rollCheck`).
-- ~~`ARCHITECTURE_REIMAGINED.md` §2.7 file-size snapshot is pinned to
-  branch start; prefix with `(Snapshot at main @ 2337ec0)`.~~ **DONE
-  (session 32).** Verified the figures are the exact line counts at
-  `2337ec0`.
-- ~~`actor.js` disapproval-chat-ordering comment overstates ordering
-  guarantees (`onDisapprovalIncreased` fires fire-and-forget inside
-  pass 2). Soften the claim or `await` the chat-message creation.~~
-  **DONE (session 32).** Softened — only the two awaited messages are
-  ordered; the EMOTE is fire-and-forget so its position isn't guaranteed
-  (awaiting would require changing the lib's non-awaiting callback
-  protocol, so soften was the right call).
-- ~~`_getInitiativeRollViaAdapter` accepts an `options = {}` param it never
-  reads — drop, or document "reserved for future modifier-dialog bridge."~~
-  **DONE (session 32).** Dropped (the dialog bridge already lives in the
-  sibling `_getInitiativeRollWithDialogViaAdapter`, so there's nothing to
-  reserve for).
-
-**Performance (below measurement threshold; document only):**
-
-- ~~`getActionDice` called 3× per `_rollToHitViaAdapter` — hoist to a
-  single `const`.~~ **DONE 2026-06-02 (Phase 7 session 34).** Hoisted to
-  one `const actionDicePresets`; the [0] formula feeds `die`, the term
-  `presets`, and `buildAttackInput` (new optional `actorActionDiceFormula`
-  param). +1 Vitest hoist guard (`getActionDice` called exactly once).
-- ~~`items.find` called 2× per `_getInitiativeRollViaAdapter` — fold into
-  one iteration.~~ **DONE 2026-06-02 (Phase 7 session 34).** Both init
-  methods (`_getInitiativeRollViaAdapter` + the dialog sibling) now scan
-  `this.items` in one `for…of` pass, apply order preserved (custom-init-die
-  weapon still wins over two-handed). +1 Vitest fold-order guard + 1 live
-  Playwright probe.
-- `renderDisapprovalRoll` / `renderMercurialEffect` use
-  `new Roll('${N}d1')` for deterministic chat;
-  `Roll.fromTerms([new NumericTerm({ number: total })])` reads cleaner
-  (no measurable win).
+**Performance (below measurement threshold) — section drained.** `getActionDice`
+3×→1× hoist in `rollToHit` and the double `items.find`→single-pass fold in both
+init methods both DONE 2026-06-02 (session 34; Vitest guards + a live Playwright
+order probe). One micro-item left, not worth a slice on its own: the
+`renderDisapprovalRoll` / `renderMercurialEffect` `new Roll('${N}d1')` deterministic
+chat could read cleaner as `Roll.fromTerms([new NumericTerm(...)])` (no measurable win).
 
 ## Decisions made
 
@@ -560,89 +400,28 @@ pure adapter-side wiring.
 
 ## Next steps
 
-**Legacy decommission arc — COMPLETE (2026-06-02, sessions 21–25 + the
-session-20 error-boundary prerequisite).** All five steps landed: roll-under
-(21), modifier dialog (22), check-penalty (23), description-only skill items
-(24), and the batch delete (25). No `_xxxLegacy` roll body survives anywhere
-in the system; every public roll dispatcher is single-path through the
-adapter (with the `options.rollUnder` and `!hasDie` *adapter* branches the
-respective dispatchers retain). Vitest + e2e retirement guards lock it in.
-The user-directed priority that opened this arc is fully discharged.
+**No arc is on a critical path.** All the Phase-7 cleanup arcs are closed
+(legacy-decom 21–25, test-coverage 26–31, doc-hygiene 32, programmatic-PC doc
+33, perf 34 — see *Current phase* + the *PR #720 review backlog* close-outs).
+The remaining candidate:
 
-**Test-coverage backfill arc — IN PROGRESS 2026-06-02 (sessions 26–27).**
-**Test-coverage-backfill arc COMPLETE (sessions 26–31, 2026-06-02).** Every
-PR #720 severity-≥6 coverage gap is now closed or found-stale. Sessions:
-26 (data-driven migration branches), 27 (`renderDisapprovalRoll` +
-`renderMercurialEffect`), 28 (`dcc-roll.js` mock async/sync + shared
-`withSyncCreateRoll`), 29 (`onSpellLost` real-cast + the forceCrit dice-flake
-fix), 30 (`terms[N]` two-pass-divergence boundary guard), 31 (NPC `rollToHit`
-adjustment injection + `Roll.validate` early-return). The `roll-dialog.mjs`
-gap was found stale (helpers retired + already covered).
+- **Appendix-A file-shrinkage arc** (`actor.js` / `actor-sheet.js` / `item.js`
+  / `config.js`) — each a multi-session project, not a slice.
 
-**Doc/comment-hygiene arc — the *Documentation / comment hygiene* subsection
-is drained (session 32, 2026-06-02).** All four items closed: §7 *Landed
-names* annotation, §2.7 `main @ 2337ec0` snapshot pin, the softened
-disapproval-chat-ordering comment, and the dropped unused
-`_getInitiativeRollViaAdapter` `options` param. **Next arc** (none on a
-critical path): an Appendix-A file-shrinkage arc — the two below-threshold
-perf items (hoist `getActionDice`, fold the `items.find` double-iteration)
-and the programmatic-PC-creation doc item are now both done (sessions 34
-and 33 respectively).
-- ~~the data-driven migration branches~~ **done (session 26).**
-- ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
-  covered too).**
-- ~~`__mocks__/dcc-roll.js` async/sync mismatch~~ **done (session 28; shared
-  `withSyncCreateRoll`; footprint was 2 files, not 13).**
-- ~~`onSpellLost` during a real cast~~ **done (session 29; deterministic
-  d3+low-INT fail-to-lost, polled for `system.lost`).**
-- ~~`terms[N]` two-pass divergence~~ **done (session 30; in-place
-  `terms[N>0]` mutation boundary guard — Vitest + live e2e).**
-- ~~`roll-dialog.mjs` direct coverage~~ **STALE — the named helpers
-  (`promptSpellburnCommitment`/`clampBurn`) were retired and
-  `adapter-roll-dialog.test.js` already covers both current exports
-  (verified session 27 follow-up).**
-- ~~*Doc / comment hygiene* (`ARCHITECTURE_REIMAGINED.md` §7 / §2.7 stale
-  refs, disapproval-chat-ordering comment, the unused
-  `_getInitiativeRollViaAdapter` `options` param).~~ **done (session 32;
-  all four items closed).**
-- ~~*Programmatic-PC-creation* documentation item.~~ **done (session 33;
-  new `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` + cross-links + §3.5/§3.3
-  refresh).**
-- ~~The below-threshold perf "document only" items (hoist `getActionDice`,
-  fold the `_getInitiativeRollViaAdapter` `items.find` double-iteration).~~
-  **done (session 34; both items drained — hoist + single-pass fold, Vitest
-  guards + a live Playwright order probe).**
-- The remaining candidate: an Appendix-A file-shrinkage arc (`actor.js` /
-  `actor-sheet.js` / `item.js` / `config.js`) — each a multi-session project,
-  not a slice.
-See the PR #720 backlog subsections above for the itemized lists.
+**Group E / §2.8 — validated, no DCC-side work left.** The class-registration
+registries shipped in Phases 4–6 and two real sibling content modules now
+consume them (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38; Group E
+session 1 added the per-class mercurial-magic table registry). The two unbuilt
+vertical-slice candidates remain viable if more pattern-laying is wanted, but
+nothing requires them: (1) **Halfling** — concentrates the §2.1 schema-slimming
+question on one class; (2) **homebrew single-class** — exercises Phase 4+5+6
+end-to-end via `registerClassMixin` + `registerSheetPart` + variant-aware data
+loading.
 
-**Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
-fully closed; open questions #2, #3, #4, and #7 all closed
-2026-05-18.** `rollWeaponAttack` + all four chained calls are
-single-path via the adapter; `module/migrations.js` targets V14-era
-(0.66+) worlds only; patron-taint matches DCC RAW end-to-end; the
-unified roll-modifier dialog covers wizard / cleric / naked spell
-checks + skill checks. Group E session 1 added the per-class
-mercurial-magic table registry, closing the long-standing §2.4
-generalization promise. Remaining Group E candidates (any are
-viable next):
-
-1. **Halfling vertical slice** — most natural Phase 4 starter
-   because it concentrates the schema-slimming question on one
-   class. Exercises §2.1 (monolithic Player schema) directly.
-2. **Homebrew single-class slice** — most ambitious; exercises
-   Phase 4 + 5 + 6 end-to-end via `registerClassMixin` +
-   `registerSheetPart` + variant-aware data loading. Largest blast
-   radius but lays the most pattern down.
-
-(Mercurial-magic, originally listed here as the third candidate,
-landed as Group E session 1 — see Recent slices.)
-
-**Cross-repo coordination:** if any migration uncovers a missing
-feature in the lib's tagged-union modifier (e.g. skill items with
-`allowLuck` needing dice-chain bumps), land the lib change first in
-its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
+**Cross-repo coordination:** if any future migration uncovers a missing
+feature in the lib's tagged-union modifier (e.g. skill items with `allowLuck`
+needing dice-chain bumps), land the lib change first in its own `dcc-core-lib`
+PR, then sync via `npm run sync-core-lib`.
 
 **Sibling-module status:**
 - **`dcc-crawl-classes`** — migrated to the full class-registration API
