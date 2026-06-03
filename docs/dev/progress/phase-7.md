@@ -1647,3 +1647,29 @@
   `module/config/` directory + the extract-and-compose pattern for the rest of
   the arc (`macroImages`, `diceTypes`/`DICE_CHAIN`, `activeEffectKeys`, the
   actor-importer block are the natural next chunks).
+
+- **2026-06-02 — Phase 7 session 36: Appendix-A `config.js` shrinkage —
+  extract the default-image tables into `module/config/images.mjs`.** Second
+  slice of the Appendix-A arc, same extract-and-compose pattern as session 35.
+  The three default/fallback image lookup tables (`defaultActorImages`,
+  `defaultItemImages`, `macroImages` [49 keys] — consumed **only** by
+  `module/entity-images.js` `EntityImages._selectImage` via `CONFIG.DCC.*`)
+  moved into a new `module/config/images.mjs` as named exports; `config.js`
+  imports + re-composes them onto `DCC` so the `CONFIG.DCC` shape is
+  **byte-identical** (`entity-images.js` needs no change). Grouped all three
+  into one `images.mjs` (one cohesive concern, one consumer file) rather than a
+  single-table `macro-images.mjs`. `diceTypes` was left for a later slice —
+  it's a different concern (dice config, consumed by `dcc.js:195`
+  `CONFIG.Dice.fulfillment.dice`). Verified byte-identical to git HEAD
+  (`JSON.stringify` diff; temp HEAD copy written **inside** `module/` so its
+  now-committed `./config/monster-data.mjs` import resolves) + same-reference
+  composition (`DCC.x === module.x`). `config.js` 625 → 560 lines (−65;
+  cumulative 845 → 560, −285 across sessions 35–36). **No behavior change, no
+  lib change.** Tests: +5 Vitest (new `module/__tests__/config-images.test.js`
+  — table values, all-paths-non-empty-string invariant, the `DCC.x ===
+  module.x` composition-identity guard); +1 Playwright (`extension-api.spec.js`
+  "survives extraction" probe reads `CONFIG.DCC.defaultActorImages`/
+  `defaultItemImages`/`macroImages` live, asserts known paths + the 7/49 key
+  counts). **1414 Vitest** (was 1409, +5). **184 Playwright passed**, zero
+  failures (was 183, +1; 6.3-min full suite). Next `config.js` chunks:
+  `diceTypes` + `DICE_CHAIN`, `activeEffectKeys`, the actor-importer block.

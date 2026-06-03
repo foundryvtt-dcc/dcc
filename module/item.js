@@ -3,16 +3,17 @@
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
 import { ContainerItemMixin } from './item/container-mixin.mjs'
+import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
  * Extend the base Item entity for DCC RPG.
  * Container-support members (weight/capacity/depth getters + containment
- * validation) live in {@link ContainerItemMixin}; see
- * `module/item/container-mixin.mjs`.
+ * validation) live in {@link ContainerItemMixin}; treasure-value / currency
+ * members live in {@link CurrencyItemMixin}. See `module/item/`.
  * @extends {Item}
  */
-class DCCItem extends ContainerItemMixin(Item) {
+class DCCItem extends CurrencyItemMixin(ContainerItemMixin(Item)) {
   prepareBaseData () {
     super.prepareBaseData()
 
@@ -683,129 +684,6 @@ class DCCItem extends ContainerItemMixin(Item) {
       no: () => null,
       defaultYes: false
     })
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Determine if this item needs to have its treasure value rolled
-   * @return {Boolean}  True if any value field contains a rollable formula
-   */
-  needsValueRoll () {
-    for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.system.value[currency]
-      if (!formula) continue
-      try {
-        const roll = new Roll(formula.toString())
-        if (!roll.isDeterministic) {
-          return true
-        }
-      } catch (e) {
-        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
-      }
-    }
-
-    return false
-  }
-
-  /**
-   * Roll to determine the value of this item
-   */
-  async rollValue () {
-    const updates = {}
-    const valueRolls = {}
-
-    for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.system.value[currency] || '0'
-      try {
-        const roll = new Roll(formula.toString())
-        await roll.evaluate()
-        updates['system.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
-      } catch (e) {
-        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
-      }
-    }
-
-    const speaker = { alias: this.actor.name, id: this.actor.id }
-    const messageData = {
-      user: game.user.id,
-      speaker,
-      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-      content: game.i18n.format('DCC.ResolveValueEmote', {
-        itemName: this.name,
-        pp: valueRolls.pp,
-        ep: valueRolls.ep,
-        gp: valueRolls.gp,
-        sp: valueRolls.sp,
-        cp: valueRolls.cp
-      }),
-      sound: CONFIG.sounds.dice,
-      flags: {
-        'dcc.RollType': 'LootValue'
-      }
-    }
-    await CONFIG.ChatMessage.documentClass.create(messageData)
-
-    this.update(updates)
-  }
-
-  /**
-   * Shift currency to the next highest denomination
-   */
-  async convertCurrencyUpward (currency) {
-    const currencyRank = CONFIG.DCC.currencyRank
-    const currencyValue = CONFIG.DCC.currencyValue
-    // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
-      return
-    }
-    // Find the rank of this currency
-    const rank = currencyRank.indexOf(currency)
-    // Make sure there's a currency to convert to
-    if (rank >= 0 && rank < currencyRank.length - 1) {
-      // What are we converting to?
-      const toCurrency = currencyRank[rank + 1]
-      // Calculate the conversion factor
-      const conversionFactor = currencyValue[toCurrency] / currencyValue[currency]
-      // Check we have enough currency
-      if (this.system.value[currency] >= conversionFactor) {
-        // Apply the conversion
-        const updates = {}
-        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
-        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
-        this.update(updates)
-      }
-    }
-  }
-
-  /**
-   * Shift currency to the next lowest denomination
-   */
-  async convertCurrencyDownward (currency) {
-    const currencyRank = CONFIG.DCC.currencyRank
-    const currencyValue = CONFIG.DCC.currencyValue
-    // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
-      return
-    }
-    // Find the rank of this currency
-    const rank = currencyRank.indexOf(currency)
-    // Make sure there's a currency to convert to
-    if (rank >= 1) {
-      // What are we converting to?
-      const toCurrency = currencyRank[rank - 1]
-      // Check we have enough currency
-      if (this.system.value[currency] >= 1) {
-        // Calculate the conversion factor
-        const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
-        // Apply the conversion
-        const updates = {}
-        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - 1
-        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
-        this.update(updates)
-      }
-    }
   }
 }
 

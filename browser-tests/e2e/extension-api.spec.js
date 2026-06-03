@@ -371,6 +371,83 @@ test.describe('DCC Extension API', () => {
     expect(result.cannotContainSelf).toEqual({ allowed: false, reason: 'DCC.ContainerCannotContainSelf' })
   })
 
+  test('DCC treasure-value / currency (needsValueRoll / rollValue / convertCurrency) survives item/currency-mixin.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A item.js shrinkage): the treasure-value / currency
+    // block moved out of module/item.js into module/item/currency-mixin.mjs,
+    // composed as `DCCItem extends CurrencyItemMixin(ContainerItemMixin(Item))`.
+    // item-sheet.js action handlers + actor-sheet.js's value-resolved check call
+    // these off live DCCItem instances. This probe exercises the surface
+    // end-to-end against a real treasure item on an actor.
+    //
+    // NOTE: under the live V14 schema the currency fields are integer
+    // NumberFields (CurrencyField) and base-item migrateData parseInt()s any
+    // string, so a die *formula* never persists in system.value — needsValueRoll
+    // therefore reports a resolved (false) value for any created treasure. The
+    // formula-flagged path (needsValueRoll === true) is covered at unit level in
+    // item-currency-mixin.test.js; here we assert the genuinely-live behavior:
+    // rollValue resolving + posting the LootValue card, and the conversion math.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+      let actor
+      // convertCurrency{Up,Down}ward fire this.update() without awaiting it, so
+      // poll the in-memory document until it settles (or briefly time out).
+      const waitForValue = async (item, currency, expected) => {
+        for (let i = 0; i < 40; i++) {
+          if (item.system.value[currency] === expected) return
+          await new Promise((r) => setTimeout(r, 25))
+        }
+      }
+      try {
+        actor = await Actor.create({ type: 'Player', name: 'P_CurrencyProbe' })
+
+        // rollValue: resolves every value field (deterministic under the schema)
+        // and posts a LootValue chat card.
+        const [hoard] = await actor.createEmbeddedDocuments('Item', [{
+          type: 'treasure',
+          name: 'Probe Hoard',
+          system: { value: { pp: 0, ep: 0, gp: 7, sp: 0, cp: 0 } }
+        }])
+        observed.needsRoll = hoard.needsValueRoll() // integer value -> resolved
+        const beforeIds = new Set(game.messages.contents.map(m => m.id))
+        await hoard.rollValue()
+        await waitForValue(hoard, 'gp', 7)
+        observed.gpResolved = hoard.system.value.gp // new Roll('7') -> 7
+        const created = game.messages.contents.filter(m => !beforeIds.has(m.id))
+        observed.lootMsgPosted = created.some(m => m.flags?.dcc?.RollType === 'LootValue')
+
+        // convertCurrency on a resolved (deterministic) value, both directions.
+        const [purse] = await actor.createEmbeddedDocuments('Item', [{
+          type: 'treasure',
+          name: 'Probe Purse',
+          system: { value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 100 } }
+        }])
+        await purse.convertCurrencyUpward('cp') // 100 cp -> 90 cp + 1 sp
+        await waitForValue(purse, 'sp', 1)
+        observed.cpAfterUp = purse.system.value.cp
+        observed.spAfterUp = purse.system.value.sp
+        await purse.convertCurrencyDownward('sp') // 1 sp -> 0 sp + 10 cp
+        await waitForValue(purse, 'cp', 100)
+        observed.cpAfterDown = purse.system.value.cp
+        observed.spAfterDown = purse.system.value.sp
+        // Bottom-denomination no-op still holds end-to-end (nothing below cp).
+        await purse.convertCurrencyDownward('cp')
+        observed.cpAfterBottomNoop = purse.system.value.cp
+      } finally {
+        if (actor) await actor.delete().catch(() => {})
+      }
+      return observed
+    })
+
+    expect(result.needsRoll).toBe(false)
+    expect(result.gpResolved).toBe(7)
+    expect(result.lootMsgPosted).toBe(true)
+    expect(result.cpAfterUp).toBe(90)
+    expect(result.spAfterUp).toBe(1)
+    expect(result.cpAfterDown).toBe(100)
+    expect(result.spAfterDown).toBe(0)
+    expect(result.cpAfterBottomNoop).toBe(100)
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-03 (session 40).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-03 (session 41).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -77,11 +77,13 @@ below-threshold perf items (34). **Sessions 35–39 ran the Appendix-A
 `module/config/images.mjs`; dice config → `module/config/dice.mjs`;
 `activeEffectKeys` → `module/config/active-effect-keys.mjs`; actor-importer
 block → `module/config/actor-importer.mjs`), shrinking `config.js` 845 → 451.
-**Session 40 opens the Appendix-A `item.js` arc** with the container-support
-block extracted to `module/item/container-mixin.mjs` via a Foundry mixin
-(`DCCItem extends ContainerItemMixin(Item)`) — `item.js` 975 → 812. All were
-behavior-neutral with no lib change. Repo green: **1432 Vitest / 188 Playwright
-e2e passed**, zero failures (flake-clean since the session-29 fix). Per-session
+**Sessions 40–41 opened the Appendix-A `item.js` arc** — container-support →
+`module/item/container-mixin.mjs` (40) + treasure-value/currency →
+`module/item/currency-mixin.mjs` (41), composed as
+`DCCItem extends CurrencyItemMixin(ContainerItemMixin(Item))`; `item.js` 975 →
+691. All were behavior-neutral with no lib change. Repo green: **1445 Vitest /
+189 Playwright e2e passed**, zero failures (flake-clean since the session-29 fix).
+Per-session
 detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
 the itemized close-outs are in the *PR #720 review backlog* below.
 
@@ -101,9 +103,11 @@ Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
 `config.js` data-table arc: **method-group → Foundry mixin**
 (`(Base) => class extends Base`, the codebase's `HandlebarsApplicationMixin(...)`
 idiom), keeping the public instance surface byte-identical. Session 40 lifted the
-container-support block into `module/item/container-mixin.mjs`
-(`DCCItem extends ContainerItemMixin(Item)`), `item.js` 975 → 812. `actor.js`
-/ `actor-sheet.js` remain unstarted multi-session projects.
+container-support block into `module/item/container-mixin.mjs`; session 41 lifted
+the treasure-value / currency block into `module/item/currency-mixin.mjs`
+(`DCCItem extends CurrencyItemMixin(ContainerItemMixin(Item))`), `item.js` 975 →
+691 (−284 across the two slices). `actor.js` / `actor-sheet.js` remain unstarted
+multi-session projects.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -114,6 +118,45 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-03 — Phase 7 session 41: Appendix-A `item.js` shrinkage —
+  extract the treasure-value / currency block into
+  `module/item/currency-mixin.mjs`.** Second slice of the `item.js` arc, same
+  method-group→Foundry-mixin shape as session 40. The 4-method treasure-value /
+  currency block (`needsValueRoll`, `rollValue`, `convertCurrencyUpward`,
+  `convertCurrencyDownward` — reads only `this.system.value` + the
+  `CONFIG.DCC.currencies`/`currencyRank`/`currencyValue` config, posts a
+  `LootValue` chat card, no spell/roll-adapter/lib entanglement, no dispatch
+  logging) moved into `CurrencyItemMixin`. `DCCItem` now declares
+  `extends CurrencyItemMixin(ContainerItemMixin(Item))` (mixin chain
+  Currency→Container→Item), so the 4 methods stay instance methods with
+  byte-identical `this` semantics; the consumers (`item-sheet.js` action
+  handlers `#rollValue`/convert-currency + `actor-sheet.js`'s value-resolved
+  check) call them off live items and need **zero** change. `item.js` 812 → 691
+  lines (−121; cumulative 975 → 691, −284 across sessions 40–41). **No behavior
+  change, no lib change.** This block had **no prior unit coverage**, so the new
+  test is a coverage win, not just a guard. Tests: +13 Vitest (new
+  `module/__tests__/item-currency-mixin.test.js` — composition guards incl. the
+  Currency→Container→Item chain order, *and behavioral*: `needsValueRoll`
+  deterministic-vs-die-formula + empty-field skipping, `convertCurrency` up/down
+  denomination math incl. below-factor / top-denom / bottom-denom no-ops + the
+  unresolved-value conversion block); +1 Playwright (`extension-api.spec.js`
+  "survives extraction" probe — live treasure item: `rollValue` resolves +
+  posts the LootValue card, `convertCurrency` up/down 100cp↔1sp end-to-end).
+  **1445 Vitest** (was 1432, +13). **189 Playwright passed**, zero failures (was
+  188, +1; 6.2-min full suite). **Latent finding surfaced, deliberately NOT
+  fixed here (out of scope for a behavior-neutral extraction):** under the live
+  V14 schema the currency value fields are integer `NumberField`s
+  (`CurrencyField`) and `base-item.mjs` `migrateData` `parseInt()`s any string,
+  so a die *formula* never persists in `system.value` — meaning
+  `needsValueRoll`'s formula-flagging path (and thus the "roll an unresolved
+  treasure value" feature behind the treasure sheet's `rollValue` button) is
+  effectively dead for current data. The Vitest covers that code path via direct
+  in-memory `system.value` assignment; the e2e probe asserts the genuinely-live
+  behavior. Worth a separate look (schema change to a formula-capable field, or
+  remove the dead path). Next `item.js` chunk: the spell/manifestation/mercurial
+  roll group (~355 lines — biggest, but roll-behavior so check for
+  dispatch-logging / lib entanglement before extracting).
 
 - **2026-06-03 — Phase 7 session 40: Appendix-A `item.js` shrinkage arc opens —
   extract the container-support block into `module/item/container-mixin.mjs`.**
@@ -235,32 +278,6 @@ archives linked above.
   **1418 Vitest** (was 1414, +4). **185 Playwright passed**, zero failures (was
   184, +1; 6.4-min full suite). Next `config.js` chunks: `activeEffectKeys`
   (~45 lines), the actor-importer block.
-
-- **2026-06-02 — Phase 7 session 36: Appendix-A `config.js` shrinkage —
-  extract the default-image tables into `module/config/images.mjs`.** Second
-  slice of the Appendix-A arc, same extract-and-compose pattern as session 35.
-  The three default/fallback image lookup tables (`defaultActorImages`,
-  `defaultItemImages`, `macroImages` [49 keys] — consumed **only** by
-  `module/entity-images.js` `EntityImages._selectImage` via `CONFIG.DCC.*`)
-  moved into a new `module/config/images.mjs` as named exports; `config.js`
-  imports + re-composes them onto `DCC` so the `CONFIG.DCC` shape is
-  **byte-identical** (`entity-images.js` needs no change). Grouped all three
-  into one `images.mjs` (one cohesive concern, one consumer file) rather than a
-  single-table `macro-images.mjs`. `diceTypes` was left for a later slice —
-  it's a different concern (dice config, consumed by `dcc.js:195`
-  `CONFIG.Dice.fulfillment.dice`). Verified byte-identical to git HEAD
-  (`JSON.stringify` diff; temp HEAD copy written **inside** `module/` so its
-  now-committed `./config/monster-data.mjs` import resolves) + same-reference
-  composition (`DCC.x === module.x`). `config.js` 625 → 560 lines (−65;
-  cumulative 845 → 560, −285 across sessions 35–36). **No behavior change, no
-  lib change.** Tests: +5 Vitest (new `module/__tests__/config-images.test.js`
-  — table values, all-paths-non-empty-string invariant, the `DCC.x ===
-  module.x` composition-identity guard); +1 Playwright (`extension-api.spec.js`
-  "survives extraction" probe reads `CONFIG.DCC.defaultActorImages`/
-  `defaultItemImages`/`macroImages` live, asserts known paths + the 7/49 key
-  counts). **1414 Vitest** (was 1409, +5). **184 Playwright passed**, zero
-  failures (was 183, +1; 6.3-min full suite). Next `config.js` chunks:
-  `diceTypes` + `DICE_CHAIN`, `activeEffectKeys`, the actor-importer block.
 
 ## Closed questions
 
@@ -423,20 +440,24 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   question still deferred: whether the unconsumed `activeEffectKeys` table
   (extracted session 38) should be deprecated/removed — see the session-38
   slice.
-- **`item.js` (975 → 812 after session 40) — IN PROGRESS.** Pattern is
+- **`item.js` (975 → 691 after session 41) — IN PROGRESS.** Pattern is
   **method-group → Foundry mixin** in `module/item/*.mjs`
-  (`DCCItem extends SomeMixin(Item)`), public surface byte-identical. Done:
-  `container-mixin.mjs` (40 — the 9 weight/capacity/depth getters + 2 validation
-  helpers). Natural next chunks by cohesion: (1) the **spell/manifestation/
-  mercurial roll group** (`rollSpellCheck` / `hasExistingManifestation` /
-  `hasExistingMercurialMagic` / `rollManifestation` / `rollMercurialMagic`,
-  ~355 lines — biggest, but roll-behavior so more adapter-adjacent; check for
-  dispatch-logging / lib entanglement before extracting); (2) the
-  **currency/value group** (`needsValueRoll` / `rollValue` /
-  `convertCurrencyUpward` / `convertCurrencyDownward`). `prepareBaseData`
-  (~240 lines, weapon attack/damage prep) and the lifecycle hooks
-  (`_onCreate` / `_preDelete` / `deleteDialog`) likely stay — too entangled
-  with the class's core identity to gain from a mixin.
+  (`DCCItem extends CurrencyItemMixin(ContainerItemMixin(Item))`), public surface
+  byte-identical. Done: `container-mixin.mjs` (40 — 9 weight/capacity/depth
+  getters + 2 validation helpers); `currency-mixin.mjs` (41 — the 4-method
+  treasure-value / currency block). Next chunk by cohesion: the
+  **spell/manifestation/mercurial roll group** (`rollSpellCheck` /
+  `hasExistingManifestation` / `hasExistingMercurialMagic` / `rollManifestation` /
+  `rollMercurialMagic`, ~355 lines — biggest remaining, but roll-behavior so
+  more adapter-adjacent; **check for dispatch-logging / lib entanglement before
+  extracting**, and verify the mixin can still reach `game.dcc` / adapter
+  helpers). `prepareBaseData` (~240 lines, weapon attack/damage prep) and the
+  lifecycle hooks (`_onCreate` / `_preDelete` / `deleteDialog`) likely stay —
+  too entangled with the class's core identity to gain from a mixin.
+  **Open item:** the session-41 latent finding — `needsValueRoll`/`rollValue`
+  formula path is dead under the integer-`NumberField` `CurrencyField` schema
+  (`migrateData` `parseInt()`s strings); decide whether to make the value field
+  formula-capable or remove the dead path. Separate from the extraction arc.
 - **`actor.js` / `actor-sheet.js`** — the remaining Appendix-A file-shrinkage
   targets; each a multi-session project, not a slice; start one only with
   budget for it.
