@@ -312,6 +312,65 @@ test.describe('DCC Extension API', () => {
     expect(result.blessingRemap).toEqual(['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object'])
   })
 
+  test('DCC container support (getters + canContainItem) survives item/container-mixin.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A item.js shrinkage): the container-support block (the
+    // weight/capacity/depth getters + the containment-validation helpers) moved
+    // out of module/item.js into module/item/container-mixin.mjs, with DCCItem
+    // now declaring `extends ContainerItemMixin(Item)`. actor-sheet.js,
+    // item-sheet.js and item-piles-support.js read these straight off live
+    // DCCItem instances — a broken mixin compose would blank container weight
+    // summaries and silently allow illegal drops. This probe exercises the
+    // surface end-to-end against a real container + contained item on an actor.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+      let actor
+      try {
+        actor = await Actor.create({ type: 'Player', name: 'P_ContainerProbe' })
+        const [backpack, loot] = await actor.createEmbeddedDocuments('Item', [
+          { type: 'container', name: 'Probe Backpack', system: { weight: 1, quantity: 1, capacity: { weight: 50, items: 10 } } },
+          { type: 'equipment', name: 'Probe Loot', system: { weight: 3, quantity: 2 } }
+        ])
+        // Loose item, not yet in the container.
+        observed.isContainer = backpack.isContainer
+        observed.lootIsContainer = loot.isContainer
+        observed.emptyContentsLen = backpack.contents.length
+        observed.emptyContentsWeight = backpack.contentsWeight
+        // canContainItem should approve a physical item with spare capacity.
+        observed.canContain = backpack.canContainItem(loot)
+
+        // Place the loot inside the backpack and re-read the live getters.
+        await loot.update({ 'system.container': backpack.id })
+        observed.contentsLen = backpack.contents.length
+        observed.contentsWeight = backpack.contentsWeight // 3 * 2
+        observed.contentsItemCount = backpack.contentsItemCount // quantity 2
+        observed.totalWeight = backpack.totalWeight // own 1 + contents 6
+        observed.availableWeight = backpack.availableWeightCapacity // 50 - 6
+        observed.availableItems = backpack.availableItemCapacity // 10 - 2
+        observed.lootIsContained = loot.isContained
+
+        // canContainItem self-rejection still fires through the extracted code.
+        observed.cannotContainSelf = backpack.canContainItem(backpack)
+      } finally {
+        if (actor) await actor.delete().catch(() => {})
+      }
+      return observed
+    })
+
+    expect(result.isContainer).toBe(true)
+    expect(result.lootIsContainer).toBe(false)
+    expect(result.emptyContentsLen).toBe(0)
+    expect(result.emptyContentsWeight).toBe(0)
+    expect(result.canContain).toEqual({ allowed: true, reason: null })
+    expect(result.contentsLen).toBe(1)
+    expect(result.contentsWeight).toBe(6)
+    expect(result.contentsItemCount).toBe(2)
+    expect(result.totalWeight).toBe(7)
+    expect(result.availableWeight).toBe(44)
+    expect(result.availableItems).toBe(8)
+    expect(result.lootIsContained).toBe(true)
+    expect(result.cannotContainSelf).toEqual({ allowed: false, reason: 'DCC.ContainerCannotContainSelf' })
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

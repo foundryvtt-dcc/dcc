@@ -65,22 +65,25 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-03 (session 39).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-03 (session 40).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
 below-threshold perf items (34). **Sessions 35–39 ran the Appendix-A
-file-shrinkage arc** with five `config.js` slices (monster tables →
+`config.js` file-shrinkage arc** with five slices (monster tables →
 `module/config/monster-data.mjs`; default-image tables →
 `module/config/images.mjs`; dice config → `module/config/dice.mjs`;
 `activeEffectKeys` → `module/config/active-effect-keys.mjs`; actor-importer
-block → `module/config/actor-importer.mjs`). All were behavior-neutral with no
-lib change. Repo green: **1427 Vitest / 187 Playwright e2e passed**, zero
-failures (flake-clean since the session-29 fix). Per-session detail lives in
-*Recent slices* + the [phase-7 archive](dev/progress/phase-7.md); the itemized
-close-outs are in the *PR #720 review backlog* below.
+block → `module/config/actor-importer.mjs`), shrinking `config.js` 845 → 451.
+**Session 40 opens the Appendix-A `item.js` arc** with the container-support
+block extracted to `module/item/container-mixin.mjs` via a Foundry mixin
+(`DCCItem extends ContainerItemMixin(Item)`) — `item.js` 975 → 812. All were
+behavior-neutral with no lib change. Repo green: **1432 Vitest / 188 Playwright
+e2e passed**, zero failures (flake-clean since the session-29 fix). Per-session
+detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
+the itemized close-outs are in the *PR #720 review backlog* below.
 
 **Appendix-A `config.js` data-table extraction is effectively complete (arc ran
 sessions 35–39).** The pattern mirrored the Phase-7 `dcc.js` split: break the
@@ -92,8 +95,15 @@ the `DCC` object, keeping the public `CONFIG.DCC` shape byte-identical. Done:
 451 lines (−394). What remains in `config.js` is small scalar enums + the
 Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
 `variants` / …); those stay — they're tiny and are the file's reason to exist.
-The other Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
-multi-session projects, not slices.
+
+**Appendix-A `item.js` arc opened (session 40).** The behavior-class targets
+(`actor.js` / `actor-sheet.js` / `item.js`) use a different shape than the
+`config.js` data-table arc: **method-group → Foundry mixin**
+(`(Base) => class extends Base`, the codebase's `HandlebarsApplicationMixin(...)`
+idiom), keeping the public instance surface byte-identical. Session 40 lifted the
+container-support block into `module/item/container-mixin.mjs`
+(`DCCItem extends ContainerItemMixin(Item)`), `item.js` 975 → 812. `actor.js`
+/ `actor-sheet.js` remain unstarted multi-session projects.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -104,6 +114,44 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-03 — Phase 7 session 40: Appendix-A `item.js` shrinkage arc opens —
+  extract the container-support block into `module/item/container-mixin.mjs`.**
+  First slice of the `item.js` file-shrinkage target (Appendix-A; the table's
+  967→~200 figure is an early snapshot — `item.js` was 975 lines at slice
+  start). Unlike the `config.js` arc (pure data-table → named exports), `item.js`
+  is a behavior-heavy class, so the extraction shape is **method-group → Foundry
+  mixin** (`(Base) => class extends Base`, matching the codebase's
+  `HandlebarsApplicationMixin(...)` idiom). The self-contained container-support
+  block — 7 weight/capacity/depth getters (`isContainer`, `isContained`,
+  `contents`, `contentsWeight`, `totalWeight`, `availableWeightCapacity`,
+  `availableItemCapacity`, `contentsItemCount`, `containerDepth`) + 2 validation
+  helpers (`wouldCreateCircularContainment`, `canContainItem`) + the
+  `MAX_CONTAINER_DEPTH` const — moved into a new
+  `module/item/container-mixin.mjs` as `ContainerItemMixin`. `DCCItem` now
+  declares `extends ContainerItemMixin(Item)`, so every member stays an instance
+  getter/method with byte-identical `this` semantics; the three external
+  consumers (`actor-sheet.js`, `item-sheet.js`, `item-piles-support.js`) read
+  these straight off live items and need **zero** change. The block is fully
+  self-contained (reads only `this`/`this.system`/`this.parent`/`this.id`/
+  `this.type` + `MAX_CONTAINER_DEPTH`; no spell/roll/lib/adapter entanglement, no
+  dispatch logging, returns i18n *keys* not localized strings). `item.js` 975 →
+  812 lines (−163). **No behavior change, no lib change.** Tests: the existing
+  `container.test.js` (48 assertions) + `item.test.js` pass unchanged (proof the
+  mixin composes transparently); +5 Vitest (new
+  `module/__tests__/item-container-mixin.test.js` — default===named export, the
+  `MAX_CONTAINER_DEPTH` const travels, applying the mixin yields all 11 members,
+  the getter-vs-method shape, and `DCCItem` instances still expose the surface);
+  +1 Playwright (`extension-api.spec.js` "survives extraction" probe — creates a
+  **live** container + contained item on an actor and asserts
+  contents/weight/capacity/`canContainItem` end-to-end incl. the self-rejection
+  branch). **1432 Vitest** (was 1427, +5). **188 Playwright passed**, zero
+  failures (was 187, +1; 6.1-min full suite). Establishes the `module/item/`
+  directory + the method-group→mixin pattern for the rest of the `item.js` arc.
+  Next `item.js` chunks (by cohesion): the spell/manifestation/mercurial roll
+  group (`rollSpellCheck`/`hasExisting*`/`rollManifestation`/`rollMercurialMagic`,
+  ~355 lines — the biggest, but roll-behavior so more adapter-adjacent) and the
+  currency/value group (`needsValueRoll`/`rollValue`/`convertCurrency{Up,Down}ward`).
 
 - **2026-06-03 — Phase 7 session 39: Appendix-A `config.js` shrinkage —
   extract the actor-importer block into `module/config/actor-importer.mjs`.**
@@ -213,34 +261,6 @@ archives linked above.
   counts). **1414 Vitest** (was 1409, +5). **184 Playwright passed**, zero
   failures (was 183, +1; 6.3-min full suite). Next `config.js` chunks:
   `diceTypes` + `DICE_CHAIN`, `activeEffectKeys`, the actor-importer block.
-
-- **2026-06-02 — Phase 7 session 35: Appendix-A `config.js` shrinkage arc
-  opens — extract the monster-classification tables into
-  `module/config/monster-data.mjs`.** First slice of the Appendix-A
-  file-shrinkage arc (`config.js` target ~200 lines). `config.js` was a single
-  845-line `DCC` data object (`export default DCC`; `CONFIG.DCC = DCC`); the
-  four monster-classification tables (`monsterCriticalHits` [178 lines],
-  `humanoidHints`, `giants`, `giantsNotGiants` — ~235 lines, the single biggest
-  cohesive chunk, consumed **only** by `module/npc-parser.js:119–130`) moved to
-  a new `module/config/monster-data.mjs` as named exports. `config.js` imports
-  them and re-composes onto `DCC` (`DCC.monsterCriticalHits =
-  monsterCriticalHits`, etc.), so the default-export / `CONFIG.DCC` shape is
-  **byte-identical** — `npc-parser.js` needs zero changes (still reads
-  `DCC.*`). Verified the extracted tables are byte-identical to git HEAD
-  (`JSON.stringify` diff against `git show HEAD:module/config.js`) and that
-  `config.js` re-composes the **same object references** (`DCC.x === module.x`).
-  `config.js` 845 → 625 lines (−220). **No behavior change, no lib change.**
-  Tests: +5 Vitest (new `module/__tests__/config-monster-data.test.js` — table
-  values + the every-row-has-6-types invariant + the `DCC.x === module.x`
-  composition-identity guard); +1 Playwright (`extension-api.spec.js`, the
-  "survives extraction" family alongside the handlebars/macros/settings-table
-  probes — reads `CONFIG.DCC.monsterCriticalHits`/`humanoidHints`/`giants`/
-  `giantsNotGiants` live and asserts the known die/table values + the 22-HD-row
-  count). **1409 Vitest** (was 1404, +5). **183 Playwright passed**, zero
-  failures (was 182, +1; 6.3-min full suite). Establishes the
-  `module/config/` directory + the extract-and-compose pattern for the rest of
-  the arc (`macroImages`, `diceTypes`/`DICE_CHAIN`, `activeEffectKeys`, the
-  actor-importer block are the natural next chunks).
 
 ## Closed questions
 
@@ -389,14 +409,13 @@ chat could read cleaner as `Roll.fromTerms([new NumericTerm(...)])` (no measurab
 ## Next steps
 
 **The Appendix-A `config.js` data-table extraction arc is done** (sessions
-35–39; all PR #720 cleanup arcs were closed first — legacy-decom 21–25,
-test-coverage 26–31, doc-hygiene 32, programmatic-PC doc 33, perf 34). Every
-self-contained data table is now its own `module/config/*.mjs` module
-re-composed onto `DCC` byte-identically:
+35–39); **the `item.js` behavior-class arc opened at session 40** with the
+container-support mixin. All PR #720 cleanup arcs were closed first — legacy-decom
+21–25, test-coverage 26–31, doc-hygiene 32, programmatic-PC doc 33, perf 34.
 
-- **`config.js` (845 → 451 after session 39).** Done: `monster-data.mjs` (35),
+- **`config.js` (845 → 451 after session 39) — DONE.** `monster-data.mjs` (35),
   `images.mjs` (36), `dice.mjs` (37), `active-effect-keys.mjs` (38),
-  `actor-importer.mjs` (39). What's left in `config.js` is small scalar enums
+  `actor-importer.mjs` (39). What's left is small scalar enums
   (`abilities` / `saves` / `items` / `currencies` / `critRanges` / …) + the
   Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
   `variants` / …) — **leave those in place**; they're tiny and are the file's
@@ -404,9 +423,23 @@ re-composed onto `DCC` byte-identically:
   question still deferred: whether the unconsumed `activeEffectKeys` table
   (extracted session 38) should be deprecated/removed — see the session-38
   slice.
-- **`actor.js` / `actor-sheet.js` / `item.js`** — the remaining Appendix-A
-  file-shrinkage targets; each a multi-session project, not a slice; start one
-  only with budget for it.
+- **`item.js` (975 → 812 after session 40) — IN PROGRESS.** Pattern is
+  **method-group → Foundry mixin** in `module/item/*.mjs`
+  (`DCCItem extends SomeMixin(Item)`), public surface byte-identical. Done:
+  `container-mixin.mjs` (40 — the 9 weight/capacity/depth getters + 2 validation
+  helpers). Natural next chunks by cohesion: (1) the **spell/manifestation/
+  mercurial roll group** (`rollSpellCheck` / `hasExistingManifestation` /
+  `hasExistingMercurialMagic` / `rollManifestation` / `rollMercurialMagic`,
+  ~355 lines — biggest, but roll-behavior so more adapter-adjacent; check for
+  dispatch-logging / lib entanglement before extracting); (2) the
+  **currency/value group** (`needsValueRoll` / `rollValue` /
+  `convertCurrencyUpward` / `convertCurrencyDownward`). `prepareBaseData`
+  (~240 lines, weapon attack/damage prep) and the lifecycle hooks
+  (`_onCreate` / `_preDelete` / `deleteDialog`) likely stay — too entangled
+  with the class's core identity to gain from a mixin.
+- **`actor.js` / `actor-sheet.js`** — the remaining Appendix-A file-shrinkage
+  targets; each a multi-session project, not a slice; start one only with
+  budget for it.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now

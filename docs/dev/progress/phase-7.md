@@ -1619,3 +1619,31 @@
   passed**, zero failures (was 181, +1; 6.5-min full suite). Picked up
   uncommitted from a prior session and finished (docs + full e2e run); Foundry
   was relaunched mid-session after the GM tab freed.
+
+- **2026-06-02 — Phase 7 session 35: Appendix-A `config.js` shrinkage arc
+  opens — extract the monster-classification tables into
+  `module/config/monster-data.mjs`.** First slice of the Appendix-A
+  file-shrinkage arc (`config.js` target ~200 lines). `config.js` was a single
+  845-line `DCC` data object (`export default DCC`; `CONFIG.DCC = DCC`); the
+  four monster-classification tables (`monsterCriticalHits` [178 lines],
+  `humanoidHints`, `giants`, `giantsNotGiants` — ~235 lines, the single biggest
+  cohesive chunk, consumed **only** by `module/npc-parser.js:119–130`) moved to
+  a new `module/config/monster-data.mjs` as named exports. `config.js` imports
+  them and re-composes onto `DCC` (`DCC.monsterCriticalHits =
+  monsterCriticalHits`, etc.), so the default-export / `CONFIG.DCC` shape is
+  **byte-identical** — `npc-parser.js` needs zero changes (still reads
+  `DCC.*`). Verified the extracted tables are byte-identical to git HEAD
+  (`JSON.stringify` diff against `git show HEAD:module/config.js`) and that
+  `config.js` re-composes the **same object references** (`DCC.x === module.x`).
+  `config.js` 845 → 625 lines (−220). **No behavior change, no lib change.**
+  Tests: +5 Vitest (new `module/__tests__/config-monster-data.test.js` — table
+  values + the every-row-has-6-types invariant + the `DCC.x === module.x`
+  composition-identity guard); +1 Playwright (`extension-api.spec.js`, the
+  "survives extraction" family alongside the handlebars/macros/settings-table
+  probes — reads `CONFIG.DCC.monsterCriticalHits`/`humanoidHints`/`giants`/
+  `giantsNotGiants` live and asserts the known die/table values + the 22-HD-row
+  count). **1409 Vitest** (was 1404, +5). **183 Playwright passed**, zero
+  failures (was 182, +1; 6.3-min full suite). Establishes the
+  `module/config/` directory + the extract-and-compose pattern for the rest of
+  the arc (`macroImages`, `diceTypes`/`DICE_CHAIN`, `activeEffectKeys`, the
+  actor-importer block are the natural next chunks).
