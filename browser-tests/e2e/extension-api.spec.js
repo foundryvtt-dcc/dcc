@@ -261,6 +261,31 @@ test.describe('DCC Extension API', () => {
     expect(result.effectDiceChainType).toBe('diceChain')
   })
 
+  test('DCC activeEffectKeys reference table survives config/active-effect-keys.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A config.js shrinkage): the AE attribute-key reference
+    // table was moved out of module/config.js into
+    // module/config/active-effect-keys.mjs and re-composed onto DCC. The table
+    // has no runtime code consumer (it's a documented CONFIG.DCC.* reference
+    // surface), so this probe is the only end-to-end guard that the live shape
+    // is unchanged after the extraction.
+    const result = await page.evaluate(() => {
+      const keys = CONFIG.DCC.activeEffectKeys ?? {}
+      return {
+        keyCount: Object.keys(keys).length,
+        strValue: keys['system.abilities.str.value'],
+        meleeHitBonus: keys['system.details.attackHitBonus.melee.adjustment'],
+        actionDie: keys['system.attributes.actionDice.value'],
+        // every key is a system.* path → DCC.* label
+        allWellFormed: Object.entries(keys).every(([p, l]) => p.startsWith('system.') && l.startsWith('DCC.'))
+      }
+    })
+    expect(result.keyCount).toBe(32)
+    expect(result.strValue).toBe('DCC.AbilityStr')
+    expect(result.meleeHitBonus).toBe('DCC.MeleeAttackBonus')
+    expect(result.actionDie).toBe('DCC.ActionDie')
+    expect(result.allWellFormed).toBe(true)
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

@@ -1538,3 +1538,42 @@
   **1402 Vitest** (unchanged) / **181 Playwright passed**, zero failures
   (unchanged; 6.4-min full suite). Served system verified to reflect the
   no-arg signature before the run.
+
+- **2026-06-02 — Phase 7 session 33: programmatic-PC-creation dev guide
+  (PR #720 resilience/cleanup backlog — the last open non-perf item).**
+  Pure-doc slice; no code, test, or lib change. Closed the standing
+  "programmatic PC creation produces inconsistent class config" item by
+  *documenting the dependency* (the open option in that note was always
+  "document the level-change-dialog dependency for quick-PC tooling /
+  browser-test fixtures" — no consumer needs an actual quick-PC helper).
+  New `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the **three**
+  population mechanisms a bare `Actor.create({ system: { class: {
+  className: 'Wizard' } } })` bypasses: (1) **sheet-open class defaults** —
+  `applyClassDefaults(actor, classId)` (`extension-api.mjs:333`) fires from
+  every PC sheet's `_prepareContext` (`actor-sheets-dcc.js:81`) on first
+  open, writing `details.sheetClass` / `class.spellCheckAbility` /
+  `class.disapproval` / `classLink` / the `config.*` toggles from
+  `built-in-class-defaults.mjs`; (2) **the level-change dialog** —
+  `DCCActorLevelChange.#onSubmitForm` (`actor-level-change.js:280`) is the
+  *only* path that writes the level-scaled fields (`saves.*.value`,
+  `details.critDie`/`critTable`/`critRange`, `attributes.actionDice.value`,
+  `hitDice.value`, `class.luckDie`, HP, level) via `actor.update(levelData)`
+  from compendium `{ClassName}-{level}` items; (3) **the Phase-6 lib
+  registry** — `registerClassProgressionsFromPacks()`
+  (`foundry-data-loader.mjs:209`) loads the same packs at `dcc.ready` so
+  adapter roll paths read `getSaveBonus`/`getCritDie`/… by classId+level at
+  roll time (no stored field). Documented what's missing on a bare create,
+  the quick-PC/fixture guidance (e2e specs deliberately set only the field
+  each test needs — `extension-api.spec.js:1373` inline `spellCheckAbility`,
+  `:1186` targeted `update`), and the **content-free-world caveat** (the
+  open-source system ships only the registration surface; level data is
+  copyrighted GG material in the private `dcc-official-data` repo, so
+  mechanisms 2+3 write nothing without a content module). Cross-linked from
+  `EXTENSION_API.md` (`registerClassProgression` row), `docs/dev/README.md`,
+  and `CLASS_DECOMPOSITION.md` — and **refreshed two now-stale spots there**:
+  §3.5 from "Planned"/"return zeros because no class is registered" to
+  "Shipped Phase 6 sessions 1–2" + the data caveat, and §3.3's overlap note
+  from "will derive … once Phase 6 wires `registerClassProgression`" to the
+  shipped present tense. **No production behavior change, no lib change, no
+  test-count delta.** Full e2e suite run deferred to Tim's call (see Notes)
+  — zero code touched, so the Playwright net asserts nothing new.

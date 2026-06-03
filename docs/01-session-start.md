@@ -43,20 +43,23 @@ session's context):
 ## Status (2026-06-02)
 
 **All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
-now active (opened session 35).** Sessions 35–37 have been shrinking
+now active (opened session 35).** Sessions 35–38 have been shrinking
 `config.js` by extracting its big self-contained data tables into focused
 `module/config/*.mjs` modules, re-composed onto `DCC` so the public
 `CONFIG.DCC` shape stays byte-identical: `monster-data.mjs` (monster
 classification tables, 35) + `images.mjs` (default actor/item/macro image
-tables, 36) + `dice.mjs` (`diceTypes` / `DICE_CHAIN` / `effectChangeTypes`,
-37). `config.js` 845 → 525 lines. The pattern for each slice: extract a
+tables, 36) + `dice.mjs` (`diceTypes` / `DICE_CHAIN` / `effectChangeTypes`, 37)
++ `active-effect-keys.mjs` (the unconsumed `activeEffectKeys` reference table,
+38). `config.js` 845 → 481 lines. The pattern for each slice: extract a
 self-contained chunk into `module/config/*.mjs`, import + re-compose onto
 `DCC`, add a Vitest composition-identity guard (`DCC.x === module.x`) + an
 `extension-api.spec.js` "survives extraction" probe; verify the extracted table
 is byte-identical to git HEAD (write the temp HEAD copy **inside** `module/` so
-its committed `./config/*.mjs` imports resolve — then `rm` it). Next `config.js`
-chunks: `activeEffectKeys`, the actor-importer block. Repo green at session-37
-close: **1418 Vitest / 185 Playwright e2e passed**, zero failures. Detail below
+its committed `./config/*.mjs` imports resolve — then `rm` it). **If a chunk
+turns out to be dead** (session 38's `activeEffectKeys` had zero consumers),
+surface it and let Tim choose extract-vs-delete rather than silently relocating.
+Next `config.js` chunk: the actor-importer block. Repo green at session-38
+close: **1421 Vitest / 186 Playwright e2e passed**, zero failures. Detail below
 + in `00-progress.md` *Recent slices*.
 
 <details><summary>PR #720 test-coverage-backfill arc (sessions 26–31, COMPLETE)</summary>

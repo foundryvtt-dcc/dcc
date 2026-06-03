@@ -65,17 +65,18 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-02 (session 37).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-02 (session 38).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). **Sessions 35–37 opened the Appendix-A
-file-shrinkage arc** with the first three `config.js` slices (monster tables →
+below-threshold perf items (34). **Sessions 35–38 opened the Appendix-A
+file-shrinkage arc** with four `config.js` slices (monster tables →
 `module/config/monster-data.mjs`; default-image tables →
-`module/config/images.mjs`; dice config → `module/config/dice.mjs`). All were
-behavior-neutral with no lib change. Repo green: **1418 Vitest / 185 Playwright
+`module/config/images.mjs`; dice config → `module/config/dice.mjs`;
+`activeEffectKeys` → `module/config/active-effect-keys.mjs`). All were
+behavior-neutral with no lib change. Repo green: **1421 Vitest / 186 Playwright
 e2e passed**, zero failures (flake-clean since the session-29 fix). Per-session
 detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
 the itemized close-outs are in the *PR #720 review backlog* below.
@@ -85,9 +86,10 @@ pattern mirrors the Phase-7 `dcc.js` split: break the big self-contained data
 tables in `config.js` into focused `module/config/*.mjs` modules and let
 `config.js` import + re-compose them onto the `DCC` object, keeping the public
 `CONFIG.DCC` shape byte-identical. So far: `monster-data.mjs` (35) +
-`images.mjs` (36) + `dice.mjs` (37) — `config.js` 845 → 525 lines (−320). The
-other Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
-multi-session projects, not slices. Group E / §2.8 homebrew
+`images.mjs` (36) + `dice.mjs` (37) + `active-effect-keys.mjs` (38) —
+`config.js` 845 → 481 lines (−364). The other Appendix-A targets (`actor.js` /
+`actor-sheet.js` / `item.js`) remain multi-session projects, not slices.
+Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
 class-registration API; no further DCC-side Group E work is needed (see
@@ -97,6 +99,34 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 38: Appendix-A `config.js` shrinkage —
+  extract the `activeEffectKeys` reference table into
+  `module/config/active-effect-keys.mjs`.** Fourth slice of the Appendix-A arc.
+  Same extract-and-compose pattern, but with a **finding surfaced first**: the
+  AE attribute-key → i18n-label reference table (`activeEffectKeys`, 32 entries)
+  has **no runtime code consumer** anywhere — not `module/`, not a template, not
+  a sibling module (`xcc`/`dcc-qol`/`mcc-classes`/`dcc-crawl-classes`), and the
+  only dynamic `CONFIG.DCC[...]` access (`table-loading.mjs`) is for table props.
+  It was added in PR #611 ("Add Active Effects support") and never read since;
+  V14 AE editing uses Foundry's native config UI. Tim's call (asked
+  explicitly): **extract like the others** (preserve the documented
+  `CONFIG.DCC.activeEffectKeys` surface; defer the deprecation question) rather
+  than skip or delete. Moved into `module/config/active-effect-keys.mjs` as a
+  named export with a header documenting the no-consumer status + the deferred
+  deprecation; `config.js` re-composes onto `DCC` byte-identical. Verified
+  byte-identical to git HEAD + same-reference composition. `config.js` 525 → 481
+  lines (−44; cumulative 845 → 481, −364 across sessions 35–38). **No behavior
+  change, no lib change.** Tests: +3 Vitest (new
+  `module/__tests__/config-active-effect-keys.test.js` — values, the
+  every-entry-is-`system.*`→`DCC.*` invariant, the `DCC.x === module.x`
+  composition guard — these pin the otherwise-unconsumed surface so a future
+  deprecation is test-visible); +1 Playwright (`extension-api.spec.js` "survives
+  extraction" probe — the **only** end-to-end guard, since there's no consumer:
+  reads `CONFIG.DCC.activeEffectKeys` live, asserts 32 entries + well-formed
+  paths). **1421 Vitest** (was 1418, +3). **186 Playwright passed**, zero
+  failures (was 185, +1; 6.2-min full suite). Next `config.js` chunk: the
+  actor-importer block.
 
 - **2026-06-02 — Phase 7 session 37: Appendix-A `config.js` shrinkage —
   extract the dice config tables into `module/config/dice.mjs`.** Third slice
@@ -217,45 +247,6 @@ archives linked above.
   passed**, zero failures (was 181, +1; 6.5-min full suite). Picked up
   uncommitted from a prior session and finished (docs + full e2e run); Foundry
   was relaunched mid-session after the GM tab freed.
-
-- **2026-06-02 — Phase 7 session 33: programmatic-PC-creation dev guide
-  (PR #720 resilience/cleanup backlog — the last open non-perf item).**
-  Pure-doc slice; no code, test, or lib change. Closed the standing
-  "programmatic PC creation produces inconsistent class config" item by
-  *documenting the dependency* (the open option in that note was always
-  "document the level-change-dialog dependency for quick-PC tooling /
-  browser-test fixtures" — no consumer needs an actual quick-PC helper).
-  New `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the **three**
-  population mechanisms a bare `Actor.create({ system: { class: {
-  className: 'Wizard' } } })` bypasses: (1) **sheet-open class defaults** —
-  `applyClassDefaults(actor, classId)` (`extension-api.mjs:333`) fires from
-  every PC sheet's `_prepareContext` (`actor-sheets-dcc.js:81`) on first
-  open, writing `details.sheetClass` / `class.spellCheckAbility` /
-  `class.disapproval` / `classLink` / the `config.*` toggles from
-  `built-in-class-defaults.mjs`; (2) **the level-change dialog** —
-  `DCCActorLevelChange.#onSubmitForm` (`actor-level-change.js:280`) is the
-  *only* path that writes the level-scaled fields (`saves.*.value`,
-  `details.critDie`/`critTable`/`critRange`, `attributes.actionDice.value`,
-  `hitDice.value`, `class.luckDie`, HP, level) via `actor.update(levelData)`
-  from compendium `{ClassName}-{level}` items; (3) **the Phase-6 lib
-  registry** — `registerClassProgressionsFromPacks()`
-  (`foundry-data-loader.mjs:209`) loads the same packs at `dcc.ready` so
-  adapter roll paths read `getSaveBonus`/`getCritDie`/… by classId+level at
-  roll time (no stored field). Documented what's missing on a bare create,
-  the quick-PC/fixture guidance (e2e specs deliberately set only the field
-  each test needs — `extension-api.spec.js:1373` inline `spellCheckAbility`,
-  `:1186` targeted `update`), and the **content-free-world caveat** (the
-  open-source system ships only the registration surface; level data is
-  copyrighted GG material in the private `dcc-official-data` repo, so
-  mechanisms 2+3 write nothing without a content module). Cross-linked from
-  `EXTENSION_API.md` (`registerClassProgression` row), `docs/dev/README.md`,
-  and `CLASS_DECOMPOSITION.md` — and **refreshed two now-stale spots there**:
-  §3.5 from "Planned"/"return zeros because no class is registered" to
-  "Shipped Phase 6 sessions 1–2" + the data caveat, and §3.3's overlap note
-  from "will derive … once Phase 6 wires `registerClassProgression`" to the
-  shipped present tense. **No production behavior change, no lib change, no
-  test-count delta.** Full e2e suite run deferred to Tim's call (see Notes)
-  — zero code touched, so the Playwright net asserts nothing new.
 
 ## Closed questions
 
@@ -410,15 +401,18 @@ shrinkage by extracting the next self-contained data chunks into
 `module/config/*.mjs`, each as its own slice, re-composing onto `DCC` so
 `CONFIG.DCC` stays byte-identical:
 
-- **`config.js` (in progress, 845 → 525 after session 37).** Done:
-  `monster-data.mjs` (35), `images.mjs` (36), `dice.mjs` (37). Next natural
-  chunks: `activeEffectKeys` (~45 lines — the AE attribute-key → i18n-label map
-  surfaced in the effect-key picker), the actor-importer block
-  (`actorImporterItemPacks` / `actorImporterNameMap` / `birthAugurEffectsPack` /
-  `importTypes` / `actorImporterPromptThreshold` — consumed by the pc/npc
-  parsers + importer). Leave the small scalar enums + the Phase 4–6 registry
-  seeds (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) in
-  `config.js` — they're tiny and are the file's actual reason to exist.
+- **`config.js` (in progress, 845 → 481 after session 38).** Done:
+  `monster-data.mjs` (35), `images.mjs` (36), `dice.mjs` (37),
+  `active-effect-keys.mjs` (38). Next natural chunk: the **actor-importer
+  block** (`actorImporterItemPacks` / `actorImporterNameMap` /
+  `birthAugurEffectsPack` / `importTypes` / `actorImporterPromptThreshold` —
+  consumed by the pc/npc parsers + importer; ~40 lines). After that, the
+  remaining bulk is small scalar enums + the Phase 4–6 registry seeds
+  (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) — leave
+  those in `config.js`; they're tiny and are the file's actual reason to exist.
+  Open question to revisit once the data tables are out: whether the
+  unconsumed `activeEffectKeys` table (extracted session 38) should be
+  deprecated/removed — deferred per Tim, see the session-38 slice.
 - **`actor.js` / `actor-sheet.js` / `item.js`** — each a multi-session project,
   not a slice; start one only with budget for it.
 
