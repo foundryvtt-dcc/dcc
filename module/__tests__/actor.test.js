@@ -1012,18 +1012,28 @@ test('rollToHit with backstab adds bonus', async () => {
 })
 
 test('getInitiativeRoll with two-handed weapon', () => {
-  // Mock a two-handed weapon
-  vi.spyOn(actor.items, 'find').mockReturnValue({
+  // Inject a real two-handed weapon into the items collection. The adapter
+  // iterates `this.items` in a single pass (it no longer calls `.find`), so
+  // assert the weapon's d16 init die actually reaches the formula rather
+  // than just that a Roll comes back.
+  const originalItems = actor.items
+  actor.items = new global.Collection([['two-handed', {
     system: {
       twoHanded: true,
       equipped: true,
-      initiativeDie: '1d16'
+      initiativeDie: '1d16',
+      config: {}
     }
-  })
+  }]])
 
-  const roll = actor.getInitiativeRoll()
+  try {
+    const roll = actor.getInitiativeRoll()
 
-  expect(roll).toBeDefined()
+    expect(roll).toBeDefined()
+    expect(roll.formula).toMatch(/1d16/)
+  } finally {
+    actor.items = originalItems
+  }
 })
 
 test('prepareBaseData sets ability modifiers correctly', () => {

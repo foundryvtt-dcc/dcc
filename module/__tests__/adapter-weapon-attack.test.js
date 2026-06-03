@@ -127,6 +127,30 @@ test('adapter path fires for simplest weapon with automate on', async () => {
   expect(dccRollCreateRollMock).toHaveBeenCalled()
 })
 
+test('rollToHit computes getActionDice once (hoist regression guard)', async () => {
+  // The action-die preset list is hoisted into a single `const`
+  // (`actionDicePresets`) and reused for both `die` (the [0] formula)
+  // and the action-die term `presets`. `getActionDice` also performs a
+  // side-effecting implicit `config.actionDice` migration write, so a
+  // regression that re-introduced a second call would do that work
+  // twice — assert exactly one call per rollToHit.
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+  const spy = vi.spyOn(actor, 'getActionDice')
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  expect(spy).toHaveBeenCalledTimes(1)
+  expect(spy).toHaveBeenCalledWith({ includeUntrained: true })
+})
+
 test('adapter path result carries lib classification + modifier list', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)

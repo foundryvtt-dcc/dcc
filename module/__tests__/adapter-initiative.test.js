@@ -78,16 +78,14 @@ test('adapter path annotates the die with the two-handed label when such a weapo
 
   // Two-handed equipped weapon forces a d16 init die with a Foundry
   // `[label]` annotation — the lib emits a plain formula, the adapter
-  // re-injects the annotation. Manual save/restore rather than
-  // `vi.spyOn().mockRestore()`, which leaks through the shared
-  // collectionFindMock to subsequent tests.
-  const originalFind = actor.items.find
+  // re-injects the annotation. Inject a real items collection (the adapter
+  // iterates `this.items` in a single pass rather than calling `.find`
+  // twice); save/restore the collection so it doesn't leak to later tests.
+  const originalItems = actor.items
   const twoHandedWeapon = {
     system: { twoHanded: true, equipped: true, initiativeDie: '1d16', config: {} }
   }
-  actor.items.find = vi.fn((predicate) =>
-    predicate(twoHandedWeapon) ? twoHandedWeapon : undefined
-  )
+  actor.items = new global.Collection([['two-handed', twoHandedWeapon]])
 
   try {
     const roll = actor.getInitiativeRoll()
@@ -96,7 +94,7 @@ test('adapter path annotates the die with the two-handed label when such a weapo
     // i18n mock returns the bare key when no translation is registered.
     expect(roll.formula).toMatch(/1d16\[WeaponPropertiesTwoHanded\]/)
   } finally {
-    actor.items.find = originalFind
+    actor.items = originalItems
   }
 })
 
@@ -207,13 +205,11 @@ test('a weapon init-die override suppresses the additive tail (weapon die wins)'
   actor.system.attributes.init.die = '1d20+1d3'
   actor.system.attributes.init.value = 0
 
-  const originalFind = actor.items.find
+  const originalItems = actor.items
   const twoHandedWeapon = {
     system: { twoHanded: true, equipped: true, initiativeDie: '1d16', config: {} }
   }
-  actor.items.find = vi.fn((predicate) =>
-    predicate(twoHandedWeapon) ? twoHandedWeapon : undefined
-  )
+  actor.items = new global.Collection([['two-handed', twoHandedWeapon]])
 
   try {
     const roll = actor.getInitiativeRoll()
@@ -224,7 +220,45 @@ test('a weapon init-die override suppresses the additive tail (weapon die wins)'
     expect(roll.formula).not.toMatch(/1d3/)
     expect(roll.formula.match(/d\d+/g)).toHaveLength(1)
   } finally {
-    actor.items.find = originalFind
+    actor.items = originalItems
+  }
+})
+
+test('a custom-init-die weapon overrides a two-handed weapon (apply order preserved through the single-pass fold)', () => {
+  // The adapter now gathers both the first equipped two-handed weapon and
+  // the first equipped custom-init-die weapon in a single pass over
+  // `this.items`, then applies them in the same order as before — the
+  // custom-init-die weapon is applied last, so it WINS when both are
+  // equipped. The previous `.find` mocks never exercised two weapons at
+  // once; this guards the order the fold must preserve.
+  dccRollCreateRollMock.mockClear()
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = 0
+
+  const originalItems = actor.items
+  const twoHandedWeapon = {
+    system: { twoHanded: true, equipped: true, initiativeDie: '1d16', config: {} }
+  }
+  const customInitWeapon = {
+    system: { equipped: true, initiativeDie: '1d30', config: { initiativeDieOverride: '1d30' } }
+  }
+  // Two-handed listed first so a single forward pass would set the d16
+  // before the override; the override must still win.
+  actor.items = new global.Collection([
+    ['two-handed', twoHandedWeapon],
+    ['custom-init', customInitWeapon]
+  ])
+
+  try {
+    const roll = actor.getInitiativeRoll()
+
+    expect(roll).toBeInstanceOf(Roll)
+    // The custom-init weapon's die + its `[Weapon]` label win.
+    expect(roll.formula).toMatch(/1d30\[Weapon\]/)
+    expect(roll.formula).not.toMatch(/1d16/)
+    expect(roll.formula.match(/d\d+/g)).toHaveLength(1)
+  } finally {
+    actor.items = originalItems
   }
 })
 

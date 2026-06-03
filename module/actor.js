@@ -1293,12 +1293,21 @@ class DCCActor extends Actor {
     let dieFormula = this.system.attributes.init.die || '1d20'
     let weaponLabel = null
 
-    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    // Single pass over items: gather the first equipped two-handed weapon and
+    // the first equipped custom-init-die weapon together (was two separate
+    // `items.find` scans). Apply order is preserved — a custom-init-die weapon
+    // still overrides a two-handed one.
+    let twoHandedWeapon = null
+    let customInitDieWeapon = null
+    for (const t of this.items) {
+      if (!t.system.equipped) continue
+      if (!twoHandedWeapon && t.system.twoHanded) twoHandedWeapon = t
+      if (!customInitDieWeapon && (t.system.config?.initiativeDieOverride || '')) customInitDieWeapon = t
+    }
     if (twoHandedWeapon) {
       dieFormula = twoHandedWeapon.system.initiativeDie
       weaponLabel = game.i18n.localize('DCC.WeaponPropertiesTwoHanded')
     }
-    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
     if (customInitDieWeapon) {
       dieFormula = customInitDieWeapon.system.initiativeDie
       weaponLabel = game.i18n.localize('DCC.Weapon')
@@ -1382,11 +1391,19 @@ class DCCActor extends Actor {
     const init = ensurePlus(this.system.attributes.init.value)
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
-    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    // Single pass over items (see `_getInitiativeRollViaAdapter`): first
+    // equipped two-handed + first equipped custom-init-die weapon, custom
+    // overrides two-handed.
+    let twoHandedWeapon = null
+    let customInitDieWeapon = null
+    for (const t of this.items) {
+      if (!t.system.equipped) continue
+      if (!twoHandedWeapon && t.system.twoHanded) twoHandedWeapon = t
+      if (!customInitDieWeapon && (t.system.config?.initiativeDieOverride || '')) customInitDieWeapon = t
+    }
     if (twoHandedWeapon) {
       die = `${twoHandedWeapon.system.initiativeDie}[${game.i18n.localize('DCC.WeaponPropertiesTwoHanded')}]`
     }
-    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
     if (customInitDieWeapon) {
       die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
     }
@@ -3640,7 +3657,13 @@ class DCCActor extends Actor {
     logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
 
     const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
-    const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
+    // Hoisted: `getActionDice` runs a regex/split + a side-effecting implicit
+    // `config.actionDice` migration write, so compute the preset list once and
+    // reuse it for all three consumers — `die` (the [0] formula), the
+    // action-die term `presets`, and `buildAttackInput` (passed the [0]
+    // formula below) — rather than calling it three times.
+    const actionDicePresets = this.getActionDice({ includeUntrained: true })
+    const actorActionDice = actionDicePresets[0].formula
     const die = weapon.system?.actionDie || actorActionDice
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
 
@@ -3653,7 +3676,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        presets: actionDicePresets
       },
       {
         type: 'Compound',
@@ -3738,7 +3761,7 @@ class DCCActor extends Actor {
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = { upperThreshold: critRange }
 
-    const attackInput = buildAttackInput(this, weapon)
+    const attackInput = buildAttackInput(this, weapon, actorActionDice)
     attackInput.threatRange = critRange
     // Reflect in-place mutations of the action-die term (e.g. dcc-qol's
     // long-range `DiceChain.bumpDie` rewriting `terms[0].formula` from

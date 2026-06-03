@@ -1406,3 +1406,52 @@
   sync-declared function — locks the production half of the parity contract
   live). **1399 Vitest** (was 1395, +4). **178 Playwright passed**, zero
   failures (was 177, +1; 6.2-min full suite).
+
+- **2026-06-02 — Phase 7 session 29: `onSpellLost` verified during a real
+  adapter cast (PR #720 test-coverage gap; test-coverage-backfill arc).**
+  `onSpellLost` had a direct-callback unit test but was never verified to
+  fire end-to-end during a real wizard cast. New e2e
+  (`adapter-dispatch.spec.js`, `rollSpellCheck` describe): a wizard casts a
+  spell engineered to **deterministically** fail-to-lost, and the test polls
+  the spell item until `system.lost` flips `true` (the `onSpellLost` →
+  `spellItem.update({ system.lost: true })` bridge), also asserting the cast
+  routed through the **adapter** (the legacy path used `actor.loseSpell`
+  instead). **Deterministic-loss construction** (the fiddly part, two
+  gotchas): (1) the adapter builds no per-spell result table (`results: []`),
+  so the lib's default tier ladder applies — `total <= 1` → tier `'lost'`
+  (`spells/cast.js:130`). (2) A spell's `spellCheck.die` **inherits the
+  actor's action die** in `prepareData` (`item.js:231`) when
+  `config.inheritActionDie` is true (the default), silently overwriting any
+  small die with the actor's `1d20` — so the test sets
+  `config.inheritActionDie: false` to keep `spellCheck.die: '1d3'`. With the
+  d3 die (natural 1–3), INT 3 (mod −3) and level 1, the wizard total =
+  natural + level + intMod = natural − 2 ∈ {−1, 0, 1}, all `<= 1` → `'lost'`
+  for **every** outcome (and a natural 1 additionally forces a fumble → total
+  1, still lost). The earlier d20-inherited die only "lost" on a 1/20
+  natural-1 fumble — a latent flake the debugging caught.
+  `createSpellEvents` wires only `onSpellLost`/disapproval/spellburn/
+  patronTaint — `onCritical`/`onFumble` are unwired, and with no patron/
+  spellburn `onSpellLost` is the only handler that fires. The lib's
+  `calculateSpellCheck` reaches `onSpellLost` via its internal
+  `castSpell(castInput, options, events)` call (`spells/spell-check.js:218` →
+  `cast.js:346`). The bridge's `spellItem.update` is fire-and-forget (the lib
+  doesn't await it), hence the poll. **No production change, no lib change —
+  test-only.** e2e-only slice (the gap is real-cast verification; the unit
+  callback test in `adapter-spell-check.test.js` already covers the bridge).
+  **Plus — forceCrit dice-flake fix (found during this session's full-suite
+  run, per Tim's "investigate the flake" call).** The session-25 forceCrit
+  test (`adapter-dispatch.spec.js:1370`, `forceCrit shift-click → natural 20`)
+  failed in the full run. Root-caused **not** as the long-assumed "suite-only
+  state-pollution flake" but as a **dice-probability** flake:
+  `applyForceCritToFoundryRoll` (`actor.js:51`) deliberately does **not**
+  override a natural 1 (`if (!forceCrit || natural === 1) return natural` — a
+  fumble beats a forced crit), yet the test cast an uncontrolled real d20 and
+  unconditionally expected natural 20, so it failed ~1/20 in *any* context
+  (full-suite runs just gave more observations). Fixed the test to retry past
+  the rare nat-1 (resetting `system.lost` between attempts, since a nat-1
+  fumble loses the wizard spell), scope the message read to its own actor, and
+  clean up the actor afterward — verified 10/10 via `--repeat-each=10`. No
+  production change (the nat-1 exception is intentional behavior). **1399
+  Vitest** (unchanged). **179 Playwright passed**, zero failures (was 178, +1
+  net from onSpellLost; the forceCrit fix is net-zero test count; 7.1-min full
+  suite — and the suite is now flake-clean, not 178+flake).

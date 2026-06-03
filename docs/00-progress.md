@@ -114,10 +114,24 @@ registry) + the quick-PC/fixture guidance + the content-free-world caveat;
 cross-linked from `EXTENSION_API.md` / `README.md` / `CLASS_DECOMPOSITION.md`
 (§3.5 + §3.3 also refreshed from their stale "Planned"/"once Phase 6 wires"
 framing). The backlog item's open option was always "document the dependency"
-(no consumer needs an actual quick-PC helper). What remains off the critical
-path: the below-threshold perf "document only" items, or an Appendix-A
-file-shrinkage arc. **Full e2e run deferred to Tim's call** — no code touched,
-so the Playwright net asserts nothing new.
+(no consumer needs an actual quick-PC helper). **Full e2e run deferred to Tim's
+call** — no code touched, so the Playwright net asserts nothing new.
+
+**Perf cleanups — session 34 (2026-06-02) drained the two itemized PR #720
+Performance "document only" items.** Behavior-neutral perf slice: (1) hoisted
+the **3×** `getActionDice` call in `rollToHit` to one `const actionDicePresets`
+(the call also does a side-effecting `config.actionDice` migration write, so the
+repeats redid that work) — threaded into `buildAttackInput` via a new optional
+`actorActionDiceFormula` param so the standalone helper stays back-compatible;
+(2) folded the **2×** `items.find` scan in both `_getInitiativeRollViaAdapter`
+and `_getInitiativeRollWithDialogViaAdapter` into one `for…of` pass, apply order
+preserved (custom-init-die weapon still wins over two-handed). +2 Vitest (hoist
+guard + fold-order guard; 3 dead `.find`-mock tests rewritten to inject real
+Collections) + 1 live Playwright (both-equipped order probe). **No behavior
+change, no lib change.** **1404 Vitest** (was 1402, +2). **182 Playwright
+passed**, zero failures (was 181, +1; 6.5-min full suite). Slice was picked up
+uncommitted from a prior session and finished here. The remaining off-critical-
+path candidate is the Appendix-A file-shrinkage arc.
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -135,6 +149,48 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 34: below-threshold perf cleanups — hoist
+  `getActionDice` in `rollToHit` + fold the double `items.find` in both
+  initiative methods (PR #720 Performance "document only" backlog).** Drained
+  the two remaining itemized Performance items (both were tagged
+  *below-measurement-threshold; document only*, but each removes a genuinely
+  redundant call so they were worth doing, not just documenting). (1)
+  **`rollToHit` hoist** — `getActionDice({ includeUntrained: true })` was
+  called **3×** per attack (the `die` [0]-formula read, the action-die term
+  `presets`, and inside `buildAttackInput`). `getActionDice` is not pure: it
+  runs a regex/split **and** performs a side-effecting implicit
+  `config.actionDice` migration write, so the repeats redid that work. Hoisted
+  to one `const actionDicePresets = this.getActionDice({ includeUntrained:
+  true })`; `actorActionDice = actionDicePresets[0].formula` feeds all three
+  consumers, and `buildAttackInput(this, weapon, actorActionDice)` now takes an
+  **optional** third `actorActionDiceFormula` param (`attack-input.mjs`) — when
+  omitted, standalone callers still self-compute via the prior
+  `actor.getActionDice(...)[0]?.formula || '1d20'` fallback, so the public
+  helper signature stays back-compatible. (2) **initiative fold** — both
+  `_getInitiativeRollViaAdapter` and `_getInitiativeRollWithDialogViaAdapter`
+  scanned `this.items` **twice** (`find` for the first equipped two-handed
+  weapon, then again for the first equipped custom-init-die weapon). Folded
+  into a single `for…of` pass collecting both, **preserving apply order** —
+  two-handed applied first, custom-init-die applied last so it still WINS when
+  both are equipped. Tests: +2 Vitest — a `rollToHit` hoist regression guard
+  (`vi.spyOn(actor, 'getActionDice')` → `toHaveBeenCalledTimes(1)`), and a
+  `getInitiativeRoll` fold-order guard that injects a real two-weapon
+  Collection (two-handed listed first) and asserts the custom-init die +
+  `[Weapon]` label win over the d16/two-handed label. Also **rewrote 3
+  `.find`-mock tests** (`actor.test.js` + 2 in `adapter-initiative.test.js`)
+  to inject a real `global.Collection` instead of `vi.spyOn(actor.items,
+  'find')` — the fold no longer calls `.find`, so the old mocks were dead; the
+  rewrites now also assert the d16 die actually reaches the formula, not just
+  that a Roll comes back. +1 Playwright (`adapter-dispatch.spec.js`): a **live**
+  actor equipped with BOTH a two-handed `1d16`-init weapon (created first) and
+  a custom-init `1d24`-override weapon → the adapter log + produced Roll carry
+  the custom die + `[Weapon]` label, not the two-handed die/label (guards the
+  single-pass apply order end-to-end). **No behavior change — pure perf +
+  test-infra. No lib change.** **1404 Vitest** (was 1402, +2). **182 Playwright
+  passed**, zero failures (was 181, +1; 6.5-min full suite). Picked up
+  uncommitted from a prior session and finished (docs + full e2e run); Foundry
+  was relaunched mid-session after the GM tab freed.
 
 - **2026-06-02 — Phase 7 session 33: programmatic-PC-creation dev guide
   (PR #720 resilience/cleanup backlog — the last open non-perf item).**
@@ -257,55 +313,6 @@ archives linked above.
   the divergence the boundary produces). **No production change — pure
   coverage backfill of an intentional, documented boundary.** **1400 Vitest**
   (was 1399, +1). **180 Playwright passed**, zero failures (was 179, +1).
-
-- **2026-06-02 — Phase 7 session 29: `onSpellLost` verified during a real
-  adapter cast (PR #720 test-coverage gap; test-coverage-backfill arc).**
-  `onSpellLost` had a direct-callback unit test but was never verified to
-  fire end-to-end during a real wizard cast. New e2e
-  (`adapter-dispatch.spec.js`, `rollSpellCheck` describe): a wizard casts a
-  spell engineered to **deterministically** fail-to-lost, and the test polls
-  the spell item until `system.lost` flips `true` (the `onSpellLost` →
-  `spellItem.update({ system.lost: true })` bridge), also asserting the cast
-  routed through the **adapter** (the legacy path used `actor.loseSpell`
-  instead). **Deterministic-loss construction** (the fiddly part, two
-  gotchas): (1) the adapter builds no per-spell result table (`results: []`),
-  so the lib's default tier ladder applies — `total <= 1` → tier `'lost'`
-  (`spells/cast.js:130`). (2) A spell's `spellCheck.die` **inherits the
-  actor's action die** in `prepareData` (`item.js:231`) when
-  `config.inheritActionDie` is true (the default), silently overwriting any
-  small die with the actor's `1d20` — so the test sets
-  `config.inheritActionDie: false` to keep `spellCheck.die: '1d3'`. With the
-  d3 die (natural 1–3), INT 3 (mod −3) and level 1, the wizard total =
-  natural + level + intMod = natural − 2 ∈ {−1, 0, 1}, all `<= 1` → `'lost'`
-  for **every** outcome (and a natural 1 additionally forces a fumble → total
-  1, still lost). The earlier d20-inherited die only "lost" on a 1/20
-  natural-1 fumble — a latent flake the debugging caught.
-  `createSpellEvents` wires only `onSpellLost`/disapproval/spellburn/
-  patronTaint — `onCritical`/`onFumble` are unwired, and with no patron/
-  spellburn `onSpellLost` is the only handler that fires. The lib's
-  `calculateSpellCheck` reaches `onSpellLost` via its internal
-  `castSpell(castInput, options, events)` call (`spells/spell-check.js:218` →
-  `cast.js:346`). The bridge's `spellItem.update` is fire-and-forget (the lib
-  doesn't await it), hence the poll. **No production change, no lib change —
-  test-only.** e2e-only slice (the gap is real-cast verification; the unit
-  callback test in `adapter-spell-check.test.js` already covers the bridge).
-  **Plus — forceCrit dice-flake fix (found during this session's full-suite
-  run, per Tim's "investigate the flake" call).** The session-25 forceCrit
-  test (`adapter-dispatch.spec.js:1370`, `forceCrit shift-click → natural 20`)
-  failed in the full run. Root-caused **not** as the long-assumed "suite-only
-  state-pollution flake" but as a **dice-probability** flake:
-  `applyForceCritToFoundryRoll` (`actor.js:51`) deliberately does **not**
-  override a natural 1 (`if (!forceCrit || natural === 1) return natural` — a
-  fumble beats a forced crit), yet the test cast an uncontrolled real d20 and
-  unconditionally expected natural 20, so it failed ~1/20 in *any* context
-  (full-suite runs just gave more observations). Fixed the test to retry past
-  the rare nat-1 (resetting `system.lost` between attempts, since a nat-1
-  fumble loses the wizard spell), scope the message read to its own actor, and
-  clean up the actor afterward — verified 10/10 via `--repeat-each=10`. No
-  production change (the nat-1 exception is intentional behavior). **1399
-  Vitest** (unchanged). **179 Playwright passed**, zero failures (was 178, +1
-  net from onSpellLost; the forceCrit fix is net-zero test count; 7.1-min full
-  suite — and the suite is now flake-clean, not 178+flake).
 
 ## Closed questions
 
@@ -468,10 +475,17 @@ pure adapter-side wiring.
 
 **Performance (below measurement threshold; document only):**
 
-- `getActionDice` called 3× per `_rollToHitViaAdapter` — hoist to a
-  single `const`.
-- `items.find` called 2× per `_getInitiativeRollViaAdapter` — fold into
-  one iteration.
+- ~~`getActionDice` called 3× per `_rollToHitViaAdapter` — hoist to a
+  single `const`.~~ **DONE 2026-06-02 (Phase 7 session 34).** Hoisted to
+  one `const actionDicePresets`; the [0] formula feeds `die`, the term
+  `presets`, and `buildAttackInput` (new optional `actorActionDiceFormula`
+  param). +1 Vitest hoist guard (`getActionDice` called exactly once).
+- ~~`items.find` called 2× per `_getInitiativeRollViaAdapter` — fold into
+  one iteration.~~ **DONE 2026-06-02 (Phase 7 session 34).** Both init
+  methods (`_getInitiativeRollViaAdapter` + the dialog sibling) now scan
+  `this.items` in one `for…of` pass, apply order preserved (custom-init-die
+  weapon still wins over two-handed). +1 Vitest fold-order guard + 1 live
+  Playwright probe.
 - `renderDisapprovalRoll` / `renderMercurialEffect` use
   `new Roll('${N}d1')` for deterministic chat;
   `Roll.fromTerms([new NumericTerm({ number: total })])` reads cleaner
@@ -570,9 +584,10 @@ is drained (session 32, 2026-06-02).** All four items closed: §7 *Landed
 names* annotation, §2.7 `main @ 2337ec0` snapshot pin, the softened
 disapproval-chat-ordering comment, and the dropped unused
 `_getInitiativeRollViaAdapter` `options` param. **Next arc** (none on a
-critical path): the programmatic-PC-creation doc item, the below-threshold
-perf "document only" items (hoist `getActionDice`, fold the `items.find`
-double-iteration), or an Appendix-A file-shrinkage arc.
+critical path): an Appendix-A file-shrinkage arc — the two below-threshold
+perf items (hoist `getActionDice`, fold the `items.find` double-iteration)
+and the programmatic-PC-creation doc item are now both done (sessions 34
+and 33 respectively).
 - ~~the data-driven migration branches~~ **done (session 26).**
 - ~~`renderDisapprovalRoll`~~ **done (session 27; `renderMercurialEffect`
   covered too).**
@@ -593,10 +608,13 @@ double-iteration), or an Appendix-A file-shrinkage arc.
 - ~~*Programmatic-PC-creation* documentation item.~~ **done (session 33;
   new `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` + cross-links + §3.5/§3.3
   refresh).**
-- The below-threshold perf "document only" items (hoist `getActionDice`,
-  fold the `_getInitiativeRollViaAdapter` `items.find` double-iteration).
-- Or an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
-  `item.js` / `config.js`) — each a multi-session project, not a slice.
+- ~~The below-threshold perf "document only" items (hoist `getActionDice`,
+  fold the `_getInitiativeRollViaAdapter` `items.find` double-iteration).~~
+  **done (session 34; both items drained — hoist + single-pass fold, Vitest
+  guards + a live Playwright order probe).**
+- The remaining candidate: an Appendix-A file-shrinkage arc (`actor.js` /
+  `actor-sheet.js` / `item.js` / `config.js`) — each a multi-session project,
+  not a slice.
 See the PR #720 backlog subsections above for the itemized lists.
 
 **Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are

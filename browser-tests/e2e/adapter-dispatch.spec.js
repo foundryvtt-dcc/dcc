@@ -793,6 +793,53 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { die: actualDie })
     })
 
+    test('custom-init-die weapon overrides an equipped two-handed weapon (single-pass fold order)', async ({ page }) => {
+      // `_getInitiativeRollViaAdapter` gathers the first equipped two-handed
+      // weapon and the first equipped custom-init-die weapon in a single pass
+      // over `actor.items`, applying the custom-init weapon last so it WINS
+      // when both are equipped. This probe equips BOTH on one live actor (the
+      // two-handed item created first, so a naive forward pass would set its
+      // die before the override) and asserts the override die — not the
+      // two-handed die — reaches the adapter log + the produced Roll, with the
+      // `[Weapon]` label rather than the two-handed label.
+      const dice = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Init OverrideOrder', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [
+          {
+            name: 'P1 Greataxe',
+            type: 'weapon',
+            system: { equipped: true, twoHanded: true, initiativeDie: '1d16' }
+          },
+          {
+            name: 'P1 Quickblade',
+            type: 'weapon',
+            system: {
+              equipped: true,
+              initiativeDie: '1d24',
+              config: { initiativeDieOverride: '1d24' }
+            }
+          }
+        ])
+        return {
+          twoHanded: actor.items.getName('P1 Greataxe').system.initiativeDie,
+          custom: actor.items.getName('P1 Quickblade').system.initiativeDie
+        }
+      })
+      const result = await page.evaluate(async () => {
+        const roll = game.actors.getName('P1 Init OverrideOrder').getInitiativeRoll()
+        return { formula: roll.formula }
+      })
+      const line = await waitForAdapterLog('rollInit')
+      // The custom-init weapon's die wins; the two-handed die is suppressed.
+      expect(dice.custom, 'custom initiativeDie should not normalize to the two-handed die').not.toBe(dice.twoHanded)
+      assertPath(line, 'adapter', { die: dice.custom })
+      expect(result.formula, `formula: ${result.formula}`).toContain(dice.custom)
+      expect(result.formula).not.toContain(dice.twoHanded)
+      // Custom-init weapon → DCC.Weapon label, not the two-handed label.
+      expect(result.formula).toContain('[Weapon]')
+      expect(result.formula).not.toContain('[Two-Handed]')
+    })
+
     test('compound additive init die (Mutant Horror 1d20+1d3) survives the combat-tracker path', async ({ page }) => {
       // mcc-core-book §9.2a folds the Mutant Horror die into init.die as
       // `1d20+1d3`. The combat-tracker init path (no dialog →

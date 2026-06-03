@@ -103,15 +103,20 @@ export function parseDeedAttackBonus (toHit) {
  *
  * @param {Object} actor
  * @param {Object} weapon
+ * @param {string} [actorActionDiceFormula] Precomputed actor action-die
+ *   formula (the `getActionDice({ includeUntrained: true })[0].formula`).
+ *   `rollToHit` already computes this — and `getActionDice` performs a
+ *   side-effecting implicit `config.actionDice` migration write — so pass it
+ *   here to avoid a redundant recompute. Standalone callers may omit it.
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').AttackInput}
  */
-export function buildAttackInput (actor, weapon) {
+export function buildAttackInput (actor, weapon, actorActionDiceFormula) {
   const isMelee = weapon.system?.melee !== false
   const attackType = isMelee ? 'melee' : 'missile'
   const toHitText = weapon.system?.toHit ?? '+0'
   const deed = parseDeedAttackBonus(toHitText)
   const attackBonus = deed ? deed.attackBonus : parseToHitBonus(toHitText)
-  const actorActionDice = actor.getActionDice({ includeUntrained: true })[0]?.formula || '1d20'
+  const actorActionDice = actorActionDiceFormula ?? (actor.getActionDice({ includeUntrained: true })[0]?.formula || '1d20')
   const actionDie = normalizeLibDie(weapon.system?.actionDie || actorActionDice)
   const threatRange = parseInt(weapon.system?.critRange || actor.system.details?.critRange || 20) || 20
   const input = {
