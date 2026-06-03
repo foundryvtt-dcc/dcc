@@ -1455,3 +1455,28 @@
   Vitest** (unchanged). **179 Playwright passed**, zero failures (was 178, +1
   net from onSpellLost; the forceCrit fix is net-zero test count; 7.1-min full
   suite — and the suite is now flake-clean, not 178+flake).
+
+- **2026-06-02 — Phase 7 session 30: `terms[N]` two-pass-divergence boundary
+  guard (PR #720 test-coverage gap; test-coverage-backfill arc).**
+  Investigation first re-scoped the gap: the `dcc.modifyAttackRollTerms`
+  post-hook re-read is already well covered — `hookTermsToBonuses` has direct
+  unit tests (translate-Modifier / skip-non-Modifier / empty), plus the live
+  `terms[0]` die-bump (`adapter-weapon-attack.test.js:588`) and the appended-
+  Modifier→`libResult.bonuses` test (507). The one genuinely-uncovered case is
+  the **documented boundary** (`attack-input.mjs:139`): an **in-place mutation
+  of an existing `terms[N]` (N>0)** is captured by *neither* the `terms[0]`
+  die re-read *nor* the appended-Modifier→bonus slice — it flows through the
+  Foundry Roll natively (chat total stays authoritative) and surfaces only as
+  a divergence, never as a `libResult` bonus. Tim chose to add the guard
+  (over skipping). +1 Vitest (`adapter-weapon-attack.test.js`): a hook mutates
+  the existing Compound to-hit term `terms[1].formula` in place (asserting it
+  mutated a real Compound + appended nothing, so the test exercises the real
+  path) → `libResult.die` unchanged (`d20`) + `libResult.bonuses` `[]`. +1
+  Playwright (`adapter-dispatch.spec.js`, `rollWeaponAttack`): the same in
+  **live** Foundry — a real `Hooks.on('dcc.modifyAttackRollTerms')` listener
+  mutates `terms[1]` to `+99` during a live attack, then asserts the chat
+  `libResult` carries no hook bonus + unchanged die AND the Foundry roll total
+  **exceeds** `libResult.total` (the `+99` reached Foundry but not the lib —
+  the divergence the boundary produces). **No production change — pure
+  coverage backfill of an intentional, documented boundary.** **1400 Vitest**
+  (was 1399, +1). **180 Playwright passed**, zero failures (was 179, +1).

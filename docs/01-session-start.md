@@ -42,6 +42,22 @@ session's context):
 
 ## Status (2026-06-02)
 
+**All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
+now active (opened session 35).** Session 35 began the `config.js` shrinkage:
+the four monster-classification tables (`monsterCriticalHits` / `humanoidHints`
+/ `giants` / `giantsNotGiants`) moved out of `config.js` into a new
+`module/config/monster-data.mjs`, re-composed onto `DCC` so the public
+`CONFIG.DCC` shape is byte-identical (`config.js` 845 → 625 lines). The pattern
+for the rest of the arc: extract a self-contained data chunk into
+`module/config/*.mjs`, import + re-compose onto `DCC`, add a Vitest
+composition-identity guard + an `extension-api.spec.js` "survives extraction"
+probe. Next `config.js` chunks: `macroImages`, `diceTypes`/`DICE_CHAIN`,
+`activeEffectKeys`, the actor-importer block. Repo green at session-35 close:
+**1409 Vitest / 183 Playwright e2e passed**, zero failures. Detail below + in
+`00-progress.md` *Recent slices*.
+
+<details><summary>PR #720 test-coverage-backfill arc (sessions 26–31, COMPLETE)</summary>
+
 **The PR #720 test-coverage-backfill arc is COMPLETE (sessions 26–31,
 2026-06-02).** Every severity-≥6 coverage gap is now closed or found-stale.
 Sessions: **26** data-driven migration branches (the V14-critical AE
@@ -63,6 +79,8 @@ comment, the unused `_getInitiativeRollViaAdapter` `options` param), the
 programmatic-PC-creation doc item, or an Appendix-A file-shrinkage arc. Repo
 green: **1402 Vitest** / **181 Playwright e2e passed**, zero failures
 (flake-clean since the session-29 forceCrit fix).
+
+</details>
 
 <details><summary>Phase 7 session 29 (onSpellLost + forceCrit flake fix)</summary>
 

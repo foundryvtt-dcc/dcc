@@ -177,6 +177,38 @@ test.describe('DCC Extension API', () => {
     expect(result.optsHasShowDialog).toBe(true)
   })
 
+  test('DCC monster-classification config (monsterCriticalHits / humanoidHints / giants / giantsNotGiants) survives config/monster-data.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A config.js shrinkage): the four monster tables
+    // were moved out of module/config.js into module/config/monster-data.mjs
+    // and re-composed onto DCC. This guards that the live CONFIG.DCC shape
+    // is unchanged end-to-end — the NPC stat-block parser reads these off
+    // CONFIG.DCC to pick a monster crit table, so a broken compose would
+    // silently mis-classify imported monsters.
+    const result = await page.evaluate(() => {
+      const mch = CONFIG.DCC.monsterCriticalHits
+      return {
+        mchRowCount: Object.keys(mch ?? {}).length,
+        mch0DemonDie: mch?.[0]?.demon?.die,
+        mch5DragonDie: mch?.[5]?.dragon?.die,
+        mch14GiantDie: mch?.[14]?.giant?.die,
+        mch21DragonDie: mch?.[21]?.dragon?.die,
+        humanoidHintsLen: CONFIG.DCC.humanoidHints?.length,
+        humanoidHasGoblin: CONFIG.DCC.humanoidHints?.includes('goblin'),
+        giants: CONFIG.DCC.giants,
+        giantsNotGiantsHasRat: CONFIG.DCC.giantsNotGiants?.includes('rat')
+      }
+    })
+    expect(result.mchRowCount).toBe(22)
+    expect(result.mch0DemonDie).toBe('d3')
+    expect(result.mch5DragonDie).toBe('d14')
+    expect(result.mch14GiantDie).toBe('d7')
+    expect(result.mch21DragonDie).toBe('4d20')
+    expect(result.humanoidHintsLen).toBe(39)
+    expect(result.humanoidHasGoblin).toBe(true)
+    expect(result.giants).toEqual(['cyclops', 'giant'])
+    expect(result.giantsNotGiantsHasRat).toBe(true)
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

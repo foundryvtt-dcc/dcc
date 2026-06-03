@@ -65,30 +65,64 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-02 (session 34).** Every major arc is
+**Phase 7 cleanup — latest 2026-06-02 (session 35).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). All were behavior-neutral with no lib
-change. Repo green: **1404 Vitest / 182 Playwright e2e passed**, zero
+below-threshold perf items (34). **Session 35 opens the Appendix-A
+file-shrinkage arc** with the first `config.js` slice (monster-classification
+tables → `module/config/monster-data.mjs`). All were behavior-neutral with no
+lib change. Repo green: **1409 Vitest / 183 Playwright e2e passed**, zero
 failures (flake-clean since the session-29 fix). Per-session detail lives
 in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md); the
 itemized close-outs are in the *PR #720 review backlog* below.
 
-**No arc remains on a critical path.** The only off-critical-path candidate
-left is an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
-`item.js` / `config.js` — each a multi-session project, not a slice). Group E /
-§2.8 homebrew extensibility was validated 2026-05-29 by migrating two real
-sibling content modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto
-the Phase 4–6 class-registration API; no further DCC-side Group E work is
-needed (see *Sibling-module status*).
+**Appendix-A file-shrinkage arc is now active (started session 35).** The
+pattern mirrors the Phase-7 `dcc.js` split: break the big self-contained data
+tables in `config.js` into focused `module/config/*.mjs` modules and let
+`config.js` import + re-compose them onto the `DCC` object, keeping the public
+`CONFIG.DCC` shape byte-identical. Session 35 did `monster-data.mjs` (845 → 625
+lines, −220). The other Appendix-A targets (`actor.js` / `actor-sheet.js` /
+`item.js`) remain multi-session projects, not slices. Group E / §2.8 homebrew
+extensibility was validated 2026-05-29 by migrating two real sibling content
+modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
+class-registration API; no further DCC-side Group E work is needed (see
+*Sibling-module status*).
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 35: Appendix-A `config.js` shrinkage arc
+  opens — extract the monster-classification tables into
+  `module/config/monster-data.mjs`.** First slice of the Appendix-A
+  file-shrinkage arc (`config.js` target ~200 lines). `config.js` was a single
+  845-line `DCC` data object (`export default DCC`; `CONFIG.DCC = DCC`); the
+  four monster-classification tables (`monsterCriticalHits` [178 lines],
+  `humanoidHints`, `giants`, `giantsNotGiants` — ~235 lines, the single biggest
+  cohesive chunk, consumed **only** by `module/npc-parser.js:119–130`) moved to
+  a new `module/config/monster-data.mjs` as named exports. `config.js` imports
+  them and re-composes onto `DCC` (`DCC.monsterCriticalHits =
+  monsterCriticalHits`, etc.), so the default-export / `CONFIG.DCC` shape is
+  **byte-identical** — `npc-parser.js` needs zero changes (still reads
+  `DCC.*`). Verified the extracted tables are byte-identical to git HEAD
+  (`JSON.stringify` diff against `git show HEAD:module/config.js`) and that
+  `config.js` re-composes the **same object references** (`DCC.x === module.x`).
+  `config.js` 845 → 625 lines (−220). **No behavior change, no lib change.**
+  Tests: +5 Vitest (new `module/__tests__/config-monster-data.test.js` — table
+  values + the every-row-has-6-types invariant + the `DCC.x === module.x`
+  composition-identity guard); +1 Playwright (`extension-api.spec.js`, the
+  "survives extraction" family alongside the handlebars/macros/settings-table
+  probes — reads `CONFIG.DCC.monsterCriticalHits`/`humanoidHints`/`giants`/
+  `giantsNotGiants` live and asserts the known die/table values + the 22-HD-row
+  count). **1409 Vitest** (was 1404, +5). **183 Playwright passed**, zero
+  failures (was 182, +1; 6.3-min full suite). Establishes the
+  `module/config/` directory + the extract-and-compose pattern for the rest of
+  the arc (`macroImages`, `diceTypes`/`DICE_CHAIN`, `activeEffectKeys`, the
+  actor-importer block are the natural next chunks).
 
 - **2026-06-02 — Phase 7 session 34: below-threshold perf cleanups — hoist
   `getActionDice` in `rollToHit` + fold the double `items.find` in both
@@ -228,31 +262,6 @@ archives linked above.
   failures (was 180, +1). **Test-coverage-backfill arc COMPLETE** (sessions
   26–31): every PR #720 severity-≥6 coverage gap is now closed or
   found-stale.
-
-- **2026-06-02 — Phase 7 session 30: `terms[N]` two-pass-divergence boundary
-  guard (PR #720 test-coverage gap; test-coverage-backfill arc).**
-  Investigation first re-scoped the gap: the `dcc.modifyAttackRollTerms`
-  post-hook re-read is already well covered — `hookTermsToBonuses` has direct
-  unit tests (translate-Modifier / skip-non-Modifier / empty), plus the live
-  `terms[0]` die-bump (`adapter-weapon-attack.test.js:588`) and the appended-
-  Modifier→`libResult.bonuses` test (507). The one genuinely-uncovered case is
-  the **documented boundary** (`attack-input.mjs:139`): an **in-place mutation
-  of an existing `terms[N]` (N>0)** is captured by *neither* the `terms[0]`
-  die re-read *nor* the appended-Modifier→bonus slice — it flows through the
-  Foundry Roll natively (chat total stays authoritative) and surfaces only as
-  a divergence, never as a `libResult` bonus. Tim chose to add the guard
-  (over skipping). +1 Vitest (`adapter-weapon-attack.test.js`): a hook mutates
-  the existing Compound to-hit term `terms[1].formula` in place (asserting it
-  mutated a real Compound + appended nothing, so the test exercises the real
-  path) → `libResult.die` unchanged (`d20`) + `libResult.bonuses` `[]`. +1
-  Playwright (`adapter-dispatch.spec.js`, `rollWeaponAttack`): the same in
-  **live** Foundry — a real `Hooks.on('dcc.modifyAttackRollTerms')` listener
-  mutates `terms[1]` to `+99` during a live attack, then asserts the chat
-  `libResult` carries no hook bonus + unchanged die AND the Foundry roll total
-  **exceeds** `libResult.total` (the `+99` reached Foundry but not the lib —
-  the divergence the boundary produces). **No production change — pure
-  coverage backfill of an intentional, documented boundary.** **1400 Vitest**
-  (was 1399, +1). **180 Playwright passed**, zero failures (was 179, +1).
 
 ## Closed questions
 
@@ -400,13 +409,22 @@ chat could read cleaner as `Roll.fromTerms([new NumericTerm(...)])` (no measurab
 
 ## Next steps
 
-**No arc is on a critical path.** All the Phase-7 cleanup arcs are closed
-(legacy-decom 21–25, test-coverage 26–31, doc-hygiene 32, programmatic-PC doc
-33, perf 34 — see *Current phase* + the *PR #720 review backlog* close-outs).
-The remaining candidate:
+**The Appendix-A file-shrinkage arc is active** (started session 35; all
+PR #720 cleanup arcs are closed — legacy-decom 21–25, test-coverage 26–31,
+doc-hygiene 32, programmatic-PC doc 33, perf 34). Continue the `config.js`
+shrinkage by extracting the next self-contained data chunks into
+`module/config/*.mjs`, each as its own slice, re-composing onto `DCC` so
+`CONFIG.DCC` stays byte-identical:
 
-- **Appendix-A file-shrinkage arc** (`actor.js` / `actor-sheet.js` / `item.js`
-  / `config.js`) — each a multi-session project, not a slice.
+- **`config.js` (in progress, 845 → 625 after session 35).** Next natural
+  chunks: `macroImages` (~58 lines, pure data), `diceTypes` + `DICE_CHAIN`
+  (icons/dice config), `activeEffectKeys` (~45 lines), the actor-importer block
+  (`actorImporterItemPacks` / `actorImporterNameMap` / `birthAugurEffectsPack` /
+  `importTypes`). Leave the small scalar enums + the Phase 4–6 registry seeds
+  (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) in
+  `config.js` — they're tiny and are the file's actual reason to exist.
+- **`actor.js` / `actor-sheet.js` / `item.js`** — each a multi-session project,
+  not a slice; start one only with budget for it.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now
