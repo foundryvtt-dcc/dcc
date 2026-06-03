@@ -65,28 +65,28 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-02 (session 36).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-02 (session 37).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). **Sessions 35–36 opened the Appendix-A
-file-shrinkage arc** with the first two `config.js` slices (monster tables →
+below-threshold perf items (34). **Sessions 35–37 opened the Appendix-A
+file-shrinkage arc** with the first three `config.js` slices (monster tables →
 `module/config/monster-data.mjs`; default-image tables →
-`module/config/images.mjs`). All were behavior-neutral with no lib change. Repo
-green: **1414 Vitest / 184 Playwright e2e passed**, zero failures (flake-clean
-since the session-29 fix). Per-session detail lives in *Recent slices* + the
-[phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in the
-*PR #720 review backlog* below.
+`module/config/images.mjs`; dice config → `module/config/dice.mjs`). All were
+behavior-neutral with no lib change. Repo green: **1418 Vitest / 185 Playwright
+e2e passed**, zero failures (flake-clean since the session-29 fix). Per-session
+detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
+the itemized close-outs are in the *PR #720 review backlog* below.
 
 **Appendix-A file-shrinkage arc is now active (started session 35).** The
 pattern mirrors the Phase-7 `dcc.js` split: break the big self-contained data
 tables in `config.js` into focused `module/config/*.mjs` modules and let
 `config.js` import + re-compose them onto the `DCC` object, keeping the public
-`CONFIG.DCC` shape byte-identical. So far: `monster-data.mjs` (session 35) +
-`images.mjs` (session 36) — `config.js` 845 → 560 lines (−285). The other
-Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
+`CONFIG.DCC` shape byte-identical. So far: `monster-data.mjs` (35) +
+`images.mjs` (36) + `dice.mjs` (37) — `config.js` 845 → 525 lines (−320). The
+other Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
 multi-session projects, not slices. Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -97,6 +97,30 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 37: Appendix-A `config.js` shrinkage —
+  extract the dice config tables into `module/config/dice.mjs`.** Third slice
+  of the Appendix-A arc, same extract-and-compose pattern. The three
+  dice-related tables — `diceTypes` (15-die label/icon map for the
+  dice-fulfillment dialog, wired into `CONFIG.Dice.fulfillment.dice` by
+  `dcc.js:195`), `DICE_CHAIN` (the ordered die progression, read by
+  `dice-chain.js`), and `effectChangeTypes` (the `diceChain` custom AE change
+  type, read by `active-effect.js`) — moved into a new `module/config/dice.mjs`
+  as named exports; `config.js` imports + re-composes onto `DCC` so the
+  `CONFIG.DCC` shape is **byte-identical** (all three consumers unchanged).
+  Grouped all three into one `dice.mjs` (one cohesive concern). Verified
+  byte-identical to git HEAD + same-reference composition (`DCC.x ===
+  module.x`). `config.js` 560 → 525 lines (−35; cumulative 845 → 525, −320
+  across sessions 35–37). **No behavior change, no lib change.** Tests: +4
+  Vitest (new `module/__tests__/config-dice.test.js` — values, the
+  strictly-ascending `DICE_CHAIN` invariant, the every-die-has-label+icon
+  invariant, the `DCC.x === module.x` composition-identity guard); +1 Playwright
+  (`extension-api.spec.js` "survives extraction" probe reads
+  `CONFIG.DCC.diceTypes`/`DICE_CHAIN`/`effectChangeTypes` live **and** asserts
+  the `dcc.js` init wiring `CONFIG.Dice.fulfillment.dice === CONFIG.DCC.diceTypes`).
+  **1418 Vitest** (was 1414, +4). **185 Playwright passed**, zero failures (was
+  184, +1; 6.4-min full suite). Next `config.js` chunks: `activeEffectKeys`
+  (~45 lines), the actor-importer block.
 
 - **2026-06-02 — Phase 7 session 36: Appendix-A `config.js` shrinkage —
   extract the default-image tables into `module/config/images.mjs`.** Second
@@ -232,40 +256,6 @@ archives linked above.
   shipped present tense. **No production behavior change, no lib change, no
   test-count delta.** Full e2e suite run deferred to Tim's call (see Notes)
   — zero code touched, so the Playwright net asserts nothing new.
-
-- **2026-06-02 — Phase 7 session 32: doc/comment hygiene — `ARCHITECTURE_REIMAGINED.md`
-  §7/§2.7 + the disapproval-chat-ordering comment + drop the unused
-  `_getInitiativeRollViaAdapter` `options` param (PR #720 doc/comment-hygiene
-  backlog).** First slice of the post-coverage doc-hygiene arc; four
-  behavior-neutral edits. (1) **§7 Phase-1 bullets** sketched the lib API as
-  `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` / `rollInitiative(…)`;
-  added a *Landed names* annotation block — as shipped the lib exposes
-  **dedicated** `rollAbilityCheck` + `rollSavingThrow` (not the string-tag
-  form) plus a **generic** `rollCheck(definition, character, { mode })` that
-  **subsumed** both `resolveSkillCheck` and `rollInitiative` (no such symbols
-  exist); all three import into `actor.js` as `libRollAbilityCheck` /
-  `libRollSavingThrow` / `libRollCheck`. (2) **§2.7** file-size figures
-  flagged as a snapshot at `main @ 2337ec0` (verified: those are the exact
-  line counts at that commit — actor.js 2,251 / actor-sheet.js 1,848 / dcc.js
-  1,560 / item.js 966 / item-sheet.js 874). (3) **`actor.js`
-  disapproval-chat-ordering comment** overstated the order — softened: only
-  the two *awaited* messages (spell check, then disapproval roll) are ordered;
-  the "gained-range" EMOTE is emitted **fire-and-forget** by the
-  `onDisapprovalIncreased` callback inside pass 2 (`spell-events.mjs` →
-  `ChatMessage.create` not awaited by the lib), so its landing position
-  relative to the two isn't deterministic. (4) **`_getInitiativeRollViaAdapter`**
-  dropped its never-read `options = {}` param (signature + the one call site
-  at the no-dialog branch) — the modifier-dialog bridge lives entirely in the
-  sibling `_getInitiativeRollWithDialogViaAdapter`; replaced with a doc note.
-  No `resolveSkillCheck`/`rollInitiative` reserved-future framing (that bridge
-  already landed as the separate dialog method). **No production behavior
-  change — pure doc/comment + dead-param removal. No lib change. No test count
-  delta** (the param was already covered by the live init dispatch test + the
-  error-boundary mock; the existence assertion in `actor.test.js` still holds).
-  Full e2e run per Tim's call (the param drop touches a real dispatch path):
-  **1402 Vitest** (unchanged) / **181 Playwright passed**, zero failures
-  (unchanged; 6.4-min full suite). Served system verified to reflect the
-  no-arg signature before the run.
 
 ## Closed questions
 
@@ -420,14 +410,14 @@ shrinkage by extracting the next self-contained data chunks into
 `module/config/*.mjs`, each as its own slice, re-composing onto `DCC` so
 `CONFIG.DCC` stays byte-identical:
 
-- **`config.js` (in progress, 845 → 560 after session 36).** Done:
-  `monster-data.mjs` (35), `images.mjs` (36). Next natural chunks: `diceTypes`
-  + `DICE_CHAIN` (dice config — `diceTypes` is consumed by `dcc.js:195`
-  `CONFIG.Dice.fulfillment.dice`, so the probe should assert that wiring too),
-  `activeEffectKeys` (~45 lines), the actor-importer block
+- **`config.js` (in progress, 845 → 525 after session 37).** Done:
+  `monster-data.mjs` (35), `images.mjs` (36), `dice.mjs` (37). Next natural
+  chunks: `activeEffectKeys` (~45 lines — the AE attribute-key → i18n-label map
+  surfaced in the effect-key picker), the actor-importer block
   (`actorImporterItemPacks` / `actorImporterNameMap` / `birthAugurEffectsPack` /
-  `importTypes`). Leave the small scalar enums + the Phase 4–6 registry seeds
-  (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) in
+  `importTypes` / `actorImporterPromptThreshold` — consumed by the pc/npc
+  parsers + importer). Leave the small scalar enums + the Phase 4–6 registry
+  seeds (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) in
   `config.js` — they're tiny and are the file's actual reason to exist.
 - **`actor.js` / `actor-sheet.js` / `item.js`** — each a multi-session project,
   not a slice; start one only with budget for it.

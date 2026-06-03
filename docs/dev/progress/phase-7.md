@@ -1504,3 +1504,37 @@
   failures (was 180, +1). **Test-coverage-backfill arc COMPLETE** (sessions
   26–31): every PR #720 severity-≥6 coverage gap is now closed or
   found-stale.
+
+- **2026-06-02 — Phase 7 session 32: doc/comment hygiene — `ARCHITECTURE_REIMAGINED.md`
+  §7/§2.7 + the disapproval-chat-ordering comment + drop the unused
+  `_getInitiativeRollViaAdapter` `options` param (PR #720 doc/comment-hygiene
+  backlog).** First slice of the post-coverage doc-hygiene arc; four
+  behavior-neutral edits. (1) **§7 Phase-1 bullets** sketched the lib API as
+  `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` / `rollInitiative(…)`;
+  added a *Landed names* annotation block — as shipped the lib exposes
+  **dedicated** `rollAbilityCheck` + `rollSavingThrow` (not the string-tag
+  form) plus a **generic** `rollCheck(definition, character, { mode })` that
+  **subsumed** both `resolveSkillCheck` and `rollInitiative` (no such symbols
+  exist); all three import into `actor.js` as `libRollAbilityCheck` /
+  `libRollSavingThrow` / `libRollCheck`. (2) **§2.7** file-size figures
+  flagged as a snapshot at `main @ 2337ec0` (verified: those are the exact
+  line counts at that commit — actor.js 2,251 / actor-sheet.js 1,848 / dcc.js
+  1,560 / item.js 966 / item-sheet.js 874). (3) **`actor.js`
+  disapproval-chat-ordering comment** overstated the order — softened: only
+  the two *awaited* messages (spell check, then disapproval roll) are ordered;
+  the "gained-range" EMOTE is emitted **fire-and-forget** by the
+  `onDisapprovalIncreased` callback inside pass 2 (`spell-events.mjs` →
+  `ChatMessage.create` not awaited by the lib), so its landing position
+  relative to the two isn't deterministic. (4) **`_getInitiativeRollViaAdapter`**
+  dropped its never-read `options = {}` param (signature + the one call site
+  at the no-dialog branch) — the modifier-dialog bridge lives entirely in the
+  sibling `_getInitiativeRollWithDialogViaAdapter`; replaced with a doc note.
+  No `resolveSkillCheck`/`rollInitiative` reserved-future framing (that bridge
+  already landed as the separate dialog method). **No production behavior
+  change — pure doc/comment + dead-param removal. No lib change. No test count
+  delta** (the param was already covered by the live init dispatch test + the
+  error-boundary mock; the existence assertion in `actor.test.js` still holds).
+  Full e2e run per Tim's call (the param drop touches a real dispatch path):
+  **1402 Vitest** (unchanged) / **181 Playwright passed**, zero failures
+  (unchanged; 6.4-min full suite). Served system verified to reflect the
+  no-arg signature before the run.

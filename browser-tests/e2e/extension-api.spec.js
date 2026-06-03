@@ -236,6 +236,31 @@ test.describe('DCC Extension API', () => {
     expect(result.macroKeyCount).toBe(49)
   })
 
+  test('DCC dice config (diceTypes / DICE_CHAIN / effectChangeTypes) survives config/dice.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A config.js shrinkage): the three dice tables were
+    // moved out of module/config.js into module/config/dice.mjs and re-composed
+    // onto DCC. This guards the live CONFIG.DCC shape end-to-end AND the
+    // init-time wiring in dcc.js that points CONFIG.Dice.fulfillment.dice at
+    // CONFIG.DCC.diceTypes — a broken compose would blank the dice-fulfillment
+    // dialog and break dice-chain step-up/down (dice-chain.js) + dice-chain
+    // Active Effects (active-effect.js).
+    const result = await page.evaluate(() => ({
+      diceTypesKeyCount: Object.keys(CONFIG.DCC.diceTypes ?? {}).length,
+      d20Icon: CONFIG.DCC.diceTypes?.d20?.icon,
+      d3Icon: CONFIG.DCC.diceTypes?.d3?.icon,
+      // dcc.js init wiring: the fulfillment dice map IS CONFIG.DCC.diceTypes.
+      fulfillmentWired: CONFIG.Dice?.fulfillment?.dice === CONFIG.DCC.diceTypes,
+      diceChain: CONFIG.DCC.DICE_CHAIN,
+      effectDiceChainType: CONFIG.DCC.effectChangeTypes?.DICE_CHAIN
+    }))
+    expect(result.diceTypesKeyCount).toBe(15)
+    expect(result.d20Icon).toBe('<i class="fas fa-dice-d20"></i>')
+    expect(result.d3Icon).toContain('d3black.svg')
+    expect(result.fulfillmentWired).toBe(true)
+    expect(result.diceChain).toEqual([3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30])
+    expect(result.effectDiceChainType).toBe('diceChain')
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were
