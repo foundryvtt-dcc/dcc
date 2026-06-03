@@ -1377,3 +1377,32 @@
   chat-pipeline wrappers. **No behavior change — pure test backfill. No lib
   change.** **1395 Vitest** (was 1379, +16). **177 Playwright passed**, zero
   failures (was 176, +1; 6.4-min full suite).
+
+- **2026-06-02 — Phase 7 session 28: `__mocks__/dcc-roll.js` async/sync
+  parity fix + shared `withSyncCreateRoll` helper (PR #720 test-coverage gap;
+  test-coverage-backfill arc).** The shared DCCRoll mock declared
+  `createRoll` as `static async` while **production** `module/dcc-roll.js:17`
+  is a *sync-declared* function (returns the Roll directly). Adapter dispatch
+  paths that consume `createRoll(...)` synchronously (`rollWeaponAttack`'s
+  damage block: `damageRoll = DCCRoll.createRoll(...)`, no `await`) therefore
+  saw a Promise under test, so each affected test installed its own local
+  sync override. **Fix:** made the mock's `createRoll` sync (matching
+  production) and added one **shared** `withSyncCreateRoll(rollFactory)`
+  helper exported from the mock — it save/replace/restores
+  `game.dcc.DCCRoll.createRoll` with a sync `vi.fn` returning the factory's
+  roll (forwards args). Deleted the duplicated per-file `withSyncCreateRoll`
+  copies in `adapter-weapon-crit-fumble.test.js` +
+  `adapter-weapon-damage.test.js` and folded the one inline override
+  (damage's "trailing flavor bracket" test) onto the shared helper; both
+  files' now-stale "we don't touch the shared mock" docstrings refreshed.
+  **Scope reality check:** the backlog estimated "13+ files"; the actual
+  duplicated-stub footprint was **2 files** (the other createRoll references
+  are ordinary mock uses), so the change is contained. **No production
+  change — test-infra only.** +4 Vitest (`dcc-roll.test.js`: production +
+  mock `createRoll` are sync-declared `constructor.name === 'Function'`, not
+  `'AsyncFunction'`; `withSyncCreateRoll` installs a sync override returning
+  the factory roll + restores; forwards the createRoll args). +1 Playwright
+  (`extension-api.spec.js`: the deployed `game.dcc.DCCRoll.createRoll` is a
+  sync-declared function — locks the production half of the parity contract
+  live). **1399 Vitest** (was 1395, +4). **178 Playwright passed**, zero
+  failures (was 177, +1; 6.2-min full suite).

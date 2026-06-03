@@ -103,9 +103,21 @@ struck). Four behavior-neutral edits: the `ARCHITECTURE_REIMAGINED.md` §7
 `_getInitiativeRollViaAdapter` `options` param. No production behavior change,
 no lib change, no test-count delta (full e2e run per Tim's call since the
 param drop touches a real dispatch path; **1402 Vitest / 181 Playwright**,
-unchanged). What remains off the critical path: the *programmatic-PC-creation*
-doc item, the below-threshold perf "document only" items, or an Appendix-A
-file-shrinkage arc.
+unchanged).
+
+**Programmatic-PC-creation doc — session 33 (2026-06-02) drained the last open
+*resilience/cleanup* backlog item.** Pure-doc slice (zero code/test/lib change):
+new `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` documents the three mechanisms a
+bare `Actor.create()` bypasses (sheet-open `applyClassDefaults`, the
+level-change dialog's compendium-driven writes, the Phase-6 lib-progression
+registry) + the quick-PC/fixture guidance + the content-free-world caveat;
+cross-linked from `EXTENSION_API.md` / `README.md` / `CLASS_DECOMPOSITION.md`
+(§3.5 + §3.3 also refreshed from their stale "Planned"/"once Phase 6 wires"
+framing). The backlog item's open option was always "document the dependency"
+(no consumer needs an actual quick-PC helper). What remains off the critical
+path: the below-threshold perf "document only" items, or an Appendix-A
+file-shrinkage arc. **Full e2e run deferred to Tim's call** — no code touched,
+so the Playwright net asserts nothing new.
 
 **Legacy decommission arc — done.** All five steps landed (sessions 21–25)
 plus the session-20 error-boundary prerequisite. No `_xxxLegacy` roll body
@@ -123,6 +135,45 @@ consumers). See *Sibling-module status* below.
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 33: programmatic-PC-creation dev guide
+  (PR #720 resilience/cleanup backlog — the last open non-perf item).**
+  Pure-doc slice; no code, test, or lib change. Closed the standing
+  "programmatic PC creation produces inconsistent class config" item by
+  *documenting the dependency* (the open option in that note was always
+  "document the level-change-dialog dependency for quick-PC tooling /
+  browser-test fixtures" — no consumer needs an actual quick-PC helper).
+  New `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the **three**
+  population mechanisms a bare `Actor.create({ system: { class: {
+  className: 'Wizard' } } })` bypasses: (1) **sheet-open class defaults** —
+  `applyClassDefaults(actor, classId)` (`extension-api.mjs:333`) fires from
+  every PC sheet's `_prepareContext` (`actor-sheets-dcc.js:81`) on first
+  open, writing `details.sheetClass` / `class.spellCheckAbility` /
+  `class.disapproval` / `classLink` / the `config.*` toggles from
+  `built-in-class-defaults.mjs`; (2) **the level-change dialog** —
+  `DCCActorLevelChange.#onSubmitForm` (`actor-level-change.js:280`) is the
+  *only* path that writes the level-scaled fields (`saves.*.value`,
+  `details.critDie`/`critTable`/`critRange`, `attributes.actionDice.value`,
+  `hitDice.value`, `class.luckDie`, HP, level) via `actor.update(levelData)`
+  from compendium `{ClassName}-{level}` items; (3) **the Phase-6 lib
+  registry** — `registerClassProgressionsFromPacks()`
+  (`foundry-data-loader.mjs:209`) loads the same packs at `dcc.ready` so
+  adapter roll paths read `getSaveBonus`/`getCritDie`/… by classId+level at
+  roll time (no stored field). Documented what's missing on a bare create,
+  the quick-PC/fixture guidance (e2e specs deliberately set only the field
+  each test needs — `extension-api.spec.js:1373` inline `spellCheckAbility`,
+  `:1186` targeted `update`), and the **content-free-world caveat** (the
+  open-source system ships only the registration surface; level data is
+  copyrighted GG material in the private `dcc-official-data` repo, so
+  mechanisms 2+3 write nothing without a content module). Cross-linked from
+  `EXTENSION_API.md` (`registerClassProgression` row), `docs/dev/README.md`,
+  and `CLASS_DECOMPOSITION.md` — and **refreshed two now-stale spots there**:
+  §3.5 from "Planned"/"return zeros because no class is registered" to
+  "Shipped Phase 6 sessions 1–2" + the data caveat, and §3.3's overlap note
+  from "will derive … once Phase 6 wires `registerClassProgression`" to the
+  shipped present tense. **No production behavior change, no lib change, no
+  test-count delta.** Full e2e suite run deferred to Tim's call (see Notes)
+  — zero code touched, so the Playwright net asserts nothing new.
 
 - **2026-06-02 — Phase 7 session 32: doc/comment hygiene — `ARCHITECTURE_REIMAGINED.md`
   §7/§2.7 + the disapproval-chat-ordering comment + drop the unused
@@ -256,35 +307,6 @@ archives linked above.
   net from onSpellLost; the forceCrit fix is net-zero test count; 7.1-min full
   suite — and the suite is now flake-clean, not 178+flake).
 
-- **2026-06-02 — Phase 7 session 28: `__mocks__/dcc-roll.js` async/sync
-  parity fix + shared `withSyncCreateRoll` helper (PR #720 test-coverage gap;
-  test-coverage-backfill arc).** The shared DCCRoll mock declared
-  `createRoll` as `static async` while **production** `module/dcc-roll.js:17`
-  is a *sync-declared* function (returns the Roll directly). Adapter dispatch
-  paths that consume `createRoll(...)` synchronously (`rollWeaponAttack`'s
-  damage block: `damageRoll = DCCRoll.createRoll(...)`, no `await`) therefore
-  saw a Promise under test, so each affected test installed its own local
-  sync override. **Fix:** made the mock's `createRoll` sync (matching
-  production) and added one **shared** `withSyncCreateRoll(rollFactory)`
-  helper exported from the mock — it save/replace/restores
-  `game.dcc.DCCRoll.createRoll` with a sync `vi.fn` returning the factory's
-  roll (forwards args). Deleted the duplicated per-file `withSyncCreateRoll`
-  copies in `adapter-weapon-crit-fumble.test.js` +
-  `adapter-weapon-damage.test.js` and folded the one inline override
-  (damage's "trailing flavor bracket" test) onto the shared helper; both
-  files' now-stale "we don't touch the shared mock" docstrings refreshed.
-  **Scope reality check:** the backlog estimated "13+ files"; the actual
-  duplicated-stub footprint was **2 files** (the other createRoll references
-  are ordinary mock uses), so the change is contained. **No production
-  change — test-infra only.** +4 Vitest (`dcc-roll.test.js`: production +
-  mock `createRoll` are sync-declared `constructor.name === 'Function'`, not
-  `'AsyncFunction'`; `withSyncCreateRoll` installs a sync override returning
-  the factory roll + restores; forwards the createRoll args). +1 Playwright
-  (`extension-api.spec.js`: the deployed `game.dcc.DCCRoll.createRoll` is a
-  sync-declared function — locks the production half of the parity contract
-  live). **1399 Vitest** (was 1395, +4). **178 Playwright passed**, zero
-  failures (was 177, +1; 6.2-min full suite).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -320,16 +342,23 @@ archive entries.
 
 **Open resilience / cleanup items:**
 
-- **Programmatic PC creation produces inconsistent class config.**
+- ~~**Programmatic PC creation produces inconsistent class config.**
   `Actor.create({ system: { class: { className: 'Wizard' } } })` doesn't
   set `spellCheckAbility`, `details.sheetClass`, save `classBonus`, crit
-  / luck die, etc. — real users get these from the level-change dialog.
-  Phase 6 sessions 1-2 wired `registerClassProgression` + a compendium →
-  lib-registry loader, so in worlds where a content module ships level
-  data the lib derives these; the open-source system ships none, so bare
-  programmatic creation in a content-free world still hits it. Remaining:
-  document the level-change-dialog dependency for "quick PC" tooling /
-  browser-test fixtures.
+  / luck die, etc. — real users get these from the level-change dialog.~~
+  **DOCUMENTED 2026-06-02 (Phase 7 session 33).** New dev guide
+  `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the three population
+  mechanisms (sheet-open `applyClassDefaults`, the level-change dialog's
+  compendium-driven `actor.update`, and the Phase-6 lib-progression
+  registry consumed at roll time), what a bare `Actor.create()` misses,
+  the quick-PC / fixture guidance, and the content-free-world caveat.
+  Cross-linked from `EXTENSION_API.md` (`registerClassProgression`),
+  `CLASS_DECOMPOSITION.md` §3.3/§3.5 (also refreshed §3.5 from "Planned"
+  to "Shipped" + §3.3's stale "once Phase 6 wires" overlap note), and
+  `docs/dev/README.md`. The remaining engineering option (a "quick PC"
+  helper that drives the dialog / sets the fields) stays unbuilt by
+  design — no consumer needs it; the doc records the dependency so any
+  future tooling knows what to populate.
 
 **Legacy decommission — COMPLETE (2026-06-02; arc ran 2026-05-31 → 06-02).**
 Goal (achieved): delete every surviving `_xxxLegacy` roll branch so the
@@ -561,7 +590,11 @@ double-iteration), or an Appendix-A file-shrinkage arc.
   refs, disapproval-chat-ordering comment, the unused
   `_getInitiativeRollViaAdapter` `options` param).~~ **done (session 32;
   all four items closed).**
-- *Programmatic-PC-creation* documentation item.
+- ~~*Programmatic-PC-creation* documentation item.~~ **done (session 33;
+  new `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` + cross-links + §3.5/§3.3
+  refresh).**
+- The below-threshold perf "document only" items (hoist `getActionDice`,
+  fold the `_getInitiativeRollViaAdapter` `items.find` double-iteration).
 - Or an Appendix-A file-shrinkage arc (`actor.js` / `actor-sheet.js` /
   `item.js` / `config.js`) — each a multi-session project, not a slice.
 See the PR #720 backlog subsections above for the itemized lists.

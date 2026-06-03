@@ -304,11 +304,10 @@ configuration. The sibling-module `classLink` registration still
 runs (last-write-wins) — no breakage.
 
 **Partial overlap with lib progression (component 6):** save bonuses,
-crit dies, and action dies will derive from
-`lib.getSavingThrows(classId, level)` etc. once Phase 6 wires
-`registerClassProgression`. `registerClassDefaults` covers what's
-left — Foundry-only concerns like `sheetClass`, `classLink`, and the
-sheet-config booleans.
+crit dies, and action dies derive from `lib.getSaveBonus(classId, level)`
+etc. (Phase 6 wired `registerClassProgression` — see §3.5).
+`registerClassDefaults` covers what's left — Foundry-only concerns like
+`sheetClass`, `classLink`, and the sheet-config booleans.
 
 ### 3.4 Starting items (Phase 5)
 
@@ -391,16 +390,31 @@ sheets.
 
 ### 3.5 Class progression (Phase 6, lib-driven)
 
-**Planned:** lib-side `registerClassProgression(classId, …)` invoked
-from `module/dcc.js:init` for each built-in DCC class.
+**Shipped Phase 6 sessions 1–2 (2026-05-19):** the lib-side registry
+plus a compendium → registry loader. `registerClassProgressionsFromPacks()`
+(`module/adapter/foundry-data-loader.mjs:209`) runs at `dcc.ready`,
+walks `CONFIG.DCC.levelDataPacks`, assembles a `ClassProgression` per
+registered class, and calls the vendored lib's
+`registerClassProgressions(...)`. Adapter roll paths then read
+`getSaveBonus` / `getCritDie` / `getAttackBonus` / … from that registry
+keyed by `classId` + level. Homebrew classes register via
+`game.dcc.registerClassProgression(s)` +
+`registerHomebrewClassForProgressionLoad` — see
+[`EXTENSION_API.md`](EXTENSION_API.md).
 
-Today: the Foundry side reads class progression from `levelData`
-packs (`CONFIG.DCC.levelDataPacks`) via the level-change dialog. The
-lib already has `getSavingThrows('warrior', 3)`, etc., but those
-functions currently return zeros because no class is registered. PR
-#720 review surfaced this as the "programmatic PC creation produces
-inconsistent class config" item (see `00-progress.md` PR #720 review
-backlog) — option (b) in that note is the Phase 6 fix.
+**Data caveat:** the open-source system ships only the registration
+surface — the progression *data* is copyrighted Goodman Games material
+in the private `dcc-official-data` repo (§8.1). In a content-free world
+`CONFIG.DCC.levelDataPacks` is `null`, the loader registers nothing, and
+`getSavingThrows('warrior', 3)` etc. return their zero/empty defaults.
+
+The two parallel paths — the level-change dialog (writes `system.*`
+display fields from the same packs) and this lib registry (derives
+values at roll time) — are what PR #720 review flagged as the
+"programmatic PC creation produces inconsistent class config" item: a
+bare `Actor.create()` drives neither. See
+[`PROGRAMMATIC_ACTOR_CREATION.md`](PROGRAMMATIC_ACTOR_CREATION.md) for
+the full breakdown and the quick-PC / fixture guidance.
 
 ### 3.6 Variant identity (Phase 6)
 

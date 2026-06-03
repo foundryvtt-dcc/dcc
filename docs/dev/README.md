@@ -19,6 +19,7 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | [Testing](TESTING.md) | Test suite, mocks, writing tests |
 | [Pack Management](PACKS.md) | Compendium JSON/LevelDB workflow |
 | [Internationalization](I18N.md) | Translation system and guidelines |
+| [Programmatic PC Creation](PROGRAMMATIC_ACTOR_CREATION.md) | Why `Actor.create()` produces a partially-configured PC, what's missing, and how quick-PC tooling / test fixtures should fill it |
 
 ## Foundry Version References
 
