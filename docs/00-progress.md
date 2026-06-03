@@ -65,27 +65,29 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-02 (session 35).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-02 (session 36).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
 found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
 hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). **Session 35 opens the Appendix-A
-file-shrinkage arc** with the first `config.js` slice (monster-classification
-tables → `module/config/monster-data.mjs`). All were behavior-neutral with no
-lib change. Repo green: **1409 Vitest / 183 Playwright e2e passed**, zero
-failures (flake-clean since the session-29 fix). Per-session detail lives
-in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md); the
-itemized close-outs are in the *PR #720 review backlog* below.
+below-threshold perf items (34). **Sessions 35–36 opened the Appendix-A
+file-shrinkage arc** with the first two `config.js` slices (monster tables →
+`module/config/monster-data.mjs`; default-image tables →
+`module/config/images.mjs`). All were behavior-neutral with no lib change. Repo
+green: **1414 Vitest / 184 Playwright e2e passed**, zero failures (flake-clean
+since the session-29 fix). Per-session detail lives in *Recent slices* + the
+[phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in the
+*PR #720 review backlog* below.
 
 **Appendix-A file-shrinkage arc is now active (started session 35).** The
 pattern mirrors the Phase-7 `dcc.js` split: break the big self-contained data
 tables in `config.js` into focused `module/config/*.mjs` modules and let
 `config.js` import + re-compose them onto the `DCC` object, keeping the public
-`CONFIG.DCC` shape byte-identical. Session 35 did `monster-data.mjs` (845 → 625
-lines, −220). The other Appendix-A targets (`actor.js` / `actor-sheet.js` /
-`item.js`) remain multi-session projects, not slices. Group E / §2.8 homebrew
+`CONFIG.DCC` shape byte-identical. So far: `monster-data.mjs` (session 35) +
+`images.mjs` (session 36) — `config.js` 845 → 560 lines (−285). The other
+Appendix-A targets (`actor.js` / `actor-sheet.js` / `item.js`) remain
+multi-session projects, not slices. Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
 class-registration API; no further DCC-side Group E work is needed (see
@@ -95,6 +97,32 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-02 — Phase 7 session 36: Appendix-A `config.js` shrinkage —
+  extract the default-image tables into `module/config/images.mjs`.** Second
+  slice of the Appendix-A arc, same extract-and-compose pattern as session 35.
+  The three default/fallback image lookup tables (`defaultActorImages`,
+  `defaultItemImages`, `macroImages` [49 keys] — consumed **only** by
+  `module/entity-images.js` `EntityImages._selectImage` via `CONFIG.DCC.*`)
+  moved into a new `module/config/images.mjs` as named exports; `config.js`
+  imports + re-composes them onto `DCC` so the `CONFIG.DCC` shape is
+  **byte-identical** (`entity-images.js` needs no change). Grouped all three
+  into one `images.mjs` (one cohesive concern, one consumer file) rather than a
+  single-table `macro-images.mjs`. `diceTypes` was left for a later slice —
+  it's a different concern (dice config, consumed by `dcc.js:195`
+  `CONFIG.Dice.fulfillment.dice`). Verified byte-identical to git HEAD
+  (`JSON.stringify` diff; temp HEAD copy written **inside** `module/` so its
+  now-committed `./config/monster-data.mjs` import resolves) + same-reference
+  composition (`DCC.x === module.x`). `config.js` 625 → 560 lines (−65;
+  cumulative 845 → 560, −285 across sessions 35–36). **No behavior change, no
+  lib change.** Tests: +5 Vitest (new `module/__tests__/config-images.test.js`
+  — table values, all-paths-non-empty-string invariant, the `DCC.x ===
+  module.x` composition-identity guard); +1 Playwright (`extension-api.spec.js`
+  "survives extraction" probe reads `CONFIG.DCC.defaultActorImages`/
+  `defaultItemImages`/`macroImages` live, asserts known paths + the 7/49 key
+  counts). **1414 Vitest** (was 1409, +5). **184 Playwright passed**, zero
+  failures (was 183, +1; 6.3-min full suite). Next `config.js` chunks:
+  `diceTypes` + `DICE_CHAIN`, `activeEffectKeys`, the actor-importer block.
 
 - **2026-06-02 — Phase 7 session 35: Appendix-A `config.js` shrinkage arc
   opens — extract the monster-classification tables into
@@ -238,30 +266,6 @@ archives linked above.
   **1402 Vitest** (unchanged) / **181 Playwright passed**, zero failures
   (unchanged; 6.4-min full suite). Served system verified to reflect the
   no-arg signature before the run.
-
-- **2026-06-02 — Phase 7 session 31: NPC `rollToHit` branches — adjustment
-  injection + `Roll.validate` early-return (PR #720 test-coverage gap;
-  closes the test-coverage-backfill arc).** The last two uncovered
-  `rollToHit` branches, both NPC/edge: (1) **NPC melee/missile
-  `attackHitBonus.<type>.adjustment` Modifier injection** (`actor.js:3669`) —
-  prior coverage exercised only a *test-local reimplementation*
-  (`buildNPCAttackTerms` in `active-effects.test.js`), not the real path; (2)
-  the **`Roll.validate(toHit) === false` early-return** (`actor.js:3634`) —
-  unit-untested because the shared Roll mock's `validate` returns `true`
-  unconditionally. +2 Vitest (`adapter-weapon-attack.test.js`): a `new
-  DCCActor()` flipped to NPC (mirroring `createNPC`) with `melee.adjustment:
-  3` → the captured `createRoll` terms carry exactly one Modifier term
-  (formula 3), the zero missile adjustment adds none; and a weapon with an
-  invalid `toHit` + a forced `Roll.validate=()=>false` → `rollToHit` returns
-  `{ rolled: false, formula }`, `logDispatch` still fired (it precedes the
-  gate), `createRoll` never called. +1 Playwright (`adapter-dispatch.spec.js`
-  `rollWeaponAttack`): a **live** NPC with a `+50` melee adjustment casts a
-  real attack and the `isToHit` card's `rolls[0].total >= 51` (only reachable
-  if the +50 reached the live roll). **No production change — pure coverage
-  backfill.** **1402 Vitest** (was 1400, +2). **181 Playwright passed**, zero
-  failures (was 180, +1). **Test-coverage-backfill arc COMPLETE** (sessions
-  26–31): every PR #720 severity-≥6 coverage gap is now closed or
-  found-stale.
 
 ## Closed questions
 
@@ -416,9 +420,11 @@ shrinkage by extracting the next self-contained data chunks into
 `module/config/*.mjs`, each as its own slice, re-composing onto `DCC` so
 `CONFIG.DCC` stays byte-identical:
 
-- **`config.js` (in progress, 845 → 625 after session 35).** Next natural
-  chunks: `macroImages` (~58 lines, pure data), `diceTypes` + `DICE_CHAIN`
-  (icons/dice config), `activeEffectKeys` (~45 lines), the actor-importer block
+- **`config.js` (in progress, 845 → 560 after session 36).** Done:
+  `monster-data.mjs` (35), `images.mjs` (36). Next natural chunks: `diceTypes`
+  + `DICE_CHAIN` (dice config — `diceTypes` is consumed by `dcc.js:195`
+  `CONFIG.Dice.fulfillment.dice`, so the probe should assert that wiring too),
+  `activeEffectKeys` (~45 lines), the actor-importer block
   (`actorImporterItemPacks` / `actorImporterNameMap` / `birthAugurEffectsPack` /
   `importTypes`). Leave the small scalar enums + the Phase 4–6 registry seeds
   (`classMixins` / `classDefaults` / `sheetParts` / `variants` / …) in

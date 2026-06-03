@@ -209,6 +209,33 @@ test.describe('DCC Extension API', () => {
     expect(result.giantsNotGiantsHasRat).toBe(true)
   })
 
+  test('DCC default image tables (defaultActorImages / defaultItemImages / macroImages) survive config/images.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A config.js shrinkage): the three default/fallback
+    // image lookup tables were moved out of module/config.js into
+    // module/config/images.mjs and re-composed onto DCC. This guards that the
+    // live CONFIG.DCC shape is unchanged end-to-end — entity-images.js reads
+    // these off CONFIG.DCC to pick default art for actors/items/macros, so a
+    // broken compose would silently fall back to blank/generic art.
+    const result = await page.evaluate(() => ({
+      actorDefault: CONFIG.DCC.defaultActorImages?.default,
+      actorParty: CONFIG.DCC.defaultActorImages?.Party,
+      itemWeapon: CONFIG.DCC.defaultItemImages?.weapon,
+      itemKeyCount: Object.keys(CONFIG.DCC.defaultItemImages ?? {}).length,
+      macroDefault: CONFIG.DCC.macroImages?.default,
+      macroStr: CONFIG.DCC.macroImages?.str,
+      macroShieldBash: CONFIG.DCC.macroImages?.shieldBash,
+      macroKeyCount: Object.keys(CONFIG.DCC.macroImages ?? {}).length
+    }))
+    expect(result.actorDefault).toBe('systems/dcc/styles/images/actor.webp')
+    expect(result.actorParty).toBe('systems/dcc/styles/images/party.webp')
+    expect(result.itemWeapon).toBe('systems/dcc/styles/images/weapon.webp')
+    expect(result.itemKeyCount).toBe(7)
+    expect(result.macroDefault).toBe('systems/dcc/styles/images/game-icons-net/dice-target.svg')
+    expect(result.macroStr).toBe('systems/dcc/styles/images/game-icons-net/weight-lifting-up.svg')
+    expect(result.macroShieldBash).toBe('systems/dcc/styles/images/game-icons-net/shield-bash.svg')
+    expect(result.macroKeyCount).toBe(49)
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

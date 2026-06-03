@@ -1480,3 +1480,27 @@
   the divergence the boundary produces). **No production change — pure
   coverage backfill of an intentional, documented boundary.** **1400 Vitest**
   (was 1399, +1). **180 Playwright passed**, zero failures (was 179, +1).
+
+- **2026-06-02 — Phase 7 session 31: NPC `rollToHit` branches — adjustment
+  injection + `Roll.validate` early-return (PR #720 test-coverage gap;
+  closes the test-coverage-backfill arc).** The last two uncovered
+  `rollToHit` branches, both NPC/edge: (1) **NPC melee/missile
+  `attackHitBonus.<type>.adjustment` Modifier injection** (`actor.js:3669`) —
+  prior coverage exercised only a *test-local reimplementation*
+  (`buildNPCAttackTerms` in `active-effects.test.js`), not the real path; (2)
+  the **`Roll.validate(toHit) === false` early-return** (`actor.js:3634`) —
+  unit-untested because the shared Roll mock's `validate` returns `true`
+  unconditionally. +2 Vitest (`adapter-weapon-attack.test.js`): a `new
+  DCCActor()` flipped to NPC (mirroring `createNPC`) with `melee.adjustment:
+  3` → the captured `createRoll` terms carry exactly one Modifier term
+  (formula 3), the zero missile adjustment adds none; and a weapon with an
+  invalid `toHit` + a forced `Roll.validate=()=>false` → `rollToHit` returns
+  `{ rolled: false, formula }`, `logDispatch` still fired (it precedes the
+  gate), `createRoll` never called. +1 Playwright (`adapter-dispatch.spec.js`
+  `rollWeaponAttack`): a **live** NPC with a `+50` melee adjustment casts a
+  real attack and the `isToHit` card's `rolls[0].total >= 51` (only reachable
+  if the +50 reached the live roll). **No production change — pure coverage
+  backfill.** **1402 Vitest** (was 1400, +2). **181 Playwright passed**, zero
+  failures (was 180, +1). **Test-coverage-backfill arc COMPLETE** (sessions
+  26–31): every PR #720 severity-≥6 coverage gap is now closed or
+  found-stale.

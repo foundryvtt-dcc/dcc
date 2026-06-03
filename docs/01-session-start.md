@@ -43,18 +43,22 @@ session's context):
 ## Status (2026-06-02)
 
 **All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
-now active (opened session 35).** Session 35 began the `config.js` shrinkage:
-the four monster-classification tables (`monsterCriticalHits` / `humanoidHints`
-/ `giants` / `giantsNotGiants`) moved out of `config.js` into a new
-`module/config/monster-data.mjs`, re-composed onto `DCC` so the public
-`CONFIG.DCC` shape is byte-identical (`config.js` 845 → 625 lines). The pattern
-for the rest of the arc: extract a self-contained data chunk into
-`module/config/*.mjs`, import + re-compose onto `DCC`, add a Vitest
-composition-identity guard + an `extension-api.spec.js` "survives extraction"
-probe. Next `config.js` chunks: `macroImages`, `diceTypes`/`DICE_CHAIN`,
-`activeEffectKeys`, the actor-importer block. Repo green at session-35 close:
-**1409 Vitest / 183 Playwright e2e passed**, zero failures. Detail below + in
-`00-progress.md` *Recent slices*.
+now active (opened session 35).** Sessions 35–36 have been shrinking
+`config.js` by extracting its big self-contained data tables into focused
+`module/config/*.mjs` modules, re-composed onto `DCC` so the public
+`CONFIG.DCC` shape stays byte-identical: `monster-data.mjs` (monster
+classification tables, session 35) + `images.mjs` (default actor/item/macro
+image tables, session 36). `config.js` 845 → 560 lines. The pattern for each
+slice: extract a self-contained chunk into `module/config/*.mjs`, import +
+re-compose onto `DCC`, add a Vitest composition-identity guard (`DCC.x ===
+module.x`) + an `extension-api.spec.js` "survives extraction" probe; verify the
+extracted table is byte-identical to git HEAD (write the temp HEAD copy
+**inside** `module/` so its committed `./config/*.mjs` imports resolve). Next
+`config.js` chunks: `diceTypes` + `DICE_CHAIN` (note `diceTypes` is also read
+by `dcc.js:195` `CONFIG.Dice.fulfillment.dice`), `activeEffectKeys`, the
+actor-importer block. Repo green at session-36 close: **1414 Vitest / 184
+Playwright e2e passed**, zero failures. Detail below + in `00-progress.md`
+*Recent slices*.
 
 <details><summary>PR #720 test-coverage-backfill arc (sessions 26–31, COMPLETE)</summary>
 
