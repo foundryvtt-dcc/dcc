@@ -508,5 +508,57 @@ test.describe('DCC Active Effects', () => {
       // Verify it's an ActiveEffect type pack
       await expect(packEntry).toHaveClass(/activeeffect/)
     })
+
+    test('actor-sheet AE summary builders survive actor-sheet/effects.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor-sheet.js shrinkage): the four #private AE
+      // summary builders moved out of actor-sheet.js into pure free functions in
+      // module/actor-sheet/effects.mjs, called from _prepareContext. This probe
+      // drives the real sheet pipeline end-to-end (actor.sheet._prepareContext)
+      // and asserts the effect-summary buckets — covering the actor + equipped /
+      // unequipped item-transfer + disabled filtering the extraction must preserve.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'P_SheetEffectsProbe', type: 'Player' })
+          await actor.createEmbeddedDocuments('ActiveEffect', [
+            { name: 'STR Boon', changes: [{ key: 'system.abilities.str.value', value: '2', type: 'add' }], disabled: false },
+            { name: 'Ref Boon', changes: [{ key: 'system.saves.ref.value', value: '1', type: 'add' }], disabled: false },
+            { name: 'HP Boon', changes: [{ key: 'system.attributes.hp.max', value: '5', type: 'add' }], disabled: false },
+            { name: 'Off Boon', changes: [{ key: 'system.abilities.per.value', value: '9', type: 'add' }], disabled: true }
+          ])
+          // Equipped item with a transferring LCK effect; unequipped item with an AGL effect.
+          const [ring, stowed] = await actor.createEmbeddedDocuments('Item', [
+            { type: 'equipment', name: 'Lucky Ring', system: { equipped: true } },
+            { type: 'equipment', name: 'Stowed Charm', system: { equipped: false } }
+          ])
+          await ring.createEmbeddedDocuments('ActiveEffect', [
+            { name: 'Ring LCK', transfer: true, changes: [{ key: 'system.abilities.lck.value', value: '3', type: 'add' }], disabled: false }
+          ])
+          await stowed.createEmbeddedDocuments('ActiveEffect', [
+            { name: 'Charm AGL', transfer: true, changes: [{ key: 'system.abilities.agl.value', value: '3', type: 'add' }], disabled: false }
+          ])
+
+          const ctx = await actor.sheet._prepareContext({})
+          const names = (bucket) => (bucket ?? []).map(e => e.name)
+          observed.str = names(ctx.abilityEffects?.str)
+          observed.lck = names(ctx.abilityEffects?.lck) // equipped item transfer -> present
+          observed.agl = names(ctx.abilityEffects?.agl) // unequipped item -> excluded
+          observed.per = names(ctx.abilityEffects?.per) // disabled -> excluded
+          observed.ref = names(ctx.saveEffects?.ref)
+          observed.hp = names(ctx.attributeEffects?.hp)
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.str).toEqual(['STR Boon'])
+      expect(result.lck).toEqual(['Ring LCK'])
+      expect(result.agl).toEqual([])
+      expect(result.per).toEqual([])
+      expect(result.ref).toEqual(['Ref Boon'])
+      expect(result.hp).toEqual(['HP Boon'])
+    })
   })
 })

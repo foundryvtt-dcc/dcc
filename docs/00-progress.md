@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-03 (session 42).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-03 (session 43).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -82,10 +82,11 @@ container-support → `module/item/container-mixin.mjs` (40), treasure-value/cur
 → `module/item/currency-mixin.mjs` (41), spell-roll (spell check + manifestation +
 mercurial magic) → `module/item/spell-mixin.mjs` (42), composed as
 `DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`;
-`item.js` 975 → 339 (−636). All were behavior-neutral with no lib change. Repo
-green on a clean run: **1459 Vitest / 190 Playwright e2e passed**, zero failures
-(one session-42 container-probe flake — transient `Actor.create` under full-suite
-load — cleared on re-run; see the session-42 slice). Per-session
+`item.js` 975 → 339 (−636). **Session 43 opened the `actor-sheet.js` arc** by
+extracting the four AE summary builders into `module/actor-sheet/effects.mjs` as
+pure free functions (sheets can't use mixins for `#private` methods), `actor-sheet.js`
+1890 → 1613. All were behavior-neutral with no lib change. Repo green on a clean
+run: **1478 Vitest / 191 Playwright e2e passed**, zero failures. Per-session
 detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
 the itemized close-outs are in the *PR #720 review backlog* below.
 
@@ -113,7 +114,20 @@ into `module/item/spell-mixin.mjs`
 `item.js` 975 → 339 (−636 across the three slices). What remains in `item.js` is
 `prepareBaseData` (weapon attack/damage prep) + the lifecycle hooks
 (`_onCreate` / `_preDelete` / `deleteDialog`) — the class's core identity, which
-stays. `actor.js` / `actor-sheet.js` remain unstarted multi-session projects.
+stays. The `item.js` arc is effectively done.
+
+**Appendix-A `actor-sheet.js` arc opened (session 43).** A sheet is an
+`ApplicationV2` class whose big methods are mostly `#private` (the action
+handlers, `#prepareItems`, the AE builders) — and **private names are lexically
+class-scoped, so they can't move to a mixin** the way `item.js`'s public methods
+did. The shrinkage shape for the sheet is therefore **pure-logic → free function
+in `module/actor-sheet/*.mjs`**, with the sheet calling them. Session 43 lifted
+the four AE summary builders (`#prepareAbilityEffects` /
+`#prepareAttackBonusEffects` / `#prepareSaveEffects` / `#prepareAttributeEffects`,
+all `#private`, all with zero prior coverage) into `module/actor-sheet/effects.mjs`
+as pure free functions, deduping the identical effect-collection block they each
+repeated into one shared `collectTransferredActiveEffects`. `actor-sheet.js`
+1890 → 1613. `actor.js` remains an unstarted multi-session project.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -124,6 +138,41 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-03 — Phase 7 session 43: Appendix-A `actor-sheet.js` arc opens —
+  extract the four AE summary builders into `module/actor-sheet/effects.mjs`.**
+  First slice of the `actor-sheet.js` target, and the first that is **not** a
+  mixin: a sheet's big methods are mostly `#private` (action handlers,
+  `#prepareItems`, the AE builders), and private names are lexically class-scoped
+  so they cannot be relocated to a mixin. The shrinkage shape for a sheet is
+  **pure-logic → free function** in `module/actor-sheet/*.mjs`, with the sheet
+  calling it. The four AE summary builders — `#prepareAbilityEffects`,
+  `#prepareAttackBonusEffects`, `#prepareSaveEffects`, `#prepareAttributeEffects`
+  (each called exactly once, in `_prepareContext`) — read only
+  `this.options.document` (the actor) and nothing else of the sheet, so they
+  extract cleanly into `prepareAbilityEffects(actor)` etc. The four ALSO repeated
+  an **identical ~20-line effect-collection block** (actor effects +
+  equipped-item transferred effects) and an identical effect-info push shape;
+  those are deduped here into a shared `collectTransferredActiveEffects(actor)` +
+  internal `effectInfo`/`pushUnique`, so the slice is a behavior-neutral
+  de-duplication on top of the relocation. The sheet's `_prepareContext` now calls
+  the free functions directly (`prepareAbilityEffects(this.options.document)`) and
+  the four `#private` methods are deleted. `actor-sheet.js` 1890 → 1613 lines
+  (−277). **No behavior change, no lib change.** The builders were `#private` and
+  had **zero prior unit coverage** (no `module/__tests__` or e2e reference), so as
+  free functions they're now directly testable — a real coverage win. Tests: +19
+  Vitest (new `module/__tests__/actor-sheet-effects.test.js` — the collector's
+  disabled/suppressed/unequipped/non-transfer filtering + default-equipped, each
+  builder's regex bucketing, dedup-by-effect-id, img fallback, the
+  AC+HP-both-buckets case, and equipped-vs-unequipped item-transfer feeding all
+  four); +1 Playwright (`active-effects.spec.js` — live actor with ability/save/
+  attribute AEs + an equipped-ring transfer + an unequipped-charm + a disabled
+  effect, drives the real `actor.sheet._prepareContext({})` and asserts every
+  summary bucket end-to-end). **1478 Vitest** (was 1459, +19). **191 Playwright
+  passed** on a clean run, zero failures (was 190, +1; no flake this run). Next
+  `actor-sheet.js` candidates (same free-function pattern): `#prepareItems`
+  (~248 lines, inventory categorization — the next-biggest cohesive chunk) and
+  the AE/compendium-link smaller helpers.
 
 - **2026-06-03 — Phase 7 session 42: Appendix-A `item.js` shrinkage —
   extract the spell-roll block into `module/item/spell-mixin.mjs`.** Third (and
@@ -279,34 +328,6 @@ archives linked above.
   `config.js`; they're tiny and are the file's actual reason to exist. The
   data-table extraction arc for `config.js` is effectively complete.
 
-- **2026-06-02 — Phase 7 session 38: Appendix-A `config.js` shrinkage —
-  extract the `activeEffectKeys` reference table into
-  `module/config/active-effect-keys.mjs`.** Fourth slice of the Appendix-A arc.
-  Same extract-and-compose pattern, but with a **finding surfaced first**: the
-  AE attribute-key → i18n-label reference table (`activeEffectKeys`, 32 entries)
-  has **no runtime code consumer** anywhere — not `module/`, not a template, not
-  a sibling module (`xcc`/`dcc-qol`/`mcc-classes`/`dcc-crawl-classes`), and the
-  only dynamic `CONFIG.DCC[...]` access (`table-loading.mjs`) is for table props.
-  It was added in PR #611 ("Add Active Effects support") and never read since;
-  V14 AE editing uses Foundry's native config UI. Tim's call (asked
-  explicitly): **extract like the others** (preserve the documented
-  `CONFIG.DCC.activeEffectKeys` surface; defer the deprecation question) rather
-  than skip or delete. Moved into `module/config/active-effect-keys.mjs` as a
-  named export with a header documenting the no-consumer status + the deferred
-  deprecation; `config.js` re-composes onto `DCC` byte-identical. Verified
-  byte-identical to git HEAD + same-reference composition. `config.js` 525 → 481
-  lines (−44; cumulative 845 → 481, −364 across sessions 35–38). **No behavior
-  change, no lib change.** Tests: +3 Vitest (new
-  `module/__tests__/config-active-effect-keys.test.js` — values, the
-  every-entry-is-`system.*`→`DCC.*` invariant, the `DCC.x === module.x`
-  composition guard — these pin the otherwise-unconsumed surface so a future
-  deprecation is test-visible); +1 Playwright (`extension-api.spec.js` "survives
-  extraction" probe — the **only** end-to-end guard, since there's no consumer:
-  reads `CONFIG.DCC.activeEffectKeys` live, asserts 32 entries + well-formed
-  paths). **1421 Vitest** (was 1418, +3). **186 Playwright passed**, zero
-  failures (was 185, +1; 6.2-min full suite). Next `config.js` chunk: the
-  actor-importer block.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -326,63 +347,29 @@ None open. All prior blockers/questions are resolved (see *Closed
 questions* above); active design / coverage work is tracked in the
 *PR #720 review backlog* below.
 
-## PR #720 review backlog (2026-04-19)
+## PR #720 review backlog (2026-04-19) — FULLY DRAINED
 
-PR #720 (the merge of Phases 0-3 into `main`) triggered a full 8-agent
-review. Fixed findings have been pruned — their narratives live in the
-*Recent slices* section / phase archives. The items below are the
-deferred findings still open.
+PR #720 (the merge of Phases 0-3 into `main`) triggered a full 8-agent review.
+**Every flagged finding is now closed**; per-session narratives live in the
+[phase-7 archive](dev/progress/phase-7.md). One-line close-out per sub-section:
 
-**Design calls — ALL CLOSED, section drained.** The five review-flagged
-design calls (spellburn dialog-ordering, spellburn floor 0-vs-1, damage
-`_total` clamp divergence, error boundaries around `_xxxViaAdapter`,
-`createFoundryRoller` delete-or-wire) were all resolved in Phase 7
-sessions 16–20. Full rationale lives in those Recent-slices / phase-7
-archive entries.
-
-**Open resilience / cleanup items — section drained.** The one item
-(programmatic PC creation produces inconsistent class config) was DOCUMENTED
-2026-06-02 (session 33): `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` lays out the
-three population mechanisms a bare `Actor.create()` misses, the quick-PC /
-fixture guidance, and the content-free-world caveat; cross-linked from
-`EXTENSION_API.md` / `CLASS_DECOMPOSITION.md` §3.3+§3.5 / `docs/dev/README.md`.
-A "quick PC" helper stays unbuilt by design — no consumer needs it.
-
-**Legacy decommission — COMPLETE (arc ran 2026-05-31 → 06-02).** Every
-`_xxxLegacy` roll branch is gone; every public dispatcher is single-path
-through the adapter (retaining only the `options.rollUnder` and `!hasDie`
-*adapter* branches). Landed across sessions 16, 21–25 + the session-20
-error-boundary prerequisite; `_buildSkillCheckLegacyTerms` →
-`_buildSkillCheckRollTerms`. Vitest + live e2e retirement guards lock it in.
-Per-session detail in the [phase-7 archive](dev/progress/phase-7.md).
-
-**Open test coverage gaps (pr-test-analyzer severity ≥ 6) — ALL CLOSED /
-found-stale 2026-06-02 (sessions 26–31).** Each closed with Vitest + (where the
-gap was real-world behavior) a live Playwright probe: data-driven migration
-branches incl. the V14-critical AE numeric-mode→string-type converter (26),
-`renderDisapprovalRoll` + `renderMercurialEffect` (27), the `dcc-roll.js`
-mock async/sync mismatch + shared `withSyncCreateRoll` (28), `onSpellLost`
-during a real cast (29), the `terms[N>0]` two-pass-divergence boundary (30),
-NPC `rollToHit` adjustment injection + `Roll.validate` early-return (31). The
-`roll-dialog.mjs` / `promptSpellburnCommitment` gap was found stale (helpers
-retired in the Q7 dialog unification; `adapter-roll-dialog.test.js` already
-covers both current exports). `_canRouteAttackViaAdapter` gate was retired at
-session 15 (assertions moved to the single-path body). Full per-session detail
-in the phase-7 archive.
-
-**Documentation / comment hygiene — ALL CLOSED 2026-06-02 (session 32).** Four
-behavior-neutral edits: `ARCHITECTURE_REIMAGINED.md` §7 *Landed names*
-annotation (lib shipped `rollAbilityCheck`/`rollSavingThrow`/generic `rollCheck`,
-not the sketched `resolveSkillCheck`/`rollInitiative`), §2.7 `main @ 2337ec0`
-snapshot pin, the softened `actor.js` disapproval-chat-ordering comment, and the
-dropped unused `_getInitiativeRollViaAdapter` `options` param.
-
-**Performance (below measurement threshold) — section drained.** `getActionDice`
-3×→1× hoist in `rollToHit` and the double `items.find`→single-pass fold in both
-init methods both DONE 2026-06-02 (session 34; Vitest guards + a live Playwright
-order probe). One micro-item left, not worth a slice on its own: the
-`renderDisapprovalRoll` / `renderMercurialEffect` `new Roll('${N}d1')` deterministic
-chat could read cleaner as `Roll.fromTerms([new NumericTerm(...)])` (no measurable win).
+- **Design calls** — 5 review-flagged calls (spellburn dialog-ordering,
+  spellburn floor 0-vs-1, damage `_total` clamp divergence, `_xxxViaAdapter`
+  error boundaries, `createFoundryRoller` delete-or-wire) resolved in sessions
+  16–20.
+- **Resilience / cleanup** — the programmatic-PC-creation finding was documented
+  in `docs/dev/PROGRAMMATIC_ACTOR_CREATION.md` (session 33); a "quick PC" helper
+  stays unbuilt by design.
+- **Legacy decommission** — COMPLETE (sessions 16, 21–25): no `_xxxLegacy` roll
+  branch survives; every public dispatcher is single-path through the adapter
+  (retaining only the `options.rollUnder` / `!hasDie` *adapter* branches).
+- **Test-coverage gaps (severity ≥ 6)** — all closed/found-stale (sessions
+  26–31), each with Vitest + a live Playwright probe where the gap was real
+  behavior.
+- **Doc/comment hygiene** — 4 behavior-neutral edits (session 32).
+- **Performance** — the two above-threshold items done (session 34); one
+  micro-item left (deterministic `new Roll('${N}d1')` → `Roll.fromTerms`, no
+  measurable win), not worth a slice.
 
 ## Decisions made
 
@@ -482,12 +469,21 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   formula path is dead under the integer-`NumberField` `CurrencyField` schema
   (`migrateData` `parseInt()`s strings); decide whether to make the value field
   formula-capable or remove the dead path. Separate from the extraction arc.
-- **`actor.js` / `actor-sheet.js`** — the remaining Appendix-A file-shrinkage
-  targets, and the only `item.js`-style work left in the arc; each a
-  multi-session project, not a slice; start one only with budget for it. The
-  same method-group→mixin pattern from the `item.js` arc applies (`actor.js` is
-  the bigger fish at ~4500 lines, but much of its bulk is the adapter dispatch
-  layer that should stay co-located with the public `rollXxx` wrappers).
+- **`actor-sheet.js` (1890 → 1613 after session 43) — IN PROGRESS.** Sheets
+  can't use the mixin pattern (their big methods are `#private`); shape is
+  **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.
+  Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector). Next
+  candidates by cohesion: `#prepareItems` (~248 lines, inventory categorization —
+  the biggest remaining cohesive chunk; check how much sheet state it touches
+  beyond `this.options.document` before extracting), then the smaller
+  `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/`#prepareCompendiumLinks`
+  helpers. The static `#` action handlers + drag-drop are trickier (they
+  reference other private members / `this` sheet state) — lower priority.
+- **`actor.js` (~4574 lines)** — the largest Appendix-A target; a multi-session
+  project, not a slice; start only with budget for it. Being a document class
+  (not a sheet) it CAN use the `item.js` mixin pattern, but much of its bulk is
+  the adapter dispatch layer that should stay co-located with the public
+  `rollXxx` wrappers.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now

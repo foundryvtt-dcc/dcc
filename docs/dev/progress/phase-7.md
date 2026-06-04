@@ -1697,3 +1697,31 @@
   **1418 Vitest** (was 1414, +4). **185 Playwright passed**, zero failures (was
   184, +1; 6.4-min full suite). Next `config.js` chunks: `activeEffectKeys`
   (~45 lines), the actor-importer block.
+
+- **2026-06-02 — Phase 7 session 38: Appendix-A `config.js` shrinkage —
+  extract the `activeEffectKeys` reference table into
+  `module/config/active-effect-keys.mjs`.** Fourth slice of the Appendix-A arc.
+  Same extract-and-compose pattern, but with a **finding surfaced first**: the
+  AE attribute-key → i18n-label reference table (`activeEffectKeys`, 32 entries)
+  has **no runtime code consumer** anywhere — not `module/`, not a template, not
+  a sibling module (`xcc`/`dcc-qol`/`mcc-classes`/`dcc-crawl-classes`), and the
+  only dynamic `CONFIG.DCC[...]` access (`table-loading.mjs`) is for table props.
+  It was added in PR #611 ("Add Active Effects support") and never read since;
+  V14 AE editing uses Foundry's native config UI. Tim's call (asked
+  explicitly): **extract like the others** (preserve the documented
+  `CONFIG.DCC.activeEffectKeys` surface; defer the deprecation question) rather
+  than skip or delete. Moved into `module/config/active-effect-keys.mjs` as a
+  named export with a header documenting the no-consumer status + the deferred
+  deprecation; `config.js` re-composes onto `DCC` byte-identical. Verified
+  byte-identical to git HEAD + same-reference composition. `config.js` 525 → 481
+  lines (−44; cumulative 845 → 481, −364 across sessions 35–38). **No behavior
+  change, no lib change.** Tests: +3 Vitest (new
+  `module/__tests__/config-active-effect-keys.test.js` — values, the
+  every-entry-is-`system.*`→`DCC.*` invariant, the `DCC.x === module.x`
+  composition guard — these pin the otherwise-unconsumed surface so a future
+  deprecation is test-visible); +1 Playwright (`extension-api.spec.js` "survives
+  extraction" probe — the **only** end-to-end guard, since there's no consumer:
+  reads `CONFIG.DCC.activeEffectKeys` live, asserts 32 entries + well-formed
+  paths). **1421 Vitest** (was 1418, +3). **186 Playwright passed**, zero
+  failures (was 185, +1; 6.2-min full suite). Next `config.js` chunk: the
+  actor-importer block.
