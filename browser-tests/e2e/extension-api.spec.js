@@ -448,6 +448,66 @@ test.describe('DCC Extension API', () => {
     expect(result.cpAfterBottomNoop).toBe(100)
   })
 
+  test('DCC spell behavior (rollSpellCheck / hasExisting* / rollManifestation / rollMercurialMagic) survives item/spell-mixin.mjs extraction', async ({ page }) => {
+    // Phase 7 (Appendix-A item.js shrinkage): the spell-item roll block moved out
+    // of module/item.js into module/item/spell-mixin.mjs, composed as the
+    // outermost layer `DCCItem extends SpellItemMixin(CurrencyItemMixin(
+    // ContainerItemMixin(Item)))`. actor-sheet.js + item-sheet.js action handlers
+    // and macros.mjs call these off live DCCItem instances; the mixin reaches the
+    // adapter via the global game.dcc.* namespace exactly as the class body did.
+    // This probe exercises the manifestation + mercurial lookup-and-stow paths
+    // end-to-end (no prior unit coverage) plus the hasExisting* getters, and
+    // confirms rollSpellCheck survived as a live method.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+      let actor
+      // rollManifestation/rollMercurialMagic fire this.update() without awaiting;
+      // the manifestation/mercurial value fields are StringFields, so the saved
+      // value round-trips as a string — compare loosely.
+      const waitForValue = async (item, path, expected) => {
+        const read = () => path.split('.').reduce((o, k) => o?.[k], item.system)
+        for (let i = 0; i < 40; i++) {
+          if (String(read()) === String(expected)) return
+          await new Promise((r) => setTimeout(r, 25))
+        }
+      }
+      try {
+        actor = await Actor.create({ type: 'Player', name: 'P_SpellMixinProbe' })
+        const [spell] = await actor.createEmbeddedDocuments('Item', [{ type: 'spell', name: 'P_Probe Spell' }])
+
+        observed.rollSpellCheckIsFn = typeof spell.rollSpellCheck === 'function'
+        // Fresh spell: no manifestation / mercurial recorded yet.
+        observed.manifestBefore = !!spell.hasExistingManifestation()
+        observed.mercurialBefore = !!spell.hasExistingMercurialMagic()
+
+        // Lookup-by-value path: roll('@value', { value }) -> total === value, stowed
+        // to system.manifestation.value. (table.draw({roll}) preserves that roll, so
+        // the value is deterministic whether or not a side-effects table matches.)
+        await spell.rollManifestation(7)
+        await waitForValue(spell, 'manifestation.value', 7)
+        observed.manifestationValue = spell.system.manifestation.value
+        observed.manifestAfter = !!spell.hasExistingManifestation()
+
+        await spell.rollMercurialMagic(55)
+        await waitForValue(spell, 'mercurialEffect.value', 55)
+        observed.mercurialValue = spell.system.mercurialEffect.value
+        observed.mercurialAfter = !!spell.hasExistingMercurialMagic()
+      } finally {
+        if (actor) await actor.delete().catch(() => {})
+      }
+      return observed
+    })
+
+    expect(result.rollSpellCheckIsFn).toBe(true)
+    expect(result.manifestBefore).toBe(false)
+    expect(result.mercurialBefore).toBe(false)
+    // value fields are StringFields under the live schema -> round-trip as strings.
+    expect(String(result.manifestationValue)).toBe('7')
+    expect(result.manifestAfter).toBe(true)
+    expect(String(result.mercurialValue)).toBe('55')
+    expect(result.mercurialAfter).toBe(true)
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

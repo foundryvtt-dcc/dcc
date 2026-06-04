@@ -1673,3 +1673,27 @@
   counts). **1414 Vitest** (was 1409, +5). **184 Playwright passed**, zero
   failures (was 183, +1; 6.3-min full suite). Next `config.js` chunks:
   `diceTypes` + `DICE_CHAIN`, `activeEffectKeys`, the actor-importer block.
+
+- **2026-06-02 — Phase 7 session 37: Appendix-A `config.js` shrinkage —
+  extract the dice config tables into `module/config/dice.mjs`.** Third slice
+  of the Appendix-A arc, same extract-and-compose pattern. The three
+  dice-related tables — `diceTypes` (15-die label/icon map for the
+  dice-fulfillment dialog, wired into `CONFIG.Dice.fulfillment.dice` by
+  `dcc.js:195`), `DICE_CHAIN` (the ordered die progression, read by
+  `dice-chain.js`), and `effectChangeTypes` (the `diceChain` custom AE change
+  type, read by `active-effect.js`) — moved into a new `module/config/dice.mjs`
+  as named exports; `config.js` imports + re-composes onto `DCC` so the
+  `CONFIG.DCC` shape is **byte-identical** (all three consumers unchanged).
+  Grouped all three into one `dice.mjs` (one cohesive concern). Verified
+  byte-identical to git HEAD + same-reference composition (`DCC.x ===
+  module.x`). `config.js` 560 → 525 lines (−35; cumulative 845 → 525, −320
+  across sessions 35–37). **No behavior change, no lib change.** Tests: +4
+  Vitest (new `module/__tests__/config-dice.test.js` — values, the
+  strictly-ascending `DICE_CHAIN` invariant, the every-die-has-label+icon
+  invariant, the `DCC.x === module.x` composition-identity guard); +1 Playwright
+  (`extension-api.spec.js` "survives extraction" probe reads
+  `CONFIG.DCC.diceTypes`/`DICE_CHAIN`/`effectChangeTypes` live **and** asserts
+  the `dcc.js` init wiring `CONFIG.Dice.fulfillment.dice === CONFIG.DCC.diceTypes`).
+  **1418 Vitest** (was 1414, +4). **185 Playwright passed**, zero failures (was
+  184, +1; 6.4-min full suite). Next `config.js` chunks: `activeEffectKeys`
+  (~45 lines), the actor-importer block.

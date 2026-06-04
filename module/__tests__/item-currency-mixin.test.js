@@ -58,12 +58,24 @@ describe('CurrencyItemMixin extraction', () => {
       expect('contentsWeight' in item).toBe(true)
     })
 
-    test('the mixin chain is ordered Currency -> Container -> Item', () => {
-      // DCCItem -> CurrencyItemMixin(...) -> ContainerItemMixin(Item) -> Item
-      const currencyLayer = Object.getPrototypeOf(DCCItem)
-      expect(Object.getOwnPropertyDescriptor(currencyLayer.prototype, 'needsValueRoll')).toBeDefined()
-      const containerLayer = Object.getPrototypeOf(currencyLayer)
-      expect(Object.getOwnPropertyDescriptor(containerLayer.prototype, 'canContainItem')).toBeDefined()
+    test('the item mixins compose as distinct prototype layers, Currency nested inside Spell and outside Container', () => {
+      // Chain: DCCItem -> SpellItemMixin -> CurrencyItemMixin -> ContainerItemMixin -> Item.
+      // Walk the chain and find which layer OWNS each signature member; resilient
+      // to additional outer mixin layers being added later.
+      const ownerLayerIndex = (member) => {
+        let layer = DCCItem
+        for (let i = 0; layer && i < 12; i++) {
+          if (layer.prototype && Object.getOwnPropertyDescriptor(layer.prototype, member)) return i
+          layer = Object.getPrototypeOf(layer)
+        }
+        return -1
+      }
+      const spell = ownerLayerIndex('rollSpellCheck')
+      const currency = ownerLayerIndex('needsValueRoll')
+      const container = ownerLayerIndex('canContainItem')
+      expect(spell).toBeGreaterThanOrEqual(0)
+      expect(currency).toBeGreaterThan(spell)
+      expect(container).toBeGreaterThan(currency)
     })
   })
 
