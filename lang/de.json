@@ -700,7 +700,7 @@
   "DCC.SpellShiftDown": "Zauberergebnis um 1 Schritt senken",
   "DCC.SpellShiftUp": "Zauberergebnis um 1 Schritt erhöhen",
   "DCC.CritShiftDown": "Kritisches Ergebnis um 1 Schritt senken",
-  "DCC.CritShiftUp": "Kritisches Ergebnis 1 Schritt erhöhen",
+  "DCC.CritShiftUp": "Kritisches Ergebnis um 1 Schritt erhöhen",
   "DCC.FumbleShiftDown": "Patzer-Ergebnis um 1 Schritt senken",
   "DCC.FumbleShiftUp": "Patzer-Ergebnis um 1 Schritt erhöhen",
   "DCC.SpellsTabHint": "Zauberliste",
