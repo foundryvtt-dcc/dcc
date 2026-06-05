@@ -362,4 +362,65 @@ test.describe('DCC Sheet UI', () => {
       expect(result.totalWeightPositive).toBe(true)
     })
   })
+
+  test.describe('Context Field Preparation', () => {
+    test('actor-sheet presentation fields survive actor-sheet/presentation.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor-sheet.js shrinkage): the four small context-field
+      // helpers (#prepareNotes / #prepareCorruption / #prepareImage /
+      // #prepareCompendiumLinks) moved out of actor-sheet.js into free functions in
+      // module/actor-sheet/presentation.mjs, called from _prepareContext. This probe
+      // drives the real sheet pipeline end-to-end on a live actor and asserts each
+      // field the extraction must preserve: enriched notes + corruption HTML, the
+      // display-image fallback, and the compendium-links config passthrough.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({
+            name: 'V14 Context Probe',
+            type: 'Player',
+            // A real core Foundry icon (exists, so no 404 in the directory thumbnail)
+            // that is neither empty nor the mystery-man placeholder — so prepareImage
+            // keeps it verbatim.
+            img: 'icons/svg/aura.svg',
+            system: {
+              details: { notes: { value: '<p>Probe notes body</p>' } },
+              class: { corruption: '<p>Probe corruption body</p>' }
+            }
+          })
+
+          const ctx = await actor.sheet._prepareContext({})
+          observed.notesHTML = ctx.notesHTML
+          observed.corruptionHTML = ctx.corruptionHTML
+          observed.customImg = ctx.img
+          // _prepareContext runs every value through foundry.utils.mergeObject,
+          // which deep-clones a non-null object — so compare by structure, not by
+          // reference, against the CONFIG.DCC source the helper reads.
+          observed.compendiumLinks = ctx.compendiumLinks ?? null
+          observed.configLinks = CONFIG.DCC.coreBookCompendiumLinks ?? null
+
+          // Drop to the mystery-man placeholder to exercise the default-image fallback.
+          await actor.update({ img: 'icons/svg/mystery-man.svg' })
+          const ctx2 = await actor.sheet._prepareContext({})
+          observed.fallbackImg = ctx2.img
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      // Notes + corruption are TextEditor.enrichHTML output — assert the source text
+      // round-trips through enrichment.
+      expect(result.notesHTML).toContain('Probe notes body')
+      expect(result.corruptionHTML).toContain('Probe corruption body')
+      // A real custom image is kept verbatim.
+      expect(result.customImg).toBe('icons/svg/aura.svg')
+      // compendiumLinks is the CONFIG.DCC passthrough — structurally identical.
+      expect(result.compendiumLinks).toEqual(result.configLinks)
+      // The mystery-man placeholder resolves to a non-empty default that is no longer
+      // the placeholder itself.
+      expect(result.fallbackImg).toBeTruthy()
+      expect(result.fallbackImg).not.toBe('icons/svg/mystery-man.svg')
+    })
+  })
 })

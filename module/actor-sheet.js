@@ -7,6 +7,7 @@ import EntityImages from './entity-images.js'
 import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
 import { prepareItems } from './actor-sheet/items.mjs'
+import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks } from './actor-sheet/presentation.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -171,19 +172,19 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       saveEffects: prepareSaveEffects(actor),
       attributeEffects: prepareAttributeEffects(actor),
       actor: this.options.document,
-      compendiumLinks: this.#prepareCompendiumLinks(),
+      compendiumLinks: prepareCompendiumLinks(),
       config: CONFIG.DCC,
-      corruptionHTML: await this.#prepareCorruption(),
+      corruptionHTML: await prepareCorruption(actor),
       documentType: 'Actor',
       effects: this.options.document.effects,
       incomplete: {},
-      img: await this.#prepareImage(),
+      img: prepareImage(actor),
       isOwner: this.options.document.isOwner,
       isNPC: this.options.document.type === 'NPC',
       isPC: this.options.document.type === 'Player',
       isZero: this.options.document.system.details.level.value === 0,
       items: this.options.document.items,
-      notesHTML: await this.#prepareNotes(),
+      notesHTML: await prepareNotes(actor),
       parts: {},
       system: this.options.document.system,
       ...preparedItems
@@ -396,49 +397,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /* -------------------------------------------- */
-
-  /**
-   * Prepare enriched notes HTML for the actor.
-   * @returns {notes: string}
-   */
-  async #prepareNotes () {
-    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-    return await TextEditor.enrichHTML(this.options.document.system.details.notes.value, context)
-  }
-
-  /**
-   * Prepare enriched corruption HTML for the actor.
-   * @returns {corruption: string}
-   */
-  async #prepareCorruption () {
-    if (this.options.document.system.class) {
-      const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-      const corruption = this.options.document.system.class.corruption || ''
-      return await TextEditor.enrichHTML(corruption, context)
-    }
-    return ''
-  }
-
-  #prepareImage () {
-    // Default images are now set in preCreateActor hook, so this is just a fallback
-    // for actors created before that hook existed
-    if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
-      const img = EntityImages.imageForActor(this.options.document.type)
-      // Only return the image for display - don't update to avoid race conditions
-      // The preCreateActor hook handles setting default images for new actors
-      return img
-    }
-    return this.options.document.img
-  }
-
-  /**
-   * Prepare compendium links for the equipment tab
-   * Returns links from CONFIG.DCC if the dcc-core-book module is active
-   * @returns {Object|null} Object with compendium pack names keyed by section, or null if module not active
-   */
-  #prepareCompendiumLinks () {
-    return CONFIG.DCC.coreBookCompendiumLinks
-  }
 
   /**
    * Search the object and then its parent elements for a dataset attribute

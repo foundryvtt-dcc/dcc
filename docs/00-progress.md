@@ -89,10 +89,15 @@ pure free functions (sheets can't use mixins for `#private` methods), `actor-she
 categorizer) into `module/actor-sheet/items.mjs` as an "actor-logic → free
 function" (it mutates the actor: zero-qty deletion, coin-treasure merge, icon
 repair), Foundry globals injected via a `deps` param; `actor-sheet.js` 1613 →
-1366. All were behavior-neutral with no lib change. Repo green on a clean
-run: **1506 Vitest / 193 Playwright e2e passed**, zero failures. Per-session
-detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
-the itemized close-outs are in the *PR #720 review backlog* below.
+1366. **Session 45 extracted the four small context-field helpers** (`#prepareNotes`
+/ `#prepareCorruption` / `#prepareImage` / `#prepareCompendiumLinks`) into
+`module/actor-sheet/presentation.mjs` as pure free functions (Foundry globals via
+`deps`), `actor-sheet.js` 1366 → 1324. All were behavior-neutral with no lib
+change. Repo green on the final run: **1516 Vitest passed**; **194 Playwright**
+(193 passed + the documented `createEmbeddedDocuments`-under-load `#prepareItems`
+flake, which passes in isolation). Per-session detail lives in *Recent slices* +
+the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
+the *PR #720 review backlog* below.
 
 **Appendix-A `config.js` data-table extraction is effectively complete (arc ran
 sessions 35–39).** The pattern mirrored the Phase-7 `dcc.js` split: break the
@@ -133,7 +138,13 @@ as pure free functions, deduping the identical effect-collection block they each
 repeated into one shared `collectTransferredActiveEffects`. Session 44 lifted
 `#prepareItems` (the inventory categorizer) into `module/actor-sheet/items.mjs`
 as an "actor-logic → free function" (it mutates the actor; Foundry globals
-injected via `deps`). `actor-sheet.js` 1890 → 1613 → 1366. `actor.js` remains an
+injected via `deps`). Session 45 lifted the four small context-field helpers
+(`#prepareNotes` / `#prepareCorruption` / `#prepareImage` /
+`#prepareCompendiumLinks`) into `module/actor-sheet/presentation.mjs` as pure
+free functions (Foundry globals via `deps`). `actor-sheet.js` 1890 → 1613 →
+1366 → 1324. The cohesive small-helper extractions are now done; what remains
+are the static `#` action handlers + drag-drop (they reach other private
+members / sheet `this`, so trickier — lower priority). `actor.js` remains an
 unstarted multi-session project.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
@@ -145,6 +156,50 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-05 — Phase 7 session 45: Appendix-A `actor-sheet.js` shrinkage —
+  extract the four small context-field helpers into
+  `module/actor-sheet/presentation.mjs`.** Third slice of the `actor-sheet.js`
+  arc, same **pure-logic → free function** shape as sessions 43/44 (a sheet's
+  `#private` methods can't move to a mixin). The four remaining small `prepare*`
+  helpers — `#prepareNotes` / `#prepareCorruption` (both `TextEditor.enrichHTML`
+  of an actor text field), `#prepareImage` (display-image fallback via
+  `EntityImages.imageForActor`), `#prepareCompendiumLinks` (a one-line
+  `CONFIG.DCC.coreBookCompendiumLinks` passthrough) — each read only
+  `this.options.document` (the actor) plus one Foundry global, so they extract
+  cleanly into `prepareNotes(actor)` / `prepareCorruption(actor)` /
+  `prepareImage(actor)` / `prepareCompendiumLinks(config)`. The Foundry globals
+  (`TextEditor`, `EntityImages.imageForActor`, `CONFIG.DCC`) are injected via
+  `deps`/param defaults to the live globals (the `items.mjs` / `extension-api.mjs`
+  DI idiom), so the enrichment, image-fallback, and config-read logic are now
+  directly unit-testable. `_prepareContext` calls the free functions and the four
+  `#private` methods are deleted. `actor-sheet.js` 1366 → 1324 lines (−42). **No
+  behavior change, no lib change.** All four were `#private` with **zero prior
+  coverage**, so a real coverage win. Tests: +10 Vitest (new
+  `module/__tests__/actor-sheet-presentation.test.js` — notes/corruption
+  enrichment with relativeTo + owner-secrets context, the no-class NPC `''`
+  short-circuit, image keep-vs-fallback for custom/mystery-man/empty, and the
+  compendium-links config passthrough incl. absent-config); +1 Playwright
+  (`sheet-ui.spec.js` "Context Field Preparation" — a live actor drives the real
+  `actor.sheet._prepareContext({})` and asserts enriched notes+corruption HTML,
+  the custom-image keep, the mystery-man → default-icon fallback after an
+  `update`, and the compendium-links passthrough). **1516 Vitest** (was 1506,
+  +10). **194 Playwright** (was 193, +1). **Two probe assertions corrected during
+  the slice** (both my new test, not the extraction): the compendium-links check
+  was reference-`===` but `_prepareContext` runs every value through
+  `foundry.utils.mergeObject` which deep-clones a non-null object, so it's now a
+  structural `toEqual` against the `CONFIG.DCC` source; and the "custom image"
+  fixture was a non-existent `worlds/*.webp` that 404'd in the Actors-directory
+  thumbnail (caught by the `afterEach` console-error guard), swapped to the real
+  core icon `icons/svg/aura.svg`. **Flake reflagged** (per the refactor testing
+  rules): the session-44 `#prepareItems` probe (`sheet-ui.spec.js:297`,
+  `containedCount`) failed once on a full run with the contained item's second
+  `createEmbeddedDocuments` not landing — the documented transient
+  `createEmbeddedDocuments`-under-load race; it passed cleanly in isolation (3.8s)
+  and is untouched by this slice (it tests `items.mjs`). Worth watching if it
+  recurs. Next `actor-sheet.js` candidates: the static `#` action handlers +
+  drag-drop are trickier (they reach other private members / sheet `this`) —
+  lower priority; the cohesive small-helper extractions are now done.
 
 - **2026-06-05 — Phase 7 session 44: Appendix-A `actor-sheet.js` shrinkage —
   extract `#prepareItems` into `module/actor-sheet/items.mjs`.** Second slice of
@@ -302,44 +357,6 @@ archives linked above.
   roll group (~355 lines — biggest, but roll-behavior so check for
   dispatch-logging / lib entanglement before extracting).
 
-- **2026-06-03 — Phase 7 session 40: Appendix-A `item.js` shrinkage arc opens —
-  extract the container-support block into `module/item/container-mixin.mjs`.**
-  First slice of the `item.js` file-shrinkage target (Appendix-A; the table's
-  967→~200 figure is an early snapshot — `item.js` was 975 lines at slice
-  start). Unlike the `config.js` arc (pure data-table → named exports), `item.js`
-  is a behavior-heavy class, so the extraction shape is **method-group → Foundry
-  mixin** (`(Base) => class extends Base`, matching the codebase's
-  `HandlebarsApplicationMixin(...)` idiom). The self-contained container-support
-  block — 7 weight/capacity/depth getters (`isContainer`, `isContained`,
-  `contents`, `contentsWeight`, `totalWeight`, `availableWeightCapacity`,
-  `availableItemCapacity`, `contentsItemCount`, `containerDepth`) + 2 validation
-  helpers (`wouldCreateCircularContainment`, `canContainItem`) + the
-  `MAX_CONTAINER_DEPTH` const — moved into a new
-  `module/item/container-mixin.mjs` as `ContainerItemMixin`. `DCCItem` now
-  declares `extends ContainerItemMixin(Item)`, so every member stays an instance
-  getter/method with byte-identical `this` semantics; the three external
-  consumers (`actor-sheet.js`, `item-sheet.js`, `item-piles-support.js`) read
-  these straight off live items and need **zero** change. The block is fully
-  self-contained (reads only `this`/`this.system`/`this.parent`/`this.id`/
-  `this.type` + `MAX_CONTAINER_DEPTH`; no spell/roll/lib/adapter entanglement, no
-  dispatch logging, returns i18n *keys* not localized strings). `item.js` 975 →
-  812 lines (−163). **No behavior change, no lib change.** Tests: the existing
-  `container.test.js` (48 assertions) + `item.test.js` pass unchanged (proof the
-  mixin composes transparently); +5 Vitest (new
-  `module/__tests__/item-container-mixin.test.js` — default===named export, the
-  `MAX_CONTAINER_DEPTH` const travels, applying the mixin yields all 11 members,
-  the getter-vs-method shape, and `DCCItem` instances still expose the surface);
-  +1 Playwright (`extension-api.spec.js` "survives extraction" probe — creates a
-  **live** container + contained item on an actor and asserts
-  contents/weight/capacity/`canContainItem` end-to-end incl. the self-rejection
-  branch). **1432 Vitest** (was 1427, +5). **188 Playwright passed**, zero
-  failures (was 187, +1; 6.1-min full suite). Establishes the `module/item/`
-  directory + the method-group→mixin pattern for the rest of the `item.js` arc.
-  Next `item.js` chunks (by cohesion): the spell/manifestation/mercurial roll
-  group (`rollSpellCheck`/`hasExisting*`/`rollManifestation`/`rollMercurialMagic`,
-  ~355 lines — the biggest, but roll-behavior so more adapter-adjacent) and the
-  currency/value group (`needsValueRoll`/`rollValue`/`convertCurrency{Up,Down}ward`).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -481,16 +498,18 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   formula path is dead under the integer-`NumberField` `CurrencyField` schema
   (`migrateData` `parseInt()`s strings); decide whether to make the value field
   formula-capable or remove the dead path. Separate from the extraction arc.
-- **`actor-sheet.js` (1890 → 1366 after session 44) — IN PROGRESS.** Sheets
+- **`actor-sheet.js` (1890 → 1324 after session 45) — IN PROGRESS.** Sheets
   can't use the mixin pattern (their big methods are `#private`); shape is
   **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.
   Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector);
   `items.mjs` (44 — `#prepareItems`, the ~248-line inventory categorizer, as an
   "actor-logic → free function" since it mutates the actor, with Foundry globals
-  injected via a `deps` param). Next candidates by cohesion: the smaller
-  `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/`#prepareCompendiumLinks`
-  helpers. The static `#` action handlers + drag-drop are trickier (they
-  reference other private members / `this` sheet state) — lower priority.
+  injected via a `deps` param); `presentation.mjs` (45 — the four small
+  context-field helpers `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
+  `#prepareCompendiumLinks` as pure free functions, Foundry globals via `deps`).
+  The cohesive `prepare*` helper extractions are now done. Remaining: the static
+  `#` action handlers + drag-drop are trickier (they reference other private
+  members / `this` sheet state) — lower priority.
 - **`actor.js` (~4574 lines)** — the largest Appendix-A target; a multi-session
   project, not a slice; start only with budget for it. Being a document class
   (not a sheet) it CAN use the `item.js` mixin pattern, but much of its bulk is

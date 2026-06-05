@@ -1756,3 +1756,41 @@
   `classDefaults` / `sheetParts` / `variants` / …) — leave those in
   `config.js`; they're tiny and are the file's actual reason to exist. The
   data-table extraction arc for `config.js` is effectively complete.
+
+- **2026-06-03 — Phase 7 session 40: Appendix-A `item.js` shrinkage arc opens —
+  extract the container-support block into `module/item/container-mixin.mjs`.**
+  First slice of the `item.js` file-shrinkage target (Appendix-A; the table's
+  967→~200 figure is an early snapshot — `item.js` was 975 lines at slice
+  start). Unlike the `config.js` arc (pure data-table → named exports), `item.js`
+  is a behavior-heavy class, so the extraction shape is **method-group → Foundry
+  mixin** (`(Base) => class extends Base`, matching the codebase's
+  `HandlebarsApplicationMixin(...)` idiom). The self-contained container-support
+  block — 7 weight/capacity/depth getters (`isContainer`, `isContained`,
+  `contents`, `contentsWeight`, `totalWeight`, `availableWeightCapacity`,
+  `availableItemCapacity`, `contentsItemCount`, `containerDepth`) + 2 validation
+  helpers (`wouldCreateCircularContainment`, `canContainItem`) + the
+  `MAX_CONTAINER_DEPTH` const — moved into a new
+  `module/item/container-mixin.mjs` as `ContainerItemMixin`. `DCCItem` now
+  declares `extends ContainerItemMixin(Item)`, so every member stays an instance
+  getter/method with byte-identical `this` semantics; the three external
+  consumers (`actor-sheet.js`, `item-sheet.js`, `item-piles-support.js`) read
+  these straight off live items and need **zero** change. The block is fully
+  self-contained (reads only `this`/`this.system`/`this.parent`/`this.id`/
+  `this.type` + `MAX_CONTAINER_DEPTH`; no spell/roll/lib/adapter entanglement, no
+  dispatch logging, returns i18n *keys* not localized strings). `item.js` 975 →
+  812 lines (−163). **No behavior change, no lib change.** Tests: the existing
+  `container.test.js` (48 assertions) + `item.test.js` pass unchanged (proof the
+  mixin composes transparently); +5 Vitest (new
+  `module/__tests__/item-container-mixin.test.js` — default===named export, the
+  `MAX_CONTAINER_DEPTH` const travels, applying the mixin yields all 11 members,
+  the getter-vs-method shape, and `DCCItem` instances still expose the surface);
+  +1 Playwright (`extension-api.spec.js` "survives extraction" probe — creates a
+  **live** container + contained item on an actor and asserts
+  contents/weight/capacity/`canContainItem` end-to-end incl. the self-rejection
+  branch). **1432 Vitest** (was 1427, +5). **188 Playwright passed**, zero
+  failures (was 187, +1; 6.1-min full suite). Establishes the `module/item/`
+  directory + the method-group→mixin pattern for the rest of the `item.js` arc.
+  Next `item.js` chunks (by cohesion): the spell/manifestation/mercurial roll
+  group (`rollSpellCheck`/`hasExisting*`/`rollManifestation`/`rollMercurialMagic`,
+  ~355 lines — the biggest, but roll-behavior so more adapter-adjacent) and the
+  currency/value group (`needsValueRoll`/`rollValue`/`convertCurrency{Up,Down}ward`).

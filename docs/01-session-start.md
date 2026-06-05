@@ -40,27 +40,35 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-06-02)
+## Status (2026-06-05)
 
 **All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
-now active (opened session 35).** Sessions 35–38 have been shrinking
-`config.js` by extracting its big self-contained data tables into focused
-`module/config/*.mjs` modules, re-composed onto `DCC` so the public
-`CONFIG.DCC` shape stays byte-identical: `monster-data.mjs` (monster
-classification tables, 35) + `images.mjs` (default actor/item/macro image
-tables, 36) + `dice.mjs` (`diceTypes` / `DICE_CHAIN` / `effectChangeTypes`, 37)
-+ `active-effect-keys.mjs` (the unconsumed `activeEffectKeys` reference table,
-38). `config.js` 845 → 481 lines. The pattern for each slice: extract a
-self-contained chunk into `module/config/*.mjs`, import + re-compose onto
-`DCC`, add a Vitest composition-identity guard (`DCC.x === module.x`) + an
-`extension-api.spec.js` "survives extraction" probe; verify the extracted table
-is byte-identical to git HEAD (write the temp HEAD copy **inside** `module/` so
-its committed `./config/*.mjs` imports resolve — then `rm` it). **If a chunk
-turns out to be dead** (session 38's `activeEffectKeys` had zero consumers),
-surface it and let Tim choose extract-vs-delete rather than silently relocating.
-Next `config.js` chunk: the actor-importer block. Repo green at session-38
-close: **1421 Vitest / 186 Playwright e2e passed**, zero failures. Detail below
-+ in `00-progress.md` *Recent slices*.
+active.** The `config.js` data-table arc (sessions 35–39, 845 → 451 lines) and
+the `item.js` method-group→mixin arc (sessions 40–42, 975 → 339 lines) are both
+effectively done. The current target is **`actor-sheet.js`** (sessions 43–45):
+a sheet is an `ApplicationV2` class whose big methods are mostly `#private`, and
+private names are lexically class-scoped so they **can't move to a mixin** the
+way `item.js`'s public methods did. The shrinkage shape for the sheet is
+**pure-logic → free function** in `module/actor-sheet/*.mjs`, with the sheet
+calling them. Done: `effects.mjs` (43 — the 4 AE summary builders + shared
+collector), `items.mjs` (44 — `#prepareItems`, the inventory categorizer, an
+"actor-logic → free function" since it mutates the actor, Foundry globals via a
+`deps` param), `presentation.mjs` (45 — the four small context-field helpers
+`#prepareNotes`/`#prepareCorruption`/`#prepareImage`/`#prepareCompendiumLinks` as
+pure free functions, Foundry globals via `deps`). `actor-sheet.js` 1890 → 1324.
+The cohesive `prepare*` extractions are done; what remains are the static `#`
+action handlers + drag-drop (they reach other private members / sheet `this`, so
+trickier — lower priority), and the unstarted multi-session `actor.js` target.
+The pattern for each slice: lift the `#private` method(s) to free function(s)
+taking the actor, inject Foundry globals via `deps` defaults, add a Vitest unit
+file (these methods had zero prior coverage — a real win) + a `sheet-ui.spec.js`
+"survives extraction" probe driving the real `actor.sheet._prepareContext({})`.
+**Watch:** the `createEmbeddedDocuments`-under-load Playwright flake recurs on
+the multi-item probes (`sheet-ui:297`, `extension-api:315`, `active-effects:559`)
+— they pass in isolation; reconfirm there before treating a full-run red as real.
+Repo green at session-45 close: **1516 Vitest / 194 Playwright** (193 passed +
+the one documented flake, which passed in isolation). Detail below + in
+`00-progress.md` *Recent slices*.
 
 <details><summary>PR #720 test-coverage-backfill arc (sessions 26–31, COMPLETE)</summary>
 
