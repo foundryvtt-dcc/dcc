@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-03 (session 43).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-05 (session 44).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -85,8 +85,12 @@ mercurial magic) → `module/item/spell-mixin.mjs` (42), composed as
 `item.js` 975 → 339 (−636). **Session 43 opened the `actor-sheet.js` arc** by
 extracting the four AE summary builders into `module/actor-sheet/effects.mjs` as
 pure free functions (sheets can't use mixins for `#private` methods), `actor-sheet.js`
-1890 → 1613. All were behavior-neutral with no lib change. Repo green on a clean
-run: **1478 Vitest / 191 Playwright e2e passed**, zero failures. Per-session
+1890 → 1613. **Session 44 extracted `#prepareItems`** (the ~248-line inventory
+categorizer) into `module/actor-sheet/items.mjs` as an "actor-logic → free
+function" (it mutates the actor: zero-qty deletion, coin-treasure merge, icon
+repair), Foundry globals injected via a `deps` param; `actor-sheet.js` 1613 →
+1366. All were behavior-neutral with no lib change. Repo green on a clean
+run: **1506 Vitest / 193 Playwright e2e passed**, zero failures. Per-session
 detail lives in *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md);
 the itemized close-outs are in the *PR #720 review backlog* below.
 
@@ -126,8 +130,11 @@ the four AE summary builders (`#prepareAbilityEffects` /
 `#prepareAttackBonusEffects` / `#prepareSaveEffects` / `#prepareAttributeEffects`,
 all `#private`, all with zero prior coverage) into `module/actor-sheet/effects.mjs`
 as pure free functions, deduping the identical effect-collection block they each
-repeated into one shared `collectTransferredActiveEffects`. `actor-sheet.js`
-1890 → 1613. `actor.js` remains an unstarted multi-session project.
+repeated into one shared `collectTransferredActiveEffects`. Session 44 lifted
+`#prepareItems` (the inventory categorizer) into `module/actor-sheet/items.mjs`
+as an "actor-logic → free function" (it mutates the actor; Foundry globals
+injected via `deps`). `actor-sheet.js` 1890 → 1613 → 1366. `actor.js` remains an
+unstarted multi-session project.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -138,6 +145,42 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-05 — Phase 7 session 44: Appendix-A `actor-sheet.js` shrinkage —
+  extract `#prepareItems` into `module/actor-sheet/items.mjs`.** Second slice of
+  the `actor-sheet.js` arc, same **pure-logic → free function** shape as session
+  43 (a sheet's `#private` methods can't move to a mixin). `#prepareItems` (~248
+  lines, the inventory categorizer, called once in `_prepareContext`) reads only
+  `this.options.document` (the actor), so it extracts to `prepareItems(actor)`.
+  **Unlike the effects builders it is NOT pure** — it mutates the actor (deletes
+  zero-quantity items when `removeEmptyItems` is on, folds resolved coin-treasure
+  into `system.currency`, repairs missing/mystery-man item icons), so it's
+  "actor-logic → free function". The four Foundry globals it touches (`TextEditor`,
+  the item-icon table, `game.i18n`, `game.settings`) are injected via a `deps`
+  param defaulting to the live globals (the `extension-api.mjs` DI idiom), so the
+  bucketing / coin-merge / weight math are now directly unit-testable. The sheet's
+  `_prepareContext` calls `prepareItems(this.options.document)` and the `#private`
+  method is deleted. `actor-sheet.js` 1613 → 1366 lines (−247). **No behavior
+  change, no lib change.** Subtlety preserved: the return is a dotted-key object
+  (`'equipment.weapons'`, …) that `_prepareContext` merges via
+  `foundry.utils.mergeObject`, which **expands** dotted keys → `ctx.equipment.weapons`
+  (the e2e probe reads the expanded nested path; the unit tests read the function's
+  direct dotted-key return). Was `#private` with **zero prior coverage**, so a real
+  coverage win. Tests: +22 Vitest (new `module/__tests__/actor-sheet-items.test.js`
+  — weapon melee/ranged bucketing, ammo/armor/equipment/mounts, spell grouping by
+  level + description enrich, skill displayDie own/inherited-action-die/null,
+  treasure-vs-coins routing + currency merge + delete, container display data +
+  capacitySummary + contained-item hiding, removeEmptyItems deletion, icon repair,
+  sortInventory, and the per-section/container/coin weight math); +1 Playwright
+  (`sheet-ui.spec.js` "Inventory Preparation" — a live actor with one item per
+  category drives the real `actor.sheet._prepareContext({})` and asserts the
+  expanded buckets/weights/container-summary/contained-count/spell-grouping/skill-die
+  end-to-end). **1506 Vitest** (was 1484, +22). **193 Playwright passed** on a
+  clean full run, zero failures — incl. the session-40 container probe, which
+  passed this run (no flake). Next `actor-sheet.js` candidates (same free-function
+  pattern): the smaller `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
+  `#prepareCompendiumLinks` helpers; the static `#` action handlers + drag-drop
+  are trickier (they reach other private members / sheet `this`) — lower priority.
 
 - **2026-06-03 — Phase 7 session 43: Appendix-A `actor-sheet.js` arc opens —
   extract the four AE summary builders into `module/actor-sheet/effects.mjs`.**
@@ -297,37 +340,6 @@ archives linked above.
   ~355 lines — the biggest, but roll-behavior so more adapter-adjacent) and the
   currency/value group (`needsValueRoll`/`rollValue`/`convertCurrency{Up,Down}ward`).
 
-- **2026-06-03 — Phase 7 session 39: Appendix-A `config.js` shrinkage —
-  extract the actor-importer block into `module/config/actor-importer.mjs`.**
-  Fifth slice of the Appendix-A arc, same extract-and-compose pattern. The
-  five actor-importer symbols — `importTypes` (actor-type select options,
-  read by `templates/dialog-actor-import.html` via the `config.importTypes`
-  context), `actorImporterPromptThreshold` (bulk-import warning count),
-  `actorImporterItemPacks` (16 dcc-core-book search packs),
-  `birthAugurEffectsPack`, and `actorImporterNameMap` (stat-block→canonical
-  name remap) — moved into a new `module/config/actor-importer.mjs` as named
-  exports; `config.js` imports + re-composes them onto `DCC` so the public
-  `CONFIG.DCC` shape is **byte-identical**. The **only** runtime consumer is
-  `module/parser.js` (the stat-block importer, reading `CONFIG.DCC.*`) + its
-  dialog template — one cohesive concern, so all five grouped into one module
-  (incl. `importTypes`, which had been sitting separately up-file at the old
-  line 294). Verified byte-identical to git HEAD (`JSON.stringify` diff against
-  a temp HEAD copy written inside `module/`) + same-reference composition
-  (`DCC.x === module.x`). `config.js` 481 → 451 lines (−30; cumulative 845 →
-  451, −394 across sessions 35–39). **No behavior change, no lib change.**
-  Tests: +6 Vitest (new `module/__tests__/config-actor-importer.test.js` —
-  values, the every-pack-is-`dcc-core-book.*` invariant, the
-  every-remap-is-a-non-empty-string-array invariant, the `DCC.x === module.x`
-  composition guard); +1 Playwright (`extension-api.spec.js` "survives
-  extraction" probe — reads `CONFIG.DCC.importTypes`/`actorImporter*`/
-  `birthAugurEffectsPack` live, asserts the 16-pack count + known remaps).
-  **1427 Vitest** (was 1421, +6). **187 Playwright passed**, zero failures
-  (was 186, +1; 6.5-min full suite). Next `config.js` work: the remaining
-  bulk is small scalar enums + the Phase 4–6 registry seeds (`classMixins` /
-  `classDefaults` / `sheetParts` / `variants` / …) — leave those in
-  `config.js`; they're tiny and are the file's actual reason to exist. The
-  data-table extraction arc for `config.js` is effectively complete.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -469,13 +481,13 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   formula path is dead under the integer-`NumberField` `CurrencyField` schema
   (`migrateData` `parseInt()`s strings); decide whether to make the value field
   formula-capable or remove the dead path. Separate from the extraction arc.
-- **`actor-sheet.js` (1890 → 1613 after session 43) — IN PROGRESS.** Sheets
+- **`actor-sheet.js` (1890 → 1366 after session 44) — IN PROGRESS.** Sheets
   can't use the mixin pattern (their big methods are `#private`); shape is
   **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.
-  Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector). Next
-  candidates by cohesion: `#prepareItems` (~248 lines, inventory categorization —
-  the biggest remaining cohesive chunk; check how much sheet state it touches
-  beyond `this.options.document` before extracting), then the smaller
+  Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector);
+  `items.mjs` (44 — `#prepareItems`, the ~248-line inventory categorizer, as an
+  "actor-logic → free function" since it mutates the actor, with Foundry globals
+  injected via a `deps` param). Next candidates by cohesion: the smaller
   `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/`#prepareCompendiumLinks`
   helpers. The static `#` action handlers + drag-drop are trickier (they
   reference other private members / `this` sheet state) — lower priority.

@@ -1725,3 +1725,34 @@
   paths). **1421 Vitest** (was 1418, +3). **186 Playwright passed**, zero
   failures (was 185, +1; 6.2-min full suite). Next `config.js` chunk: the
   actor-importer block.
+
+- **2026-06-03 — Phase 7 session 39: Appendix-A `config.js` shrinkage —
+  extract the actor-importer block into `module/config/actor-importer.mjs`.**
+  Fifth slice of the Appendix-A arc, same extract-and-compose pattern. The
+  five actor-importer symbols — `importTypes` (actor-type select options,
+  read by `templates/dialog-actor-import.html` via the `config.importTypes`
+  context), `actorImporterPromptThreshold` (bulk-import warning count),
+  `actorImporterItemPacks` (16 dcc-core-book search packs),
+  `birthAugurEffectsPack`, and `actorImporterNameMap` (stat-block→canonical
+  name remap) — moved into a new `module/config/actor-importer.mjs` as named
+  exports; `config.js` imports + re-composes them onto `DCC` so the public
+  `CONFIG.DCC` shape is **byte-identical**. The **only** runtime consumer is
+  `module/parser.js` (the stat-block importer, reading `CONFIG.DCC.*`) + its
+  dialog template — one cohesive concern, so all five grouped into one module
+  (incl. `importTypes`, which had been sitting separately up-file at the old
+  line 294). Verified byte-identical to git HEAD (`JSON.stringify` diff against
+  a temp HEAD copy written inside `module/`) + same-reference composition
+  (`DCC.x === module.x`). `config.js` 481 → 451 lines (−30; cumulative 845 →
+  451, −394 across sessions 35–39). **No behavior change, no lib change.**
+  Tests: +6 Vitest (new `module/__tests__/config-actor-importer.test.js` —
+  values, the every-pack-is-`dcc-core-book.*` invariant, the
+  every-remap-is-a-non-empty-string-array invariant, the `DCC.x === module.x`
+  composition guard); +1 Playwright (`extension-api.spec.js` "survives
+  extraction" probe — reads `CONFIG.DCC.importTypes`/`actorImporter*`/
+  `birthAugurEffectsPack` live, asserts the 16-pack count + known remaps).
+  **1427 Vitest** (was 1421, +6). **187 Playwright passed**, zero failures
+  (was 186, +1; 6.5-min full suite). Next `config.js` work: the remaining
+  bulk is small scalar enums + the Phase 4–6 registry seeds (`classMixins` /
+  `classDefaults` / `sheetParts` / `variants` / …) — leave those in
+  `config.js`; they're tiny and are the file's actual reason to exist. The
+  data-table extraction arc for `config.js` is effectively complete.

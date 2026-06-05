@@ -291,4 +291,75 @@ test.describe('DCC Sheet UI', () => {
       expect(result.afterOff).toBe(false)
     })
   })
+
+  // ── Inventory preparation ────────────────────────────────────────────
+  test.describe('Inventory Preparation', () => {
+    test('actor-sheet #prepareItems survives actor-sheet/items.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor-sheet.js shrinkage): #prepareItems moved out of
+      // actor-sheet.js into a free function in module/actor-sheet/items.mjs, called
+      // from _prepareContext. This probe drives the real sheet pipeline end-to-end
+      // (actor.sheet._prepareContext) on a live actor carrying one item of each
+      // major category — a melee + ranged weapon, armor, equipment, a spell with a
+      // description, a skill, a container with a contained item, and a resolved
+      // coin treasure — and asserts the inventory buckets, the contained-item
+      // nesting, spell grouping, and the carried-weight totals the extraction must
+      // preserve.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Inventory Probe', type: 'Player' })
+          const [, , , , , , container] = await actor.createEmbeddedDocuments('Item', [
+            { type: 'weapon', name: 'Probe Sword', system: { melee: true, weight: 3, quantity: 1 } },
+            { type: 'weapon', name: 'Probe Bow', system: { melee: false, weight: 2, quantity: 1 } },
+            { type: 'armor', name: 'Probe Mail', system: { weight: 10, quantity: 1 } },
+            { type: 'equipment', name: 'Probe Torch', system: { weight: 1, quantity: 2 } },
+            { type: 'spell', name: 'Probe Bolt', system: { level: 1, description: { value: 'A bolt.' } } },
+            { type: 'skill', name: 'Probe Skill', system: { config: { useDie: true }, die: '1d16' } },
+            { type: 'container', name: 'Probe Pack', system: { capacity: { weight: 20, items: 5 } } }
+          ])
+          await actor.createEmbeddedDocuments('Item', [
+            { type: 'equipment', name: 'Probe Stowed', system: { weight: 4, quantity: 1, container: container.id } }
+          ])
+
+          // _prepareContext merges #prepareItems' return via foundry.utils.mergeObject,
+          // which expands the dotted keys: 'equipment.weapons' -> ctx.equipment.weapons.
+          // The non-dotted `spells` / `skills` stay top-level on the context.
+          const ctx = await actor.sheet._prepareContext({})
+          const eq = ctx.equipment ?? {}
+          const names = (bucket) => (bucket ?? []).map(i => i.name)
+          observed.melee = names(eq.weapons?.melee)
+          observed.ranged = names(eq.weapons?.ranged)
+          observed.armor = names(eq.armor)
+          observed.equipment = names(eq.equipment) // contained item must NOT appear here
+          observed.containers = names(eq.containers)
+          observed.containerSummary = eq.containers?.[0]?.capacitySummary ?? ''
+          observed.containedCount = eq.containers?.[0]?.containerContents?.length ?? 0
+          observed.spellLevels = Object.keys(ctx.spells ?? {})
+          observed.spellEnriched = !!ctx.spells?.['1']?.[0]?.descriptionHTML
+          observed.skillDie = ctx.skills?.[0]?.displayDie ?? null
+          observed.meleeWeight = eq.weights?.melee ?? null
+          observed.totalWeightPositive = (eq.weights?.total ?? 0) > 0
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.melee).toEqual(['Probe Sword'])
+      expect(result.ranged).toEqual(['Probe Bow'])
+      expect(result.armor).toEqual(['Probe Mail'])
+      // The contained "Probe Stowed" is nested under its container, not standalone.
+      expect(result.equipment).toEqual(['Probe Torch'])
+      expect(result.containers).toEqual(['Probe Pack'])
+      expect(result.containerSummary).toContain('/20')
+      expect(result.containerSummary).toContain('/5')
+      expect(result.containedCount).toBe(1)
+      expect(result.spellLevels).toEqual(['1'])
+      expect(result.spellEnriched).toBe(true)
+      expect(result.skillDie).toBe('1d16')
+      expect(result.meleeWeight).toBe(3)
+      expect(result.totalWeightPositive).toBe(true)
+    })
+  })
 })
