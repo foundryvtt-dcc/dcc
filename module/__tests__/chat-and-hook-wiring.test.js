@@ -72,6 +72,7 @@ const {
   onHotbarDrop,
   onRenderChatMessageHTML,
   onGetChatMessageContextOptions,
+  onGetCompendiumContextOptions,
   onRenderActorDirectory,
   onPreCreateActor,
   onPreCreateItem,
@@ -87,19 +88,24 @@ let originalGame
 let originalFoundry
 let originalHooks
 let originalUi
+let originalConst
 
 beforeEach(() => {
   originalGame = globalThis.game
   originalFoundry = globalThis.foundry
   originalHooks = globalThis.Hooks
   originalUi = globalThis.ui
+  originalConst = globalThis.CONST
   globalThis.game = {
     user: { isGM: true, id: 'user-1' },
     settings: { get: vi.fn() },
     actors: [],
+    packs: { get: vi.fn() },
     i18n: { format: vi.fn((key) => key) },
     dcc: { DiceChain: { bumpDie: vi.fn() } }
   }
+  // Minimal stand-in for the Foundry global; only WORLD_DOCUMENT_TYPES is read here.
+  globalThis.CONST = { WORLD_DOCUMENT_TYPES: ['Actor', 'Item', 'JournalEntry', 'Macro', 'RollTable', 'Scene', 'Playlist', 'Cards'] }
   globalThis.foundry = {
     utils: {
       getProperty: vi.fn(),
@@ -118,6 +124,7 @@ afterEach(() => {
   globalThis.foundry = originalFoundry
   globalThis.Hooks = originalHooks
   globalThis.ui = originalUi
+  globalThis.CONST = originalConst
 })
 
 describe('onHotbarDrop', () => {
@@ -276,6 +283,82 @@ describe('onGetChatMessageContextOptions', () => {
     const result = onGetChatMessageContextOptions('<html/>', [{ name: 'A' }])
     expect(chat.addChatMessageContextOptions).toHaveBeenCalledWith('<html/>', [{ name: 'A' }])
     expect(result).toBe('ctx-result')
+  })
+})
+
+describe('onGetCompendiumContextOptions', () => {
+  // The real "Import All" entry Foundry builds for the directory context menu:
+  // visible for everything except Adventure packs.
+  function makeImportAllEntry () {
+    return {
+      label: 'COMPENDIUM.ImportAll.Option',
+      icon: 'fa-solid fa-download',
+      visible: (li) => globalThis.game.packs.get(li?.dataset?.pack)?.documentName !== 'Adventure',
+      onClick: vi.fn()
+    }
+  }
+
+  function liFor (packId) {
+    return { dataset: { pack: packId } }
+  }
+
+  test('is a no-op when the menu has no Import All entry', () => {
+    const entries = [{ label: 'COMPENDIUM.ToggleLocked.Lock' }]
+    expect(() => onGetCompendiumContextOptions({}, entries)).not.toThrow()
+    expect(entries).toHaveLength(1)
+  })
+
+  test('hides Import All for a non-world-document pack (ActiveEffect / dcc-effects)', () => {
+    globalThis.game.packs.get = vi.fn(() => ({ documentName: 'ActiveEffect' }))
+    const entry = makeImportAllEntry()
+    const entries = [entry]
+
+    onGetCompendiumContextOptions({}, entries)
+
+    expect(entry.visible(liFor('dcc.dcc-effects'))).toBe(false)
+  })
+
+  test('keeps Import All visible for a world-document pack (Item)', () => {
+    globalThis.game.packs.get = vi.fn(() => ({ documentName: 'Item' }))
+    const entry = makeImportAllEntry()
+
+    onGetCompendiumContextOptions({}, [entry])
+
+    expect(entry.visible(liFor('dcc.some-items'))).toBe(true)
+  })
+
+  test('defers to the original predicate for world-document packs (still hides Adventure)', () => {
+    globalThis.game.packs.get = vi.fn(() => ({ documentName: 'Adventure' }))
+    const entry = makeImportAllEntry()
+
+    onGetCompendiumContextOptions({}, [entry])
+
+    // Adventure is a world document type, so our guard passes through to
+    // Foundry's original `!== "Adventure"` predicate, which still hides it.
+    expect(entry.visible(liFor('dcc.an-adventure'))).toBe(false)
+  })
+
+  test('falls back to visible when the pack lookup misses (defensive)', () => {
+    globalThis.game.packs.get = vi.fn(() => undefined)
+    const entry = makeImportAllEntry()
+
+    onGetCompendiumContextOptions({}, [entry])
+
+    // Unknown pack → our guard is skipped; original predicate returns true
+    // (documentName of undefined !== 'Adventure').
+    expect(entry.visible(liFor('missing'))).toBe(true)
+  })
+
+  test('handles an Import All entry whose original visible is a boolean', () => {
+    globalThis.game.packs.get = vi.fn(() => ({ documentName: 'Item' }))
+    const entry = { label: 'COMPENDIUM.ImportAll.Option', visible: true }
+
+    onGetCompendiumContextOptions({}, [entry])
+
+    expect(entry.visible(liFor('dcc.some-items'))).toBe(true)
+
+    globalThis.game.packs.get = vi.fn(() => ({ documentName: 'ActiveEffect' }))
+    expect(entry.visible(liFor('dcc.dcc-effects'))).toBe(false)
   })
 })
 
@@ -591,6 +674,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.hotbarDrop.handler).toBe(onHotbarDrop)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTML)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getChatMessageContextOptions.handler).toBe(onGetChatMessageContextOptions)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.getCompendiumContextOptions.handler).toBe(onGetCompendiumContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.renderActorDirectory.handler).toBe(onRenderActorDirectory)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preCreateActor.handler).toBe(onPreCreateActor)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preCreateItem.handler).toBe(onPreCreateItem)
@@ -601,10 +685,11 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the eleven documented hook names', () => {
+  test('covers exactly the twelve documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
       'getChatMessageContextOptions',
+      'getCompendiumContextOptions',
       'getProseMirrorMenuDropDowns',
       'hotbarDrop',
       'item-piles-ready',
@@ -636,6 +721,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.hotbarDrop).toBe(onHotbarDrop)
     expect(onCalls.renderChatMessageHTML).toBe(onRenderChatMessageHTML)
     expect(onCalls.getChatMessageContextOptions).toBe(onGetChatMessageContextOptions)
+    expect(onCalls.getCompendiumContextOptions).toBe(onGetCompendiumContextOptions)
     expect(onCalls.renderActorDirectory).toBe(onRenderActorDirectory)
     expect(onCalls.preCreateActor).toBe(onPreCreateActor)
     expect(onCalls.preCreateItem).toBe(onPreCreateItem)
@@ -651,10 +737,10 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly ten Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly eleven Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(10)
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(11)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

@@ -509,6 +509,53 @@ test.describe('DCC Active Effects', () => {
       await expect(packEntry).toHaveClass(/activeeffect/)
     })
 
+    test('Import All is suppressed for the ActiveEffect compendium but kept for world-document packs', async ({ page }) => {
+      // The getCompendiumContextOptions hook (chat-and-hook-wiring.mjs) hides
+      // the "Import All" directory context-menu entry for packs whose documents
+      // have no world home. Without it, "Import All" on dcc-effects crashes
+      // inside CompendiumCollection.importAll (no world ActiveEffect directory →
+      // `Cannot read properties of undefined (reading 'initializeTree')`).
+      // Drive the REAL registered hook against the REAL game.packs + CONST.
+      const result = await page.evaluate(async () => {
+        // Stand-in for Foundry's Import All entry: visible everywhere but Adventure.
+        const makeEntry = () => ({
+          label: 'COMPENDIUM.ImportAll.Option',
+          visible: (li) => game.packs.get(li?.dataset?.pack)?.documentName !== 'Adventure'
+        })
+
+        // dcc-effects (ActiveEffect — not a world document type)
+        const effectsEntries = [makeEntry()]
+        Hooks.callAll('getCompendiumContextOptions', {}, effectsEntries)
+        const effectsVisible = effectsEntries[0].visible({ dataset: { pack: 'dcc.dcc-effects' } })
+
+        // Find a world-document pack (Item/JournalEntry/Macro) to confirm the
+        // hook leaves normal "Import All" alone.
+        const worldPack = game.packs.find(p => CONST.WORLD_DOCUMENT_TYPES.includes(p.documentName))
+        const worldEntries = [makeEntry()]
+        Hooks.callAll('getCompendiumContextOptions', {}, worldEntries)
+        const worldVisible = worldPack
+          ? worldEntries[0].visible({ dataset: { pack: worldPack.collection } })
+          : null
+
+        return {
+          effectsDocumentName: game.packs.get('dcc.dcc-effects')?.documentName,
+          effectsImportAllInWorldTypes: CONST.WORLD_DOCUMENT_TYPES.includes('ActiveEffect'),
+          effectsVisible,
+          worldPackCollection: worldPack?.collection ?? null,
+          worldVisible
+        }
+      })
+
+      // Precondition the fix relies on: ActiveEffect is not a world document type.
+      expect(result.effectsDocumentName).toBe('ActiveEffect')
+      expect(result.effectsImportAllInWorldTypes).toBe(false)
+      // Import All hidden for the effects pack…
+      expect(result.effectsVisible).toBe(false)
+      // …but untouched for a normal world-document pack.
+      expect(result.worldPackCollection).not.toBeNull()
+      expect(result.worldVisible).toBe(true)
+    })
+
     test('actor-sheet AE summary builders survive actor-sheet/effects.mjs extraction', async ({ page }) => {
       // Phase 7 (Appendix-A actor-sheet.js shrinkage): the four #private AE
       // summary builders moved out of actor-sheet.js into pure free functions in

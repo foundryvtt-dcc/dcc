@@ -1,14 +1,16 @@
-/* global foundry, game, Hooks, ui */
+/* global foundry, game, Hooks, ui, CONST */
 
 /**
  * Chat- and hook-wiring surface extracted from `module/dcc.js`.
  *
- * Eleven `Hooks.on` / `Hooks.once` handlers covering:
+ * Twelve `Hooks.on` / `Hooks.once` handlers covering:
  *   - `hotbarDrop` — macro creation when a rollable is dropped on the hotbar
  *   - `renderChatMessageHTML` — chat decorations (crit/fail highlight, minimum-damage
  *     enforcement, spell-result HTML, data-item-id, emote rolls, crit/fumble lookups,
  *     and TableResult navigation)
  *   - `getChatMessageContextOptions` — context-menu options on chat cards
+ *   - `getCompendiumContextOptions` — hide "Import All" for non-world-document packs
+ *     (our `dcc-effects` ActiveEffect compendium)
  *   - `renderActorDirectory` — parser quick-import bridge
  *   - `preCreateActor` / `preCreateItem` — default-image assignment + Player
  *     prototype-token actor-link
@@ -121,6 +123,41 @@ export async function onRenderChatMessageHTML (message, html, data) {
  */
 export function onGetChatMessageContextOptions (html, options) {
   return chat.addChatMessageContextOptions(html, options)
+}
+
+/**
+ * Hide the "Import All" entry from a compendium's sidebar context menu for
+ * packs whose documents have no world home — most importantly our
+ * `dcc-effects` ActiveEffect compendium.
+ *
+ * Foundry guards the *single-entry* "Import Entry" option with
+ * `CONST.WORLD_DOCUMENT_TYPES.includes(documentName)` (so it is already hidden
+ * for ActiveEffect packs), but the directory-level "Import All" option is only
+ * guarded against Adventure packs (`documentName !== "Adventure"`). For an
+ * ActiveEffect pack that leaves "Import All" available, and invoking it throws
+ * `Cannot read properties of undefined (reading 'initializeTree')` deep inside
+ * `CompendiumCollection.importAll` → `Folder.create` — there is no world-level
+ * ActiveEffect directory to import into. Effects are meant to be dragged from
+ * the compendium straight onto an actor or item, not imported into the world.
+ *
+ * This wraps the option's `visible` predicate to additionally suppress it
+ * whenever the pack's `documentName` is not a world document type, mirroring
+ * Foundry's own single-import guard so the directory and entry menus agree.
+ */
+export function onGetCompendiumContextOptions (directory, entries) {
+  const importAll = entries.find(entry => entry.label === 'COMPENDIUM.ImportAll.Option')
+  if (!importAll) return
+
+  const originalVisible = importAll.visible
+  importAll.visible = (li) => {
+    const pack = game.packs.get(li?.dataset?.pack)
+    // No world directory exists for non-world document types (e.g. ActiveEffect),
+    // so "Import All" would crash — suppress it for those packs.
+    if (pack && !CONST.WORLD_DOCUMENT_TYPES.includes(pack.documentName)) return false
+    // Otherwise defer to Foundry's original predicate (or default-visible).
+    if (typeof originalVisible === 'function') return originalVisible(li)
+    return originalVisible ?? true
+  }
 }
 
 /**
@@ -346,6 +383,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   hotbarDrop: { handler: onHotbarDrop, once: false },
   renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },
+  getCompendiumContextOptions: { handler: onGetCompendiumContextOptions, once: false },
   renderActorDirectory: { handler: onRenderActorDirectory, once: false },
   preCreateActor: { handler: onPreCreateActor, once: false },
   preCreateItem: { handler: onPreCreateItem, once: false },
