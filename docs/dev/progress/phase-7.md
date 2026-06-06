@@ -1794,3 +1794,42 @@
   group (`rollSpellCheck`/`hasExisting*`/`rollManifestation`/`rollMercurialMagic`,
   ~355 lines — the biggest, but roll-behavior so more adapter-adjacent) and the
   currency/value group (`needsValueRoll`/`rollValue`/`convertCurrency{Up,Down}ward`).
+
+- **2026-06-03 — Phase 7 session 41: Appendix-A `item.js` shrinkage —
+  extract the treasure-value / currency block into
+  `module/item/currency-mixin.mjs`.** Second slice of the `item.js` arc, same
+  method-group→Foundry-mixin shape as session 40. The 4-method treasure-value /
+  currency block (`needsValueRoll`, `rollValue`, `convertCurrencyUpward`,
+  `convertCurrencyDownward` — reads only `this.system.value` + the
+  `CONFIG.DCC.currencies`/`currencyRank`/`currencyValue` config, posts a
+  `LootValue` chat card, no spell/roll-adapter/lib entanglement, no dispatch
+  logging) moved into `CurrencyItemMixin`. `DCCItem` now declares
+  `extends CurrencyItemMixin(ContainerItemMixin(Item))` (mixin chain
+  Currency→Container→Item), so the 4 methods stay instance methods with
+  byte-identical `this` semantics; the consumers (`item-sheet.js` action
+  handlers `#rollValue`/convert-currency + `actor-sheet.js`'s value-resolved
+  check) call them off live items and need **zero** change. `item.js` 812 → 691
+  lines (−121; cumulative 975 → 691, −284 across sessions 40–41). **No behavior
+  change, no lib change.** This block had **no prior unit coverage**, so the new
+  test is a coverage win, not just a guard. Tests: +13 Vitest (new
+  `module/__tests__/item-currency-mixin.test.js` — composition guards incl. the
+  Currency→Container→Item chain order, *and behavioral*: `needsValueRoll`
+  deterministic-vs-die-formula + empty-field skipping, `convertCurrency` up/down
+  denomination math incl. below-factor / top-denom / bottom-denom no-ops + the
+  unresolved-value conversion block); +1 Playwright (`extension-api.spec.js`
+  "survives extraction" probe — live treasure item: `rollValue` resolves +
+  posts the LootValue card, `convertCurrency` up/down 100cp↔1sp end-to-end).
+  **1445 Vitest** (was 1432, +13). **189 Playwright passed**, zero failures (was
+  188, +1; 6.2-min full suite). **Latent finding surfaced, deliberately NOT
+  fixed here (out of scope for a behavior-neutral extraction):** under the live
+  V14 schema the currency value fields are integer `NumberField`s
+  (`CurrencyField`) and `base-item.mjs` `migrateData` `parseInt()`s any string,
+  so a die *formula* never persists in `system.value` — meaning
+  `needsValueRoll`'s formula-flagging path (and thus the "roll an unresolved
+  treasure value" feature behind the treasure sheet's `rollValue` button) is
+  effectively dead for current data. The Vitest covers that code path via direct
+  in-memory `system.value` assignment; the e2e probe asserts the genuinely-live
+  behavior. Worth a separate look (schema change to a formula-capable field, or
+  remove the dead path). Next `item.js` chunk: the spell/manifestation/mercurial
+  roll group (~355 lines — biggest, but roll-behavior so check for
+  dispatch-logging / lib entanglement before extracting).

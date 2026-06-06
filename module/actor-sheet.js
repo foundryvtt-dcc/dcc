@@ -8,6 +8,7 @@ import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
 import { prepareItems } from './actor-sheet/items.mjs'
 import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks } from './actor-sheet/presentation.mjs'
+import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -399,18 +400,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /* -------------------------------------------- */
 
   /**
-   * Search the object and then its parent elements for a dataset attribute
+   * Search the object and then its parent elements for a dataset attribute.
+   * Thin static wrapper delegating to the `findDataset` free function in
+   * `actor-sheet/drag-drop.mjs` — preserves the public static surface consumed
+   * cross-module (`party-sheet.js`) and documented (`CLICKABLE_ITEMS.md`).
    @param {Object} element    The starting element
    @param {String} attribute  The name of the dataset attribute
    */
   static findDataset (element, attribute) {
-    while (element && !(attribute in element.dataset)) {
-      element = element.parentElement
-    }
-    if (element && attribute in element.dataset) {
-      return element.dataset[attribute]
-    }
-    return null
+    return findDataset(element, attribute)
   }
 
   /**
@@ -601,216 +599,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Create a macro when a rollable element is dragged
+   * Create a macro when a rollable element is dragged. The `dragData` payload is
+   * built by the `buildDragStartData` free function in
+   * `actor-sheet/drag-drop.mjs`; this wrapper owns the only side effect (writing
+   * the payload to the drag event).
    * @param {Event} event
    * @override */
   _onDragStart (event) {
-    const li = event.currentTarget
-
-    // Check if element is draggable
-    if (!li.dataset.drag) return
-
-    let dragData = null
-
-    // Handle ActiveEffect drags
-    if (li.dataset.dragType === 'ActiveEffect') {
-      const effectId = li.dataset.effectId
-      const effect = this.options.document.effects.get(effectId)
-      if (effect) {
-        dragData = {
-          type: 'ActiveEffect',
-          uuid: effect.uuid,
-          data: effect.toObject()
-        }
-        event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
-      }
-      return
-    }
-
-    // Use data-drag-action for specific drag types
-    const dragAction = li.dataset.dragAction
-
-    // Get common data
-    const actorId = this.options.document.id
-    const classes = event.target.classList
-
-    switch (dragAction) {
-      case 'ability': {
-        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
-        const labelFor = event.target.getAttribute('for') || ''
-        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
-        dragData = {
-          type: 'Ability',
-          actorId,
-          data: {
-            abilityId,
-            rollUnder
-          }
-        }
-      }
-        break
-
-      case 'initiative':
-        dragData = {
-          type: 'Initiative',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'hitDice':
-        dragData = {
-          type: 'Hit Dice',
-          actorId,
-          data: {
-            dice: this.options.document.system.attributes.hitDice.value
-          }
-        }
-        break
-
-      case 'save': {
-        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
-        dragData = {
-          type: 'Save',
-          actorId,
-          data: saveId
-        }
-      }
-        break
-
-      case 'skill': {
-        const skillId = DCCActorSheet.findDataset(event.currentTarget, 'skill')
-        const actorSkill = this.options.document.system.skills[skillId]
-        const skillName = actorSkill ? actorSkill.label : skillId
-        dragData = {
-          type: 'Skill',
-          actorId,
-          data: {
-            skillId,
-            skillName
-          }
-        }
-      }
-        break
-
-      case 'luckDie':
-        dragData = {
-          type: 'Luck Die',
-          actorId,
-          data: {
-            die: this.options.document.system.class.luckDie
-          }
-        }
-        break
-
-      case 'spellCheck': {
-        const ability = DCCActorSheet.findDataset(event.currentTarget, 'ability')
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const spell = DCCActorSheet.findDataset(event.currentTarget, 'spell')
-
-        const dragDataContent = { ability }
-
-        // If we have an itemId, include spell details for item-based macros
-        if (itemId) {
-          const item = this.options.document.items.get(itemId)
-          if (item) {
-            dragDataContent.itemId = itemId
-            dragDataContent.name = item.name
-            dragDataContent.img = item.img
-          }
-        } else if (spell) {
-          // Fallback to spell name from data attribute
-          dragDataContent.name = spell
-        }
-
-        dragData = {
-          type: 'Spell Check',
-          actorId,
-          data: dragDataContent
-        }
-      }
-        break
-
-      case 'attackBonus':
-        dragData = {
-          type: 'Attack Bonus',
-          actorId,
-          data: {
-            die: this.options.document.system.details.attackBonus
-          }
-        }
-        break
-
-      case 'actionDice':
-        dragData = {
-          type: 'Action Dice',
-          actorId,
-          data: {
-            die: this.options.document.system.attributes.actionDice.value || '1d20'
-          }
-        }
-        break
-
-      case 'disapprovalRange':
-        dragData = {
-          type: 'Apply Disapproval',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'disapprovalTable':
-        dragData = {
-          type: 'Roll Disapproval',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'weapon': {
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const weapon = this.actor.items.get(itemId)
-        if (weapon) {
-          dragData = Object.assign(
-            weapon.toDragData(),
-            {
-              dccType: 'Weapon',
-              actorId,
-              data: weapon,
-              dccData: {
-                weapon,
-                backstab: classes.contains('backstab-button')
-              }
-            }
-          )
-        }
-      }
-        break
-
-      case 'item': {
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const item = this.options.document.items.get(itemId)
-        if (item) {
-          // Use 'DCC Item' for spells to prevent Foundry's default macro creation
-          // Use 'Item' for other items to maintain normal drag/drop functionality
-          const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
-
-          dragData = {
-            type: dragType,
-            actorId,
-            uuid: item.uuid,
-            data: item,
-            system: {
-              item
-            }
-          }
-        }
-      }
-        break
-    }
-
+    const dragData = buildDragStartData(this.options.document, event)
     if (dragData) {
-      if (this.options.document.isToken) dragData.tokenId = this.options.document.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     }
   }

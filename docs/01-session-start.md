@@ -40,12 +40,12 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-06-05)
+## Status (2026-06-06)
 
 **All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
 active.** The `config.js` data-table arc (sessions 35–39, 845 → 451 lines) and
 the `item.js` method-group→mixin arc (sessions 40–42, 975 → 339 lines) are both
-effectively done. The current target is **`actor-sheet.js`** (sessions 43–45):
+effectively done. The current target is **`actor-sheet.js`** (sessions 43–46):
 a sheet is an `ApplicationV2` class whose big methods are mostly `#private`, and
 private names are lexically class-scoped so they **can't move to a mixin** the
 way `item.js`'s public methods did. The shrinkage shape for the sheet is
@@ -55,20 +55,28 @@ collector), `items.mjs` (44 — `#prepareItems`, the inventory categorizer, an
 "actor-logic → free function" since it mutates the actor, Foundry globals via a
 `deps` param), `presentation.mjs` (45 — the four small context-field helpers
 `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/`#prepareCompendiumLinks` as
-pure free functions, Foundry globals via `deps`). `actor-sheet.js` 1890 → 1324.
-The cohesive `prepare*` extractions are done; what remains are the static `#`
-action handlers + drag-drop (they reach other private members / sheet `this`, so
-trickier — lower priority), and the unstarted multi-session `actor.js` target.
-The pattern for each slice: lift the `#private` method(s) to free function(s)
-taking the actor, inject Foundry globals via `deps` defaults, add a Vitest unit
-file (these methods had zero prior coverage — a real win) + a `sheet-ui.spec.js`
-"survives extraction" probe driving the real `actor.sheet._prepareContext({})`.
-**Watch:** the `createEmbeddedDocuments`-under-load Playwright flake recurs on
-the multi-item probes (`sheet-ui:297`, `extension-api:315`, `active-effects:559`)
-— they pass in isolation; reconfirm there before treating a full-run red as real.
-Repo green at session-45 close: **1516 Vitest / 194 Playwright** (193 passed +
-the one documented flake, which passed in isolation). Detail below + in
-`00-progress.md` *Recent slices*.
+pure free functions, Foundry globals via `deps`), `drag-drop.mjs` (46 —
+`_onDragStart`'s ~210-line drag-payload switch as the pure
+`buildDragStartData(actor, event)` + the relocated `findDataset`, with
+`DCCActorSheet.findDataset` kept as a delegating static for cross-module +
+documented callers; `_onDragStart` is a plain method, not `#private`, so it
+extracts more cleanly than the action handlers will). `actor-sheet.js` 1890 →
+1121. The cohesive `prepare*` extractions + the drag-start builder are done;
+what remains are the static `#` action handlers (thin `rollXxx` wrappers — low
+value, the `static #x` entries must stay in the `actions` map) and the drop-side
+handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow
+`drag-drop.mjs`; `_onDrop` calls `super._onDrop` so it can't fully move) — lower
+priority, and the unstarted multi-session `actor.js` target. The pattern for
+each slice: lift the method(s) to free function(s) taking the actor, inject any
+Foundry globals via `deps` defaults, add a Vitest unit file (these had zero prior
+coverage — a real win) + a `sheet-ui.spec.js` "survives extraction" probe driving
+the real live sheet method. **Watch:** the `createEmbeddedDocuments`-under-load
+Playwright flake recurs on the multi-item probes (`sheet-ui:297`,
+`extension-api:315`, `active-effects:559`) — they pass in isolation; reconfirm
+there before treating a full-run red as real. Repo green at session-46 close:
+**1544 Vitest / 195 Playwright** (194 passed + the one documented under-load
+flake — `active-effects.spec.js:559`, the session-43 `effects.mjs` probe — which
+passed cleanly in isolation). Detail below + in `00-progress.md` *Recent slices*.
 
 <details><summary>PR #720 test-coverage-backfill arc (sessions 26–31, COMPLETE)</summary>
 

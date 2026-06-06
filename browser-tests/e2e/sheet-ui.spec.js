@@ -423,4 +423,65 @@ test.describe('DCC Sheet UI', () => {
       expect(result.fallbackImg).not.toBe('icons/svg/mystery-man.svg')
     })
   })
+
+  test.describe('Drag Start Data', () => {
+    test('actor-sheet _onDragStart survives actor-sheet/drag-drop.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor-sheet.js shrinkage): _onDragStart's ~210-line
+      // switch moved out of actor-sheet.js into the buildDragStartData free function
+      // in module/actor-sheet/drag-drop.mjs; the sheet's thin _onDragStart now calls
+      // it and owns the lone side effect (event.dataTransfer.setData). This probe
+      // drives the real sheet method end-to-end on a live actor — synthesizing the
+      // dragstart event for several drag actions and capturing the JSON payload
+      // actually written to the drag event — and asserts the payloads the extraction
+      // must preserve: a simple roll drag, the weapon drag (toDragData merge +
+      // backstab flag), the spell-item drag's 'DCC Item' type, and the
+      // non-draggable no-op.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Drag Probe', type: 'Player' })
+          const [weapon, spell] = await actor.createEmbeddedDocuments('Item', [
+            { type: 'weapon', name: 'Drag Sword', system: { melee: true } },
+            { type: 'spell', name: 'Drag Bolt', system: { level: 1 } }
+          ])
+          const sheet = actor.sheet
+
+          // Synthesize a dragstart event whose setData call we capture. _onDragStart
+          // reads only currentTarget.dataset, target.classList/getAttribute, and the
+          // actor — no live DOM render required.
+          const fire = (dataset, classes = []) => {
+            let captured
+            sheet._onDragStart({
+              currentTarget: { dataset, parentElement: null },
+              target: {
+                classList: { contains: (c) => classes.includes(c) },
+                getAttribute: () => null
+              },
+              dataTransfer: { setData: (_type, val) => { captured = val } }
+            })
+            return captured === undefined ? null : JSON.parse(captured)
+          }
+
+          observed.actorId = actor.id
+          observed.initiative = fire({ drag: 'true', dragAction: 'initiative' })
+          observed.weapon = fire({ drag: 'true', dragAction: 'weapon', itemId: weapon.id }, ['backstab-button'])
+          observed.spellItem = fire({ drag: 'true', dragAction: 'item', itemId: spell.id })
+          observed.nonDraggable = fire({ dragAction: 'initiative' })
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.initiative).toMatchObject({ type: 'Initiative', actorId: result.actorId, data: {} })
+      expect(result.weapon).toMatchObject({ dccType: 'Weapon', actorId: result.actorId })
+      expect(result.weapon.dccData.backstab).toBe(true)
+      // Spells drag as 'DCC Item' (suppresses Foundry's default macro creation).
+      expect(result.spellItem.type).toBe('DCC Item')
+      expect(result.spellItem.uuid).toBeTruthy()
+      // A non-draggable element writes nothing to the drag event.
+      expect(result.nonDraggable).toBeNull()
+    })
+  })
 })

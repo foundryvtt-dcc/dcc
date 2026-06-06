@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-05 (session 44).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-06 (session 46).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -92,8 +92,15 @@ repair), Foundry globals injected via a `deps` param; `actor-sheet.js` 1613 →
 1366. **Session 45 extracted the four small context-field helpers** (`#prepareNotes`
 / `#prepareCorruption` / `#prepareImage` / `#prepareCompendiumLinks`) into
 `module/actor-sheet/presentation.mjs` as pure free functions (Foundry globals via
-`deps`), `actor-sheet.js` 1366 → 1324. All were behavior-neutral with no lib
-change. Repo green on the final run: **1516 Vitest passed**; **194 Playwright**
+`deps`), `actor-sheet.js` 1366 → 1324. **Session 46 extracted `_onDragStart`**
+(the ~210-line drag-payload switch — the biggest cohesive chunk left, and a plain
+overridable method rather than `#private`) into `module/actor-sheet/drag-drop.mjs`
+as the pure free function `buildDragStartData(actor, event)`, leaving the sole
+side effect (`event.dataTransfer.setData`) in the thin sheet wrapper; `findDataset`
+moved alongside it with `DCCActorSheet.findDataset` kept as a delegating static
+(it's consumed cross-module by `party-sheet.js` + documented), `actor-sheet.js`
+1324 → 1121. All were behavior-neutral with no lib change. Repo green on the final
+run: **1544 Vitest passed**; **194 Playwright**
 (193 passed + the documented `createEmbeddedDocuments`-under-load `#prepareItems`
 flake, which passes in isolation). Per-session detail lives in *Recent slices* +
 the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
@@ -141,11 +148,18 @@ as an "actor-logic → free function" (it mutates the actor; Foundry globals
 injected via `deps`). Session 45 lifted the four small context-field helpers
 (`#prepareNotes` / `#prepareCorruption` / `#prepareImage` /
 `#prepareCompendiumLinks`) into `module/actor-sheet/presentation.mjs` as pure
-free functions (Foundry globals via `deps`). `actor-sheet.js` 1890 → 1613 →
-1366 → 1324. The cohesive small-helper extractions are now done; what remains
-are the static `#` action handlers + drag-drop (they reach other private
-members / sheet `this`, so trickier — lower priority). `actor.js` remains an
-unstarted multi-session project.
+free functions (Foundry globals via `deps`). Session 46 lifted `_onDragStart`
+(the ~210-line drag-payload switch — a plain overridable method, not `#private`,
+so it extracts more cleanly than the action handlers will) into
+`module/actor-sheet/drag-drop.mjs` as the pure `buildDragStartData(actor, event)`,
+with `findDataset` relocated beside it and `DCCActorSheet.findDataset` kept as a
+delegating static (cross-module + documented). `actor-sheet.js` 1890 → 1613 →
+1366 → 1324 → 1121. The cohesive small-helper extractions + the drag-start
+builder are now done; what remains are the static `#` action handlers + the
+drop-side handlers (`_onDrop` calls `super._onDrop` so it can't fully move;
+`_handleContainerDrop` / `_onDropActiveEffect` are more self-contained and could
+follow) — trickier, lower priority. `actor.js` remains an unstarted multi-session
+project.
 Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
@@ -156,6 +170,51 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-06 — Phase 7 session 46: Appendix-A `actor-sheet.js` shrinkage —
+  extract `_onDragStart` into `module/actor-sheet/drag-drop.mjs`.** Fourth slice
+  of the `actor-sheet.js` arc. `_onDragStart` (~210 lines — the biggest cohesive
+  chunk left) is the switch that maps a dragged sheet element to its macro
+  `dragData` payload. Unlike the prior three slices' `#private` `prepare*`
+  helpers, it's a plain overridable method, so it extracts more cleanly: it reads
+  only the actor (`this.options.document`) and the DOM event, with the sole side
+  effect being `event.dataTransfer.setData`. Lifted into the pure free function
+  `buildDragStartData(actor, event)` (returns the `dragData` object or `null`);
+  the sheet's `_onDragStart` collapses to a 4-line wrapper that calls it and owns
+  the `setData`. `findDataset` (the parent-walking dataset reader the switch leans
+  on) moved into the same module as an export, with `DCCActorSheet.findDataset`
+  kept as a **thin delegating static** — it's consumed cross-module by
+  `party-sheet.js` (lines 451/466/476) and documented (`CLICKABLE_ITEMS.md`), so
+  its public surface is preserved byte-for-byte. `actor-sheet.js` 1324 → 1121
+  lines (−203). **No behavior change, no lib change.** Both functions had **zero
+  prior unit coverage** (drag is e2e-hard), so a real coverage win. Tests: +28
+  Vitest (new `module/__tests__/actor-sheet-drag-drop.test.js` — `findDataset`
+  walk/miss/null, and `buildDragStartData` across every `dragAction` branch:
+  non-draggable + unknown-action null, ActiveEffect found/gone, ability
+  plain-vs-luck-roll-under [class + value-label], initiative/hitDice/save/skill
+  [label-vs-id fallback]/luckDie, spellCheck item-vs-name, attackBonus,
+  actionDice [configured + 1d20 default], disapproval range/table, weapon
+  [toDragData merge + backstab], item [Item vs DCC-Item for spells], and the
+  token-actor `tokenId` append); +1 Playwright (`sheet-ui.spec.js` "Drag Start
+  Data" — a live actor with a weapon + spell drives the real
+  `sheet._onDragStart` with synthesized events and asserts the captured
+  `setData` JSON for the initiative / weapon-backstab / spell-`DCC Item` /
+  non-draggable cases). **1544 Vitest** (was 1516, +28). **195 Playwright** (194
+  passed + 1 flake; was 194). **Flake reconfirmed, not slice-caused** (per the
+  refactor testing rules): the full run's one red was `active-effects.spec.js:559`
+  — the **session-43** `effects.mjs` AE-summary-builder probe, untouched by this
+  slice — where the equipped ring's *transferred* `lck` effect bucket came back
+  empty (the actor-level `str` boon passed). That probe fires five sequential
+  `createEmbeddedDocuments` calls (actor AEs → two items → ring AE → stowed AE)
+  before reading `_prepareContext`; the nested `ring.createEmbeddedDocuments`
+  didn't land in time under full-suite load — the documented
+  `createEmbeddedDocuments`-under-load flake family. It passed cleanly in
+  isolation (1.1s, all 14 in the spec green). The new "Drag Start Data" probe
+  passed in the full run. Next
+  `actor-sheet.js`: the static `#` action handlers (thin `rollXxx` wrappers — low
+  value, the `static #x` entries must stay in the `actions` map) and the
+  drop-side handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow;
+  `_onDrop` itself calls `super._onDrop` so it can't fully move) — lower priority.
 
 - **2026-06-05 — Phase 7 session 45: Appendix-A `actor-sheet.js` shrinkage —
   extract the four small context-field helpers into
@@ -318,45 +377,6 @@ archives linked above.
   recurs. Next `item.js`: nothing warranted — the arc's cohesive method groups
   are extracted; `prepareBaseData` + lifecycle hooks stay.
 
-- **2026-06-03 — Phase 7 session 41: Appendix-A `item.js` shrinkage —
-  extract the treasure-value / currency block into
-  `module/item/currency-mixin.mjs`.** Second slice of the `item.js` arc, same
-  method-group→Foundry-mixin shape as session 40. The 4-method treasure-value /
-  currency block (`needsValueRoll`, `rollValue`, `convertCurrencyUpward`,
-  `convertCurrencyDownward` — reads only `this.system.value` + the
-  `CONFIG.DCC.currencies`/`currencyRank`/`currencyValue` config, posts a
-  `LootValue` chat card, no spell/roll-adapter/lib entanglement, no dispatch
-  logging) moved into `CurrencyItemMixin`. `DCCItem` now declares
-  `extends CurrencyItemMixin(ContainerItemMixin(Item))` (mixin chain
-  Currency→Container→Item), so the 4 methods stay instance methods with
-  byte-identical `this` semantics; the consumers (`item-sheet.js` action
-  handlers `#rollValue`/convert-currency + `actor-sheet.js`'s value-resolved
-  check) call them off live items and need **zero** change. `item.js` 812 → 691
-  lines (−121; cumulative 975 → 691, −284 across sessions 40–41). **No behavior
-  change, no lib change.** This block had **no prior unit coverage**, so the new
-  test is a coverage win, not just a guard. Tests: +13 Vitest (new
-  `module/__tests__/item-currency-mixin.test.js` — composition guards incl. the
-  Currency→Container→Item chain order, *and behavioral*: `needsValueRoll`
-  deterministic-vs-die-formula + empty-field skipping, `convertCurrency` up/down
-  denomination math incl. below-factor / top-denom / bottom-denom no-ops + the
-  unresolved-value conversion block); +1 Playwright (`extension-api.spec.js`
-  "survives extraction" probe — live treasure item: `rollValue` resolves +
-  posts the LootValue card, `convertCurrency` up/down 100cp↔1sp end-to-end).
-  **1445 Vitest** (was 1432, +13). **189 Playwright passed**, zero failures (was
-  188, +1; 6.2-min full suite). **Latent finding surfaced, deliberately NOT
-  fixed here (out of scope for a behavior-neutral extraction):** under the live
-  V14 schema the currency value fields are integer `NumberField`s
-  (`CurrencyField`) and `base-item.mjs` `migrateData` `parseInt()`s any string,
-  so a die *formula* never persists in `system.value` — meaning
-  `needsValueRoll`'s formula-flagging path (and thus the "roll an unresolved
-  treasure value" feature behind the treasure sheet's `rollValue` button) is
-  effectively dead for current data. The Vitest covers that code path via direct
-  in-memory `system.value` assignment; the e2e probe asserts the genuinely-live
-  behavior. Worth a separate look (schema change to a formula-capable field, or
-  remove the dead path). Next `item.js` chunk: the spell/manifestation/mercurial
-  roll group (~355 lines — biggest, but roll-behavior so check for
-  dispatch-logging / lib entanglement before extracting).
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -498,7 +518,7 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   formula path is dead under the integer-`NumberField` `CurrencyField` schema
   (`migrateData` `parseInt()`s strings); decide whether to make the value field
   formula-capable or remove the dead path. Separate from the extraction arc.
-- **`actor-sheet.js` (1890 → 1324 after session 45) — IN PROGRESS.** Sheets
+- **`actor-sheet.js` (1890 → 1121 after session 46) — IN PROGRESS.** Sheets
   can't use the mixin pattern (their big methods are `#private`); shape is
   **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.
   Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector);
@@ -506,10 +526,17 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   "actor-logic → free function" since it mutates the actor, with Foundry globals
   injected via a `deps` param); `presentation.mjs` (45 — the four small
   context-field helpers `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
-  `#prepareCompendiumLinks` as pure free functions, Foundry globals via `deps`).
-  The cohesive `prepare*` helper extractions are now done. Remaining: the static
-  `#` action handlers + drag-drop are trickier (they reference other private
-  members / `this` sheet state) — lower priority.
+  `#prepareCompendiumLinks` as pure free functions, Foundry globals via `deps`);
+  `drag-drop.mjs` (46 — `_onDragStart`'s ~210-line drag-payload switch as the
+  pure `buildDragStartData(actor, event)` + the relocated `findDataset`, with
+  `DCCActorSheet.findDataset` kept as a delegating static for the cross-module +
+  documented callers). The cohesive `prepare*` helpers + the drag-start builder
+  are now done. Remaining: the static `#` action handlers (thin wrappers over
+  `this.options.document.rollXxx` — extracting gains little since the `static #x`
+  entries must stay in the `actions` map) and the drop-side handlers (`_onDrop`
+  calls `super._onDrop` so it can't fully move; `_handleContainerDrop` /
+  `_onDropActiveEffect` are more self-contained and could follow `drag-drop.mjs`).
+  Lower priority.
 - **`actor.js` (~4574 lines)** — the largest Appendix-A target; a multi-session
   project, not a slice; start only with budget for it. Being a document class
   (not a sheet) it CAN use the `item.js` mixin pattern, but much of its bulk is
