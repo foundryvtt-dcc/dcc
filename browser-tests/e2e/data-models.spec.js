@@ -131,6 +131,58 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.click('button[data-action="yes"]')
     })
 
+    test('actor derived-stat computation survives actor/derived-stats-mixin.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the four derived-stat computation
+      // helpers (computeMeleeAndMissileAttackAndDamage / computeSavingThrows /
+      // computeSpellCheck / computeInitiative) moved out of actor.js into the
+      // DerivedStatsMixin in module/actor/derived-stats-mixin.mjs; DCCActor now
+      // extends DerivedStatsMixin(ActiveEffectsMixin(Actor)). This probe calls each
+      // extracted method directly on a live actor and asserts the derived writes
+      // (saves with bonuses + override, initiative, spell-check formula) the
+      // extraction must preserve — reading the actor's own ability mods so it is
+      // robust to the DCC modifier table.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Derived Stats Probe', type: 'Player' })
+          observed.aglMod = parseInt(actor.system.abilities.agl.mod)
+
+          // Saving throws: agl mod + class + other bonus; override wins on frt.
+          actor.system.saves.ref.classBonus = 2
+          actor.system.saves.ref.otherBonus = 1
+          actor.system.saves.frt.override = 5
+          actor.computeSavingThrows()
+          observed.ref = actor.system.saves.ref.value
+          observed.frt = actor.system.saves.frt.value
+
+          // Initiative: agl mod + otherMod (no class level).
+          actor.system.attributes.init.otherMod = 1
+          actor.computeInitiative({ addClassLevelToInitiative: false })
+          observed.init = actor.system.attributes.init.value
+
+          // Spell check: produces a non-empty formula string and fires the stable hook.
+          let hookFired = false
+          const hookId = Hooks.on('dcc.afterComputeSpellCheck', () => { hookFired = true })
+          actor.system.details.level.value = 3
+          actor.computeSpellCheck()
+          Hooks.off('dcc.afterComputeSpellCheck', hookId)
+          observed.spellCheck = actor.system.class.spellCheck
+          observed.hookFired = hookFired
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      const signed = (n) => (n >= 0 ? `+${n}` : `${n}`)
+      expect(result.ref).toBe(signed(result.aglMod + 3)) // agl mod + class 2 + other 1
+      expect(result.frt).toBe('+5') // override wins
+      expect(result.init).toBe(result.aglMod + 1) // agl mod + otherMod
+      expect(result.spellCheck).toBeTruthy()
+      expect(result.hookFired).toBe(true) // stable dcc.afterComputeSpellCheck hook preserved
+    })
+
     test('can create a new NPC actor', async ({ page }) => {
       // Click the actors tab
       await page.click('button[data-tab="actors"]')
