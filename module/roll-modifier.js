@@ -751,5 +751,7 @@ function createRollFromTerms (terms, options) {
 
 export {
   showRollModifier,
-  createRollFromTerms
+  createRollFromTerms,
+  // Exposed for unit testing the dialog's formula construction + term routing.
+  RollModifierDialog
 }
