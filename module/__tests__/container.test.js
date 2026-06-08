@@ -614,6 +614,22 @@ describe('Container Item Tests', () => {
         ['sword-1', 'shield-1', 'container-1']
       )
     })
+
+    test('returns null and logs when the cascade delete throws (audit 2026-06-08)', async () => {
+      const sword = { id: 'sword-1', system: { container: 'container-1' } }
+      container.parent = {
+        items: { filter: () => [sword] },
+        deleteEmbeddedDocuments: vi.fn().mockRejectedValue(new Error('delete failed'))
+      }
+      global.Dialog.confirm = vi.fn(({ yes }) => yes())
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const result = await container.deleteDialog()
+
+      expect(result).toBeNull() // the yes-callback catch returns null rather than throwing
+      expect(errSpy).toHaveBeenCalled()
+      errSpy.mockRestore()
+    })
   })
 
   describe('_onCreate orphan re-association', () => {
