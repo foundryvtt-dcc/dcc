@@ -42,7 +42,24 @@ session's context):
 
 ## Status (2026-06-08)
 
-**Sessions 48–50 (latest): `actor.js` arc done — the Appendix-A file-shrinkage arc
+**Session 51 (latest): §2.1 schema-slimming (Group E halfling) resolved as
+architecturally-bounded.** The last substantive Group E thread. Foundry's
+`defineSchema()` is static (one schema per document *subtype*), so a halfling and a
+wizard both being `type: 'Player'` share one schema and carry all 7 classes' fields
+— full per-class field removal is unreachable without per-class Actor subtypes (an
+ecosystem-breaking `actor.type` change, rejected; runtime pruning also rejected — it
+throws on ~15 unguarded `actor.js` reads + 8+ unguarded XCC reads). Resolution: the
+mixin relocation closed the extensibility half, and the lib is the class-clean
+read-side source of truth (`actorToCharacter` reads zero class fields → schema class
+fields are a compat projection). **No production-code change — behavior-neutral**
+(docs + guard tests). New decision record `docs/dev/SCHEMA_SLIMMING.md`; §2.1/§7
+cross-links in `ARCHITECTURE_REIMAGINED.md` + `CLASS_DECOMPOSITION.md`. +3 Vitest
+(`schema-slimming-guard.test.js`) + 1 Playwright (`data-models.spec.js` live-halfling
+projection). **1592 Vitest.** The §2.1 / Group E halfling question is now closed; the
+remaining unbuilt Group E candidate is the optional homebrew single-class exercise.
+The rest of this section is the prior (session 48–50) status.
+
+**Sessions 48–50: `actor.js` arc done — the Appendix-A file-shrinkage arc
 is COMPLETE.** `actor.js` is a document class, so unlike the sheet it uses the
 `item.js` mixin pattern. Session 48 lifted the AE-application engine
 (`applyActiveEffects` + `_resolveEffectValue` + the 7 `_applyXxxEffect` handlers)

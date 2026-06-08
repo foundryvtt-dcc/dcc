@@ -255,6 +255,55 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       expect(result.accumulated).toBe('5 cold + 4 fire') // same-flavor terms summed, operators skipped
     })
 
+    test('§2.1 schema-slimming: the lib Character projection of a live halfling is class-clean', async ({ page }) => {
+      // §2.1 resolution guard (see docs/dev/SCHEMA_SLIMMING.md). Foundry's static
+      // one-schema-per-subtype model means a live halfling carries EVERY class's
+      // schema fields (shieldBash / disapproval / knownSpells / thief skills…).
+      // The resolution is that the lib is the class-clean read-side source of
+      // truth: actorToCharacter projects the actor reading only cross-class fields.
+      // This drives the real adapter projection on a live halfling and asserts the
+      // produced Character carries no foreign-class state even though the actor's
+      // schema does — proving the roll path is independent of the un-slimmable
+      // monolithic schema.
+      const result = await page.evaluate(async () => {
+        const { actorToCharacter } = await import('../../../../../../../../systems/dcc/module/adapter/character-accessors.mjs')
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Halfling Projection Probe', type: 'Player' })
+          await actor.update({ 'system.class.className': 'Halfling', 'system.details.sheetClass': 'Halfling' })
+          // The live actor carries the monolithic schema's foreign-class fields.
+          const carriesShieldBash = actor.system.skills?.shieldBash !== undefined
+          const carriesKnownSpells = actor.system.class?.knownSpells !== undefined
+
+          const character = actorToCharacter(actor)
+          return {
+            carriesShieldBash,
+            carriesKnownSpells,
+            classId: character.classInfo?.classId,
+            topKeys: Object.keys(character).sort(),
+            stateKeys: Object.keys(character.state).sort(),
+            hasSkills: Object.prototype.hasOwnProperty.call(character, 'skills'),
+            hasClericState: character.state.cleric !== undefined,
+            hasWizardState: character.state.wizard !== undefined
+          }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      // The actor's schema DOES carry foreign-class fields (the un-slimmable part)...
+      expect(result.carriesShieldBash).toBe(true)
+      expect(result.carriesKnownSpells).toBe(true)
+      // ...but the lib projection is class-clean: only identity/state/classInfo,
+      // state has only abilities/saves, and the classId is halfling.
+      expect(result.classId).toBe('halfling')
+      expect(result.topKeys).toEqual(['classInfo', 'identity', 'state'])
+      expect(result.stateKeys).toEqual(['abilities', 'saves'])
+      expect(result.hasSkills).toBe(false)
+      expect(result.hasClericState).toBe(false)
+      expect(result.hasWizardState).toBe(false)
+    })
+
     test('can create a new NPC actor', async ({ page }) => {
       // Click the actors tab
       await page.click('button[data-tab="actors"]')

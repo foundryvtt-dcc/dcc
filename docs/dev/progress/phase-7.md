@@ -1973,3 +1973,47 @@
   `module/__tests__/actor-sheet-presentation.test.js`); +1 Playwright
   (`sheet-ui.spec.js` "Context Field Preparation"). **1516 Vitest** (was 1506,
   +10). **194 Playwright** (was 193, +1).
+- **2026-06-06 — Phase 7 session 46: Appendix-A `actor-sheet.js` shrinkage —
+  extract `_onDragStart` into `module/actor-sheet/drag-drop.mjs`.** Fourth slice
+  of the `actor-sheet.js` arc. `_onDragStart` (~210 lines — the biggest cohesive
+  chunk left) is the switch that maps a dragged sheet element to its macro
+  `dragData` payload. Unlike the prior three slices' `#private` `prepare*`
+  helpers, it's a plain overridable method, so it extracts more cleanly: it reads
+  only the actor (`this.options.document`) and the DOM event, with the sole side
+  effect being `event.dataTransfer.setData`. Lifted into the pure free function
+  `buildDragStartData(actor, event)` (returns the `dragData` object or `null`);
+  the sheet's `_onDragStart` collapses to a 4-line wrapper that calls it and owns
+  the `setData`. `findDataset` (the parent-walking dataset reader the switch leans
+  on) moved into the same module as an export, with `DCCActorSheet.findDataset`
+  kept as a **thin delegating static** — it's consumed cross-module by
+  `party-sheet.js` (lines 451/466/476) and documented (`CLICKABLE_ITEMS.md`), so
+  its public surface is preserved byte-for-byte. `actor-sheet.js` 1324 → 1121
+  lines (−203). **No behavior change, no lib change.** Both functions had **zero
+  prior unit coverage** (drag is e2e-hard), so a real coverage win. Tests: +28
+  Vitest (new `module/__tests__/actor-sheet-drag-drop.test.js` — `findDataset`
+  walk/miss/null, and `buildDragStartData` across every `dragAction` branch:
+  non-draggable + unknown-action null, ActiveEffect found/gone, ability
+  plain-vs-luck-roll-under [class + value-label], initiative/hitDice/save/skill
+  [label-vs-id fallback]/luckDie, spellCheck item-vs-name, attackBonus,
+  actionDice [configured + 1d20 default], disapproval range/table, weapon
+  [toDragData merge + backstab], item [Item vs DCC-Item for spells], and the
+  token-actor `tokenId` append); +1 Playwright (`sheet-ui.spec.js` "Drag Start
+  Data" — a live actor with a weapon + spell drives the real
+  `sheet._onDragStart` with synthesized events and asserts the captured
+  `setData` JSON for the initiative / weapon-backstab / spell-`DCC Item` /
+  non-draggable cases). **1544 Vitest** (was 1516, +28). **195 Playwright** (194
+  passed + 1 flake; was 194). **Flake reconfirmed, not slice-caused** (per the
+  refactor testing rules): the full run's one red was `active-effects.spec.js:559`
+  — the **session-43** `effects.mjs` AE-summary-builder probe, untouched by this
+  slice — where the equipped ring's *transferred* `lck` effect bucket came back
+  empty (the actor-level `str` boon passed). That probe fires five sequential
+  `createEmbeddedDocuments` calls (actor AEs → two items → ring AE → stowed AE)
+  before reading `_prepareContext`; the nested `ring.createEmbeddedDocuments`
+  didn't land in time under full-suite load — the documented
+  `createEmbeddedDocuments`-under-load flake family. It passed cleanly in
+  isolation (1.1s, all 14 in the spec green). The new "Drag Start Data" probe
+  passed in the full run. Next
+  `actor-sheet.js`: the static `#` action handlers (thin `rollXxx` wrappers — low
+  value, the `static #x` entries must stay in the `actions` map) and the
+  drop-side handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow;
+  `_onDrop` itself calls `super._onDrop` so it can't fully move) — lower priority.

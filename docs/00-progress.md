@@ -192,12 +192,44 @@ Group E / §2.8 homebrew
 extensibility was validated 2026-05-29 by migrating two real sibling content
 modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
 class-registration API; no further DCC-side Group E work is needed (see
-*Sibling-module status*).
+*Sibling-module status*). **Session 51 (2026-06-08) closed the last Group E thread
+— the §2.1 schema-slimming question — as architecturally-bounded** (Foundry's
+static one-schema-per-subtype model blocks full per-class field removal; the lib is
+the class-clean read-side source of truth). Decision record:
+[`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md).
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-08 — Phase 7 session 51: resolve §2.1 schema-slimming (Group E
+  halfling) as architecturally-bounded.** The last substantive Group E thread.
+  Investigation (3 Explore sweeps) established the headline goal — "a halfling
+  carries only halfling fields" — is **architecturally blocked**: Foundry's
+  `defineSchema()` is static (one schema per document *subtype*), so a halfling and
+  a wizard both being `type: 'Player'` share one schema, `applyClassMixins` attaches
+  all 7 classes' fields to it, and Foundry bakes every `.initial` into every actor's
+  `_source`. There is no per-instance schema mechanism. **Resolution
+  (architecturally-bounded):** the `registerClassMixin` relocation closed the
+  "spinoffs cannot remove or restructure" half (siblings last-write-wins replace
+  built-ins), and the lib is the class-clean read-side source of truth —
+  `actorToCharacter` (`character-accessors.mjs`) reads **zero** class-specific schema
+  fields, so the schema's class fields are a Foundry-forced compat projection, not a
+  source of truth. Rejected (ecosystem-breakage, fail the stop-conditions): runtime
+  pruning (~15 unguarded `actor.js` reads + 8+ unguarded XCC sheet reads would throw)
+  and per-class Actor subtypes (changes `actor.type` off `'Player'` across the system
+  + 4 sibling modules + packs + migration). **No production-code change — fully
+  behavior-neutral** (docs + guard tests only). New decision record
+  [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md); §2.1/§7 cross-links in
+  `ARCHITECTURE_REIMAGINED.md` + `CLASS_DECOMPOSITION.md`. Tests: +3 Vitest
+  (`schema-slimming-guard.test.js` — `actorToCharacter` builds a complete class-clean
+  Character from an actor with no class fields, and returns identical output with vs
+  without a pile of foreign-class fields, locking in "the roll path needs zero schema
+  class fields"); +1 Playwright (`data-models.spec.js` — a live halfling that DOES
+  carry `shieldBash`/`knownSpells` projects to a class-clean Character with
+  `classId==='halfling'` and only `identity`/`state`/`classInfo`). **1592 Vitest**
+  (was 1589, +3). **The §2.1 / Group E halfling question is now closed.**
 
 - **2026-06-08 — Phase 7 session 50: Appendix-A `actor.js` shrinkage —
   extract the roll-input accessors (`module/actor/roll-data-mixin.mjs`) + the
@@ -303,51 +335,6 @@ archives linked above.
   per slice, full E2E once per batch — see `CLAUDE.md`). The cohesive
   `actor-sheet.js` extractions are now done; next target is `actor.js`.
 
-- **2026-06-06 — Phase 7 session 46: Appendix-A `actor-sheet.js` shrinkage —
-  extract `_onDragStart` into `module/actor-sheet/drag-drop.mjs`.** Fourth slice
-  of the `actor-sheet.js` arc. `_onDragStart` (~210 lines — the biggest cohesive
-  chunk left) is the switch that maps a dragged sheet element to its macro
-  `dragData` payload. Unlike the prior three slices' `#private` `prepare*`
-  helpers, it's a plain overridable method, so it extracts more cleanly: it reads
-  only the actor (`this.options.document`) and the DOM event, with the sole side
-  effect being `event.dataTransfer.setData`. Lifted into the pure free function
-  `buildDragStartData(actor, event)` (returns the `dragData` object or `null`);
-  the sheet's `_onDragStart` collapses to a 4-line wrapper that calls it and owns
-  the `setData`. `findDataset` (the parent-walking dataset reader the switch leans
-  on) moved into the same module as an export, with `DCCActorSheet.findDataset`
-  kept as a **thin delegating static** — it's consumed cross-module by
-  `party-sheet.js` (lines 451/466/476) and documented (`CLICKABLE_ITEMS.md`), so
-  its public surface is preserved byte-for-byte. `actor-sheet.js` 1324 → 1121
-  lines (−203). **No behavior change, no lib change.** Both functions had **zero
-  prior unit coverage** (drag is e2e-hard), so a real coverage win. Tests: +28
-  Vitest (new `module/__tests__/actor-sheet-drag-drop.test.js` — `findDataset`
-  walk/miss/null, and `buildDragStartData` across every `dragAction` branch:
-  non-draggable + unknown-action null, ActiveEffect found/gone, ability
-  plain-vs-luck-roll-under [class + value-label], initiative/hitDice/save/skill
-  [label-vs-id fallback]/luckDie, spellCheck item-vs-name, attackBonus,
-  actionDice [configured + 1d20 default], disapproval range/table, weapon
-  [toDragData merge + backstab], item [Item vs DCC-Item for spells], and the
-  token-actor `tokenId` append); +1 Playwright (`sheet-ui.spec.js` "Drag Start
-  Data" — a live actor with a weapon + spell drives the real
-  `sheet._onDragStart` with synthesized events and asserts the captured
-  `setData` JSON for the initiative / weapon-backstab / spell-`DCC Item` /
-  non-draggable cases). **1544 Vitest** (was 1516, +28). **195 Playwright** (194
-  passed + 1 flake; was 194). **Flake reconfirmed, not slice-caused** (per the
-  refactor testing rules): the full run's one red was `active-effects.spec.js:559`
-  — the **session-43** `effects.mjs` AE-summary-builder probe, untouched by this
-  slice — where the equipped ring's *transferred* `lck` effect bucket came back
-  empty (the actor-level `str` boon passed). That probe fires five sequential
-  `createEmbeddedDocuments` calls (actor AEs → two items → ring AE → stowed AE)
-  before reading `_prepareContext`; the nested `ring.createEmbeddedDocuments`
-  didn't land in time under full-suite load — the documented
-  `createEmbeddedDocuments`-under-load flake family. It passed cleanly in
-  isolation (1.1s, all 14 in the spec green). The new "Drag Start Data" probe
-  passed in the full run. Next
-  `actor-sheet.js`: the static `#` action handlers (thin `rollXxx` wrappers — low
-  value, the `static #x` entries must stay in the `actions` map) and the
-  drop-side handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow;
-  `_onDrop` itself calls `super._onDrop` so it can't fully move) — lower priority.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -360,6 +347,7 @@ phase archives):
 5. ~~Patron-taint mechanic alignment~~ — `dcc-core-lib@0.7.0` models the RAW triggers; `_runLegacyPatronTaint` deleted; entire D3 arc complete (2026-04-24).
 6. ~~Spellburn dialog integration~~ — adapter DialogV2 prompt wired into `rollSpellCheck` (2026-04-18); later unified into `promptRollModifierDialog` (Q7).
 7. ~~Wizard/elf modifier-dialog coverage beyond Spellburn~~ — unified `promptRollModifierDialog` covers skill + spell checks incl. spellburn (2026-05-17, sessions 26 + 27).
+8. ~~§2.1 schema-slimming (Group E halfling vertical)~~ — resolved **architecturally-bounded** (2026-06-08, session 51): Foundry's static one-schema-per-subtype model makes full per-class field removal unreachable; §2.1 closes on the mixin relocation (extensibility) + the lib being the class-clean read-side source of truth (schema class fields = compat projection). Per-class subtypes + runtime pruning rejected (ecosystem breakage). Decision record: [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md).
 
 ## Blockers / open questions
 
@@ -516,12 +504,17 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now
 consume them (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38; Group E
-session 1 added the per-class mercurial-magic table registry). The two unbuilt
-vertical-slice candidates remain viable if more pattern-laying is wanted, but
-nothing requires them: (1) **Halfling** — concentrates the §2.1 schema-slimming
-question on one class; (2) **homebrew single-class** — exercises Phase 4+5+6
-end-to-end via `registerClassMixin` + `registerSheetPart` + variant-aware data
-loading.
+session 1 added the per-class mercurial-magic table registry). **The §2.1
+schema-slimming question — the halfling vertical — was closed session 51
+(2026-06-08) as architecturally-bounded** (Foundry's static one-schema-per-subtype
+model blocks full per-class field removal; the lib is the class-clean read-side
+source of truth; per-class subtypes + runtime pruning rejected for ecosystem
+breakage — see [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md)). The one
+remaining unbuilt candidate stays viable if more pattern-laying is wanted, but
+nothing requires it: **homebrew single-class** — exercises Phase 4+5+6 end-to-end
+via `registerClassMixin` + `registerSheetPart` + variant-aware data loading (a
+thin exercise now the registries exist; doesn't slim the schema, just validates
+the homebrew path with a fresh class).
 
 **Cross-repo coordination:** if any future migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with `allowLuck`

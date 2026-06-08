@@ -469,6 +469,13 @@ five pain points the decomposition is built to relieve:
   truth onto a per-class registry; Foundry-smelling shape (component
   in §2.12) stays intact because the path `system.skills.shieldBash`
   resolves identically once the dwarf mixin is registered.
+  **Resolved 2026-06-08 as architecturally-bounded** — full per-class
+  *field removal* (a halfling not carrying `shieldBash`) is unreachable
+  under Foundry's static one-schema-per-subtype model, so §2.1 closes on
+  the mixin relocation (extensibility) + the lib being the class-clean
+  read-side source of truth (the schema's class fields are a compat
+  projection). Halfling was the worked testbed; full decision record +
+  rejected alternatives in [`SCHEMA_SLIMMING.md`](SCHEMA_SLIMMING.md).
 - **§2.5 — Extension surface is lopsided.** Sibling modules can
   *add* fields via `dcc.definePlayerSchema` but can't *relocate* the
   built-ins. Mixins let the system itself contribute through the

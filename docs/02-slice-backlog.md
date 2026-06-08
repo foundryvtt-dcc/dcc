@@ -483,13 +483,21 @@ full-stack approach works end-to-end with a real sibling consumer.
 
 **Candidates (pick one at slice time):**
 
-1. **Halfling vertical** — **STARTED 2026-05-18 (Phase 4 session 1).**
-   Session 1 landed the `game.dcc.registerClassMixin` infrastructure +
-   relocated `skills.sneakAndHide` off the monolithic Player schema
-   onto a built-in DCC `'halfling'` mixin (see "Phase 4 — Active
-   sub-arc" below for remaining sub-slices: more class-bound fields,
-   class-id dispatch, halfling sheet-tab composition, variant
-   registration).
+1. ~~**Halfling vertical**~~ — **RESOLVED 2026-06-08 (session 51).**
+   Components 1–7 all shipped generically across the Phase 4–6 per-class
+   arcs (schema mixin / sheet part / defaults / starting items / lib
+   progression / variant). The one genuinely-remaining halfling thread —
+   the §2.1 *schema-slimming* question ("a halfling carries only halfling
+   fields") — was closed as **architecturally-bounded**: Foundry's static
+   one-schema-per-subtype model makes full per-class field removal
+   unreachable (a halfling + a wizard are both `type: 'Player'` → one
+   shared schema), and per-class subtypes / runtime pruning are rejected
+   for ecosystem breakage (changes `actor.type`; throws on ~15 unguarded
+   `actor.js` + 8+ XCC reads). §2.1 closes on the mixin relocation
+   (extensibility) + the lib being the class-clean read-side source of
+   truth (`actorToCharacter` reads zero class fields). Docs + guard tests
+   only, behavior-neutral. Decision record:
+   [`docs/dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md).
 2. ~~**Mercurial-magic vertical**~~ — **DONE 2026-05-18 (Group E
    session 1).** New `dcc.registerMercurialMagicTable(classKey,
    tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`

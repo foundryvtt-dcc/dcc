@@ -57,6 +57,8 @@ Seven language files with `npm run compare-lang`. 17 unit + 4 integration test f
 ### 2.1 The Player schema is monolithic
 Every Player actor — Warrior, Wizard, or an XCC Archaeologist — carries *every* DCC class's fields: cleric disapproval + spells 1–5, thief 13 skills + luck die, wizard patron + corruption + familiar + mercurial magic, halfling `sneakAndHide`, dwarf `shieldBash`, warrior `luckyWeapon`, elf `detectSecretDoors` override. Spinoffs can **add** via hooks but cannot **remove or restructure**.
 
+> **Resolved 2026-06-08 — architecturally-bounded. See [`SCHEMA_SLIMMING.md`](SCHEMA_SLIMMING.md).** Foundry's `defineSchema()` is static (one schema per document *subtype*, not per instance), so a halfling and a wizard both being `type: 'Player'` necessarily share one schema — full per-class field removal is unreachable without per-class document subtypes (an ecosystem-breaking `actor.type` change, rejected). The achievable resolution: (1) the `registerClassMixin` registry closed the "cannot remove or restructure" half — siblings can now last-write-wins replace built-in class fields; (2) the lib's `Character` is the class-clean read-side source of truth (`actorToCharacter` reads zero class-specific fields), so the schema's class fields are a Foundry-forced compatibility projection, not a source of truth. Halfling was the worked testbed.
+
 ### 2.2 Class dispatch is string-matched, not polymorphic
 Examples from the audit:
 - `actor.js:134` — `if (this.system.details.sheetClass === 'Elf')`
@@ -365,6 +367,8 @@ Now that the lib is producing `Character` shapes, the Foundry Player schema no l
 - Foundry's `system.*` shape becomes a projection of the lib's `Character` type
 
 **Ships as:** major release with migration. External modules using `dcc.definePlayerSchema` migrate to `registerClassMixin`.
+
+> **Annotation 2026-06-08 — what landed vs. the sketch.** The mixin split shipped (all 7 classes via `registerClassMixin`). But the two bullets above ("future characters only get the mixins their class needs", "system.* becomes a projection") ran into Foundry's static one-schema-per-subtype model: `defineSchema()` can't vary per instance, so every Player necessarily declares every class's field. **§2.1 was therefore resolved as architecturally-bounded** rather than by literal field removal — the read-side projection (`actorToCharacter`) is already class-clean and authoritative, and the schema's class fields are a Foundry-forced compat surface. Full details + the rejected alternatives (runtime pruning, per-class subtypes) in [`SCHEMA_SLIMMING.md`](SCHEMA_SLIMMING.md).
 
 ### Phase 5 — Sheet composition (4–6 weeks)
 - Collapse 7 class sheets into 1 `DCCSheet` that composes parts based on `character.classId`
