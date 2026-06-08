@@ -42,7 +42,22 @@ session's context):
 
 ## Status (2026-06-08)
 
-**Session 51 (latest): §2.1 schema-slimming (Group E halfling) resolved as
+**Session 52 (latest): the two latent open items resolved.** (a) **Removed**
+the unconsumed `CONFIG.DCC.activeEffectKeys` reference table (zero runtime consumers
+ever, superseded by Foundry's native V14 AE UI, duplicated by the user-guide). (b)
+**Restored rollable treasure values** — the session-41 finding was an orphaned
+feature, not dead code: a V14 schema tightening (integer `CurrencyField` +
+`parseInt` migration) had killed it while the sheet inputs / `parseInt` readers /
+`needsValueRoll` guard / Roll-Value button stayed formula-aware. Un-broke it with a
+new `TreasureValueField` (StringField per denomination) on the item `system.value` +
+a formula-preserving `migrateData`; **actor `currency` stays integer `CurrencyField`**
+(Item Piles/§2.12 safe). A GM can again author `3d100` gp and roll it. +3 integration
+tests; the e2e currency probe rewritten to assert the restored feature. **1592
+Vitest.** Both session-38 + session-41 latent items closed. The refactor's backlog
+(Appendix-A shrinkage + Group E + latent items) is now fully drained. The rest of
+this section is the prior (session 51) status.
+
+**Session 51: §2.1 schema-slimming (Group E halfling) resolved as
 architecturally-bounded.** The last substantive Group E thread. Foundry's
 `defineSchema()` is static (one schema per document *subtype*), so a halfling and a
 wizard both being `type: 'Player'` share one schema and carry all 7 classes' fields

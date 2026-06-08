@@ -370,6 +370,29 @@ describe('Data Migration (real Foundry migration pipeline)', () => {
     const migrated = BaseItemData.migrateData(source)
     expect(migrated.description.judge).toEqual({ value: '<p>secret</p>' })
   })
+
+  // Restored rollable-treasure-value feature: an item's value is a
+  // TreasureValueField (StringField per denomination), so a die formula must
+  // survive migrateData (the pre-V14 parseInt coercion silently destroyed it).
+  test('PhysicalItemData migrateData preserves a rollable treasure value formula', () => {
+    const source = { value: { gp: '3d100', sp: '2d6+1' } }
+    const migrated = PhysicalItemData.migrateData(source)
+    expect(migrated.value.gp).toBe('3d100')
+    expect(migrated.value.sp).toBe('2d6+1')
+  })
+
+  test('PhysicalItemData migrateData stringifies a legacy integer value (no data loss)', () => {
+    const source = { value: { gp: 7, cp: 0 } }
+    const migrated = PhysicalItemData.migrateData(source)
+    expect(migrated.value.gp).toBe('7')
+    expect(migrated.value.cp).toBe('0')
+  })
+
+  test('TreasureData constructs with a value formula intact (StringField persists)', () => {
+    const data = new TreasureData({ value: { gp: '3d100' } })
+    expect(data.value.gp).toBe('3d100')
+    expect(data.value.pp).toBe('0') // untouched denominations default to '0'
+  })
 })
 
 // ============================================================================

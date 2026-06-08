@@ -203,6 +203,33 @@ the class-clean read-side source of truth). Decision record:
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-06-08 — Phase 7 session 52: resolve the two latent open items —
+  restore rollable treasure values + remove the unconsumed `activeEffectKeys`
+  table.** Two commits. **(a) Removed `activeEffectKeys`** (`chore(cruft)`): the
+  32-entry `CONFIG.DCC.activeEffectKeys` reference table (PR #611) had zero runtime
+  consumers ever (system or all 4 siblings), is superseded by Foundry's native V14
+  AE config UI, and is duplicated independently by the user-guide "Common Attribute
+  Keys" section. Deleted `module/config/active-effect-keys.mjs` + the re-composition
+  in `config.js` + the unit guard; the e2e probe flips to a removal guard (asserts
+  the surface is gone). −139 lines. **(b) Restored rollable treasure values**: the
+  session-41 finding wasn't dead code — the formula-rolling *capability* was orphaned
+  by a V14 schema tightening (item `system.value` became integer `CurrencyField` +
+  `migrateData` `parseInt()`-destroyed formulas), while ALL the surrounding
+  scaffolding stayed formula-aware (the `type="text"` sheet inputs, the `parseInt`
+  coin-merge/conversion readers, the `needsValueRoll` guard, the Roll-Value button).
+  Un-broke it with a new `TreasureValueField` (StringField per pp/ep/gp/sp/cp) on the
+  item value field + a `migrateData` that String()s legacy integers instead of
+  destroying formulas. **Actor `currency` stays integer `CurrencyField`** (Item
+  Piles / §2.12 ecosystem currency-walking unaffected). A GM can again author a hoard
+  worth e.g. `3d100` gp and resolve it via the Roll-Value button; resolved values are
+  strings (the downstream readers `parseInt` them). Tests: +3 integration
+  (`data-models.test.js` — formula survives migrateData, legacy int → string,
+  `TreasureData` constructs with a formula intact); the e2e currency probe rewritten
+  to assert the restored feature end-to-end (a `2d6` hoard persists + `needsValueRoll`
+  true + resolves in [2,12] + posts the LootValue card) with the resolved/conversion
+  assertions moved to strings. **1592 Vitest.** Both session-38 + session-41 latent
+  open items are now closed.
+
 - **2026-06-08 — Phase 7 session 51: resolve §2.1 schema-slimming (Group E
   halfling) as architecturally-bounded.** The last substantive Group E thread.
   Investigation (3 Explore sweeps) established the headline goal — "a halfling
@@ -299,41 +326,6 @@ archives linked above.
   stub checks (`actor-active-effects-mixin.test.js`), +1 Playwright
   (`active-effects.spec.js` — add/override/upgrade/downgrade/multiply through the
   live engine + the `overrides` tracking map; passes in isolation).
-
-- **2026-06-08 — Phase 7 session 47: Appendix-A `actor-sheet.js` shrinkage —
-  extract the drop-side handlers into `module/actor-sheet/drop.mjs`.** Fifth
-  slice of the `actor-sheet.js` arc, same **pure-logic → free function** shape as
-  43–46 (drop side this time). The two self-contained drop handlers —
-  `_handleContainerDrop` (drop an item onto a container element) and
-  `_onDropActiveEffect` (copy a dropped ActiveEffect onto the actor) — read only
-  the actor (`this.options.document`) plus the DOM event / drag data, so they
-  lifted cleanly into `handleContainerDrop(actor, event, data, deps)` /
-  `dropActiveEffect(actor, data, deps)`; the sheet methods collapse to thin
-  wrappers. Foundry globals (`fromUuid`, `ui`, `game.i18n`,
-  `foundry.utils.deepClone`) injected via `deps` defaulting to
-  `globalThis.…?.` (the `items.mjs`/`presentation.mjs` DI idiom — resolves to
-  `undefined` in unit tests instead of throwing on a bare global). `_onDrop`
-  stays on the sheet (it calls `super._onDrop`, so it can't fully move).
-  `fromUuid`/`ui` dropped from the file's `/* global */` directive (now unused
-  there). `actor-sheet.js` 1121 → 1040 (−81). **No behavior change, no lib
-  change.** Both were non-`#private` but had zero prior unit coverage (drop is
-  e2e-hard) — a real coverage win. Tests: +17 Vitest (new
-  `actor-sheet-drop.test.js` — container drop: no-container/no-item/fromUuid-throw
-  /null-item undefined+false paths, already-on-actor allow/disallow/update-throw,
-  external-item create + ContainerFull/ContainerTooHeavy/null-capacity/create-throw;
-  ActiveEffect: not-owner, no-data, uuid-miss, inline-create with id-strip +
-  origin/transfer/img-default + module-flag preservation, compendium uuid resolve
-  keeping existing img); +1 Playwright (`sheet-ui.spec.js` "Drop Handlers" — live
-  actor drives the real `sheet._handleContainerDrop` setting an item's container
-  ref + the non-container undefined fall-through, and `sheet._onDropActiveEffect`
-  copying an inline effect with normalized origin/transfer/img). **1561 Vitest**
-  (was 1544, +17). **Full E2E: 195 passed + 1 documented flake**
-  (`extension-api.spec.js:315`, the session-40 container-mixin probe — the
-  `createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation,
-  502ms; untouched by this slice). New Drop Handlers probe passed in the full run.
-  **Cadence note:** this batch adopted the new push-per-batch E2E cadence (Vitest
-  per slice, full E2E once per batch — see `CLAUDE.md`). The cohesive
-  `actor-sheet.js` extractions are now done; next target is `actor.js`.
 
 ## Closed questions
 
@@ -459,10 +451,12 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   (`abilities` / `saves` / `items` / `currencies` / `critRanges` / …) + the
   Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
   `variants` / …) — **leave those in place**; they're tiny and are the file's
-  actual reason to exist. No further `config.js` slice is warranted. Open
-  question still deferred: whether the unconsumed `activeEffectKeys` table
-  (extracted session 38) should be deprecated/removed — see the session-38
-  slice.
+  actual reason to exist. No further `config.js` slice is warranted. ~~Open
+  question: whether the unconsumed `activeEffectKeys` table should be
+  deprecated/removed.~~ **RESOLVED 2026-06-08 (session 52): removed** — zero runtime
+  consumers ever (system or siblings), superseded by Foundry's native V14 AE UI,
+  human reference is the independent user-guide. `module/config/active-effect-keys.mjs`
+  + the `CONFIG.DCC.activeEffectKeys` re-composition + tests deleted.
 - **`item.js` (975 → 339 after session 42) — effectively DONE.** Pattern was
   **method-group → Foundry mixin** in `module/item/*.mjs`
   (`DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`),
@@ -473,10 +467,15 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   what remains in `item.js` is `prepareBaseData` (weapon attack/damage prep) +
   the lifecycle hooks (`_onCreate` / `_preDelete` / `deleteDialog`) — the class's
   core identity, which stays. No further `item.js` slice is warranted.
-  **Open item:** the session-41 latent finding — `needsValueRoll`/`rollValue`
-  formula path is dead under the integer-`NumberField` `CurrencyField` schema
-  (`migrateData` `parseInt()`s strings); decide whether to make the value field
-  formula-capable or remove the dead path. Separate from the extraction arc.
+  ~~**Open item:** the session-41 latent finding — `needsValueRoll`/`rollValue`
+  formula path is dead under the integer `CurrencyField` schema.~~ **RESOLVED
+  2026-06-08 (session 52): rollable treasure values restored.** New
+  `TreasureValueField` (StringField per denomination) for an item's `system.value`
+  (actor `currency` stays integer `CurrencyField` — Item Piles/§2.12 safe);
+  `base-item.mjs` `migrateData` now String()s legacy integers instead of
+  `parseInt()`-destroying formulas. The surrounding scaffolding (text sheet inputs,
+  `parseInt` readers, `needsValueRoll` guard, the Roll-Value button) was already
+  formula-aware — only the schema + migration had orphaned the feature.
 - **`actor-sheet.js` (1890 → 1040 after session 47) — cohesive extractions DONE.**
   Sheets can't use the mixin pattern (their big methods are `#private`); shape is
   **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.

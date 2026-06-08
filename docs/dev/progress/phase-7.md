@@ -2017,3 +2017,37 @@
   value, the `static #x` entries must stay in the `actions` map) and the
   drop-side handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow;
   `_onDrop` itself calls `super._onDrop` so it can't fully move) — lower priority.
+- **2026-06-08 — Phase 7 session 47: Appendix-A `actor-sheet.js` shrinkage —
+  extract the drop-side handlers into `module/actor-sheet/drop.mjs`.** Fifth
+  slice of the `actor-sheet.js` arc, same **pure-logic → free function** shape as
+  43–46 (drop side this time). The two self-contained drop handlers —
+  `_handleContainerDrop` (drop an item onto a container element) and
+  `_onDropActiveEffect` (copy a dropped ActiveEffect onto the actor) — read only
+  the actor (`this.options.document`) plus the DOM event / drag data, so they
+  lifted cleanly into `handleContainerDrop(actor, event, data, deps)` /
+  `dropActiveEffect(actor, data, deps)`; the sheet methods collapse to thin
+  wrappers. Foundry globals (`fromUuid`, `ui`, `game.i18n`,
+  `foundry.utils.deepClone`) injected via `deps` defaulting to
+  `globalThis.…?.` (the `items.mjs`/`presentation.mjs` DI idiom — resolves to
+  `undefined` in unit tests instead of throwing on a bare global). `_onDrop`
+  stays on the sheet (it calls `super._onDrop`, so it can't fully move).
+  `fromUuid`/`ui` dropped from the file's `/* global */` directive (now unused
+  there). `actor-sheet.js` 1121 → 1040 (−81). **No behavior change, no lib
+  change.** Both were non-`#private` but had zero prior unit coverage (drop is
+  e2e-hard) — a real coverage win. Tests: +17 Vitest (new
+  `actor-sheet-drop.test.js` — container drop: no-container/no-item/fromUuid-throw
+  /null-item undefined+false paths, already-on-actor allow/disallow/update-throw,
+  external-item create + ContainerFull/ContainerTooHeavy/null-capacity/create-throw;
+  ActiveEffect: not-owner, no-data, uuid-miss, inline-create with id-strip +
+  origin/transfer/img-default + module-flag preservation, compendium uuid resolve
+  keeping existing img); +1 Playwright (`sheet-ui.spec.js` "Drop Handlers" — live
+  actor drives the real `sheet._handleContainerDrop` setting an item's container
+  ref + the non-container undefined fall-through, and `sheet._onDropActiveEffect`
+  copying an inline effect with normalized origin/transfer/img). **1561 Vitest**
+  (was 1544, +17). **Full E2E: 195 passed + 1 documented flake**
+  (`extension-api.spec.js:315`, the session-40 container-mixin probe — the
+  `createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation,
+  502ms; untouched by this slice). New Drop Handlers probe passed in the full run.
+  **Cadence note:** this batch adopted the new push-per-batch E2E cadence (Vitest
+  per slice, full E2E once per batch — see `CLAUDE.md`). The cohesive
+  `actor-sheet.js` extractions are now done; next target is `actor.js`.

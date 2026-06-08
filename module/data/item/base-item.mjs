@@ -3,7 +3,7 @@
  * Base data model for all DCC items
  * Provides description fields used by itemDescription template
  */
-import { CurrencyField } from '../fields/_module.mjs'
+import { TreasureValueField } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, HTMLField, NumberField, BooleanField } = foundry.data.fields
 
@@ -73,15 +73,18 @@ export class PhysicalItemData extends BaseItemData {
       source.value = {}
     }
 
-    // Convert currency values to integers if needed
+    // Normalize each coin value to a string WITHOUT destroying rollable
+    // treasure formulas. An item's value is a `TreasureValueField` (StringField
+    // per denomination) so a GM can author a hoard worth e.g. `3d100` gp and
+    // resolve it via `rollValue()`. The pre-V14 schema stored integers, so
+    // legacy data carries numbers — String() them (a number is already a
+    // resolved/deterministic value). A string (resolved "187" OR formula
+    // "3d100") is left intact; the earlier `parseInt()` coercion here was what
+    // silently orphaned the rollable-treasure feature.
     if (source.value) {
       for (const key of ['pp', 'ep', 'gp', 'sp', 'cp']) {
-        if (source.value[key] !== undefined) {
-          if (typeof source.value[key] === 'string') {
-            source.value[key] = parseInt(source.value[key]) || 0
-          } else if (typeof source.value[key] === 'number' && !Number.isInteger(source.value[key])) {
-            source.value[key] = Math.floor(source.value[key])
-          }
+        if (typeof source.value[key] === 'number') {
+          source.value[key] = String(source.value[key])
         }
       }
     }
@@ -96,7 +99,7 @@ export class PhysicalItemData extends BaseItemData {
       weight: new NumberField({ initial: 0, min: 0 }),
       equipped: new BooleanField({ initial: true }),
       identified: new BooleanField({ initial: true }),
-      value: new CurrencyField(),
+      value: new TreasureValueField(),
       container: new StringField({ nullable: true, initial: null })
     }
   }

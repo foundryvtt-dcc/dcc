@@ -369,13 +369,13 @@ test.describe('DCC Extension API', () => {
     // these off live DCCItem instances. This probe exercises the surface
     // end-to-end against a real treasure item on an actor.
     //
-    // NOTE: under the live V14 schema the currency fields are integer
-    // NumberFields (CurrencyField) and base-item migrateData parseInt()s any
-    // string, so a die *formula* never persists in system.value — needsValueRoll
-    // therefore reports a resolved (false) value for any created treasure. The
-    // formula-flagged path (needsValueRoll === true) is covered at unit level in
-    // item-currency-mixin.test.js; here we assert the genuinely-live behavior:
-    // rollValue resolving + posting the LootValue card, and the conversion math.
+    // Rollable-treasure-value feature RESTORED: an item's value is now a
+    // TreasureValueField (StringField per denomination), so a GM can author a
+    // hoard worth e.g. `2d6` gp and resolve it. This probe asserts end-to-end
+    // that (a) a die formula PERSISTS in system.value and needsValueRoll() flags
+    // it, (b) rollValue() resolves it to an in-range integer + posts the LootValue
+    // card, and (c) a resolved value still drives the conversion math. Values are
+    // strings post-restore (the downstream readers parseInt() them).
     const result = await page.evaluate(async () => {
       const observed = {}
       let actor
@@ -390,18 +390,33 @@ test.describe('DCC Extension API', () => {
       try {
         actor = await Actor.create({ type: 'Player', name: 'P_CurrencyProbe' })
 
-        // rollValue: resolves every value field (deterministic under the schema)
-        // and posts a LootValue chat card.
+        // RESTORED FEATURE: a die formula persists in system.value and is flagged
+        // as unresolved; rollValue resolves it to an in-range integer + posts the
+        // LootValue card.
+        const [formulaHoard] = await actor.createEmbeddedDocuments('Item', [{
+          type: 'treasure',
+          name: 'Probe Formula Hoard',
+          system: { value: { pp: '0', ep: '0', gp: '2d6', sp: '0', cp: '0' } }
+        }])
+        observed.formulaPersists = formulaHoard.system.value.gp // '2d6' survives the schema + migration
+        observed.formulaNeedsRoll = formulaHoard.needsValueRoll() // non-deterministic -> true
+        await formulaHoard.rollValue()
+        const gpResolvedRaw = formulaHoard.system.value.gp
+        observed.gpResolvedType = typeof gpResolvedRaw
+        observed.gpResolvedInRange = Number(gpResolvedRaw) >= 2 && Number(gpResolvedRaw) <= 12
+        observed.resolvedNeedsRoll = formulaHoard.needsValueRoll() // now deterministic -> false
+
+        // rollValue on an already-resolved value + posts a LootValue chat card.
         const [hoard] = await actor.createEmbeddedDocuments('Item', [{
           type: 'treasure',
           name: 'Probe Hoard',
-          system: { value: { pp: 0, ep: 0, gp: 7, sp: 0, cp: 0 } }
+          system: { value: { pp: '0', ep: '0', gp: '7', sp: '0', cp: '0' } }
         }])
-        observed.needsRoll = hoard.needsValueRoll() // integer value -> resolved
+        observed.needsRoll = hoard.needsValueRoll() // deterministic '7' -> resolved
         const beforeIds = new Set(game.messages.contents.map(m => m.id))
         await hoard.rollValue()
-        await waitForValue(hoard, 'gp', 7)
-        observed.gpResolved = hoard.system.value.gp // new Roll('7') -> 7
+        await waitForValue(hoard, 'gp', '7')
+        observed.gpResolved = hoard.system.value.gp // new Roll('7') -> '7'
         const created = game.messages.contents.filter(m => !beforeIds.has(m.id))
         observed.lootMsgPosted = created.some(m => m.flags?.dcc?.RollType === 'LootValue')
 
@@ -409,14 +424,14 @@ test.describe('DCC Extension API', () => {
         const [purse] = await actor.createEmbeddedDocuments('Item', [{
           type: 'treasure',
           name: 'Probe Purse',
-          system: { value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 100 } }
+          system: { value: { pp: '0', ep: '0', gp: '0', sp: '0', cp: '100' } }
         }])
         await purse.convertCurrencyUpward('cp') // 100 cp -> 90 cp + 1 sp
-        await waitForValue(purse, 'sp', 1)
+        await waitForValue(purse, 'sp', '1')
         observed.cpAfterUp = purse.system.value.cp
         observed.spAfterUp = purse.system.value.sp
         await purse.convertCurrencyDownward('sp') // 1 sp -> 0 sp + 10 cp
-        await waitForValue(purse, 'cp', 100)
+        await waitForValue(purse, 'cp', '100')
         observed.cpAfterDown = purse.system.value.cp
         observed.spAfterDown = purse.system.value.sp
         // Bottom-denomination no-op still holds end-to-end (nothing below cp).
@@ -428,14 +443,21 @@ test.describe('DCC Extension API', () => {
       return observed
     })
 
+    // Restored rollable-treasure feature.
+    expect(result.formulaPersists).toBe('2d6') // formula survives schema + migrateData
+    expect(result.formulaNeedsRoll).toBe(true) // non-deterministic -> needs a roll
+    expect(result.gpResolvedType).toBe('string')
+    expect(result.gpResolvedInRange).toBe(true) // 2d6 -> 2..12
+    expect(result.resolvedNeedsRoll).toBe(false) // resolved -> no longer flagged
+    // Resolved-value rollValue + conversion math (values are strings post-restore).
     expect(result.needsRoll).toBe(false)
-    expect(result.gpResolved).toBe(7)
+    expect(result.gpResolved).toBe('7')
     expect(result.lootMsgPosted).toBe(true)
-    expect(result.cpAfterUp).toBe(90)
-    expect(result.spAfterUp).toBe(1)
-    expect(result.cpAfterDown).toBe(100)
-    expect(result.spAfterDown).toBe(0)
-    expect(result.cpAfterBottomNoop).toBe(100)
+    expect(result.cpAfterUp).toBe('90')
+    expect(result.spAfterUp).toBe('1')
+    expect(result.cpAfterDown).toBe('100')
+    expect(result.spAfterDown).toBe('0')
+    expect(result.cpAfterBottomNoop).toBe('100')
   })
 
   test('DCC spell behavior (rollSpellCheck / hasExisting* / rollManifestation / rollMercurialMagic) survives item/spell-mixin.mjs extraction', async ({ page }) => {
