@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-08 (sessions 48–49).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-08 (sessions 48–50).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -113,15 +113,23 @@ mixin pattern: session 48 lifted the AE-application engine (`applyActiveEffects`
 helpers (`computeMeleeAndMissileAttackAndDamage` / `computeSavingThrows` /
 `computeSpellCheck` / `computeInitiative`) into `module/actor/derived-stats-mixin.mjs`;
 `DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`, `actor.js` 4574 →
-4145 (−429). Both are cohesive *non-dispatch* groups (the bulk of `actor.js` is the
-adapter dispatch layer that stays co-located with the public `rollXxx` wrappers);
-the `dcc.afterComputeSpellCheck` stable hook is preserved. All
-behavior-neutral with no lib change. Repo green on the final run:
-**1574 Vitest passed**; **full E2E 195 passed + 1 documented flake**
+4145 (−429). **Session 50 shipped the low-value `actor.js` mop-up** — the roll-input
+accessors (`getRollData` / `getAttackBonusMode` / `getActionDice`) into
+`module/actor/roll-data-mixin.mjs` and the pure `_buildDamageBreakdown` into the
+free function `module/actor/damage-breakdown.mjs`;
+`DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`,
+`actor.js` 4145 → 3999 (−146). **With session 50 the Appendix-A file-shrinkage arc
+is complete** — every cohesive *non-dispatch* group is extracted; what remains in
+`actor.js` is the adapter dispatch layer that per §8.6 stays co-located with the
+public `rollXxx` wrappers. The `dcc.afterComputeSpellCheck` stable hook is
+preserved. All behavior-neutral with no lib change. Repo green:
+**1589 Vitest passed** (sessions 48–49 closed at 1574); full E2E run for the
+48–49 batch was **195 passed + 1 documented flake**
 (`extension-api.spec.js:315`, the session-40 container-mixin probe — the
 `createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation).
 **Session 47 adopted the push-per-batch E2E cadence** (Vitest per slice, full
-E2E once per batch — see `CLAUDE.md`); sessions 48–49 ran as one such batch.
+E2E once per batch — see `CLAUDE.md`); sessions 48–49 and session 50 each ran as
+one such batch.
 Per-session detail lives in *Recent slices* +
 the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
 the *PR #720 review backlog* below.
@@ -190,6 +198,40 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-08 — Phase 7 session 50: Appendix-A `actor.js` shrinkage —
+  extract the roll-input accessors (`module/actor/roll-data-mixin.mjs`) + the
+  pure `_buildDamageBreakdown` helper (`module/actor/damage-breakdown.mjs`).**
+  Third `actor.js` slice, the "low-value mop-up" remainder the docs flagged — two
+  cohesive extractions shipped as one batch (one E2E run). **(a) RollDataMixin:**
+  the three roll-input accessors — `getRollData` (the `@override` that augments
+  Foundry's roll data with DCC ability/save/attack shorthands), `getAttackBonusMode`
+  (normalizes `system.config.attackBonusMode`, read only by `getRollData`), and
+  `getActionDice` (parses `system.config.actionDice` into the sheet/adapter preset
+  list + the implicit legacy-actor migration) — lifted into `RollDataMixin`;
+  `DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`.
+  Transparent composition keeps the public surface byte-identical, so the
+  consumers (`actor.getRollData()` in `item/spell-mixin.mjs`,
+  `actor.getActionDice()` in `actor-sheet/items.mjs` + `adapter/attack-input.mjs`
+  + **XCC's sheets**) are untouched; `super.getRollData()` still resolves up the
+  chain to `Actor.prototype` (no intervening mixin defines it). **(b)
+  buildDamageBreakdown:** `_buildDamageBreakdown` was a *pure* method (no `this`),
+  so it extracts as a **free function** (the `actor-sheet/*` pure-logic shape, not
+  a mixin) into `module/actor/damage-breakdown.mjs`; `_rollDamage` calls it
+  directly. `actor.js` 4145 → 3999 (−146). **No behavior/lib change.** Both groups
+  had zero prior *direct* unit coverage (only exercised end-to-end), so a real
+  coverage win: +9 Vitest (`actor-roll-data-mixin.test.js` — composition guard +
+  getRollData shorthands/flat-vs-rolled-ab/NPC-no-xp, getAttackBonusMode
+  normalization, getActionDice parse/untrained/legacy-migration/warn) +6 Vitest
+  (`actor-damage-breakdown.test.js` — single-type null, two-type, same-flavor
+  accumulation, missing-total, flavored+flavorless mix). +2 Playwright
+  (`data-models.spec.js` — a live actor drives the real `getRollData` /
+  `getAttackBonusMode` / `getActionDice`; an in-page import of
+  `damage-breakdown.mjs` confirms the multi-type/null contract). **1589 Vitest**
+  (was 1574, +15). **With session 50 the `actor.js` low-value shrink candidates
+  are exhausted** — what remains is the adapter dispatch layer that per §8.6 stays
+  co-located with the public `rollXxx` wrappers. The Appendix-A file-shrinkage arc
+  is now complete.
 
 - **2026-06-08 — Phase 7 session 49: Appendix-A `actor.js` shrinkage —
   extract derived-stat computation into `module/actor/derived-stats-mixin.mjs`.**
@@ -305,50 +347,6 @@ archives linked above.
   value, the `static #x` entries must stay in the `actions` map) and the
   drop-side handlers (`_handleContainerDrop` / `_onDropActiveEffect` could follow;
   `_onDrop` itself calls `super._onDrop` so it can't fully move) — lower priority.
-
-- **2026-06-05 — Phase 7 session 45: Appendix-A `actor-sheet.js` shrinkage —
-  extract the four small context-field helpers into
-  `module/actor-sheet/presentation.mjs`.** Third slice of the `actor-sheet.js`
-  arc, same **pure-logic → free function** shape as sessions 43/44 (a sheet's
-  `#private` methods can't move to a mixin). The four remaining small `prepare*`
-  helpers — `#prepareNotes` / `#prepareCorruption` (both `TextEditor.enrichHTML`
-  of an actor text field), `#prepareImage` (display-image fallback via
-  `EntityImages.imageForActor`), `#prepareCompendiumLinks` (a one-line
-  `CONFIG.DCC.coreBookCompendiumLinks` passthrough) — each read only
-  `this.options.document` (the actor) plus one Foundry global, so they extract
-  cleanly into `prepareNotes(actor)` / `prepareCorruption(actor)` /
-  `prepareImage(actor)` / `prepareCompendiumLinks(config)`. The Foundry globals
-  (`TextEditor`, `EntityImages.imageForActor`, `CONFIG.DCC`) are injected via
-  `deps`/param defaults to the live globals (the `items.mjs` / `extension-api.mjs`
-  DI idiom), so the enrichment, image-fallback, and config-read logic are now
-  directly unit-testable. `_prepareContext` calls the free functions and the four
-  `#private` methods are deleted. `actor-sheet.js` 1366 → 1324 lines (−42). **No
-  behavior change, no lib change.** All four were `#private` with **zero prior
-  coverage**, so a real coverage win. Tests: +10 Vitest (new
-  `module/__tests__/actor-sheet-presentation.test.js` — notes/corruption
-  enrichment with relativeTo + owner-secrets context, the no-class NPC `''`
-  short-circuit, image keep-vs-fallback for custom/mystery-man/empty, and the
-  compendium-links config passthrough incl. absent-config); +1 Playwright
-  (`sheet-ui.spec.js` "Context Field Preparation" — a live actor drives the real
-  `actor.sheet._prepareContext({})` and asserts enriched notes+corruption HTML,
-  the custom-image keep, the mystery-man → default-icon fallback after an
-  `update`, and the compendium-links passthrough). **1516 Vitest** (was 1506,
-  +10). **194 Playwright** (was 193, +1). **Two probe assertions corrected during
-  the slice** (both my new test, not the extraction): the compendium-links check
-  was reference-`===` but `_prepareContext` runs every value through
-  `foundry.utils.mergeObject` which deep-clones a non-null object, so it's now a
-  structural `toEqual` against the `CONFIG.DCC` source; and the "custom image"
-  fixture was a non-existent `worlds/*.webp` that 404'd in the Actors-directory
-  thumbnail (caught by the `afterEach` console-error guard), swapped to the real
-  core icon `icons/svg/aura.svg`. **Flake reflagged** (per the refactor testing
-  rules): the session-44 `#prepareItems` probe (`sheet-ui.spec.js:297`,
-  `containedCount`) failed once on a full run with the contained item's second
-  `createEmbeddedDocuments` not landing — the documented transient
-  `createEmbeddedDocuments`-under-load race; it passed cleanly in isolation (3.8s)
-  and is untouched by this slice (it tests `items.mjs`). Worth watching if it
-  recurs. Next `actor-sheet.js` candidates: the static `#` action handlers +
-  drag-drop are trickier (they reach other private members / sheet `this`) —
-  lower priority; the cohesive small-helper extractions are now done.
 
 ## Closed questions
 
@@ -504,15 +502,16 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   uses the `item.js` mixin pattern (`DCCActor extends DerivedStatsMixin(
   ActiveEffectsMixin(Actor))`). Done: `active-effects-mixin.mjs` (48 — the
   AE-application engine) + `derived-stats-mixin.mjs` (49 — the four `compute*`
-  helpers). **The two clean cohesive *non-dispatch* groups are now extracted.**
-  The remaining bulk is the **adapter dispatch layer** (`rollXxx` +
-  `_xxxViaAdapter` + the spell/attack/damage/crit/fumble dispatch bodies) that
-  per `ARCHITECTURE_REIMAGINED.md §8.6` stays co-located with the public wrappers
-  — extracting it would split the dispatch path and is NOT a behavior-neutral
-  shrinkage. Lower-value remaining candidates if more shrinkage is wanted:
-  `_buildDamageBreakdown` (pure string builder), `getActionDice`/`getRollData`
-  (read by the lib/adapter — assess entanglement first). Otherwise the Appendix-A
-  shrinkage arc is effectively complete.
+  helpers) + `roll-data-mixin.mjs` (50 — `getRollData` / `getAttackBonusMode` /
+  `getActionDice`) + `damage-breakdown.mjs` (50 — the pure `_buildDamageBreakdown`
+  free function). `actor.js` 4574 → 3999 (−575). **All cohesive *non-dispatch*
+  groups + the low-value accessor/pure-logic mop-up are now extracted — the
+  Appendix-A shrinkage arc is COMPLETE.** What remains in `actor.js` is the
+  **adapter dispatch layer** (`rollXxx` + `_xxxViaAdapter` + the
+  spell/attack/damage/crit/fumble dispatch bodies) that per
+  `ARCHITECTURE_REIMAGINED.md §8.6` stays co-located with the public wrappers —
+  extracting it would split the dispatch path and is NOT a behavior-neutral
+  shrinkage. No further `actor.js` shrinkage slice is warranted.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now

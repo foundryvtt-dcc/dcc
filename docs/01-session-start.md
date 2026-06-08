@@ -42,23 +42,29 @@ session's context):
 
 ## Status (2026-06-08)
 
-**Sessions 48–49 (latest): `actor.js` arc opened with two mixins; the cohesive
-non-dispatch groups are now extracted.** `actor.js` is a document class, so unlike
-the sheet it uses the `item.js` mixin pattern. Session 48 lifted the AE-application
-engine (`applyActiveEffects` + `_resolveEffectValue` + the 7 `_applyXxxEffect`
-handlers) into `module/actor/active-effects-mixin.mjs`; session 49 lifted the four
+**Sessions 48–50 (latest): `actor.js` arc done — the Appendix-A file-shrinkage arc
+is COMPLETE.** `actor.js` is a document class, so unlike the sheet it uses the
+`item.js` mixin pattern. Session 48 lifted the AE-application engine
+(`applyActiveEffects` + `_resolveEffectValue` + the 7 `_applyXxxEffect` handlers)
+into `module/actor/active-effects-mixin.mjs`; session 49 lifted the four
 `compute*` derived-stat helpers into `module/actor/derived-stats-mixin.mjs`;
-`DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`. `actor.js` 4574 →
-4145 (−429). The `dcc.afterComputeSpellCheck` stable hook is preserved. **What
-remains in `actor.js` is the adapter dispatch layer** (`rollXxx` +
-`_xxxViaAdapter` bodies) that per §8.6 stays co-located with the public wrappers —
-extracting it is NOT behavior-neutral, so the Appendix-A shrinkage arc is
-effectively complete. **1574 Vitest**; **full E2E 195 passed + 1 documented flake**
-(`extension-api.spec.js:315`, container-mixin probe — reconfirmed clean in
-isolation). **Cadence (`CLAUDE.md`):** Vitest after every slice, commit each
-locally, run the full E2E **once per batch** and push only when green; 48–49 ran
-as one batch. Session 47 (drop handlers → `actor-sheet/drop.mjs`) preceded this.
-The rest of this section is the prior (session-46) status.
+session 50 lifted the roll-input accessors (`getRollData` / `getAttackBonusMode` /
+`getActionDice`) into `module/actor/roll-data-mixin.mjs` and the *pure*
+`_buildDamageBreakdown` into the free function `module/actor/damage-breakdown.mjs`
+(pure logic → free function, not a mixin). `DCCActor extends
+RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`; `actor.js` 4574 →
+3999 (−575). The `dcc.afterComputeSpellCheck` stable hook is preserved; XCC's
+`getActionDice` consumers are untouched (transparent composition). **What remains
+in `actor.js` is the adapter dispatch layer** (`rollXxx` + `_xxxViaAdapter` bodies)
+that per §8.6 stays co-located with the public wrappers — extracting it is NOT
+behavior-neutral, so no further `actor.js` shrinkage slice is warranted and the
+Appendix-A arc is complete. **1589 Vitest**; the full E2E run for the 48–49 batch
+was **195 passed + 1 documented flake** (`extension-api.spec.js:315`,
+container-mixin probe — reconfirmed clean in isolation). **Cadence (`CLAUDE.md`):**
+Vitest after every slice, commit each locally, run the full E2E **once per batch**
+and push only when green; 48–49 ran as one batch, 50 as another. Session 47 (drop
+handlers → `actor-sheet/drop.mjs`) preceded this. The rest of this section is the
+prior (session-46) status.
 
 ## Status (2026-06-06)
 

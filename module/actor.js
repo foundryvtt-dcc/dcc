@@ -29,6 +29,8 @@ import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-inpu
 import { logDispatch, warnIfDivergent, withRollErrorBoundary, withRollErrorBoundarySync } from './adapter/debug.mjs'
 import { ActiveEffectsMixin } from './actor/active-effects-mixin.mjs'
 import { DerivedStatsMixin } from './actor/derived-stats-mixin.mjs'
+import { RollDataMixin } from './actor/roll-data-mixin.mjs'
+import { buildDamageBreakdown } from './actor/damage-breakdown.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -62,7 +64,7 @@ function applyForceCritToFoundryRoll (foundryRoll, natural, options) {
  * Extend the base Actor entity by defining a custom roll data structure.
  * @extends {Actor}
  */
-class DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor)) {
+class DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor))) {
   /**
    * Canonical lowercase class identifier for this actor, or `null` if
    * `system.details.sheetClass` is empty. Use this for class dispatch
@@ -344,154 +346,6 @@ class DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor)) {
     this.system.config = defaultConfig
 
     return defaultConfig
-  }
-
-  /**
-   * Build a damage breakdown string showing damage by type
-   * Only returns a string if there are multiple damage types
-   * @param {Roll} roll - The evaluated damage roll
-   * @returns {string|null} - Breakdown string like "3 + 5 fire" or null if single type
-   */
-  _buildDamageBreakdown (roll) {
-    // Collect damage totals by flavor
-    const damageByFlavor = new Map()
-
-    for (const term of roll.terms) {
-      // Skip operator terms
-      if (term.operator) continue
-
-      // Get the term's total and flavor
-      const total = term.total ?? 0
-      const flavor = term.flavor || ''
-
-      // Accumulate damage by flavor
-      damageByFlavor.set(flavor, (damageByFlavor.get(flavor) || 0) + total)
-    }
-
-    // Only show breakdown if there are multiple distinct damage types
-    if (damageByFlavor.size <= 1) return null
-
-    // Build the breakdown string
-    const parts = []
-    for (const [flavor, total] of damageByFlavor) {
-      if (flavor) {
-        parts.push(`${total} ${flavor}`)
-      } else {
-        parts.push(`${total}`)
-      }
-    }
-
-    return parts.join(' + ')
-  }
-
-  /* -------------------------------------------- */
-
-  /** @override */
-  getRollData () {
-    const data = super.getRollData()
-
-    const customData = foundry.utils.mergeObject(
-      data,
-      {
-        str: data.abilities.str.mod,
-        agi: data.abilities.agl.mod,
-        agl: data.abilities.agl.mod,
-        sta: data.abilities.sta.mod,
-        per: data.abilities.per.mod,
-        int: data.abilities.int.mod,
-        lck: data.abilities.lck.mod,
-        initiative: data.attributes.init.value,
-        maxStr: data.abilities.str.maxMod,
-        maxAgi: data.abilities.agl.maxMod,
-        maxAgl: data.abilities.agl.maxMod,
-        maxSta: data.abilities.sta.maxMod,
-        maxPer: data.abilities.per.maxMod,
-        maxInt: data.abilities.int.maxMod,
-        maxLck: data.abilities.lck.maxMod,
-        ref: data.saves.ref.value,
-        frt: data.saves.frt.value,
-        wil: data.saves.wil.value,
-        ac: data.attributes.ac.value,
-        check: data.attributes.ac.checkPenalty,
-        speed: data.attributes.speed.value,
-        hp: data.attributes.hp.value,
-        maxhp: data.attributes.hp.max,
-        level: data.details.level.value,
-        cl: data.details.level.value
-      }
-    )
-
-    // Get the relevant attack bonus (direct or rolled)
-    customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
-    customData.mab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.melee.value
-    customData.mad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.melee.value
-    customData.rab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.missile.value
-    customData.rad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.missile.value
-
-    // Player only data
-    if (this.type === 'Player') {
-      customData.xp = data.details.xp.value || 0
-    }
-
-    return customData
-  }
-
-  /**
-   * Get Attack Bonus Mode
-   * Translate the Attack Bonus Mode into a valid value
-   * Invalid values default to 'flat'
-   * @return {String}  A valid Attack Bonus Mode name
-   */
-  getAttackBonusMode () {
-    switch (this.system.config.attackBonusMode) {
-      case 'flat':
-        return 'flat'
-      case 'manual':
-        return 'manual'
-      case 'autoPerAttack':
-        return 'autoPerAttack'
-      default:
-        return 'flat'
-    }
-  }
-
-  /**
-   * Get Action Dice
-   * @return {Array}  Array of formulae for the action dice
-   */
-  getActionDice (options = {}) {
-    const actionDice = []
-    // Gather available action dice
-    try {
-      // Implicit migration for legacy actors
-      if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
-      }
-      if (this.system.config.actionDice.includes('+')) {
-        this.system.config.actionDice = this.system.config.actionDice.replaceAll('+', ',')
-      }
-
-      if (!this.system.config.actionDice.match(/\dd/)) {
-        ui.notifications.warn(game.i18n.localize('DCC.ActionDiceInvalid'))
-      }
-      const dieList = this.system.config.actionDice.split(',')
-      dieList.forEach(termDie => {
-        actionDice.push({
-          label: termDie,
-          formula: termDie
-        })
-      })
-    } catch (err) {
-      console.log(err)
-    }
-
-    if (options.includeUntrained) {
-      actionDice.push({
-        label: game.i18n.localize('DCC.Untrained'),
-        formula: '1d10'
-      })
-    }
-    return actionDice
   }
 
   /**
@@ -3513,7 +3367,7 @@ class DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor)) {
       dataset: { damage: damageRoll.total }
     }).outerHTML
 
-    const damageBreakdown = this._buildDamageBreakdown(damageRoll)
+    const damageBreakdown = buildDamageBreakdown(damageRoll)
     if (damageBreakdown) {
       damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
     }

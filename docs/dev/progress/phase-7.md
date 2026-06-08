@@ -1950,3 +1950,26 @@
   pattern): the smaller `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
   `#prepareCompendiumLinks` helpers; the static `#` action handlers + drag-drop
   are trickier (they reach other private members / sheet `this`) — lower priority.
+
+- **2026-06-05 — Phase 7 session 45: Appendix-A `actor-sheet.js` shrinkage —
+  extract the four small context-field helpers into
+  `module/actor-sheet/presentation.mjs`.** Third slice of the `actor-sheet.js`
+  arc, same **pure-logic → free function** shape as sessions 43/44 (a sheet's
+  `#private` methods can't move to a mixin). The four remaining small `prepare*`
+  helpers — `#prepareNotes` / `#prepareCorruption` (both `TextEditor.enrichHTML`
+  of an actor text field), `#prepareImage` (display-image fallback via
+  `EntityImages.imageForActor`), `#prepareCompendiumLinks` (a one-line
+  `CONFIG.DCC.coreBookCompendiumLinks` passthrough) — each read only
+  `this.options.document` (the actor) plus one Foundry global, so they extract
+  cleanly into `prepareNotes(actor)` / `prepareCorruption(actor)` /
+  `prepareImage(actor)` / `prepareCompendiumLinks(config)`. The Foundry globals
+  (`TextEditor`, `EntityImages.imageForActor`, `CONFIG.DCC`) are injected via
+  `deps`/param defaults to the live globals (the `items.mjs` / `extension-api.mjs`
+  DI idiom), so the enrichment, image-fallback, and config-read logic are now
+  directly unit-testable. `_prepareContext` calls the free functions and the four
+  `#private` methods are deleted. `actor-sheet.js` 1366 → 1324 lines (−42). **No
+  behavior change, no lib change.** All four were `#private` with **zero prior
+  coverage**, so a real coverage win. Tests: +10 Vitest (new
+  `module/__tests__/actor-sheet-presentation.test.js`); +1 Playwright
+  (`sheet-ui.spec.js` "Context Field Preparation"). **1516 Vitest** (was 1506,
+  +10). **194 Playwright** (was 193, +1).

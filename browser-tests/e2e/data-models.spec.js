@@ -183,6 +183,78 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       expect(result.hookFired).toBe(true) // stable dcc.afterComputeSpellCheck hook preserved
     })
 
+    test('actor roll-input accessors survive actor/roll-data-mixin.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the three roll-input accessors
+      // (getRollData / getAttackBonusMode / getActionDice) moved out of actor.js
+      // into the RollDataMixin in module/actor/roll-data-mixin.mjs; DCCActor now
+      // extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor))). This
+      // probe drives each extracted accessor on a live actor and asserts the public
+      // shape the sheet/adapter/XCC consumers depend on — getRollData's ability
+      // shorthands + super-augmentation, getAttackBonusMode normalization, and
+      // getActionDice's comma-list parse + untrained preset + legacy + migration.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Roll Data Probe', type: 'Player' })
+
+          // getRollData: augments super.getRollData() with DCC shorthands.
+          const rollData = actor.getRollData()
+          observed.str = rollData.str
+          observed.actorStrMod = parseInt(actor.system.abilities.str.mod)
+          observed.cl = rollData.cl
+          observed.level = actor.system.details.level.value
+          observed.hasXp = Object.prototype.hasOwnProperty.call(rollData, 'xp') // Player only
+
+          // getAttackBonusMode: known modes pass through, invalid -> 'flat'.
+          actor.system.config.attackBonusMode = 'autoPerAttack'
+          observed.knownMode = actor.getAttackBonusMode()
+          actor.system.config.attackBonusMode = 'bogus'
+          observed.invalidMode = actor.getAttackBonusMode()
+
+          // getActionDice: comma list -> presets, untrained appends 1d10, + -> ,
+          actor.system.config.actionDice = '1d20+1d14'
+          const dice = actor.getActionDice({ includeUntrained: true })
+          observed.dice = dice.map(d => d.formula)
+          observed.migratedActionDice = actor.system.config.actionDice
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.str).toBe(result.actorStrMod) // getRollData str shorthand = ability mod
+      expect(result.cl).toBe(result.level) // caster-level shorthand mirrors level
+      expect(result.hasXp).toBe(true) // Player-only xp shorthand present
+      expect(result.knownMode).toBe('autoPerAttack')
+      expect(result.invalidMode).toBe('flat') // invalid mode normalizes to flat
+      expect(result.dice).toEqual(['1d20', '1d14', '1d10']) // parsed + untrained preset
+      expect(result.migratedActionDice).toBe('1d20,1d14') // implicit + -> , migration persisted
+    })
+
+    test('buildDamageBreakdown survives actor/damage-breakdown.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the pure _buildDamageBreakdown
+      // method moved out of actor.js into a free function in
+      // module/actor/damage-breakdown.mjs (it reads nothing off the actor). This
+      // probe imports the live-served module and confirms the deployed helper
+      // reproduces the multi-type summing + single-type null contract that
+      // _rollDamage's chat breakdown depends on.
+      const result = await page.evaluate(async () => {
+        const mod = await import('../../../../../../../../systems/dcc/module/actor/damage-breakdown.mjs')
+        const op = (operator) => ({ operator })
+        const die = (total, flavor = '') => ({ total, flavor })
+        return {
+          single: mod.buildDamageBreakdown({ terms: [die(6, 'fire')] }),
+          twoType: mod.buildDamageBreakdown({ terms: [die(3, ''), op('+'), die(5, 'fire')] }),
+          accumulated: mod.buildDamageBreakdown({ terms: [die(2, 'cold'), op('+'), die(3, 'cold'), op('+'), die(4, 'fire')] })
+        }
+      })
+
+      expect(result.single).toBeNull() // single damage type -> no breakdown
+      expect(result.twoType).toBe('3 + 5 fire')
+      expect(result.accumulated).toBe('5 cold + 4 fire') // same-flavor terms summed, operators skipped
+    })
+
     test('can create a new NPC actor', async ({ page }) => {
       // Click the actors tab
       await page.click('button[data-tab="actors"]')

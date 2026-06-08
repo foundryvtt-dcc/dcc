@@ -1009,6 +1009,21 @@ was the migration-ordering slice; no session was numbered 13 in this
 file — it landed alongside the init-die fix directly in
 `00-progress.md`.)
 
+#### Appendix-A file-shrinkage arc (sessions 35–50) — **COMPLETE 2026-06-08**
+The §Appendix-A big-file split ran as a long arc tracked in
+`00-progress.md` *Recent slices* + the [phase-7 archive](dev/progress/phase-7.md)
+rather than as per-session backlog entries. Targets + final shapes:
+`config.js` 845 → 451 (data tables → `module/config/*.mjs`, sessions 35–39);
+`item.js` 975 → 339 (method-group → mixin, `module/item/*.mjs`, sessions 40–42);
+`actor-sheet.js` 1890 → 1040 (pure-logic → free function, `module/actor-sheet/*.mjs`,
+sessions 43–47 — sheets can't use mixins, their big methods are `#private`);
+`actor.js` 4574 → 3999 (document class → mixin for stateful groups +
+free function for pure logic, `module/actor/*.mjs`, sessions 48–50:
+`active-effects-mixin.mjs`, `derived-stats-mixin.mjs`, `roll-data-mixin.mjs`,
+`damage-breakdown.mjs`). What remains in `actor.js` is the adapter dispatch layer
+that per §8.6 stays co-located with the public `rollXxx` wrappers — not a
+behavior-neutral extraction. **No further file-shrinkage slice is warranted.**
+
 ---
 
 ## Completed slices
