@@ -507,11 +507,18 @@ full-stack approach works end-to-end with a real sibling consumer.
    Vitest, +2 Playwright. Did NOT require Phase 4 schema work or
    Phase 5 sheet composition — purely an extension-surface fix that
    resolved the §2.4 critique.
-3. **Single-class homebrew vertical** — pick a fan-made class (e.g.,
-   from `dcc-crawl-classes`), rewire it as a class-mixin + sheet-part
-   registration. Validates §2.8 homebrew extensibility. With the
-   `registerClassMixin` infrastructure now in place, this becomes a
-   thinner exercise — just register the mixin + add the sheet part.
+3. ~~**Single-class homebrew vertical**~~ — **DROPPED 2026-06-08 — already
+   validated by real consumers.** Audit: `dcc-crawl-classes` ships **9 homebrew
+   classes on base DCC** (Ranger / Paladin / Orc / two Halfling subclasses / Gnome
+   / Elven Rogue / Dwarven Priest / Bard) driving `registerClassMixin` +
+   `registerSheetPart` + `registerClassDefaults` +
+   `registerHomebrewClassForProgressionLoad` + `registerActorSheet` + 9
+   `extends DCCSheet` stubs; `mcc-classes` exercises the same registries across 7
+   variant classes. A real 9-class homebrew module is strictly stronger validation
+   than a synthetic demo class. The only registries no sibling exercises —
+   `registerClassStartingItems` (built-in dwarf only) and `registerVariant` for a
+   base-DCC homebrew (n/a) — already have dedicated coverage (P5-2, P6-5). **Group
+   E is fully done.**
 
 ---
 

@@ -509,12 +509,18 @@ schema-slimming question — the halfling vertical — was closed session 51
 (2026-06-08) as architecturally-bounded** (Foundry's static one-schema-per-subtype
 model blocks full per-class field removal; the lib is the class-clean read-side
 source of truth; per-class subtypes + runtime pruning rejected for ecosystem
-breakage — see [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md)). The one
-remaining unbuilt candidate stays viable if more pattern-laying is wanted, but
-nothing requires it: **homebrew single-class** — exercises Phase 4+5+6 end-to-end
-via `registerClassMixin` + `registerSheetPart` + variant-aware data loading (a
-thin exercise now the registries exist; doesn't slim the schema, just validates
-the homebrew path with a fresh class).
+breakage — see [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md)). **The
+"homebrew single-class vertical" candidate is dropped — already validated by real
+consumers** (2026-06-08 audit): `dcc-crawl-classes` ships **9 homebrew classes on
+base DCC** (Ranger / Paladin / Orc / two Halfling subclasses / Gnome / Elven Rogue
+/ Dwarven Priest / Bard) driving `registerClassMixin` + `registerSheetPart` +
+`registerClassDefaults` + `registerHomebrewClassForProgressionLoad` +
+`registerActorSheet` + 9 `extends DCCSheet` stubs; `mcc-classes` exercises the same
+registries across 7 variant classes. A real 9-class module is strictly stronger
+than a synthetic demo. The only registries no sibling exercises —
+`registerClassStartingItems` (built-in dwarf only) and `registerVariant` for a
+base-DCC homebrew (n/a) — already have dedicated coverage (P5-2, P6-5). **Group E
+is fully done; no further Group E work is warranted.**
 
 **Cross-repo coordination:** if any future migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with `allowLuck`
