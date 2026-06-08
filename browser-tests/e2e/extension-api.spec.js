@@ -401,6 +401,10 @@ test.describe('DCC Extension API', () => {
         observed.formulaPersists = formulaHoard.system.value.gp // '2d6' survives the schema + migration
         observed.formulaNeedsRoll = formulaHoard.needsValueRoll() // non-deterministic -> true
         await formulaHoard.rollValue()
+        // rollValue awaits its own update; poll defensively until the formula resolves.
+        for (let i = 0; i < 40 && formulaHoard.needsValueRoll(); i++) {
+          await new Promise((r) => setTimeout(r, 25))
+        }
         const gpResolvedRaw = formulaHoard.system.value.gp
         observed.gpResolvedType = typeof gpResolvedRaw
         observed.gpResolvedInRange = Number(gpResolvedRaw) >= 2 && Number(gpResolvedRaw) <= 12

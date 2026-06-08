@@ -160,6 +160,21 @@ describe('prepareItems — treasure and coins', () => {
     const ctx = await prepareItems(actor, makeDeps())
     expect(ctx['equipment.treasure']).toHaveLength(1)
   })
+
+  test('coin weight totals string denomination values numerically, not by concatenation', async () => {
+    // Regression (post treasure-value restore): system.value.* are now
+    // formula-capable StringFields. An unresolved coin (needsValueRoll true)
+    // stays as treasure and reaches the coin-weight branch — a bare `+` would
+    // string-concat "0"+"0"+"12"+"0"+"0" -> "001200" -> 1200, then /10 -> 120 lbs.
+    // parseInt per denomination gives the correct 12 / 10 = 1.2.
+    const actor = makeActor({
+      currency: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 },
+      items: [coinItem({ pp: '0', ep: '0', gp: '12', sp: '0', cp: '0' }, true, { _id: 'c1' })]
+    })
+    const ctx = await prepareItems(actor, makeDeps(10)) // coinWeight = 10 coins/lb
+    expect(ctx['equipment.treasure']).toHaveLength(1) // unresolved coin stays as treasure
+    expect(ctx['equipment.weights'].treasure).toBeCloseTo(1.2)
+  })
 })
 
 // --- containers --------------------------------------------------------------

@@ -229,9 +229,12 @@ export async function prepareItems (actor, {
     let total = 0
     for (const item of items) {
       if (item.system.isCoins && coinsPerPound > 0) {
-        // Configurable coin weight (default: 10 coins = 1 pound)
+        // Configurable coin weight (default: 10 coins = 1 pound).
+        // `system.value.*` are formula-capable StringFields (a treasure may be
+        // worth e.g. `3d100` gp), so coerce each denomination with parseInt —
+        // a bare `+` would string-concatenate "187"+"0"+… into a garbage total.
         const value = item.system.value || {}
-        const totalCoins = (value.pp || 0) + (value.ep || 0) + (value.gp || 0) + (value.sp || 0) + (value.cp || 0)
+        const totalCoins = (parseInt(value.pp) || 0) + (parseInt(value.ep) || 0) + (parseInt(value.gp) || 0) + (parseInt(value.sp) || 0) + (parseInt(value.cp) || 0)
         total += totalCoins / coinsPerPound
       } else if (!item.system.isCoins) {
         // Non-coin treasure uses standard weight * quantity

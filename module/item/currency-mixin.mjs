@@ -88,7 +88,7 @@ export const CurrencyItemMixin = (Base) => class extends Base {
     }
     await CONFIG.ChatMessage.documentClass.create(messageData)
 
-    this.update(updates)
+    await this.update(updates)
   }
 
   /**
