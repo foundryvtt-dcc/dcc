@@ -1017,6 +1017,19 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 47 (2026-06-08): Appendix-A `actor-sheet.js` shrinkage —
+  extract the two drop-side handlers (`_handleContainerDrop` /
+  `_onDropActiveEffect`) into `module/actor-sheet/drop.mjs` as the free functions
+  `handleContainerDrop(actor, event, data, deps)` / `dropActiveEffect(actor,
+  data, deps)` (Foundry globals via `deps`). `_onDrop` stays on the sheet (calls
+  `super._onDrop`). `actor-sheet.js` 1121 → 1040. +17 Vitest
+  (`actor-sheet-drop.test.js`), +1 Playwright (`sheet-ui.spec.js` "Drop
+  Handlers"). 1561 Vitest; full E2E 195 passed + 1 documented `extension-api:315`
+  flake (clean in isolation). Cohesive `actor-sheet.js` extractions DONE; next
+  target `actor.js`. **Adopted push-per-batch E2E cadence** (see `CLAUDE.md`).
+  Sessions 43–46 (effects/items/presentation/drag-drop) tracked in
+  `00-progress.md` + the phase-7 archive.
+
 - Phase 7 session 31 (2026-06-02): PR #720 test-coverage backfill — NPC
   `rollToHit` branches (closes the arc). Two uncovered branches: (1) NPC
   melee/missile `attackHitBonus.<type>.adjustment` Modifier injection

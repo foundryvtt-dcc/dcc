@@ -1833,3 +1833,49 @@
   remove the dead path). Next `item.js` chunk: the spell/manifestation/mercurial
   roll group (~355 lines — biggest, but roll-behavior so check for
   dispatch-logging / lib entanglement before extracting).
+
+- **2026-06-03 — Phase 7 session 42: Appendix-A `item.js` shrinkage —
+  extract the spell-roll block into `module/item/spell-mixin.mjs`.** Third (and
+  largest) slice of the `item.js` arc, same method-group→Foundry-mixin shape. The
+  5-method spell-item block (`rollSpellCheck`, `hasExistingManifestation`,
+  `hasExistingMercurialMagic`, `rollManifestation`, `rollMercurialMagic` — ~352
+  lines) moved into `SpellItemMixin`, the **outermost** layer:
+  `DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`.
+  **Entanglement assessed before extracting** (the slice the progress notes
+  flagged as roll-behavior/adapter-adjacent): the block carries **no
+  `logDispatch` and no direct adapter-module imports** — it reaches the adapter
+  through the GLOBAL `game.dcc.*` namespace (`game.dcc.DCCRoll.createRoll`,
+  `game.dcc.processSpellCheck`), which a mixin reaches identically; the
+  dispatch-logged spell-check *routing* lives on the actor side
+  (`DCCActor._rollSpellCheckViaAdapter`), untouched. The one module dependency is
+  `ensurePlus` (`../utilities.js`), imported by the mixin. Consumers
+  (`actor-sheet.js` + `item-sheet.js` action handlers, `macros.mjs` macro
+  commands, the spell/cleric/wizard/elf templates' `data-action`s) call these off
+  live items and need **zero** change. `item.js` 691 → 339 lines (−352;
+  cumulative 975 → 339, −636 across sessions 40–42). What's left in `item.js` is
+  `prepareBaseData` + the lifecycle hooks — the class's core identity. **No
+  behavior change, no lib change.** `rollSpellCheck` already had item.test.js
+  coverage (passes unchanged — proves transparent composition); the
+  manifestation / mercurial / `hasExisting*` methods had **no prior unit
+  coverage**, so the new test is a coverage win. Tests: +14 Vitest (new
+  `module/__tests__/item-spell-mixin.test.js` — composition guards incl. Spell as
+  the outermost layer + all-three-mixins-coexist, AND behavioral:
+  `hasExistingManifestation`/`hasExistingMercurialMagic` truthiness across
+  value/summary/description, the non-spell-type + no-actor guards, and the
+  manifestation/mercurial lookup-by-value stow). Also **fixed the session-41
+  currency chain-order test** — adding the Spell layer made its hard-coded
+  Currency→Container→Item assertion stale; rewrote it to walk the prototype chain
+  (resilient to future outer layers). +1 Playwright (`extension-api.spec.js`
+  "survives extraction" probe — live spell item: `rollManifestation(7)` /
+  `rollMercurialMagic(55)` lookup-and-stow end-to-end [value fields are
+  StringFields → round-trip as strings], `hasExisting*` flips false→true,
+  `rollSpellCheck` survives as a live method). **1459 Vitest** (was 1445, +14).
+  **190 Playwright passed** on a clean run, zero failures (was 189, +1). **Flake
+  flagged** (per the refactor testing rules): on the first full-suite run the
+  unchanged session-40 container probe failed once with `result.isContainer`
+  undefined — the `page.evaluate` block threw early, consistent with a transient
+  `Actor.create`/`createEmbeddedDocuments` timeout under full-suite load; it
+  passed in isolation, in a 3-item-probe run, and on a clean full re-run. Not
+  introduced by this slice (container probe untouched); worth watching if it
+  recurs. Next `item.js`: nothing warranted — the arc's cohesive method groups
+  are extracted; `prepareBaseData` + lifecycle hooks stay.

@@ -484,4 +484,73 @@ test.describe('DCC Sheet UI', () => {
       expect(result.nonDraggable).toBeNull()
     })
   })
+
+  test.describe('Drop Handlers', () => {
+    test('actor-sheet drop handlers survive actor-sheet/drop.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor-sheet.js shrinkage): the two self-contained
+      // drop-side handlers (_handleContainerDrop / _onDropActiveEffect) moved out
+      // of actor-sheet.js into free functions in module/actor-sheet/drop.mjs; the
+      // sheet's thin wrappers now call them with this.options.document. This probe
+      // drives the real sheet methods end-to-end on a live actor — dropping an
+      // item already on the actor onto a container element, and dropping an
+      // ActiveEffect onto the actor — and asserts the state changes the extraction
+      // must preserve: the item's container reference is set, and the dropped
+      // effect is copied onto the actor with origin/transfer/img normalized.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Drop Probe', type: 'Player' })
+          const [container, stowable] = await actor.createEmbeddedDocuments('Item', [
+            { type: 'container', name: 'V14 Drop Pack', system: { capacity: { weight: 50, items: 10 } } },
+            { type: 'equipment', name: 'V14 Drop Torch', system: { weight: 1, quantity: 1 } }
+          ])
+          const sheet = actor.sheet
+
+          // Container drop: synthesize an event whose target resolves to the
+          // container element via closest('[data-container-id]'). The item is
+          // already on the actor, so the handler just sets system.container.
+          const containerEvent = {
+            target: { closest: () => ({ dataset: { containerId: container.id } }) }
+          }
+          observed.containerResult = await sheet._handleContainerDrop(containerEvent, { type: 'Item', uuid: stowable.uuid })
+          observed.containerRef = actor.items.get(stowable.id)?.system?.container ?? null
+          observed.containerId = container.id
+
+          // Non-container drop target returns undefined (caller falls through).
+          observed.noContainer = await sheet._handleContainerDrop(
+            { target: { closest: () => null } },
+            { type: 'Item', uuid: stowable.uuid }
+          )
+
+          // ActiveEffect drop: copy an inline effect onto the actor. event is unused.
+          const effectBefore = actor.effects.size
+          observed.effectResult = await sheet._onDropActiveEffect({}, {
+            type: 'ActiveEffect',
+            data: { _id: 'sourceid', name: 'V14 Drop Effect', changes: [], transfer: true }
+          })
+          observed.effectAdded = actor.effects.size - effectBefore
+          const created = actor.effects.find(e => e.name === 'V14 Drop Effect')
+          observed.effectOrigin = created?.origin ?? null
+          observed.effectTransfer = created?.transfer ?? null
+          observed.effectImg = created?.img ?? null
+          observed.actorUuid = actor.uuid
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      // Container drop handled, item's container reference now points at the pack.
+      expect(result.containerResult).toBe(true)
+      expect(result.containerRef).toBe(result.containerId)
+      // A drop not over a container returns undefined so the caller can fall through.
+      expect(result.noContainer).toBeUndefined()
+      // The dropped ActiveEffect is copied onto the actor with normalized fields.
+      expect(result.effectAdded).toBe(1)
+      expect(result.effectOrigin).toBe(result.actorUuid)
+      expect(result.effectTransfer).toBe(false)
+      expect(result.effectImg).toBeTruthy()
+    })
+  })
 })

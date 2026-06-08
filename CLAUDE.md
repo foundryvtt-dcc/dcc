@@ -75,26 +75,42 @@ to be in the lib (not just an adapter translation issue):
 These override the default "never commit/push without being asked"
 rule. They apply only to the scoped context described.
 
-- **Auto-commit and push refactor slices on `refactor/dcc-core-lib-adapter`.**
-  When a Phase-N session-M slice is complete (code + tests + docs,
-  all green), commit and push without asking. Commit-message format
-  matches the established history on this branch:
+- **Auto-commit refactor slices on `refactor/dcc-core-lib-adapter`;
+  push per batch.** When a Phase-N session-M slice is complete (code +
+  Vitest + docs, Vitest green), **commit** it locally without asking.
+  Commit-message format matches the established history on this branch:
   `feat(adapter): Phase <N> session <M> — <short slice description>`
   (optionally followed by a second `docs(adapter): refresh session-start
   prompt for Phase <N> session <M>` commit if `docs/01-session-start.md`
-  was updated). Push to `origin refactor/dcc-core-lib-adapter` after
-  the commit(s) land. Still pause and ask if: tests are failing,
+  was updated). **Push is gated on the full E2E suite** (see the batch
+  cadence in *Refactor-slice testing requirements* below): commit each
+  slice in a batch locally, run the full Playwright suite once at the
+  batch end, and only `git push origin refactor/dcc-core-lib-adapter`
+  once that run is green. Still pause and ask if: Vitest is failing,
+  the batch E2E goes red and the cause isn't a one-commit `git revert`,
   `git status` shows unexpected untracked files, the pre-commit hook
-  rewrites code in ways that should be reviewed, or the slice is
+  rewrites code in ways that should be reviewed, or a slice is
   incomplete.
 
 ## Refactor-slice testing requirements
 
 Apply to every slice on `refactor/dcc-core-lib-adapter`. These are
-preconditions for the auto-commit authorization above — if any fail,
-don't commit.
+preconditions for the auto-commit/push authorization above — if any
+fail, don't push.
 
-- **Run the FULL browser-tests/e2e Playwright suite each session.**
+- **Batch cadence (adopted 2026-06-08).** The full Playwright suite
+  takes ~6–12 min, so it no longer runs after every slice. Instead:
+  run the **fast Vitest suite (`npm test`, ~3 s) after every slice** —
+  that is the primary regression net for behaviour-neutral extractions
+  — commit each slice locally, then run the **full E2E suite once at
+  the end of the batch** and push only when it is green. This amortizes
+  the slow E2E across several slices. Because each slice ships its own
+  slice-specific E2E probe (next bullet) and is its own commit, a red
+  batch E2E points at the culprit probe and is recoverable with a
+  single-commit `git revert`. **Prefer fewer, larger, cohesive slices
+  per batch** (e.g. `actor.js` mixin extractions) over many trivial
+  ones — that is the better way to amortize the E2E cost.
+- **Run the FULL browser-tests/e2e Playwright suite once per batch.**
   Not just `adapter-dispatch.spec.js` — also `active-effects.spec.js`,
   `sheet-ui.spec.js`, `data-models.spec.js`, and every other spec in
   `browser-tests/e2e/`.
@@ -105,9 +121,10 @@ don't commit.
   filter). Report any failure, even if apparently unrelated to the
   slice — pre-existing flakes are worth flagging and pin-pointing,
   not ignoring.
-- **Extend the browser tests each session.** Every slice must add
+- **Extend the browser tests each slice.** Every slice must add
   at least one new browser-test assertion exercising the new
-  behavior end-to-end against live Foundry. For dispatch changes,
+  behavior end-to-end against live Foundry (so a batch E2E failure
+  localizes to the slice whose probe went red). For dispatch changes,
   extend `adapter-dispatch.spec.js` with the new branch. For
   data / sheet / chat-template changes, add cases to the appropriate
   spec (`active-effects.spec.js`, `sheet-ui.spec.js`,

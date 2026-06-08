@@ -1,4 +1,4 @@
-/* global CONFIG, document, fromUuid, game, foundry, ResizeObserver, ui */
+/* global CONFIG, document, game, foundry, ResizeObserver */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -9,6 +9,7 @@ import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, p
 import { prepareItems } from './actor-sheet/items.mjs'
 import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks } from './actor-sheet/presentation.mjs'
 import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
+import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -1021,67 +1022,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<boolean|undefined>} false if handled with error, true if handled, undefined if not a container drop
    */
   async _handleContainerDrop (event, data) {
-    // Find the closest container drop target
-    const containerEl = event.target.closest('[data-container-id]')
-    if (!containerEl) return undefined
-
-    const containerId = containerEl.dataset.containerId
-    const container = this.options.document.items.get(containerId)
-    if (!container) return undefined
-
-    // Get the dropped item
-    let item
-    try {
-      item = await fromUuid(data.uuid)
-    } catch (err) {
-      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
-      return false
-    }
-    if (!item) return false
-
-    // Item already on this actor — just set the container reference
-    if (item.parent?.id === this.options.document.id) {
-      const check = container.canContainItem(item)
-      if (!check.allowed) {
-        ui.notifications.warn(game.i18n.localize(check.reason))
-        return false
-      }
-      try {
-        await item.update({ 'system.container': containerId })
-      } catch (err) {
-        console.error(`DCC | Failed to add item "${item.name}" to container`, err)
-        return false
-      }
-      return true
-    }
-
-    // Item from sidebar, compendium, or another actor — create on actor inside the container
-    const itemData = item.toObject ? item.toObject() : data.data
-    if (!itemData) return undefined
-    // Validate capacity (circularity checks don't apply for items not yet on the actor)
-    if (container.availableItemCapacity !== null) {
-      const itemQuantity = parseInt(itemData.system?.quantity) || 1
-      if (itemQuantity > container.availableItemCapacity) {
-        ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
-        return false
-      }
-    }
-    if (container.availableWeightCapacity !== null) {
-      const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
-      if (itemWeight > container.availableWeightCapacity) {
-        ui.notifications.warn(game.i18n.localize('DCC.ContainerTooHeavy'))
-        return false
-      }
-    }
-    itemData.system = itemData.system || {}
-    itemData.system.container = containerId
-    try {
-      await this.options.document.createEmbeddedDocuments('Item', [itemData])
-    } catch (err) {
-      console.error('DCC | Failed to create item in container', err)
-      return false
-    }
-    return true
+    return handleContainerDrop(this.options.document, event, data)
   }
 
   /**
@@ -1092,29 +1033,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<ActiveEffect|boolean>}
    */
   async _onDropActiveEffect (event, data) {
-    const actor = this.options.document
-    if (!actor.isOwner) return false
-
-    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
-    let effectData = data.data
-    if (!effectData && data.uuid) {
-      const effect = await fromUuid(data.uuid)
-      if (!effect) return false
-      effectData = effect.toObject()
-    }
-    if (!effectData) return false
-
-    // Prepare the effect data for creation on the actor
-    // Use foundry.utils.deepClone to preserve all effect data including module flags (e.g., aura settings)
-    const createData = foundry.utils.deepClone(effectData)
-    // Override specific fields for actor-based effects
-    delete createData._id // Remove ID so a new one is generated
-    createData.origin = actor.uuid // Set origin to this actor
-    createData.transfer = false // Effects directly on actors don't transfer
-    createData.img = createData.img || 'icons/svg/aura.svg'
-
-    // Create the effect on the actor
-    return actor.createEmbeddedDocuments('ActiveEffect', [createData])
+    return dropActiveEffect(this.options.document, data)
   }
 }
 

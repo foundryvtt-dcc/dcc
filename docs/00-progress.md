@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-06 (session 46).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-08 (session 47).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -99,10 +99,19 @@ as the pure free function `buildDragStartData(actor, event)`, leaving the sole
 side effect (`event.dataTransfer.setData`) in the thin sheet wrapper; `findDataset`
 moved alongside it with `DCCActorSheet.findDataset` kept as a delegating static
 (it's consumed cross-module by `party-sheet.js` + documented), `actor-sheet.js`
-1324 → 1121. All were behavior-neutral with no lib change. Repo green on the final
-run: **1544 Vitest passed**; **194 Playwright**
-(193 passed + the documented `createEmbeddedDocuments`-under-load `#prepareItems`
-flake, which passes in isolation). Per-session detail lives in *Recent slices* +
+1324 → 1121. **Session 47 extracted the two drop-side handlers**
+(`_handleContainerDrop` / `_onDropActiveEffect`) into `module/actor-sheet/drop.mjs`
+as the free functions `handleContainerDrop(actor, event, data, deps)` /
+`dropActiveEffect(actor, data, deps)` (Foundry globals via `deps`); `_onDrop`
+stays on the sheet (calls `super._onDrop`); `actor-sheet.js` 1121 → 1040. The
+cohesive `actor-sheet.js` extractions are now done — what remains there is the
+static `#` action handlers (low value, must stay in the `actions` map). All were
+behavior-neutral with no lib change. Repo green on the final run:
+**1561 Vitest passed**; **full E2E 195 passed + 1 documented flake**
+(`extension-api.spec.js:315`, the session-40 container-mixin probe — the
+`createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation).
+**Session 47 also adopted the push-per-batch E2E cadence** (Vitest per slice, full
+E2E once per batch — see `CLAUDE.md`). Per-session detail lives in *Recent slices* +
 the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
 the *PR #720 review backlog* below.
 
@@ -170,6 +179,41 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-08 — Phase 7 session 47: Appendix-A `actor-sheet.js` shrinkage —
+  extract the drop-side handlers into `module/actor-sheet/drop.mjs`.** Fifth
+  slice of the `actor-sheet.js` arc, same **pure-logic → free function** shape as
+  43–46 (drop side this time). The two self-contained drop handlers —
+  `_handleContainerDrop` (drop an item onto a container element) and
+  `_onDropActiveEffect` (copy a dropped ActiveEffect onto the actor) — read only
+  the actor (`this.options.document`) plus the DOM event / drag data, so they
+  lifted cleanly into `handleContainerDrop(actor, event, data, deps)` /
+  `dropActiveEffect(actor, data, deps)`; the sheet methods collapse to thin
+  wrappers. Foundry globals (`fromUuid`, `ui`, `game.i18n`,
+  `foundry.utils.deepClone`) injected via `deps` defaulting to
+  `globalThis.…?.` (the `items.mjs`/`presentation.mjs` DI idiom — resolves to
+  `undefined` in unit tests instead of throwing on a bare global). `_onDrop`
+  stays on the sheet (it calls `super._onDrop`, so it can't fully move).
+  `fromUuid`/`ui` dropped from the file's `/* global */` directive (now unused
+  there). `actor-sheet.js` 1121 → 1040 (−81). **No behavior change, no lib
+  change.** Both were non-`#private` but had zero prior unit coverage (drop is
+  e2e-hard) — a real coverage win. Tests: +17 Vitest (new
+  `actor-sheet-drop.test.js` — container drop: no-container/no-item/fromUuid-throw
+  /null-item undefined+false paths, already-on-actor allow/disallow/update-throw,
+  external-item create + ContainerFull/ContainerTooHeavy/null-capacity/create-throw;
+  ActiveEffect: not-owner, no-data, uuid-miss, inline-create with id-strip +
+  origin/transfer/img-default + module-flag preservation, compendium uuid resolve
+  keeping existing img); +1 Playwright (`sheet-ui.spec.js` "Drop Handlers" — live
+  actor drives the real `sheet._handleContainerDrop` setting an item's container
+  ref + the non-container undefined fall-through, and `sheet._onDropActiveEffect`
+  copying an inline effect with normalized origin/transfer/img). **1561 Vitest**
+  (was 1544, +17). **Full E2E: 195 passed + 1 documented flake**
+  (`extension-api.spec.js:315`, the session-40 container-mixin probe — the
+  `createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation,
+  502ms; untouched by this slice). New Drop Handlers probe passed in the full run.
+  **Cadence note:** this batch adopted the new push-per-batch E2E cadence (Vitest
+  per slice, full E2E once per batch — see `CLAUDE.md`). The cohesive
+  `actor-sheet.js` extractions are now done; next target is `actor.js`.
 
 - **2026-06-06 — Phase 7 session 46: Appendix-A `actor-sheet.js` shrinkage —
   extract `_onDragStart` into `module/actor-sheet/drag-drop.mjs`.** Fourth slice
@@ -331,52 +375,6 @@ archives linked above.
   (~248 lines, inventory categorization — the next-biggest cohesive chunk) and
   the AE/compendium-link smaller helpers.
 
-- **2026-06-03 — Phase 7 session 42: Appendix-A `item.js` shrinkage —
-  extract the spell-roll block into `module/item/spell-mixin.mjs`.** Third (and
-  largest) slice of the `item.js` arc, same method-group→Foundry-mixin shape. The
-  5-method spell-item block (`rollSpellCheck`, `hasExistingManifestation`,
-  `hasExistingMercurialMagic`, `rollManifestation`, `rollMercurialMagic` — ~352
-  lines) moved into `SpellItemMixin`, the **outermost** layer:
-  `DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`.
-  **Entanglement assessed before extracting** (the slice the progress notes
-  flagged as roll-behavior/adapter-adjacent): the block carries **no
-  `logDispatch` and no direct adapter-module imports** — it reaches the adapter
-  through the GLOBAL `game.dcc.*` namespace (`game.dcc.DCCRoll.createRoll`,
-  `game.dcc.processSpellCheck`), which a mixin reaches identically; the
-  dispatch-logged spell-check *routing* lives on the actor side
-  (`DCCActor._rollSpellCheckViaAdapter`), untouched. The one module dependency is
-  `ensurePlus` (`../utilities.js`), imported by the mixin. Consumers
-  (`actor-sheet.js` + `item-sheet.js` action handlers, `macros.mjs` macro
-  commands, the spell/cleric/wizard/elf templates' `data-action`s) call these off
-  live items and need **zero** change. `item.js` 691 → 339 lines (−352;
-  cumulative 975 → 339, −636 across sessions 40–42). What's left in `item.js` is
-  `prepareBaseData` + the lifecycle hooks — the class's core identity. **No
-  behavior change, no lib change.** `rollSpellCheck` already had item.test.js
-  coverage (passes unchanged — proves transparent composition); the
-  manifestation / mercurial / `hasExisting*` methods had **no prior unit
-  coverage**, so the new test is a coverage win. Tests: +14 Vitest (new
-  `module/__tests__/item-spell-mixin.test.js` — composition guards incl. Spell as
-  the outermost layer + all-three-mixins-coexist, AND behavioral:
-  `hasExistingManifestation`/`hasExistingMercurialMagic` truthiness across
-  value/summary/description, the non-spell-type + no-actor guards, and the
-  manifestation/mercurial lookup-by-value stow). Also **fixed the session-41
-  currency chain-order test** — adding the Spell layer made its hard-coded
-  Currency→Container→Item assertion stale; rewrote it to walk the prototype chain
-  (resilient to future outer layers). +1 Playwright (`extension-api.spec.js`
-  "survives extraction" probe — live spell item: `rollManifestation(7)` /
-  `rollMercurialMagic(55)` lookup-and-stow end-to-end [value fields are
-  StringFields → round-trip as strings], `hasExisting*` flips false→true,
-  `rollSpellCheck` survives as a live method). **1459 Vitest** (was 1445, +14).
-  **190 Playwright passed** on a clean run, zero failures (was 189, +1). **Flake
-  flagged** (per the refactor testing rules): on the first full-suite run the
-  unchanged session-40 container probe failed once with `result.isContainer`
-  undefined — the `page.evaluate` block threw early, consistent with a transient
-  `Actor.create`/`createEmbeddedDocuments` timeout under full-suite load; it
-  passed in isolation, in a 3-item-probe run, and on a clean full re-run. Not
-  introduced by this slice (container probe untouched); worth watching if it
-  recurs. Next `item.js`: nothing warranted — the arc's cohesive method groups
-  are extracted; `prepareBaseData` + lifecycle hooks stay.
-
 ## Closed questions
 
 All resolved — one-line ticks (full rationale in the linked sessions /
@@ -518,30 +516,26 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   formula path is dead under the integer-`NumberField` `CurrencyField` schema
   (`migrateData` `parseInt()`s strings); decide whether to make the value field
   formula-capable or remove the dead path. Separate from the extraction arc.
-- **`actor-sheet.js` (1890 → 1121 after session 46) — IN PROGRESS.** Sheets
-  can't use the mixin pattern (their big methods are `#private`); shape is
+- **`actor-sheet.js` (1890 → 1040 after session 47) — cohesive extractions DONE.**
+  Sheets can't use the mixin pattern (their big methods are `#private`); shape is
   **pure-logic → free function** in `module/actor-sheet/*.mjs`, sheet calls it.
-  Done: `effects.mjs` (43 — the 4 AE summary builders + shared collector);
-  `items.mjs` (44 — `#prepareItems`, the ~248-line inventory categorizer, as an
-  "actor-logic → free function" since it mutates the actor, with Foundry globals
-  injected via a `deps` param); `presentation.mjs` (45 — the four small
-  context-field helpers `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
-  `#prepareCompendiumLinks` as pure free functions, Foundry globals via `deps`);
-  `drag-drop.mjs` (46 — `_onDragStart`'s ~210-line drag-payload switch as the
-  pure `buildDragStartData(actor, event)` + the relocated `findDataset`, with
-  `DCCActorSheet.findDataset` kept as a delegating static for the cross-module +
-  documented callers). The cohesive `prepare*` helpers + the drag-start builder
-  are now done. Remaining: the static `#` action handlers (thin wrappers over
-  `this.options.document.rollXxx` — extracting gains little since the `static #x`
-  entries must stay in the `actions` map) and the drop-side handlers (`_onDrop`
-  calls `super._onDrop` so it can't fully move; `_handleContainerDrop` /
-  `_onDropActiveEffect` are more self-contained and could follow `drag-drop.mjs`).
-  Lower priority.
-- **`actor.js` (~4574 lines)** — the largest Appendix-A target; a multi-session
-  project, not a slice; start only with budget for it. Being a document class
-  (not a sheet) it CAN use the `item.js` mixin pattern, but much of its bulk is
-  the adapter dispatch layer that should stay co-located with the public
-  `rollXxx` wrappers.
+  Done: `effects.mjs` (43), `items.mjs` (44), `presentation.mjs` (45),
+  `drag-drop.mjs` (46 — `_onDragStart` + `findDataset`), `drop.mjs` (47 — the two
+  drop handlers `handleContainerDrop` / `dropActiveEffect`; `_onDrop` stays since
+  it calls `super._onDrop`). Remaining is just the static `#` action handlers
+  (thin `rollXxx` wrappers — low value, the `static #x` entries must stay in the
+  `actions` map). No further `actor-sheet.js` slice warranted.
+- **`actor.js` (~4574 lines) — NEXT TARGET (multi-session).** The largest
+  Appendix-A target. Being a document class (not a sheet) it CAN use the
+  `item.js` mixin pattern (`DCCActor extends XxxMixin(Actor)`). Much of its bulk
+  is the adapter dispatch layer that stays co-located with the public `rollXxx`
+  wrappers — but several cohesive *non-dispatch* method groups are clean mixin
+  candidates: the **AE-application engine** (`applyActiveEffects` +
+  `_resolveEffectValue` + the 7 `_applyXxxEffect` handlers, ~310 lines, lines
+  327–636) is the strongest first slice; the **`compute*` derived-data helpers**
+  (`computeMeleeAndMissileAttackAndDamage` / `computeSavingThrows` /
+  `computeSpellCheck` / `computeInitiative`, lines 809–929) are a second
+  candidate (assess lib entanglement at slice time).
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now

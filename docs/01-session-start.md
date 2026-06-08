@@ -40,6 +40,21 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
+## Status (2026-06-08)
+
+**Session 47 (latest): drop-side handlers extracted; cohesive `actor-sheet.js`
+work DONE; `actor.js` is the next target.** `_handleContainerDrop` /
+`_onDropActiveEffect` moved into `module/actor-sheet/drop.mjs` as
+`handleContainerDrop` / `dropActiveEffect` (Foundry globals via `deps`); `_onDrop`
+stays (calls `super._onDrop`). `actor-sheet.js` 1121 → 1040. **1561 Vitest**;
+**full E2E 195 passed + 1 documented flake** (`extension-api.spec.js:315`,
+container-mixin probe — reconfirmed clean in isolation). **Cadence changed
+(`CLAUDE.md`):** Vitest after every slice, commit each locally, run the full E2E
+**once per batch** and push only when green — prefer fewer, larger, cohesive
+slices (e.g. `actor.js` mixins) per batch. **Next: `actor.js`** (document class →
+can use the `item.js` mixin pattern; strongest first slice is the AE-application
+engine, lines 327–636). The rest of this section is the prior (session-46) status.
+
 ## Status (2026-06-06)
 
 **All PR #720 cleanup arcs are CLOSED; the Appendix-A file-shrinkage arc is
