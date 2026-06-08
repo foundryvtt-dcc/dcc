@@ -42,18 +42,23 @@ session's context):
 
 ## Status (2026-06-08)
 
-**Session 47 (latest): drop-side handlers extracted; cohesive `actor-sheet.js`
-work DONE; `actor.js` is the next target.** `_handleContainerDrop` /
-`_onDropActiveEffect` moved into `module/actor-sheet/drop.mjs` as
-`handleContainerDrop` / `dropActiveEffect` (Foundry globals via `deps`); `_onDrop`
-stays (calls `super._onDrop`). `actor-sheet.js` 1121 → 1040. **1561 Vitest**;
-**full E2E 195 passed + 1 documented flake** (`extension-api.spec.js:315`,
-container-mixin probe — reconfirmed clean in isolation). **Cadence changed
-(`CLAUDE.md`):** Vitest after every slice, commit each locally, run the full E2E
-**once per batch** and push only when green — prefer fewer, larger, cohesive
-slices (e.g. `actor.js` mixins) per batch. **Next: `actor.js`** (document class →
-can use the `item.js` mixin pattern; strongest first slice is the AE-application
-engine, lines 327–636). The rest of this section is the prior (session-46) status.
+**Sessions 48–49 (latest): `actor.js` arc opened with two mixins; the cohesive
+non-dispatch groups are now extracted.** `actor.js` is a document class, so unlike
+the sheet it uses the `item.js` mixin pattern. Session 48 lifted the AE-application
+engine (`applyActiveEffects` + `_resolveEffectValue` + the 7 `_applyXxxEffect`
+handlers) into `module/actor/active-effects-mixin.mjs`; session 49 lifted the four
+`compute*` derived-stat helpers into `module/actor/derived-stats-mixin.mjs`;
+`DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`. `actor.js` 4574 →
+4145 (−429). The `dcc.afterComputeSpellCheck` stable hook is preserved. **What
+remains in `actor.js` is the adapter dispatch layer** (`rollXxx` +
+`_xxxViaAdapter` bodies) that per §8.6 stays co-located with the public wrappers —
+extracting it is NOT behavior-neutral, so the Appendix-A shrinkage arc is
+effectively complete. **1574 Vitest**; **full E2E 195 passed + 1 documented flake**
+(`extension-api.spec.js:315`, container-mixin probe — reconfirmed clean in
+isolation). **Cadence (`CLAUDE.md`):** Vitest after every slice, commit each
+locally, run the full E2E **once per batch** and push only when green; 48–49 ran
+as one batch. Session 47 (drop handlers → `actor-sheet/drop.mjs`) preceded this.
+The rest of this section is the prior (session-46) status.
 
 ## Status (2026-06-06)
 

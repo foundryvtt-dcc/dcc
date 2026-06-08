@@ -1017,6 +1017,25 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
 
+- Phase 7 session 49 (2026-06-08): Appendix-A `actor.js` shrinkage — extract the
+  four derived-stat helpers (`computeMeleeAndMissileAttackAndDamage` /
+  `computeSavingThrows` / `computeSpellCheck` / `computeInitiative`) into
+  `module/actor/derived-stats-mixin.mjs`;
+  `DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`.
+  `computeSpellCheck` preserves the stable `dcc.afterComputeSpellCheck` hook.
+  `actor.js` 4263 → 4145. +5 Vitest (`actor-derived-stats-mixin.test.js`), +1
+  Playwright (`data-models.spec.js`). Part of the 48–49 batch.
+
+- Phase 7 session 48 (2026-06-08): Appendix-A `actor.js` arc opens — extract the
+  AE-application engine (`applyActiveEffects` + `_resolveEffectValue` + the 7
+  `_applyXxxEffect` handlers) into `module/actor/active-effects-mixin.mjs`;
+  `DCCActor extends ActiveEffectsMixin(Actor)`. Document class → can use the
+  `item.js` mixin pattern. Dropped now-unused `DCCActiveEffect`/`DiceChain`
+  imports. `actor.js` 4574 → 4263. +8 Vitest
+  (`actor-active-effects-mixin.test.js`), +1 Playwright (`active-effects.spec.js`).
+  The two cohesive non-dispatch groups (AE engine + compute helpers) are now
+  extracted; the remaining `actor.js` bulk is the dispatch layer that stays per §8.6.
+
 - Phase 7 session 47 (2026-06-08): Appendix-A `actor-sheet.js` shrinkage —
   extract the two drop-side handlers (`_handleContainerDrop` /
   `_onDropActiveEffect`) into `module/actor-sheet/drop.mjs` as the free functions

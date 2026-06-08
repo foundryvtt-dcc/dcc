@@ -1879,3 +1879,74 @@
   introduced by this slice (container probe untouched); worth watching if it
   recurs. Next `item.js`: nothing warranted — the arc's cohesive method groups
   are extracted; `prepareBaseData` + lifecycle hooks stay.
+
+- **2026-06-03 — Phase 7 session 43: Appendix-A `actor-sheet.js` arc opens —
+  extract the four AE summary builders into `module/actor-sheet/effects.mjs`.**
+  First slice of the `actor-sheet.js` target, and the first that is **not** a
+  mixin: a sheet's big methods are mostly `#private` (action handlers,
+  `#prepareItems`, the AE builders), and private names are lexically class-scoped
+  so they cannot be relocated to a mixin. The shrinkage shape for a sheet is
+  **pure-logic → free function** in `module/actor-sheet/*.mjs`, with the sheet
+  calling it. The four AE summary builders — `#prepareAbilityEffects`,
+  `#prepareAttackBonusEffects`, `#prepareSaveEffects`, `#prepareAttributeEffects`
+  (each called exactly once, in `_prepareContext`) — read only
+  `this.options.document` (the actor) and nothing else of the sheet, so they
+  extract cleanly into `prepareAbilityEffects(actor)` etc. The four ALSO repeated
+  an **identical ~20-line effect-collection block** (actor effects +
+  equipped-item transferred effects) and an identical effect-info push shape;
+  those are deduped here into a shared `collectTransferredActiveEffects(actor)` +
+  internal `effectInfo`/`pushUnique`, so the slice is a behavior-neutral
+  de-duplication on top of the relocation. The sheet's `_prepareContext` now calls
+  the free functions directly (`prepareAbilityEffects(this.options.document)`) and
+  the four `#private` methods are deleted. `actor-sheet.js` 1890 → 1613 lines
+  (−277). **No behavior change, no lib change.** The builders were `#private` and
+  had **zero prior unit coverage** (no `module/__tests__` or e2e reference), so as
+  free functions they're now directly testable — a real coverage win. Tests: +19
+  Vitest (new `module/__tests__/actor-sheet-effects.test.js` — the collector's
+  disabled/suppressed/unequipped/non-transfer filtering + default-equipped, each
+  builder's regex bucketing, dedup-by-effect-id, img fallback, the
+  AC+HP-both-buckets case, and equipped-vs-unequipped item-transfer feeding all
+  four); +1 Playwright (`active-effects.spec.js` — live actor with ability/save/
+  attribute AEs + an equipped-ring transfer + an unequipped-charm + a disabled
+  effect, drives the real `actor.sheet._prepareContext({})` and asserts every
+  summary bucket end-to-end). **1478 Vitest** (was 1459, +19). **191 Playwright
+  passed** on a clean run, zero failures (was 190, +1; no flake this run). Next
+  `actor-sheet.js` candidates (same free-function pattern): `#prepareItems`
+  (~248 lines, inventory categorization — the next-biggest cohesive chunk) and
+  the AE/compendium-link smaller helpers.
+
+- **2026-06-05 — Phase 7 session 44: Appendix-A `actor-sheet.js` shrinkage —
+  extract `#prepareItems` into `module/actor-sheet/items.mjs`.** Second slice of
+  the `actor-sheet.js` arc, same **pure-logic → free function** shape as session
+  43 (a sheet's `#private` methods can't move to a mixin). `#prepareItems` (~248
+  lines, the inventory categorizer, called once in `_prepareContext`) reads only
+  `this.options.document` (the actor), so it extracts to `prepareItems(actor)`.
+  **Unlike the effects builders it is NOT pure** — it mutates the actor (deletes
+  zero-quantity items when `removeEmptyItems` is on, folds resolved coin-treasure
+  into `system.currency`, repairs missing/mystery-man item icons), so it's
+  "actor-logic → free function". The four Foundry globals it touches (`TextEditor`,
+  the item-icon table, `game.i18n`, `game.settings`) are injected via a `deps`
+  param defaulting to the live globals (the `extension-api.mjs` DI idiom), so the
+  bucketing / coin-merge / weight math are now directly unit-testable. The sheet's
+  `_prepareContext` calls `prepareItems(this.options.document)` and the `#private`
+  method is deleted. `actor-sheet.js` 1613 → 1366 lines (−247). **No behavior
+  change, no lib change.** Subtlety preserved: the return is a dotted-key object
+  (`'equipment.weapons'`, …) that `_prepareContext` merges via
+  `foundry.utils.mergeObject`, which **expands** dotted keys → `ctx.equipment.weapons`
+  (the e2e probe reads the expanded nested path; the unit tests read the function's
+  direct dotted-key return). Was `#private` with **zero prior coverage**, so a real
+  coverage win. Tests: +22 Vitest (new `module/__tests__/actor-sheet-items.test.js`
+  — weapon melee/ranged bucketing, ammo/armor/equipment/mounts, spell grouping by
+  level + description enrich, skill displayDie own/inherited-action-die/null,
+  treasure-vs-coins routing + currency merge + delete, container display data +
+  capacitySummary + contained-item hiding, removeEmptyItems deletion, icon repair,
+  sortInventory, and the per-section/container/coin weight math); +1 Playwright
+  (`sheet-ui.spec.js` "Inventory Preparation" — a live actor with one item per
+  category drives the real `actor.sheet._prepareContext({})` and asserts the
+  expanded buckets/weights/container-summary/contained-count/spell-grouping/skill-die
+  end-to-end). **1506 Vitest** (was 1484, +22). **193 Playwright passed** on a
+  clean full run, zero failures — incl. the session-40 container probe, which
+  passed this run (no flake). Next `actor-sheet.js` candidates (same free-function
+  pattern): the smaller `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
+  `#prepareCompendiumLinks` helpers; the static `#` action handlers + drag-drop
+  are trickier (they reach other private members / sheet `this`) — lower priority.

@@ -65,7 +65,7 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-08 (session 47).** Every PR #720 arc is
+**Phase 7 cleanup — latest 2026-06-08 (sessions 48–49).** Every PR #720 arc is
 closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
 survives; every public dispatcher is single-path through the adapter),
 test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
@@ -105,13 +105,24 @@ as the free functions `handleContainerDrop(actor, event, data, deps)` /
 `dropActiveEffect(actor, data, deps)` (Foundry globals via `deps`); `_onDrop`
 stays on the sheet (calls `super._onDrop`); `actor-sheet.js` 1121 → 1040. The
 cohesive `actor-sheet.js` extractions are now done — what remains there is the
-static `#` action handlers (low value, must stay in the `actions` map). All were
+static `#` action handlers (low value, must stay in the `actions` map). **Sessions
+48–49 opened the `actor.js` arc** — being a document class it CAN use the `item.js`
+mixin pattern: session 48 lifted the AE-application engine (`applyActiveEffects` +
+`_resolveEffectValue` + the 7 `_applyXxxEffect` handlers) into
+`module/actor/active-effects-mixin.mjs`; session 49 lifted the four derived-stat
+helpers (`computeMeleeAndMissileAttackAndDamage` / `computeSavingThrows` /
+`computeSpellCheck` / `computeInitiative`) into `module/actor/derived-stats-mixin.mjs`;
+`DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`, `actor.js` 4574 →
+4145 (−429). Both are cohesive *non-dispatch* groups (the bulk of `actor.js` is the
+adapter dispatch layer that stays co-located with the public `rollXxx` wrappers);
+the `dcc.afterComputeSpellCheck` stable hook is preserved. All
 behavior-neutral with no lib change. Repo green on the final run:
-**1561 Vitest passed**; **full E2E 195 passed + 1 documented flake**
+**1574 Vitest passed**; **full E2E 195 passed + 1 documented flake**
 (`extension-api.spec.js:315`, the session-40 container-mixin probe — the
 `createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation).
-**Session 47 also adopted the push-per-batch E2E cadence** (Vitest per slice, full
-E2E once per batch — see `CLAUDE.md`). Per-session detail lives in *Recent slices* +
+**Session 47 adopted the push-per-batch E2E cadence** (Vitest per slice, full
+E2E once per batch — see `CLAUDE.md`); sessions 48–49 ran as one such batch.
+Per-session detail lives in *Recent slices* +
 the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
 the *PR #720 review backlog* below.
 
@@ -179,6 +190,41 @@ class-registration API; no further DCC-side Group E work is needed (see
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-08 — Phase 7 session 49: Appendix-A `actor.js` shrinkage —
+  extract derived-stat computation into `module/actor/derived-stats-mixin.mjs`.**
+  Second `actor.js` slice (document class → mixin pattern). The four cohesive
+  derived-stat helpers — `computeMeleeAndMissileAttackAndDamage`,
+  `computeSavingThrows`, `computeSpellCheck`, `computeInitiative` — lifted into
+  `DerivedStatsMixin`; `DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`.
+  Self-contained (only `this.system` + `ensurePlus`); `computeSpellCheck` still
+  fires the **stable `dcc.afterComputeSpellCheck` hook** (XCC consumer) verbatim.
+  Static `computeSpeedValue` stays in `actor.js`. `actor.js` 4263 → 4145 (−118).
+  **No behavior/lib change.** Existing `actor.test.js` exercises these on a live
+  actor and passes unchanged (transparent composition); +5 Vitest composition
+  guard (`actor-derived-stats-mixin.test.js`), +1 Playwright
+  (`data-models.spec.js` — calls each method on a live actor: saves with
+  bonuses+override, initiative, spell-check formula + hook fire; passes in
+  isolation). Part of the session-48/49 batch (one E2E run, see below).
+
+- **2026-06-08 — Phase 7 session 48: Appendix-A `actor.js` arc opens —
+  extract the AE-application engine into `module/actor/active-effects-mixin.mjs`.**
+  First `actor.js` slice. `actor.js` is a **document class**, so unlike the sheet
+  it CAN use the `item.js` mixin pattern. The self-contained Active-Effects
+  application engine — `applyActiveEffects` (the custom replacement for core's,
+  handling equipped-item transfers + DCC change types incl. `diceChain`/`subtract`
+  + the #736 `token.*` routing) + `_resolveEffectValue` + the seven
+  `_applyXxxEffect` handlers (custom/add/subtract/multiply/override/upgrade/
+  downgrade) — lifted into `ActiveEffectsMixin`;
+  `DCCActor extends ActiveEffectsMixin(Actor)`. `_getConfig` stays (also read by
+  `prepareBaseData`/`prepareDerivedData`); now-unused `DCCActiveEffect` + imported
+  `DiceChain` (the rest are `game.dcc.DiceChain`) dropped from `actor.js`.
+  `actor.js` 4574 → 4263 (−311). **No behavior/lib change.** Existing
+  `active-effects.test.js` exercises every handler on a live actor and passes
+  unchanged (transparent composition); +8 Vitest composition guard + direct
+  stub checks (`actor-active-effects-mixin.test.js`), +1 Playwright
+  (`active-effects.spec.js` — add/override/upgrade/downgrade/multiply through the
+  live engine + the `overrides` tracking map; passes in isolation).
 
 - **2026-06-08 — Phase 7 session 47: Appendix-A `actor-sheet.js` shrinkage —
   extract the drop-side handlers into `module/actor-sheet/drop.mjs`.** Fifth
@@ -303,77 +349,6 @@ archives linked above.
   recurs. Next `actor-sheet.js` candidates: the static `#` action handlers +
   drag-drop are trickier (they reach other private members / sheet `this`) —
   lower priority; the cohesive small-helper extractions are now done.
-
-- **2026-06-05 — Phase 7 session 44: Appendix-A `actor-sheet.js` shrinkage —
-  extract `#prepareItems` into `module/actor-sheet/items.mjs`.** Second slice of
-  the `actor-sheet.js` arc, same **pure-logic → free function** shape as session
-  43 (a sheet's `#private` methods can't move to a mixin). `#prepareItems` (~248
-  lines, the inventory categorizer, called once in `_prepareContext`) reads only
-  `this.options.document` (the actor), so it extracts to `prepareItems(actor)`.
-  **Unlike the effects builders it is NOT pure** — it mutates the actor (deletes
-  zero-quantity items when `removeEmptyItems` is on, folds resolved coin-treasure
-  into `system.currency`, repairs missing/mystery-man item icons), so it's
-  "actor-logic → free function". The four Foundry globals it touches (`TextEditor`,
-  the item-icon table, `game.i18n`, `game.settings`) are injected via a `deps`
-  param defaulting to the live globals (the `extension-api.mjs` DI idiom), so the
-  bucketing / coin-merge / weight math are now directly unit-testable. The sheet's
-  `_prepareContext` calls `prepareItems(this.options.document)` and the `#private`
-  method is deleted. `actor-sheet.js` 1613 → 1366 lines (−247). **No behavior
-  change, no lib change.** Subtlety preserved: the return is a dotted-key object
-  (`'equipment.weapons'`, …) that `_prepareContext` merges via
-  `foundry.utils.mergeObject`, which **expands** dotted keys → `ctx.equipment.weapons`
-  (the e2e probe reads the expanded nested path; the unit tests read the function's
-  direct dotted-key return). Was `#private` with **zero prior coverage**, so a real
-  coverage win. Tests: +22 Vitest (new `module/__tests__/actor-sheet-items.test.js`
-  — weapon melee/ranged bucketing, ammo/armor/equipment/mounts, spell grouping by
-  level + description enrich, skill displayDie own/inherited-action-die/null,
-  treasure-vs-coins routing + currency merge + delete, container display data +
-  capacitySummary + contained-item hiding, removeEmptyItems deletion, icon repair,
-  sortInventory, and the per-section/container/coin weight math); +1 Playwright
-  (`sheet-ui.spec.js` "Inventory Preparation" — a live actor with one item per
-  category drives the real `actor.sheet._prepareContext({})` and asserts the
-  expanded buckets/weights/container-summary/contained-count/spell-grouping/skill-die
-  end-to-end). **1506 Vitest** (was 1484, +22). **193 Playwright passed** on a
-  clean full run, zero failures — incl. the session-40 container probe, which
-  passed this run (no flake). Next `actor-sheet.js` candidates (same free-function
-  pattern): the smaller `#prepareNotes`/`#prepareCorruption`/`#prepareImage`/
-  `#prepareCompendiumLinks` helpers; the static `#` action handlers + drag-drop
-  are trickier (they reach other private members / sheet `this`) — lower priority.
-
-- **2026-06-03 — Phase 7 session 43: Appendix-A `actor-sheet.js` arc opens —
-  extract the four AE summary builders into `module/actor-sheet/effects.mjs`.**
-  First slice of the `actor-sheet.js` target, and the first that is **not** a
-  mixin: a sheet's big methods are mostly `#private` (action handlers,
-  `#prepareItems`, the AE builders), and private names are lexically class-scoped
-  so they cannot be relocated to a mixin. The shrinkage shape for a sheet is
-  **pure-logic → free function** in `module/actor-sheet/*.mjs`, with the sheet
-  calling it. The four AE summary builders — `#prepareAbilityEffects`,
-  `#prepareAttackBonusEffects`, `#prepareSaveEffects`, `#prepareAttributeEffects`
-  (each called exactly once, in `_prepareContext`) — read only
-  `this.options.document` (the actor) and nothing else of the sheet, so they
-  extract cleanly into `prepareAbilityEffects(actor)` etc. The four ALSO repeated
-  an **identical ~20-line effect-collection block** (actor effects +
-  equipped-item transferred effects) and an identical effect-info push shape;
-  those are deduped here into a shared `collectTransferredActiveEffects(actor)` +
-  internal `effectInfo`/`pushUnique`, so the slice is a behavior-neutral
-  de-duplication on top of the relocation. The sheet's `_prepareContext` now calls
-  the free functions directly (`prepareAbilityEffects(this.options.document)`) and
-  the four `#private` methods are deleted. `actor-sheet.js` 1890 → 1613 lines
-  (−277). **No behavior change, no lib change.** The builders were `#private` and
-  had **zero prior unit coverage** (no `module/__tests__` or e2e reference), so as
-  free functions they're now directly testable — a real coverage win. Tests: +19
-  Vitest (new `module/__tests__/actor-sheet-effects.test.js` — the collector's
-  disabled/suppressed/unequipped/non-transfer filtering + default-equipped, each
-  builder's regex bucketing, dedup-by-effect-id, img fallback, the
-  AC+HP-both-buckets case, and equipped-vs-unequipped item-transfer feeding all
-  four); +1 Playwright (`active-effects.spec.js` — live actor with ability/save/
-  attribute AEs + an equipped-ring transfer + an unequipped-charm + a disabled
-  effect, drives the real `actor.sheet._prepareContext({})` and asserts every
-  summary bucket end-to-end). **1478 Vitest** (was 1459, +19). **191 Playwright
-  passed** on a clean run, zero failures (was 190, +1; no flake this run). Next
-  `actor-sheet.js` candidates (same free-function pattern): `#prepareItems`
-  (~248 lines, inventory categorization — the next-biggest cohesive chunk) and
-  the AE/compendium-link smaller helpers.
 
 ## Closed questions
 
@@ -525,17 +500,19 @@ container-support mixin. All PR #720 cleanup arcs were closed first — legacy-d
   it calls `super._onDrop`). Remaining is just the static `#` action handlers
   (thin `rollXxx` wrappers — low value, the `static #x` entries must stay in the
   `actions` map). No further `actor-sheet.js` slice warranted.
-- **`actor.js` (~4574 lines) — NEXT TARGET (multi-session).** The largest
-  Appendix-A target. Being a document class (not a sheet) it CAN use the
-  `item.js` mixin pattern (`DCCActor extends XxxMixin(Actor)`). Much of its bulk
-  is the adapter dispatch layer that stays co-located with the public `rollXxx`
-  wrappers — but several cohesive *non-dispatch* method groups are clean mixin
-  candidates: the **AE-application engine** (`applyActiveEffects` +
-  `_resolveEffectValue` + the 7 `_applyXxxEffect` handlers, ~310 lines, lines
-  327–636) is the strongest first slice; the **`compute*` derived-data helpers**
-  (`computeMeleeAndMissileAttackAndDamage` / `computeSavingThrows` /
-  `computeSpellCheck` / `computeInitiative`, lines 809–929) are a second
-  candidate (assess lib entanglement at slice time).
+- **`actor.js` (4574 → 4145 after session 49) — IN PROGRESS.** Document class →
+  uses the `item.js` mixin pattern (`DCCActor extends DerivedStatsMixin(
+  ActiveEffectsMixin(Actor))`). Done: `active-effects-mixin.mjs` (48 — the
+  AE-application engine) + `derived-stats-mixin.mjs` (49 — the four `compute*`
+  helpers). **The two clean cohesive *non-dispatch* groups are now extracted.**
+  The remaining bulk is the **adapter dispatch layer** (`rollXxx` +
+  `_xxxViaAdapter` + the spell/attack/damage/crit/fumble dispatch bodies) that
+  per `ARCHITECTURE_REIMAGINED.md §8.6` stays co-located with the public wrappers
+  — extracting it would split the dispatch path and is NOT a behavior-neutral
+  shrinkage. Lower-value remaining candidates if more shrinkage is wanted:
+  `_buildDamageBreakdown` (pure string builder), `getActionDice`/`getRollData`
+  (read by the lib/adapter — assess entanglement first). Otherwise the Appendix-A
+  shrinkage arc is effectively complete.
 
 **Group E / §2.8 — validated, no DCC-side work left.** The class-registration
 registries shipped in Phases 4–6 and two real sibling content modules now
