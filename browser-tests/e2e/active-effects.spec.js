@@ -228,6 +228,54 @@ test.describe('DCC Active Effects', () => {
       await expect(page.locator('.change-summary')).toContainText('system.abilities.str.value')
     })
 
+    test('actor applyActiveEffects engine survives actor/active-effects-mixin.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the Active-Effects application
+      // engine (applyActiveEffects + the seven _applyXxxEffect handlers) moved out
+      // of actor.js into the ActiveEffectsMixin in module/actor/active-effects-mixin.mjs;
+      // DCCActor now `extends ActiveEffectsMixin(Actor)`. This probe drives the real
+      // engine end-to-end on a live actor carrying one effect per change mode
+      // (add / override / upgrade / downgrade / multiply) and asserts each derived
+      // ability value plus the overrides-tracking map the extraction must preserve.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 AE Modes Probe', type: 'Player' })
+          await actor.createEmbeddedDocuments('ActiveEffect', [
+            { name: 'add', img: 'icons/svg/aura.svg', disabled: false, changes: [{ key: 'system.abilities.str.value', value: '2', type: 'add' }] },
+            { name: 'override', img: 'icons/svg/aura.svg', disabled: false, changes: [{ key: 'system.abilities.agl.value', value: '15', type: 'override' }] },
+            { name: 'upgrade', img: 'icons/svg/aura.svg', disabled: false, changes: [{ key: 'system.abilities.sta.value', value: '8', type: 'upgrade' }] },
+            { name: 'downgrade', img: 'icons/svg/aura.svg', disabled: false, changes: [{ key: 'system.abilities.per.value', value: '7', type: 'downgrade' }] },
+            { name: 'multiply', img: 'icons/svg/aura.svg', disabled: false, changes: [{ key: 'system.abilities.int.value', value: '2', type: 'multiply' }] }
+          ])
+          // createEmbeddedDocuments triggers a full re-prepare (reset from source +
+          // applyActiveEffects); reading straight after reflects one clean application.
+          observed.str = actor.system.abilities.str.value // 10 + 2
+          observed.agl = actor.system.abilities.agl.value // overridden to 15
+          observed.sta = actor.system.abilities.sta.value // max(10, 8) = 10
+          observed.per = actor.system.abilities.per.value // min(10, 7) = 7
+          observed.int = actor.system.abilities.int.value // 10 * 2 = 20
+          observed.overrideKeys = Object.keys(actor.overrides || {})
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.str).toBe(12)
+      expect(result.agl).toBe(15)
+      expect(result.sta).toBe(10)
+      expect(result.per).toBe(7)
+      expect(result.int).toBe(20)
+      // The overrides map (consumed by form submission, #714) tracks every modified field.
+      expect(result.overrideKeys).toEqual(expect.arrayContaining([
+        'system.abilities.str.value',
+        'system.abilities.agl.value',
+        'system.abilities.per.value',
+        'system.abilities.int.value'
+      ]))
+    })
+
     test('disabling an effect reverts the modified value', async ({ page }) => {
       // Create actor with STR bonus effect
       const actorId = await page.evaluate(async () => {
