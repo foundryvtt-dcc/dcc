@@ -17,7 +17,6 @@ import {
   DICE_CHAIN,
   effectChangeTypes
 } from './config/dice.mjs'
-import { activeEffectKeys } from './config/active-effect-keys.mjs'
 import {
   actorImporterItemPacks,
   actorImporterNameMap,
@@ -264,12 +263,6 @@ DCC.currencyValue = {
   sp: 10,
   cp: 1
 }
-
-// Active Effect attribute-key reference table is extracted into
-// ./config/active-effect-keys.mjs and re-composed onto DCC here so the public
-// CONFIG.DCC.activeEffectKeys surface is unchanged. (No runtime code consumer;
-// retained as a documented reference — see that module's header.)
-DCC.activeEffectKeys = activeEffectKeys
 
 // Dice config (diceTypes / DICE_CHAIN / effectChangeTypes) is extracted into
 // ./config/dice.mjs and re-composed onto DCC here so the public CONFIG.DCC

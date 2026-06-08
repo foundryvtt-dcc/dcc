@@ -261,29 +261,19 @@ test.describe('DCC Extension API', () => {
     expect(result.effectDiceChainType).toBe('diceChain')
   })
 
-  test('DCC activeEffectKeys reference table survives config/active-effect-keys.mjs extraction', async ({ page }) => {
-    // Phase 7 (Appendix-A config.js shrinkage): the AE attribute-key reference
-    // table was moved out of module/config.js into
-    // module/config/active-effect-keys.mjs and re-composed onto DCC. The table
-    // has no runtime code consumer (it's a documented CONFIG.DCC.* reference
-    // surface), so this probe is the only end-to-end guard that the live shape
-    // is unchanged after the extraction.
-    const result = await page.evaluate(() => {
-      const keys = CONFIG.DCC.activeEffectKeys ?? {}
-      return {
-        keyCount: Object.keys(keys).length,
-        strValue: keys['system.abilities.str.value'],
-        meleeHitBonus: keys['system.details.attackHitBonus.melee.adjustment'],
-        actionDie: keys['system.attributes.actionDice.value'],
-        // every key is a system.* path → DCC.* label
-        allWellFormed: Object.entries(keys).every(([p, l]) => p.startsWith('system.') && l.startsWith('DCC.'))
-      }
-    })
-    expect(result.keyCount).toBe(32)
-    expect(result.strValue).toBe('DCC.AbilityStr')
-    expect(result.meleeHitBonus).toBe('DCC.MeleeAttackBonus')
-    expect(result.actionDie).toBe('DCC.ActionDie')
-    expect(result.allWellFormed).toBe(true)
+  test('DCC activeEffectKeys reference table is removed from CONFIG.DCC', async ({ page }) => {
+    // The activeEffectKeys reference table (32 entries, added in PR #611) had no
+    // runtime consumer — system or sibling — ever; the V14 AE workflow uses
+    // Foundry's native config UI and the human-facing reference is the
+    // docs/user-guide/Active-Effects.md "Common Attribute Keys" section. It was
+    // removed to drop the schema-drift sync burden. This guard asserts the
+    // CONFIG.DCC.activeEffectKeys surface is gone end-to-end.
+    const result = await page.evaluate(() => ({
+      present: 'activeEffectKeys' in (CONFIG.DCC ?? {}),
+      value: CONFIG.DCC?.activeEffectKeys
+    }))
+    expect(result.present).toBe(false)
+    expect(result.value).toBeUndefined()
   })
 
   test('DCC actor-importer config (importTypes / actorImporter* / birthAugurEffectsPack) survives config/actor-importer.mjs extraction', async ({ page }) => {
