@@ -166,4 +166,3 @@ export interface PatronLookupOptions {
     /** Search by name (partial match) */
     nameSearch?: string;
 }
-//# sourceMappingURL=patron.d.ts.map

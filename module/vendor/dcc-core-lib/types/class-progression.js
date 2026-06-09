@@ -21,4 +21,3 @@ export function getSkillBonus(progression, level, alignment, skillId) {
     }
     return alignmentData.skills[skillId];
 }
-//# sourceMappingURL=class-progression.js.map

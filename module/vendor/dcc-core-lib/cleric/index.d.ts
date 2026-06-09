@@ -35,4 +35,3 @@ export { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, LAY_ON_HANDS_SKILL
 export type { LayOnHandsInput, LayOnHandsResult, LayOnHandsTarget, } from "./lay-on-hands.js";
 export { divineAid, getDivineAidModifier, getDivineAidDie, getMinimumCheckForSpellLevel, estimateAidSpellLevel, describePotentialAid, DIVINE_AID_SKILL, } from "./divine-aid.js";
 export type { DivineAidInput, DivineAidResult, DivineAidEffect, DivineAidEffectType, AidRequestType, } from "./divine-aid.js";
-//# sourceMappingURL=index.d.ts.map

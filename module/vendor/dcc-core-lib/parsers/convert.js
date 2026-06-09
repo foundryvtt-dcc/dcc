@@ -444,4 +444,3 @@ export function convertPSCharacter(ps, options = {}) {
 export function convertPSCharacters(characters, options = {}) {
     return characters.map((ps) => convertPSCharacter(ps, options));
 }
-//# sourceMappingURL=convert.js.map

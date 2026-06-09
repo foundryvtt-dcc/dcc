@@ -73,4 +73,3 @@ export declare function isFailure(tier: ResultTier | undefined): boolean;
  * Calculate the total modifier sum from a spell check modifiers list
  */
 export declare function getSpellCheckTotalModifier(modifiers: LegacyRollModifier[]): number;
-//# sourceMappingURL=cast.d.ts.map

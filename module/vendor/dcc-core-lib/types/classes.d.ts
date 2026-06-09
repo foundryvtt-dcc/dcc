@@ -102,4 +102,3 @@ export interface CharacterClass {
     /** XP in this class (if tracking separately) */
     xp?: number;
 }
-//# sourceMappingURL=classes.d.ts.map

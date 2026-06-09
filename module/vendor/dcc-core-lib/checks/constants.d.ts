@@ -104,4 +104,3 @@ export declare function isAbilityId(id: string): id is AbilityId;
  * Check if a raw string (no namespace) is a valid save ID
  */
 export declare function isSaveId(id: string): id is SaveId;
-//# sourceMappingURL=constants.d.ts.map

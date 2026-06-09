@@ -93,4 +93,3 @@ export function applyPatronTaintAcquisition(patronId, taintTable, options, event
     events?.onPatronTaint?.(result, taintResult);
     return taintResult;
 }
-//# sourceMappingURL=patron-taint-check.js.map

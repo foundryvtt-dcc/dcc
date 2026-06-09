@@ -98,4 +98,3 @@ export function rollLuckCheckSimple(luckScore, roller, label = "Luck Check") {
         label,
     };
 }
-//# sourceMappingURL=luck-check.js.map

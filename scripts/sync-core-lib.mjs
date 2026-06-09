@@ -8,7 +8,7 @@
 // DCC_CORE_LIB_SRC=/path/to/dcc-core-lib npm run sync-core-lib.
 
 import { execSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -19,6 +19,37 @@ const VENDOR_DEST = resolve(SYSTEM_ROOT, 'module/vendor/dcc-core-lib')
 function fail (msg) {
   console.error(`sync-core-lib: ${msg}`)
   process.exit(1)
+}
+
+// Foundry loads the vendored files directly and never reads source maps; the
+// lib's published `.map` files point at original `.ts` sources we don't vendor,
+// so Vitest logs a "Sourcemap points to missing source files" warning for every
+// transformed module. Drop the `.map` files and strip the trailing
+// `//# sourceMappingURL=` comments so vendored output stays self-contained and
+// the test log stays clean. Returns the count of files touched.
+function stripSourcemaps (dir) {
+  let removedMaps = 0
+  let strippedComments = 0
+  const walk = (current) => {
+    for (const entry of readdirSync(current)) {
+      const full = resolve(current, entry)
+      if (statSync(full).isDirectory()) {
+        walk(full)
+      } else if (entry.endsWith('.map')) {
+        rmSync(full)
+        removedMaps++
+      } else if (entry.endsWith('.js') || entry.endsWith('.d.ts')) {
+        const original = readFileSync(full, 'utf8')
+        const stripped = original.replace(/\n?\/\/# sourceMappingURL=.*\n?/g, '\n')
+        if (stripped !== original) {
+          writeFileSync(full, stripped)
+          strippedComments++
+        }
+      }
+    }
+  }
+  walk(dir)
+  return { removedMaps, strippedComments }
 }
 
 if (!existsSync(LIB_SRC)) fail(`lib source not found at ${LIB_SRC}`)
@@ -39,6 +70,9 @@ console.log(`sync-core-lib: copying dist/ → ${VENDOR_DEST}`)
 rmSync(VENDOR_DEST, { recursive: true, force: true })
 mkdirSync(VENDOR_DEST, { recursive: true })
 cpSync(dist, VENDOR_DEST, { recursive: true })
+
+const { removedMaps, strippedComments } = stripSourcemaps(VENDOR_DEST)
+console.log(`sync-core-lib: stripped sourcemaps (${removedMaps} .map removed, ${strippedComments} files de-referenced)`)
 
 const commit = execSync('git rev-parse HEAD', { cwd: LIB_SRC }).toString().trim()
 const dirty = execSync('git status --porcelain', { cwd: LIB_SRC }).toString().trim().length > 0

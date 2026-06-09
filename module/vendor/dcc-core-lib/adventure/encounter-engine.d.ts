@@ -107,4 +107,3 @@ export declare function processAllMonsterTurns(encounter: CombatEncounterState, 
     encounter: CombatEncounterState;
     results: MonsterTurnResult[];
 };
-//# sourceMappingURL=encounter-engine.d.ts.map

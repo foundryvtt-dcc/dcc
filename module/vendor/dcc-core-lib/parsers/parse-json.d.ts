@@ -9,4 +9,3 @@ import type { PSParseResult } from "./purple-sorcerer-types.js";
  * Handles both single character and array of characters
  */
 export declare function parsePurpleSorcererJson(jsonString: string): PSParseResult;
-//# sourceMappingURL=parse-json.d.ts.map

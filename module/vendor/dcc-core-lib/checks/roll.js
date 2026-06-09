@@ -229,4 +229,3 @@ export async function rollSavingThrowAsync(saveId, character, options) {
     }
     return rollCheckAsync(saveId, character, options);
 }
-//# sourceMappingURL=roll.js.map

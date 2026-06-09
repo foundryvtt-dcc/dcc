@@ -85,4 +85,3 @@ export declare function layOnHands(input: LayOnHandsInput, table: LayOnHandsTabl
  */
 export declare function getLayOnHandsModifier(level: number, personality: number, healingSelf?: boolean): number;
 export declare function getLayOnHandsDie(): DieType;
-//# sourceMappingURL=lay-on-hands.d.ts.map

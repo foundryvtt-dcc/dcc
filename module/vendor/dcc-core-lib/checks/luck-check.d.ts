@@ -74,4 +74,3 @@ export declare function rollLuckCheck(character: Character, options?: RollLuckCh
  * }
  */
 export declare function rollLuckCheckSimple(luckScore: number, roller?: DiceRoller, label?: string): LuckCheckResult;
-//# sourceMappingURL=luck-check.d.ts.map

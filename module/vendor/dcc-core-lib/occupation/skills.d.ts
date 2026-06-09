@@ -123,4 +123,3 @@ export declare function isOccupationSkillSuccess(result: OccupationSkillCheckRes
  * @returns Summary string
  */
 export declare function getOccupationSkillSummary(result: OccupationSkillCheckResult): string;
-//# sourceMappingURL=skills.d.ts.map

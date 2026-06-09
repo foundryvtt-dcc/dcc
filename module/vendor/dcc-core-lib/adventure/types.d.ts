@@ -363,4 +363,3 @@ export interface MonsterTurnResult {
     /** Whether the monster fled */
     fled: boolean;
 }
-//# sourceMappingURL=types.d.ts.map

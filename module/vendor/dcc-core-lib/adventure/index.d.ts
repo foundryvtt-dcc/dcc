@@ -8,4 +8,3 @@ export * from "./types.js";
 export * from "./encounter-engine.js";
 export * from "./narrative-engine.js";
 export * from "./narrative-templates.js";
-//# sourceMappingURL=index.d.ts.map

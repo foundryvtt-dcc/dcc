@@ -74,4 +74,3 @@ export declare function removeCorruption(currentCorruptions: readonly string[], 
  * Remove all corruptions from a character (extremely rare).
  */
 export declare function clearAllCorruptions(): string[];
-//# sourceMappingURL=corruption.d.ts.map

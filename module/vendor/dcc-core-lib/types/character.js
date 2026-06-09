@@ -46,4 +46,3 @@ export function createInventoryItem(name, category, options) {
     }
     return item;
 }
-//# sourceMappingURL=character.js.map

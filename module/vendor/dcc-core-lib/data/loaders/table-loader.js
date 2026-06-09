@@ -133,4 +133,3 @@ export function getBirthAugurModifier(luckModifier, augur) {
         effectType: augur.effectType ?? "unknown",
     };
 }
-//# sourceMappingURL=table-loader.js.map

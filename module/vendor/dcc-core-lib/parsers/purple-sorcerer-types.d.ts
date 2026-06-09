@@ -176,4 +176,3 @@ export interface PSParseResult {
     errors: string[];
     warnings: string[];
 }
-//# sourceMappingURL=purple-sorcerer-types.d.ts.map

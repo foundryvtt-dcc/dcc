@@ -8,4 +8,3 @@
  * - Patron spell grants
  */
 export {};
-//# sourceMappingURL=patron.js.map

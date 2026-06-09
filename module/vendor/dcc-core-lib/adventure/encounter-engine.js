@@ -720,4 +720,3 @@ export function processAllMonsterTurns(encounter, roller) {
     }
     return { encounter: current, results };
 }
-//# sourceMappingURL=encounter-engine.js.map

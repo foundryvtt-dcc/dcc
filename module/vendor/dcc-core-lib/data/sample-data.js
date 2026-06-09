@@ -216,4 +216,3 @@ export const SAMPLE_XP_THRESHOLDS = [
     { classId: "elf", thresholds: SLOW_XP },
     { classId: "halfling", thresholds: STANDARD_XP },
 ];
-//# sourceMappingURL=sample-data.js.map

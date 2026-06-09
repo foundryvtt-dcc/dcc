@@ -407,4 +407,3 @@ export function formatMoraleResult(result) {
         : "FAILS - attempts to flee";
     return `Morale check: ${String(result.roll)}${modifierStr} = ${String(result.total)} vs DC ${String(result.dc)} - ${outcomeStr}`;
 }
-//# sourceMappingURL=morale.js.map

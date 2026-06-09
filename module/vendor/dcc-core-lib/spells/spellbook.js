@@ -301,4 +301,3 @@ export function updateMercurialEffect(spellbook, spellId, mercurialEffect) {
     }
     return newSpellbook;
 }
-//# sourceMappingURL=spellbook.js.map

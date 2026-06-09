@@ -71,4 +71,3 @@ export function parsePurpleSorcerer(input) {
 // Stat Block Parser
 // =============================================================================
 export { parseStatBlock, parseStatBlocks } from "./parse-statblock.js";
-//# sourceMappingURL=index.js.map

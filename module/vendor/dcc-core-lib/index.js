@@ -30,4 +30,3 @@ export * from "./patron/index.js";
 export * from "./occupation/index.js";
 // Adventure system
 export * from "./adventure/index.js";
-//# sourceMappingURL=index.js.map

@@ -169,4 +169,3 @@ export interface OccupationSkillEvents {
     /** Called on fumble */
     onFumble?: (result: OccupationSkillCheckResult) => void;
 }
-//# sourceMappingURL=occupation-skills.d.ts.map

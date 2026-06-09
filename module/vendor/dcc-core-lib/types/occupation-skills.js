@@ -8,4 +8,3 @@
  * - Limited thief skills (reduced effectiveness)
  */
 export {};
-//# sourceMappingURL=occupation-skills.js.map

@@ -226,4 +226,3 @@ export declare function getSuggestedModifier(scenario: string): number;
  * Format morale check result for display
  */
 export declare function formatMoraleResult(result: MoraleCheckResult): string;
-//# sourceMappingURL=morale.d.ts.map

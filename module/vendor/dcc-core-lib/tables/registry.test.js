@@ -374,4 +374,3 @@ describe("JSON Loading", () => {
         });
     });
 });
-//# sourceMappingURL=registry.test.js.map

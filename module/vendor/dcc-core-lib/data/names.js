@@ -173,4 +173,3 @@ export function generateNameForOccupation(occupation, data = DEFAULT_NAME_DATA, 
     const ancestry = detectAncestryFromOccupation(occupation);
     return generateName(ancestry, data, options, random);
 }
-//# sourceMappingURL=names.js.map

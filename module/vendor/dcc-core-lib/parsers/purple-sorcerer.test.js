@@ -758,4 +758,3 @@ describe("convertPSCharacters", () => {
         expect(defined(characters[1]).identity.occupation).toBe("Hunter");
     });
 });
-//# sourceMappingURL=purple-sorcerer.test.js.map

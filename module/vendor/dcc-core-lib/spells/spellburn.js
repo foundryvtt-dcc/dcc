@@ -168,4 +168,3 @@ export function hasSpellburnDamage(abilities) {
         abilities.agl.current < abilities.agl.max ||
         abilities.sta.current < abilities.sta.max);
 }
-//# sourceMappingURL=spellburn.js.map

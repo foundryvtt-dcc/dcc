@@ -190,4 +190,3 @@ export function calculateAverageHD(hdExpression) {
     }
     return average;
 }
-//# sourceMappingURL=turn-unholy.js.map

@@ -427,4 +427,3 @@ export function isAtDeathsDoor(currentHP) {
 export function canReceiveHealing(status) {
     return status === "alive" || status === "unconscious" || status === "bleeding-out";
 }
-//# sourceMappingURL=death-and-dying.js.map

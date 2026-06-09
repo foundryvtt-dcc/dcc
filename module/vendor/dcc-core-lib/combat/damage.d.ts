@@ -86,4 +86,3 @@ export declare function buildDamageFormula(damageDie: DieType, diceCount: number
  * @returns Damage, minimum 1
  */
 export declare function applyMinimumDamage(damageTotal: number): number;
-//# sourceMappingURL=damage.d.ts.map

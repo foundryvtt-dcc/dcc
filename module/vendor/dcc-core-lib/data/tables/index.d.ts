@@ -9,4 +9,3 @@
  */
 export { TEST_TURN_UNHOLY_TABLE } from "./test-turn-unholy.js";
 export { TEST_LAY_ON_HANDS_TABLE } from "./test-lay-on-hands.js";
-//# sourceMappingURL=index.d.ts.map

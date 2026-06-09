@@ -531,4 +531,3 @@ function updateClassState(character, classId, level, attackBonus) {
     }
     character.state.classState = classState;
 }
-//# sourceMappingURL=level-up.js.map

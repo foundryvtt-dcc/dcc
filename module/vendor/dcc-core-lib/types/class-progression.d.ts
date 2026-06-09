@@ -78,4 +78,3 @@ export interface ClassProgression {
  * Helper to get skill bonus for a character
  */
 export declare function getSkillBonus(progression: ClassProgression, level: number, alignment: ProgressionAlignment, skillId: string): number | DieType | undefined;
-//# sourceMappingURL=class-progression.d.ts.map

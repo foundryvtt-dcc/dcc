@@ -83,4 +83,3 @@ export declare function getSkillsForOccupation(occupationName: string): Occupati
  * @returns True if the occupation grants skills
  */
 export declare function occupationHasSkills(occupationName: string): boolean;
-//# sourceMappingURL=sample-skills.d.ts.map

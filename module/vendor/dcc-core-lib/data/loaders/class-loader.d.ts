@@ -29,4 +29,3 @@ export declare function loadClassProgression(classId: string, name: string, skil
  * Get skill bonus for a character from progression data
  */
 export declare function getSkillBonusFromProgression(progression: ClassProgression, level: number, alignment: ProgressionAlignment, skillId: string): number | DieType | undefined;
-//# sourceMappingURL=class-loader.d.ts.map

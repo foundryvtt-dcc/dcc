@@ -84,4 +84,3 @@ export interface Creature {
  * Collection of creatures indexed by ID
  */
 export type CreatureCollection = Record<string, Creature>;
-//# sourceMappingURL=creatures.d.ts.map

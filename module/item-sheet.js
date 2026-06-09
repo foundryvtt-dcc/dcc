@@ -681,7 +681,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _rollManifestation (event, options) {
-    console.log('rollManifestation')
     this.document.rollManifestation(undefined, options)
   }
 
@@ -692,7 +691,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _rollMercurialMagic (event, options) {
-    console.log('rollMercurialMagic')
     this.document.rollMercurialMagic(undefined, options)
     // No need to render - the document update will trigger re-render automatically
   }
@@ -711,7 +709,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _lookupMercurialMagic () {
-    console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
   }

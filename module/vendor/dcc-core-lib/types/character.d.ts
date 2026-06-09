@@ -322,4 +322,3 @@ export interface Character {
     /** Mutable character state */
     state: CharacterState;
 }
-//# sourceMappingURL=character.d.ts.map

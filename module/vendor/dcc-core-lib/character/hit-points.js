@@ -243,4 +243,3 @@ function getMaxDieRoll(die) {
         return 6; // Default to d6 max
     return parseInt(match[1], 10);
 }
-//# sourceMappingURL=hit-points.js.map

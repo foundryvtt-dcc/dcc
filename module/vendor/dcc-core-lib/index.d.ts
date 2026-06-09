@@ -16,4 +16,3 @@ export * from "./cleric/index.js";
 export * from "./patron/index.js";
 export * from "./occupation/index.js";
 export * from "./adventure/index.js";
-//# sourceMappingURL=index.d.ts.map

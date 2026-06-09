@@ -188,4 +188,3 @@ export function buildDamageFormula(damageDie, diceCount, modifiers) {
 export function applyMinimumDamage(damageTotal) {
     return Math.max(1, damageTotal);
 }
-//# sourceMappingURL=damage.js.map

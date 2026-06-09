@@ -14,4 +14,3 @@ export { registerPatron, registerPatrons, clearPatronRegistry, getPatron, requir
 export { INVOKE_PATRON_MIN_SUCCESS, INVOKE_PATRON_FUMBLE_TRIGGERS_TAINT, buildInvokeModifiers, sumModifiers, buildInvokeFormula, invokePatron, isInvokeSuccess, isInvokeFumble, getInvokeSummary, getMinimumForInvokeTier, estimateInvokeSuccessChance, } from "./invoke.js";
 // Patron Bond
 export { createPatronBond, canFormPatronBond, getCharacterPatronId, hasPatronBond, formWizardPatronBond, formElfPatronBond, getAvailablePatronSpells, canLearnPatronSpell, createPatronSpellEntry, incrementTaintCount, addTaintToNotes, getPatronBondBreakConsequences, canBreakPatronBond, } from "./bond.js";
-//# sourceMappingURL=index.js.map

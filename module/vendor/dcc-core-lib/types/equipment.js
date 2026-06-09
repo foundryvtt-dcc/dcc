@@ -6,4 +6,3 @@
  * the combat-oriented types in combat.ts (WeaponStats, ArmorStats).
  */
 export {};
-//# sourceMappingURL=equipment.js.map

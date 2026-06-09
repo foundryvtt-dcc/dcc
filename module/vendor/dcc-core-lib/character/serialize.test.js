@@ -257,4 +257,3 @@ describe("v1.0 → v1.1 migration", () => {
         expect(thief?.["backstabMultiplier"]).toBeUndefined();
     });
 });
-//# sourceMappingURL=serialize.test.js.map

@@ -145,4 +145,3 @@ function describe(success, input, dice, row) {
     }
     return row?.text ?? `Channelled ${String(dice)} healing dice into the subject.`;
 }
-//# sourceMappingURL=lay-on-hands.js.map

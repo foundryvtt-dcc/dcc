@@ -90,4 +90,3 @@ export function extractAbilityScores(character, accessors = DEFAULT_ACCESSORS, a
     }
     return scores;
 }
-//# sourceMappingURL=accessors.js.map

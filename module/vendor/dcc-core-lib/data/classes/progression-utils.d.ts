@@ -152,4 +152,3 @@ export declare function getHitDie(classId: string): string;
  * @returns The luck die (e.g., "d3", "d14") or undefined
  */
 export declare function getLuckDie(classId: string, level: number): string | undefined;
-//# sourceMappingURL=progression-utils.d.ts.map

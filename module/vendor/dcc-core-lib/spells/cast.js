@@ -423,4 +423,3 @@ export function isFailure(tier) {
 export function getSpellCheckTotalModifier(modifiers) {
     return modifiers.reduce((sum, mod) => sum + mod.value, 0);
 }
-//# sourceMappingURL=cast.js.map

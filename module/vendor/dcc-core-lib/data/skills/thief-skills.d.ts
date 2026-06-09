@@ -71,4 +71,3 @@ export declare const THIEF_SKILLS: Record<string, SkillDefinition>;
  * List of thief skill IDs
  */
 export declare const THIEF_SKILL_IDS: string[];
-//# sourceMappingURL=thief-skills.d.ts.map

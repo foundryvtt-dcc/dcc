@@ -15,4 +15,3 @@ export function lookupTableResult(table, roll) {
 export function lookupBirthAugurEntry(augurs, roll) {
     return augurs.find((a) => a.roll === roll);
 }
-//# sourceMappingURL=tables.js.map

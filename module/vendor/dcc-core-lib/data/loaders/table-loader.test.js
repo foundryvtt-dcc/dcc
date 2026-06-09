@@ -156,4 +156,3 @@ describe("table-loader", () => {
         });
     });
 });
-//# sourceMappingURL=table-loader.test.js.map

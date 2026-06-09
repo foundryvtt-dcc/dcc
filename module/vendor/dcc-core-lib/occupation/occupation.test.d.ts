@@ -8,4 +8,3 @@
  * - Skill resolution
  */
 export {};
-//# sourceMappingURL=occupation.test.d.ts.map

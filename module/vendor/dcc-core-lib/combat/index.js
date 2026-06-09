@@ -58,4 +58,3 @@ checkMeleeAgainstGrappled,
 processWithdrawal, isEngagedInMelee, formatWithdrawalResult, 
 // Mounted combat functions
 createMountState, getMountedCombatBonuses, getMountedInitiativeModifier, checkHorseSpooked, checkHorseAttackSpook, makeStayMountedCheck, isLanceOrSpear, getMountedChargeDamageMultiplier, formatStayMountedResult, formatMountedBonuses, } from "./misc-rules.js";
-//# sourceMappingURL=index.js.map

@@ -63,4 +63,3 @@ export declare function formatOptionDisplay(option: NarrativeOption): string;
  */
 export declare function formatCheckResult(result: NarrativeCheckResult): string;
 export {};
-//# sourceMappingURL=narrative-engine.d.ts.map

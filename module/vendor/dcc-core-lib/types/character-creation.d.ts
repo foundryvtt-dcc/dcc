@@ -409,4 +409,3 @@ export declare function resolveCharacterCreationConfig(userConfig?: CharacterCre
  * Returns undefined if not found.
  */
 export declare function getDiceMethodDefinition(method: AbilityScoreMethod, customMethod?: DiceMethodDefinition | string, customMethodsRegistry?: Record<string, DiceMethodDefinition>): DiceMethodDefinition | undefined;
-//# sourceMappingURL=character-creation.d.ts.map

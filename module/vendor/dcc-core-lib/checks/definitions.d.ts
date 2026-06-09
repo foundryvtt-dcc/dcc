@@ -56,4 +56,3 @@ export declare function getRegisteredCheckIds(): string[];
  * Get all registered check IDs for a specific namespace
  */
 export declare function getCheckIdsByNamespace(namespace: CheckNamespaceType): string[];
-//# sourceMappingURL=definitions.d.ts.map

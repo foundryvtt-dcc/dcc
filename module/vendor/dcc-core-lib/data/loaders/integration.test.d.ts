@@ -5,4 +5,3 @@
  * FoundryVTT DCC data files.
  */
 export {};
-//# sourceMappingURL=integration.test.d.ts.map

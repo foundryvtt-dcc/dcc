@@ -329,4 +329,3 @@ export function savingThrow(saveType, abilityId, abilityScore, saveBonus, option
     };
     return resolveSkillCheck(input, options);
 }
-//# sourceMappingURL=resolve.js.map

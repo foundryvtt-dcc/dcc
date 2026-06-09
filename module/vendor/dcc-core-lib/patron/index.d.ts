@@ -13,4 +13,3 @@ export { INVOKE_PATRON_MIN_SUCCESS, INVOKE_PATRON_FUMBLE_TRIGGERS_TAINT, buildIn
 export { createPatronBond, canFormPatronBond, getCharacterPatronId, hasPatronBond, formWizardPatronBond, formElfPatronBond, getAvailablePatronSpells, canLearnPatronSpell, createPatronSpellEntry, incrementTaintCount, addTaintToNotes, getPatronBondBreakConsequences, canBreakPatronBond, } from "./bond.js";
 export type { PatronDefinition, PatronSpellGrant, PatronBond, InvokePatronInput, InvokePatronResult, PatronEvents, PatronLookupOptions, } from "../types/patron.js";
 export type { BondBreakConsequences } from "./bond.js";
-//# sourceMappingURL=index.d.ts.map

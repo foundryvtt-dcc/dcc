@@ -111,4 +111,3 @@ export declare function getDiceChain(): number[];
  * @returns True if the die is in the chain
  */
 export declare function isInDiceChain(faces: number, diceChain?: readonly number[]): boolean;
-//# sourceMappingURL=dice-chain.d.ts.map

@@ -137,4 +137,3 @@ export function sortByInitiative(combatants) {
 export function isInitiativeTied(a, b) {
     return a.total === b.total;
 }
-//# sourceMappingURL=initiative.js.map

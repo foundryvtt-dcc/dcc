@@ -9,4 +9,3 @@ import type { PSParseResult } from "./purple-sorcerer-types.js";
  * Handles both single and multiple character outputs
  */
 export declare function parsePurpleSorcererText(text: string): PSParseResult;
-//# sourceMappingURL=parse-text.d.ts.map

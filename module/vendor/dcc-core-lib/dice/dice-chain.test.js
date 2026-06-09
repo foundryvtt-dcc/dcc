@@ -219,4 +219,3 @@ describe("dice-chain", () => {
         });
     });
 });
-//# sourceMappingURL=dice-chain.test.js.map

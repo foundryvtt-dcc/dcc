@@ -25,4 +25,3 @@ export declare function getTemplatesByCategory(category: NarrativeCategory): Nar
  * Get all available categories.
  */
 export declare function getAvailableCategories(): NarrativeCategory[];
-//# sourceMappingURL=narrative-templates.d.ts.map

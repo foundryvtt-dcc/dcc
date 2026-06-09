@@ -77,4 +77,3 @@ export declare function isClericSpellFailure(natural: number, profile: CasterPro
  * Get the appropriate failure type for a caster.
  */
 export declare function getFailureType(natural: number, profile: CasterProfile): "fumble" | "disapproval" | "none";
-//# sourceMappingURL=fumble.d.ts.map

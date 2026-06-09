@@ -13,4 +13,3 @@ import type { SimpleTable } from "../../tables/types.js";
  * Simplified version with fewer entries for test coverage.
  */
 export declare const TEST_TURN_UNHOLY_TABLE: SimpleTable;
-//# sourceMappingURL=test-turn-unholy.d.ts.map

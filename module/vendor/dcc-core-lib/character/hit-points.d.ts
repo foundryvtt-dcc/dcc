@@ -109,4 +109,3 @@ export declare function addHPRollToHistory(character: Character, record: HPRollR
  * @returns Total HP from all recorded rolls
  */
 export declare function getTotalHPFromHistory(history: HPRollRecord[]): number;
-//# sourceMappingURL=hit-points.d.ts.map

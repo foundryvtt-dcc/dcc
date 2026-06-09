@@ -35,4 +35,3 @@ export { turnUnholy, getTurnUnholyModifier, getTurnUnholyDie, resolveHDExpressio
 export { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
 // Divine Aid
 export { divineAid, getDivineAidModifier, getDivineAidDie, getMinimumCheckForSpellLevel, estimateAidSpellLevel, describePotentialAid, DIVINE_AID_SKILL, } from "./divine-aid.js";
-//# sourceMappingURL=index.js.map

@@ -77,4 +77,3 @@ export declare function sortByInitiative<T extends {
  * Check for tied initiatives.
  */
 export declare function isInitiativeTied(a: InitiativeResult, b: InitiativeResult): boolean;
-//# sourceMappingURL=initiative.d.ts.map

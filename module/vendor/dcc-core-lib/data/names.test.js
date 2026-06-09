@@ -145,4 +145,3 @@ describe("DEFAULT_NAME_DATA", () => {
         expect(DEFAULT_NAME_DATA.halfling.firstNames.length).toBeGreaterThanOrEqual(20);
     });
 });
-//# sourceMappingURL=names.test.js.map

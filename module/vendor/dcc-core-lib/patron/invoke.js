@@ -332,4 +332,3 @@ export function estimateInvokeSuccessChance(totalModifier, targetDC = INVOKE_PAT
     const successOutcomes = Math.min(21 - needed, 19); // Can't count natural 1
     return Math.max(0, successOutcomes) / 20;
 }
-//# sourceMappingURL=invoke.js.map

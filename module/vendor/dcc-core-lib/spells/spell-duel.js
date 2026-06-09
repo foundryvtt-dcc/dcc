@@ -464,4 +464,3 @@ export function formatSpellDuelState(state) {
     }
     return lines.join("\n");
 }
-//# sourceMappingURL=spell-duel.js.map

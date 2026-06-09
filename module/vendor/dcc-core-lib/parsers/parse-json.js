@@ -240,4 +240,3 @@ export function parsePurpleSorcererJson(jsonString) {
     result.success = result.characters.length > 0;
     return result;
 }
-//# sourceMappingURL=parse-json.js.map

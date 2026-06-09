@@ -113,4 +113,3 @@ export declare function selectOccupation(occupations: OccupationEntry[], specifi
  * @returns The created character and roll metadata
  */
 export declare function createZeroLevelCharacter(data: CharacterCreationData, config?: CharacterCreationConfig, random?: RandomSource): CharacterCreationResult;
-//# sourceMappingURL=create.d.ts.map

@@ -199,4 +199,3 @@ export function removeCorruption(currentCorruptions, indexToRemove) {
 export function clearAllCorruptions() {
     return [];
 }
-//# sourceMappingURL=corruption.js.map

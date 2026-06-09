@@ -92,4 +92,3 @@ export declare function getPatronSpells(patronId: string, casterLevel?: number):
  * @returns Number of registered patrons
  */
 export declare function getPatronCount(): number;
-//# sourceMappingURL=registry.d.ts.map

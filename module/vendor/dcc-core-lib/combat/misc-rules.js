@@ -852,4 +852,3 @@ export function formatGrappleResult(result, attackerName, defenderName) {
         : `${defenderName} resists the grapple!`;
     return `Grapple: ${attackerName} (${String(result.attackerTotal)}) vs ${defenderName} (${String(result.defenderTotal)}) - ${outcome}`;
 }
-//# sourceMappingURL=misc-rules.js.map

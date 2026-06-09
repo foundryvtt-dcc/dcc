@@ -13,4 +13,3 @@
  * These tests follow DCC rules from the core book (Chapter 4: Combat)
  */
 export {};
-//# sourceMappingURL=full-combat.test.d.ts.map

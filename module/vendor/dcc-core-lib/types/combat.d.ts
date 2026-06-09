@@ -428,4 +428,3 @@ export interface WeaponStats {
  * Common weapon stats
  */
 export declare const COMMON_WEAPONS: Record<string, WeaponStats>;
-//# sourceMappingURL=combat.d.ts.map

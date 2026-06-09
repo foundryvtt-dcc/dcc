@@ -232,4 +232,3 @@ export interface ParsedDiceExpression {
     /** The original expression */
     original: string;
 }
-//# sourceMappingURL=dice.d.ts.map

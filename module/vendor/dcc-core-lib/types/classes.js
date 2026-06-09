@@ -9,4 +9,3 @@
  * registerClassProgression() from data/classes/progression-utils.
  */
 export {};
-//# sourceMappingURL=classes.js.map

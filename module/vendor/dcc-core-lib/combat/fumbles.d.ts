@@ -99,4 +99,3 @@ export declare function getArmorCheckPenalty(armorType: ArmorType): number;
  * @returns Speed reduction in feet
  */
 export declare function getArmorSpeedPenalty(armorType: ArmorType): number;
-//# sourceMappingURL=fumbles.d.ts.map

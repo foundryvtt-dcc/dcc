@@ -21,4 +21,3 @@ export * from "./patron-taint-check.js";
 export * from "./disapproval.js";
 // Spell duels
 export * from "./spell-duel.js";
-//# sourceMappingURL=index.js.map

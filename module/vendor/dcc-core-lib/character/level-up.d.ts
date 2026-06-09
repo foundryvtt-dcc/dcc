@@ -192,4 +192,3 @@ export declare function levelUp(character: Character, random?: RandomSource): Le
  * @returns Updated character
  */
 export declare function addXP(character: Character, xp: number): Character;
-//# sourceMappingURL=level-up.d.ts.map

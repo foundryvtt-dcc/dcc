@@ -197,4 +197,3 @@ export function peekExportedCharacter(json) {
     }
     return { valid: false, error: "Unrecognized format" };
 }
-//# sourceMappingURL=serialize.js.map

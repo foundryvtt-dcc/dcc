@@ -68,4 +68,3 @@ export declare function rollPatronTaintChanceCheck(currentChance: number, option
  * `newPatronTaintChance` from merged trigger state (reset-to-1 on acquisition).
  */
 export declare function applyPatronTaintAcquisition(patronId: string, taintTable: SimpleTable | undefined, options: RollOptions, events: SpellEvents | undefined, result: SpellCastResult): PatronTaintResult | undefined;
-//# sourceMappingURL=patron-taint-check.d.ts.map

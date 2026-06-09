@@ -47,4 +47,3 @@ import type { PSParseResult } from "./purple-sorcerer-types.js";
 export declare function parsePurpleSorcerer(input: string): PSParseResult;
 export { parseStatBlock, parseStatBlocks } from "./parse-statblock.js";
 export type { StatBlockParseResult, StatBlockParseOptions, ParsedAttack, ParsedStatBlock, } from "./statblock-types.js";
-//# sourceMappingURL=index.d.ts.map

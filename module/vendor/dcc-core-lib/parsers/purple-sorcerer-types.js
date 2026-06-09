@@ -5,4 +5,3 @@
  * Supports both text format (copy-paste) and JSON format (API/export).
  */
 export {};
-//# sourceMappingURL=purple-sorcerer-types.js.map

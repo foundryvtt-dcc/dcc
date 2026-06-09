@@ -61,4 +61,3 @@ export declare function abilityCheck(abilityId: string, abilityScore: number, op
  * Create a saving throw check
  */
 export declare function savingThrow(saveType: string, abilityId: string, abilityScore: number, saveBonus: number, options?: SkillResolveOptions): SkillCheckResult;
-//# sourceMappingURL=resolve.d.ts.map

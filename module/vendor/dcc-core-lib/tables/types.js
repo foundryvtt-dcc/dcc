@@ -7,4 +7,3 @@
  * - Tiered result tables (spells with lost/fail/success tiers)
  */
 export {};
-//# sourceMappingURL=types.js.map

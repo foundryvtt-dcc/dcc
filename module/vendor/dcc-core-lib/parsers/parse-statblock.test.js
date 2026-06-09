@@ -275,4 +275,3 @@ Orc: Init +0; Atk sword +2 melee (1d8+1); AC 13; HD 1d8+1; MV 30'; Act 1d20; SV 
         });
     });
 });
-//# sourceMappingURL=parse-statblock.test.js.map

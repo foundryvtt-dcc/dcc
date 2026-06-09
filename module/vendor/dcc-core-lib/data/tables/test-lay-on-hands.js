@@ -37,4 +37,3 @@ export const TEST_LAY_ON_HANDS_TABLE = {
         "blindness": 4,
     },
 };
-//# sourceMappingURL=test-lay-on-hands.js.map

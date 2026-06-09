@@ -248,4 +248,3 @@ export interface SkillEvents {
     /** Called when a table lookup occurs */
     onTableLookup?: (result: TableLookupResult) => void;
 }
-//# sourceMappingURL=skills.d.ts.map

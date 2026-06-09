@@ -233,4 +233,3 @@ export declare function isAtDeathsDoor(currentHP: number): boolean;
  * @returns Whether healing can be applied
  */
 export declare function canReceiveHealing(status: VitalStatus): boolean;
-//# sourceMappingURL=death-and-dying.d.ts.map

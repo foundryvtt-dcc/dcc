@@ -8,4 +8,3 @@ export * from "./classes/index.js";
 export * from "./sample-data.js";
 export * from "./names.js";
 export * from "./tables/index.js";
-//# sourceMappingURL=index.d.ts.map

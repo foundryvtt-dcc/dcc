@@ -101,4 +101,3 @@ export declare function createNoMercurialEffect(): MercurialEffect;
  * Check if a mercurial effect is the "no effect" placeholder.
  */
 export declare function isMercurialEffectPlaceholder(effect: MercurialEffect): boolean;
-//# sourceMappingURL=mercurial.d.ts.map

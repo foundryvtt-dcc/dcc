@@ -926,4 +926,3 @@ describe("Integration: Combat Scenarios", () => {
         expect(clubResult.isSubdual).toBe(true);
     });
 });
-//# sourceMappingURL=misc-rules.test.js.map

@@ -124,4 +124,3 @@ export declare function entryToCounterspellPowerResult(entry: CounterspellPowerE
  * Convert a phlogiston disturbance entry to the full result format
  */
 export declare function entryToPhlogistonDisturbanceResult(entry: PhlogistonDisturbanceEntry, roll: number): PhlogistonDisturbanceResult;
-//# sourceMappingURL=spell-duel-tables.d.ts.map

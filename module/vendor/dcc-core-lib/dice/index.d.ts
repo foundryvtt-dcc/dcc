@@ -3,4 +3,3 @@
  */
 export * from "./dice-chain.js";
 export * from "./roll.js";
-//# sourceMappingURL=index.d.ts.map

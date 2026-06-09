@@ -105,4 +105,3 @@ export declare function rollAbilityCheckAsync(abilityId: string, character: Char
  * Roll a saving throw for a character (async).
  */
 export declare function rollSavingThrowAsync(saveId: string, character: Character, options: RollCheckOptionsAsync): Promise<SkillCheckResult>;
-//# sourceMappingURL=roll.d.ts.map

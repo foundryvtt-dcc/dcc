@@ -557,4 +557,3 @@ export interface SpellCheckOptions extends RollOptions {
      */
     profileOverride?: CasterProfile;
 }
-//# sourceMappingURL=spells.d.ts.map

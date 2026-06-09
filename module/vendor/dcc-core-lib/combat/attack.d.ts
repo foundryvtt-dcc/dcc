@@ -135,4 +135,3 @@ export declare function rollTwoWeaponAttack(input: TwoWeaponAttackInput, roller?
  * @returns Whether the deed succeeded
  */
 export declare function isDeedSuccessful(deedRoll: number): boolean;
-//# sourceMappingURL=attack.d.ts.map

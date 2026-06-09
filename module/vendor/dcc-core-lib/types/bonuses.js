@@ -203,4 +203,3 @@ export function getDiceChainSteps(bonuses) {
         return sum;
     }, 0);
 }
-//# sourceMappingURL=bonuses.js.map

@@ -80,4 +80,3 @@ export declare function validateTable(table: LookupTable): {
  * Check if a table covers a specific roll value.
  */
 export declare function tableCoversRoll(table: LookupTable, roll: number): boolean;
-//# sourceMappingURL=lookup.d.ts.map

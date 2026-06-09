@@ -222,4 +222,3 @@ describe("class-loader", () => {
         });
     });
 });
-//# sourceMappingURL=class-loader.test.js.map

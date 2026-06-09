@@ -48,4 +48,3 @@ export declare function getBirthAugurModifier(luckModifier: number, augur: Birth
     affects: string;
     effectType: BirthAugurEffectType;
 };
-//# sourceMappingURL=table-loader.d.ts.map

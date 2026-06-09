@@ -174,4 +174,3 @@ export declare function getEnablingSkillsForClass(classId: string): SkillDefinit
  * Check if a class has a specific enabling skill
  */
 export declare function classHasEnablingSkill(classId: string, skillId: string): boolean;
-//# sourceMappingURL=enabling-skills.d.ts.map

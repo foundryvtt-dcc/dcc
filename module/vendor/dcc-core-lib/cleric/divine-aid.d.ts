@@ -135,4 +135,3 @@ export declare function estimateAidSpellLevel(checkResult: number): number;
  * @returns Description of potential aid levels
  */
 export declare function describePotentialAid(modifier: number): string;
-//# sourceMappingURL=divine-aid.d.ts.map

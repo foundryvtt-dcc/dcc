@@ -76,4 +76,3 @@ export declare function createMockRandomSource(queue: MockRandomQueue): RandomSo
  * Use this when you don't need reproducibility or testing.
  */
 export declare const defaultRandomSource: RandomSource;
-//# sourceMappingURL=random.d.ts.map

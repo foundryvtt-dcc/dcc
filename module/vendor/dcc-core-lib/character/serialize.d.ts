@@ -90,4 +90,3 @@ export interface PeekResult {
  * Useful for previewing before import.
  */
 export declare function peekExportedCharacter(json: string): PeekResult;
-//# sourceMappingURL=serialize.d.ts.map

@@ -245,4 +245,3 @@ export function getLuckDie(classId, level) {
         return undefined;
     return levelData.luckDie;
 }
-//# sourceMappingURL=progression-utils.js.map

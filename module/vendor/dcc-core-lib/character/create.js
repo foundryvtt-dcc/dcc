@@ -418,4 +418,3 @@ export function createZeroLevelCharacter(data, config, random = defaultRandomSou
         },
     };
 }
-//# sourceMappingURL=create.js.map

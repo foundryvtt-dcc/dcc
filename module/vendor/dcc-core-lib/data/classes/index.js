@@ -20,4 +20,3 @@
  * ```
  */
 export * from "./progression-utils.js";
-//# sourceMappingURL=index.js.map

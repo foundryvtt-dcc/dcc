@@ -179,4 +179,3 @@ function getAbilityModifiers(abilities) {
         per: getAbilityModifier(abilities.per.current),
     };
 }
-//# sourceMappingURL=saving-throws.js.map

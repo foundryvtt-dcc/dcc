@@ -56,4 +56,3 @@ export declare function getBirthAugurEffectType(augur: BirthAugurEntry): BirthAu
  * These are fan-made approximations for testing.
  */
 export declare const SAMPLE_XP_THRESHOLDS: XPThresholds[];
-//# sourceMappingURL=sample-data.d.ts.map

@@ -149,4 +149,3 @@ export declare function findAbility(abilities: readonly AbilityDefinition[], id:
  * Helper to find a save by ID
  */
 export declare function findSave(saves: readonly SaveDefinition[], id: SaveType): SaveDefinition | undefined;
-//# sourceMappingURL=system.d.ts.map

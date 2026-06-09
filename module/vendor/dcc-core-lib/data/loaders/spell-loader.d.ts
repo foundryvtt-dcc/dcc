@@ -114,4 +114,3 @@ export declare function findSpellsByName(spells: readonly SpellDefinition[], nam
  * Get all spells available to a specific caster type at a given level
  */
 export declare function getAvailableSpells(spells: readonly SpellDefinition[], casterType: CasterType, maxLevel: number): SpellDefinition[];
-//# sourceMappingURL=spell-loader.d.ts.map

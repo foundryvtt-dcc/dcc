@@ -478,4 +478,3 @@ function guessCritDie(hitDice) {
         return "1d8";
     return "1d6";
 }
-//# sourceMappingURL=parse-statblock.js.map

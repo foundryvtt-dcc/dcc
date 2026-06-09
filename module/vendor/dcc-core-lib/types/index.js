@@ -15,4 +15,3 @@ export * from "./spells.js";
 export * from "./combat.js";
 export * from "./creatures.js";
 export * from "./equipment.js";
-//# sourceMappingURL=index.js.map

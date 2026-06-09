@@ -152,4 +152,3 @@ export declare function canBreakPatronBond(character: Character): {
     canBreak: boolean;
     warning: string;
 };
-//# sourceMappingURL=bond.d.ts.map

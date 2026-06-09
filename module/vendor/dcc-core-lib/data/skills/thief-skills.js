@@ -253,4 +253,3 @@ export const THIEF_SKILLS = {
  * List of thief skill IDs
  */
 export const THIEF_SKILL_IDS = Object.keys(THIEF_SKILLS);
-//# sourceMappingURL=thief-skills.js.map

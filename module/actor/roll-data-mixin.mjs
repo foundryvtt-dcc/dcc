@@ -120,7 +120,7 @@ export const RollDataMixin = (Base) => class extends Base {
         })
       })
     } catch (err) {
-      console.log(err)
+      console.error('DCC | Failed to build action dice from config', err)
     }
 
     if (options.includeUntrained) {

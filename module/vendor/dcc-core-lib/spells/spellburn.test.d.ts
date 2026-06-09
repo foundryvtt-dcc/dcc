@@ -8,4 +8,3 @@
  * old "can't go below 1" behavior.
  */
 export {};
-//# sourceMappingURL=spellburn.test.d.ts.map

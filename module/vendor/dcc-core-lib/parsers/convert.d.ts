@@ -33,4 +33,3 @@ export declare function convertPSCharacter(ps: PSCharacter, options?: ConvertOpt
  * Convert multiple parsed characters
  */
 export declare function convertPSCharacters(characters: PSCharacter[], options?: ConvertOptions): Character[];
-//# sourceMappingURL=convert.d.ts.map

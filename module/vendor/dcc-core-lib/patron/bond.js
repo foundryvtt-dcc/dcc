@@ -250,4 +250,3 @@ export function canBreakPatronBond(character) {
         warning: consequences.description,
     };
 }
-//# sourceMappingURL=bond.js.map

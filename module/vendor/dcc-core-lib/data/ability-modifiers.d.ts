@@ -40,4 +40,3 @@ export declare function getAbilityModifier(score: number): number;
  * @returns Formatted modifier string (e.g., "+2", "-1", "0")
  */
 export declare function formatAbilityModifier(score: number): string;
-//# sourceMappingURL=ability-modifiers.d.ts.map

@@ -459,4 +459,3 @@ function emitTwoWeaponEvents(result, events) {
 export function isDeedSuccessful(deedRoll) {
     return deedRoll >= 3;
 }
-//# sourceMappingURL=attack.js.map

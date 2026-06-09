@@ -313,4 +313,3 @@ export function getOccupationSkillSummary(result) {
     }
     return parts.join(" | ");
 }
-//# sourceMappingURL=skills.js.map

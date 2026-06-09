@@ -71,4 +71,3 @@ describe("applySpellburn", () => {
         expect(after.per.current).toBe(10);
     });
 });
-//# sourceMappingURL=spellburn.test.js.map

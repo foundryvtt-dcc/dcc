@@ -105,4 +105,3 @@ export declare function calculateWillSave(character: Character): number;
  * @returns New character with recalculated saves
  */
 export declare function recalculateSavingThrows(character: Character): Character;
-//# sourceMappingURL=saving-throws.d.ts.map

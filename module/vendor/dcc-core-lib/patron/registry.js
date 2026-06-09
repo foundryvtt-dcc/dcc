@@ -159,4 +159,3 @@ export function getPatronSpells(patronId, casterLevel) {
 export function getPatronCount() {
     return patronRegistry.size;
 }
-//# sourceMappingURL=registry.js.map

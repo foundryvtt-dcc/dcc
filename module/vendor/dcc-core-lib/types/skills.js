@@ -6,4 +6,3 @@
  * they're both skills with different configurations.
  */
 export {};
-//# sourceMappingURL=skills.js.map

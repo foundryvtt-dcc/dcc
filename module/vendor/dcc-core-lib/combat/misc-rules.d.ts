@@ -557,4 +557,3 @@ export declare function formatFallingDamage(result: FallingDamageResult): string
  * Format grapple result for display
  */
 export declare function formatGrappleResult(result: GrappleResult, attackerName: string, defenderName: string): string;
-//# sourceMappingURL=misc-rules.d.ts.map

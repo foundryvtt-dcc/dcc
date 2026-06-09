@@ -397,4 +397,3 @@ export function classHasEnablingSkill(classId, skillId) {
         return false;
     return skill.classes?.includes(classId) ?? false;
 }
-//# sourceMappingURL=enabling-skills.js.map

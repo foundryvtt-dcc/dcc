@@ -224,4 +224,3 @@ export function getArmorCheckPenalty(armorType) {
 export function getArmorSpeedPenalty(armorType) {
     return ARMOR_SPEED_PENALTY[armorType];
 }
-//# sourceMappingURL=fumbles.js.map

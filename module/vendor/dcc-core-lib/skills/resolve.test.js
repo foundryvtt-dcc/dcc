@@ -521,4 +521,3 @@ describe("resolve", () => {
         });
     });
 });
-//# sourceMappingURL=resolve.test.js.map

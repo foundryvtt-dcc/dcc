@@ -84,4 +84,3 @@ export declare function detectAncestryFromOccupation(occupation: string): Ancest
  * @returns Generated name result
  */
 export declare function generateNameForOccupation(occupation: string, data?: NameGenerationData, options?: NameGenerationOptions, random?: RandomSource): GeneratedName;
-//# sourceMappingURL=names.d.ts.map

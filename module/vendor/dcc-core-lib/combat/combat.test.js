@@ -1286,4 +1286,3 @@ describe("Combat Events", () => {
         expect(spy.success).toBe(true);
     });
 });
-//# sourceMappingURL=combat.test.js.map

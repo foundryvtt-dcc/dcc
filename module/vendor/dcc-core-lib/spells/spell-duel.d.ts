@@ -317,4 +317,3 @@ export declare function formatExchangeResult(result: CounterspellExchangeResult,
  * Format the current state of a spell duel
  */
 export declare function formatSpellDuelState(state: SpellDuelState): string;
-//# sourceMappingURL=spell-duel.d.ts.map

@@ -173,4 +173,3 @@ export function getDisapprovalRiskDescription(disapprovalRange) {
     }
     return `Extreme risk (${String(percent)}% - natural 1-${String(disapprovalRange)})`;
 }
-//# sourceMappingURL=disapproval.js.map

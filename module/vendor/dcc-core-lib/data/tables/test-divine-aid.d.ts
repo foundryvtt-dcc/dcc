@@ -5,4 +5,3 @@
  */
 import type { SimpleTable } from "../../tables/types.js";
 export declare const TEST_DIVINE_AID_TABLE: SimpleTable;
-//# sourceMappingURL=test-divine-aid.d.ts.map

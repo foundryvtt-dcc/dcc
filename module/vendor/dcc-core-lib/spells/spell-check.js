@@ -452,4 +452,3 @@ export function getSpellCheckSummary(result) {
     }
     return parts.join(" | ");
 }
-//# sourceMappingURL=spell-check.js.map

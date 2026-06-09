@@ -27,4 +27,3 @@ export declare function parseStatBlock(statblock: string, options?: StatBlockPar
  * Parse multiple stat blocks from text (separated by blank lines or double newlines)
  */
 export declare function parseStatBlocks(text: string, options?: StatBlockParseOptions): StatBlockParseResult[];
-//# sourceMappingURL=parse-statblock.d.ts.map

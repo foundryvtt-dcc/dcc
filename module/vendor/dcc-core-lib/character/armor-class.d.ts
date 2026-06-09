@@ -182,4 +182,3 @@ export declare function getAllArmorStats(): {
     speedPenalty: number;
     fumbleDie: DieType;
 }[];
-//# sourceMappingURL=armor-class.d.ts.map

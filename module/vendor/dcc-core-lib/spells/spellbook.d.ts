@@ -92,4 +92,3 @@ export declare function setSpellLimits(spellbook: DeepReadonly<Spellbook>, limit
  * Returns a new spellbook with updated mercurial effect.
  */
 export declare function updateMercurialEffect(spellbook: DeepReadonly<Spellbook>, spellId: string, mercurialEffect: MercurialEffect | undefined): Spellbook;
-//# sourceMappingURL=spellbook.d.ts.map

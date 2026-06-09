@@ -364,4 +364,3 @@ describe("tableCoversRoll", () => {
         expect(tableCoversRoll(tieredTable, 30)).toBe(false);
     });
 });
-//# sourceMappingURL=lookup.test.js.map

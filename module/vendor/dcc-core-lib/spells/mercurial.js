@@ -293,4 +293,3 @@ export function createNoMercurialEffect() {
 export function isMercurialEffectPlaceholder(effect) {
     return effect.rollValue === 0 && effect.summary === "No mercurial effect";
 }
-//# sourceMappingURL=mercurial.js.map

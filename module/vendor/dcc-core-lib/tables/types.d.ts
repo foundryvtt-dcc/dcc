@@ -330,4 +330,3 @@ export interface TableReference {
      */
     rollModifier?: number | string;
 }
-//# sourceMappingURL=types.d.ts.map

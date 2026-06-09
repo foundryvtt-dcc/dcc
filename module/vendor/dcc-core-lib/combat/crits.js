@@ -211,4 +211,3 @@ export function parseCritExtraDamage(tableResultText) {
     }
     return undefined;
 }
-//# sourceMappingURL=crits.js.map

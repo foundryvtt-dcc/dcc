@@ -257,4 +257,3 @@ export declare function getTotalModifier(bonuses: RollBonus[]): number;
  * Get net dice chain steps from a list of bonuses
  */
 export declare function getDiceChainSteps(bonuses: RollBonus[]): number;
-//# sourceMappingURL=bonuses.d.ts.map

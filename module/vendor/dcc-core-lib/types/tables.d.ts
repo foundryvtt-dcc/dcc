@@ -56,4 +56,3 @@ export declare function lookupTableResult(table: RollableTable, roll: number): T
  * Look up a birth augur by roll value
  */
 export declare function lookupBirthAugurEntry(augurs: BirthAugurEntry[], roll: number): BirthAugurEntry | undefined;
-//# sourceMappingURL=tables.d.ts.map

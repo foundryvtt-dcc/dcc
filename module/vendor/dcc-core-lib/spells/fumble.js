@@ -188,4 +188,3 @@ export function getFailureType(natural, profile) {
     }
     return "fumble";
 }
-//# sourceMappingURL=fumble.js.map

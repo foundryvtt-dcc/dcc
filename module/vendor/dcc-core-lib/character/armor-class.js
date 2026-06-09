@@ -260,4 +260,3 @@ export function getAllArmorStats() {
         ...getArmorDetails(type),
     }));
 }
-//# sourceMappingURL=armor-class.js.map

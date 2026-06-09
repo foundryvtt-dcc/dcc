@@ -106,4 +106,3 @@ export declare function resolveHDExpression(hdExpression: string, level: number)
  * @returns Average HD value
  */
 export declare function calculateAverageHD(hdExpression: string): number;
-//# sourceMappingURL=turn-unholy.d.ts.map

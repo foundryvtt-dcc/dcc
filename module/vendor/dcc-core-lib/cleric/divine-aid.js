@@ -240,4 +240,3 @@ export function describePotentialAid(modifier) {
     }
     return `Aid ranges from spell level ${String(Math.max(0, minLevel))} (minimum) to ${String(maxLevel)} (maximum), with level ${String(avgLevel)} most likely.`;
 }
-//# sourceMappingURL=divine-aid.js.map

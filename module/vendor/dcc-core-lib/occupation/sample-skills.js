@@ -260,4 +260,3 @@ export function occupationHasSkills(occupationName) {
     const skills = OCCUPATION_SKILL_MAP[occupationName];
     return skills !== undefined && skills.length > 0;
 }
-//# sourceMappingURL=sample-skills.js.map

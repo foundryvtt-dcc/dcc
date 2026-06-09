@@ -147,4 +147,3 @@ export function getCheckIdsByNamespace(namespace) {
     const prefix = `${namespace}:`;
     return Array.from(CHECK_REGISTRY.keys()).filter((id) => id.startsWith(prefix));
 }
-//# sourceMappingURL=definitions.js.map

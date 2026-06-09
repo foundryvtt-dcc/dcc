@@ -308,4 +308,3 @@ describe("Class Progression Utilities", () => {
         });
     });
 });
-//# sourceMappingURL=progression-utils.test.js.map

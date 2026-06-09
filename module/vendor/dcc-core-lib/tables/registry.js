@@ -258,4 +258,3 @@ export function loadTablesFromJson(json) {
     }
     return { success: true, tables };
 }
-//# sourceMappingURL=registry.js.map

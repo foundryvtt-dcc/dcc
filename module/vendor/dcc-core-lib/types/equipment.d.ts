@@ -166,4 +166,3 @@ export interface OccupationArmor {
  * Union type for all occupation items
  */
 export type OccupationItem = OccupationWeapon | OccupationTradeGood | OccupationTreasure | OccupationArmor;
-//# sourceMappingURL=equipment.d.ts.map

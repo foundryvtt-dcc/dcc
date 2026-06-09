@@ -48,4 +48,3 @@ export { rollCheck, rollAbilityCheck, rollSavingThrow, } from "./roll.js";
 export { rollCheckAsync, rollAbilityCheckAsync, rollSavingThrowAsync, } from "./roll.js";
 // Luck Check (roll-under)
 export { rollLuckCheck, rollLuckCheckSimple, } from "./luck-check.js";
-//# sourceMappingURL=index.js.map

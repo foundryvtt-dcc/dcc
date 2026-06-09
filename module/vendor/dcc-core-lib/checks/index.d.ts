@@ -36,4 +36,3 @@ export { ABILITY_CHECK_DEFINITIONS, SAVE_DEFINITIONS, getCheckDefinition, getChe
 export { rollCheck, rollAbilityCheck, rollSavingThrow, type CheckInput, type InlineCheckConfig, type RollCheckOptions, } from "./roll.js";
 export { rollCheckAsync, rollAbilityCheckAsync, rollSavingThrowAsync, type RollCheckOptionsAsync, } from "./roll.js";
 export { rollLuckCheck, rollLuckCheckSimple, type LuckCheckResult, type RollLuckCheckOptions, } from "./luck-check.js";
-//# sourceMappingURL=index.d.ts.map

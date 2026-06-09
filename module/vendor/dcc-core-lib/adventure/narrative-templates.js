@@ -332,4 +332,3 @@ export function getTemplatesByCategory(category) {
 export function getAvailableCategories() {
     return ["exploration", "trap", "puzzle", "social", "environmental"];
 }
-//# sourceMappingURL=narrative-templates.js.map

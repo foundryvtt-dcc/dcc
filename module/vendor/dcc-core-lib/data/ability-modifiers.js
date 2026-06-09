@@ -81,4 +81,3 @@ export function formatAbilityModifier(score) {
     }
     return String(mod);
 }
-//# sourceMappingURL=ability-modifiers.js.map

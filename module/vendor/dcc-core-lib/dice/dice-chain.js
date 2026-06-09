@@ -205,4 +205,3 @@ export function getDiceChain() {
 export function isInDiceChain(faces, diceChain = DEFAULT_DICE_CHAIN) {
     return diceChain.includes(faces);
 }
-//# sourceMappingURL=dice-chain.js.map

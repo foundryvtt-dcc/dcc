@@ -113,4 +113,3 @@ export declare const DEFAULT_ACCESSORS: CharacterAccessors;
  * @param abilityIds - Which ability IDs to extract (defaults to standard DCC)
  */
 export declare function extractAbilityScores(character: Character, accessors?: CharacterAccessors, abilityIds?: string[]): Record<string, number>;
-//# sourceMappingURL=accessors.d.ts.map

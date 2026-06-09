@@ -242,4 +242,3 @@ export function getDiceMethodDefinition(method, customMethod, customMethodsRegis
     }
     return undefined;
 }
-//# sourceMappingURL=character-creation.js.map

@@ -85,4 +85,3 @@ export function findAbility(abilities, id) {
 export function findSave(saves, id) {
     return saves.find((s) => s.id === id);
 }
-//# sourceMappingURL=system.js.map

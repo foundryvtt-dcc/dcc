@@ -342,4 +342,3 @@ export function findSpellsByName(spells, name) {
 export function getAvailableSpells(spells, casterType, maxLevel) {
     return spells.filter((s) => s.casterTypes.includes(casterType) && s.level <= maxLevel);
 }
-//# sourceMappingURL=spell-loader.js.map

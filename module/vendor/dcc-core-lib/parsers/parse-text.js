@@ -640,4 +640,3 @@ export function parsePurpleSorcererText(text) {
     result.success = result.characters.length > 0;
     return result;
 }
-//# sourceMappingURL=parse-text.js.map

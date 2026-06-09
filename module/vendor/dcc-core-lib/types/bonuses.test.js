@@ -327,4 +327,3 @@ describe("Real-world scenarios", () => {
         expect(result.totalModifier).toBe(-5); // All stack
     });
 });
-//# sourceMappingURL=bonuses.test.js.map

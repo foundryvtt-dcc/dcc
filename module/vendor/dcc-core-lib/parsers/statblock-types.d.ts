@@ -86,4 +86,3 @@ export interface StatBlockParseOptions {
     /** Default crit table if not specified in stat block */
     defaultCritTable?: string | undefined;
 }
-//# sourceMappingURL=statblock-types.d.ts.map

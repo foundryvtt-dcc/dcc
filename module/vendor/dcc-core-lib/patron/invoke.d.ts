@@ -95,4 +95,3 @@ export declare function getMinimumForInvokeTier(invokeTable: TieredTable, desire
  * @returns Probability of success (0-1)
  */
 export declare function estimateInvokeSuccessChance(totalModifier: number, targetDC?: number): number;
-//# sourceMappingURL=invoke.d.ts.map

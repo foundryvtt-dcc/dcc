@@ -426,4 +426,3 @@ describe("Real-world AC scenarios", () => {
         expect(result.total).toBe(16); // 10 + 2 + 2 + 1 + 1
     });
 });
-//# sourceMappingURL=armor-class.test.js.map

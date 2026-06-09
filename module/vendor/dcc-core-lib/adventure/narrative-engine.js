@@ -187,4 +187,3 @@ export function formatCheckResult(result) {
     const passedStr = result.passed ? "**Success!**" : "**Failure!**";
     return `${result.playerName} rolls ${ABILITY_FULL_NAMES[result.ability]}: ${String(result.roll)} ${modStr} = **${String(result.total)}** vs DC ${String(result.dc)} - ${passedStr}`;
 }
-//# sourceMappingURL=narrative-engine.js.map

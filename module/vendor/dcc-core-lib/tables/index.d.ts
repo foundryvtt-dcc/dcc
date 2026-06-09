@@ -9,4 +9,3 @@
 export * from "./types.js";
 export * from "./lookup.js";
 export * from "./registry.js";
-//# sourceMappingURL=index.d.ts.map

@@ -145,4 +145,3 @@ export declare function isSpellCheckFailure(result: SpellCheckResult): boolean;
  * Get a summary of the spell check result for display
  */
 export declare function getSpellCheckSummary(result: SpellCheckResult): string;
-//# sourceMappingURL=spell-check.d.ts.map

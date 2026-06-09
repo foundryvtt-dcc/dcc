@@ -109,4 +109,3 @@ export declare function getDisapprovalProbability(disapprovalRange: number): num
  * Get a description of how risky the current disapproval range is.
  */
 export declare function getDisapprovalRiskDescription(disapprovalRange: number): string;
-//# sourceMappingURL=disapproval.d.ts.map

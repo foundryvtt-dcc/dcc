@@ -60,4 +60,3 @@ export function createEmptySpellburn() {
 export function totalSpellburn(commitment) {
     return commitment.str + commitment.agl + commitment.sta;
 }
-//# sourceMappingURL=spells.js.map

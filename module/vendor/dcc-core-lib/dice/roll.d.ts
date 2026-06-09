@@ -228,4 +228,3 @@ export declare function resolveThreatRange(baseThreatRange: number, dieFaces: nu
  * - Other kinds pass through untouched.
  */
 export declare function markApplied(modifiers: RollModifier[]): RollModifier[];
-//# sourceMappingURL=roll.d.ts.map

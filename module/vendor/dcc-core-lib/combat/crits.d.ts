@@ -100,4 +100,3 @@ export declare function parseCritExtraDamage(tableResultText: string): {
     dice?: string;
     modifier?: number;
 } | undefined;
-//# sourceMappingURL=crits.d.ts.map

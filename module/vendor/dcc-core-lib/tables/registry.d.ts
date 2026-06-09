@@ -113,4 +113,3 @@ export declare function loadTablesFromJson(json: string): {
     success: false;
     error: string;
 };
-//# sourceMappingURL=registry.d.ts.map

@@ -845,4 +845,3 @@ describe("formatSpellDuelState", () => {
         expect(formatted).toContain("Momentum: 10");
     });
 });
-//# sourceMappingURL=spell-duel.test.js.map

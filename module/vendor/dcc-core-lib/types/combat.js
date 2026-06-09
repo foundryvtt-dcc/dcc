@@ -174,4 +174,3 @@ export const COMMON_WEAPONS = {
         twoHanded: true,
     },
 };
-//# sourceMappingURL=combat.js.map

@@ -130,4 +130,3 @@ export function isSaveId(id) {
     const validSaves = ["reflex", "fortitude", "will"];
     return validSaves.includes(id);
 }
-//# sourceMappingURL=constants.js.map

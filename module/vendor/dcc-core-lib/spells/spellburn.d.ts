@@ -62,4 +62,3 @@ export declare function getSpellburnDamage(abilities: AbilityScores): SpellburnC
  * Check if any spellburn damage remains
  */
 export declare function hasSpellburnDamage(abilities: AbilityScores): boolean;
-//# sourceMappingURL=spellburn.d.ts.map

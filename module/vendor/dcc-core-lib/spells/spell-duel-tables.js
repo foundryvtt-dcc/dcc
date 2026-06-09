@@ -392,4 +392,3 @@ export function entryToPhlogistonDisturbanceResult(entry, roll) {
         specialEffect: entry.specialEffect,
     };
 }
-//# sourceMappingURL=spell-duel-tables.js.map

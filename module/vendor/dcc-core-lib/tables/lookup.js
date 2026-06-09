@@ -248,4 +248,3 @@ export function validateTable(table) {
 export function tableCoversRoll(table, roll) {
     return lookup(table, roll, table.type === "multi-column" ? table.columns[0]?.id : undefined) !== undefined;
 }
-//# sourceMappingURL=lookup.js.map
