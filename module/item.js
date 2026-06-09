@@ -1,4 +1,4 @@
-/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
+/* global Item, game, Roll, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'

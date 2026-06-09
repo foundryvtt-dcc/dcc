@@ -243,12 +243,15 @@ describe('_createDCCActionDiceMacro', () => {
 })
 
 describe('_createDCCWeaponMacro', () => {
+  // The drag payload maps dccData -> system, so the weapon item lives at
+  // `data.system.weapon` (a real DCCItem with `.type === 'weapon'`). The icon
+  // fallback reads `weapon.type` — NOT a bogus `data.data.weapon.type`, which
+  // would throw in production where `data.data` is the weapon item itself.
   test('weapon drop with explicit img keeps it', () => {
     const macro = _createDCCWeaponMacro({
       type: 'Weapon',
       actorId: 'A10',
-      data: { weapon: { type: 'weapon' } },
-      system: { weapon: { _id: 'W1', name: 'Longsword', img: 'longsword.webp' }, backstab: false }
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Longsword', img: 'longsword.webp' }, backstab: false }
     })
     expect(macro.name).toBe('Longsword')
     expect(macro.img).toBe('longsword.webp')
@@ -260,8 +263,7 @@ describe('_createDCCWeaponMacro', () => {
     const macro = _createDCCWeaponMacro({
       type: 'Weapon',
       actorId: 'A10',
-      data: { weapon: { type: 'weapon' } },
-      system: { weapon: { _id: 'W1', name: 'Bare Weapon', img: '' } }
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Bare Weapon', img: '' } }
     })
     expect(macro.img).toBe('weapon.webp')
   })
@@ -270,8 +272,7 @@ describe('_createDCCWeaponMacro', () => {
     const macro = _createDCCWeaponMacro({
       type: 'Weapon',
       actorId: 'A10',
-      data: { weapon: { type: 'weapon' } },
-      system: { weapon: { _id: 'W1', name: 'Mystery', img: 'icons/svg/mystery-man.svg' } }
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Mystery', img: 'icons/svg/mystery-man.svg' } }
     })
     expect(macro.img).toBe('weapon.webp')
   })
@@ -280,8 +281,7 @@ describe('_createDCCWeaponMacro', () => {
     const macro = _createDCCWeaponMacro({
       type: 'Weapon',
       actorId: 'A10',
-      data: { weapon: { type: 'weapon' } },
-      system: { weapon: { _id: 'W1', name: 'Dagger', img: 'dagger.webp' }, backstab: true }
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Dagger', img: 'dagger.webp' }, backstab: true }
     })
     expect(macro.img).toBe('backstab.svg')
     expect(macro.command).toContain('"backstab":true')

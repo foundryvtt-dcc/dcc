@@ -1,5 +1,3 @@
-/* global Item */
-
 /**
  * Container-support mixin for {@link DCCItem}.
  *

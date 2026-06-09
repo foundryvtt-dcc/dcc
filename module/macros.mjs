@@ -214,7 +214,7 @@ export function _createDCCWeaponMacro (data) {
 
   // Replace missing or default weapon icon with our default
   if (!macroData.img || macroData.img === 'icons/svg/mystery-man.svg') {
-    macroData.img = EntityImages.imageForItem(data.data.weapon.type)
+    macroData.img = EntityImages.imageForItem(weapon.type)
   }
 
   // If dragging a backstab use the backstab icon

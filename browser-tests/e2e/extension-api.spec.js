@@ -384,7 +384,7 @@ test.describe('DCC Extension API', () => {
       const waitForValue = async (item, currency, expected) => {
         for (let i = 0; i < 40; i++) {
           if (item.system.value[currency] === expected) return
-          await new Promise((r) => setTimeout(r, 25))
+          await new Promise((resolve) => setTimeout(resolve, 25))
         }
       }
       try {
@@ -403,7 +403,7 @@ test.describe('DCC Extension API', () => {
         await formulaHoard.rollValue()
         // rollValue awaits its own update; poll defensively until the formula resolves.
         for (let i = 0; i < 40 && formulaHoard.needsValueRoll(); i++) {
-          await new Promise((r) => setTimeout(r, 25))
+          await new Promise((resolve) => setTimeout(resolve, 25))
         }
         const gpResolvedRaw = formulaHoard.system.value.gp
         observed.gpResolvedType = typeof gpResolvedRaw
@@ -484,7 +484,7 @@ test.describe('DCC Extension API', () => {
         const read = () => path.split('.').reduce((o, k) => o?.[k], item.system)
         for (let i = 0; i < 40; i++) {
           if (String(read()) === String(expected)) return
-          await new Promise((r) => setTimeout(r, 25))
+          await new Promise((resolve) => setTimeout(resolve, 25))
         }
       }
       try {

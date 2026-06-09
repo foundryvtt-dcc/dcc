@@ -1,4 +1,4 @@
-/* global Item, game, ui, Roll, CONFIG, CONST */
+/* global game, ui, Roll, CONFIG, CONST */
 
 /**
  * Currency / treasure-value mixin for {@link DCCItem}.

@@ -1,7 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import CurrencyItemMixin, { CurrencyItemMixin as NamedMixin } from '../item/currency-mixin.mjs'
-import { ContainerItemMixin } from '../item/container-mixin.mjs'
 import DCCItem from '../item.js'
 
 vi.mock('../dice-chain.js', () => ({
