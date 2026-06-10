@@ -40,9 +40,33 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
+## Status (2026-06-09)
+
+**Sessions 52–54 (latest): `dcc.js` decomposition — the Appendix-A entry-point
+split is done.** `module/dcc.js` (already 470 lines; the 1560 Appendix-A baseline
+predates earlier extractions) had three inline hook bodies left. They moved into
+focused `register*()` + named-handler modules matching the existing
+settings-table/table-loading/chat-and-hook-wiring siblings: session 52 →
+`init-hook.mjs` (`Hooks.once('init')` body, split into named bootstrap steps +
+`registerInitHook()`); session 53 → `ready-hook.mjs` (`Hooks.once('ready')` body +
+`checkReleaseNotes`/`_onShowJournal`/`_onShowURI` + `registerReadyHook()`); session
+54 → `scene-control-hooks.mjs` (`getSceneControlButtons` + `registerSceneControlHooks()`).
+**`dcc.js` 470 → 87 lines** — a pure orchestrator of seven `register*()` calls,
+zero inline hook bodies. Behaviour-neutral (identical hooks register at load).
++37 Vitest (`init-hook` 17 / `ready-hook` 13 / `scene-control-hooks` 7) → **1716
+Vitest**; +3 Playwright probes in `extension-api.spec.js`. Three commits (one per
+slice). **With this, every Appendix-A god-object target (`actor.js` /
+`actor-sheet.js` / `item.js` / `config.js` / `dcc.js`) has had its cohesive
+extractable groups lifted.** The Appendix-A file-shrinkage arc is fully complete;
+remaining Phase 7 cleanup items (shim retirement, migration pruning, the
+`warnIfDivergent` exit criterion) are the non-shrinkage backlog. *(NB: an older
+copy of this file labelled the treasure-values work "Session 52"; git's
+authoritative numbering is 52–54 = this dcc.js batch — the treasure work was the
+unnumbered 2026-06-08 slice below.)* The rest of this section is prior status.
+
 ## Status (2026-06-08)
 
-**Session 52 (latest): the two latent open items resolved.** (a) **Removed**
+**The two latent open items resolved (the unnumbered 2026-06-08 slice).** (a) **Removed**
 the unconsumed `CONFIG.DCC.activeEffectKeys` reference table (zero runtime consumers
 ever, superseded by Foundry's native V14 AE UI, duplicated by the user-guide). (b)
 **Restored rollable treasure values** — the session-41 finding was an orphaned

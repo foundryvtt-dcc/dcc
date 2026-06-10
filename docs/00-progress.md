@@ -130,7 +130,15 @@ preserved. All behavior-neutral with no lib change. Repo green:
 **Session 47 adopted the push-per-batch E2E cadence** (Vitest per slice, full
 E2E once per batch — see `CLAUDE.md`); sessions 48–49 and session 50 each ran as
 one such batch.
-Per-session detail lives in *Recent slices* +
+**Sessions 52–54 (2026-06-09) finished the Appendix-A `dcc.js` entry-point
+split** — the three remaining inline hook bodies (`init` → `init-hook.mjs`,
+`ready` → `ready-hook.mjs`, `getSceneControlButtons` → `scene-control-hooks.mjs`)
+moved into focused `register*()` modules matching the existing
+settings-table/table-loading/chat-and-hook-wiring siblings; **`dcc.js` 470 → 87
+lines**, now a pure orchestrator of seven `register*()` calls. All Appendix-A
+god-object targets (`actor.js`, `actor-sheet.js`, `item.js`, `config.js`,
+`dcc.js`) have now had their cohesive extractable groups lifted. Per-session
+detail lives in *Recent slices* +
 the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
 the *PR #720 review backlog* below.
 
@@ -202,6 +210,32 @@ the class-clean read-side source of truth). Decision record:
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-09 — Phase 7 sessions 52–54: `dcc.js` decomposition (the
+  Appendix-A entry-point split, finally done).** The system entry point
+  `module/dcc.js` was already 470 lines (the §2.7/Appendix-A 1560 baseline
+  predates the settings-table / table-loading / chat-and-hook-wiring
+  extractions). This batch finished the job: the three remaining inline hook
+  bodies moved into focused `register*()` + named-handler modules matching the
+  established sibling pattern — **session 52** lifted the `Hooks.once('init')`
+  body into `module/init-hook.mjs` (split into `registerBuiltInRegistries` /
+  `registerDocumentConfig` / `registerDataModels` / `assembleGameDccNamespace` /
+  `registerSheets` / `loadSystemTemplates` / `registerEarlySettings`, wired via
+  `registerInitHook()`; `foundry.*` destructures pushed into the functions that
+  use them); **session 53** lifted the `Hooks.once('ready')` body +
+  `checkReleaseNotes`/`_onShowJournal`/`_onShowURI` into `module/ready-hook.mjs`
+  (`registerReadyHook()`); **session 54** lifted `getSceneControlButtons` into
+  `module/scene-control-hooks.mjs` (`registerSceneControlHooks()`). **`dcc.js`
+  470 → 87 lines** — now a pure orchestrator of seven `register*()` calls with
+  zero inline hook bodies (init/scene-controls/ready + the four pre-existing
+  settings-table/table-loading/table-cache/chat-and-hook wirings). Behaviour-
+  neutral: identical hooks register at module load. Tests: +37 Vitest across
+  `init-hook.test.js` (17), `ready-hook.test.js` (13), `scene-control-hooks.test.js`
+  (7) — **1716 Vitest** (was 1679); +3 Playwright probes in
+  `extension-api.spec.js` (init-hook bootstrap side effects, ready-hook
+  settings/KeyState/theme-classes, scene-control buttons driven via
+  `Hooks.callAll`). Three commits, one per slice. Docs: this entry + Current
+  phase + `ARCHITECTURE_REIMAGINED.md` Appendix A / §5.3.
 
 - **2026-06-09 — Phase 7: actor.js roll-dispatch extraction (reverses the
   session-50 "no further shrinkage" call).** Per owner direction, extracted the
@@ -308,41 +342,6 @@ archives linked above.
   are exhausted** — what remains is the adapter dispatch layer that per §8.6 stays
   co-located with the public `rollXxx` wrappers. The Appendix-A file-shrinkage arc
   is now complete.
-
-- **2026-06-08 — Phase 7 session 49: Appendix-A `actor.js` shrinkage —
-  extract derived-stat computation into `module/actor/derived-stats-mixin.mjs`.**
-  Second `actor.js` slice (document class → mixin pattern). The four cohesive
-  derived-stat helpers — `computeMeleeAndMissileAttackAndDamage`,
-  `computeSavingThrows`, `computeSpellCheck`, `computeInitiative` — lifted into
-  `DerivedStatsMixin`; `DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`.
-  Self-contained (only `this.system` + `ensurePlus`); `computeSpellCheck` still
-  fires the **stable `dcc.afterComputeSpellCheck` hook** (XCC consumer) verbatim.
-  Static `computeSpeedValue` stays in `actor.js`. `actor.js` 4263 → 4145 (−118).
-  **No behavior/lib change.** Existing `actor.test.js` exercises these on a live
-  actor and passes unchanged (transparent composition); +5 Vitest composition
-  guard (`actor-derived-stats-mixin.test.js`), +1 Playwright
-  (`data-models.spec.js` — calls each method on a live actor: saves with
-  bonuses+override, initiative, spell-check formula + hook fire; passes in
-  isolation). Part of the session-48/49 batch (one E2E run, see below).
-
-- **2026-06-08 — Phase 7 session 48: Appendix-A `actor.js` arc opens —
-  extract the AE-application engine into `module/actor/active-effects-mixin.mjs`.**
-  First `actor.js` slice. `actor.js` is a **document class**, so unlike the sheet
-  it CAN use the `item.js` mixin pattern. The self-contained Active-Effects
-  application engine — `applyActiveEffects` (the custom replacement for core's,
-  handling equipped-item transfers + DCC change types incl. `diceChain`/`subtract`
-  + the #736 `token.*` routing) + `_resolveEffectValue` + the seven
-  `_applyXxxEffect` handlers (custom/add/subtract/multiply/override/upgrade/
-  downgrade) — lifted into `ActiveEffectsMixin`;
-  `DCCActor extends ActiveEffectsMixin(Actor)`. `_getConfig` stays (also read by
-  `prepareBaseData`/`prepareDerivedData`); now-unused `DCCActiveEffect` + imported
-  `DiceChain` (the rest are `game.dcc.DiceChain`) dropped from `actor.js`.
-  `actor.js` 4574 → 4263 (−311). **No behavior/lib change.** Existing
-  `active-effects.test.js` exercises every handler on a live actor and passes
-  unchanged (transparent composition); +8 Vitest composition guard + direct
-  stub checks (`actor-active-effects-mixin.test.js`), +1 Playwright
-  (`active-effects.spec.js` — add/override/upgrade/downgrade/multiply through the
-  live engine + the `overrides` tracking map; passes in isolation).
 
 ## Closed questions
 

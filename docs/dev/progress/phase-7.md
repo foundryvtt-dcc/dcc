@@ -2051,3 +2051,38 @@
   **Cadence note:** this batch adopted the new push-per-batch E2E cadence (Vitest
   per slice, full E2E once per batch — see `CLAUDE.md`). The cohesive
   `actor-sheet.js` extractions are now done; next target is `actor.js`.
+
+- **2026-06-08 — Phase 7 session 48: Appendix-A `actor.js` arc opens —
+  extract the AE-application engine into `module/actor/active-effects-mixin.mjs`.**
+  First `actor.js` slice. `actor.js` is a **document class**, so unlike the sheet
+  it CAN use the `item.js` mixin pattern. The self-contained Active-Effects
+  application engine — `applyActiveEffects` (the custom replacement for core's,
+  handling equipped-item transfers + DCC change types incl. `diceChain`/`subtract`
+  + the #736 `token.*` routing) + `_resolveEffectValue` + the seven
+  `_applyXxxEffect` handlers (custom/add/subtract/multiply/override/upgrade/
+  downgrade) — lifted into `ActiveEffectsMixin`;
+  `DCCActor extends ActiveEffectsMixin(Actor)`. `_getConfig` stays (also read by
+  `prepareBaseData`/`prepareDerivedData`); now-unused `DCCActiveEffect` + imported
+  `DiceChain` (the rest are `game.dcc.DiceChain`) dropped from `actor.js`.
+  `actor.js` 4574 → 4263 (−311). **No behavior/lib change.** Existing
+  `active-effects.test.js` exercises every handler on a live actor and passes
+  unchanged (transparent composition); +8 Vitest composition guard + direct
+  stub checks (`actor-active-effects-mixin.test.js`), +1 Playwright
+  (`active-effects.spec.js` — add/override/upgrade/downgrade/multiply through the
+  live engine + the `overrides` tracking map; passes in isolation).
+
+- **2026-06-08 — Phase 7 session 49: Appendix-A `actor.js` shrinkage —
+  extract derived-stat computation into `module/actor/derived-stats-mixin.mjs`.**
+  Second `actor.js` slice (document class → mixin pattern). The four cohesive
+  derived-stat helpers — `computeMeleeAndMissileAttackAndDamage`,
+  `computeSavingThrows`, `computeSpellCheck`, `computeInitiative` — lifted into
+  `DerivedStatsMixin`; `DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`.
+  Self-contained (only `this.system` + `ensurePlus`); `computeSpellCheck` still
+  fires the **stable `dcc.afterComputeSpellCheck` hook** (XCC consumer) verbatim.
+  Static `computeSpeedValue` stays in `actor.js`. `actor.js` 4263 → 4145 (−118).
+  **No behavior/lib change.** Existing `actor.test.js` exercises these on a live
+  actor and passes unchanged (transparent composition); +5 Vitest composition
+  guard (`actor-derived-stats-mixin.test.js`), +1 Playwright
+  (`data-models.spec.js` — calls each method on a live actor: saves with
+  bonuses+override, initiative, spell-check formula + hook fire; passes in
+  isolation). Part of the session-48/49 batch (one E2E run).

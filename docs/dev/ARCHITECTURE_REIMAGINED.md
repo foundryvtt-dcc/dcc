@@ -257,7 +257,7 @@ Separate the stack into clearly-bounded packages:
 ### 5.3 What stays in Foundry but gets *smaller*
 - `actor.js` — 2,251 lines → ~400 lines of thin wrappers
 - `item.js` — 967 lines → ~200 lines
-- `dcc.js` — 1,560 lines → split into `init.mjs`, `ready.mjs`, `settings.mjs`, `adapter.mjs`
+- `dcc.js` — 1,560 lines → split into focused hook-wiring modules (**done 2026-06-09, sessions 52–54: now 87 lines** — `init-hook.mjs` / `ready-hook.mjs` / `scene-control-hooks.mjs` + the four pre-existing `settings-table-hooks.mjs` / `table-loading.mjs` / `adapter/table-cache.mjs` / `chat-and-hook-wiring.mjs` wirings; `dcc.js` is a pure orchestrator of seven `register*()` calls)
 - `actor-sheet.js` — 1,848 lines → composition framework, not a class-dispatch sheet
 
 ### 5.4 The adapter layer
@@ -534,7 +534,7 @@ Reassess after those two. The answers to "does the adapter feel sane?" and "are 
 |---|---|---|---|
 | `module/actor.js` | 2251 | Phases 1–4, 7 | ~400 → **575 (achieved 2026-06-09)** |
 | `module/actor-sheet.js` | 1848 | Phase 5 | ~500 |
-| `module/dcc.js` | 1560 | Phase 7 | split into 4–5 files |
+| `module/dcc.js` | 1560 | Phase 7 | split into focused hook modules → **87 (achieved 2026-06-09, sessions 52–54)** |
 | `module/item.js` | 967 | Phases 2–3 | ~200 |
 | `module/data/actor/player-data.mjs` | ~400 | Phase 4 | ~100 + mixins |
 | `module/config.js` | 764 | Phases 4–6 | ~200 (variant-specific moves to lib/registry) |
