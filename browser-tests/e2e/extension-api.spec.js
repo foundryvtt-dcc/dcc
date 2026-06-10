@@ -939,6 +939,65 @@ test.describe('DCC Extension API', () => {
     expect(result.fleetingLuckSettingRegistered).toBe(true)
   })
 
+  test('DCC ready-hook bootstrap (system settings + KeyState + theme body classes + dcc.ready) survives ready-hook.mjs extraction', async ({ page }) => {
+    // Phase 7 session 53: the `Hooks.once('ready', …)` body plus
+    // `checkReleaseNotes` / `_onShowJournal` / `_onShowURI` were relocated
+    // from `module/dcc.js` into `module/ready-hook.mjs`, split out so
+    // `checkReleaseNotes` is unit-testable, and wired via
+    // `registerReadyHook()`. This probe asserts the post-pack bootstrap
+    // side effects still landed against live Foundry: the world settings
+    // registered by `registerSystemSettings`, the KeyState tracker seeded on
+    // `game.dcc`, and the theme body classes applied to match their settings.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+
+      // 1. registerSystemSettings — a representative spread of world settings
+      //    (spanning the top, middle and tail of settings.js) is registered.
+      observed.settingsRegistered = [
+        'dcc.activeVariant',
+        'dcc.automateDamageFumblesCrits',
+        'dcc.disableDarkThemeIconFilter',
+        'dcc.chatCardsUseAppTheme',
+        'dcc.showWelcomeDialog'
+      ].filter(key => game.settings.settings.has(key))
+
+      // 2. KeyState tracker seeded on the stable namespace.
+      observed.keyStateCtor = game.dcc.KeyState?.constructor?.name ?? null
+
+      // 3. FleetingLuck / SpellDuel singletons are live (init ran in ready).
+      observed.fleetingLuckShowType = typeof game.dcc.FleetingLuck?.show
+      observed.spellDuelShowType = typeof game.dcc.SpellDuel?.show
+
+      // 4. Theme body classes track their settings — the ready hook's
+      //    conditional class-application branch ran. The chat-cards class is
+      //    applied when chatCardsUseAppTheme is OFF; the dark-filter class
+      //    when disableDarkThemeIconFilter is ON.
+      observed.chatCardsUseAppTheme = game.settings.get('dcc', 'chatCardsUseAppTheme')
+      observed.disableDarkThemeIconFilter = game.settings.get('dcc', 'disableDarkThemeIconFilter')
+      observed.bodyHasChatUiThemeClass = document.body.classList.contains('chat-cards-use-ui-theme')
+      observed.bodyHasDarkFilterClass = document.body.classList.contains('disable-dark-theme-icon-filter')
+
+      return observed
+    })
+
+    // All five representative world settings were registered.
+    expect(result.settingsRegistered).toEqual([
+      'dcc.activeVariant',
+      'dcc.automateDamageFumblesCrits',
+      'dcc.disableDarkThemeIconFilter',
+      'dcc.chatCardsUseAppTheme',
+      'dcc.showWelcomeDialog'
+    ])
+    // KeyState tracker seeded.
+    expect(result.keyStateCtor).toBe('KeyState')
+    // FleetingLuck / SpellDuel initialised + usable.
+    expect(result.fleetingLuckShowType).toBe('function')
+    expect(result.spellDuelShowType).toBe('function')
+    // Theme body classes match their settings (the ready-hook branch ran).
+    expect(result.bodyHasChatUiThemeClass).toBe(!result.chatCardsUseAppTheme)
+    expect(result.bodyHasDarkFilterClass).toBe(!!result.disableDarkThemeIconFilter)
+  })
+
   test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {
     // Phase 7 session 7: the ~2979-line `styles/dcc.scss` monolith is
     // split into 18 focused partials (`_base.scss`, `_journal.scss`,
