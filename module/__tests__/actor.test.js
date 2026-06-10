@@ -1594,6 +1594,66 @@ test('roll skill check without useLevel config', async () => {
   )
 })
 
+test('NPC skill item with useDie:false + a value modifier inherits the actor action die', async () => {
+  // Regression (#742): imported NPCs carry skill items configured with
+  // `useDie: false` but a flat `value` (e.g. "Divine Aid +4"). The
+  // missing-die fallback in `_resolveSkill` must treat such a rollable
+  // skill item like a built-in slot and inherit the actor's action die,
+  // so it rolls with the action die rather than dropping to the
+  // description path with no die.
+  //
+  // Branch architecture: ordinary skill checks flow through the lib
+  // adapter (`_rollSkillCheckViaAdapter` → `new Roll(plan.formula)`), not
+  // `DCCRoll.createRoll`, so this asserts the resolved term-builder output
+  // (`_resolveSkill` + `_buildSkillCheckRollTerms`) — the unit that
+  // implements the fix — rather than a `createRoll` call.
+  const skillItem = new DCCItem({
+    name: 'Divine Aid',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: true,
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false
+      },
+      ability: 'int',
+      die: '1d20',
+      value: '4',
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  // Ensure a clean action die (earlier tests can leave config.actionDice
+  // mutated to 'invalid').
+  actor.system.config.actionDice = '1d20'
+
+  const resolved = actor._resolveSkill('Divine Aid')
+  const terms = actor._buildSkillCheckRollTerms('Divine Aid', resolved)
+
+  // Inherited the actor's action die (labelled "Action Die" because the
+  // skill item carries no per-skill die).
+  const dieTerm = terms.find(t => t.type === 'Die')
+  expect(dieTerm).toBeDefined()
+  expect(dieTerm.formula).toBe('1d20')
+  expect(dieTerm.label).toBe(game.i18n.localize('DCC.ActionDie'))
+
+  // Flat +4 skill value carried through as a Compound term.
+  const valueTerm = terms.find(t => t.type === 'Compound')
+  expect(valueTerm).toBeDefined()
+  expect(valueTerm.formula).toBe('4')
+
+  global.itemTypesMock.mockReset()
+})
+
 test('computeSpellCheck propagates spellCheckOtherMod to cleric abilities', () => {
   // Set up cleric-like skills
   actor.system.skills.divineAid = { label: 'Divine Aid', value: '', ability: '' }

@@ -58,3 +58,10 @@ test('computed speed ignores the delta when no persisted value is available', ()
 test('computed speed treats non-numeric inputs as zero', () => {
   expect(DCCActor.computeSpeedValue({})).toBe(0)
 })
+
+test('computed speed parses unit-bearing values (e.g. 30 feet written with a tick)', () => {
+  // base "30'" with a -5 armor penalty and no active effect -> 25
+  expect(DCCActor.computeSpeedValue({
+    base: "30'", otherMod: 0, armorPenalty: -5, currentValue: "30'", sourceValue: "30'"
+  })).toBe(25)
+})
