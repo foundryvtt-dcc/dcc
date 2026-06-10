@@ -1035,9 +1035,28 @@ sessions 43–47 — sheets can't use mixins, their big methods are `#private`);
 `actor.js` 4574 → 3999 (document class → mixin for stateful groups +
 free function for pure logic, `module/actor/*.mjs`, sessions 48–50:
 `active-effects-mixin.mjs`, `derived-stats-mixin.mjs`, `roll-data-mixin.mjs`,
-`damage-breakdown.mjs`). What remains in `actor.js` is the adapter dispatch layer
-that per §8.6 stays co-located with the public `rollXxx` wrappers — not a
-behavior-neutral extraction. **No further file-shrinkage slice is warranted.**
+`damage-breakdown.mjs`).
+
+**Update 2026-06-09 — roll-dispatch extraction (reverses the
+"no further shrinkage" call below).** The session-50 note originally read
+"What remains in `actor.js` is the adapter dispatch layer that per §8.6 stays
+co-located with the public `rollXxx` wrappers — not a behavior-neutral
+extraction. No further file-shrinkage slice is warranted." Per owner direction
+that call was reversed: the roll dispatchers were extracted as **mixins** (not
+free functions — the public `rollXxx` wrappers and their private dispatchers move
+together, so each stays an instance method with byte-identical `this` semantics,
+and the §8.6 "co-located with the wrapper" intent is preserved because wrapper +
+dispatcher live in the same mixin file). Five cohesive slices:
+`rolls-spell-mixin.mjs` (986 lines, `rollSpellCheck` + cast dispatchers),
+`rolls-weapon-mixin.mjs` (984, `rollWeaponAttack`/`rollCritical` + attack/damage/
+crit/fumble), `rolls-check-mixin.mjs` (777, ability/luck/init/hit-dice/save),
+`rolls-skill-mixin.mjs` (624, `rollSkillCheck` + resolvers), plus the shared
+`force-crit.mjs` free function. `actor.js` 3999 → 575 — the lifecycle
+(`prepareBaseData`/`prepareDerivedData`/`_getConfig`/`levelChange`/
+`computeSpeedValue`), `rollLuckDie`, and the damage/disapproval resolution
+methods remain. Behaviour-neutral: full Vitest unchanged + a shape/behaviour
+guard per mixin (`actor-rolls-*-mixin.test.js`). See `ARCHITECTURE_REIMAGINED.md`
+Appendix A.
 
 ---
 

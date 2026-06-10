@@ -203,6 +203,23 @@ the class-clean read-side source of truth). Decision record:
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-06-09 — Phase 7: actor.js roll-dispatch extraction (reverses the
+  session-50 "no further shrinkage" call).** Per owner direction, extracted the
+  five roll-dispatch groups out of `actor.js` into cohesive mixins under
+  `module/actor/`: `rolls-spell-mixin.mjs` (986 lines), `rolls-weapon-mixin.mjs`
+  (984), `rolls-check-mixin.mjs` (777, ability/luck/init/hit-dice/save),
+  `rolls-skill-mixin.mjs` (624), plus the shared `force-crit.mjs` free function
+  (`applyForceCritToFoundryRoll`, used by both skill + spell). `DCCActor` now
+  `extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpellMixin(
+  RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))))))`. **actor.js
+  3999 → 575** — what remains is the document lifecycle, `rollLuckDie`, and the
+  damage/disapproval resolution methods. Behaviour-neutral: every `this.*`
+  cross-reference resolves up the (always co-composed) prototype chain; all
+  existing Vitest pass unchanged + a shape/behaviour guard per mixin
+  (`actor-rolls-{spell,weapon,check,skill}-mixin.test.js`, 1679 total). Five
+  commits, one per slice. Docs updated: `02-slice-backlog.md` Appendix-A note +
+  `ARCHITECTURE_REIMAGINED.md` Appendix A / §8.6.
+
 - **2026-06-08 — Phase 7 session 52: resolve the two latent open items —
   restore rollable treasure values + remove the unconsumed `activeEffectKeys`
   table.** Two commits. **(a) Removed `activeEffectKeys`** (`chore(cruft)`): the

@@ -471,6 +471,8 @@ Two surfaces exist, and they retire differently:
 **Foundry-facing API — stays indefinitely as thin wrappers.**
 `DCCActor.rollAbilityCheck`, `DCCActor.rollInitiative`, `game.dcc.DiceChain.bumpDie`, `game.dcc.processSpellCheck`, hook names like `dcc.modifyAttackRollTerms`, and documented `CONFIG.DCC.*` entries. These are what third-party tools (Token Action HUD, Item Piles, XCC sheets, `dcc-qol`) depend on (§2.12). They stay forever — but their *bodies* become thin wrappers over adapter calls once the adapter is capable. This preserves the Foundry-smelling surface without keeping the old implementation logic.
 
+> *Note (2026-06-09):* "stays as part of `DCCActor`" is about the **public method surface**, not the source file. The roll dispatchers were extracted into `module/actor/rolls-{spell,weapon,check,skill}-mixin.mjs` and composed back into `DCCActor` via its `extends` chain (Appendix A). The public `rollXxx` methods are unchanged from a consumer's view — `actor.rollSpellCheck()` still resolves — and each public wrapper lives in the same mixin file as the dispatcher it fronts, so §8.6's "thin wrapper co-located with its adapter call" intent holds.
+
 **Internal legacy branches — retire once adapter coverage is exhaustive.**
 `_rollToHitLegacy`, `_rollDamageLegacy`, `_rollCriticalLegacy`, `_rollFumbleLegacy`, `_runLegacyPatronTaint`, and the direct-reimpl branches inside `rollSpellCheck`. These exist *only* to keep code working while the adapter gains coverage. Once the gate for a given call site is exhaustive, the legacy branch is deleted and the dispatcher collapses to a single call.
 
@@ -527,7 +529,7 @@ Reassess after those two. The answers to "does the adapter feel sane?" and "are 
 
 | File | Lines | Phase when it shrinks | Target size |
 |---|---|---|---|
-| `module/actor.js` | 2251 | Phases 1–4 | ~400 |
+| `module/actor.js` | 2251 | Phases 1–4, 7 | ~400 → **575 (achieved 2026-06-09)** |
 | `module/actor-sheet.js` | 1848 | Phase 5 | ~500 |
 | `module/dcc.js` | 1560 | Phase 7 | split into 4–5 files |
 | `module/item.js` | 967 | Phases 2–3 | ~200 |

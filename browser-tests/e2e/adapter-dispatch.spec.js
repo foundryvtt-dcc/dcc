@@ -129,6 +129,37 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     }, { name, extraSystem })
   }
 
+  // ── roll-dispatch mixin composition ─────────────────────────────────
+  // The roll dispatchers were extracted from actor.js into
+  // module/actor/rolls-{spell,weapon,check,skill}-mixin.mjs (2026-06-09).
+  // This probe asserts the mixin chain composes correctly in live Foundry —
+  // every public + representative private dispatcher resolves on a real
+  // DCCActor instance's prototype chain. If a mixin failed to wire into the
+  // `extends` chain, these would be undefined and every other test below
+  // (which drives these methods) would fail with a less localized error.
+  test.describe('roll-dispatch mixin composition', () => {
+    test('a live DCCActor carries every extracted roll dispatcher', async ({ page }) => {
+      await makePlayer(page, 'P1 Composition Probe')
+      const surface = await page.evaluate(() => {
+        const actor = game.actors.getName('P1 Composition Probe')
+        const names = [
+          // rolls-spell-mixin
+          'rollSpellCheck', '_rollSpellCheckDispatch', '_castViaCastSpell', '_buildSpellCheckFlavor',
+          // rolls-weapon-mixin
+          'rollWeaponAttack', 'rollCritical', 'rollToHit', '_rollDamage', '_rollFumble',
+          // rolls-check-mixin
+          'rollAbilityCheck', 'getInitiativeRoll', 'rollInit', 'rollHitDice', 'rollSavingThrow',
+          // rolls-skill-mixin
+          'rollSkillCheck', '_resolveSkill', '_stripDieCount', '_buildSkillCheckRollTerms'
+        ]
+        return Object.fromEntries(names.map(n => [n, typeof actor[n]]))
+      })
+      for (const [name, type] of Object.entries(surface)) {
+        expect(type, `DCCActor is missing dispatcher: ${name}`).toBe('function')
+      }
+    })
+  })
+
   // ── rollAbilityCheck ────────────────────────────────────────────────
 
   test.describe('rollAbilityCheck', () => {
