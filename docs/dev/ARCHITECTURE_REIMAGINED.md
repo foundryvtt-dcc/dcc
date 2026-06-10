@@ -476,6 +476,9 @@ Two surfaces exist, and they retire differently:
 **Internal legacy branches — retire once adapter coverage is exhaustive.**
 `_rollToHitLegacy`, `_rollDamageLegacy`, `_rollCriticalLegacy`, `_rollFumbleLegacy`, `_runLegacyPatronTaint`, and the direct-reimpl branches inside `rollSpellCheck`. These exist *only* to keep code working while the adapter gains coverage. Once the gate for a given call site is exhaustive, the legacy branch is deleted and the dispatcher collapses to a single call.
 
+**Observational divergence checks — retire on a version-stability criterion.**
+The 6 `warnIfDivergent(...)` calls (weapon + spell mixins) are not legacy branches and not redundant computation — they compare the lib's re-classified total against Foundry's displayed total to catch a silent lib drift. Their exit criterion lives in `module/adapter/debug.mjs` (`warnIfDivergent` JSDoc): remove the calls once `@moonloch/dcc-core-lib` is version-pinned and has shipped ≥2 consecutive vendor syncs with zero divergence warnings; the surrounding two-pass stays.
+
 **Keeping legacy paths alive permanently doubles the Foundry version-upgrade tax (§2.9), defeating one of the refactor's strongest motivations.** Any earlier phase close-out decision that marked a specific legacy branch as "permanent" is superseded by this principle — those branches retire when their outstanding blockers are resolved. Blockers (e.g., RAW alignment for patron taint) move from "deferred to backlog" onto the critical path.
 
 Deprecation warnings for the Foundry-facing surface come in Phase 6/7; removals of *actually-unused* Foundry-facing APIs come in a later major version. The internal-legacy retirements are silent — no external consumer knows or cares.

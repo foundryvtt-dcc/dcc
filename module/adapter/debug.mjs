@@ -37,6 +37,21 @@ export function logDispatch (rollType, path, details = {}) {
  * claims "no divergence with the displayed total"; this enforces
  * it observationally.
  *
+ * NOT redundant computation: Foundry rolls the dice once and the lib
+ * re-classifies those same naturals via a sequenced roller (see the
+ * `sequencedRoller` closures in `actor/rolls-weapon-mixin.mjs` /
+ * `rolls-spell-mixin.mjs`). This check just compares the two totals —
+ * it is one integer comparison per roll, not a second roll.
+ *
+ * Exit criterion (when to delete these calls): once `@moonloch/dcc-core-lib`
+ * is version-pinned and has shipped ≥2 consecutive vendor syncs with zero
+ * `[DCC adapter] … total divergence` warnings observed in real play / the
+ * e2e run, the safety net has served its purpose and each `warnIfDivergent`
+ * call can be removed (the surrounding two-pass stays — it is the adapter's
+ * design, not scaffolding). Until then, keep them: a silent lib bump that
+ * shifts a total is exactly what this is here to catch. Tracked against
+ * ARCHITECTURE_REIMAGINED.md §8.6.
+ *
  * @param {string} rollType - e.g. 'rollToHit', 'rollDamage', 'rollCritical'
  * @param {number} foundryTotal - Foundry Roll's final total
  * @param {number} libTotal - lib result's total
