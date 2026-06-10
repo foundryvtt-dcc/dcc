@@ -68,6 +68,35 @@ export default defineConfig({
       '**/node_modules/**',
       '**/browser-tests/**'
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'json-summary', 'html'],
+      reportsDirectory: 'coverage',
+      // Measure the system's runtime source only. Exclude test scaffolding,
+      // the vendored lib (its own repo's concern), and the Node build/CLI
+      // scripts that aren't part of the in-Foundry runtime.
+      include: ['module/**/*.{js,mjs}'],
+      exclude: [
+        'module/__tests__/**',
+        'module/__integration__/**',
+        'module/__mocks__/**',
+        'module/vendor/**',
+        'module/compilePacks.js',
+        'module/extractPacks.js',
+        'module/compare-lang-files.js',
+        'module/sync-v13-updates.js',
+        '**/*.test.js'
+      ],
+      // Ratchet floor — set just below the measured baseline so coverage can
+      // only hold or climb. Raise these as coverage improves; never lower them
+      // to make a red run pass. See docs/dev/TESTING.md.
+      thresholds: {
+        statements: 60,
+        branches: 60,
+        functions: 63,
+        lines: 60
+      }
+    },
     projects
   }
 })

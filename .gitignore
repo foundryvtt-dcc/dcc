@@ -76,6 +76,9 @@ packs/**/MANIFEST*
 test-results/
 playwright-report/
 
+# Vitest coverage reports (npm run test:coverage)
+coverage/
+
 # Environment files with secrets
 .env
 browser-tests/**/.env

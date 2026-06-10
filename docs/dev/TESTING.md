@@ -24,8 +24,8 @@ npm run test:integration
 # Run specific test file
 npm test module/__tests__/actor.test.js
 
-# Run tests with coverage
-npm test -- --coverage
+# Run the unit suite with coverage + enforce the ratchet thresholds
+npm run test:coverage
 ```
 
 ## Test Structure
@@ -247,6 +247,28 @@ See [Test Coverage](TEST_COVERAGE.md) for:
 - Phase-by-phase implementation plan
 - Known issues discovered during testing
 - Mock enhancement strategies
+
+### Coverage tooling + ratchet
+
+`npm run test:coverage` runs the **unit** project (deterministic — no
+Foundry dependency) under the `v8` provider and enforces the thresholds in
+`vitest.config.js`. They are a **ratchet floor**, set just below the measured
+baseline so coverage can only hold or climb:
+
+| Metric | Floor | Baseline (2026-06-09) |
+|--------|-------|-----------------------|
+| Statements | 60% | 60.5% |
+| Branches | 60% | 60.65% |
+| Functions | 63% | 64.22% |
+| Lines | 60% | 60.95% |
+
+Raise the floors as coverage improves; **never lower them to make a red run
+pass** — a drop means new code shipped untested. The default `npm test` does
+**not** measure coverage (kept fast for the pre-commit hook); coverage is
+opt-in via `test:coverage` and is the natural gate to wire into CI. Reports
+land in `coverage/` (gitignored); open `coverage/index.html` for the
+line-by-line view. The integration project (when Foundry is present) only
+*adds* coverage, so basing the floor on unit-only stays safe everywhere.
 
 ### Current Coverage Targets
 | Category | Target |
