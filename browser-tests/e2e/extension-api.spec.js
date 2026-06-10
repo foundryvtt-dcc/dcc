@@ -861,6 +861,84 @@ test.describe('DCC Extension API', () => {
     expect(result.protoTokenSyncedToCustom).toBe(true)
   })
 
+  test('DCC init-hook bootstrap (document/data-model config + game.dcc namespace + sheet registration) survives init-hook.mjs extraction', async ({ page }) => {
+    // Phase 7 session 52: the `Hooks.once('init', …)` body was relocated from
+    // `module/dcc.js` into `module/init-hook.mjs`, split into named step
+    // functions (`registerDocumentConfig`, `registerDataModels`,
+    // `assembleGameDccNamespace`, `registerSheets`, `loadSystemTemplates`,
+    // `registerEarlySettings`) and wired via `registerInitHook()`. This probe
+    // asserts every init-time side effect still landed against live Foundry:
+    // the custom document classes, the V14 ActiveEffect phases + diceChain
+    // change type, the Actor/Item data models, the stable `game.dcc` surface,
+    // the registered sheets, and the early Fleeting Luck setting.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+
+      // 1. registerDocumentConfig — custom document classes.
+      observed.actorDocClass = CONFIG.Actor.documentClass?.name ?? null
+      observed.itemDocClass = CONFIG.Item.documentClass?.name ?? null
+      observed.combatantDocClass = CONFIG.Combatant.documentClass?.name ?? null
+      observed.activeEffectDocClass = CONFIG.ActiveEffect.documentClass?.name ?? null
+      // V14 ActiveEffect application phases + custom diceChain change type.
+      observed.aePhases = {
+        initial: CONFIG.ActiveEffect.phases?.initial?.priority ?? null,
+        final: CONFIG.ActiveEffect.phases?.final?.priority ?? null
+      }
+      observed.diceChainChangeType = CONFIG.ActiveEffect.changeTypes?.diceChain?.label ?? null
+      // DCC dice types fed into the dice-fulfillment config.
+      observed.diceFulfillmentSeeded = Array.isArray(CONFIG.Dice.fulfillment?.dice) || typeof CONFIG.Dice.fulfillment?.dice === 'object'
+
+      // 2. registerDataModels — Actor + Item data models keyed by subtype.
+      observed.actorDataModelKeys = Object.keys(CONFIG.Actor.dataModels ?? {}).sort()
+      observed.itemDataModelKeys = Object.keys(CONFIG.Item.dataModels ?? {}).sort()
+
+      // 3. assembleGameDccNamespace — documented stable extension surface.
+      const expectedGameDccKeys = [
+        'DCCActor', 'DCCRoll', 'DiceChain', 'FleetingLuck', 'SpellDuel', 'SpellResult', 'TableResult',
+        'getSkillTable', 'processSpellCheck', 'getActiveVariant',
+        'registerActorSheet', 'registerClassDefaults', 'registerClassMixin',
+        'registerClassProgression', 'registerClassProgressions', 'registerClassStartingItems',
+        'registerHomebrewClassForProgressionLoad', 'registerItemSheet', 'registerSheetPart', 'registerVariant',
+        'rollDCCWeaponMacro', 'getMacroActor', 'getMacroOptions'
+      ]
+      observed.gameDccMissingKeys = expectedGameDccKeys.filter(k => !(k in game.dcc))
+
+      // 4. registerSheets — DCC actor + item sheets are registered + selectable.
+      const playerSheets = Object.values(CONFIG.Actor.sheetClasses?.Player ?? {}).map(s => s.id)
+      observed.hasDccPlayerSheet = playerSheets.some(id => id.includes('DCCActorSheet'))
+      const itemSheets = Object.values(CONFIG.Item.sheetClasses?.weapon ?? {}).map(s => s.id)
+      observed.hasDccItemSheet = itemSheets.some(id => id.includes('DCCItemSheet'))
+
+      // 5. registerEarlySettings — Fleeting Luck setting registered early.
+      observed.fleetingLuckSettingRegistered = game.settings.settings.has('dcc.enableFleetingLuck')
+
+      return observed
+    })
+
+    // Document classes.
+    expect(result.actorDocClass).toBe('DCCActor')
+    expect(result.itemDocClass).toBe('DCCItem')
+    expect(result.combatantDocClass).toBe('DCCCombatant')
+    expect(result.activeEffectDocClass).toBe('DCCActiveEffect')
+    // V14 AE phases + diceChain change type.
+    expect(result.aePhases).toEqual({ initial: 0, final: 100 })
+    expect(result.diceChainChangeType).toBe('DCC.EffectChangeTypeDiceChain')
+    expect(result.diceFulfillmentSeeded).toBe(true)
+    // Data models.
+    expect(result.actorDataModelKeys).toEqual(['NPC', 'Party', 'Player'])
+    expect(result.itemDataModelKeys).toEqual([
+      'ammunition', 'armor', 'container', 'equipment', 'level',
+      'mount', 'skill', 'spell', 'treasure', 'weapon'
+    ])
+    // Stable game.dcc surface — nothing dropped in the extraction.
+    expect(result.gameDccMissingKeys).toEqual([])
+    // Sheets registered + selectable.
+    expect(result.hasDccPlayerSheet).toBe(true)
+    expect(result.hasDccItemSheet).toBe(true)
+    // Early Fleeting Luck setting.
+    expect(result.fleetingLuckSettingRegistered).toBe(true)
+  })
+
   test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {
     // Phase 7 session 7: the ~2979-line `styles/dcc.scss` monolith is
     // split into 18 focused partials (`_base.scss`, `_journal.scss`,
