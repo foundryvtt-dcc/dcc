@@ -998,6 +998,67 @@ test.describe('DCC Extension API', () => {
     expect(result.bodyHasDarkFilterClass).toBe(!!result.disableDarkThemeIconFilter)
   })
 
+  test('DCC scene-control buttons (Spell Duel always, Fleeting Luck when enabled) survive scene-control-hooks.mjs extraction', async ({ page }) => {
+    // Phase 7 session 54: the `getSceneControlButtons` handler was relocated
+    // from `module/dcc.js` into `module/scene-control-hooks.mjs`, wired via
+    // `registerSceneControlHooks()`. This probe drives the registered hook
+    // end-to-end by broadcasting `getSceneControlButtons` with a stub
+    // `controls` object and asserting the DCC token-layer tools land: Spell
+    // Duel is always added; Fleeting Luck is added iff the
+    // `dcc.enableFleetingLuck` world setting is on. Their onChange callbacks
+    // are also exercised to confirm they delegate to the live singletons.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+
+      const fleetingLuckEnabled = game.settings.get('dcc', 'enableFleetingLuck')
+      observed.fleetingLuckEnabled = fleetingLuckEnabled
+
+      // Drive the registered hook with a stub controls object shaped like
+      // Foundry's scene-control payload.
+      const controls = { tokens: { tools: {} } }
+      Hooks.callAll('getSceneControlButtons', controls)
+
+      observed.spellDuelTool = controls.tokens.tools.spellDuel
+        ? { name: controls.tokens.tools.spellDuel.name, title: controls.tokens.tools.spellDuel.title, hasOnChange: typeof controls.tokens.tools.spellDuel.onChange === 'function' }
+        : null
+      observed.fleetingLuckTool = controls.tokens.tools.fleetingLuck
+        ? { name: controls.tokens.tools.fleetingLuck.name, title: controls.tokens.tools.fleetingLuck.title }
+        : null
+
+      // The onChange callbacks delegate to the live game.dcc singletons —
+      // stub their show() methods to confirm wiring without opening UI.
+      const flShow = game.dcc.FleetingLuck.show
+      const sdShow = game.dcc.SpellDuel.show
+      let spellDuelDelegated = false
+      let fleetingLuckDelegated = false
+      try {
+        game.dcc.SpellDuel.show = () => { spellDuelDelegated = true }
+        game.dcc.FleetingLuck.show = () => { fleetingLuckDelegated = true }
+        controls.tokens.tools.spellDuel?.onChange?.({}, true)
+        controls.tokens.tools.fleetingLuck?.onChange?.({}, true)
+      } finally {
+        game.dcc.FleetingLuck.show = flShow
+        game.dcc.SpellDuel.show = sdShow
+      }
+      observed.spellDuelDelegated = spellDuelDelegated
+      observed.fleetingLuckDelegated = fleetingLuckDelegated
+
+      return observed
+    })
+
+    // Spell Duel button is always present + wired.
+    expect(result.spellDuelTool).toEqual({ name: 'spellDuel', title: 'DCC.SpellDuel', hasOnChange: true })
+    expect(result.spellDuelDelegated).toBe(true)
+    // Fleeting Luck button tracks its world setting.
+    if (result.fleetingLuckEnabled) {
+      expect(result.fleetingLuckTool).toEqual({ name: 'fleetingLuck', title: 'DCC.FleetingLuck' })
+      expect(result.fleetingLuckDelegated).toBe(true)
+    } else {
+      expect(result.fleetingLuckTool).toBeNull()
+      expect(result.fleetingLuckDelegated).toBe(false)
+    }
+  })
+
   test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {
     // Phase 7 session 7: the ~2979-line `styles/dcc.scss` monolith is
     // split into 18 focused partials (`_base.scss`, `_journal.scss`,

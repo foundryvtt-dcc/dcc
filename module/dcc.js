@@ -1,23 +1,22 @@
-/* global game, Hooks */
-
 /**
  * DCC
  *
  * System entry point (the sole `esmodules` entry in `system.json`). This file
  * is a thin orchestrator: it imports the focused hook-wiring modules and
- * invokes their `register*()` entry-points. The bootstrap bodies themselves
- * live in their own modules:
- *   - `init` hook            → `module/init-hook.mjs`
- *   - `getSceneControlButtons`→ inline below (Phase 7 slice 3 target)
- *   - `ready` hook           → `module/ready-hook.mjs`
- *   - settings-table hooks   → `module/settings-table-hooks.mjs`
- *   - table-loading hooks    → `module/table-loading.mjs`
- *   - adapter table caches   → `module/adapter/table-cache.mjs`
- *   - chat + lifecycle hooks → `module/chat-and-hook-wiring.mjs`
+ * invokes their `register*()` entry-points. The hook bodies themselves live
+ * in their own modules:
+ *   - `init` hook             → `module/init-hook.mjs`
+ *   - `getSceneControlButtons` → `module/scene-control-hooks.mjs`
+ *   - `ready` hook            → `module/ready-hook.mjs`
+ *   - settings-table hooks    → `module/settings-table-hooks.mjs`
+ *   - table-loading hooks     → `module/table-loading.mjs`
+ *   - adapter table caches    → `module/adapter/table-cache.mjs`
+ *   - chat + lifecycle hooks  → `module/chat-and-hook-wiring.mjs`
  */
 
 // Import Modules
 import { registerInitHook } from './init-hook.mjs'
+import { registerSceneControlHooks } from './scene-control-hooks.mjs'
 import { registerReadyHook } from './ready-hook.mjs'
 import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { registerTableLoadingHooks } from './table-loading.mjs'
@@ -37,36 +36,11 @@ registerInitHook()
 /* --------------------------------------------- */
 /*  Initialize Scene Control Buttons             */
 /* --------------------------------------------- */
-Hooks.on('getSceneControlButtons', (controls) => {
-  // Only add Fleeting Luck button if the setting is enabled
-  try {
-    if (game.settings.get('dcc', 'enableFleetingLuck')) {
-      controls.tokens.tools.fleetingLuck = {
-        name: 'fleetingLuck',
-        title: 'DCC.FleetingLuck',
-        icon: 'fas fa-balance-scale-left',
-        onChange: (event, active) => {
-          game.dcc.FleetingLuck.show()
-        },
-        button: true,
-        active: true
-      }
-    }
-  } catch (e) {
-    console.error('DCC | Error adding Fleeting Luck button:', e)
-  }
-
-  controls.tokens.tools.spellDuel = {
-    name: 'spellDuel',
-    title: 'DCC.SpellDuel',
-    icon: 'fas fa-hat-wizard',
-    onChange: (event, active) => {
-      game.dcc.SpellDuel.show()
-    },
-    button: true,
-    active: true
-  }
-})
+// The `getSceneControlButtons` handler lives in
+// `module/scene-control-hooks.mjs`; `registerSceneControlHooks()` wires it
+// onto `Hooks.on(…)`. Adds the token-layer Fleeting Luck (setting-gated) and
+// Spell Duel scene-control buttons.
+registerSceneControlHooks()
 
 /* -------------------------------------------- */
 /*  Post initialization hook                    */
