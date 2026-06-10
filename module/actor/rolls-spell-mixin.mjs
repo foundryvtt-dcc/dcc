@@ -14,6 +14,7 @@ import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
+import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs'
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -643,6 +644,17 @@ export const RollsSpellMixin = (Base) => class extends Base {
       }
     }
 
+    // Post-result seam parity with the legacy `processSpellCheck` path
+    // (item casts fire it there; this adapter route does not). Naked casts
+    // carry no patron taint, so `suppressPatronTaint` is moot here.
+    emitAfterSpellCheckResult(this, {
+      foundryRoll,
+      result,
+      spellItem: null,
+      castingMode: isIdolMagic ? 'cleric' : 'wizard',
+      spellburn: sumSpellburn(input.spellburn)
+    })
+
     return foundryRoll
   }
 
@@ -679,6 +691,16 @@ export const RollsSpellMixin = (Base) => class extends Base {
       foundryRoll
     })
 
+    // Post-result seam parity (see `processSpellCheck`). Generic-mode casts
+    // carry no patron taint, so `suppressPatronTaint` is moot here.
+    emitAfterSpellCheckResult(this, {
+      foundryRoll,
+      result,
+      spellItem,
+      castingMode: 'generic',
+      spellburn: sumSpellburn(input.spellburn)
+    })
+
     return foundryRoll
   }
 
@@ -703,6 +725,16 @@ export const RollsSpellMixin = (Base) => class extends Base {
   async _castViaCalculateSpellCheck (args, spellItem, options) {
     const { character, input, profile } = args
     const events = createSpellEvents({ actor: this, spellItem })
+
+    // `suppressPatronTaint` opt-out: clear the lib's patron-spell flag so
+    // its RAW creeping-chance pipeline is skipped for this cast (mirrors the
+    // legacy `processSpellCheck` `!suppressPatronTaint` guard). With the flag
+    // off, the patron-taint table load + d100/d6 pre-rolls below collapse,
+    // and the lib's pass-2 runs no taint sub-roll. For variant modules (e.g.
+    // MCC) that implement their own patron mechanic off `afterSpellCheckResult`.
+    if (options.suppressPatronTaint) {
+      input.isPatronSpell = false
+    }
 
     // Q7-phase2 (session 27) — fold dialog overrides into the lib
     // input. The dispatcher captured them in `options` (see
@@ -956,6 +988,18 @@ export const RollsSpellMixin = (Base) => class extends Base {
         'system.class.patronTaintChance': `${result.newPatronTaintChance}%`
       })
     }
+
+    // Post-result seam parity (see `processSpellCheck`). `castingMode` is the
+    // adapter-resolved profile (`wizard` / `cleric` / `elf`); the lib applied
+    // any spellburn via `onSpellburnApplied`, so report the input amount.
+    emitAfterSpellCheckResult(this, {
+      foundryRoll,
+      result,
+      spellItem,
+      castingMode: profile?.type,
+      suppressPatronTaint: !!options.suppressPatronTaint,
+      spellburn: sumSpellburn(input.spellburn)
+    })
 
     return foundryRoll
   }

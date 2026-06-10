@@ -1,4 +1,4 @@
-/* global rollToMessageMock, ChatMessage, uiNotificationsWarnMock, gameSettingsGetMock, actorUpdateMock, CONFIG, game */
+/* global rollToMessageMock, ChatMessage, uiNotificationsWarnMock, gameSettingsGetMock, actorUpdateMock, CONFIG, game, Hooks */
 /**
  * Adapter round-trip test — Phase 2 (spell check).
  *
@@ -248,6 +248,38 @@ test('patron-related spell (name contains Patron) bumps patronTaintChance adapte
   // legacy verbatim helper.
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
   expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '4%' })
+
+  findSpy.mockRestore()
+})
+
+test('suppressPatronTaint:true skips the lib creeping-chance so patronTaintChance is not bumped', async () => {
+  // #732 opt-out parity for the adapter calculate path: clearing
+  // `input.isPatronSpell` collapses the patron-taint table load + d100/d6
+  // pre-rolls and the lib's pass-2 runs no taint sub-roll, so the chance
+  // is left untouched. Mirrors the legacy `!suppressPatronTaint` guard in
+  // `processSpellCheck`. Same setup as the bump test above, only the flag
+  // differs.
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Bobugbubilz'
+  actor.system.class.patronTaintChance = '3%'
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  spellItem.name = 'Patron Bond'
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Patron Bond', suppressPatronTaint: true })
+
+  // Cast still rendered, but the patron-taint chance was NOT touched.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(actorUpdateMock).not.toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.class.patronTaintChance': expect.anything() })
+  )
 
   findSpy.mockRestore()
 })
@@ -576,6 +608,47 @@ test('naked spell check (no item) routes via adapter through libCastSpell (D4 na
   itemSpy.mockRestore()
 })
 
+test('naked spell check fires dcc.afterSpellCheckResult with the documented payload (adapter seam parity)', async () => {
+  // #732 seam parity: naked casts route through `_castNakedViaAdapter`
+  // (not `processSpellCheck`), so the post-result hook is emitted via
+  // `emitAfterSpellCheckResult`. A variant module (e.g. MCC) observes the
+  // outcome regardless of cast path. `result` / `patronTaint` are null on
+  // the adapter path (the lib classifies tiers + routes taint via
+  // onPatronTaint); listeners key off `naturalRoll` for the nat-1 trigger.
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  await actor.rollSpellCheck()
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call).toBeDefined()
+  const [, hookActor, payload] = call
+  expect(hookActor).toBe(actor)
+  expect(payload).toMatchObject({
+    item: null,
+    result: null,
+    patronTaint: null,
+    castingMode: 'wizard',
+    suppressPatronTaint: false,
+    spellburn: 0
+  })
+  expect(typeof payload.naturalRoll).toBe('number')
+  expect(typeof payload.total).toBe('number')
+  expect(typeof payload.crit).toBe('boolean')
+  expect(typeof payload.fumble).toBe('boolean')
+  expect(typeof payload.success).toBe('boolean')
+  expect(payload.roll).toBeDefined()
+
+  callAllSpy.mockRestore()
+  itemSpy.mockRestore()
+})
+
 test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _castNakedViaAdapter)', async () => {
   // The naked path deducts spellburn inline in `_castNakedViaAdapter`
   // (no spellItem → no `createSpellEvents`/`onSpellburnApplied` wiring).
@@ -585,6 +658,7 @@ test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _
   rollToMessageMock.mockClear()
   actorUpdateMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -605,6 +679,12 @@ test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _
     'system.abilities.sta.value': 0
   })
 
+  // The burned total (3) is surfaced on the afterSpellCheckResult payload
+  // so a listener (MCC glowburn) can key off it without sniffing the roll.
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call?.[2]?.spellburn).toBe(3)
+
+  callAllSpy.mockRestore()
   itemSpy.mockRestore()
 })
 
