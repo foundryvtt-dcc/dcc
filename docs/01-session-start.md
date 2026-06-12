@@ -8,8 +8,10 @@
 
 We're resuming a refactor on the DCC FoundryVTT system. Working dir:
 `/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc` (git worktree,
-branch `refactor/dcc-core-lib-adapter`). Run `nvm use` first — `.nvmrc`
-pins Node 24.
+branch `refactor/dcc-core-lib-adapter`). Node 24 is required (`.nvmrc`
+pins it); this machine manages Node with **fnm** and 24 is already the
+default — just verify `node --version`, don't `nvm use` (there is no
+nvm here).
 
 **Read these first, in order:**
 1. `docs/00-progress.md` — rolling handoff log. Update at session end.
@@ -39,6 +41,28 @@ session's context):
 - [phase-3.md](dev/progress/phase-3.md) attacks/damage/crit/fumble + cruft
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
+
+## Status (2026-06-12)
+
+**Refactor COMPLETE — pre-merge holding. The slice backlog is fully drained;
+do not look for a next slice.** Since the 06-09 status below: **(a)** the
+2026-06-09 coverage backfill + tooling batch (spell-duel/parser/migrations/
+party-sheet/chat/rolls backfill, `@vitest/coverage-v8` + ratchet floors via
+`npm run test:coverage`, the `warnIfDivergent` exit criterion in
+`adapter/debug.mjs` + §8.6); **(b)** 2026-06-10 — merged main v0.67.7, completed
+the **#732 spell-check seam** on the adapter cast paths (new
+`module/actor/spell-result-hook.mjs` fires `dcc.afterSpellCheckResult` from all
+three adapter terminals; `suppressPatronTaint` honored), and pinned
+`system.json` to the target release **0.70.0** (expect a `system.json` conflict
+on every main merge — keep ours); **(c)** 2026-06-12 — merged main v0.67.8
+(the #744 crit double-display fix; `chat.test.js` adapted to this branch's
+`crit-lookup-hint` contract). Health: **1752 Vitest; full E2E 205/205 clean**
+(the `extension-api.spec.js` container-probe flake did not reproduce).
+**What's next is the PR #720 endgame** — see `00-progress.md` *Next steps*:
+(1) Phases 4–7 review pass, (2) 0.70.0 pre-release build for playtesting
+(`dev/PRERELEASE_PROCESS.md`), (3) sibling-PR coordination (dcc-crawl-classes
+#40 / mcc-classes #38 / XCC extension-api migration), (4) squash-merge PR #720
+as 0.70.0. The rest of this file is prior status.
 
 ## Status (2026-06-09)
 

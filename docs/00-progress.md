@@ -65,151 +65,74 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 cleanup — latest 2026-06-08 (sessions 48–50).** Every PR #720 arc is
-closed: legacy-decommission (sessions 21–25 — no `_xxxLegacy` roll body
-survives; every public dispatcher is single-path through the adapter),
-test-coverage backfill (26–31 — every PR #720 severity-≥6 gap closed or
-found-stale, incl. the session-29 forceCrit dice-flake fix), doc/comment
-hygiene (32), the programmatic-PC-creation doc (33), and the two
-below-threshold perf items (34). **Sessions 35–39 ran the Appendix-A
-`config.js` file-shrinkage arc** with five slices (monster tables →
-`module/config/monster-data.mjs`; default-image tables →
-`module/config/images.mjs`; dice config → `module/config/dice.mjs`;
-`activeEffectKeys` → `module/config/active-effect-keys.mjs`; actor-importer
-block → `module/config/actor-importer.mjs`), shrinking `config.js` 845 → 451.
-**Sessions 40–42 opened + advanced the Appendix-A `item.js` arc** —
-container-support → `module/item/container-mixin.mjs` (40), treasure-value/currency
-→ `module/item/currency-mixin.mjs` (41), spell-roll (spell check + manifestation +
-mercurial magic) → `module/item/spell-mixin.mjs` (42), composed as
-`DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`;
-`item.js` 975 → 339 (−636). **Session 43 opened the `actor-sheet.js` arc** by
-extracting the four AE summary builders into `module/actor-sheet/effects.mjs` as
-pure free functions (sheets can't use mixins for `#private` methods), `actor-sheet.js`
-1890 → 1613. **Session 44 extracted `#prepareItems`** (the ~248-line inventory
-categorizer) into `module/actor-sheet/items.mjs` as an "actor-logic → free
-function" (it mutates the actor: zero-qty deletion, coin-treasure merge, icon
-repair), Foundry globals injected via a `deps` param; `actor-sheet.js` 1613 →
-1366. **Session 45 extracted the four small context-field helpers** (`#prepareNotes`
-/ `#prepareCorruption` / `#prepareImage` / `#prepareCompendiumLinks`) into
-`module/actor-sheet/presentation.mjs` as pure free functions (Foundry globals via
-`deps`), `actor-sheet.js` 1366 → 1324. **Session 46 extracted `_onDragStart`**
-(the ~210-line drag-payload switch — the biggest cohesive chunk left, and a plain
-overridable method rather than `#private`) into `module/actor-sheet/drag-drop.mjs`
-as the pure free function `buildDragStartData(actor, event)`, leaving the sole
-side effect (`event.dataTransfer.setData`) in the thin sheet wrapper; `findDataset`
-moved alongside it with `DCCActorSheet.findDataset` kept as a delegating static
-(it's consumed cross-module by `party-sheet.js` + documented), `actor-sheet.js`
-1324 → 1121. **Session 47 extracted the two drop-side handlers**
-(`_handleContainerDrop` / `_onDropActiveEffect`) into `module/actor-sheet/drop.mjs`
-as the free functions `handleContainerDrop(actor, event, data, deps)` /
-`dropActiveEffect(actor, data, deps)` (Foundry globals via `deps`); `_onDrop`
-stays on the sheet (calls `super._onDrop`); `actor-sheet.js` 1121 → 1040. The
-cohesive `actor-sheet.js` extractions are now done — what remains there is the
-static `#` action handlers (low value, must stay in the `actions` map). **Sessions
-48–49 opened the `actor.js` arc** — being a document class it CAN use the `item.js`
-mixin pattern: session 48 lifted the AE-application engine (`applyActiveEffects` +
-`_resolveEffectValue` + the 7 `_applyXxxEffect` handlers) into
-`module/actor/active-effects-mixin.mjs`; session 49 lifted the four derived-stat
-helpers (`computeMeleeAndMissileAttackAndDamage` / `computeSavingThrows` /
-`computeSpellCheck` / `computeInitiative`) into `module/actor/derived-stats-mixin.mjs`;
-`DCCActor extends DerivedStatsMixin(ActiveEffectsMixin(Actor))`, `actor.js` 4574 →
-4145 (−429). **Session 50 shipped the low-value `actor.js` mop-up** — the roll-input
-accessors (`getRollData` / `getAttackBonusMode` / `getActionDice`) into
-`module/actor/roll-data-mixin.mjs` and the pure `_buildDamageBreakdown` into the
-free function `module/actor/damage-breakdown.mjs`;
-`DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`,
-`actor.js` 4145 → 3999 (−146). **With session 50 the Appendix-A file-shrinkage arc
-is complete** — every cohesive *non-dispatch* group is extracted; what remains in
-`actor.js` is the adapter dispatch layer that per §8.6 stays co-located with the
-public `rollXxx` wrappers. The `dcc.afterComputeSpellCheck` stable hook is
-preserved. All behavior-neutral with no lib change. Repo green:
-**1589 Vitest passed** (sessions 48–49 closed at 1574); full E2E run for the
-48–49 batch was **195 passed + 1 documented flake**
-(`extension-api.spec.js:315`, the session-40 container-mixin probe — the
-`createEmbeddedDocuments`-under-load family; reconfirmed clean in isolation).
-**Session 47 adopted the push-per-batch E2E cadence** (Vitest per slice, full
-E2E once per batch — see `CLAUDE.md`); sessions 48–49 and session 50 each ran as
-one such batch.
-**Sessions 52–54 (2026-06-09) finished the Appendix-A `dcc.js` entry-point
-split** — the three remaining inline hook bodies (`init` → `init-hook.mjs`,
-`ready` → `ready-hook.mjs`, `getSceneControlButtons` → `scene-control-hooks.mjs`)
-moved into focused `register*()` modules matching the existing
-settings-table/table-loading/chat-and-hook-wiring siblings; **`dcc.js` 470 → 87
-lines**, now a pure orchestrator of seven `register*()` calls. All Appendix-A
-god-object targets (`actor.js`, `actor-sheet.js`, `item.js`, `config.js`,
-`dcc.js`) have now had their cohesive extractable groups lifted. Per-session
-detail lives in *Recent slices* +
-the [phase-7 archive](dev/progress/phase-7.md); the itemized close-outs are in
-the *PR #720 review backlog* below.
+**Refactor work is COMPLETE — the branch is in pre-merge holding (latest
+2026-06-12).** Every planned arc is done and the slice backlog is fully
+drained: Phases 0–6 shipped, every Phase 7 cleanup arc closed (legacy
+decommission 21–25, coverage backfill 26–31 + the 2026-06-09 batch,
+doc hygiene 32–33, perf 34, Appendix-A file shrinkage 35–54 — all five
+god-object targets `actor.js` 4574→575 / `actor-sheet.js` 1890→1040 /
+`item.js` 975→339 / `config.js` 845→451 / `dcc.js` 1560→87), Group E
+validated by real sibling consumers, §2.1 schema-slimming closed as
+architecturally-bounded, and the #732 spell-check seam fired from all
+adapter cast terminals (2026-06-10). The branch is current with **main
+v0.67.8** (merged 2026-06-12) and `system.json` is pinned to the target
+release **0.70.0**. Health: **1752 Vitest, full E2E 205/205 clean**.
 
-**Appendix-A `config.js` data-table extraction is effectively complete (arc ran
-sessions 35–39).** The pattern mirrored the Phase-7 `dcc.js` split: break the
-big self-contained data tables in `config.js` into focused
-`module/config/*.mjs` modules and let `config.js` import + re-compose them onto
-the `DCC` object, keeping the public `CONFIG.DCC` shape byte-identical. Done:
-`monster-data.mjs` (35) + `images.mjs` (36) + `dice.mjs` (37) +
-`active-effect-keys.mjs` (38) + `actor-importer.mjs` (39) — `config.js` 845 →
-451 lines (−394). What remains in `config.js` is small scalar enums + the
-Phase 4–6 registry seeds (`classMixins` / `classDefaults` / `sheetParts` /
-`variants` / …); those stay — they're tiny and are the file's reason to exist.
-
-**Appendix-A `item.js` arc opened (session 40).** The behavior-class targets
-(`actor.js` / `actor-sheet.js` / `item.js`) use a different shape than the
-`config.js` data-table arc: **method-group → Foundry mixin**
-(`(Base) => class extends Base`, the codebase's `HandlebarsApplicationMixin(...)`
-idiom), keeping the public instance surface byte-identical. Session 40 lifted the
-container-support block into `module/item/container-mixin.mjs`; session 41 lifted
-the treasure-value / currency block into `module/item/currency-mixin.mjs`; session
-42 lifted the spell-roll block (spell check + manifestation + mercurial magic)
-into `module/item/spell-mixin.mjs`
-(`DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item)))`),
-`item.js` 975 → 339 (−636 across the three slices). What remains in `item.js` is
-`prepareBaseData` (weapon attack/damage prep) + the lifecycle hooks
-(`_onCreate` / `_preDelete` / `deleteDialog`) — the class's core identity, which
-stays. The `item.js` arc is effectively done.
-
-**Appendix-A `actor-sheet.js` arc opened (session 43).** A sheet is an
-`ApplicationV2` class whose big methods are mostly `#private` (the action
-handlers, `#prepareItems`, the AE builders) — and **private names are lexically
-class-scoped, so they can't move to a mixin** the way `item.js`'s public methods
-did. The shrinkage shape for the sheet is therefore **pure-logic → free function
-in `module/actor-sheet/*.mjs`**, with the sheet calling them. Session 43 lifted
-the four AE summary builders (`#prepareAbilityEffects` /
-`#prepareAttackBonusEffects` / `#prepareSaveEffects` / `#prepareAttributeEffects`,
-all `#private`, all with zero prior coverage) into `module/actor-sheet/effects.mjs`
-as pure free functions, deduping the identical effect-collection block they each
-repeated into one shared `collectTransferredActiveEffects`. Session 44 lifted
-`#prepareItems` (the inventory categorizer) into `module/actor-sheet/items.mjs`
-as an "actor-logic → free function" (it mutates the actor; Foundry globals
-injected via `deps`). Session 45 lifted the four small context-field helpers
-(`#prepareNotes` / `#prepareCorruption` / `#prepareImage` /
-`#prepareCompendiumLinks`) into `module/actor-sheet/presentation.mjs` as pure
-free functions (Foundry globals via `deps`). Session 46 lifted `_onDragStart`
-(the ~210-line drag-payload switch — a plain overridable method, not `#private`,
-so it extracts more cleanly than the action handlers will) into
-`module/actor-sheet/drag-drop.mjs` as the pure `buildDragStartData(actor, event)`,
-with `findDataset` relocated beside it and `DCCActorSheet.findDataset` kept as a
-delegating static (cross-module + documented). `actor-sheet.js` 1890 → 1613 →
-1366 → 1324 → 1121. The cohesive small-helper extractions + the drag-start
-builder are now done; what remains are the static `#` action handlers + the
-drop-side handlers (`_onDrop` calls `super._onDrop` so it can't fully move;
-`_handleContainerDrop` / `_onDropActiveEffect` are more self-contained and could
-follow) — trickier, lower priority. `actor.js` remains an unstarted multi-session
-project.
-Group E / §2.8 homebrew
-extensibility was validated 2026-05-29 by migrating two real sibling content
-modules (`dcc-crawl-classes` PR #40, `mcc-classes` PR #38) onto the Phase 4–6
-class-registration API; no further DCC-side Group E work is needed (see
-*Sibling-module status*). **Session 51 (2026-06-08) closed the last Group E thread
-— the §2.1 schema-slimming question — as architecturally-bounded** (Foundry's
-static one-schema-per-subtype model blocks full per-class field removal; the lib is
-the class-clean read-side source of truth). Decision record:
-[`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md).
+**What remains is the PR #720 endgame, not slices:** review the
+Phases 4–7 surface (the 8-agent review only covered Phases 0–3), cut a
+pre-release build for live playtesting (`PRERELEASE_PROCESS.md`),
+coordinate the sibling-module PR landings (dcc-crawl-classes #40,
+mcc-classes #38, XCC `chore/migrate-to-dcc-extension-api`), then
+squash-merge PR #720 into main as 0.70.0. The only time-gated cleanup
+left is the `warnIfDivergent` exit criterion (delete the 6 calls after
+≥2 consecutive zero-divergence vendor syncs — see
+`ARCHITECTURE_REIMAGINED.md` §8.6); the 2026-06-12 E2E run also cleared
+the long-documented `extension-api.spec.js` container-probe flake.
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-06-12 — main merge: v0.67.8 (#744 crit double-display fix).**
+  Merged `origin/main` after landing PR #745 there (a standalone crit roll
+  rendered its table result twice when emote rolls were on and
+  `automateDamageFumblesCrits` off — `emoteCritRoll` embeds the stored
+  `system.critResult` block and `lookupCriticalRoll` appended a second copy;
+  fix is an idempotency guard: `lookupCriticalRoll` returns early when the
+  rendered HTML already contains `.crit-result`). Only conflict: `system.json`
+  — kept this branch's 0.70.0 pin + pre-release URLs (`version.txt` /
+  `package.json` auto-merged to 0.67.8, mirroring the pre-merge split).
+  Adapted the merged `module/__tests__/chat.test.js` unavailable-table case to
+  this branch's `crit-lookup-hint` contract (main appends
+  `DCC.CritTableUnavailable` instead); deduped `.gitignore` (main gained the
+  `coverage/`/`test-results/`/`playwright-report/` entries this branch already
+  had). **1752 Vitest; full E2E 205/205 clean (6.2 min) — including the
+  previously-flaky `extension-api.spec.js` container probe.** Pushed
+  (batch gate green).
+
+- **2026-06-10 — #732 spell-check-seam completion on the adapter paths +
+  v0.67.7 main merge + 0.70.0 version pin.** Three commits. **(a)** Merged
+  `origin/main` v0.67.7 (`785646e`) — #732 spell-check-hooks was the only real
+  integration; the rest was take-HEAD. **(b)** `feat(adapter)` (`0ab2c48`): the
+  item path (`DCCItem.rollSpellCheck` → `game.dcc.processSpellCheck`) already
+  fired the #732 seam post-merge; this extends it to the adapter cast paths
+  that bypass `processSpellCheck`. New shared emitter
+  `module/actor/spell-result-hook.mjs` (`emitAfterSpellCheckResult` +
+  `sumSpellburn`) normalizes the lib `SpellCheckResult` to the
+  `processSpellCheck` payload contract (one listener serves both paths;
+  `result`/`patronTaint` are null on the adapter path — listeners key off
+  `naturalRoll`), fired from all three adapter terminals in
+  `rolls-spell-mixin.mjs` (`_castNakedViaAdapter` — the primary gap —,
+  `_castViaCastSpell`, `_castViaCalculateSpellCheck`). `suppressPatronTaint`
+  honored in `_castViaCalculateSpellCheck` by clearing `input.isPatronSpell`
+  (collapses the taint table load + d100/d6 pre-rolls, mirroring the legacy
+  guard). +`spell-result-hook.test.js` (payload contract + sumSpellburn) +
+  end-to-end `adapter-spell-check.test.js` assertions; **1747 Vitest**.
+  **(c)** `chore` (`c4be351`): `system.json` pinned to **0.70.0** + v0.70.0
+  manifest/download URLs — the refactor's target release number; `version.txt`
+  / `package.json` keep tracking main's release train (expect a `system.json`
+  conflict on every future main merge; resolve by keeping ours).
 
 - **2026-06-09 — Phase 7 sessions 52–54: `dcc.js` decomposition (the
   Appendix-A entry-point split, finally done).** The system entry point
@@ -237,6 +160,28 @@ archives linked above.
   `Hooks.callAll`). Three commits, one per slice. Docs: this entry + Current
   phase + `ARCHITECTURE_REIMAGINED.md` Appendix A / §5.3.
 
+- **2026-06-09 — coverage backfill + tooling batch (previously unrecorded;
+  brackets the roll-dispatch slice below).** Eleven commits. **(a) Unit-coverage
+  backfill** for the largest untested surfaces: `spell-duel.js` (the whole
+  805-line module), parser `_applyBirthAugurEffect` guards, `migrateWorld`
+  orchestration (failure → unstamped → warn), party-sheet membership +
+  member-weapon round-trip, chat table-result dual-write + spell-result wiring,
+  currency `rollValue` + `RollModifierDialog` formula construction,
+  fleeting-luck + init-die parser + `deleteDialog` cascade catch. **(b) Fixes
+  found while testing:** weapon-macro icon fallback read undefined
+  `data.data.weapon.type` (`95a4454`); numeric coin-weight totals + awaited
+  `rollValue` update (`1e69c72`). **(c) Tooling** (`478f427`):
+  `@vitest/coverage-v8` + `npm run test:coverage` with **ratchet-floor
+  thresholds** in `vitest.config.js` (statements 60 / branches 60 / functions
+  63 / lines 60 — just below the 2026-06-09 baseline so coverage can only hold
+  or climb; see `TESTING.md` "Coverage tooling + ratchet"). **(d)
+  `warnIfDivergent` exit criterion defined** (`3f7ae9b`): the 6 calls are NOT
+  redundant two-pass computation (single integer comparison catching silent lib
+  drift); JSDoc in `adapter/debug.mjs` + `ARCHITECTURE_REIMAGINED.md` §8.6 now
+  say to delete them only once the lib is version-pinned and ≥2 consecutive
+  vendor syncs ship zero divergence warnings. Plus `chore` cleanup (`c278bc1` —
+  debug logs + vendor sourcemap noise).
+
 - **2026-06-09 — Phase 7: actor.js roll-dispatch extraction (reverses the
   session-50 "no further shrinkage" call).** Per owner direction, extracted the
   five roll-dispatch groups out of `actor.js` into cohesive mixins under
@@ -254,94 +199,6 @@ archives linked above.
   commits, one per slice. Docs updated: `02-slice-backlog.md` Appendix-A note +
   `ARCHITECTURE_REIMAGINED.md` Appendix A / §8.6.
 
-- **2026-06-08 — Phase 7 session 52: resolve the two latent open items —
-  restore rollable treasure values + remove the unconsumed `activeEffectKeys`
-  table.** Two commits. **(a) Removed `activeEffectKeys`** (`chore(cruft)`): the
-  32-entry `CONFIG.DCC.activeEffectKeys` reference table (PR #611) had zero runtime
-  consumers ever (system or all 4 siblings), is superseded by Foundry's native V14
-  AE config UI, and is duplicated independently by the user-guide "Common Attribute
-  Keys" section. Deleted `module/config/active-effect-keys.mjs` + the re-composition
-  in `config.js` + the unit guard; the e2e probe flips to a removal guard (asserts
-  the surface is gone). −139 lines. **(b) Restored rollable treasure values**: the
-  session-41 finding wasn't dead code — the formula-rolling *capability* was orphaned
-  by a V14 schema tightening (item `system.value` became integer `CurrencyField` +
-  `migrateData` `parseInt()`-destroyed formulas), while ALL the surrounding
-  scaffolding stayed formula-aware (the `type="text"` sheet inputs, the `parseInt`
-  coin-merge/conversion readers, the `needsValueRoll` guard, the Roll-Value button).
-  Un-broke it with a new `TreasureValueField` (StringField per pp/ep/gp/sp/cp) on the
-  item value field + a `migrateData` that String()s legacy integers instead of
-  destroying formulas. **Actor `currency` stays integer `CurrencyField`** (Item
-  Piles / §2.12 ecosystem currency-walking unaffected). A GM can again author a hoard
-  worth e.g. `3d100` gp and resolve it via the Roll-Value button; resolved values are
-  strings (the downstream readers `parseInt` them). Tests: +3 integration
-  (`data-models.test.js` — formula survives migrateData, legacy int → string,
-  `TreasureData` constructs with a formula intact); the e2e currency probe rewritten
-  to assert the restored feature end-to-end (a `2d6` hoard persists + `needsValueRoll`
-  true + resolves in [2,12] + posts the LootValue card) with the resolved/conversion
-  assertions moved to strings. **1592 Vitest.** Both session-38 + session-41 latent
-  open items are now closed.
-
-- **2026-06-08 — Phase 7 session 51: resolve §2.1 schema-slimming (Group E
-  halfling) as architecturally-bounded.** The last substantive Group E thread.
-  Investigation (3 Explore sweeps) established the headline goal — "a halfling
-  carries only halfling fields" — is **architecturally blocked**: Foundry's
-  `defineSchema()` is static (one schema per document *subtype*), so a halfling and
-  a wizard both being `type: 'Player'` share one schema, `applyClassMixins` attaches
-  all 7 classes' fields to it, and Foundry bakes every `.initial` into every actor's
-  `_source`. There is no per-instance schema mechanism. **Resolution
-  (architecturally-bounded):** the `registerClassMixin` relocation closed the
-  "spinoffs cannot remove or restructure" half (siblings last-write-wins replace
-  built-ins), and the lib is the class-clean read-side source of truth —
-  `actorToCharacter` (`character-accessors.mjs`) reads **zero** class-specific schema
-  fields, so the schema's class fields are a Foundry-forced compat projection, not a
-  source of truth. Rejected (ecosystem-breakage, fail the stop-conditions): runtime
-  pruning (~15 unguarded `actor.js` reads + 8+ unguarded XCC sheet reads would throw)
-  and per-class Actor subtypes (changes `actor.type` off `'Player'` across the system
-  + 4 sibling modules + packs + migration). **No production-code change — fully
-  behavior-neutral** (docs + guard tests only). New decision record
-  [`dev/SCHEMA_SLIMMING.md`](dev/SCHEMA_SLIMMING.md); §2.1/§7 cross-links in
-  `ARCHITECTURE_REIMAGINED.md` + `CLASS_DECOMPOSITION.md`. Tests: +3 Vitest
-  (`schema-slimming-guard.test.js` — `actorToCharacter` builds a complete class-clean
-  Character from an actor with no class fields, and returns identical output with vs
-  without a pile of foreign-class fields, locking in "the roll path needs zero schema
-  class fields"); +1 Playwright (`data-models.spec.js` — a live halfling that DOES
-  carry `shieldBash`/`knownSpells` projects to a class-clean Character with
-  `classId==='halfling'` and only `identity`/`state`/`classInfo`). **1592 Vitest**
-  (was 1589, +3). **The §2.1 / Group E halfling question is now closed.**
-
-- **2026-06-08 — Phase 7 session 50: Appendix-A `actor.js` shrinkage —
-  extract the roll-input accessors (`module/actor/roll-data-mixin.mjs`) + the
-  pure `_buildDamageBreakdown` helper (`module/actor/damage-breakdown.mjs`).**
-  Third `actor.js` slice, the "low-value mop-up" remainder the docs flagged — two
-  cohesive extractions shipped as one batch (one E2E run). **(a) RollDataMixin:**
-  the three roll-input accessors — `getRollData` (the `@override` that augments
-  Foundry's roll data with DCC ability/save/attack shorthands), `getAttackBonusMode`
-  (normalizes `system.config.attackBonusMode`, read only by `getRollData`), and
-  `getActionDice` (parses `system.config.actionDice` into the sheet/adapter preset
-  list + the implicit legacy-actor migration) — lifted into `RollDataMixin`;
-  `DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`.
-  Transparent composition keeps the public surface byte-identical, so the
-  consumers (`actor.getRollData()` in `item/spell-mixin.mjs`,
-  `actor.getActionDice()` in `actor-sheet/items.mjs` + `adapter/attack-input.mjs`
-  + **XCC's sheets**) are untouched; `super.getRollData()` still resolves up the
-  chain to `Actor.prototype` (no intervening mixin defines it). **(b)
-  buildDamageBreakdown:** `_buildDamageBreakdown` was a *pure* method (no `this`),
-  so it extracts as a **free function** (the `actor-sheet/*` pure-logic shape, not
-  a mixin) into `module/actor/damage-breakdown.mjs`; `_rollDamage` calls it
-  directly. `actor.js` 4145 → 3999 (−146). **No behavior/lib change.** Both groups
-  had zero prior *direct* unit coverage (only exercised end-to-end), so a real
-  coverage win: +9 Vitest (`actor-roll-data-mixin.test.js` — composition guard +
-  getRollData shorthands/flat-vs-rolled-ab/NPC-no-xp, getAttackBonusMode
-  normalization, getActionDice parse/untrained/legacy-migration/warn) +6 Vitest
-  (`actor-damage-breakdown.test.js` — single-type null, two-type, same-flavor
-  accumulation, missing-total, flavored+flavorless mix). +2 Playwright
-  (`data-models.spec.js` — a live actor drives the real `getRollData` /
-  `getAttackBonusMode` / `getActionDice`; an in-page import of
-  `damage-breakdown.mjs` confirms the multi-type/null contract). **1589 Vitest**
-  (was 1574, +15). **With session 50 the `actor.js` low-value shrink candidates
-  are exhausted** — what remains is the adapter dispatch layer that per §8.6 stays
-  co-located with the public `rollXxx` wrappers. The Appendix-A file-shrinkage arc
-  is now complete.
 
 ## Closed questions
 
@@ -456,9 +313,34 @@ PR #720 (the merge of Phases 0-3 into `main`) triggered a full 8-agent review.
 
 ## Next steps
 
-**The Appendix-A `config.js` data-table extraction arc is done** (sessions
-35–39); **the `item.js` behavior-class arc opened at session 40** with the
-container-support mixin. All PR #720 cleanup arcs were closed first — legacy-decom
+**All slice work is done — what's next is the PR #720 endgame
+(sequenced, 2026-06-12):**
+
+1. **Phases 4–7 review pass.** The 8-agent PR #720 review covered the
+   Phases 0–3 diff; everything since (class registries, sheet
+   composition, lib progression, the Phase 7 extraction arcs, the #732
+   seam) has only had per-slice review. Run a comprehensive review of
+   the full branch diff before merge (e.g. `/code-review ultra`).
+2. **Pre-release build for live playtesting.** Cut a
+   Foundry-installable 0.70.0 pre-release off this branch per
+   `dev/PRERELEASE_PROCESS.md` so real worlds exercise the adapter
+   before it ships. (`system.json` is already pinned to 0.70.0 with
+   pre-release URLs — commit `c4be351`.)
+3. **Sibling-module PR coordination.** Land/sequence with the system
+   merge: `dcc-crawl-classes` #40, `mcc-classes` #38, and XCC
+   `chore/migrate-to-dcc-extension-api` (all on the extension API this
+   branch ships). Refresh the stale `EXTENSION_API.md` consumer rows
+   while touching it.
+4. **Squash-merge PR #720 into main as 0.70.0** (after 1–3), then
+   release per `dev/RELEASE_PROCESS.md`.
+5. **Time-gated, post-merge:** delete the 6 `warnIfDivergent` calls
+   once the lib is version-pinned and ≥2 consecutive vendor syncs ship
+   zero divergence warnings (`ARCHITECTURE_REIMAGINED.md` §8.6).
+
+The per-file shrinkage record below is kept for reference — every
+target is DONE; no further shrinkage slice is warranted anywhere.
+
+All PR #720 cleanup arcs were closed first — legacy-decom
 21–25, test-coverage 26–31, doc-hygiene 32, programmatic-PC doc 33, perf 34.
 
 - **`config.js` (845 → 451 after session 39) — DONE.** `monster-data.mjs` (35),
@@ -568,6 +450,9 @@ PR, then sync via `npm run sync-core-lib`.
 - The pre-commit hook runs `npm run format` → `git add .` → `npm test`.
   That `git add .` **will sweep untracked files into the commit**. Before
   committing, either stash or add to `.gitignore`.
+- **Node is managed by fnm, not nvm** (Node 24 is the default; there is
+  no `~/.nvm/nvm.sh`). Ignore older `nvm use 24` instructions — just
+  verify `node --version` ≥ 24 and run commands directly.
 - **Lib updates require `npm run sync-core-lib`** to re-vendor
   `module/vendor/dcc-core-lib/`. Commit the vendor delta separately
   from any adapter change that depends on it — two commits: `vendor:

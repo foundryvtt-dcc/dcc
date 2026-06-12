@@ -327,7 +327,8 @@ npx @foundryvtt/foundryvtt-cli configure set installPath ~/Applications/foundry-
 npx @foundryvtt/foundryvtt-cli configure set dataPath /Users/timlwhite/FoundryVTT-Next
 
 # Every run: Node 24 (required by V14), then launch + test.
-nvm use 24
+# This machine manages Node with fnm and 24 is the default — verify with
+# `node --version`; do NOT `nvm use` (there is no nvm installed here).
 nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
   >/tmp/foundry-v14.log 2>&1 & disown
 
@@ -339,7 +340,7 @@ npm run test:headed                           # watch it drive the browser
 
 ### Gotchas
 
-- **Node 24 is required.** V14 Foundry refuses to boot on older Node. `.nvmrc` pins 24; `nvm use` in the project dir picks it up.
+- **Node 24 is required.** V14 Foundry refuses to boot on older Node. `.nvmrc` pins 24; on this machine fnm provides Node 24 as the default (no nvm installed — verify with `node --version`).
 - **`installPath` default is `foundry-13`.** Running a V14 world on that install fails with `World "…" is not available to auto-launch` plus cryptic data-model validation errors. Always `configure view` first.
 - **`dataPath` matters per worktree.** The main repo lives under `/Users/timlwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timlwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
 - **World name is `v14`, not `automated_testing`.** The worlds in `FoundryVTT-Next/Data/worlds/` are `v14`, `v13`, and `secrets-of-the-spectral-summoner`. Use `v14`.

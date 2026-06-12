@@ -2086,3 +2086,95 @@
   (`data-models.spec.js` — calls each method on a live actor: saves with
   bonuses+override, initiative, spell-check formula + hook fire; passes in
   isolation). Part of the session-48/49 batch (one E2E run).
+
+- **2026-06-08 — Phase 7 session 50: Appendix-A `actor.js` shrinkage —
+  extract the roll-input accessors (`module/actor/roll-data-mixin.mjs`) + the
+  pure `_buildDamageBreakdown` helper (`module/actor/damage-breakdown.mjs`).**
+  Third `actor.js` slice, the "low-value mop-up" remainder the docs flagged — two
+  cohesive extractions shipped as one batch (one E2E run). **(a) RollDataMixin:**
+  the three roll-input accessors — `getRollData` (the `@override` that augments
+  Foundry's roll data with DCC ability/save/attack shorthands), `getAttackBonusMode`
+  (normalizes `system.config.attackBonusMode`, read only by `getRollData`), and
+  `getActionDice` (parses `system.config.actionDice` into the sheet/adapter preset
+  list + the implicit legacy-actor migration) — lifted into `RollDataMixin`;
+  `DCCActor extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor)))`.
+  Transparent composition keeps the public surface byte-identical, so the
+  consumers (`actor.getRollData()` in `item/spell-mixin.mjs`,
+  `actor.getActionDice()` in `actor-sheet/items.mjs` + `adapter/attack-input.mjs`
+  + **XCC's sheets**) are untouched; `super.getRollData()` still resolves up the
+  chain to `Actor.prototype` (no intervening mixin defines it). **(b)
+  buildDamageBreakdown:** `_buildDamageBreakdown` was a *pure* method (no `this`),
+  so it extracts as a **free function** (the `actor-sheet/*` pure-logic shape, not
+  a mixin) into `module/actor/damage-breakdown.mjs`; `_rollDamage` calls it
+  directly. `actor.js` 4145 → 3999 (−146). **No behavior/lib change.** Both groups
+  had zero prior *direct* unit coverage (only exercised end-to-end), so a real
+  coverage win: +9 Vitest (`actor-roll-data-mixin.test.js` — composition guard +
+  getRollData shorthands/flat-vs-rolled-ab/NPC-no-xp, getAttackBonusMode
+  normalization, getActionDice parse/untrained/legacy-migration/warn) +6 Vitest
+  (`actor-damage-breakdown.test.js` — single-type null, two-type, same-flavor
+  accumulation, missing-total, flavored+flavorless mix). +2 Playwright
+  (`data-models.spec.js` — a live actor drives the real `getRollData` /
+  `getAttackBonusMode` / `getActionDice`; an in-page import of
+  `damage-breakdown.mjs` confirms the multi-type/null contract). **1589 Vitest**
+  (was 1574, +15). **With session 50 the `actor.js` low-value shrink candidates
+  are exhausted** — what remains is the adapter dispatch layer that per §8.6 stays
+  co-located with the public `rollXxx` wrappers. The Appendix-A file-shrinkage arc
+  is now complete.
+
+- **2026-06-08 — Phase 7 session 51: resolve §2.1 schema-slimming (Group E
+  halfling) as architecturally-bounded.** The last substantive Group E thread.
+  Investigation (3 Explore sweeps) established the headline goal — "a halfling
+  carries only halfling fields" — is **architecturally blocked**: Foundry's
+  `defineSchema()` is static (one schema per document *subtype*), so a halfling and
+  a wizard both being `type: 'Player'` share one schema, `applyClassMixins` attaches
+  all 7 classes' fields to it, and Foundry bakes every `.initial` into every actor's
+  `_source`. There is no per-instance schema mechanism. **Resolution
+  (architecturally-bounded):** the `registerClassMixin` relocation closed the
+  "spinoffs cannot remove or restructure" half (siblings last-write-wins replace
+  built-ins), and the lib is the class-clean read-side source of truth —
+  `actorToCharacter` (`character-accessors.mjs`) reads **zero** class-specific schema
+  fields, so the schema's class fields are a Foundry-forced compat projection, not a
+  source of truth. Rejected (ecosystem-breakage, fail the stop-conditions): runtime
+  pruning (~15 unguarded `actor.js` reads + 8+ unguarded XCC sheet reads would throw)
+  and per-class Actor subtypes (changes `actor.type` off `'Player'` across the system
+  + 4 sibling modules + packs + migration). **No production-code change — fully
+  behavior-neutral** (docs + guard tests only). New decision record
+  [`SCHEMA_SLIMMING.md`](../SCHEMA_SLIMMING.md); §2.1/§7 cross-links in
+  `ARCHITECTURE_REIMAGINED.md` + `CLASS_DECOMPOSITION.md`. Tests: +3 Vitest
+  (`schema-slimming-guard.test.js` — `actorToCharacter` builds a complete class-clean
+  Character from an actor with no class fields, and returns identical output with vs
+  without a pile of foreign-class fields, locking in "the roll path needs zero schema
+  class fields"); +1 Playwright (`data-models.spec.js` — a live halfling that DOES
+  carry `shieldBash`/`knownSpells` projects to a class-clean Character with
+  `classId==='halfling'` and only `identity`/`state`/`classInfo`). **1592 Vitest**
+  (was 1589, +3). **The §2.1 / Group E halfling question is now closed.**
+
+- **2026-06-08 — Phase 7 (unnumbered slice): resolve the two latent open items —
+  restore rollable treasure values + remove the unconsumed `activeEffectKeys`
+  table.** *(NB: an older copy of `00-progress.md` labelled this "session 52";
+  git's authoritative numbering assigns 52–54 to the dcc.js decomposition batch —
+  this slice's commits are unnumbered `chore(cruft)` / `feat(item)`.)* Two
+  commits. **(a) Removed `activeEffectKeys`** (`chore(cruft)`): the
+  32-entry `CONFIG.DCC.activeEffectKeys` reference table (PR #611) had zero runtime
+  consumers ever (system or all 4 siblings), is superseded by Foundry's native V14
+  AE config UI, and is duplicated independently by the user-guide "Common Attribute
+  Keys" section. Deleted `module/config/active-effect-keys.mjs` + the re-composition
+  in `config.js` + the unit guard; the e2e probe flips to a removal guard (asserts
+  the surface is gone). −139 lines. **(b) Restored rollable treasure values**: the
+  session-41 finding wasn't dead code — the formula-rolling *capability* was orphaned
+  by a V14 schema tightening (item `system.value` became integer `CurrencyField` +
+  `migrateData` `parseInt()`-destroyed formulas), while ALL the surrounding
+  scaffolding stayed formula-aware (the `type="text"` sheet inputs, the `parseInt`
+  coin-merge/conversion readers, the `needsValueRoll` guard, the Roll-Value button).
+  Un-broke it with a new `TreasureValueField` (StringField per pp/ep/gp/sp/cp) on the
+  item value field + a `migrateData` that String()s legacy integers instead of
+  destroying formulas. **Actor `currency` stays integer `CurrencyField`** (Item
+  Piles / §2.12 ecosystem currency-walking unaffected). A GM can again author a hoard
+  worth e.g. `3d100` gp and resolve it via the Roll-Value button; resolved values are
+  strings (the downstream readers `parseInt` them). Tests: +3 integration
+  (`data-models.test.js` — formula survives migrateData, legacy int → string,
+  `TreasureData` constructs with a formula intact); the e2e currency probe rewritten
+  to assert the restored feature end-to-end (a `2d6` hoard persists + `needsValueRoll`
+  true + resolves in [2,12] + posts the LootValue card) with the resolved/conversion
+  assertions moved to strings. **1592 Vitest.** Both session-38 + session-41 latent
+  open items are now closed.

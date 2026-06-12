@@ -57,6 +57,12 @@ Retirement is silent — no external consumer knows or cares.
 
 ## Active queue
 
+> **DRAINED 2026-06-12.** Every slice below is done, dropped, or
+> resolved — do not look for a next slice here. What remains is the
+> **PR #720 endgame** (Phases 4–7 review pass → 0.70.0 pre-release
+> build → sibling-PR coordination → squash-merge); see
+> `00-progress.md` *Next steps* for the sequenced list.
+
 ### Group A — Phase 3 attack-gate completion (serial; `module/actor.js` conflicts)
 
 These broaden the attack-dispatcher gate until coverage is exhaustive
