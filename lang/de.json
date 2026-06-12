@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "Attribut",
   "DCC.SkillApplyCheckPenalty": "Wurf-Malus anwenden",
   "DCC.SkillApplyCheckPenaltyHint": "Wurf-Malus von Rüstung auf diese Fertigkeit anwenden",
+  "DCC.SkillCastingModeInfo": "Behandelt diese Fertigkeit wie eine zauberähnliche Fähigkeit: Zauberkundiger verliert den Zauber bei einem misslungenen Wurf, Kleriker wendet die Ungnade-Regeln an, Generisch ohne Automatisierung",
   "DCC.SkillDetails": "Fertigkeitsdetails",
   "DCC.SkillDie": "Würfel",
   "DCC.SkillDieHint": "Vom Akteur übernommen, verwende </>Konfig in der Titelleiste, um dies zu ändern",

@@ -1662,6 +1662,78 @@ test('rollSkillCheck does not route regular skills through processSpellCheck', a
   expect(rollToMessageMock).toHaveBeenCalled()
 })
 
+test('rollSkillCheck routes spell-like skills with a casting mode through processSpellCheck', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // A custom class skill that casts like a wizard spell (issue #375):
+  // no result table, no disapproval range, just an explicit casting mode
+  actor.system.skills.runicAlphabet = {
+    label: 'Runic Alphabet',
+    die: '1d20',
+    value: 0,
+    castingMode: 'wizard'
+  }
+
+  await actor.rollSkillCheck('runicAlphabet')
+
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[0]).toBe(actor)
+  expect(spellCheckCall[1].rollTable).toBeNull()
+  expect(spellCheckCall[1].castingMode).toBe('wizard')
+})
+
+test('rollSkillCheck does not route generic casting mode skills through processSpellCheck', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  rollToMessageMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // Generic casting mode means no failure automation - plain skill path
+  actor.system.skills.plainSkill = {
+    label: 'Plain Skill',
+    die: '1d20',
+    value: '+2',
+    castingMode: 'generic'
+  }
+
+  await actor.rollSkillCheck('plainSkill')
+
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
+})
+
+test('rollSkillCheck leaves castingMode undefined for cleric abilities without one', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // Built-in cleric abilities carry no castingMode of their own, so
+  // processSpellCheck's sheet-class default must stay in charge
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('turnUnholy')
+
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[1].castingMode).toBeUndefined()
+})
+
 test('rollLuckDie with negative luck modifier', async () => {
   dccRollCreateRollMock.mockClear()
   actorUpdateMock.mockClear()
@@ -2097,4 +2169,100 @@ test('_applyAddEffect treats null initial values as zero', () => {
   // Should treat null as 0 and add 2
   expect(actor.system.class.spellCheckOtherMod).toEqual(2)
   expect(overrides['system.class.spellCheckOtherMod']).toEqual(2)
+})
+
+test('rollSkillCheck passes a skill item casting mode through to processSpellCheck', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // A custom skill item configured as a spell-like cleric ability (issue #375)
+  const skillItem = new DCCItem({
+    name: 'Invoke Ancestors',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: false,
+        useAbility: false,
+        useDie: true,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false,
+        castingMode: 'cleric'
+      },
+      die: '1d20',
+      value: '+2',
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  await actor.rollSkillCheck('Invoke Ancestors')
+
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[0]).toBe(actor)
+  expect(spellCheckCall[1].item).toBe(skillItem)
+  expect(spellCheckCall[1].castingMode).toBe('cleric')
+
+  global.itemTypesMock.mockReset()
+})
+
+test('rollSkillCheck blocks lost wizard casting mode skill items', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  global.uiNotificationsWarnMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
+    return originalGet(module, key)
+  })
+
+  // A wizard casting mode skill that was lost on a failed check
+  const skillItem = new DCCItem({
+    name: 'Runic Blast',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: false,
+        useAbility: false,
+        useDie: true,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false,
+        castingMode: 'wizard'
+      },
+      die: '1d20',
+      value: '+2',
+      lost: true,
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  await actor.rollSkillCheck('Runic Blast')
+
+  // The lost skill must warn and never roll, mirroring lost wizard spells
+  expect(global.uiNotificationsWarnMock).toHaveBeenCalled()
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+
+  global.itemTypesMock.mockReset()
+  game.settings.get = originalGet
 })

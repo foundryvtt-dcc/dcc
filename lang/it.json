@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "Caratteristica",
   "DCC.SkillApplyCheckPenalty": "Applica Penalità alla Prova",
   "DCC.SkillApplyCheckPenaltyHint": "Applica la Penalità alla Prova a questa abilità (per l'armatura)",
+  "DCC.SkillCastingModeInfo": "Tratta questa abilità come una capacità magica: Mago applica la perdita dell'incantesimo in caso di fallimento, Chierico applica le regole di Disapprovazione, Generico non applica alcuna automazione",
   "DCC.SkillDetails": "Dettagli",
   "DCC.SkillDie": "Dado",
   "DCC.SkillDieHint": "Ereditato dall'Attore, usa </>Configura nella barra del titolo per cambiarlo",

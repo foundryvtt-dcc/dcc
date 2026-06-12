@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "属性",
   "DCC.SkillApplyCheckPenalty": "应用检定惩罚",
   "DCC.SkillApplyCheckPenaltyHint": "为此技能应用来自护甲的检定惩罚",
+  "DCC.SkillCastingModeInfo": "将此技能视为类法术能力：法师在检定失败时丧失法术，牧师应用不悦规则，泛用则不应用自动化",
   "DCC.SkillDetails": "技能细节",
   "DCC.SkillDie": "骰子",
   "DCC.SkillDieHint": "继承角色，使用标题栏的「<\/>设置」以更改",

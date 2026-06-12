@@ -1205,12 +1205,24 @@ class DCCActor extends Actor {
         if (skillItem.system.config.useLevel) {
           skill.level = `+${this.system.details.level.value ?? 0}`
         }
+        if (skillItem.system.config.castingMode) {
+          skill.castingMode = skillItem.system.config.castingMode
+        }
       }
     }
 
     // Check if skill should use level (for built-in skills)
     if (skill?.config?.useLevel) {
       skill.level = `+${this.system.details.level.value ?? 0}`
+    }
+
+    // Spell-like skills with the wizard casting mode are lost on a failed
+    // check like spells, mirroring DCCItem.rollSpellCheck's lost gate
+    if (skillItem?.system.lost && skill.castingMode === 'wizard' && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+        actor: this.name,
+        spell: skillItem.name
+      }))
     }
 
     let die = (skill.die && skill.die.trim()) ? skill.die : null
@@ -1344,9 +1356,14 @@ class DCCActor extends Actor {
       }
     }
 
+    // Skills with a wizard or cleric casting mode are spell-like and get the
+    // matching failure automation (spell loss or disapproval) even without a
+    // result table
+    const spellLikeCastingMode = skill.castingMode && skill.castingMode !== 'generic'
+
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
-    if (skillTable || skill.useDisapprovalRange) {
+    if (skillTable || skill.useDisapprovalRange || spellLikeCastingMode) {
       // Route through processSpellCheck for skills with tables or cleric abilities
       // processSpellCheck handles pass/fail display, disapproval range checks, and disapproval increase
       await game.dcc.processSpellCheck(this, {
@@ -1354,7 +1371,8 @@ class DCCActor extends Actor {
         roll,
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
-        suppressPatronTaint: options.suppressPatronTaint
+        suppressPatronTaint: options.suppressPatronTaint,
+        castingMode: skill.castingMode
       })
 
       // Divine aid always increases disapproval by its cost (e.g. +10), separate from

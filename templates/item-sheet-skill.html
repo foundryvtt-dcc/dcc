@@ -41,6 +41,11 @@
                  value="{{#if system.value}}{{numberFormat system.value decimals=0 sign=true}}{{/if}}"
                  data-dtype="String"/>
         {{/if}}
+        {{#if (eq system.config.castingMode "wizard")}}
+          <label for="system.lost" title="{{localize 'DCC.SkillCastingModeInfo'}}">{{localize "DCC.SpellLost"}}</label>
+          <input type="checkbox" name="system.lost" id="system.lost"
+                 {{checked system.lost}} data-dtype="Boolean"/>
+        {{/if}}
       </div>
     </div>
 

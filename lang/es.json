@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "Atributo",
   "DCC.SkillApplyCheckPenalty": "Aplicar penalización al chequeo",
   "DCC.SkillApplyCheckPenaltyHint": "Aplicar penalización de armadura a esta habilidad",
+  "DCC.SkillCastingModeInfo": "Trata esta habilidad como una aptitud sortílega: Mago aplica la pérdida del hechizo al fallar la prueba, Clérigo aplica las reglas de Desaprobación, Genérico no aplica automatización",
   "DCC.SkillDetails": "Detalles de la habilidad",
   "DCC.SkillDie": "Dado",
   "DCC.SkillDieHint": "Hereda del actor, usa </> Config en la barra de título para cambiar esto",

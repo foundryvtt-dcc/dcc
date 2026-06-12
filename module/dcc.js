@@ -594,6 +594,11 @@ async function processSpellCheck (actor, spellData) {
   // - roll: the roll object to evaluate for the spell
   // - item (optional): the item representing the spell or spell-like skill
   // - flavor: flavor text for the spell if no table is available to provide it
+  // - castingMode (optional): explicit casting mode ('generic', 'wizard', or
+  //   'cleric') for the failure automation below. Takes precedence over the
+  //   item's configured casting mode and the sheet-class default, so custom
+  //   skills with spell-like features can opt into wizard spell loss or
+  //   cleric disapproval handling.
   const rollTable = spellData.rollTable
   const roll = spellData.roll
   const item = spellData.item
@@ -724,7 +729,8 @@ async function processSpellCheck (actor, spellData) {
       }
 
       // Build the spell result indicator for pass/fail display
-      const noTableLevel = item ? item.system.level : 1
+      // Items without a level field (e.g. spell-like skills) are treated as level 1
+      const noTableLevel = (item ? item.system.level : 1) ?? 1
       const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
       let spellResultHtml = ''
       if (fumble) {
@@ -756,15 +762,17 @@ async function processSpellCheck (actor, spellData) {
       })
     }
 
-    // Determine casting mode from the item or actor - default to wizard
-    let castingMode = item ? item.system.config.castingMode : 'wizard'
-    if (!item && actor.system.details.sheetClass === 'Cleric') {
+    // Determine casting mode: an explicit override from the caller wins,
+    // then the item's configuration, defaulting to wizard
+    let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
+    if (!spellData.castingMode && !item && actor.system.details.sheetClass === 'Cleric') {
       // Cleric sheets will use the cleric casting mode if not set by the item
       castingMode = 'cleric'
     }
 
     // Spell check threshold is 10 + spell level * 2, anything below this is a failure
-    const level = item ? item.system.level : 1
+    // Items without a level field (e.g. spell-like skills) are treated as level 1
+    const level = (item ? item.system.level : 1) ?? 1
     let success = roll.total >= (10 + level * 2)
 
     // Handle spell failure based on casting mode
@@ -797,8 +805,10 @@ async function processSpellCheck (actor, spellData) {
       }
     }
 
-    // Store the roll result in the item for display on the spells tab
-    if (item) {
+    // Store the roll result in the item for display on the spells tab.
+    // Skill items are skipped: rollSkillCheck owns their lastResult update
+    // and honors the skill's showLastResult config
+    if (item && item.type !== 'skill') {
       await item.update({ 'system.lastResult': roll.total })
     }
 
