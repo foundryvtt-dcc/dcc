@@ -28,6 +28,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     },
     actions: {
       applyDisapproval: this.#applyDisapproval,
+      castEquipmentSpell: this.#castEquipmentSpell,
       configureActor: this.#configureActor,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
@@ -1033,6 +1034,23 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document.items.get(itemId)
     await item.sheet.render({ force: true })
+  }
+
+  /**
+   * Cast the spell attached to a charged magic item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #castEquipmentSpell (event, target) {
+    event.preventDefault()
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.options.document.items.get(itemId)
+    const options = DCCActorSheet.fillRollOptions(event)
+    if (item) {
+      await item.castSpell(options)
+    }
   }
 
   /**

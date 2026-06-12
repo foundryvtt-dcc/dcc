@@ -1386,6 +1386,24 @@ a.inline-roll {
   border: 0;
   background: rgba(0, 0, 0, 0.05);
 }
+.dcc.item .attached-spell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.dcc.item .attached-spell-hint {
+  font-style: italic;
+  opacity: 0.7;
+}
+.dcc.item .charges-inputs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.dcc.item .charges-inputs input {
+  width: 40px;
+  text-align: center;
+}
 
 /* ----------------------------------------- */
 /*  Config Dialogs                           */

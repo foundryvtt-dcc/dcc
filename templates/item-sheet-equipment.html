@@ -28,6 +28,33 @@
       </div>
     </div>
 
+    <div class="box-border grid-col-span-12">
+      <div class="box-title">{{localize "DCC.ChargedMagicItem"}}</div>
+      <div class="grid-tpl-max-auto-loose p-5">
+        <label title="{{localize 'DCC.AttachedSpellHint'}}">{{localize "DCC.AttachedSpell"}}</label>
+        {{#if system.spell.name}}
+          <div class="attached-spell">
+            <img class="icon-filter" src="{{system.spell.img}}" width="22" height="22" alt="{{system.spell.name}}"/>
+            <span>{{system.spell.name}}</span>
+            <a class="item-control" title="{{localize 'DCC.RemoveAttachedSpell'}}" data-action="removeAttachedSpell"><i class="fas fa-times"></i></a>
+          </div>
+        {{else}}
+          <div class="attached-spell-hint">{{localize "DCC.AttachedSpellHint"}}</div>
+        {{/if}}
+        <label for="system.charges.value" title="{{localize 'DCC.ChargesHint'}}">{{localize "DCC.Charges"}}</label>
+        <div class="charges-inputs" title="{{localize 'DCC.ChargesHint'}}">
+          <input type="text" name="system.charges.value" id="system.charges.value"
+                 value="{{system.charges.value}}" data-dtype="Number"/>
+          /
+          <input type="text" name="system.charges.max" id="system.charges.max"
+                 value="{{system.charges.max}}" data-dtype="Number"/>
+        </div>
+        <label for="system.spellCheckOverride" title="{{localize 'DCC.SpellCheckOverrideHint'}}">{{localize "DCC.SpellCheckOverride"}}</label>
+        <input type="text" name="system.spellCheckOverride" id="system.spellCheckOverride"
+               value="{{system.spellCheckOverride}}" title="{{localize 'DCC.SpellCheckOverrideHint'}}" data-dtype="String"/>
+      </div>
+    </div>
+
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
     <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp"
