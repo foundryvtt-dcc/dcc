@@ -29,6 +29,11 @@
   <input type="checkbox" name="system.config.applyCheckPenalty" id="system.config.applyCheckPenalty"
     {{checked system.config.applyCheckPenalty}} data-dtype="Boolean"/>
 
+  <label for="system.config.castingMode" title="{{localize 'DCC.SkillCastingModeInfo'}}">{{localize "DCC.SpellCastingMode"}}</label>
+  <select name="system.config.castingMode" id="system.config.castingMode" title="{{localize 'DCC.SkillCastingModeInfo'}}">
+    {{selectOptions config.castingModes selected=system.config.castingMode localize=true}}
+  </select>
+
   <footer class="grid-col-span-2">
     <button type="submit">
       <i class="fas fa-save"></i>{{localize "DCC.SaveItemConfig"}}

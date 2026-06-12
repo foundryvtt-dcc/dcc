@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "Cecha",
   "DCC.SkillApplyCheckPenalty": "Zastosuj Karę do Testów",
   "DCC.SkillApplyCheckPenaltyHint": "Zastosuj Karę do Testów ze zbroi do tej umiejętności",
+  "DCC.SkillCastingModeInfo": "Traktuje tę umiejętność jak zdolność podobną do czaru: Czarodziej traci czar przy nieudanym teście, Kleryk stosuje zasady Dezaprobaty, Ogólny nie stosuje automatyzacji",
   "DCC.SkillDetails": "Szczegóły Umiejętności",
   "DCC.SkillDie": "Kostka",
   "DCC.SkillDieHint": "Dziedziczone z postaci, użyj </> Config na pasku tytułu aby to zmienić",

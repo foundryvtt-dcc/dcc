@@ -614,6 +614,7 @@
   "DCC.SkillAbility": "Ability",
   "DCC.SkillApplyCheckPenalty": "Apply Check Penalty",
   "DCC.SkillApplyCheckPenaltyHint": "Apply Check Penalty from armor to this skill",
+  "DCC.SkillCastingModeInfo": "Treat this skill as a spell-like ability: Wizard applies spell loss on a failed check, Cleric applies disapproval rules, Generic applies no failure automation",
   "DCC.SkillDetails": "Skill Details",
   "DCC.SkillDie": "Die",
   "DCC.SkillDieHint": "Inherited from actor, use </> Config in title bar to change this",
