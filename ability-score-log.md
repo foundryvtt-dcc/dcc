@@ -201,8 +201,8 @@ placement, edit dialog, and log viewer.
 │ Date         Ability  Change  Reason       Source         Recovery       │
 │ ──────────────────────────────────────────────────────────────────────── │
 │ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night  [Heal] │
-│ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent  [Heal] │
-│ 2026-06-10   Sta      −1      Roll the Body  —            Permanent  [Heal] │
+│ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent          │
+│ 2026-06-10   Sta      −1      Roll the Body  —            Permanent          │
 │ 2026-06-09   Agl      −2      Spellburn    Magic Missile  ✓ healed 2026-06-10 │
 │                                                              [🗑 per row, GM] │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -212,8 +212,11 @@ placement, edit dialog, and log viewer.
 - **Heal** button: restores `min(ability.max, value + |change|)` — i.e. caps at max —
   marks the entry `healed: true` + `healedTimestamp`, in a single `update()` with the
   `abilityLogged` options flag. It does **not** delete the row (history is the point).
-- Permanent-class entries still offer Heal (divine intervention happens) but behind a
-  `DialogV2.confirm` ("This loss is normally permanent — restore anyway?").
+- Permanent-class entries (luck spend for non-thieves, Roll the Body, bleed-out,
+  corruption, permanent change) get **no Heal button**. If something strange happens
+  (divine intervention, restoration magic), record it as a new manual change through
+  the edit dialog — "Healing / recovery" with a note — which keeps the original
+  permanent loss and its restoration both visible in the history.
 - Positive entries (heals, blessings, awards) have no Heal button — you don't heal
   a gain. Recording a revoked blessing is just a new negative entry (or GM delete).
 - GM-only trash icon per row for bookkeeping mistakes; players can only use Heal.
@@ -294,7 +297,8 @@ card (speaker = the actor), matching the system's existing card styling:
 - Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; Heal
   caps at max and sets flags; recovery-class derivation (thief Luck vs wizard Luck);
   fallback hook skips when `abilityLogged` flag present; setting off → no hook writes;
-  `otherTemporary`/`otherPermanent` reject submission with an empty note.
+  `otherTemporary`/`otherPermanent` reject submission with an empty note;
+  permanent-class and positive entries render no Heal button.
 - Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
 - E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal,
   verify value restored and row dimmed.
