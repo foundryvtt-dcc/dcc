@@ -2214,3 +2214,55 @@ test('rollSkillCheck passes a skill item casting mode through to processSpellChe
 
   global.itemTypesMock.mockReset()
 })
+
+test('rollSkillCheck blocks lost wizard casting mode skill items', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  global.uiNotificationsWarnMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
+    return originalGet(module, key)
+  })
+
+  // A wizard casting mode skill that was lost on a failed check
+  const skillItem = new DCCItem({
+    name: 'Runic Blast',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: false,
+        useAbility: false,
+        useDie: true,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false,
+        castingMode: 'wizard'
+      },
+      die: '1d20',
+      value: '+2',
+      lost: true,
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  await actor.rollSkillCheck('Runic Blast')
+
+  // The lost skill must warn and never roll, mirroring lost wizard spells
+  expect(global.uiNotificationsWarnMock).toHaveBeenCalled()
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+
+  global.itemTypesMock.mockReset()
+  game.settings.get = originalGet
+})

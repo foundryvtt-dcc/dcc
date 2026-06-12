@@ -805,8 +805,10 @@ async function processSpellCheck (actor, spellData) {
       }
     }
 
-    // Store the roll result in the item for display on the spells tab
-    if (item) {
+    // Store the roll result in the item for display on the spells tab.
+    // Skill items are skipped: rollSkillCheck owns their lastResult update
+    // and honors the skill's showLastResult config
+    if (item && item.type !== 'skill') {
       await item.update({ 'system.lastResult': roll.total })
     }
 

@@ -50,7 +50,10 @@ export class SkillData extends BaseItemData {
       ability: new StringField({ initial: '' }),
       die: new DiceField({ initial: '1d20' }),
       value: new StringField({ initial: '' }),
-      lastResult: new StringField({ initial: '0' })
+      lastResult: new StringField({ initial: '0' }),
+      // Set by loseSpell when a wizard casting mode skill fails its check,
+      // mirroring SpellData
+      lost: new BooleanField({ initial: false })
     }
   }
 }

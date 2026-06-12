@@ -1216,6 +1216,15 @@ class DCCActor extends Actor {
       skill.level = `+${this.system.details.level.value ?? 0}`
     }
 
+    // Spell-like skills with the wizard casting mode are lost on a failed
+    // check like spells, mirroring DCCItem.rollSpellCheck's lost gate
+    if (skillItem?.system.lost && skill.castingMode === 'wizard' && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+        actor: this.name,
+        spell: skillItem.name
+      }))
+    }
+
     let die = (skill.die && skill.die.trim()) ? skill.die : null
     let hasDie = !!die
 
