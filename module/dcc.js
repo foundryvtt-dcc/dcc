@@ -428,6 +428,12 @@ function checkMigrations () {
   }
 }
 
+// Helper function to check if a table name contains "Deed" or the localized version
+function isMightyDeedsTable (tableName) {
+  const deedText = game.i18n.localize('DCC.Deed')
+  return tableName.includes('Deed') || tableName.includes(deedText)
+}
+
 function registerTables () {
   // Helper function to check if a table name contains "Disapproval" or the localized version
   const isDisapprovalTable = (tableName) => {
@@ -476,6 +482,49 @@ function registerTables () {
   } else {
     // No compendium configured - still scan world tables for disapproval tables
     CONFIG.DCC.disapprovalPacks._updateHook(CONFIG.DCC.disapprovalPacks)
+  }
+
+  // Create manager for Mighty Deed table packs and register the system setting
+  CONFIG.DCC.mightyDeedsPacks = new TablePackManager({
+    updateHook: async (manager) => {
+      // Clear Mighty Deed tables
+      CONFIG.DCC.mightyDeedsTables = {}
+
+      // For each valid pack, update the list of Mighty Deed tables available on the attack card deed prompt
+      // Using table name as key to enable de-duplication
+      for (const packName of manager.packs) {
+        const pack = game.packs.get(packName)
+        if (pack) {
+          for (const value of pack.index.values()) {
+            // Use table name as key for de-duplication
+            CONFIG.DCC.mightyDeedsTables[value.name] = {
+              name: value.name,
+              path: `${packName}.${value.name}`
+            }
+          }
+        }
+      }
+
+      // Add world tables to the Mighty Deed tables list if they contain "Deed" in their name
+      // World tables will overwrite compendium tables with the same name (preferred)
+      // If multiple world tables have the same name, the last one processed wins
+      for (const table of game.tables) {
+        if (isMightyDeedsTable(table.name)) {
+          // Use table name as key - this overwrites compendium tables with same name
+          CONFIG.DCC.mightyDeedsTables[table.name] = {
+            name: table.name,
+            path: table.name
+          }
+        }
+      }
+    }
+  })
+  const mightyDeedsCompendium = game.settings.get('dcc', 'mightyDeedsCompendium')
+  if (mightyDeedsCompendium) {
+    CONFIG.DCC.mightyDeedsPacks.addPack(mightyDeedsCompendium, true)
+  } else {
+    // No compendium configured - still scan world tables for Mighty Deed tables
+    CONFIG.DCC.mightyDeedsPacks._updateHook(CONFIG.DCC.mightyDeedsPacks)
   }
 
   // Create manager for critical hit table packs and register the system setting
@@ -917,6 +966,9 @@ Hooks.on('renderChatMessageHTML', async (message, html, data) => {
   // Process table result navigation AFTER emote/lookup functions have modified the HTML
   // This ensures event listeners are attached to the final DOM elements
   TableResult.processChatMessage(message, html, data)
+
+  // Attach Mighty Deed table prompt listeners after the emote functions have modified the HTML
+  chat.attachMightyDeedListeners(message, html)
 })
 
 // Support context menu on chat cards
@@ -933,6 +985,15 @@ Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting = false) => {
 
   if (disapprovalPacks) {
     disapprovalPacks.addPack(value, fromSystemSetting)
+  }
+})
+
+// Mighty Deed table packs
+Hooks.on('dcc.registerMightyDeedsPack', (value, fromSystemSetting = false) => {
+  const mightyDeedsPacks = CONFIG.DCC.mightyDeedsPacks
+
+  if (mightyDeedsPacks) {
+    mightyDeedsPacks.addPack(value, fromSystemSetting)
   }
 })
 
@@ -1031,12 +1092,21 @@ Hooks.on('createRollTable', (table) => {
       path: table.name
     }
   }
+
+  // Add to Mighty Deed tables list if the name contains "Deed"
+  if (isMightyDeedsTable(table.name)) {
+    CONFIG.DCC.mightyDeedsTables[table.name] = {
+      name: table.name,
+      path: table.name
+    }
+  }
 })
 
 // Remove deleted world RollTables from disapproval tables list
 Hooks.on('deleteRollTable', (table) => {
   // Use table name as key to find and delete
   delete CONFIG.DCC.disapprovalTables[table.name]
+  delete CONFIG.DCC.mightyDeedsTables[table.name]
 })
 
 // Update world RollTable entries when name changes
@@ -1066,6 +1136,24 @@ Hooks.on('updateRollTable', (table, changes) => {
     for (const worldTable of game.tables) {
       if (isDisapprovalTable(worldTable.name)) {
         CONFIG.DCC.disapprovalTables[worldTable.name] = {
+          name: worldTable.name,
+          path: worldTable.name
+        }
+      }
+    }
+
+    // Rebuild the Mighty Deed world tables list the same way
+    const deedCompendiumTables = {}
+    for (const [key, value] of Object.entries(CONFIG.DCC.mightyDeedsTables)) {
+      // Keep compendium tables (they have paths with dots like "pack.table")
+      if (value.path.includes('.')) {
+        deedCompendiumTables[key] = value
+      }
+    }
+    CONFIG.DCC.mightyDeedsTables = deedCompendiumTables
+    for (const worldTable of game.tables) {
+      if (isMightyDeedsTable(worldTable.name)) {
+        CONFIG.DCC.mightyDeedsTables[worldTable.name] = {
           name: worldTable.name,
           path: worldTable.name
         }

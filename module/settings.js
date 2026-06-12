@@ -126,6 +126,22 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Compendium to look in for Mighty Deed tables
+   */
+  game.settings.register('dcc', 'mightyDeedsCompendium', {
+    name: 'DCC.SettingMightyDeedsTablesCompendium',
+    hint: 'DCC.SettingMightyDeedsTablesCompendiumHint',
+    scope: 'world',
+    config: manualConfig,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerMightyDeedsPack', value, true)
+    }
+  })
+
+  /**
    * Table to use for turn unholy
    */
   game.settings.register('dcc', 'turnUnholyTable', {

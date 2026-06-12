@@ -617,10 +617,14 @@ DCC.levelDataPacks = null
 DCC.fumbleTable = null
 DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
+DCC.mightyDeedsPacks = null
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks
 DCC.disapprovalTables = {}
+
+// List of available Mighty Deed tables for the attack card deed prompt, generated from mightyDeedsPacks
+DCC.mightyDeedsTables = {}
 
 // Registry for skills that use a table lookup - maps skill name to config property
 // System defaults defined here, modules can register their own

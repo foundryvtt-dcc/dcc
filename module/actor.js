@@ -1722,6 +1722,13 @@ class DCCActor extends Actor {
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
 
+    // On a successful deed, offer a prompt to look up the deed die result on a Mighty Deed table (issue #319)
+    let deedTables = []
+    if (deedRollSuccess) {
+      deedTables = Object.values(CONFIG.DCC.mightyDeedsTables || {})
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     // Crit roll
     let critRollFormula = ''
     let critInlineRoll = ''
@@ -1864,6 +1871,7 @@ class DCCActor extends Actor {
         deedDieRoll,
         deedDieRollResult,
         deedRollSuccess,
+        deedTables,
         fumbleInlineRoll,
         fumblePrompt,
         fumbleRoll,
