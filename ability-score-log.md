@@ -64,7 +64,9 @@ each with a *recovery class* used for display:
 | `bleedOut` | `permanent` | "Permanent (saved from bleeding out)" |
 | `corruption` | `permanent` | "Permanent (corruption/disapproval)" |
 | `heal` | — | a restoration (positive change; also written by the Healed button) |
-| `manual` | `unknown` | "—" (fallback for untyped direct edits) |
+| `otherTemporary` | `rest` | "Temporary — heals 1/night, 2/day bed rest"; note **required** explaining why |
+| `otherPermanent` | `permanent` | "Permanent"; note **required** explaining why |
+| `manual` | `unknown` | "—" (fallback for untyped direct edits that bypass the dialog) |
 
 Recovery class is **derived at render time** (from `type` + actor class for Luck), not
 stored — so class changes and future rule modules stay correct retroactively.
@@ -118,7 +120,8 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
 │  ( ) Saved from bleeding out (Stamina)         │
 │  ( ) Corruption / disapproval                  │
 │  ( ) Healing / recovery                        │
-│  ( ) Other                                     │
+│  ( ) Temporary change (note why)               │
+│  ( ) Permanent change (note why)               │
 │                                                │
 │ Source/note: [ Invoke Patron________ ]         │
 │                                                │
@@ -130,7 +133,12 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
 
 - The radio list is filtered contextually: `luckSpend` only for `lck`; `bleedOut`
   preselected default only for `sta`; `spellburn` only for str/agl/sta (and shown for
-  all physical stats in MCC worlds where glowburn allows any).
+  all physical stats in MCC worlds where glowburn allows any). The two generic
+  "Temporary change" / "Permanent change" options always appear last — they cover
+  everything the rule-specific reasons don't (curses, magic items, quest effects,
+  judge rulings) while still recording the one fact the log exists to answer: does
+  this heal or not. For both, the Source/note field is **required** (Apply disabled
+  until filled) so the "why" is always captured.
 - On submit, **one** `actor.update()` writes both the new value and the appended log
   entry, passing `{ dcc: { abilityLogged: true } }` in update options so the fallback
   hook (below) doesn't double-log.
@@ -242,7 +250,8 @@ Timestamps: store `Date.now()`; display world calendar later if ever needed.
 
 - Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; Healed
   caps at max and sets flags; recovery-class derivation (thief Luck vs wizard Luck);
-  fallback hook skips when `abilityLogged` flag present; setting off → no hook writes.
+  fallback hook skips when `abilityLogged` flag present; setting off → no hook writes;
+  `otherTemporary`/`otherPermanent` reject submission with an empty note.
 - Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
 - E2E: enable setting, click Str, pick Spellburn, apply −3, open log, mark Healed,
   verify value restored and row dimmed.
