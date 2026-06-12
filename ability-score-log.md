@@ -1,7 +1,7 @@
 # Ability Score Change Log — Design Sketch
 
 Optional (world-setting gated) tracking of ability score changes with a reason,
-a per-actor history log, recovery expectations, and one-click "Healed" revert.
+a per-actor history log, recovery expectations, and one-click "Heal" revert.
 
 ## Why
 
@@ -64,7 +64,7 @@ each with a *recovery class* used for display:
 | `rollTheBody` | `permanent` | "Permanent injury (Roll the Body)" |
 | `bleedOut` | `permanent` | "Permanent (saved from bleeding out)" |
 | `corruption` | `permanent` | "Permanent (corruption/disapproval)" |
-| `heal` | — | a restoration (positive change; also written by the Healed button) |
+| `heal` | — | a restoration (positive change; also written by the Heal button) |
 | `otherTemporary` | `rest` | "Temporary — heals 1/night, 2/day bed rest"; note **required** explaining why |
 | `otherPermanent` | `permanent` | "Permanent"; note **required** explaining why |
 | `manual` | `unknown` | "—" (fallback for untyped direct edits that bypass the dialog) |
@@ -146,7 +146,7 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
   delta with `otherPermanent` and a note. When the change is a *gain*, an
   "Also adjust Max" checkbox appears (default **checked** for permanent types,
   unchecked for temporary): a permanent blessing raises the natural maximum alongside
-  the value, so the new ceiling is correct for all later Healed-cap math. Temporary
+  the value, so the new ceiling is correct for all later Heal-cap math. Temporary
   boosts (e.g. a potion) leave max alone and are naturally clipped back when they
   expire.
 - On submit, **one** `actor.update()` writes both the new value and the appended log
@@ -200,23 +200,23 @@ placement, edit dialog, and log viewer.
 ┌─ Ability Score Log — Bonnie the Wizard ──────────────────────────────────┐
 │ Date         Ability  Change  Reason       Source         Recovery       │
 │ ──────────────────────────────────────────────────────────────────────── │
-│ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night  [Healed] │
-│ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent  [Healed] │
-│ 2026-06-10   Sta      −1      Roll the Body  —            Permanent  [Healed] │
+│ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night  [Heal] │
+│ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent  [Heal] │
+│ 2026-06-10   Sta      −1      Roll the Body  —            Permanent  [Heal] │
 │ 2026-06-09   Agl      −2      Spellburn    Magic Missile  ✓ healed 2026-06-10 │
 │                                                              [🗑 per row, GM] │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 - Rows sorted newest-first; healed rows dimmed with a checkmark instead of the button.
-- **Healed** button: restores `min(ability.max, value + |change|)` — i.e. caps at max —
+- **Heal** button: restores `min(ability.max, value + |change|)` — i.e. caps at max —
   marks the entry `healed: true` + `healedTimestamp`, in a single `update()` with the
   `abilityLogged` options flag. It does **not** delete the row (history is the point).
-- Permanent-class entries still offer Healed (divine intervention happens) but behind a
+- Permanent-class entries still offer Heal (divine intervention happens) but behind a
   `DialogV2.confirm` ("This loss is normally permanent — restore anyway?").
-- Positive entries (heals, blessings, awards) have no Healed button — you don't heal
+- Positive entries (heals, blessings, awards) have no Heal button — you don't heal
   a gain. Recording a revoked blessing is just a new negative entry (or GM delete).
-- GM-only trash icon per row for bookkeeping mistakes; players can only mark Healed.
+- GM-only trash icon per row for bookkeeping mistakes; players can only use Heal.
 - Empty state: localized "No ability score changes recorded."
 
 Timestamps: store `Date.now()`; display world calendar later if ever needed.
@@ -232,7 +232,7 @@ card (speaker = the actor), matching the system's existing card styling:
    Heals 1 point per night's rest, 2 per day of bed rest
 ```
 
-- Losses, gains ("…gains 2 Strength — Blessed by Gorhan (permanent)"), and Healed
+- Losses, gains ("…gains 2 Strength — Blessed by Gorhan (permanent)"), and Heal
   restores ("…recovers 3 Strength — Spellburn healed") all get cards. **Luck spends
   included** — the card is where non-thieves get reminded the loss is permanent.
 - The card shows the reason, note, and recovery expectation — so the table hears the
@@ -250,7 +250,7 @@ card (speaker = the actor), matching the system's existing card styling:
 | `module/config.js` | `DCC.abilityLogTypes` + recovery-class map |
 | `module/settings.js` | register `enableAbilityScoreLog` |
 | `module/ability-score-config.js` | **new** — edit dialog (pattern: `hit-points-config.js`) |
-| `module/ability-score-log.js` | **new** — log viewer dialog + `logAbilityChange(actor, entry)` helper + Healed/delete actions |
+| `module/ability-score-log.js` | **new** — log viewer dialog + `logAbilityChange(actor, entry)` helper + Heal/delete actions |
 | `module/actor-sheet.js` | `editAbilityScore` / `viewAbilityLog` actions; pass setting flag into context |
 | `templates/actor-partial-pc-common.html` | readonly+action on value input when enabled; log button |
 | `templates/actor-partial-npc-common.html` | same (or PC-only for v1 — see open questions) |
@@ -268,7 +268,7 @@ card (speaker = the actor), matching the system's existing card styling:
 - **Max changes too**: only `value` edits go through the dialog; `max` edits stay free
   (level-up bookkeeping shouldn't be ceremonious). The fallback hook could log max
   changes as `manual` — proposed: don't, keep noise down.
-- **Healed when value has since changed**: restore is relative (`value + |change|`),
+- **Heal when value has since changed**: restore is relative (`value + |change|`),
   capped at max — not "set back to `newValue − change`" — so interleaved changes
   compose correctly.
 - **Double-heal**: guarded by `healed` flag.
@@ -291,12 +291,12 @@ card (speaker = the actor), matching the system's existing card styling:
 
 ## Test plan
 
-- Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; Healed
+- Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; Heal
   caps at max and sets flags; recovery-class derivation (thief Luck vs wizard Luck);
   fallback hook skips when `abilityLogged` flag present; setting off → no hook writes;
   `otherTemporary`/`otherPermanent` reject submission with an empty note.
 - Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
-- E2E: enable setting, click Str, pick Spellburn, apply −3, open log, mark Healed,
+- E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal,
   verify value restored and row dimmed.
 
 ## Implementation order
@@ -304,6 +304,6 @@ card (speaker = the actor), matching the system's existing card styling:
 1. Schema extension + config types + setting + i18n keys (mechanical, low risk)
 2. `logAbilityChange` helper + unit tests
 3. Edit dialog + sheet wiring (PC template)
-4. Log viewer dialog + Healed/delete
+4. Log viewer dialog + Heal/delete
 5. Auto-logging in spellburn/luck-spend paths + fallback hook
 6. SCSS, E2E, dependent-module smoke check
