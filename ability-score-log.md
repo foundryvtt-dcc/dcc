@@ -181,9 +181,20 @@ hostile. Log everything, prompt only on sheet clicks.)
 
 ### 4. The log viewer
 
-A small scroll/book icon button in the `.ability-scores` block header
-(`actor-partial-pc-common.html:248`), `data-action="viewAbilityLog"`, opening
-**`AbilityScoreLogDialog`** (ApplicationV2, pattern: `fleeting-luck.js`):
+A single small history icon (`fa-clock-rotate-left`) anchored to the **top-right
+corner of the `.ability-scores` column** (`actor-partial-pc-common.html:248`),
+absolutely positioned so it borrows empty corner space rather than adding a grid row
+(the column's `repeat(5, 68px)` rows and per-box pixel grids stay untouched).
+Tooltip "Ability Score Log", subdued styling like the ability-effects icons,
+rendered only when the setting is on — sheet is pixel-identical when disabled.
+`data-action="viewAbilityLog"`, opening **`AbilityScoreLogDialog`** (ApplicationV2,
+pattern: `fleeting-luck.js`). Placement rationale: the log covers all six abilities
+equally, so the button shouldn't visually belong to any one box; per-ability icons
+(×6) are noise, and the dialog filters by ability internally instead. A secondary
+entry in the sheet's header controls menu provides a fallback access point.
+
+See `mockups/ability-score-log-mockup.html` for a visual mockup of the button
+placement, edit dialog, and log viewer.
 
 ```text
 ┌─ Ability Score Log — Bonnie the Wizard ──────────────────────────────────┐
@@ -210,6 +221,27 @@ A small scroll/book icon button in the `.ability-scores` block header
 
 Timestamps: store `Date.now()`; display world calendar later if ever needed.
 
+### 5. Chat cards
+
+Every log entry written through the dialog or the automatic flows also emits a chat
+card (speaker = the actor), matching the system's existing card styling:
+
+```text
+⚔ Bonnie the Wizard loses 3 Strength
+   Spellburn — Invoke Patron
+   Heals 1 point per night's rest, 2 per day of bed rest
+```
+
+- Losses, gains ("…gains 2 Strength — Blessed by Gorhan (permanent)"), and Healed
+  restores ("…recovers 3 Strength — Spellburn healed") all get cards. **Luck spends
+  included** — the card is where non-thieves get reminded the loss is permanent.
+- The card shows the reason, note, and recovery expectation — so the table hears the
+  fiction, not just the bookkeeping.
+- The fallback `manual` hook entries do **not** emit cards (modules/macros may make
+  rapid silent updates; only deliberate, typed changes deserve table-wide announcements).
+- Implementation: one `ChatMessage.create()` in `logAbilityChange()` behind an
+  `announce` parameter — dialog and automation pass `true`, the hook passes `false`.
+
 ## Files touched
 
 | File | Change |
@@ -224,6 +256,7 @@ Timestamps: store `Date.now()`; display world calendar later if ever needed.
 | `templates/actor-partial-npc-common.html` | same (or PC-only for v1 — see open questions) |
 | `templates/dialog-ability-score-config.html` | **new** |
 | `templates/dialog-ability-score-log.html` | **new** |
+| `templates/chat-card-ability-change.html` | **new** — chat card for losses/gains/heals |
 | `module/actor.js` | log spellburn (`:1560`) and luck spend (`:1445`) |
 | `module/item.js` | log spellburn (`:343`) |
 | `module/dcc.js` | `preUpdateActor` fallback logger |
@@ -253,9 +286,8 @@ Timestamps: store `Date.now()`; display world calendar later if ever needed.
 
 1. NPC sheets too, or PC-only for v1? (Lean: PC-only; monsters' stat changes are
    rarely worth a paper trail.)
-2. Should the log viewer also be reachable from a header control (sheet kebab menu)
-   in addition to the inline button?
-3. Chat card on Healed (public "Bonnie recovers 2 Str")? Nice flavor, cheap to add.
+2. ~~Should chat cards for Luck spends be suppressed?~~ Resolved: no — Luck spends
+   get chat cards like everything else.
 
 ## Test plan
 
