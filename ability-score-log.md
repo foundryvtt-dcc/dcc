@@ -46,6 +46,7 @@ abilityLog: new ArrayField(new SchemaField({
   type: new StringField(),                        // see "Reason types" below
   source: new StringField(),                      // free text: spell name, monster, etc.
   newValue: new NumberField({ integer: true }),   // value after the change
+  hpChange: new NumberField({ integer: true, initial: 0 }), // HP adjustment applied alongside (Stamina modifier threshold crossings)
   healedAmount: new NumberField({ integer: true, min: 0, initial: 0 }), // points healed back so far (0..|change|); entry is fully healed when == |change|
   healedTimestamp: new NumberField({ integer: true, nullable: true })   // most recent heal
 }), { initial: [] })
@@ -154,6 +155,31 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
   hook (below) doesn't double-log.
 
 Setting OFF → inputs behave exactly as today; zero behavior change.
+
+### 1a. Stamina → hit points
+
+The core book: "Your Stamina modifier affects hit points (even at level 0)" — the
+Stamina modifier is added to the HP gained at each level (minimum 1 hp/level). RAW is
+silent on whether mid-career Stamina loss retroactively reduces HP, so this is
+**offered, never silent**:
+
+- When a Stamina edit in the dialog crosses a modifier threshold
+  (`CONFIG.DCC.abilityModifiers` lookup, old mod vs. new), the dialog shows a
+  pre-checked checkbox: *"Also adjust hit points by −2 (Stamina modifier +1 → 0,
+  level 2)"*. ΔHP = (newMod − oldMod) × max(1, level), applied to both `hp.max` and
+  `hp.value` (value clamped ≥ 0, max clamped ≥ max(1, level) per the
+  minimum-1-hp-per-level rule). Judges who don't play with retroactive HP just
+  uncheck it.
+- The applied amount is recorded on the log entry as `hpChange`.
+- **Heal clicks are symmetric per step**: each 1-point Stamina heal recomputes the
+  modifier before/after that single point; if the step crosses a threshold back,
+  the same ΔHP formula restores the hit points (and accumulates into `hpChange`,
+  which trends back toward 0). Doing it per step — rather than per entry — means
+  partial healing and interleaved changes stay correct.
+- Automatic spellburn logging (Stamina burn) and the fallback hook do **not** touch
+  HP — only the dialog offers it, because only there is a human confirming.
+- The chat card mentions it: "…loses 2 Stamina (Spellburn — Invoke Patron) and 2 hit
+  points (modifier +1 → 0)".
 
 ### 2. Automatic logging from existing flows
 
@@ -307,7 +333,10 @@ card (speaker = the actor), matching the system's existing card styling:
   recovery-class derivation (thief Luck vs wizard Luck); fallback hook skips when
   `abilityLogged` flag present; setting off → no hook writes;
   `otherTemporary`/`otherPermanent` reject submission with an empty note;
-  permanent-class and positive entries render no Heal button.
+  permanent-class and positive entries render no Heal button; Stamina threshold
+  crossing computes ΔHP = Δmod × max(1, level), clamps, records `hpChange`, and
+  per-step heals restore HP symmetrically (no HP change when checkbox unchecked or
+  when the step doesn't cross a threshold).
 - Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
 - E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal
   twice, verify value +2 and row shows "healed 2/3"; third click fully heals and dims
