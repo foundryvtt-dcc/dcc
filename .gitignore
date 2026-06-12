@@ -84,3 +84,10 @@ browser-tests/**/.env
 !docs/**/*.jpeg
 !docs/**/*.gif
 /.claude/worktrees/
+
+# Playwright artifacts when test runner is invoked from project root
+test-results/
+playwright-report/
+
+# Vitest coverage reports (npm run test:coverage)
+coverage/
