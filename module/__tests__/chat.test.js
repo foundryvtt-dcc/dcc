@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../__mocks__/foundry.js'
-import { lookupCriticalRoll } from '../chat.js'
+
+vi.mock('../utilities.js', async (importOriginal) => {
+  const actual = await importOriginal()
+  return { ...actual, getCritTableResult: vi.fn() }
+})
+
+const { lookupCriticalRoll } = await import('../chat.js')
+const { getCritTableResult } = await import('../utilities.js')
 
 /**
  * Minimal stand-in for the rendered chat message HTML element.
@@ -36,6 +43,10 @@ function makeCritMessage () {
 }
 
 describe('lookupCriticalRoll', () => {
+  beforeEach(() => {
+    getCritTableResult.mockReset()
+  })
+
   it('appends a navigable crit result using the stored system data', async () => {
     const html = makeHtml('<span>roll</span>')
 
@@ -57,6 +68,31 @@ describe('lookupCriticalRoll', () => {
 
     expect(html.messageContent.innerHTML).toBe(renderedOnce)
     expect(html.messageContent.innerHTML.match(/crit-result/g)).toHaveLength(1)
+  })
+
+  it('looks up the crit table when no stored result is present', async () => {
+    getCritTableResult.mockResolvedValue({ description: 'Mighty blow to the skull' })
+    const message = makeCritMessage()
+    message.system = { critTableName: 'II' }
+    const html = makeHtml('<span>roll</span>')
+
+    await lookupCriticalRoll(message, html)
+
+    expect(getCritTableResult).toHaveBeenCalledWith(message.rolls[0], expect.stringContaining('II'))
+    expect(html.messageContent.innerHTML).toContain('Mighty blow to the skull')
+    expect(html.messageContent.innerHTML.match(/crit-result/g)).toHaveLength(1)
+  })
+
+  it('appends the unavailable message when the crit table has no result', async () => {
+    getCritTableResult.mockResolvedValue(null)
+    const message = makeCritMessage()
+    message.system = { critTableName: 'II' }
+    const html = makeHtml('<span>roll</span>')
+
+    await lookupCriticalRoll(message, html)
+
+    expect(html.messageContent.innerHTML).toContain('CritTableUnavailable')
+    expect(html.messageContent.innerHTML).not.toContain('crit-result')
   })
 
   it('skips attack rolls flagged isToHit', async () => {
