@@ -552,6 +552,10 @@ export const emoteSkillCheckRoll = function (message, html, data) {
 export const lookupCriticalRoll = async function (message, html) {
   if (!message.rolls || !message.isContentVisible || message.getFlag('dcc', 'isToHit')) return
 
+  // A navigable crit result may already be rendered (e.g. by emoteCritRoll
+  // when emote rolls are enabled) — appending another would show it twice
+  if (html.querySelector('.crit-result')) return
+
   // Only process messages that are specifically critical table rolls, not attack rolls with crits
   const hasCriticalInFlavor = message.flavor && message.flavor.includes(game.i18n.localize('DCC.Critical'))
   const hasCritTableInSystem = message.system?.critTableName
