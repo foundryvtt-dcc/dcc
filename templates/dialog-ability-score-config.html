@@ -1,0 +1,45 @@
+<section class="ability-score-config-content">
+  <div class="current-row">
+    <span><label>{{localize "DCC.AbilityLogCurrent"}}:</label> {{currentValue}}</span>
+    <span><label>{{localize "DCC.Max"}}:</label> {{maxValue}}</span>
+  </div>
+
+  <div class="new-value-row">
+    <label for="ability-config-new-value">{{localize "DCC.AbilityLogNewValue"}}:</label>
+    <input type="number" name="newValue" id="ability-config-new-value" value="{{currentValue}}" min="0" step="1">
+    <span class="change-display"></span>
+  </div>
+
+  <fieldset class="reasons">
+    <legend>{{localize "DCC.AbilityLogReason"}}</legend>
+    {{#each reasons}}
+    <label>
+      <input type="radio" name="reason" value="{{key}}" {{#if checked}}checked{{/if}}>
+      {{label}}{{#if noteRequired}} <span class="note-hint">{{localize "DCC.AbilityLogNoteWhy"}}</span>{{/if}}
+    </label>
+    {{/each}}
+  </fieldset>
+
+  <div class="note-row">
+    <label for="ability-config-note">{{localize "DCC.AbilityLogSourceNote"}}:</label>
+    <input type="text" name="note" id="ability-config-note" value="">
+  </div>
+
+  <div class="adjust-max-row hidden">
+    <label>
+      <input type="checkbox" name="adjustMax">
+      {{localize "DCC.AbilityLogAlsoAdjustMax"}}
+    </label>
+  </div>
+
+  <div class="adjust-hp-row hidden">
+    <label>
+      <input type="checkbox" name="adjustHP" checked>
+      <span class="adjust-hp-label"></span>
+    </label>
+  </div>
+
+  <div class="recovery-hint"></div>
+
+  <button type="submit">{{localize "DCC.Apply"}}</button>
+</section>

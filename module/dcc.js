@@ -5,6 +5,7 @@
  */
 
 // Import Modules
+import { abilityLogPreUpdateActor, logAbilityChange } from './ability-score-log.js'
 import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
@@ -114,6 +115,7 @@ Hooks.once('init', async function () {
     SpellResult,
     TableResult,
     getSkillTable,
+    logAbilityChange, // Exported for dependent modules (MCC glowburn, etc.)
     processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
@@ -1115,6 +1117,11 @@ Hooks.on('preUpdateActor', async (actor, changes, options, userId) => {
     changes['prototypeToken.texture.src'] = changes.img
   }
 })
+
+// Fallback logger for the Ability Score Log: records direct ability value
+// edits (macros, modules, GM bar edits) as 'manual' entries unless the
+// update already carries the dcc.abilityLogged flag
+Hooks.on('preUpdateActor', abilityLogPreUpdateActor)
 
 // Handle Active Effect duration automation
 Hooks.on('updateCombat', async (combat, changed, options, userId) => {

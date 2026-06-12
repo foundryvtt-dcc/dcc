@@ -278,6 +278,18 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Track ability score changes in a per-actor log with reasons and recovery
+   */
+  game.settings.register('dcc', 'enableAbilityScoreLog', {
+    name: 'DCC.SettingEnableAbilityScoreLog',
+    hint: 'DCC.SettingEnableAbilityScoreLogHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Check weapon is equipped if not UI warning display appears and prevent rolls
    */
   game.settings.register('dcc', 'checkWeaponEquipment', {

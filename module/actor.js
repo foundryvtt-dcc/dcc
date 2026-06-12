@@ -2,6 +2,7 @@
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
+import { logAbilityChange, logSpellburn } from './ability-score-log.js'
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
@@ -1440,10 +1441,13 @@ class DCCActor extends Actor {
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
     const flavor = game.i18n.format('DCC.LuckSpend', { luckSpend })
 
-    // Spend the luck
-    await this.update({
-      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
-    })
+    // Spend the luck (logged in the ability score log when enabled)
+    await logAbilityChange(this, {
+      ability: 'lck',
+      change: -luckSpend,
+      type: 'luckSpend',
+      source: options.title
+    }, { announce: true })
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -1557,12 +1561,8 @@ class DCCActor extends Actor {
         agl: this.system.abilities.agl.value,
         sta: this.system.abilities.sta.value,
         callback: (formula, term) => {
-          // Apply the spellburn
-          this.update({
-            'system.abilities.str.value': term.str,
-            'system.abilities.agl.value': term.agl,
-            'system.abilities.sta.value': term.sta
-          })
+          // Apply the spellburn (logged in the ability score log when enabled)
+          logSpellburn(this, term, spell)
         }
       })
     }

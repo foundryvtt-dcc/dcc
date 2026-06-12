@@ -61,6 +61,45 @@ DCC.abilityModifiers = {
 /* -------------------------------------------- */
 
 /**
+ * Reason types for ability score log entries (key => i18n label)
+ * @type {Object}
+ */
+DCC.abilityLogTypes = {
+  spellburn: 'DCC.AbilityLogTypeSpellburn',
+  damage: 'DCC.AbilityLogTypeDamage',
+  luckSpend: 'DCC.AbilityLogTypeLuckSpend',
+  rollTheBody: 'DCC.AbilityLogTypeRollTheBody',
+  bleedOut: 'DCC.AbilityLogTypeBleedOut',
+  corruption: 'DCC.AbilityLogTypeCorruption',
+  heal: 'DCC.AbilityLogTypeHeal',
+  otherTemporary: 'DCC.AbilityLogTypeOtherTemporary',
+  otherPermanent: 'DCC.AbilityLogTypeOtherPermanent',
+  manual: 'DCC.AbilityLogTypeManual'
+}
+
+/**
+ * Recovery class for each ability score log reason type
+ * 'rest' heals 1/night (2/day bed rest), 'luckRegen' regenerates for thieves
+ * and halflings (derived at render time - permanent for everyone else),
+ * 'permanent' does not heal, 'none' is a restoration, 'unknown' is untyped
+ * @type {Object}
+ */
+DCC.abilityLogRecoveryClasses = {
+  spellburn: 'rest',
+  damage: 'rest',
+  luckSpend: 'luckRegen',
+  rollTheBody: 'permanent',
+  bleedOut: 'permanent',
+  corruption: 'permanent',
+  heal: 'none',
+  otherTemporary: 'rest',
+  otherPermanent: 'permanent',
+  manual: 'unknown'
+}
+
+/* -------------------------------------------- */
+
+/**
  * Character alignment options
  * @type {Object}
  */

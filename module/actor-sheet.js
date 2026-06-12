@@ -1,5 +1,7 @@
 /* global CONFIG, document, fromUuid, game, foundry, ResizeObserver, ui */
 
+import AbilityScoreConfig from './ability-score-config.js'
+import { AbilityScoreLogDialog, abilityScoreLogEnabled } from './ability-score-log.js'
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
@@ -30,6 +32,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       applyDisapproval: this.#applyDisapproval,
       castEquipmentSpell: this.#castEquipmentSpell,
       configureActor: this.#configureActor,
+      editAbilityScore: this.#editAbilityScore,
+      viewAbilityLog: this.#viewAbilityLog,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
@@ -75,9 +79,25 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           icon: 'fas fa-code',
           label: 'DCC.ConfigureSheet',
           ownership: 'OWNER'
+        },
+        {
+          action: 'viewAbilityLog',
+          icon: 'fas fa-clock-rotate-left',
+          label: 'DCC.AbilityLogTitle',
+          ownership: 'OWNER'
         }
       ]
     }
+  }
+
+  /** @inheritDoc */
+  _getHeaderControls () {
+    const controls = super._getHeaderControls()
+    // The ability score log is gated by a world setting and PC-only for now
+    if (!abilityScoreLogEnabled() || this.options.document.type !== 'Player') {
+      return controls.filter(c => c.action !== 'viewAbilityLog')
+    }
+    return controls
   }
 
   /** @inheritDoc */
@@ -163,6 +183,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const preparedItems = await this.#prepareItems()
 
     foundry.utils.mergeObject(context, {
+      abilityScoreLogEnabled: abilityScoreLogEnabled() && this.options.document.type === 'Player',
       abilityEffects: this.#prepareAbilityEffects(),
       attackBonusEffects: this.#prepareAttackBonusEffects(),
       saveEffects: this.#prepareSaveEffects(),
@@ -1425,6 +1446,45 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       position: {
         top: this.position.top + 40,
         left: this.position.left + (this.position.width - 400) / 2
+      }
+    }).render(true)
+  }
+
+  /**
+   * Open the ability score edit dialog (Ability Score Log enabled)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #editAbilityScore (event, target) {
+    event.preventDefault()
+    const abilityId = target.closest('[data-ability]')?.dataset.ability
+    if (!abilityId) return
+    await new AbilityScoreConfig({
+      document: this.options.document,
+      abilityId,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 340) / 2
+      }
+    }).render(true)
+  }
+
+  /**
+   * Open the ability score log viewer (Ability Score Log enabled)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #viewAbilityLog (event, target) {
+    event.preventDefault()
+    await new AbilityScoreLogDialog({
+      document: this.options.document,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + 60
       }
     }).render(true)
   }
