@@ -46,8 +46,8 @@ abilityLog: new ArrayField(new SchemaField({
   type: new StringField(),                        // see "Reason types" below
   source: new StringField(),                      // free text: spell name, monster, etc.
   newValue: new NumberField({ integer: true }),   // value after the change
-  healed: new BooleanField({ initial: false }),   // set when reverted via the log viewer
-  healedTimestamp: new NumberField({ integer: true, nullable: true })
+  healedAmount: new NumberField({ integer: true, min: 0, initial: 0 }), // points healed back so far (0..|change|); entry is fully healed when == |change|
+  healedTimestamp: new NumberField({ integer: true, nullable: true })   // most recent heal
 }), { initial: [] })
 ```
 
@@ -200,7 +200,7 @@ placement, edit dialog, and log viewer.
 ┌─ Ability Score Log — Bonnie the Wizard ──────────────────────────────────┐
 │ Date         Ability  Change  Reason       Source         Recovery       │
 │ ──────────────────────────────────────────────────────────────────────── │
-│ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night  [Heal] │
+│ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night · healed 1/3 [Heal] │
 │ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent          │
 │ 2026-06-10   Sta      −1      Roll the Body  —            Permanent          │
 │ 2026-06-09   Agl      −2      Spellburn    Magic Missile  ✓ healed 2026-06-10 │
@@ -208,10 +208,15 @@ placement, edit dialog, and log viewer.
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Rows sorted newest-first; healed rows dimmed with a checkmark instead of the button.
-- **Heal** button: restores `min(ability.max, value + |change|)` — i.e. caps at max —
-  marks the entry `healed: true` + `healedTimestamp`, in a single `update()` with the
-  `abilityLogged` options flag. It does **not** delete the row (history is the point).
+- Rows sorted newest-first; fully healed rows dimmed with a checkmark instead of the
+  button.
+- **Heal** button: heals **1 point per click** — the rules' natural quantum (a night's
+  rest = one click; a day of bed rest = two; Lay on Hands = whatever it rolled).
+  Each click restores `min(ability.max, value + 1)` and increments `healedAmount`
+  (+ updates `healedTimestamp`), in a single `update()` with the `abilityLogged`
+  options flag. The row shows progress ("healed 1/3") until `healedAmount == |change|`,
+  then dims. **Shift-click heals the full remainder** for judge fiat or big magical
+  restores. Healing never deletes the row (history is the point).
 - Permanent-class entries (luck spend for non-thieves, Roll the Body, bleed-out,
   corruption, permanent change) get **no Heal button**. If something strange happens
   (divine intervention, restoration magic), record it as a new manual change through
@@ -236,7 +241,8 @@ card (speaker = the actor), matching the system's existing card styling:
 ```
 
 - Losses, gains ("…gains 2 Strength — Blessed by Gorhan (permanent)"), and Heal
-  restores ("…recovers 3 Strength — Spellburn healed") all get cards. **Luck spends
+  restores ("…recovers 1 Strength — Spellburn healing, 2 of 3 healed") all get cards.
+  **Luck spends
   included** — the card is where non-thieves get reminded the loss is permanent.
 - The card shows the reason, note, and recovery expectation — so the table hears the
   fiction, not just the bookkeeping.
@@ -249,7 +255,7 @@ card (speaker = the actor), matching the system's existing card styling:
 
 | File | Change |
 |---|---|
-| `module/data/actor/base-actor.mjs` | extend `abilityLog` entry schema (`id`, `healed`, `healedTimestamp`) |
+| `module/data/actor/base-actor.mjs` | extend `abilityLog` entry schema (`id`, `maxChange`, `healedAmount`, `healedTimestamp`) |
 | `module/config.js` | `DCC.abilityLogTypes` + recovery-class map |
 | `module/settings.js` | register `enableAbilityScoreLog` |
 | `module/ability-score-config.js` | **new** — edit dialog (pattern: `hit-points-config.js`) |
@@ -271,10 +277,11 @@ card (speaker = the actor), matching the system's existing card styling:
 - **Max changes too**: only `value` edits go through the dialog; `max` edits stay free
   (level-up bookkeeping shouldn't be ceremonious). The fallback hook could log max
   changes as `manual` — proposed: don't, keep noise down.
-- **Heal when value has since changed**: restore is relative (`value + |change|`),
+- **Heal when value has since changed**: each restore is relative (`value + 1`),
   capped at max — not "set back to `newValue − change`" — so interleaved changes
   compose correctly.
-- **Double-heal**: guarded by `healed` flag.
+- **Over-heal**: guarded by the `healedAmount` cap — the button disappears (row dims)
+  once `healedAmount == |change|`, and each click is also clamped to `ability.max`.
 - **Active Effects on abilities**: AEs modify derived values, not `value`; the log only
   tracks the base `value`, so no interaction. The existing ability-effects icons
   (`actor-partial-pc-common.html:216`) already cover AE visibility.
@@ -294,14 +301,17 @@ card (speaker = the actor), matching the system's existing card styling:
 
 ## Test plan
 
-- Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; Heal
-  caps at max and sets flags; recovery-class derivation (thief Luck vs wizard Luck);
-  fallback hook skips when `abilityLogged` flag present; setting off → no hook writes;
+- Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; each
+  Heal click restores exactly 1, clamps to max, increments `healedAmount`; shift-click
+  heals the remainder; no further healing once `healedAmount == |change|`;
+  recovery-class derivation (thief Luck vs wizard Luck); fallback hook skips when
+  `abilityLogged` flag present; setting off → no hook writes;
   `otherTemporary`/`otherPermanent` reject submission with an empty note;
   permanent-class and positive entries render no Heal button.
 - Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
-- E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal,
-  verify value restored and row dimmed.
+- E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal
+  twice, verify value +2 and row shows "healed 2/3"; third click fully heals and dims
+  the row.
 
 ## Implementation order
 
