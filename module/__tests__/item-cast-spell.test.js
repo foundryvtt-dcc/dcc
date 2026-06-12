@@ -87,8 +87,7 @@ describe('Charged magic items (equipment with attached spell)', () => {
 
     await item.attachSpell(source)
 
-    expect(item.update).toHaveBeenCalledTimes(1)
-    const snapshot = item.update.mock.calls[0][0]['system.spell']
+    const snapshot = item.update.mock.calls.at(-1)[0]['system.spell']
     expect(snapshot._id).toBeUndefined()
     expect(snapshot.name).toBe('Magic Missile')
     // The charge is the cost - a magic item's spell is never 'lost'
@@ -107,6 +106,21 @@ describe('Charged magic items (equipment with attached spell)', () => {
   test('removeAttachedSpell clears the snapshot', async () => {
     await item.removeAttachedSpell()
     expect(item.update).toHaveBeenCalledWith({ 'system.spell': null })
+  })
+
+  test('attachSpell clears an existing snapshot before storing the new one', async () => {
+    // Object updates merge recursively - replacing without clearing would
+    // leak the old snapshot's keys into the new one
+    const source = {
+      type: 'spell',
+      toObject: () => ({ name: 'Sleep', type: 'spell', system: { lost: false } })
+    }
+
+    await item.attachSpell(source)
+
+    expect(item.update).toHaveBeenCalledTimes(2)
+    expect(item.update.mock.calls[0][0]).toEqual({ 'system.spell': null })
+    expect(item.update.mock.calls[1][0]['system.spell'].name).toBe('Sleep')
   })
 
   test('castSpell rolls the attached spell and spends a charge', async () => {
@@ -182,6 +196,40 @@ describe('Charged magic items (equipment with attached spell)', () => {
 
     expect(rollSpellCheckSpy).toHaveBeenCalledTimes(1)
     expect(item.update).not.toHaveBeenCalled()
+  })
+
+  test('castSpell rethrows real roll errors without spending a charge', async () => {
+    rollSpellCheckSpy.mockRejectedValue(new Error('boom'))
+
+    await expect(item.castSpell()).rejects.toThrow('boom')
+    expect(item.update).not.toHaveBeenCalled()
+  })
+
+  test('castSpell suppresses patron taint by default but honors an explicit opt-in', async () => {
+    await item.castSpell()
+    expect(rollSpellCheckSpy.mock.calls[0][1].suppressPatronTaint).toBe(true)
+
+    rollSpellCheckSpy.mockClear()
+    await item.castSpell({ suppressPatronTaint: false })
+    expect(rollSpellCheckSpy.mock.calls[0][1].suppressPatronTaint).toBe(false)
+  })
+
+  test('castSpell ignores a second cast while the first is awaiting its roll', async () => {
+    let resolveRoll
+    rollSpellCheckSpy.mockImplementation(() => new Promise(resolve => { resolveRoll = resolve }))
+
+    const first = item.castSpell()
+    const second = item.castSpell()
+
+    await second
+    expect(rollSpellCheckSpy).toHaveBeenCalledTimes(1)
+
+    resolveRoll()
+    await first
+
+    // Only the completed cast spends a charge
+    expect(item.update).toHaveBeenCalledTimes(1)
+    expect(item.update).toHaveBeenCalledWith({ 'system.charges.value': 2 })
   })
 
   test('castSpell is a no-op for non-equipment items', async () => {

@@ -21,8 +21,8 @@ export class EquipmentData extends PhysicalItemData {
       // Charges remaining / maximum. A max of 0 means charges are not
       // tracked and the item casts without consuming anything
       charges: new SchemaField({
-        value: new NumberField({ initial: 0, integer: true, min: 0 }),
-        max: new NumberField({ initial: 0, integer: true, min: 0 })
+        value: new NumberField({ initial: 0, integer: true, min: 0, required: true, nullable: false }),
+        max: new NumberField({ initial: 0, integer: true, min: 0, required: true, nullable: false })
       }),
 
       // Optional fixed spell check modifier for the item (e.g. '+5').
