@@ -42,6 +42,7 @@ abilityLog: new ArrayField(new SchemaField({
   timestamp: new NumberField({ integer: true }),
   ability: new StringField(),                     // str, agl, sta, per, int, lck
   change: new NumberField({ integer: true }),     // negative = loss, positive = gain
+  maxChange: new NumberField({ integer: true, initial: 0 }), // nonzero when the gain also raised max (permanent blessings)
   type: new StringField(),                        // see "Reason types" below
   source: new StringField(),                      // free text: spell name, monster, etc.
   newValue: new NumberField({ integer: true }),   // value after the change
@@ -125,6 +126,8 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
 │                                                │
 │ Source/note: [ Invoke Patron________ ]         │
 │                                                │
+│ [x] Also adjust Max          [gains only]      │
+│                                                │
 │ Recovery: Heals 1/night, 2/day bed rest        │  ← updates live with radio choice
 │                                                │
 │              [ Apply ]                         │
@@ -139,6 +142,13 @@ ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
   judge rulings) while still recording the one fact the log exists to answer: does
   this heal or not. For both, the Source/note field is **required** (Apply disabled
   until filled) so the "why" is always captured.
+- **Gains work too** — e.g. "a god blessed me with a permanent +2 Str" is a positive
+  delta with `otherPermanent` and a note. When the change is a *gain*, an
+  "Also adjust Max" checkbox appears (default **checked** for permanent types,
+  unchecked for temporary): a permanent blessing raises the natural maximum alongside
+  the value, so the new ceiling is correct for all later Healed-cap math. Temporary
+  boosts (e.g. a potion) leave max alone and are naturally clipped back when they
+  expire.
 - On submit, **one** `actor.update()` writes both the new value and the appended log
   entry, passing `{ dcc: { abilityLogged: true } }` in update options so the fallback
   hook (below) doesn't double-log.
@@ -193,7 +203,8 @@ A small scroll/book icon button in the `.ability-scores` block header
   `abilityLogged` options flag. It does **not** delete the row (history is the point).
 - Permanent-class entries still offer Healed (divine intervention happens) but behind a
   `DialogV2.confirm` ("This loss is normally permanent — restore anyway?").
-- Positive `heal`/award entries have no Healed button.
+- Positive entries (heals, blessings, awards) have no Healed button — you don't heal
+  a gain. Recording a revoked blessing is just a new negative entry (or GM delete).
 - GM-only trash icon per row for bookkeeping mistakes; players can only mark Healed.
 - Empty state: localized "No ability score changes recorded."
 
