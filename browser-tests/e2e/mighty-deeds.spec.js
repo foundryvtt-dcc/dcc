@@ -186,15 +186,17 @@ test.describe('Mighty Deeds E2E Tests', () => {
     const success = await attackUntilDeed(page, fixtures, true)
     expect(success, 'no successful deed in 30 attacks').not.toBeNull()
     expect(success.deedDieRollResult).toBeGreaterThanOrEqual(3)
-    expect(success.deedTables).toEqual([{ name: 'E2E Deed Table', path: 'E2E Deed Table' }])
+    // Other deed tables may be registered too (e.g. the dcc-core-book pack)
+    expect(success.deedTables).toContainEqual({ name: 'E2E Deed Table', path: 'E2E Deed Table' })
     expect(success.contentHasPrompt).toBe(true)
 
-    // Click Roll Deed on the rendered chat card
+    // Select the test table and click Roll Deed on the rendered chat card
     await page.evaluate(() => ui.sidebar.expand())
     await page.click('button[data-tab="chat"]')
     await page.waitForTimeout(500)
     await page.evaluate(() => ui.chat.scrollBottom({ immediate: true }))
     const card = page.locator(`#chat .chat-message[data-message-id="${success.messageId}"]`)
+    await card.locator('.deed-table-select').selectOption('E2E Deed Table')
     const button = card.locator('.roll-deed-table')
     await button.scrollIntoViewIfNeeded()
     await expect(button).toBeVisible()
