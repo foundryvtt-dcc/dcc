@@ -69,6 +69,9 @@
       <div>{{{item.system.description.summary}}}</div>
       <div><i class="fa-thin fa-up" data-action="increaseQty"></i> {{item.system.quantity}} <i class="fa-thin fa-down" data-action="decreaseQty"></i></div>
       <div>
+        {{#if item.system.spell.name}}
+          <a class="item-control rollable" title="{{localize 'DCC.CastSpell'}}: {{item.system.spell.name}}{{#if item.system.charges.max}} ({{item.system.charges.value}}/{{item.system.charges.max}}){{/if}}" data-action="castEquipmentSpell"><i class="fas fa-wand-sparkles"></i></a>
+        {{/if}}
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
         <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
       </div>

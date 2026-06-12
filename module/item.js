@@ -1,4 +1,4 @@
-/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
+/* global Item, foundry, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
@@ -394,6 +394,100 @@ class DCCItem extends Item {
       suppressPatronTaint: options.suppressPatronTaint,
       spellburn: spellburnTotal
     })
+  }
+
+  /**
+   * Attach a spell to this equipment item, making it a charged magic item
+   * (e.g. a wand of magic missiles, issue #500). Stores a snapshot of the
+   * spell's data so the item is self-contained and tradeable.
+   * @param {DCCItem} spell    The spell item to attach
+   * @return {Promise}
+   */
+  async attachSpell (spell) {
+    if (this.type !== 'equipment') { return }
+    if (spell?.type !== 'spell') { return }
+
+    const spellData = spell.toObject ? spell.toObject() : foundry.utils.duplicate(spell)
+    // The snapshot is independent of the source spell document
+    delete spellData._id
+    if (spellData.system) {
+      // A magic item's spell is never 'lost' - the charge is the cost
+      spellData.system.lost = false
+    }
+
+    return this.update({ 'system.spell': spellData })
+  }
+
+  /**
+   * Remove the attached spell from this equipment item
+   * @return {Promise}
+   */
+  async removeAttachedSpell () {
+    if (this.type !== 'equipment') { return }
+    return this.update({ 'system.spell': null })
+  }
+
+  /**
+   * Cast the spell attached to this equipment item, spending a charge.
+   * A charge is spent per cast regardless of the spell check result;
+   * casting is blocked at zero charges. Items with a charge maximum of
+   * zero do not track charges and cast freely.
+   * @param options
+   * @return {Promise}
+   */
+  async castSpell (options = {}) {
+    if (this.type !== 'equipment') { return }
+
+    const actor = this.actor
+    if (!actor) {
+      return ui.notifications.warn(game.i18n.format('DCC.CastSpellNoActorWarning', { item: this.name }))
+    }
+
+    const spellData = this.system.spell
+    if (!spellData?.name) {
+      return ui.notifications.warn(game.i18n.format('DCC.NoSpellAttachedWarning', { item: this.name }))
+    }
+
+    const charges = this.system.charges || {}
+    if (charges.max > 0 && charges.value <= 0) {
+      return ui.notifications.warn(game.i18n.format('DCC.NoChargesRemainingWarning', { item: this.name }))
+    }
+
+    // rollSpellCheck refuses spells without a results table; check up front
+    // so a misconfigured item doesn't burn a charge on the warning
+    if (!spellData.system?.results?.table) {
+      return ui.notifications.warn(game.i18n.localize('DCC.NoSpellResultsTableWarning'))
+    }
+
+    // Build an ephemeral owned copy of the attached spell to roll with
+    const data = foundry.utils.duplicate(spellData)
+    delete data._id
+    data.system = data.system || {}
+    data.system.lost = false
+    // The charge is the casting cost: no wizard spell loss or cleric
+    // disapproval automation for magic item casts
+    data.system.config = Object.assign({}, data.system.config, { castingMode: 'generic' })
+    if (this.system.spellCheckOverride) {
+      // The item casts at its own fixed spell check instead of the
+      // attached spell's configuration
+      data.system.config.inheritSpellCheck = false
+      data.system.spellCheck = Object.assign({}, data.system.spellCheck, { value: this.system.spellCheckOverride })
+    }
+    const spell = new this.constructor(data, { parent: actor })
+
+    const abilityId = actor.system.class?.spellCheckAbility || ''
+    try {
+      await spell.rollSpellCheck(abilityId, options)
+    } catch (err) {
+      // The roll modifier dialog rejects with null on cancel - no cast, no charge
+      if (err) { throw err }
+      return
+    }
+
+    // Spend a charge per cast attempt (when charges are tracked)
+    if (charges.max > 0) {
+      await this.update({ 'system.charges.value': Math.max(0, charges.value - 1) })
+    }
   }
 
   /**
