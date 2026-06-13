@@ -4,7 +4,7 @@ Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tablet
 
 Please check out the [User Guide](https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/en/latest/). Thanks to Christian Ovsenik (@algnc) for putthing that together.
 
-Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goodman Games discord for help and discussion.
+Join us on the [dcc channel on the FoundryVTT Discord](https://discord.gg/foundryvtt) for help and discussion.
 
 *Note that this system does not contain content from copyrighted DCC products, only rollable character sheets.*
 
