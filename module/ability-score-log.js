@@ -265,9 +265,10 @@ export async function logAbilityChange (actor, entryData, { announce = true } = 
 /**
  * Apply spellburn (or MCC glowburn) and log one entry per burned ability
  *
- * Replaces the plain actor.update() in the spellburn roll term callbacks -
- * one update carrying the new values and the log entries. When the setting
- * is disabled the update is identical to the previous behavior.
+ * Replaces the plain actor.update() in the spellburn apply sites - one
+ * update carrying the new values and the log entries. Only abilities whose
+ * value actually changed are written (and logged); when the setting is
+ * disabled the same value-only update is applied with no log entries.
  *
  * @param {Object} actor    The actor burning ability points
  * @param {Object} burned   {str, agl, sta} - new values after the burn
@@ -275,22 +276,25 @@ export async function logAbilityChange (actor, entryData, { announce = true } = 
  * @returns {Promise}
  */
 export async function logSpellburn (actor, burned, source = '') {
-  const update = {
-    'system.abilities.str.value': burned.str,
-    'system.abilities.agl.value': burned.agl,
-    'system.abilities.sta.value': burned.sta
-  }
-
-  if (!abilityScoreLogEnabled()) {
-    return actor.update(update)
-  }
-
+  const enabled = abilityScoreLogEnabled()
+  const update = {}
   const entries = []
+
   for (const abilityId of ['str', 'agl', 'sta']) {
     const newValue = parseInt(burned[abilityId])
+    if (isNaN(newValue)) continue
     const change = newValue - (parseInt(actor.system.abilities[abilityId]?.value) || 0)
-    if (!change || isNaN(change)) continue
-    entries.push(buildLogEntry(actor, { ability: abilityId, change, type: 'spellburn', source, newValue }))
+    if (!change) continue
+    update[`system.abilities.${abilityId}.value`] = newValue
+    if (enabled) {
+      entries.push(buildLogEntry(actor, { ability: abilityId, change, type: 'spellburn', source, newValue }))
+    }
+  }
+
+  if (Object.keys(update).length === 0) return
+
+  if (!enabled) {
+    return actor.update(update)
   }
 
   if (entries.length) {

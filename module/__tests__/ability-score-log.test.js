@@ -186,7 +186,7 @@ describe('logSpellburn', () => {
     expect(actor.update).toHaveBeenCalledTimes(1)
     const [update, options] = actor.update.mock.calls[0]
     expect(update['system.abilities.str.value']).toEqual(10)
-    expect(update['system.abilities.agl.value']).toEqual(14)
+    expect(update['system.abilities.agl.value']).toBeUndefined() // unburned, omitted
     expect(update['system.abilities.sta.value']).toEqual(12)
     expect(options).toEqual({ dcc: { abilityLogged: true } })
 
@@ -202,8 +202,14 @@ describe('logSpellburn', () => {
     await logSpellburn(actor, { str: 10, agl: 14, sta: 13 }, 'Magic Missile')
 
     const [update, options] = actor.update.mock.calls[0]
-    expect(update['system.abilityLog']).toBeUndefined()
+    expect(update).toEqual({ 'system.abilities.str.value': 10 })
     expect(options).toBeUndefined()
+  })
+
+  test('no update at all when nothing was burned', async () => {
+    const actor = makeActor()
+    await logSpellburn(actor, { str: 12, agl: 14, sta: 13 }, 'Magic Missile')
+    expect(actor.update).not.toHaveBeenCalled()
   })
 })
 
