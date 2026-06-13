@@ -58,7 +58,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
-      dropSelector: '.tab-body'
+      dropSelector: '.dcc.item'
     }]
   }
 
