@@ -78,6 +78,20 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
       const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
 
+      // Custom spell-like skills (a skill item with a wizard/cleric casting
+      // mode) get the same failure automation as spells (issue #375)
+      const spellLikeCastingMode = !!resolved.skill.castingMode && resolved.skill.castingMode !== 'generic'
+
+      // A spell-like skill in wizard casting mode is lost on a failed check
+      // like a wizard spell; once lost it cannot be cast again until recovered,
+      // mirroring rollSpellCheck's lost gate
+      if (resolved.skillItem?.system.lost && resolved.skill.castingMode === 'wizard' && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+        return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+          actor: this.name,
+          spell: resolved.skillItem.name
+        }))
+      }
+
       // Description-only skill items (no die, no value, no roll) route
       // through the adapter's `_emitSkillDescriptionViaAdapter`, which
       // posts a description chat card rather than a roll (legacy-decom
@@ -89,6 +103,14 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // `showModifierDialog` on its own.
       if (!resolved.hasDie) {
         return this._emitSkillDescriptionViaAdapter(skillId, resolved)
+      }
+
+      // Custom spell-like skills resolve through processSpellCheck so they
+      // get wizard spell loss / cleric disapproval automation even without a
+      // result table (#375). Built-in cleric abilities (no castingMode) keep
+      // the adapter's skill-table path below.
+      if (spellLikeCastingMode) {
+        return this._castingModeSkillViaProcessSpellCheck(skillId, options, resolved)
       }
 
       if (hasSkillTable || useDisapprovalRange) {
@@ -125,6 +147,11 @@ export const RollsSkillMixin = (Base) => class extends Base {
         }
         if (skillItem.system.config.useLevel) {
           skill.level = `+${this.system.details.level.value ?? 0}`
+        }
+        if (skillItem.system.config.castingMode) {
+          // Spell-like skills carry a casting mode that drives failure
+          // automation through processSpellCheck (issue #375)
+          skill.castingMode = skillItem.system.config.castingMode
         }
       }
     }
@@ -319,6 +346,47 @@ export const RollsSkillMixin = (Base) => class extends Base {
    *     on the skill item so the sheet displays the latest total.
    * @private
    */
+  /**
+   * Spell-like skill branch (issue #375). A custom skill item configured
+   * with a wizard or cleric casting mode rolls like a skill but resolves
+   * through `processSpellCheck`, so it gets the matching failure automation
+   * (wizard spell loss or cleric disapproval) even without a result table.
+   * The roll itself is built from the same `_buildSkillCheckRollTerms`
+   * helper as the other skill paths so the modifier breakdown is identical;
+   * an explicit `castingMode` is threaded through so processSpellCheck
+   * applies the right automation regardless of sheet class.
+   * @private
+   */
+  async _castingModeSkillViaProcessSpellCheck (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'castingMode' })
+    const { skill, skillItem, abilityLabel } = resolved
+
+    const terms = this._buildSkillCheckRollTerms(skillId, resolved)
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    if (!roll._evaluated) {
+      await roll.evaluate()
+    }
+
+    // A result table is optional for spell-like skills; processSpellCheck
+    // falls back to the no-table pass/fail indicator when absent
+    const skillTable = await game.dcc.getSkillTable(skillId)
+
+    await game.dcc.processSpellCheck(this, {
+      rollTable: skillTable,
+      roll,
+      item: skillItem,
+      flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+      suppressPatronTaint: options.suppressPatronTaint,
+      castingMode: skill.castingMode
+    })
+
+    if (skillItem && skillItem.system.config.showLastResult) {
+      skillItem.update({ 'system.lastResult': roll.total })
+    }
+
+    return roll
+  }
+
   async _skillTableViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'skillTable' })
     const { skill, skillItem, abilityLabel } = resolved

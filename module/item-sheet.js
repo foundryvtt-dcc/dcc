@@ -50,6 +50,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       containerDeleteItem: this.#containerDeleteItem,
       containerEditItem: this.#containerEditItem,
       twoWeaponChange: this.#twoWeaponChange,
+      removeAttachedSpell: this.#removeAttachedSpell,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
       effectDelete: this.#effectDelete,
@@ -57,7 +58,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
-      dropSelector: '.tab-body'
+      dropSelector: '.dcc.item'
     }]
   }
 
@@ -509,6 +510,23 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return this._onDropActiveEffect(event, data)
     }
 
+    // Handle spell drops onto equipment sheets — attach the spell to make
+    // a charged magic item (issue #500)
+    if (this.document.type === 'equipment' && (data.type === 'Item' || data.type === 'DCC Item') && data.uuid) {
+      let spell
+      try {
+        spell = await fromUuid(data.uuid)
+      } catch (err) {
+        console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
+        return false
+      }
+      if (spell?.type === 'spell') {
+        await this.document.attachSpell(spell)
+        this.render(false)
+        return true
+      }
+    }
+
     // Handle item drops onto container sheets — add the item to this container
     if (this.document.type === 'container' && (data.type === 'Item' || data.type === 'DCC Item') && data.uuid) {
       const actor = this.document.parent
@@ -711,6 +729,19 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _lookupMercurialMagic () {
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Remove the attached spell from this equipment item
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #removeAttachedSpell (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+    await this.document.removeAttachedSpell()
+    this.render(false)
   }
 
   /**

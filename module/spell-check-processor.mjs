@@ -10,8 +10,9 @@
  * `docs/00-progress.md`'s Decision #6 (permanent stable API, no
  * deprecation path).
  *
- * Pure refactor — the function body is byte-identical to the prior
- * inline definition. Continues to read `game.dcc.SpellResult` /
+ * Originally a pure (byte-identical) extraction of the inline definition;
+ * since extended with the explicit `castingMode` override (issue #375).
+ * Continues to read `game.dcc.SpellResult` /
  * `game.dcc.FleetingLuck` rather than importing those modules directly,
  * mirroring how `module/actor.js`'s spell-check paths already invoke
  * them; keeps the init-time `game.dcc` registration order unchanged.
@@ -30,6 +31,11 @@ export async function processSpellCheck (actor, spellData) {
   // - roll: the roll object to evaluate for the spell
   // - item (optional): the item representing the spell or spell-like skill
   // - flavor: flavor text for the spell if no table is available to provide it
+  // - castingMode (optional): explicit casting mode ('generic', 'wizard', or
+  //   'cleric') for the failure automation below. Takes precedence over the
+  //   item's configured casting mode and the sheet-class default, so custom
+  //   skills with spell-like features can opt into wizard spell loss or
+  //   cleric disapproval handling (issue #375).
   const rollTable = spellData.rollTable
   const roll = spellData.roll
   const item = spellData.item
@@ -160,7 +166,8 @@ export async function processSpellCheck (actor, spellData) {
       }
 
       // Build the spell result indicator for pass/fail display
-      const noTableLevel = item ? item.system.level : 1
+      // Items without a level field (e.g. spell-like skills) are treated as level 1
+      const noTableLevel = (item ? item.system.level : 1) ?? 1
       const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
       let spellResultHtml = ''
       if (fumble) {
@@ -192,15 +199,19 @@ export async function processSpellCheck (actor, spellData) {
       })
     }
 
-    // Determine casting mode from the item or actor - default to wizard
-    let castingMode = item ? item.system.config.castingMode : 'wizard'
-    if (!item && actor.classId === 'cleric') {
+    // Determine casting mode: an explicit override from the caller wins,
+    // then the item's configuration, defaulting to wizard. The explicit
+    // override lets custom spell-like skills opt into wizard spell loss or
+    // cleric disapproval handling (issue #375).
+    let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
+    if (!spellData.castingMode && !item && actor.classId === 'cleric') {
       // Cleric sheets will use the cleric casting mode if not set by the item
       castingMode = 'cleric'
     }
 
     // Spell check threshold is 10 + spell level * 2, anything below this is a failure
-    const level = item ? item.system.level : 1
+    // Items without a level field (e.g. spell-like skills) are treated as level 1
+    const level = (item ? item.system.level : 1) ?? 1
     let success = roll.total >= (10 + level * 2)
 
     // Handle spell failure based on casting mode
@@ -233,8 +244,10 @@ export async function processSpellCheck (actor, spellData) {
       }
     }
 
-    // Store the roll result in the item for display on the spells tab
-    if (item) {
+    // Store the roll result in the item for display on the spells tab.
+    // Spell-like skill items update their own lastResult in the skill-roll
+    // path, so skip them here to avoid a redundant update (issue #375)
+    if (item?.id && item.type !== 'skill') {
       await item.update({ 'system.lastResult': roll.total })
     }
 

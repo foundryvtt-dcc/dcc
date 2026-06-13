@@ -516,6 +516,73 @@ test.describe('DCC Active Effects', () => {
       await expect(page.locator('.dcc.sheet.item .effect-name')).toContainText('Sword Attack Bonus')
       await expect(page.locator('.dcc.sheet.item .effect-transfer')).toBeVisible()
     })
+
+    test('can drop an active effect onto an item effects tab (issue #750)', async ({ page }) => {
+      // Create an actor with a target item (no effects) and a source effect to drag
+      const { itemId, effectUuid, effectData } = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 AE Drop Target', type: 'Player' })
+
+        const [weapon] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'V14 Drop Sword',
+          type: 'weapon'
+        }])
+
+        const [effect] = await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'V14 Dragged Effect',
+          img: 'icons/svg/aura.svg',
+          changes: [{ key: 'system.abilities.str.value', value: '1', type: 'add' }],
+          disabled: false
+        }])
+
+        await weapon.sheet.render(true)
+
+        return { itemId: weapon.id, effectUuid: effect.uuid, effectData: effect.toObject() }
+      })
+
+      await page.waitForSelector('.dcc.sheet.item', { timeout: 5000 })
+      await page.waitForTimeout(500)
+
+      // Navigate to the item's Effects tab (via the sheet API to avoid pointer
+      // interception from notification banners) and confirm it starts empty
+      await page.evaluate((id) => {
+        const item = game.items.get(id) ||
+          game.actors.getName('V14 AE Drop Target')?.items.get(id)
+        item.sheet.changeTab('effects', 'sheet')
+      }, itemId)
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.sheet.item .effects-empty')).toBeVisible()
+
+      // Simulate dropping the ActiveEffect onto the item's effects tab.
+      // The DragDrop handler is bound to the sheet root (.dcc.item), so the
+      // native drop event bubbles up from the effects section to the handler.
+      // Before issue #750's fix the handler was bound to .tab-body, which the
+      // effects tab does not contain, so the drop was silently ignored.
+      await page.evaluate(({ effectUuid, effectData }) => {
+        const section = document.querySelector('.dcc.sheet.item section[data-tab="effects"]')
+        const dataTransfer = new DataTransfer()
+        dataTransfer.setData('text/plain', JSON.stringify({
+          type: 'ActiveEffect',
+          uuid: effectUuid,
+          data: effectData
+        }))
+        section.dispatchEvent(new DragEvent('drop', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer
+        }))
+      }, { effectUuid, effectData })
+
+      // The effect should now exist on the item itself
+      await page.waitForFunction((id) => {
+        const item = game.items.get(id) ||
+          game.actors.getName('V14 AE Drop Target')?.items.get(id)
+        return item && item.effects.size === 1
+      }, itemId, { timeout: 5000 })
+
+      // And it should render in the item's effects list
+      await expect(page.locator('.dcc.sheet.item .effect-item')).toBeVisible()
+      await expect(page.locator('.dcc.sheet.item .effect-name')).toContainText('V14 Dragged Effect')
+    })
   })
 
   // ── Effects Compendium ───────────────────────────────────────────────

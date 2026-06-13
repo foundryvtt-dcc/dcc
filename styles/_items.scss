@@ -245,5 +245,27 @@
       background: rgba(0, 0, 0, 0.05);
     }
   }
+
+  .attached-spell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .attached-spell-hint {
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .charges-inputs {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    input {
+      width: 40px;
+      text-align: center;
+    }
+  }
 }
 

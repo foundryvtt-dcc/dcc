@@ -45,6 +45,45 @@ describe('suppressPatronTaint opt-out flag', () => {
   })
 })
 
+/**
+ * Mirror of the casting-mode determination in `processSpellCheck`
+ * (module/dcc.js):
+ *   let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
+ *   if (!spellData.castingMode && !item && actor.system.details.sheetClass === 'Cleric') {
+ *     castingMode = 'cleric'
+ *   }
+ * Kept in lockstep with the source condition.
+ */
+function resolveCastingMode ({ castingMode = undefined, item = null, sheetClass = '' }) {
+  let result = castingMode || (item ? item.system.config.castingMode : 'wizard')
+  if (!castingMode && !item && sheetClass === 'Cleric') {
+    result = 'cleric'
+  }
+  return result
+}
+
+describe('castingMode override (issue #375)', () => {
+  const clericSkillItem = { system: { config: { castingMode: 'cleric' } } }
+
+  test('an explicit spellData.castingMode wins over the item configuration', () => {
+    expect(resolveCastingMode({ castingMode: 'wizard', item: clericSkillItem })).toBe('wizard')
+    expect(resolveCastingMode({ castingMode: 'generic', item: clericSkillItem })).toBe('generic')
+  })
+
+  test('an explicit spellData.castingMode wins over the cleric sheet-class default', () => {
+    expect(resolveCastingMode({ castingMode: 'wizard', sheetClass: 'Cleric' })).toBe('wizard')
+  })
+
+  test('without an override, the item configuration is used (unchanged default behavior)', () => {
+    expect(resolveCastingMode({ item: clericSkillItem })).toBe('cleric')
+  })
+
+  test('without an override or item, wizard is the default and cleric sheets use cleric', () => {
+    expect(resolveCastingMode({})).toBe('wizard')
+    expect(resolveCastingMode({ sheetClass: 'Cleric' })).toBe('cleric')
+  })
+})
+
 describe('dcc.afterSpellCheckResult payload contract', () => {
   test('callAll receives the actor plus a payload carrying the documented keys', () => {
     // Mirror of the Hooks.callAll(...) site at the end of processSpellCheck.

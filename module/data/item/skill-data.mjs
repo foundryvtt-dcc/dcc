@@ -40,12 +40,20 @@ export class SkillData extends BaseItemData {
         useLevel: new BooleanField({ initial: false }),
         useValue: new BooleanField({ initial: true }),
         showLastResult: new BooleanField({ initial: true }),
-        applyCheckPenalty: new BooleanField({ initial: false })
+        applyCheckPenalty: new BooleanField({ initial: false }),
+        // Casting mode for spell-like skills: 'generic' (no failure
+        // automation), 'wizard' (spell loss), or 'cleric' (disapproval).
+        // Plain StringField (no choices) to match SpellData, so variant
+        // modules can introduce custom modes handled via hooks
+        castingMode: new StringField({ initial: 'generic' })
       }),
       ability: new StringField({ initial: '' }),
       die: new DiceField({ initial: '1d20' }),
       value: new StringField({ initial: '' }),
-      lastResult: new StringField({ initial: '0' })
+      lastResult: new StringField({ initial: '0' }),
+      // Set by loseSpell when a wizard casting mode skill fails its check,
+      // mirroring SpellData
+      lost: new BooleanField({ initial: false })
     }
   }
 }
