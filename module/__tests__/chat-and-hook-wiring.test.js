@@ -84,6 +84,8 @@ const {
   registerChatAndHookWiring
 } = await import('../chat-and-hook-wiring.mjs')
 
+const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
+
 let originalGame
 let originalFoundry
 let originalHooks
@@ -717,18 +719,24 @@ describe('registerChatAndHookWiring', () => {
   test('wires every non-once handler via Hooks.on with the matching dispatch-table entry', () => {
     registerChatAndHookWiring()
 
-    const onCalls = Object.fromEntries(globalThis.Hooks.on.mock.calls)
-    expect(onCalls.hotbarDrop).toBe(onHotbarDrop)
-    expect(onCalls.renderChatMessageHTML).toBe(onRenderChatMessageHTML)
-    expect(onCalls.getChatMessageContextOptions).toBe(onGetChatMessageContextOptions)
-    expect(onCalls.getCompendiumContextOptions).toBe(onGetCompendiumContextOptions)
-    expect(onCalls.renderActorDirectory).toBe(onRenderActorDirectory)
-    expect(onCalls.preCreateActor).toBe(onPreCreateActor)
-    expect(onCalls.preCreateItem).toBe(onPreCreateItem)
-    expect(onCalls.applyActiveEffect).toBe(onApplyActiveEffect)
-    expect(onCalls.preUpdateActor).toBe(onPreUpdateActor)
-    expect(onCalls.updateCombat).toBe(onUpdateCombat)
-    expect(onCalls.getProseMirrorMenuDropDowns).toBe(onGetProseMirrorMenuDropDowns)
+    // `preUpdateActor` carries two listeners (dispatch-table token-sync +
+    // the ability-score-log fallback logger registered outside the table),
+    // so collect calls per hook name rather than flattening to an object.
+    const onCalls = {}
+    for (const [hookName, handler] of globalThis.Hooks.on.mock.calls) {
+      (onCalls[hookName] ??= []).push(handler)
+    }
+    expect(onCalls.hotbarDrop).toEqual([onHotbarDrop])
+    expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTML])
+    expect(onCalls.getChatMessageContextOptions).toEqual([onGetChatMessageContextOptions])
+    expect(onCalls.getCompendiumContextOptions).toEqual([onGetCompendiumContextOptions])
+    expect(onCalls.renderActorDirectory).toEqual([onRenderActorDirectory])
+    expect(onCalls.preCreateActor).toEqual([onPreCreateActor])
+    expect(onCalls.preCreateItem).toEqual([onPreCreateItem])
+    expect(onCalls.applyActiveEffect).toEqual([onApplyActiveEffect])
+    expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
+    expect(onCalls.updateCombat).toEqual([onUpdateCombat])
+    expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
   })
 
   test('wires the once-only item-piles-ready handler via Hooks.once', () => {
@@ -737,10 +745,11 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly eleven Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly twelve Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(11)
+    // Eleven dispatch-table listeners + the ability-score-log fallback logger
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(12)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

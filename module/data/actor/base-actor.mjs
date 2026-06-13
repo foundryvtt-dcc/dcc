@@ -132,12 +132,17 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
 
       // Ability change log - tracks spellburn, luck spend, damage, recovery, etc.
       abilityLog: new ArrayField(new SchemaField({
+        id: new StringField({ required: true }), // foundry.utils.randomID(), targets entries for heal/delete
         timestamp: new NumberField({ integer: true }), // Unix timestamp
         ability: new StringField(), // str, agl, sta, per, int, lck
         change: new NumberField({ integer: true }), // positive = gain, negative = loss
-        type: new StringField(), // spellburn, damage, recovery, heal, award, spend
+        maxChange: new NumberField({ integer: true, initial: 0 }), // nonzero when a gain also raised max
+        type: new StringField(), // key into CONFIG.DCC.abilityLogTypes
         source: new StringField(), // spell name, monster, etc.
-        newValue: new NumberField({ integer: true }) // value after change
+        newValue: new NumberField({ integer: true }), // value after change
+        hpChange: new NumberField({ integer: true, initial: 0 }), // HP adjustment applied alongside (Stamina modifier threshold crossings)
+        healedAmount: new NumberField({ integer: true, min: 0, initial: 0 }), // points healed back so far (0..|change|)
+        healedTimestamp: new NumberField({ integer: true, nullable: true, initial: null }) // most recent heal
       }), { initial: [] }),
 
       // Attributes

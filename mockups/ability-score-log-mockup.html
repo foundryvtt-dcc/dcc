@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ability Score Log — Design Mockup</title>
+<style>
+  /* Theme variables lifted from styles/variables.css (light theme) */
+  :root {
+    --system-border-color: #333230;
+    --system-primary-color: #222;
+    --system-secondary-color: #97958e;
+    --system-input-background-color: #c3c2b9;
+    --system-value-display-background-color: #d0cec3;
+    --system-data-font: 'Book Antiqua', Palatino, 'Palatino Linotype', serif;
+    --system-label-font: 'Cooper Black', 'Rockwell', 'Arial Black', serif;
+    --system-heading-font: 'Duvall', 'Book Antiqua', serif;
+  }
+  body {
+    background: #555;
+    color: var(--system-primary-color);
+    font-family: var(--system-data-font);
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 24px;
+  }
+  .panel-label {
+    color: #eee;
+    font-family: sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 0 0 6px 2px;
+  }
+  .parchment {
+    background: #ece4d0;
+    border: 1px solid #1a1a17;
+    border-radius: 5px;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 50%);
+    padding: 10px;
+  }
+
+  /* ============ Panel 1: ability column on the sheet ============ */
+  .ability-scores {
+    display: grid;
+    grid-template-rows: repeat(5, 68px) auto;
+    position: relative;
+    padding: 14px 8px 4px;
+    width: 200px;
+  }
+  /* THE NEW BUTTON: history icon in the top-right corner of the column */
+  .ability-log-button {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.65;
+    padding: 0;
+  }
+  .ability-log-button:hover { opacity: 1; }
+  .ability-log-button svg { width: 16px; height: 16px; fill: var(--system-primary-color); }
+
+  .ability-box {
+    align-items: center;
+    display: grid;
+    font-size: 14px;
+    grid-template-columns: 85px 37px 60px;
+    grid-template-rows: 19px 20px 20px;
+  }
+  .ability-box .box-title {
+    font-family: var(--system-label-font);
+    font-size: 14px;
+    grid-column-end: span 2;
+    cursor: pointer;
+  }
+  .ability-score {
+    align-self: stretch;
+    border: 5px solid var(--system-border-color);
+    display: grid;
+    grid-row: 1 / span 3;
+    grid-column: 3;
+    position: relative;
+    background: var(--system-input-background-color);
+  }
+  .ability-score .value {
+    align-self: center;
+    justify-self: center;
+    font-size: 30px;
+    cursor: pointer; /* readonly + data-action="editAbilityScore" when setting is on */
+  }
+  .ability-box label.small {
+    font-family: var(--system-label-font);
+    font-size: 11.5px;
+  }
+  .ability-box .small-val {
+    border-bottom: 1px solid var(--system-border-color);
+    font-size: 14px;
+    width: 26px;
+    text-align: center;
+  }
+  .dcc-logo {
+    align-self: center;
+    justify-self: center;
+    opacity: 0.35;
+    font-family: var(--system-label-font);
+    font-size: 20px;
+    padding: 12px 0 4px;
+  }
+
+  /* ============ Shared dialog chrome (Foundry-ish window) ============ */
+  .fvtt-window {
+    background: #ece4d0;
+    border: 1px solid #1a1a17;
+    border-radius: 5px;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 50%);
+    overflow: hidden;
+  }
+  .fvtt-titlebar {
+    background: #2e2c28 url('') repeat;
+    color: #c8d7bd;
+    font-family: var(--system-label-font);
+    font-size: 13px;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .fvtt-titlebar .close { color: #c8d7bd; opacity: 0.8; cursor: pointer; }
+  .fvtt-content { padding: 12px 14px; }
+
+  /* ============ Panel 2: edit dialog ============ */
+  .edit-dialog { width: 330px; }
+  .edit-dialog .current-row {
+    display: flex;
+    gap: 18px;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .edit-dialog .current-row b { font-family: var(--system-label-font); font-weight: normal; }
+  .edit-dialog .new-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .edit-dialog input[type="number"] {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    font-family: var(--system-data-font);
+    font-size: 18px;
+    text-align: center;
+    width: 52px;
+  }
+  fieldset.reasons {
+    border: 1px solid var(--system-secondary-color);
+    border-radius: 4px;
+    margin: 0 0 10px;
+    padding: 6px 10px 8px;
+  }
+  fieldset.reasons legend {
+    font-family: var(--system-label-font);
+    font-size: 12px;
+    padding: 0 4px;
+  }
+  fieldset.reasons label {
+    display: block;
+    font-size: 13.5px;
+    padding: 1.5px 0;
+  }
+  .note-row { margin-bottom: 8px; font-size: 13.5px; }
+  .note-row input {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    font-family: var(--system-data-font);
+    font-size: 13.5px;
+    width: 180px;
+    padding: 2px 5px;
+  }
+  .hp-adjust label {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    text-align: left;
+  }
+  .hp-adjust input[type="checkbox"] { margin: 2px 0 0; width: auto; flex: 0 0 auto; }
+  .hp-adjust small { font-size: 11px; font-style: italic; }
+  .recovery-hint {
+    background: var(--system-value-display-background-color);
+    border-left: 3px solid var(--system-border-color);
+    font-size: 13px;
+    font-style: italic;
+    padding: 5px 8px;
+    margin-bottom: 10px;
+  }
+  .apply-btn {
+    background: var(--system-border-color);
+    border: none;
+    border-radius: 3px;
+    color: #ece4d0;
+    cursor: pointer;
+    display: block;
+    font-family: var(--system-label-font);
+    font-size: 13px;
+    margin: 0 auto;
+    padding: 6px 26px;
+  }
+
+  /* ============ Panel 3: log viewer ============ */
+  .log-dialog { width: 640px; }
+  .log-table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  .log-table th {
+    border-bottom: 2px solid var(--system-border-color);
+    font-family: var(--system-label-font);
+    font-size: 11.5px;
+    font-weight: normal;
+    padding: 3px 6px;
+    text-align: left;
+  }
+  .log-table td {
+    border-bottom: 1px dotted var(--system-secondary-color);
+    padding: 5px 6px;
+    vertical-align: middle;
+  }
+  .log-table td:first-child { white-space: nowrap; }
+  .log-table .loss { color: #7a1f1f; font-weight: bold; }
+  .log-table .gain { color: #1f5c2d; font-weight: bold; }
+  .log-table tr.healed { opacity: 0.45; }
+  .heal-btn {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--system-label-font);
+    font-size: 10.5px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .trash {
+    color: #7a1f1f;
+    cursor: pointer;
+    opacity: 0.55;
+    font-size: 12px;
+  }
+  .trash:hover { opacity: 1; }
+  .healed-mark { font-size: 12px; font-style: italic; }
+  .perm { font-style: italic; }
+
+  /* ============ Panel 4: chat card ============ */
+  .chat-card { width: 280px; padding: 8px 10px; }
+  .chat-card .speaker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px groove #d8cfb8;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+  }
+  .chat-card .speaker .portrait {
+    width: 32px; height: 32px;
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    background: var(--system-value-display-background-color);
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .chat-card .speaker .name { font-family: var(--system-label-font); font-size: 13px; }
+  .chat-card .headline { font-size: 14.5px; margin: 2px 0 4px; }
+  .chat-card .headline .loss { color: #7a1f1f; font-weight: bold; }
+  .chat-card .reason { font-size: 13px; }
+  .chat-card .recovery {
+    font-size: 12.5px;
+    font-style: italic;
+    color: #4a4639;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 1. Sheet: ability column with log button ============ -->
+<div>
+  <p class="panel-label">1 · Character sheet — ability column</p>
+  <div class="parchment">
+    <div class="ability-scores">
+      <button class="ability-log-button" title="Ability Score Log" aria-label="Ability Score Log">
+        <!-- fa-clock-rotate-left -->
+        <svg viewBox="0 0 512 512"><path d="M75 75a256 256 0 1 1-9 353l38-34a205 205 0 1 0 7-285c-31 31-39 39-55 56l52 52H0V109l49 49c15-16 7-8 26-27zm205 53v120l86 51-20 34-104-62V128h38z"/></svg>
+      </button>
+      <div class="ability-box">
+        <span class="box-title">Strength</span>
+        <div class="ability-score"><span class="value">9</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">+0</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">12</span>
+      </div>
+      <div class="ability-box">
+        <span class="box-title">Agility</span>
+        <div class="ability-score"><span class="value">14</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">+1</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">14</span>
+      </div>
+      <div class="ability-box">
+        <span class="box-title">Stamina</span>
+        <div class="ability-score"><span class="value">11</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">+0</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">12</span>
+      </div>
+      <div class="ability-box">
+        <span class="box-title">Personality</span>
+        <div class="ability-score"><span class="value">13</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">+1</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">13</span>
+      </div>
+      <div class="ability-box">
+        <span class="box-title">Intelligence</span>
+        <div class="ability-score"><span class="value">16</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">+2</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">16</span>
+      </div>
+      <div class="ability-box">
+        <span class="box-title">Luck</span>
+        <div class="ability-score"><span class="value">7</span></div>
+        <label class="small" style="grid-row:2">Modifier:</label>
+        <span class="small-val" style="grid-row:2;grid-column:2">−1</span>
+        <label class="small" style="grid-row:3">Max Value:</label>
+        <span class="small-val" style="grid-row:3;grid-column:2">11</span>
+      </div>
+      <div class="dcc-logo">DCC RPG</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. Edit dialog ============ -->
+<div>
+  <p class="panel-label">2 · Click an ability → edit dialog</p>
+  <div class="fvtt-window edit-dialog">
+    <div class="fvtt-titlebar"><span>Strength — Bonnie the Wizard</span><span class="close">✕</span></div>
+    <div class="fvtt-content">
+      <div class="current-row"><span><b>Current:</b> 12</span><span><b>Max:</b> 12</span></div>
+      <div class="new-value-row">
+        <b style="font-family: var(--system-label-font); font-size: 13px;">New Value:</b>
+        <input type="number" value="9">
+        <span style="font-size:13px; color:#4a4639;">(change: −3)</span>
+      </div>
+      <fieldset class="reasons">
+        <legend>Reason</legend>
+        <label><input type="radio" name="r" checked> Spellburn</label>
+        <label><input type="radio" name="r"> Ability damage (monster, trap, …)</label>
+        <label><input type="radio" name="r" disabled> Luck spend <span style="opacity:.5">(Luck only)</span></label>
+        <label><input type="radio" name="r"> Roll the Body injury</label>
+        <label><input type="radio" name="r"> Saved from bleeding out (Stamina)</label>
+        <label><input type="radio" name="r"> Corruption / disapproval</label>
+        <label><input type="radio" name="r"> Healing / recovery</label>
+        <label><input type="radio" name="r"> Temporary change (note why)</label>
+        <label><input type="radio" name="r"> Permanent change (note why)</label>
+      </fieldset>
+      <div class="note-row"><b style="font-family: var(--system-label-font); font-size: 12px;">Source / Note:</b>
+        <input type="text" value="Invoke Patron">
+      </div>
+      <div class="note-row hp-adjust" style="opacity:.45">
+        <label>
+          <input type="checkbox" disabled>
+          <span>Also adjust hit points by −2 (modifier +1 → 0)<br>
+          <small>shown for Stamina threshold crossings only</small></span>
+        </label>
+      </div>
+      <div class="recovery-hint">Recovery: heals 1 point per night&rsquo;s rest, 2 per day of bed rest</div>
+      <button class="apply-btn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 3. Log viewer ============ -->
+<div>
+  <p class="panel-label">3 · Log button → ability score log</p>
+  <div class="fvtt-window log-dialog">
+    <div class="fvtt-titlebar"><span>Ability Score Log — Bonnie the Wizard</span><span class="close">✕</span></div>
+    <div class="fvtt-content">
+      <table class="log-table">
+        <tr><th>Date</th><th>Ability</th><th>Change</th><th>Reason</th><th>Source / Note</th><th>Recovery</th><th></th><th></th></tr>
+        <tr>
+          <td>2026-06-12</td><td>Str</td><td class="loss">−3</td><td>Spellburn</td><td>Invoke Patron</td>
+          <td>1/night, 2/bed rest <span class="healed-mark">· healed 1/3</span></td><td><button class="heal-btn" title="Heal 1 point (shift-click: heal all)">Heal</button></td><td><span class="trash" title="Delete (GM)">🗑</span></td>
+        </tr>
+        <tr>
+          <td>2026-06-12</td><td>Lck</td><td class="loss">−2</td><td>Luck spend</td><td>Attack roll vs. troll</td>
+          <td class="perm">Permanent (Luck does not heal)</td><td></td><td><span class="trash" title="Delete (GM)">🗑</span></td>
+        </tr>
+        <tr>
+          <td>2026-06-11</td><td>Str</td><td class="gain">+2</td><td>Permanent change</td><td>Blessed by Gorhan</td>
+          <td class="perm">Permanent (max raised to 14)</td><td></td><td><span class="trash" title="Delete (GM)">🗑</span></td>
+        </tr>
+        <tr>
+          <td>2026-06-10</td><td>Sta</td><td class="loss">−1</td><td>Roll the Body</td><td>Troll lair</td>
+          <td class="perm">Permanent injury</td><td></td><td><span class="trash" title="Delete (GM)">🗑</span></td>
+        </tr>
+        <tr class="healed">
+          <td>2026-06-09</td><td>Agl</td><td class="loss">−2</td><td>Spellburn</td><td>Magic Missile</td>
+          <td>1/night, 2/bed rest</td><td><span class="healed-mark">✓ healed 06-10</span></td><td></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ 4. Chat card ============ -->
+  <p class="panel-label" style="margin-top:22px">4 · Chat card on change</p>
+  <div class="parchment chat-card">
+    <div class="speaker">
+      <div class="portrait">🧙</div>
+      <span class="name">Bonnie the Wizard</span>
+    </div>
+    <div class="headline">Loses <span class="loss">3 Strength</span></div>
+    <div class="reason">Spellburn — Invoke Patron</div>
+    <div class="recovery">Heals 1 point per night&rsquo;s rest, 2 per day of bed rest</div>
+  </div>
+</div>
+
+</body>
+</html>

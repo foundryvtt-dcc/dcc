@@ -671,11 +671,9 @@ test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _
 
   await actor.rollSpellCheck({ spellburn: { str: 0, agl: 0, sta: 3 } })
 
-  // Stamina burned 3 → 0 (not floored at 1); the naked path writes all
-  // three physical scores, so str/agl come through unchanged.
+  // Stamina burned 3 → 0 (not floored at 1); `logSpellburn` writes only
+  // the scores that changed, so unburned str/agl are omitted.
   expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.abilities.str.value': 12,
-    'system.abilities.agl.value': 12,
     'system.abilities.sta.value': 0
   })
 

@@ -212,7 +212,9 @@
         </label>
         <div class="ability-score">
           <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
-                 name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
+                 name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10"
+                 {{#if @root.abilityScoreLogEnabled}}readonly style="cursor: pointer" data-action="editAbilityScore"
+                 data-tooltip="{{localize 'DCC.AbilityLogTitle'}}"{{/if}}>
           {{#if effects.length}}
           <div class="ability-effects">
             {{#each effects}}
@@ -246,6 +248,12 @@
     {{/inline}}
 
     <div class="ability-scores">
+      {{#if abilityScoreLogEnabled}}
+      <button type="button" class="ability-log-button" data-action="viewAbilityLog"
+              data-tooltip="{{localize 'DCC.AbilityLogTitle'}}" aria-label="{{localize 'DCC.AbilityLogTitle'}}">
+        <i class="fas fa-clock-rotate-left"></i>
+      </button>
+      {{/if}}
       {{> abilityScore id='str' ability=system.abilities.str effects=abilityEffects.str }}
       {{> abilityScore id='agl' ability=system.abilities.agl effects=abilityEffects.agl }}
       {{> abilityScore id='sta' ability=system.abilities.sta effects=abilityEffects.sta }}

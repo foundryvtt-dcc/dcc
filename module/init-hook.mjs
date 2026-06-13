@@ -17,6 +17,7 @@
  * extraction pattern.
  */
 
+import { logAbilityChange } from './ability-score-log.js'
 import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
@@ -218,6 +219,7 @@ export function assembleGameDccNamespace () {
     SpellResult,
     TableResult,
     getSkillTable,
+    logAbilityChange, // Exported for dependent modules (MCC glowburn, etc.)
     processSpellCheck,
     getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md

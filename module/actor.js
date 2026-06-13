@@ -1,6 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
+import { logAbilityChange } from './ability-score-log.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import { ActiveEffectsMixin } from './actor/active-effects-mixin.mjs'
 import { DerivedStatsMixin } from './actor/derived-stats-mixin.mjs'
@@ -330,10 +331,13 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
     const flavor = game.i18n.format('DCC.LuckSpend', { luckSpend })
 
-    // Spend the luck
-    await this.update({
-      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
-    })
+    // Spend the luck (logged in the ability score log when enabled)
+    await logAbilityChange(this, {
+      ability: 'lck',
+      change: -luckSpend,
+      type: 'luckSpend',
+      source: options.title
+    }, { announce: true })
 
     // Convert the roll to a chat message
     roll.toMessage({

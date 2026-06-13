@@ -14,6 +14,35 @@
   .ability-scores {
     display: grid;
     grid-template-rows: repeat(5, 68px);
+    position: relative;
+
+    // Ability Score Log button - floats just above the top-right corner of
+    // the column (the corner itself is filled by the first score box) rather
+    // than adding a grid row
+    .ability-log-button {
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      height: 20px;
+      line-height: 20px;
+      opacity: 0.65;
+      padding: 0;
+      position: absolute;
+      right: 0;
+      top: -16px;
+      width: 20px;
+      z-index: 2;
+
+      &:hover {
+        box-shadow: none;
+        opacity: 1;
+      }
+
+      i {
+        color: var(--system-primary-color);
+        font-size: 14px;
+      }
+    }
 
     .ability-box {
       align-items: center;

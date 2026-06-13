@@ -649,14 +649,55 @@ describe('Edge cases caught by real Foundry code', () => {
   test('ArrayField with SchemaField elements works', () => {
     const data = new PlayerData({
       abilityLog: [
-        { timestamp: 1000, ability: 'str', change: -2, type: 'spellburn', source: 'Magic Missile', newValue: 8 },
-        { timestamp: 2000, ability: 'str', change: 1, type: 'recovery', source: 'Rest', newValue: 9 }
+        { id: 'log1', timestamp: 1000, ability: 'str', change: -2, type: 'spellburn', source: 'Magic Missile', newValue: 8 },
+        { id: 'log2', timestamp: 2000, ability: 'str', change: 1, type: 'recovery', source: 'Rest', newValue: 9 }
       ]
     })
     expect(data.abilityLog).toHaveLength(2)
     expect(data.abilityLog[0].ability).toBe('str')
     expect(data.abilityLog[0].change).toBe(-2)
     expect(data.abilityLog[1].type).toBe('recovery')
+  })
+
+  test('abilityLog entries round-trip the heal-tracking fields', () => {
+    const data = new PlayerData({
+      abilityLog: [
+        {
+          id: 'log1',
+          timestamp: 1000,
+          ability: 'sta',
+          change: -3,
+          maxChange: 0,
+          type: 'damage',
+          source: 'Giant rat',
+          newValue: 9,
+          hpChange: -2,
+          healedAmount: 1,
+          healedTimestamp: 2000
+        },
+        {
+          id: 'log2',
+          timestamp: 3000,
+          ability: 'str',
+          change: 2,
+          maxChange: 2,
+          type: 'otherPermanent',
+          source: 'Blessed by Gorhan',
+          newValue: 14
+        }
+      ]
+    })
+    expect(data.abilityLog[0].id).toBe('log1')
+    expect(data.abilityLog[0].hpChange).toBe(-2)
+    expect(data.abilityLog[0].healedAmount).toBe(1)
+    expect(data.abilityLog[0].healedTimestamp).toBe(2000)
+    expect(data.abilityLog[1].maxChange).toBe(2)
+    // Heal-tracking fields default sensibly when omitted
+    expect(data.abilityLog[1].hpChange).toBe(0)
+    expect(data.abilityLog[1].healedAmount).toBe(0)
+    expect(data.abilityLog[1].healedTimestamp).toBeNull()
+    // Source data preserved for round-tripping
+    expect(data._source.abilityLog[0].healedAmount).toBe(1)
   })
 
   test('NumberField with min/max constraints via real validation', () => {

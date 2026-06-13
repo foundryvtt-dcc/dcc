@@ -7,6 +7,7 @@ import {
   getAbilityModifier as libGetAbilityModifier,
   rollMercurialMagic as libRollMercurialMagic
 } from '../vendor/dcc-core-lib/index.js'
+import { logSpellburn } from '../ability-score-log.js'
 import { renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
@@ -591,6 +592,13 @@ export const RollsSpellMixin = (Base) => class extends Base {
       roller: () => natural
     })
 
+    // Flavor base: an explicit spell name wins; otherwise an optional
+    // `checkLabel` (i18n key or literal — `localize` passes a non-key
+    // through unchanged) lets a class/module relabel the raw check
+    // (e.g. "Mutation Check"); falls back to the generic "Spell Check".
+    const flavorBase = options.spell ||
+      (options.checkLabel ? game.i18n.localize(options.checkLabel) : game.i18n.localize('DCC.SpellCheck'))
+
     // Spellburn applied via the lib's event in item-bound routes; for
     // naked we just deduct here since there's no `createSpellEvents`
     // wiring (no spellItem to mutate). Clamped at 0, not 1: per DCC RAW a
@@ -598,23 +606,20 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // lethal). This matches the pre-adapter `DCCSpellburnTerm` callback
     // semantics (the legacy `#modifySpellburn` dialog permitted a
     // resulting score of 0) and the item-bound `onSpellburnApplied` bridge
-    // in `adapter/spell-events.mjs`.
+    // in `adapter/spell-events.mjs`. `logSpellburn` takes post-burn
+    // SCORES (the lib input carries burn AMOUNTS) and records typed
+    // entries in the ability score log when the world setting is on.
     if (input.spellburn) {
       const burn = input.spellburn
-      await this.update({
-        'system.abilities.str.value': Math.max(0, this.system.abilities.str.value - (burn.str || 0)),
-        'system.abilities.agl.value': Math.max(0, this.system.abilities.agl.value - (burn.agl || 0)),
-        'system.abilities.sta.value': Math.max(0, this.system.abilities.sta.value - (burn.sta || 0))
-      })
+      await logSpellburn(this, {
+        str: Math.max(0, this.system.abilities.str.value - (burn.str || 0)),
+        agl: Math.max(0, this.system.abilities.agl.value - (burn.agl || 0)),
+        sta: Math.max(0, this.system.abilities.sta.value - (burn.sta || 0))
+      }, flavorBase)
     }
 
     const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
-    // Flavor base: an explicit spell name wins; otherwise an optional
-    // `checkLabel` (i18n key or literal — `localize` passes a non-key
-    // through unchanged) lets a class/module relabel the raw check
-    // (e.g. "Mutation Check"); falls back to the generic "Spell Check".
-    let flavor = options.spell ||
-      (options.checkLabel ? game.i18n.localize(options.checkLabel) : game.i18n.localize('DCC.SpellCheck'))
+    let flavor = flavorBase
     if (abilityLabel) {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }

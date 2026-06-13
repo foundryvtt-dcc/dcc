@@ -1,5 +1,6 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
+import { logSpellburn } from '../ability-score-log.js'
 import { ensurePlus } from '../utilities.js'
 
 /**
@@ -119,13 +120,10 @@ export const SpellItemMixin = (Base) => class extends Base {
         sta: sbSta,
         callback: (formula, term) => {
           // Record the points burned (original minus the dialog's reduced
-          // values), then apply the spellburn.
+          // values), then apply the spellburn (logged in the ability score
+          // log when enabled).
           spellburnTotal = (sbStr - term.str) + (sbAgl - term.agl) + (sbSta - term.sta)
-          actor.update({
-            'system.abilities.str.value': term.str,
-            'system.abilities.agl.value': term.agl,
-            'system.abilities.sta.value': term.sta
-          })
+          logSpellburn(actor, term, this.name)
         }
       })
     }

@@ -26,6 +26,7 @@
  * `module/settings-table-hooks.mjs` / `module/table-loading.mjs` pattern.
  */
 
+import { abilityLogPreUpdateActor } from './ability-score-log.js'
 import * as chat from './chat.js'
 import parser from './parser.js'
 import EntityImages from './entity-images.js'
@@ -399,4 +400,11 @@ export function registerChatAndHookWiring () {
     if (once) Hooks.once(hookName, handler)
     else Hooks.on(hookName, handler)
   }
+
+  // Registered outside the dispatch table because `preUpdateActor` already
+  // carries the prototype-token-sync handler there (one handler per hook
+  // name in the table). Fallback logger for the Ability Score Log: records
+  // direct ability value edits (macros, modules, GM bar edits) as 'manual'
+  // entries unless the update carries the dcc.abilityLogged flag.
+  Hooks.on('preUpdateActor', abilityLogPreUpdateActor)
 }

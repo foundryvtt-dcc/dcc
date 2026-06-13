@@ -1,5 +1,7 @@
 /* global ChatMessage, CONFIG, CONST, game */
 
+import { logSpellburn } from '../ability-score-log.js'
+
 /**
  * Foundry-flavored implementation of the lib's `SpellEvents` callback
  * surface (see `@moonloch/dcc-core-lib/spells/*`).
@@ -137,17 +139,24 @@ export function createSpellEvents ({ actor, spellItem }) {
       if (actor.isNPC) return
       if (!burn) return
 
-      const updates = {}
+      // `logSpellburn` takes post-burn SCORES for all three physical
+      // abilities (unburned abilities keep their current value, which is
+      // a no-op on the write side and produces no log entry). It applies
+      // the same single actor.update as before and additionally records
+      // typed entries in the ability score log when the world setting is
+      // enabled.
+      const burned = {}
+      let anyBurn = false
       for (const abilityId of ['str', 'agl', 'sta']) {
         const amount = Number(burn[abilityId]) || 0
-        if (amount <= 0) continue
         const current = Number(actor.system?.abilities?.[abilityId]?.value) || 0
-        updates[`system.abilities.${abilityId}.value`] = Math.max(0, current - amount)
+        burned[abilityId] = amount > 0 ? Math.max(0, current - amount) : current
+        if (amount > 0) anyBurn = true
       }
 
-      if (Object.keys(updates).length > 0) {
-        Promise.resolve(actor.update(updates)).catch((err) => {
-          console.error('[DCC adapter] onSpellburnApplied: actor.update rejected', { actor: actor?.name, updates, err })
+      if (anyBurn) {
+        Promise.resolve(logSpellburn(actor, burned, spellItem?.name ?? '')).catch((err) => {
+          console.error('[DCC adapter] onSpellburnApplied: spellburn update rejected', { actor: actor?.name, burned, err })
         })
       }
     }
