@@ -105,15 +105,13 @@ export const RollsSkillMixin = (Base) => class extends Base {
         return this._emitSkillDescriptionViaAdapter(skillId, resolved)
       }
 
-      // Custom spell-like skills resolve through processSpellCheck so they
-      // get wizard spell loss / cleric disapproval automation even without a
-      // result table (#375). Built-in cleric abilities (no castingMode) keep
-      // the adapter's skill-table path below.
-      if (spellLikeCastingMode) {
-        return this._castingModeSkillViaProcessSpellCheck(skillId, options, resolved)
-      }
-
-      if (hasSkillTable || useDisapprovalRange) {
+      // Skill-table, cleric disapproval-range, and spell-like castingMode
+      // skills all resolve through the one adapter path. `_skillTableViaAdapter`
+      // applies the result-table / disapproval-range handling and, for skills
+      // with an explicit casting mode, the matching wizard spell loss or
+      // cleric disapproval automation (#375) — so spell-like skills are no
+      // longer a separate processSpellCheck detour.
+      if (hasSkillTable || useDisapprovalRange || spellLikeCastingMode) {
         return this._skillTableViaAdapter(skillId, options, resolved)
       }
 
@@ -344,49 +342,11 @@ export const RollsSkillMixin = (Base) => class extends Base {
    *     Unholy's documented cost).
    *   - `skillItem.system.config.showLastResult` updates `lastResult`
    *     on the skill item so the sheet displays the latest total.
+   *   - Spell-like skills (an explicit `skill.castingMode`) additionally
+   *     apply wizard spell loss or cleric disapproval automation on a
+   *     failed check (#375), the single path for all spell-like skills.
    * @private
    */
-  /**
-   * Spell-like skill branch (issue #375). A custom skill item configured
-   * with a wizard or cleric casting mode rolls like a skill but resolves
-   * through `processSpellCheck`, so it gets the matching failure automation
-   * (wizard spell loss or cleric disapproval) even without a result table.
-   * The roll itself is built from the same `_buildSkillCheckRollTerms`
-   * helper as the other skill paths so the modifier breakdown is identical;
-   * an explicit `castingMode` is threaded through so processSpellCheck
-   * applies the right automation regardless of sheet class.
-   * @private
-   */
-  async _castingModeSkillViaProcessSpellCheck (skillId, options, resolved) {
-    logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'castingMode' })
-    const { skill, skillItem, abilityLabel } = resolved
-
-    const terms = this._buildSkillCheckRollTerms(skillId, resolved)
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
-    if (!roll._evaluated) {
-      await roll.evaluate()
-    }
-
-    // A result table is optional for spell-like skills; processSpellCheck
-    // falls back to the no-table pass/fail indicator when absent
-    const skillTable = await game.dcc.getSkillTable(skillId)
-
-    await game.dcc.processSpellCheck(this, {
-      rollTable: skillTable,
-      roll,
-      item: skillItem,
-      flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
-      suppressPatronTaint: options.suppressPatronTaint,
-      castingMode: skill.castingMode
-    })
-
-    if (skillItem && skillItem.system.config.showLastResult) {
-      skillItem.update({ 'system.lastResult': roll.total })
-    }
-
-    return roll
-  }
-
   async _skillTableViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'skillTable' })
     const { skill, skillItem, abilityLabel } = resolved
@@ -478,6 +438,33 @@ export const RollsSkillMixin = (Base) => class extends Base {
         system: { spellId: skillItem?.id, skillId },
         content: `${rollHTML}${spellResultHtml}`
       })
+    }
+
+    // Spell-like skill failure automation (#375): a skill configured with an
+    // explicit casting mode applies the same wizard spell loss / cleric
+    // disapproval as a spell check. Spell-like skills carry no level field, so
+    // the success threshold uses level 1 (10 + 1 * 2), matching
+    // processSpellCheck. Built-in cleric abilities have no castingMode and are
+    // unaffected (they keep the disapproval-range / drainDisapproval handling).
+    if (skill.castingMode === 'wizard') {
+      const spellLikeLevel = skillItem?.system?.level ?? 1
+      if (game.settings.get('dcc', 'automateWizardSpellLoss') && roll.total < (10 + spellLikeLevel * 2)) {
+        await this.loseSpell(skillItem)
+      }
+    } else if (skill.castingMode === 'cleric') {
+      if (game.settings.get('dcc', 'automateClericDisapproval')) {
+        const spellLikeLevel = skillItem?.system?.level ?? 1
+        let success = roll.total >= (10 + spellLikeLevel * 2)
+        // A natural roll inside the disapproval range triggers disapproval and
+        // is an automatic failure
+        if (naturalRoll <= this.system.class.disapproval) {
+          await this.rollDisapproval(naturalRoll)
+          success = false
+        }
+        if (!success) {
+          await this.applyDisapproval()
+        }
+      }
     }
 
     // Skill-driven disapproval drain (Turn Unholy etc.) — preserves

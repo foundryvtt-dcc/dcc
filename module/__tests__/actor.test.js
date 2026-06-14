@@ -1280,29 +1280,62 @@ test('rollSkillCheck does not route regular skills through processSpellCheck', a
   expect(rollToMessageMock).toHaveBeenCalled()
 })
 
-test('rollSkillCheck routes spell-like skills with a casting mode through processSpellCheck', async () => {
+test('rollSkillCheck routes spell-like wizard skills through the adapter with spell-loss automation', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
-
   game.dcc.getSkillTable.mockResolvedValue(null)
 
-  // A custom class skill that casts like a wizard spell (issue #375):
-  // no result table, no disapproval range, just an explicit casting mode
-  actor.system.skills.runicAlphabet = {
-    label: 'Runic Alphabet',
-    die: '1d20',
-    value: 0,
-    castingMode: 'wizard'
-  }
+  // Wizard spell-loss automation enabled for this test
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
+    if (module === 'core' && key === 'messageMode') return 'public'
+    return originalGet(module, key)
+  })
 
-  await actor.rollSkillCheck('runicAlphabet')
+  const loseSpellSpy = vi.spyOn(actor, 'loseSpell').mockResolvedValue(undefined)
 
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
-  expect(spellCheckCall[0]).toBe(actor)
-  expect(spellCheckCall[1].rollTable).toBeNull()
-  expect(spellCheckCall[1].castingMode).toBe('wizard')
+  // A custom skill item that casts like a wizard spell (issue #375): no
+  // result table, no disapproval range, just an explicit casting mode. Spell-
+  // like skills route through the one adapter path, not a processSpellCheck
+  // detour.
+  const skillItem = new DCCItem({
+    name: 'Runic Alphabet',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: false,
+        useAbility: false,
+        useDie: true,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false,
+        castingMode: 'wizard'
+      },
+      die: '1d20',
+      value: '+0',
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  await actor.rollSkillCheck('Runic Alphabet')
+
+  // Unified adapter path — no processSpellCheck detour for spell-like skills
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+  // The default failing roll (total 10 < threshold 12) loses the spell
+  expect(loseSpellSpy).toHaveBeenCalledWith(skillItem)
+
+  loseSpellSpy.mockRestore()
+  global.itemTypesMock.mockReset()
+  game.settings.get = originalGet
 })
 
 test('rollSkillCheck does not route generic casting mode skills through processSpellCheck', async () => {
@@ -1802,12 +1835,23 @@ test('legacy-decom step 5: the shared skill-term builder was renamed off the "Le
   expect(typeof proto._buildSkillCheckRollTerms, 'renamed builder present').toBe('function')
 })
 
-test('rollSkillCheck passes a skill item casting mode through to processSpellCheck', async () => {
+test('rollSkillCheck routes spell-like cleric skills through the adapter with disapproval automation', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
-
   game.dcc.getSkillTable.mockResolvedValue(null)
+
+  const applyDisapprovalSpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  // Cleric disapproval automation enabled for this test
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateClericDisapproval') return true
+    if (module === 'core' && key === 'messageMode') return 'public'
+    return originalGet(module, key)
+  })
+
+  actor.system.class.disapproval = 1
 
   // A custom skill item configured as a spell-like cleric ability (issue #375)
   const skillItem = new DCCItem({
@@ -1837,13 +1881,15 @@ test('rollSkillCheck passes a skill item casting mode through to processSpellChe
 
   await actor.rollSkillCheck('Invoke Ancestors')
 
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
-  expect(spellCheckCall[0]).toBe(actor)
-  expect(spellCheckCall[1].item).toBe(skillItem)
-  expect(spellCheckCall[1].castingMode).toBe('cleric')
+  // Unified adapter path — no processSpellCheck detour; the failed check
+  // (default roll total 10 < threshold 12) applies a point of disapproval
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+  expect(applyDisapprovalSpy).toHaveBeenCalled()
 
+  applyDisapprovalSpy.mockRestore()
   global.itemTypesMock.mockReset()
+  game.settings.get = originalGet
 })
 
 test('rollSkillCheck blocks lost wizard casting mode skill items', async () => {
