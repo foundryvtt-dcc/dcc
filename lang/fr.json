@@ -667,6 +667,7 @@
   "DCC.SidebarText": "Texte de la Barre Latérale",
   "DCC.Skill": "Compétences",
   "DCC.SkillAbility": "Caractéristiques",
+  "DCC.SkillActiveEffectModHint": "Modificateur issu des effets actifs. Modifiez la valeur de base dans le champ ; les effets s'y ajoutent.",
   "DCC.SkillApplyCheckPenalty": "Appliquer Malus au Test",
   "DCC.SkillApplyCheckPenaltyHint": "Appliquer le Malus au Test de l'armure à cette compétence",
   "DCC.SkillCastingModeInfo": "Traite cette compétence comme un pouvoir magique : Mage applique la perte du sort en cas d'échec, Clerc applique les règles de Défaveur, Générique n'applique aucune automatisation",

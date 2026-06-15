@@ -674,6 +674,7 @@
   "DCC.SidebarText": "Seitenleistentext",
   "DCC.Skill": "Fertigkeit",
   "DCC.SkillAbility": "Attribut",
+  "DCC.SkillActiveEffectModHint": "Modifikator durch aktive Effekte. Bearbeite den Grundwert im Feld; Effekte addieren hier dazu.",
   "DCC.SkillApplyCheckPenalty": "Wurf-Malus anwenden",
   "DCC.SkillApplyCheckPenaltyHint": "Wurf-Malus von Rüstung auf diese Fertigkeit anwenden",
   "DCC.SkillCastingModeInfo": "Behandelt diese Fertigkeit wie eine zauberähnliche Fähigkeit: Zauberkundiger verliert den Zauber bei einem misslungenen Wurf, Kleriker wendet die Ungnade-Regeln an, Generisch ohne Automatisierung",

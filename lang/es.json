@@ -674,6 +674,7 @@
   "DCC.SidebarText": "Texto de barra lateral",
   "DCC.Skill": "Habilidad",
   "DCC.SkillAbility": "Atributo",
+  "DCC.SkillActiveEffectModHint": "Modificador de los efectos activos. Edita el valor base en el campo; los efectos se suman aquí.",
   "DCC.SkillApplyCheckPenalty": "Aplicar penalización al chequeo",
   "DCC.SkillApplyCheckPenaltyHint": "Aplicar penalización de armadura a esta habilidad",
   "DCC.SkillCastingModeInfo": "Trata esta habilidad como una aptitud sortílega: Mago aplica la pérdida del hechizo al fallar la prueba, Clérigo aplica las reglas de Desaprobación, Genérico no aplica automatización",

@@ -465,6 +465,33 @@ test('roll Custom Die And Value Luck', async () => {
   )
 })
 
+test('skill otherMod surfaces as its own roll modifier (#714)', () => {
+  // A skill's Active-Effect modifier lives on the derived `otherMod` field
+  // and must contribute to the check as a distinct, attributed term —
+  // separate from the editable `value` base, which stays untouched.
+  const skill = { label: 'DCC.PickLock', value: '2', otherMod: 3 }
+  const mods = actor._buildSkillCheckModifiers('pickLock', { skill, abilityMod: 0 })
+
+  const otherModTerm = mods.find(m => m.origin?.id === 'skill-other-mod')
+  expect(otherModTerm, 'expected a skill-other-mod modifier').toBeDefined()
+  expect(otherModTerm.value).toBe(3)
+
+  const valueTerm = mods.find(m => m.origin?.id === 'skill-value')
+  expect(valueTerm.value).toBe(2) // base value contributes independently
+})
+
+test('skill otherMod of zero emits no modifier (#714)', () => {
+  const skill = { label: 'DCC.PickLock', value: '2', otherMod: 0 }
+  const mods = actor._buildSkillCheckModifiers('pickLock', { skill, abilityMod: 0 })
+  expect(mods.find(m => m.origin?.id === 'skill-other-mod')).toBeUndefined()
+})
+
+test('skill otherMod missing (e.g. skill item) emits no modifier (#714)', () => {
+  const skill = { label: 'DCC.PickLock', value: '2' }
+  const mods = actor._buildSkillCheckModifiers('pickLock', { skill, abilityMod: 0 })
+  expect(mods.find(m => m.origin?.id === 'skill-other-mod')).toBeUndefined()
+})
+
 test('roll luck die', async () => {
   dccRollCreateRollMock.mockClear()
   actorUpdateMock.mockClear()

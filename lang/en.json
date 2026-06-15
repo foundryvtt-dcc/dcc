@@ -674,6 +674,7 @@
   "DCC.SidebarText": "Sidebar Text",
   "DCC.Skill": "Skill",
   "DCC.SkillAbility": "Ability",
+  "DCC.SkillActiveEffectModHint": "Modifier from Active Effects. Edit the base value in the field; effects add to it here.",
   "DCC.SkillApplyCheckPenalty": "Apply Check Penalty",
   "DCC.SkillApplyCheckPenaltyHint": "Apply Check Penalty from armor to this skill",
   "DCC.SkillCastingModeInfo": "Treat this skill as a spell-like ability: Wizard applies spell loss on a failed check, Cleric applies disapproval rules, Generic applies no failure automation",

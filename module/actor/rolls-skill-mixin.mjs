@@ -538,6 +538,23 @@ export const RollsSkillMixin = (Base) => class extends Base {
       }
     }
 
+    // Active-Effect skill modifier. AEs target the derived-only `otherMod`
+    // field (never the editable `value` base — see #714), so it surfaces as
+    // its own attributed term in the roll breakdown rather than overlaying
+    // the base.
+    const otherMod = parseInt(String(skill.otherMod ?? 0), 10) || 0
+    if (otherMod !== 0) {
+      modifiers.push({
+        kind: 'add',
+        value: otherMod,
+        origin: {
+          category: 'other',
+          id: 'skill-other-mod',
+          label: skillLabel
+        }
+      })
+    }
+
     if (skill.level !== undefined && skill.level !== 0) {
       const levelNum = parseInt(String(skill.level), 10) || 0
       if (levelNum !== 0) {
@@ -673,15 +690,18 @@ export const RollsSkillMixin = (Base) => class extends Base {
     }
 
     if (skill.value !== undefined) {
-      let formula = skill.value.toString()
-      if (abilityMod !== 0) {
-        formula = `${skill.value} + ${abilityMod}`
-      }
+      // Fold the ability mod and the Active-Effect skill modifier
+      // (`otherMod`, see #714) into the same Compound term so the dialog
+      // total matches the non-dialog modifier list.
+      const otherMod = parseInt(String(skill.otherMod ?? 0), 10) || 0
+      const parts = [skill.value.toString()]
+      if (abilityMod !== 0) parts.push(`${abilityMod}`)
+      if (otherMod !== 0) parts.push(`${otherMod}`)
       terms.push({
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula
+        formula: parts.join(' + ')
       })
     }
 

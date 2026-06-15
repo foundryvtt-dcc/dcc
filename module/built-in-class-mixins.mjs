@@ -62,6 +62,10 @@ export const BUILT_IN_CLASS_MIXINS = {
     const disapprovalSkill = (label, extra = {}) => new fields.SchemaField({
       label: new fields.StringField({ initial: label }),
       value: new fields.NumberField({ initial: 0, integer: true }),
+      // Derived-only Active-Effect modifier accumulator. AEs MUST target
+      // `otherMod`, never the editable `value` base — see the skill-modifier
+      // guidance in docs/user-guide/Active-Effects.md (#714).
+      otherMod: new fields.NumberField({ initial: 0, integer: true }),
       useDisapprovalRange: new fields.BooleanField({ initial: true }),
       ...extra
     })
@@ -78,6 +82,8 @@ export const BUILT_IN_CLASS_MIXINS = {
       ability: new fields.StringField({ initial: 'str' }),
       die: new DiceField({ initial: '1d14' }),
       value: new fields.StringField({ initial: '+0' }),
+      // AE-modifier target (never AE the editable `value`); see #714.
+      otherMod: new fields.NumberField({ initial: 0, integer: true }),
       useDeed: new fields.BooleanField({ initial: true })
     })
   },
@@ -93,14 +99,18 @@ export const BUILT_IN_CLASS_MIXINS = {
     schema.skills.fields.detectSecretDoors = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.HeightenedSenses' }),
       ability: new fields.StringField({ initial: 'int' }),
-      value: new fields.StringField({ initial: '+4' })
+      value: new fields.StringField({ initial: '+4' }),
+      // AE-modifier target (never AE the editable `value`); see #714.
+      otherMod: new fields.NumberField({ initial: 0, integer: true })
     })
   },
   halfling (schema) {
     const fields = foundry.data.fields
     schema.skills.fields.sneakAndHide = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.SneakAndHide' }),
-      value: new fields.StringField({ initial: '+3' })
+      value: new fields.StringField({ initial: '+3' }),
+      // AE-modifier target (never AE the editable `value`); see #714.
+      otherMod: new fields.NumberField({ initial: 0, integer: true })
     })
   },
   thief (schema) {
@@ -110,7 +120,11 @@ export const BUILT_IN_CLASS_MIXINS = {
     const thiefSkill = (label, ability) => new fields.SchemaField({
       label: new fields.StringField({ initial: label }),
       ability: new fields.StringField({ initial: ability }),
-      value: new fields.StringField({ initial: '0' })
+      value: new fields.StringField({ initial: '0' }),
+      // Derived-only Active-Effect modifier accumulator. AEs MUST target
+      // `otherMod`, never the editable `value` base — see the skill-modifier
+      // guidance in docs/user-guide/Active-Effects.md (#714).
+      otherMod: new fields.NumberField({ initial: 0, integer: true })
     })
     schema.skills.fields.sneakSilently = thiefSkill('DCC.SneakSilently', 'agl')
     schema.skills.fields.hideInShadows = thiefSkill('DCC.HideInShadows', 'agl')
@@ -124,13 +138,17 @@ export const BUILT_IN_CLASS_MIXINS = {
     schema.skills.fields.readLanguages = thiefSkill('DCC.ReadLanguages', 'int')
     schema.skills.fields.handlePoison = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.HandlePoison' }),
-      value: new fields.StringField({ initial: '0' })
+      value: new fields.StringField({ initial: '0' }),
+      // AE-modifier target (never AE the editable `value`); see #714.
+      otherMod: new fields.NumberField({ initial: 0, integer: true })
     })
     schema.skills.fields.castSpellFromScroll = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.CastSpellFromScroll' }),
       ability: new fields.StringField({ initial: 'int' }),
       die: new DiceField({ initial: '1d10' }),
-      value: new fields.StringField({ initial: '0' })
+      value: new fields.StringField({ initial: '0' }),
+      // AE-modifier target (never AE the editable `value`); see #714.
+      otherMod: new fields.NumberField({ initial: 0, integer: true })
     })
   },
   warrior (schema) {

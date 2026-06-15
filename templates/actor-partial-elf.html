@@ -84,7 +84,7 @@
           <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
             <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
                    title="{{localize 'DCC.HeightenedSensesDescription'}}" data-action="rollSkillCheck">
-              {{localize "DCC.HeightenedSenses"}}
+              {{localize "DCC.HeightenedSenses"}}{{#if system.skills.detectSecretDoors.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.detectSecretDoors.otherMod sign=true}})</span>{{/if}}
             </label>
             <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
                    title="{{localize 'DCC.HeightenedSensesDescription'}}"

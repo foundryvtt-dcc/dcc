@@ -12,7 +12,7 @@ import { BaseActorData } from './base-actor.mjs'
 import { isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 import { applyClassMixins } from '../../extension-api.mjs'
 
-const { SchemaField, StringField, BooleanField, HTMLField } = foundry.data.fields
+const { SchemaField, StringField, BooleanField, HTMLField, NumberField } = foundry.data.fields
 
 export class PlayerData extends BaseActorData {
   /**
@@ -104,7 +104,9 @@ export class PlayerData extends BaseActorData {
         detectSecretDoors: new SchemaField({
           label: new StringField({ initial: 'DCC.DetectSecretDoors' }),
           ability: new StringField({ initial: '' }),
-          value: new StringField({ initial: '+0' })
+          value: new StringField({ initial: '+0' }),
+          // AE-modifier target (never AE the editable `value`); see #714.
+          otherMod: new NumberField({ initial: 0, integer: true })
         })
       }),
 

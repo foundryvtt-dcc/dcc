@@ -674,6 +674,7 @@
   "DCC.SidebarText": "边栏文本",
   "DCC.Skill": "技能",
   "DCC.SkillAbility": "属性",
+  "DCC.SkillActiveEffectModHint": "来自主动效果的修正值。在输入框中编辑基础值；效果会在此处累加。",
   "DCC.SkillApplyCheckPenalty": "应用检定惩罚",
   "DCC.SkillApplyCheckPenaltyHint": "为此技能应用来自护甲的检定惩罚",
   "DCC.SkillCastingModeInfo": "将此技能视为类法术能力：法师在检定失败时丧失法术，牧师应用不悦规则，泛用则不应用自动化",

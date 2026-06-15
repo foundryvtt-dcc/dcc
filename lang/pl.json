@@ -674,6 +674,7 @@
   "DCC.SidebarText": "Sidebar Text",
   "DCC.Skill": "Umiejętność",
   "DCC.SkillAbility": "Cecha",
+  "DCC.SkillActiveEffectModHint": "Modyfikator z efektów aktywnych. Edytuj wartość bazową w polu; efekty dodają się tutaj.",
   "DCC.SkillApplyCheckPenalty": "Zastosuj Karę do Testów",
   "DCC.SkillApplyCheckPenaltyHint": "Zastosuj Karę do Testów ze zbroi do tej umiejętności",
   "DCC.SkillCastingModeInfo": "Traktuje tę umiejętność jak zdolność podobną do czaru: Czarodziej traci czar przy nieudanym teście, Kleryk stosuje zasady Dezaprobaty, Ogólny nie stosuje automatyzacji",

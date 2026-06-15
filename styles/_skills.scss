@@ -38,6 +38,14 @@
   }
 }
 
+/* Active-Effect skill-modifier indicator shown beside a skill label when
+   `otherMod` is non-zero (e.g. "Pick Lock (+1)"). Editable base value stays
+   in the input; this surfaces the effect contribution. */
+.dcc .skill-ae-mod {
+  color: var(--system-text-muted-color);
+  font-size: 0.9em;
+}
+
 .dcc .skills-bg {
   background-image: url('./images/FCI-spots-8-14-Four-Potion-Bottles.webp');
   background-repeat: no-repeat;

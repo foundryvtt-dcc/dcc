@@ -276,6 +276,93 @@ test.describe('DCC Active Effects', () => {
       ]))
     })
 
+    test('skill effect modifies via otherMod and never touches the editable base (#714)', async ({ page }) => {
+      // Reproduces the runaway-thief-skill bug. A skill Active Effect must land
+      // on the derived-only `otherMod` field, never the editable `value` base.
+      // Toggling the effect drives a full reset-from-source + re-apply (the real
+      // data-prep cycle): otherMod must return to exactly the single delta — never
+      // accumulate — and the base stays pristine. The effect is tracked on
+      // otherMod, not value, so form submission can never re-persist the base.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Skill otherMod Probe', type: 'Player' })
+          const [effect] = await actor.createEmbeddedDocuments('ActiveEffect', [{
+            name: 'Pick Lock +3',
+            img: 'icons/svg/aura.svg',
+            disabled: false,
+            changes: [{ key: 'system.skills.pickLock.otherMod', value: '3', type: 'add' }]
+          }])
+          observed.otherMod = actor.system.skills.pickLock.otherMod
+          observed.base = actor.system.skills.pickLock.value
+          observed.source = actor._source.system.skills.pickLock.value
+          observed.overrideKeys = Object.keys(actor.overrides || {})
+
+          // Disable → re-apply skipped: otherMod reverts to source (0), base untouched.
+          await effect.update({ disabled: true })
+          observed.otherModDisabled = actor.system.skills.pickLock.otherMod
+          observed.baseDisabled = actor.system.skills.pickLock.value
+          // Re-enable → re-applies exactly +3, not +6. No accumulation across the
+          // full reset+prepare cycle a real data change triggers.
+          await effect.update({ disabled: false })
+          observed.otherModReenabled = actor.system.skills.pickLock.otherMod
+          observed.baseReenabled = actor.system.skills.pickLock.value
+          observed.sourceAfter = actor._source.system.skills.pickLock.value
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.otherMod).toBe(3)
+      expect(result.base).toBe(result.source) // effect did not overlay the base
+      // Tracked on otherMod, NOT on the editable value (so a sheet save can't re-persist it).
+      expect(result.overrideKeys).toContain('system.skills.pickLock.otherMod')
+      expect(result.overrideKeys).not.toContain('system.skills.pickLock.value')
+      // Disabling fully reverts the derived modifier — nothing residual in the base.
+      expect(result.otherModDisabled).toBe(0)
+      expect(result.baseDisabled).toBe(result.source)
+      // Re-enabling re-applies exactly +3 (no accumulation through real prep cycles).
+      expect(result.otherModReenabled).toBe(3)
+      expect(result.baseReenabled).toBe(result.source)
+      expect(result.sourceAfter).toBe(result.source)
+    })
+
+    test('thief sheet surfaces the skill effect as a label modifier, base input pristine (#714)', async ({ page }) => {
+      const actorName = 'V14 Thief Skill Indicator'
+      await page.evaluate(async (name) => {
+        const actor = await Actor.create({
+          name,
+          type: 'Player',
+          system: { class: { className: 'Thief' }, details: { sheetClass: 'Thief' } }
+        })
+        // Force the Thief class sheet (no auto-assignment from sheetClass); the
+        // registered id format is `<scope>.<ClassName>` but resolve it dynamically.
+        const thiefSheetId = Object.keys(CONFIG.Actor.sheetClasses.Player || {})
+          .find(id => /Thief$/.test(id))
+        if (thiefSheetId) await actor.setFlag('core', 'sheetClass', thiefSheetId)
+        await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Pick Lock +3',
+          img: 'icons/svg/aura.svg',
+          disabled: false,
+          changes: [{ key: 'system.skills.pickLock.otherMod', value: '3', type: 'add' }]
+        }])
+      }, actorName)
+
+      await openActorSheet(page, actorName)
+
+      // The thief part renders the pickLock skill. The +3 effect surfaces as a
+      // (+3) indicator on the label (text content is present even if the thief
+      // tab is not the active one)...
+      const indicator = page.locator('[data-skill="pickLock"] .skill-ae-mod')
+      await expect(indicator).toHaveCount(1)
+      expect((await indicator.textContent()).trim()).toContain('+3')
+      // ...while the editable base value stays pristine (effect did not overlay it).
+      const base = await page.locator('input[name="system.skills.pickLock.value"]').inputValue()
+      expect(parseInt(base) || 0).toBe(0)
+    })
+
     test('disabling an effect reverts the modified value', async ({ page }) => {
       // Create actor with STR bonus effect
       const actorId = await page.evaluate(async () => {

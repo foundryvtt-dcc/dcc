@@ -674,6 +674,7 @@
   "DCC.SidebarText": "Testo riquadro",
   "DCC.Skill": "Abilità",
   "DCC.SkillAbility": "Caratteristica",
+  "DCC.SkillActiveEffectModHint": "Modificatore dagli effetti attivi. Modifica il valore base nel campo; gli effetti si sommano qui.",
   "DCC.SkillApplyCheckPenalty": "Applica Penalità alla Prova",
   "DCC.SkillApplyCheckPenaltyHint": "Applica la Penalità alla Prova a questa abilità (per l'armatura)",
   "DCC.SkillCastingModeInfo": "Tratta questa abilità come una capacità magica: Mago applica la perdita dell'incantesimo in caso di fallimento, Chierico applica le regole di Disapprovazione, Generico non applica alcuna automazione",
