@@ -33,7 +33,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 - **Translate new keys**: When adding to language files, translate them
 - **Tests must pass**: All PRs require passing tests
 - **FoundryVTT v14**: Target version (v14-only, ApplicationV2 API)
-- **Check dependent modules**: Before PRs, verify no breakage in `../../modules/dcc-qol`, `../../modules/xcc`, `../../mcc-classes`, `../../dcc-crawl-classes`
+- **Check dependent modules**: Before PRs, verify no breakage in `../../modules/dcc-qol`, `../../modules/xcc`, `../../modules/mcc-classes`, `../../modules/dcc-crawl-classes`
 
 ## Working with dcc-core-lib
 
