@@ -322,6 +322,17 @@ test.describe('DCC Sheet UI', () => {
             { type: 'equipment', name: 'Probe Stowed', system: { weight: 4, quantity: 1, container: container.id } }
           ])
 
+          // The contained-item linkage can lag a tick behind the awaited
+          // createEmbeddedDocuments under the shared-session page, so the
+          // container's `contents` getter (parent.items.filter by container id)
+          // occasionally reports empty if read immediately — which flaked
+          // containedCount to 0 in full-suite runs. Wait for the container to
+          // actually see its stowed item before driving _prepareContext.
+          const probeContainer = actor.items.get(container.id)
+          for (let i = 0; i < 40 && probeContainer.contents.length < 1; i++) {
+            await new Promise(resolve => setTimeout(resolve, 25))
+          }
+
           // _prepareContext merges #prepareItems' return via foundry.utils.mergeObject,
           // which expands the dotted keys: 'equipment.weapons' -> ctx.equipment.weapons.
           // The non-dotted `spells` / `skills` stay top-level on the context.

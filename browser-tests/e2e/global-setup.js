@@ -22,6 +22,37 @@ const LAUNCH_HINT =
   '  nvm use 24\n' +
   '  npx @foundryvtt/foundryvtt-cli launch --world=v14\n'
 
+/**
+ * A fresh Foundry boot can park on the license / EULA screen — `/join` then
+ * redirects there and the user picker never renders (the "Software license
+ * verification failed. Please confirm…" boot state). When it's just an
+ * *unsigned EULA* (a valid license key is present, only the agreement needs
+ * re-confirming) we can self-heal: tick the agree box (#eula-agree) and submit
+ * (#sign) — the same "check the box and submit" a human would do — so the suite
+ * doesn't abort on it. A missing license *key* genuinely can't be supplied here,
+ * so surface that distinctly. Returns true if it accepted an EULA (the caller
+ * should then re-navigate to /join). Selectors mirror Foundry v14's
+ * templates/setup/parts/eula-form.hbs + templates/views/license.hbs.
+ */
+async function acceptEulaIfPresent (page) {
+  const eulaAgree = page.locator('#eula-agree')
+  if (await eulaAgree.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await eulaAgree.check()
+    await page.locator('#sign').click()
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
+    return true
+  }
+  const keyField = page.locator('input[name="licenseKey"]')
+  if (await keyField.isVisible({ timeout: 500 }).catch(() => false)) {
+    throw new Error(
+      `Foundry is on the license-key entry screen at ${FOUNDRY_URL}/license — no ` +
+      'valid license key is configured, which the e2e suite cannot supply ' +
+      'automatically. Enter your license key in Foundry once, then re-run.'
+    )
+  }
+  return false
+}
+
 module.exports = async function globalSetup () {
   // 1. Is the Foundry server reachable at all?
   let serverUp = false
@@ -46,6 +77,14 @@ module.exports = async function globalSetup () {
     // data, so give it the same patience login() does (a short settle + a
     // generous visibility wait) to avoid a false fast-fail on a slow boot.
     await page.waitForTimeout(1000)
+
+    // If we landed on the license/EULA screen instead, auto-accept an unsigned
+    // EULA and return to /join so the run self-heals rather than aborting.
+    if (await acceptEulaIfPresent(page)) {
+      await page.goto(`${FOUNDRY_URL}/join`, { waitUntil: 'domcontentloaded', timeout: 15000 })
+      await page.waitForTimeout(1000)
+    }
+
     const userSelect = page.locator('select[name="userid"]')
     const selectVisible = await userSelect.isVisible({ timeout: 20000 }).catch(() => false)
     if (!selectVisible) {
