@@ -1,6 +1,10 @@
 name: Create GitHub Release
 
 on:
+  # Manual fallback: the push trigger's `paths` filter can miss very large
+  # pushes (e.g. a 600+ file squash merge via the API doesn't always report
+  # version.txt as changed), leaving no release run. Dispatch this then.
+  workflow_dispatch:
   push:
     branches:
       - 'main'
