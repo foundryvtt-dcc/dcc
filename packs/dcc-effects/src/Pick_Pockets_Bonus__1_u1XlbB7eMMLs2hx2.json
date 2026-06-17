@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.pickPockets.value",
+      "key": "system.skills.pickPockets.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

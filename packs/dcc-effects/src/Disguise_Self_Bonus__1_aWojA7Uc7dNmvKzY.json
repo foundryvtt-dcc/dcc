@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.disguiseSelf.value",
+      "key": "system.skills.disguiseSelf.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

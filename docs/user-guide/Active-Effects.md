@@ -43,6 +43,24 @@ Each change consists of:
 - **Change Mode**: How to apply the modification (Add, Multiply, Override, etc.)
 - **Effect Value**: The value to use for the modification. This can be a plain number (e.g., `2`) or an `@`-variable reference to another actor attribute (e.g., `@system.abilities.lck.mod`). See [Using @-Variable References](#using--variable-references) below.
 
+> **⚠️ Always target the modifier field, never the editable base value.**
+>
+> Many stats expose a dedicated *modifier* field whose only job is to receive
+> Active Effects — for example `system.attributes.ac.otherMod` (not
+> `ac.value`), `system.saves.ref.otherBonus` (not `ref.value`),
+> `system.class.spellCheckOtherMod`, and **`system.skills.<skill>.otherMod`**
+> (not `<skill>.value`). These fields are derived-only: the character sheet
+> never submits them, so an effect can add to them freely without ever
+> overwriting the number you typed in.
+>
+> If you instead point an `Add` effect at an editable base field (like a
+> thief skill's `value`), the effect overlays the value you can edit on the
+> sheet. Every time that sheet is saved, the already-modified number is
+> written back as the new base and the effect adds on top of it again,
+> making the value climb on its own. Targeting the `otherMod`/`otherBonus`
+> field avoids this entirely. When in doubt, look for a `*Mod` / `*Bonus`
+> field on the stat and use that.
+
 ## Using @-Variable References
 
 Instead of entering a static number as the Effect Value, you can reference another attribute on the actor using the `@` prefix. The reference will be resolved dynamically each time effects are applied, so the bonus updates automatically when the referenced attribute changes.
@@ -212,22 +230,25 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 - `system.attributes.fumble.die` - Fumble Die
 
 ### Thief Skills
-- `system.skills.sneakSilently.value` - Sneak Silently
-- `system.skills.hideInShadows.value` - Hide In Shadows
-- `system.skills.pickPockets.value` - Pick Pockets
-- `system.skills.climbSheerSurfaces.value` - Climb Sheer Surfaces
-- `system.skills.pickLock.value` - Pick Lock
-- `system.skills.findTrap.value` - Find Trap
-- `system.skills.disableTrap.value` - Disable Trap
-- `system.skills.forgeDocument.value` - Forge Document
-- `system.skills.disguiseSelf.value` - Disguise Self
-- `system.skills.readLanguages.value` - Read Languages
-- `system.skills.handlePoison.value` - Handle Poison
-- `system.skills.castSpellFromScroll.value` - Cast Spell From Scroll
+Target the `otherMod` modifier field, **not** the `value` base (see the warning below).
+- `system.skills.sneakSilently.otherMod` - Sneak Silently
+- `system.skills.hideInShadows.otherMod` - Hide In Shadows
+- `system.skills.pickPockets.otherMod` - Pick Pockets
+- `system.skills.climbSheerSurfaces.otherMod` - Climb Sheer Surfaces
+- `system.skills.pickLock.otherMod` - Pick Lock
+- `system.skills.findTrap.otherMod` - Find Trap
+- `system.skills.disableTrap.otherMod` - Disable Trap
+- `system.skills.forgeDocument.otherMod` - Forge Document
+- `system.skills.disguiseSelf.otherMod` - Disguise Self
+- `system.skills.readLanguages.otherMod` - Read Languages
+- `system.skills.handlePoison.otherMod` - Handle Poison
+- `system.skills.castSpellFromScroll.otherMod` - Cast Spell From Scroll
 
 ### Other Skills
-- `system.skills.detectSecretDoors.value` - Detect Secret Doors (Elves)
-- `system.skills.sneakAndHide.value` - Sneak and Hide (Halflings)
+- `system.skills.detectSecretDoors.otherMod` - Detect Secret Doors (Elves)
+- `system.skills.sneakAndHide.otherMod` - Sneak and Hide (Halflings)
+- Cleric skills also support a modifier: `system.skills.divineAid.otherMod`, `system.skills.turnUnholy.otherMod`, `system.skills.layOnHands.otherMod`
+- Dwarf shield bash: `system.skills.shieldBash.otherMod`
 
 ## Effect Modes
 

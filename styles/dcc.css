@@ -501,7 +501,7 @@
   font-family: var(--system-label-font), serif;
 }
 .dcc .rollable:hover {
-  color: #000;
+  color: var(--system-rollable-hover-color);
   cursor: pointer;
   text-shadow: 0 0 10px red;
 }
@@ -683,6 +683,35 @@ a.inline-roll {
 
 .emote-note {
   font-size: 0.9em;
+}
+
+/* ----------------------------------------- */
+/*  Per-modifier breakdown                   */
+/* ----------------------------------------- */
+.dcc-modifier-breakdown {
+  margin-top: 4px;
+  font-size: var(--font-size-12);
+  color: var(--system-text-muted-color);
+}
+.dcc-modifier-breakdown .dcc-modifier-breakdown-heading {
+  display: block;
+  font-family: var(--system-label-font), serif;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.dcc-modifier-breakdown .dcc-modifier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dcc-modifier-breakdown .dcc-modifier-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 18px;
+}
+.dcc-modifier-breakdown .dcc-modifier-value {
+  font-variant-numeric: tabular-nums;
 }
 
 .flavor-text {
@@ -913,10 +942,10 @@ a.inline-roll {
   z-index: 1;
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-primary {
-  color: #4caf50;
+  color: var(--system-two-weapon-primary-color);
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-secondary {
-  color: #d32f2f;
+  color: var(--system-two-weapon-secondary-color);
 }
 
 /* ----------------------------------------- */
@@ -1100,7 +1129,7 @@ a.inline-roll {
   cursor: pointer;
 }
 .dcc .party-body .character-row .fa-heart.clickable:hover {
-  color: #8b0000;
+  color: var(--system-damage-color);
 }
 .dcc .party-body .character-row .weapon {
   grid-column: span 1;
@@ -1130,7 +1159,7 @@ a.inline-roll {
 .dcc .party-body .empty-party p {
   font-family: var(--system-data-font), serif;
   font-style: italic;
-  color: #666;
+  color: var(--system-text-muted-color);
   margin: 0;
 }
 
@@ -1146,7 +1175,7 @@ a.inline-roll {
   border-radius: 4px;
 }
 .dcc.hit-points-config .hp-display .hp-current {
-  color: #8b0000;
+  color: var(--system-damage-color);
   font-weight: bold;
 }
 .dcc.hit-points-config .hp-display .hp-separator {
@@ -1161,9 +1190,179 @@ a.inline-roll {
 }
 .dcc.hit-points-config .hint {
   font-size: 0.85em;
-  color: #666;
+  color: var(--system-text-muted-color);
   font-style: italic;
   margin: 0;
+}
+
+/* ----------------------------------------- */
+/*  Ability Score Config Dialog              */
+/* ----------------------------------------- */
+.dcc.ability-score-config .ability-score-config-content {
+  padding: 8px;
+}
+.dcc.ability-score-config .ability-score-config-content label {
+  font-family: var(--system-label-font), serif;
+}
+.dcc.ability-score-config .ability-score-config-content .hidden {
+  display: none;
+}
+.dcc.ability-score-config .ability-score-config-content .current-row {
+  display: flex;
+  font-size: 14px;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+.dcc.ability-score-config .ability-score-config-content .new-value-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dcc.ability-score-config .ability-score-config-content .new-value-row input[name=newValue] {
+  font-size: 18px;
+  text-align: center;
+  width: 52px;
+}
+.dcc.ability-score-config .ability-score-config-content .new-value-row .change-display {
+  color: var(--system-secondary-color);
+  font-size: 13px;
+}
+.dcc.ability-score-config .ability-score-config-content .reasons {
+  border: 1px solid var(--system-secondary-color);
+  border-radius: 4px;
+  margin: 0 0 10px;
+  padding: 6px 10px 8px;
+}
+.dcc.ability-score-config .ability-score-config-content .reasons legend {
+  font-family: var(--system-label-font), serif;
+  font-size: 12px;
+  padding: 0 4px;
+}
+.dcc.ability-score-config .ability-score-config-content .reasons label {
+  display: block;
+  font-family: var(--system-data-font), serif;
+  font-size: 13.5px;
+  padding: 1.5px 0;
+}
+.dcc.ability-score-config .ability-score-config-content .note-row {
+  align-items: center;
+  display: flex;
+  font-size: 13.5px;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dcc.ability-score-config .ability-score-config-content .note-row input[name=note] {
+  flex: 1;
+}
+.dcc.ability-score-config .ability-score-config-content .adjust-max-row,
+.dcc.ability-score-config .ability-score-config-content .adjust-hp-row {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.dcc.ability-score-config .ability-score-config-content .adjust-max-row label,
+.dcc.ability-score-config .ability-score-config-content .adjust-hp-row label {
+  align-items: flex-start;
+  display: flex;
+  font-family: var(--system-data-font), serif;
+  gap: 6px;
+}
+.dcc.ability-score-config .ability-score-config-content .adjust-max-row input[type=checkbox],
+.dcc.ability-score-config .ability-score-config-content .adjust-hp-row input[type=checkbox] {
+  flex: 0 0 auto;
+  margin: 2px 0 0;
+  width: auto;
+}
+.dcc.ability-score-config .ability-score-config-content .recovery-hint {
+  background: var(--system-value-display-background-color);
+  border-left: 3px solid var(--system-border-color);
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 10px;
+  padding: 5px 8px;
+}
+.dcc.ability-score-config .ability-score-config-content button[type=submit] {
+  display: block;
+  margin: 0 auto;
+  width: auto;
+}
+
+/* ----------------------------------------- */
+/*  Ability Score Log Dialog                 */
+/* ----------------------------------------- */
+.dcc.ability-score-log .ability-score-log-content {
+  padding: 8px;
+}
+.dcc.ability-score-log .empty-log {
+  font-style: italic;
+  text-align: center;
+}
+.dcc.ability-score-log .ability-log-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+}
+.dcc.ability-score-log .ability-log-table th {
+  border-bottom: 2px solid var(--system-border-color);
+  font-family: var(--system-label-font), serif;
+  font-size: 11.5px;
+  font-weight: normal;
+  padding: 3px 6px;
+  text-align: left;
+}
+.dcc.ability-score-log .ability-log-table td {
+  border-bottom: 1px dotted var(--system-secondary-color);
+  padding: 5px 6px;
+  vertical-align: middle;
+}
+.dcc.ability-score-log .ability-log-table .log-date {
+  white-space: nowrap;
+}
+.dcc.ability-score-log .ability-log-table .loss {
+  color: #7a1f1f;
+  font-weight: bold;
+}
+.dcc.ability-score-log .ability-log-table .gain {
+  color: #1f5c2d;
+  font-weight: bold;
+}
+.dcc.ability-score-log .ability-log-table tr.healed {
+  opacity: 0.45;
+}
+.dcc.ability-score-log .ability-log-table .healed-mark {
+  font-size: 12px;
+  font-style: italic;
+}
+.dcc.ability-score-log .ability-log-table .heal-button {
+  font-size: 10.5px;
+  line-height: normal;
+  padding: 2px 8px;
+  white-space: nowrap;
+  width: auto;
+}
+.dcc.ability-score-log .ability-log-table .delete-entry {
+  color: #7a1f1f;
+  cursor: pointer;
+  opacity: 0.55;
+}
+.dcc.ability-score-log .ability-log-table .delete-entry:hover {
+  opacity: 1;
+}
+
+/* ----------------------------------------- */
+/*  Ability Change Chat Card                 */
+/* ----------------------------------------- */
+.ability-change-card .headline {
+  font-size: 14.5px;
+}
+.ability-change-card .reason,
+.ability-change-card .hp-note {
+  font-size: 13px;
+}
+.ability-change-card .recovery {
+  font-size: 12.5px;
+  font-style: italic;
+  margin-top: 4px;
 }
 
 /* ----------------------------------------- */
@@ -1505,11 +1704,19 @@ a.inline-roll {
 }
 .dcc .skill-list .skill-summary-text {
   grid-column: 1/-1;
-  color: #666;
+  color: var(--system-text-muted-color);
   font-size: 0.9em;
   padding-top: 4px;
   text-align: left !important;
   width: 100%;
+}
+
+/* Active-Effect skill-modifier indicator shown beside a skill label when
+   `otherMod` is non-zero (e.g. "Pick Lock (+1)"). Editable base value stays
+   in the input; this surfaces the effect contribution. */
+.dcc .skill-ae-mod {
+  color: var(--system-text-muted-color);
+  font-size: 0.9em;
 }
 
 .dcc .skills-bg {
@@ -1580,8 +1787,8 @@ a.inline-roll {
   top: 100%;
   right: 0;
   z-index: 100;
-  background: #f0e8d8; /* Parchment-like background matching sheet style */
-  border: 1px solid #8b7355;
+  background: var(--system-tab-overflow-background);
+  border: 1px solid var(--system-tab-overflow-border-color);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   min-width: 150px;
@@ -1593,38 +1800,21 @@ a.inline-roll {
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
   display: block;
   padding: 6px 12px;
-  color: #4a3c2a;
+  color: var(--system-tab-overflow-text-color);
   text-decoration: none;
   white-space: nowrap;
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
-  background: #e0d5c0;
-  color: #2a1f14;
+  background: var(--system-tab-overflow-hover-background);
+  color: var(--system-tab-overflow-hover-text-color);
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
-  color: var(--color-text-dark-primary);
+  color: var(--system-tab-overflow-active-text-color);
   font-weight: bold;
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]::before {
   font-family: var(--system-icon-font), serif;
   padding-right: 8px;
-}
-.dcc.sheet {
-  /* Dark mode styles for tabs overflow dropdown */
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
-  background: #2a2a2a;
-  border-color: #444;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
-  color: #ccc;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
-  background: #3a3a3a;
-  color: #fff;
-}
-body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
-  color: #fff;
 }
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
@@ -1785,7 +1975,7 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 }
 .dcc-roll-modifier button.flat-button {
   background: rgba(0, 0, 0, 0.05);
-  border: 2px groove #c9c7b8;
+  border: 2px groove var(--system-flat-button-border-color);
 }
 
 /* ----------------------------------------- */
@@ -2030,6 +2220,29 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 .dcc .character .ability-scores {
   display: grid;
   grid-template-rows: repeat(5, 68px);
+  position: relative;
+}
+.dcc .character .ability-scores .ability-log-button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 20px;
+  line-height: 20px;
+  opacity: 0.65;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: -16px;
+  width: 20px;
+  z-index: 2;
+}
+.dcc .character .ability-scores .ability-log-button:hover {
+  box-shadow: none;
+  opacity: 1;
+}
+.dcc .character .ability-scores .ability-log-button i {
+  color: var(--system-primary-color);
+  font-size: 14px;
 }
 .dcc .character .ability-scores .ability-box {
   align-items: center;

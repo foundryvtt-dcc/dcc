@@ -1,0 +1,135 @@
+/* ----------------------------------------- */
+/*  Cleric Class                             */
+/* ----------------------------------------- */
+
+.dcc .cleric-table {
+  table {
+    font-family: var(--system-data-font), serif;
+    margin: 10px 0 0 0;
+
+    td {
+      padding: 4px 12px 4px 4px;
+    }
+
+    th {
+      padding: 0 3px 3px 3px;
+    }
+
+    &.box-border {
+      border-top: var(--system-frame-border);
+    }
+  }
+}
+
+.dcc .cleric-spells-bg {
+  background-image: url('images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  height: 565px;
+}
+
+/* ----------------------------------------- */
+/*  Wizard/Elf
+  /* ----------------------------------------- */
+
+.dcc .elf-bg {
+  background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > .grid-container {
+      display: grid;
+      grid-template-rows: 1fr auto 0.6fr; // Top flexible, elf abilities fixed, corruption flexible
+      min-height: 0;
+      height: 100%;
+      grid-row-gap: 0;
+
+      // Top section with spell check, familiar, patron - flexible
+      > .grid-container:first-child {
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      // Elf Abilities section - stays at natural height
+      > div:nth-child(2) {
+        // This will take its natural height (auto in grid)
+      }
+
+      // Corruption section - flexible
+      > .corruption {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 0;
+        overflow: hidden;
+
+        .editor,
+        prose-mirror {
+          min-height: 0;
+          height: 100%;
+        }
+      }
+    }
+  }
+}
+
+.dcc .wizard-bg {
+  background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > .grid-container {
+      display: grid;
+      grid-template-rows: 1fr auto 0.75fr;
+      height: 100%;
+      grid-row-gap: 0;
+
+      // Corruption section
+      > .corruption {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 0;
+        overflow: hidden;
+
+        .editor,
+        prose-mirror {
+          min-height: 0;
+          height: 100%;
+        }
+      }
+    }
+  }
+}
+
+.dcc .wizard-spells-bg {
+  background-image: url('images/FCI-spots-8-32-Spell-Book-Stack.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 565px;
+}
+
+.dcc .corruption .editor {
+  min-height: 128px;
+  padding-top: 5px;
+}
+
+.dcc .corruption-wizard .editor {
+  padding-top: 5px;
+}
+

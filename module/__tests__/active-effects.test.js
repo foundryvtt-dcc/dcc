@@ -448,6 +448,42 @@ describe('Active Effects - Skill StringField Paths', () => {
   })
 })
 
+describe('Active Effects - Skill otherMod modifier (#714)', () => {
+  // Skill AEs must target the derived-only `otherMod` field, never the
+  // editable `value` base. Applying to otherMod leaves the base untouched,
+  // so the runaway-accumulation bug (effect overlaying the editable value,
+  // which the sheet then re-persists) cannot occur.
+
+  test('_applyAddEffect on skill otherMod leaves the base value untouched', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { pickLock: { value: '0', otherMod: 0 } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.pickLock.otherMod', '3', overrides)
+
+    expect(actor.system.skills.pickLock.otherMod).toEqual(3)
+    expect(actor.system.skills.pickLock.value).toEqual('0') // base untouched
+    expect(overrides['system.skills.pickLock.otherMod']).toEqual(3)
+    expect(overrides['system.skills.pickLock.value']).toBeUndefined()
+  })
+
+  test('repeated otherMod application does not accumulate the base', () => {
+    // Each data-prep cycle resets otherMod from source (0) before re-applying,
+    // so the derived otherMod is always the single effect delta and the
+    // editable base never grows.
+    const actor = new DCCActor()
+    actor.system.skills = { findTrap: { value: '+2', otherMod: 0 } }
+
+    for (let i = 0; i < 5; i++) {
+      actor.system.skills.findTrap.otherMod = 0 // simulate source reset per prep
+      actor._applyAddEffect('system.skills.findTrap.otherMod', '1', {})
+    }
+
+    expect(actor.system.skills.findTrap.otherMod).toEqual(1)
+    expect(actor.system.skills.findTrap.value).toEqual('+2')
+  })
+})
+
 describe('Active Effects - Attack Bonus Adjustments', () => {
   test('Melee attack adjustment affects computed melee attack bonus', () => {
     const actor = createPCWithAttackSetup({ strValue: 14, strMod: 1 })

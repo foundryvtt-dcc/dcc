@@ -6,6 +6,7 @@
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.3",
+    "@vitest/coverage-v8": "^4.1.8",
     "husky": "^9.1.7",
     "sass": "^1.99.0",
     "standard": "^17.1.2",
@@ -39,6 +40,7 @@
     "test": "vitest run module/",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --project unit --coverage",
     "test-watch": "vitest module/",
     "setup:foundry": "node scripts/setup-foundry-dev.js",
     "scss": "sass styles/dcc.scss styles/dcc.css",
@@ -46,13 +48,15 @@
     "todb": "node module/compilePacks.js",
     "tojson": "node module/extractPacks.js",
     "compare-lang": "node module/compare-lang-files.js lang/en.json lang/cn.json lang/de.json lang/es.json lang/fr.json lang/it.json lang/pl.json",
+    "sync-core-lib": "node scripts/sync-core-lib.mjs",
     "prepare": "husky"
   },
   "standard": {
     "ignore": [
-      "docs/**"
+      "docs/**",
+      "module/vendor/**"
     ]
   },
   "type": "module",
-  "version": "0.67.12"
+  "version": "0.70.0"
 }

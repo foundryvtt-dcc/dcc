@@ -1,3 +1,8 @@
+> **Cutting a test build off a feature branch (not `main`)?** That's a
+> different, manual flow — see
+> [PRERELEASE_PROCESS.md](PRERELEASE_PROCESS.md). The steps below are the
+> normal stable release from `main`.
+
 When you are about to do a release, and not before:
 
 For automated release process:

@@ -1,6 +1,7 @@
 import { expect, vi, describe, it, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCRoll from '../dcc-roll.js'
+import MockDCCRoll, { withSyncCreateRoll } from '../__mocks__/dcc-roll.js'
 
 // Mock the roll-modifier module since it has complex dependencies
 vi.mock('../roll-modifier.js', () => ({
@@ -414,6 +415,49 @@ describe('DCCRoll', () => {
       const result = await DCCRoll.createRoll(formula, data, { showModifierDialog: false })
 
       expect(result).toBeDefined()
+    })
+  })
+
+  // Regression guard for the mock ↔ production sync-contract parity
+  // (PR #720 test-coverage gap). Production `DCCRoll.createRoll`
+  // (module/dcc-roll.js:17) is a *sync-declared* function; the shared mock
+  // previously declared it `static async`, which forced every adapter
+  // dispatch-path test (`_rollDamage` / `_rollCritical` / `_rollFumble`) to
+  // install its own local sync override. The mock now mirrors the sync
+  // declaration and exposes the shared `withSyncCreateRoll` helper.
+  describe('createRoll sync contract (mock ↔ production parity)', () => {
+    it('production createRoll is a sync-declared function (not async)', () => {
+      expect(DCCRoll.createRoll.constructor.name).toBe('Function')
+      expect(DCCRoll.createRoll.constructor.name).not.toBe('AsyncFunction')
+    })
+
+    it('the shared mock createRoll mirrors the sync declaration', () => {
+      expect(MockDCCRoll.createRoll.constructor.name).toBe('Function')
+      // The mock wired onto game.dcc.DCCRoll is the same class.
+      expect(global.game.dcc.DCCRoll.createRoll.constructor.name).toBe('Function')
+    })
+
+    it('withSyncCreateRoll installs a sync override returning the factory roll, then restores', () => {
+      const original = global.game.dcc.DCCRoll.createRoll
+      const stubRoll = { total: 7, terms: [] }
+      const restore = withSyncCreateRoll(() => stubRoll)
+
+      const returned = global.game.dcc.DCCRoll.createRoll('1d20', {}, {})
+      expect(returned).toBe(stubRoll) // sync return value, not a Promise
+      expect(returned.then).toBeUndefined()
+
+      restore()
+      expect(global.game.dcc.DCCRoll.createRoll).toBe(original)
+    })
+
+    it('withSyncCreateRoll forwards the createRoll arguments to the factory', () => {
+      const seen = []
+      const restore = withSyncCreateRoll((...args) => { seen.push(args); return { total: 1 } })
+      global.game.dcc.DCCRoll.createRoll('1d6+2', { a: 1 }, { showModifierDialog: false })
+      restore()
+      expect(seen).toHaveLength(1)
+      expect(seen[0][0]).toBe('1d6+2')
+      expect(seen[0][2]).toEqual({ showModifierDialog: false })
     })
   })
 })

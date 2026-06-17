@@ -59,12 +59,82 @@ async function buildClassNameLookup () {
 }
 
 /**
+ * Version that triggers migration — set to the version that introduced
+ * breaking changes. After migration completes we stamp the world at this
+ * value to prevent repeated migrations.
+ */
+export const NEEDS_MIGRATION_VERSION = 0.68
+
+/**
+ * Floor for V14-era worlds. Worlds at or above this value can be migrated
+ * forward by the surviving data-driven branches; worlds below it predate
+ * V14 and must first upgrade through a pre-V14 DCC release.
+ */
+export const MINIMUM_SUPPORTED_VERSION = 0.66
+
+/**
+ * Classify what `checkMigrations` should do for a stored migration
+ * version. Pure function — no Foundry globals — so it's unit-testable.
+ *
+ * @param {number|null} currentVersion  The stored `systemMigrationVersion`
+ *   (Foundry returns 0 by default for never-stored settings, which maps
+ *   to the same "fresh world" bucket as `null`).
+ * @returns {'skip'|'block'|'run'}
+ *   - `'skip'`: already migrated (>= ceiling), nothing to do.
+ *   - `'block'`: known pre-V14 world, refuse and tell the user to upgrade
+ *     through a pre-V14 release first.
+ *   - `'run'`: fresh or V14-era world that still needs data-driven fixes;
+ *     run `migrateWorld`.
+ */
+export function classifyMigrationDecision (currentVersion) {
+  const needsMigration = (currentVersion == null) || (currentVersion < NEEDS_MIGRATION_VERSION)
+  if (!needsMigration) return 'skip'
+  if (currentVersion && currentVersion < MINIMUM_SUPPORTED_VERSION) return 'block'
+  return 'run'
+}
+
+/**
+ * Decide how `migrateWorld` should finish, given the list of per-document
+ * failures it accumulated. Pure function — no Foundry globals — so the
+ * stamp / notify policy is unit-testable in isolation (same pattern as
+ * `classifyMigrationDecision`).
+ *
+ * Policy: a clean run stamps the world at `NEEDS_MIGRATION_VERSION` and
+ * shows the "complete" notification. A run with any failed document does
+ * NOT advance the version (so the world stays flagged and re-runs the —
+ * idempotent — migrations on the next load after the GM resolves the
+ * issue) and surfaces a `ui.notifications.warn` carrying the count. The
+ * pre-this-change behavior swallowed each failure with a bare
+ * `console.error` and stamped the version regardless, leaving a GM with
+ * a green "complete" toast over a partially-migrated world.
+ *
+ * @param {Array<{type: string, name: string}>} failures - One entry per
+ *   document whose migration threw. Empty array means a clean run.
+ * @returns {{ stampVersion: boolean, notify: 'complete'|'failures', failureCount: number }}
+ */
+export function migrationOutcome (failures) {
+  const failureCount = Array.isArray(failures) ? failures.length : 0
+  return failureCount === 0
+    ? { stampVersion: true, notify: 'complete', failureCount: 0 }
+    : { stampVersion: false, notify: 'failures', failureCount }
+}
+
+/**
  * Migrate the current world to the current version of the system
  *
- * @return {Promise}    A promise which resolves once the migration is completed
+ * @return {Promise<{ migrationComplete: boolean }>}  Resolves once the
+ *   migration finishes. `migrationComplete` is `true` for a clean run
+ *   (version stamped) and `false` if any document failed (version left
+ *   unstamped so the idempotent migrations re-run next load). The flag is
+ *   threaded onto the `dcc.ready` payload via `checkMigrations`.
  */
 export const migrateWorld = async function () {
   ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
+
+  // Per-document failures accumulate here so the run can report them as a
+  // group and gate version-stamping (see `migrationOutcome`). Each catch
+  // still logs the stack to the console for debugging.
+  const failures = []
 
   // Migrate World Actors
   for (const a of game.actors) {
@@ -76,6 +146,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Actor', name: a.name })
     }
   }
 
@@ -89,6 +160,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Item', name: i.name })
     }
   }
 
@@ -102,6 +174,7 @@ export const migrateWorld = async function () {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: 'Scene', name: s.name })
     }
   }
 
@@ -110,14 +183,68 @@ export const migrateWorld = async function () {
     return (p.metadata.package === 'world') && ['Actor', 'Item', 'Scene'].includes(p.documentName)
   })
   for (const p of packs) {
-    await migrateCompendium(p)
+    failures.push(...await migrateCompendium(p))
   }
 
-  // Set the migration as complete
-  // Save the target migration version to prevent repeated migrations
-  // This must match NEEDS_MIGRATION_VERSION in dcc.js
-  game.settings.set('dcc', 'systemMigrationVersion', 0.68)
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
+  // Decide the finish: a clean run stamps the world at
+  // `NEEDS_MIGRATION_VERSION` (so subsequent loads classify as 'skip'
+  // in `classifyMigrationDecision`) and shows the "complete" toast; a
+  // run with failures leaves the version unstamped (the idempotent
+  // data-driven migrations re-run on the next load) and warns the GM
+  // with the count rather than silently swallowing the errors.
+  const outcome = migrationOutcome(failures)
+  if (outcome.stampVersion) {
+    game.settings.set('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
+    ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
+  } else {
+    ui.notifications.warn(game.i18n.format('DCC.MigrationFailures', { count: outcome.failureCount }), { permanent: true })
+  }
+
+  return { migrationComplete: outcome.stampVersion }
+}
+
+/* -------------------------------------------- */
+
+/**
+ * Entry point the system's `ready` hook awaits before firing `dcc.ready`.
+ * Decides — via `classifyMigrationDecision` — whether the stored migration
+ * version needs work, and (when it does) **awaits** `migrateWorld` to
+ * completion so the rest of the ready chain and any `dcc.ready` listeners
+ * observe a fully-migrated world rather than racing the async per-document
+ * mutations. Previously `dcc.js` called this fire-and-forget from a sync
+ * ready callback, so `registerTables` / `FleetingLuck.init` / `dcc.ready`
+ * et al. ran concurrently with the in-flight `update()` calls.
+ *
+ * Only the GM client migrates; other clients return immediately. The
+ * returned `{ migrationComplete }` flag is threaded onto the `dcc.ready`
+ * payload so sibling modules can branch on whether this client left the
+ * world fully migrated:
+ *   - `true`  — nothing to migrate (already at the ceiling), a non-GM
+ *               client (never migrates locally), or a clean `migrateWorld`.
+ *   - `false` — a pre-V14 world was refused (blocked), or `migrateWorld`
+ *               finished with per-document failures (version left unstamped).
+ *
+ * @returns {Promise<{ migrationComplete: boolean }>}
+ */
+export const checkMigrations = async function () {
+  if (!game.user.isGM) return { migrationComplete: true }
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+  const decision = classifyMigrationDecision(currentVersion)
+  if (decision === 'skip') return { migrationComplete: true }
+  if (decision === 'block') {
+    // Toggles to a dot-separated string so the decimal separator doesn't
+    // drift between interpolated and literal tokens in locales that format
+    // numbers with a comma.
+    ui.notifications.error(
+      game.i18n.format('DCC.MigrationUnsupportedVersion', {
+        currentVersion: currentVersion.toFixed(2),
+        minimumVersion: MINIMUM_SUPPORTED_VERSION.toFixed(2)
+      }),
+      { permanent: true }
+    )
+    return { migrationComplete: false }
+  }
+  return migrateWorld()
 }
 
 /* -------------------------------------------- */
@@ -125,11 +252,15 @@ export const migrateWorld = async function () {
 /**
  * Apply migration rules to all Entities within a single Compendium pack
  * @param pack
- * @return {Promise}
+ * @return {Promise<Array<{type: string, name: string}>>}  Per-document
+ *   failures (empty when clean), surfaced up to `migrateWorld` so they
+ *   count toward the run's outcome.
  */
 const migrateCompendium = async function (pack) {
   const documentName = pack.documentName
-  if (!['Actor', 'Item', 'Scene'].includes(documentName)) return
+  if (!['Actor', 'Item', 'Scene'].includes(documentName)) return []
+
+  const failures = []
 
   // Unlock the pack for editing
   const wasLocked = pack.locked
@@ -161,6 +292,7 @@ const migrateCompendium = async function (pack) {
       }
     } catch (err) {
       console.error(err)
+      failures.push({ type: documentName, name: doc.name })
     }
   }
 
@@ -168,6 +300,7 @@ const migrateCompendium = async function (pack) {
   await pack.configure({ locked: wasLocked })
 
   console.log(`Migrated all ${documentName} documents from Compendium ${pack.collection}`)
+  return failures
 }
 
 /* -------------------------------------------- */
@@ -177,26 +310,18 @@ const migrateCompendium = async function (pack) {
 /**
  * Migrate a single Actor document to incorporate latest data model changes
  * Return an Object of updateData to be applied
+ *
+ * Exported for unit testing of its data-driven branches (V14 AE
+ * numeric-mode → string-type conversion, `sheetClass`-from-`className`,
+ * `critRange` / `disapproval` string→number, `luckyRoll` → `birthAugur`,
+ * default alignment, #739 speed-base seed). Not part of the Foundry-facing
+ * API — internal migration helper only.
+ *
  * @param {Actor} actor   The actor to Update
  * @return {Promise<Object>}       The updateData to apply
  */
-const migrateActorData = async function (actor) {
+export const migrateActorData = async function (actor) {
   const updateData = {}
-
-  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-
-  // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
-  if ((currentVersion <= 0.17) || (currentVersion == null)) {
-    updateData['system.skills.divineAid.useDisapprovalRange'] = true
-    updateData['system.skills.turnUnholy.useDisapprovalRange'] = true
-    updateData['system.skills.layOnHands.useDisapprovalRange'] = true
-  }
-
-  // If migrating from earlier than 0.50.0 copy attackBonus to attackHitBonus
-  if ((currentVersion <= 0.50) || (currentVersion == null)) {
-    updateData['system.details.attackHitBonus.melee.value'] = actor.system.details.attackBonus
-    updateData['system.details.attackHitBonus.missile.value'] = actor.system.details.attackBonus
-  }
 
   if (actor.system.details.luckyRoll) {
     updateData['system.details.birthAugur'] = actor.system.details.luckyRoll
@@ -204,32 +329,6 @@ const migrateActorData = async function (actor) {
 
   if (!actor.system?.details?.alignment) {
     updateData['system.details.alignment'] = 'l'
-  }
-
-  // If migrating from earlier than 0.65.0, set base speed from current speed if not present
-  if (currentVersion < 0.65) {
-    if (!actor.system?.attributes?.speed?.base && actor.system?.attributes?.speed?.value) {
-      updateData['system.attributes.speed.base'] = actor.system.attributes.speed.value
-    }
-  }
-
-  // If migrating from earlier than 0.68.0, seed base speed from the persisted
-  // displayed speed so computed speed derives from the character's real speed.
-  // The <0.65 block above never fired because base defaults to '30' in the
-  // schema (so `!base` was always false). Read raw _source here to tell a
-  // genuinely unset/default base from an explicitly configured one (#739).
-  if (currentVersion < 0.68) {
-    const rawSpeed = actor._source?.system?.attributes?.speed || {}
-    const rawBase = rawSpeed.base
-    const rawValue = rawSpeed.value
-    // Compare parsed integers so unit-bearing values (e.g. "30'") aren't treated
-    // as different from the unitless '30' default, and store base unitless (#739).
-    const baseNum = parseInt(rawBase)
-    const valueNum = parseInt(rawValue)
-    const baseUnsetOrDefault = rawBase === undefined || rawBase === null || rawBase === '' || baseNum === 30
-    if (baseUnsetOrDefault && !isNaN(valueNum) && valueNum !== baseNum) {
-      updateData['system.attributes.speed.base'] = String(valueNum)
-    }
   }
 
   // Convert critRange and disapproval from string to number if needed (data-driven check)
@@ -291,6 +390,23 @@ const migrateActorData = async function (actor) {
     }
   }
 
+  // Seed base speed from the persisted displayed speed so computed speed
+  // derives from the character's real speed rather than the schema default.
+  // Data-driven: only seeds when base is unset or still the '30' default while
+  // the displayed value differs (#739). Reads raw _source so a schema-defaulted
+  // base does not mask a genuinely-unset value.
+  const rawSpeed = actor._source?.system?.attributes?.speed || {}
+  const rawSpeedBase = rawSpeed.base
+  const rawSpeedValue = rawSpeed.value
+  // Compare parsed integers so unit-bearing values (e.g. "30'") aren't treated
+  // as different from the unitless '30' default, and store base unitless (#739).
+  const speedBaseNum = parseInt(rawSpeedBase)
+  const speedValueNum = parseInt(rawSpeedValue)
+  const speedBaseUnsetOrDefault = rawSpeedBase === undefined || rawSpeedBase === null || rawSpeedBase === '' || speedBaseNum === 30
+  if (speedBaseUnsetOrDefault && !isNaN(speedValueNum) && speedValueNum !== speedBaseNum) {
+    updateData['system.attributes.speed.base'] = String(speedValueNum)
+  }
+
   // Migrate Owned Items
   let hasItemUpdates = false
   let items = []
@@ -320,49 +436,15 @@ const migrateActorData = async function (actor) {
 
 /**
  * Migrate a single Item document to incorporate latest data model changes
+ *
+ * Exported for unit testing of its V14 AE numeric-mode → string-type
+ * conversion branch. Not part of the Foundry-facing API — internal
+ * migration helper only.
+ *
  * @param item
  */
-const migrateItemData = function (item) {
-  let updateData = {}
-
-  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-
-  // If migrating from 0.11 mark all physicalItems as equipped
-  if ((currentVersion <= 0.11) || (currentVersion == null)) {
-    if (item.equipped !== undefined) {
-      updateData = { equipped: true }
-    }
-  }
-
-  // If migrating from 0.21 mark all spells as inheritActionDie
-  if ((currentVersion <= 0.21) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.config.inheritActionDie) {
-      updateData = {
-        config: {
-          inheritActionDie: true
-        }
-      }
-    }
-  }
-
-  // If migrating from 0.22 mark all spells as castingMode: wizard
-  if ((currentVersion <= 0.22) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.config.castingMode) {
-      updateData = {
-        config: {
-          castingMode: 'wizard'
-        }
-      }
-    }
-  }
-
-  if (currentVersion < 0.51) {
-    if (item.type === 'weapon') {
-      if (item.damage && !item.damageWeapon) {
-        item.config.damageOverride = item.damage
-      }
-    }
-  }
+export const migrateItemData = function (item) {
+  const updateData = {}
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)
   // - Convert numeric mode to string type
@@ -415,7 +497,7 @@ const migrateSceneData = async function (scene) {
     } else if (!game.actors.has(t.actorId)) {
       t.actorId = null
       t.actorData = {}
-    } else if (!t.actorLink) {
+    } else if (!t.actorLink && t.actorData) {
       const actorData = foundry.utils.deepClone(t.actorData)
       actorData.type = token.actor?.type
       const actorUpdate = await migrateActorData(actorData);

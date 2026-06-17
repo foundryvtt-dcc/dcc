@@ -1,0 +1,4 @@
+/**
+ * Character Serialization Tests
+ */
+export {};

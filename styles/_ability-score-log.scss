@@ -1,0 +1,208 @@
+/* ----------------------------------------- */
+/*  Ability Score Config Dialog              */
+/* ----------------------------------------- */
+
+.dcc.ability-score-config {
+  .ability-score-config-content {
+    padding: 8px;
+
+    label {
+      font-family: var(--system-label-font), serif;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .current-row {
+      display: flex;
+      font-size: 14px;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+
+    .new-value-row {
+      align-items: center;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+
+      input[name='newValue'] {
+        font-size: 18px;
+        text-align: center;
+        width: 52px;
+      }
+
+      .change-display {
+        color: var(--system-secondary-color);
+        font-size: 13px;
+      }
+    }
+
+    .reasons {
+      border: 1px solid var(--system-secondary-color);
+      border-radius: 4px;
+      margin: 0 0 10px;
+      padding: 6px 10px 8px;
+
+      legend {
+        font-family: var(--system-label-font), serif;
+        font-size: 12px;
+        padding: 0 4px;
+      }
+
+      label {
+        display: block;
+        font-family: var(--system-data-font), serif;
+        font-size: 13.5px;
+        padding: 1.5px 0;
+      }
+    }
+
+    .note-row {
+      align-items: center;
+      display: flex;
+      font-size: 13.5px;
+      gap: 6px;
+      margin-bottom: 8px;
+
+      input[name='note'] {
+        flex: 1;
+      }
+    }
+
+    // Scope checkbox rows tightly - a broad `input` rule here would stretch
+    // the checkboxes to full width
+    .adjust-max-row,
+    .adjust-hp-row {
+      font-size: 13px;
+      margin-bottom: 8px;
+
+      label {
+        align-items: flex-start;
+        display: flex;
+        font-family: var(--system-data-font), serif;
+        gap: 6px;
+      }
+
+      input[type='checkbox'] {
+        flex: 0 0 auto;
+        margin: 2px 0 0;
+        width: auto;
+      }
+    }
+
+    .recovery-hint {
+      background: var(--system-value-display-background-color);
+      border-left: 3px solid var(--system-border-color);
+      font-size: 13px;
+      font-style: italic;
+      margin-bottom: 10px;
+      padding: 5px 8px;
+    }
+
+    button[type='submit'] {
+      display: block;
+      margin: 0 auto;
+      width: auto;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Ability Score Log Dialog                 */
+/* ----------------------------------------- */
+
+.dcc.ability-score-log {
+  .ability-score-log-content {
+    padding: 8px;
+  }
+
+  .empty-log {
+    font-style: italic;
+    text-align: center;
+  }
+
+  .ability-log-table {
+    border-collapse: collapse;
+    font-size: 13px;
+    width: 100%;
+
+    th {
+      border-bottom: 2px solid var(--system-border-color);
+      font-family: var(--system-label-font), serif;
+      font-size: 11.5px;
+      font-weight: normal;
+      padding: 3px 6px;
+      text-align: left;
+    }
+
+    td {
+      border-bottom: 1px dotted var(--system-secondary-color);
+      padding: 5px 6px;
+      vertical-align: middle;
+    }
+
+    .log-date {
+      white-space: nowrap;
+    }
+
+    .loss {
+      color: #7a1f1f;
+      font-weight: bold;
+    }
+
+    .gain {
+      color: #1f5c2d;
+      font-weight: bold;
+    }
+
+    tr.healed {
+      opacity: 0.45;
+    }
+
+    .healed-mark {
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .heal-button {
+      font-size: 10.5px;
+      line-height: normal;
+      padding: 2px 8px;
+      white-space: nowrap;
+      width: auto;
+    }
+
+    .delete-entry {
+      color: #7a1f1f;
+      cursor: pointer;
+      opacity: 0.55;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Ability Change Chat Card                 */
+/* ----------------------------------------- */
+
+.ability-change-card {
+  .headline {
+    font-size: 14.5px;
+  }
+
+  .reason,
+  .hp-note {
+    font-size: 13px;
+  }
+
+  .recovery {
+    font-size: 12.5px;
+    font-style: italic;
+    margin-top: 4px;
+  }
+}

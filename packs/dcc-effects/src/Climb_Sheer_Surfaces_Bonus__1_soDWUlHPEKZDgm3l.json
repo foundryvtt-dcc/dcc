@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.climbSheerSurfaces.value",
+      "key": "system.skills.climbSheerSurfaces.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

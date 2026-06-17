@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.sneakSilently.value",
+      "key": "system.skills.sneakSilently.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

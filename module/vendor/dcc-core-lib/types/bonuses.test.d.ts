@@ -1,0 +1,4 @@
+/**
+ * Bonus System Tests
+ */
+export {};

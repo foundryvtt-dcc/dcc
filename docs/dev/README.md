@@ -12,10 +12,14 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | Document | Description |
 |----------|-------------|
 | [Architecture](ARCHITECTURE.md) | System structure, classes, data model, DCC features |
+| [Architecture (reimagined)](ARCHITECTURE_REIMAGINED.md) | 7-phase refactor plan splitting Foundry adapter from `dcc-core-lib` engine |
+| [Class Decomposition](CLASS_DECOMPOSITION.md) | Per-class component map: which extension API owns schema mixins, sheet parts, defaults, starting items, lib progression, variants |
+| [Extension API](EXTENSION_API.md) | Stable / internal / dead surface that sibling modules consume |
 | [Development](DEVELOPMENT.md) | Commands, code standards, project structure |
 | [Testing](TESTING.md) | Test suite, mocks, writing tests |
 | [Pack Management](PACKS.md) | Compendium JSON/LevelDB workflow |
 | [Internationalization](I18N.md) | Translation system and guidelines |
+| [Programmatic PC Creation](PROGRAMMATIC_ACTOR_CREATION.md) | Why `Actor.create()` produces a partially-configured PC, what's missing, and how quick-PC tooling / test fixtures should fill it |
 
 ## Foundry Version References
 
@@ -30,6 +34,7 @@ This directory contains developer documentation for the DCC system for FoundryVT
 |----------|-------------|
 | [Test Coverage](TEST_COVERAGE.md) | Detailed testing strategy and coverage goals |
 | [Release Process](RELEASE_PROCESS.md) | How to create releases |
+| [Pre-Release Process](PRERELEASE_PROCESS.md) | Foundry-installable test builds off a feature branch (not `main`) |
 | [LevelDB Workflow](LEVELDB_WORKFLOW.md) | Detailed pack workflow |
 | [Module Conversion](MODULE_CONVERSION.md) | End-to-end guide for converting an adventure module |
 

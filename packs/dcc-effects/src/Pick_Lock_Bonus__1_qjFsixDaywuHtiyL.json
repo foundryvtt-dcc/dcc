@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.pickLock.value",
+      "key": "system.skills.pickLock.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

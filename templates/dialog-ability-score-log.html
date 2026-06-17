@@ -1,0 +1,46 @@
+<section class="ability-score-log-content">
+  {{#if entries.length}}
+  <table class="ability-log-table">
+    <thead>
+      <tr>
+        <th>{{localize "DCC.AbilityLogDate"}}</th>
+        <th>{{localize "DCC.Ability"}}</th>
+        <th>{{localize "DCC.AbilityLogChange"}}</th>
+        <th>{{localize "DCC.AbilityLogReason"}}</th>
+        <th>{{localize "DCC.AbilityLogSourceNote"}}</th>
+        <th>{{localize "DCC.AbilityLogRecovery"}}</th>
+        <th></th>
+        {{#if isGM}}<th></th>{{/if}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#each entries}}
+      <tr class="{{#if fullyHealed}}healed{{/if}}">
+        <td class="log-date">{{date}}</td>
+        <td>{{abilityLabel}}</td>
+        <td class="{{changeClass}}">{{change}}</td>
+        <td>{{typeLabel}}</td>
+        <td class="log-source">{{source}}</td>
+        <td class="log-recovery">{{recovery}}{{#if healedProgress}} <span class="healed-mark">· {{healedProgress}}</span>{{/if}}</td>
+        <td>
+          {{#if healable}}
+          <button type="button" class="heal-button" data-action="healEntry" data-entry-id="{{id}}"
+                  data-tooltip="{{localize 'DCC.AbilityLogHealTitle'}}">{{localize "DCC.AbilityLogHeal"}}</button>
+          {{else if fullyHealed}}
+          <span class="healed-mark">✓ {{healedDate}}</span>
+          {{/if}}
+        </td>
+        {{#if ../isGM}}
+        <td>
+          <a class="delete-entry" data-action="deleteEntry" data-entry-id="{{id}}"
+             data-tooltip="{{localize 'DCC.AbilityLogDelete'}}"><i class="fas fa-trash-alt"></i></a>
+        </td>
+        {{/if}}
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="empty-log">{{localize "DCC.AbilityLogEmpty"}}</p>
+  {{/if}}
+</section>

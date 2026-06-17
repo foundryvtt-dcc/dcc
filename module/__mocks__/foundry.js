@@ -1318,6 +1318,8 @@ class Localization {
       'DCC.AbilityInt': 'Intelligence',
       'DCC.AbilityLck': 'Luck',
       'DCC.ActionDie': 'Action Die',
+      'DCC.CritTable': 'Crit Table',
+      'DCC.CritTableLookupHint': 'Roll the crit die above and look up the result on {table} in your rulebook.',
       'DCC.RollModifierTitleInitiative': 'Initiative',
       'DCC.ToHit': 'Attack',
       'DCC.SavesReflex': 'Reflex',
@@ -1341,7 +1343,10 @@ class Localization {
       'DCC.SpellCheckSuccessNoTable': 'Success.',
       'DCC.SpellCheckFailureNoTable': 'Failure.',
       'DCC.SpellCheckCritNoTable': 'Crit! Natural 20.',
-      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.'
+      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.',
+      'DCC.SkillCheckUnknownSkillWarning': 'Cannot roll a skill check for unknown skill: {skill}',
+      'DCC.AbilityLogRecoveryLuckRegen': 'Regenerates {level} point(s) per night, up to natural maximum',
+      'DCC.AbilityLogRecoveryRest': "Heals 1 point per night's rest, 2 per day of bed rest"
     }
   }
 
@@ -1505,6 +1510,23 @@ class DragDropMock {
 // Namespace for Foundry helper functions
 global.foundry = {
   utils: {
+    // Generate a random alphanumeric ID
+    randomID (length = 16) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+      let id = ''
+      for (let i = 0; i < length; i++) {
+        id += chars[Math.floor(Math.random() * chars.length)]
+      }
+      return id
+    },
+    // Expand a flattened object with dot-notation keys into a nested object
+    expandObject (object) {
+      const expanded = {}
+      for (const [key, value] of Object.entries(object ?? {})) {
+        this.setProperty(expanded, key, value)
+      }
+      return expanded
+    },
     // Get a property from an object using dot notation
     getProperty (object, key) {
       if (!key) return undefined

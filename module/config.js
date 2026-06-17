@@ -1,6 +1,30 @@
 // Namespace DCC Configuration Values
 // noinspection HtmlRequiredAltAttribute,HtmlUnknownTarget
 
+import {
+  giants,
+  giantsNotGiants,
+  humanoidHints,
+  monsterCriticalHits
+} from './config/monster-data.mjs'
+import {
+  defaultActorImages,
+  defaultItemImages,
+  macroImages
+} from './config/images.mjs'
+import {
+  diceTypes,
+  DICE_CHAIN,
+  effectChangeTypes
+} from './config/dice.mjs'
+import {
+  actorImporterItemPacks,
+  actorImporterNameMap,
+  actorImporterPromptThreshold,
+  birthAugurEffectsPack,
+  importTypes
+} from './config/actor-importer.mjs'
+
 const DCC = {}
 
 // ASCII Artwork
@@ -56,6 +80,45 @@ DCC.abilityModifiers = {
   22: 5,
   23: 5,
   24: 6
+}
+
+/* -------------------------------------------- */
+
+/**
+ * Reason types for ability score log entries (key => i18n label)
+ * @type {Object}
+ */
+DCC.abilityLogTypes = {
+  spellburn: 'DCC.AbilityLogTypeSpellburn',
+  damage: 'DCC.AbilityLogTypeDamage',
+  luckSpend: 'DCC.AbilityLogTypeLuckSpend',
+  rollTheBody: 'DCC.AbilityLogTypeRollTheBody',
+  bleedOut: 'DCC.AbilityLogTypeBleedOut',
+  corruption: 'DCC.AbilityLogTypeCorruption',
+  heal: 'DCC.AbilityLogTypeHeal',
+  otherTemporary: 'DCC.AbilityLogTypeOtherTemporary',
+  otherPermanent: 'DCC.AbilityLogTypeOtherPermanent',
+  manual: 'DCC.AbilityLogTypeManual'
+}
+
+/**
+ * Recovery class for each ability score log reason type
+ * 'rest' heals 1/night (2/day bed rest), 'luckRegen' regenerates for thieves
+ * and halflings (derived at render time - permanent for everyone else),
+ * 'permanent' does not heal, 'none' is a restoration, 'unknown' is untyped
+ * @type {Object}
+ */
+DCC.abilityLogRecoveryClasses = {
+  spellburn: 'rest',
+  damage: 'rest',
+  luckSpend: 'luckRegen',
+  rollTheBody: 'permanent',
+  bleedOut: 'permanent',
+  corruption: 'permanent',
+  heal: 'none',
+  otherTemporary: 'rest',
+  otherPermanent: 'permanent',
+  manual: 'unknown'
 }
 
 /* -------------------------------------------- */
@@ -240,96 +303,11 @@ DCC.currencyValue = {
   cp: 1
 }
 
-/**
- * Active Effect Attribute Keys
- * Common paths for modifying actor data via Active Effects
- * @type {Object}
- */
-DCC.activeEffectKeys = {
-  // Abilities
-  'system.abilities.str.value': 'DCC.AbilityStr',
-  'system.abilities.str.max': 'DCC.AbilityStrMax',
-  'system.abilities.agl.value': 'DCC.AbilityAgl',
-  'system.abilities.agl.max': 'DCC.AbilityAglMax',
-  'system.abilities.sta.value': 'DCC.AbilitySta',
-  'system.abilities.sta.max': 'DCC.AbilityStaMax',
-  'system.abilities.per.value': 'DCC.AbilityPer',
-  'system.abilities.per.max': 'DCC.AbilityPerMax',
-  'system.abilities.int.value': 'DCC.AbilityInt',
-  'system.abilities.int.max': 'DCC.AbilityIntMax',
-  'system.abilities.lck.value': 'DCC.AbilityLck',
-  'system.abilities.lck.max': 'DCC.AbilityLckMax',
-
-  // Combat Attributes
-  'system.attributes.ac.value': 'DCC.ArmorClass',
-  'system.attributes.ac.otherMod': 'DCC.ACOtherMod',
-  'system.attributes.hp.value': 'DCC.HitPoints',
-  'system.attributes.hp.max': 'DCC.HitPointsMax',
-  'system.attributes.hp.temp': 'DCC.HitPointsTemp',
-  'system.attributes.speed.value': 'DCC.Speed',
-  'system.attributes.init.value': 'DCC.Initiative',
-  'system.attributes.init.otherMod': 'DCC.InitiativeOtherMod',
-
-  // Attack and Damage Bonuses
-  'system.details.attackHitBonus.melee.adjustment': 'DCC.MeleeAttackBonus',
-  'system.details.attackDamageBonus.melee.adjustment': 'DCC.MeleeDamageBonus',
-  'system.details.attackHitBonus.missile.adjustment': 'DCC.MissileAttackBonus',
-  'system.details.attackDamageBonus.missile.adjustment': 'DCC.MissileDamageBonus',
-
-  // Saving Throws
-  'system.saves.frt.otherBonus': 'DCC.SavesFortitudeBonus',
-  'system.saves.ref.otherBonus': 'DCC.SavesReflexBonus',
-  'system.saves.wil.otherBonus': 'DCC.SavesWillBonus',
-
-  // Class-specific
-  'system.class.spellCheckOtherMod': 'DCC.SpellCheckBonus',
-  'system.class.luckDie': 'DCC.LuckDie',
-  'system.attributes.critical.die': 'DCC.CriticalDie',
-  'system.attributes.fumble.die': 'DCC.FumbleDie',
-
-  // Dice Chain Adjustable (add/subtract auto-detects dice expressions)
-  'system.attributes.actionDice.value': 'DCC.ActionDie'
-}
-
-// Dice Types for Dice Configuration Dialog
-DCC.diceTypes = {
-  d2: { label: 'd2', icon: '<i class="fas fa-dice-two"></i>' },
-  d3: {
-    label: 'd3',
-    icon: '<img src="systems/dcc/styles/images/dice/d3black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d4: { label: 'd4', icon: '<i class="fas fa-dice-d4"></i>' },
-  d5: {
-    label: 'd5',
-    icon: '<img src="systems/dcc/styles/images/dice/d5black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d6: { label: 'd6', icon: '<i class="fas fa-dice-d6"></i>' },
-  d7: {
-    label: 'd7',
-    icon: '<img src="systems/dcc/styles/images/dice/d7black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d8: { label: 'd8', icon: '<i class="fas fa-dice-d8"></i>' },
-  d10: { label: 'd10', icon: '<i class="fas fa-dice-d10"></i>' },
-  d12: { label: 'd12', icon: '<i class="fas fa-dice-d12"></i>' },
-  d14: {
-    label: 'd14',
-    icon: '<img src="systems/dcc/styles/images/dice/d14black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d16: {
-    label: 'd16',
-    icon: '<img src="systems/dcc/styles/images/dice/d16black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d20: { label: 'd20', icon: '<i class="fas fa-dice-d20"></i>' },
-  d24: {
-    label: 'd24',
-    icon: '<img src="systems/dcc/styles/images/dice/d24black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d30: {
-    label: 'd30',
-    icon: '<img src="systems/dcc/styles/images/dice/d30black.svg" height="14" width="14" style="border: none; vertical-align: middle">'
-  },
-  d100: { label: 'd100', icon: '<i class="fas fa-percent"></i>' }
-}
+// Dice config (diceTypes / DICE_CHAIN / effectChangeTypes) is extracted into
+// ./config/dice.mjs and re-composed onto DCC here so the public CONFIG.DCC
+// shape is unchanged. Consumed by module/dcc.js (CONFIG.Dice.fulfillment.dice),
+// module/dice-chain.js, and module/active-effect.js.
+DCC.diceTypes = diceTypes
 
 // Hit Die Per Class
 DCC.hitDiePerClass = {
@@ -342,247 +320,21 @@ DCC.hitDiePerClass = {
   elf: '1d6'
 }
 
-DCC.giants = [
-  'cyclops',
-  'giant'
-]
+// Monster-classification data (humanoidHints / giants / giantsNotGiants /
+// monsterCriticalHits) is extracted into ./config/monster-data.mjs and
+// re-composed onto DCC here so the public CONFIG.DCC shape is unchanged.
+// Consumed by module/npc-parser.js.
+DCC.giants = giants
+DCC.giantsNotGiants = giantsNotGiants
+DCC.humanoidHints = humanoidHints
+DCC.monsterCriticalHits = monsterCriticalHits
 
-DCC.giantsNotGiants = [
-  'ant',
-  'beetle',
-  'centipede',
-  'lizard',
-  'rat',
-  'scorpion',
-  'snake'
-]
-
-DCC.humanoidHints = [
-  'acolyte',
-  'agent',
-  'assassin',
-  'bandit',
-  'beserker',
-  'blade',
-  'bugbear',
-  'centaur',
-  'club',
-  'dagger',
-  'deep one',
-  'dimensional sailor',
-  'fortune teller',
-  'friar',
-  'gnoll',
-  'goblin',
-  'hobgoblin',
-  'hollow man',
-  'huntress',
-  'knight',
-  'kindred',
-  'kobold',
-  'living statue',
-  'lizardman',
-  'magician',
-  'mace',
-  'man-at-arms',
-  'noble',
-  'ogre',
-  'orc',
-  'peasant',
-  'sage',
-  'serpent-man',
-  'spear',
-  'subhuman',
-  'sword',
-  'time traveler',
-  'troglodyte',
-  'witch'
-]
-
-DCC.monsterCriticalHits = {
-  0: {
-    humanoid: { table: 'III', die: 'd4' },
-    dragon: { table: 'DR', die: 'd4' },
-    demon: { table: 'DN', die: 'd3' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd4' },
-    other: { table: 'M', die: 'd4' }
-  },
-  1: {
-    humanoid: { table: 'III', die: 'd6' },
-    dragon: { table: 'DR', die: 'd6' },
-    demon: { table: 'DN', die: 'd4' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd6' },
-    other: { table: 'M', die: 'd6' }
-  },
-  2: {
-    humanoid: { table: 'III', die: 'd8' },
-    dragon: { table: 'DR', die: 'd8' },
-    demon: { table: 'DN', die: 'd4' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd6' },
-    other: { table: 'M', die: 'd8' }
-  },
-  3: {
-    humanoid: { table: 'III', die: 'd8' },
-    dragon: { table: 'DR', die: 'd10' },
-    demon: { table: 'DN', die: 'd4' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd8' },
-    other: { table: 'M', die: 'd8' }
-  },
-  4: {
-    humanoid: { table: 'III', die: 'd10' },
-    dragon: { table: 'DR', die: 'd12' },
-    demon: { table: 'DN', die: 'd4' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd8' },
-    other: { table: 'M', die: 'd10' }
-  },
-  5: {
-    humanoid: { table: 'III', die: 'd10' },
-    dragon: { table: 'DR', die: 'd14' },
-    demon: { table: 'DN', die: 'd6' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd10' },
-    other: { table: 'M', die: 'd10' }
-  },
-  6: {
-    humanoid: { table: 'IV', die: 'd12' },
-    dragon: { table: 'DR', die: 'd16' },
-    demon: { table: 'DN', die: 'd6' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd10' },
-    other: { table: 'M', die: 'd12' }
-  },
-  7: {
-    humanoid: { table: 'IV', die: 'd12' },
-    dragon: { table: 'DR', die: 'd20' },
-    demon: { table: 'DN', die: 'd8' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd12' },
-    other: { table: 'M', die: 'd12' }
-  },
-  8: {
-    humanoid: { table: 'IV', die: 'd14' },
-    dragon: { table: 'DR', die: 'd20' },
-    demon: { table: 'DN', die: 'd8' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd12' },
-    other: { table: 'M', die: 'd14' }
-  },
-  9: {
-    humanoid: { table: 'IV', die: 'd14' },
-    dragon: { table: 'DR', die: 'd24' },
-    demon: { table: 'DN', die: 'd10' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd14' },
-    other: { table: 'M', die: 'd14' }
-  },
-  10: {
-    humanoid: { table: 'IV', die: 'd16' },
-    dragon: { table: 'DR', die: 'd24' },
-    demon: { table: 'DN', die: 'd10' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd14' },
-    other: { table: 'M', die: 'd16' }
-  },
-  11: {
-    humanoid: { table: 'V', die: 'd16' },
-    dragon: { table: 'DR', die: '2d14' },
-    demon: { table: 'DN', die: 'd12' },
-    giant: { table: 'G', die: 'd4' },
-    undead: { table: 'U', die: 'd16' },
-    other: { table: 'M', die: 'd16' }
-  },
-  12: {
-    humanoid: { table: 'V', die: 'd20' },
-    dragon: { table: 'DR', die: '2d14' },
-    demon: { table: 'DN', die: 'd12' },
-    giant: { table: 'G', die: 'd6' },
-    undead: { table: 'U', die: 'd16' },
-    other: { table: 'M', die: 'd20' }
-  },
-  13: {
-    humanoid: { table: 'V', die: 'd20' },
-    dragon: { table: 'DR', die: 'd30' },
-    demon: { table: 'DN', die: 'd14' },
-    giant: { table: 'G', die: 'd6' },
-    undead: { table: 'U', die: 'd20' },
-    other: { table: 'M', die: 'd20' }
-  },
-  14: {
-    humanoid: { table: 'V', die: '2d10' },
-    dragon: { table: 'DR', die: 'd30' },
-    demon: { table: 'DN', die: 'd14' },
-    giant: { table: 'G', die: 'd7' },
-    undead: { table: 'U', die: 'd20' },
-    other: { table: 'M', die: 'd20' }
-  },
-  15: {
-    humanoid: { table: 'V', die: '2d10' },
-    dragon: { table: 'DR', die: '2d16' },
-    demon: { table: 'DN', die: 'd16' },
-    giant: { table: 'G', die: 'd7' },
-    undead: { table: 'U', die: 'd24' },
-    other: { table: 'M', die: 'd20' }
-  },
-  16: {
-    humanoid: { table: 'V', die: '2d12' },
-    dragon: { table: 'DR', die: '2d16' },
-    demon: { table: 'DN', die: 'd16' },
-    giant: { table: 'G', die: 'd8' },
-    undead: { table: 'U', die: 'd24' },
-    other: { table: 'M', die: 'd24' }
-  },
-  17: {
-    humanoid: { table: 'V', die: '2d12' },
-    dragon: { table: 'DR', die: '2d20' },
-    demon: { table: 'DN', die: 'd20' },
-    giant: { table: 'G', die: 'd8' },
-    undead: { table: 'U', die: 'd30' },
-    other: { table: 'M', die: 'd24' }
-  },
-  18: {
-    humanoid: { table: 'V', die: '2d14' },
-    dragon: { table: 'DR', die: '2d20' },
-    demon: { table: 'DN', die: 'd20' },
-    giant: { table: 'G', die: 'd10' },
-    undead: { table: 'U', die: 'd30' },
-    other: { table: 'M', die: 'd24' }
-  },
-  19: {
-    humanoid: { table: 'V', die: '2d14' },
-    dragon: { table: 'DR', die: '3d20' },
-    demon: { table: 'DN', die: 'd24' },
-    giant: { table: 'G', die: 'd10' },
-    undead: { table: 'U', die: 'd30' },
-    other: { table: 'M', die: 'd30' }
-  },
-  20: {
-    humanoid: { table: 'V', die: '3d10' },
-    dragon: { table: 'DR', die: '3d20' },
-    demon: { table: 'DN', die: 'd24' },
-    giant: { table: 'G', die: 'd12' },
-    undead: { table: 'U', die: 'd30' },
-    other: { table: 'M', die: 'd30' }
-  },
-  21: {
-    humanoid: { table: 'V', die: '3d10' },
-    dragon: { table: 'DR', die: '4d20' },
-    demon: { table: 'DN', die: 'd30' },
-    giant: { table: 'G', die: 'd12' },
-    undead: { table: 'U', die: 'd30' },
-    other: { table: 'M', die: 'd30' }
-  }
-}
-
-// Import Types
-DCC.importTypes = {
-  Player: 'DCC.ActorTypePlayer',
-  NPC: 'DCC.ActorTypeNPC'
-}
+// Actor-importer config (importTypes / actorImporterPromptThreshold /
+// actorImporterItemPacks / birthAugurEffectsPack / actorImporterNameMap) is
+// extracted into ./config/actor-importer.mjs and re-composed onto DCC here so
+// the public CONFIG.DCC shape is unchanged. Consumed by module/parser.js
+// (+ its import dialog template).
+DCC.importTypes = importTypes
 
 // Languages
 DCC.languages = {
@@ -598,15 +350,9 @@ DCC.languages = {
   cant: 'DCC.LanguagesThievesCant'
 }
 
-// The dice chain
-DCC.DICE_CHAIN = [
-  3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
-]
-
-// Custom effect change types beyond the standard Foundry types
-DCC.effectChangeTypes = {
-  DICE_CHAIN: 'diceChain'
-}
+// The dice chain + custom effect-change types (extracted into ./config/dice.mjs)
+DCC.DICE_CHAIN = DICE_CHAIN
+DCC.effectChangeTypes = effectChangeTypes
 
 // Critical Hit and Disapproval Compendiums, Fumble table, and Mercurial Magic table
 // Updated at runtime from settings
@@ -617,6 +363,87 @@ DCC.levelDataPacks = null
 DCC.fumbleTable = null
 DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
+
+// Per-class mercurial magic table registry, keyed by lowercase
+// `system.details.sheetClass` (e.g. `'wizard'`, `'elf'`, `'blaster'`,
+// `'gnome'`). The `'default'` key carries the world-setting value and
+// stays mirrored in `mercurialMagicTable` above for back-compat
+// readers. Populated via the `dcc.registerMercurialMagicTable` hook.
+DCC.mercurialMagicTables = {}
+
+// Per-class schema-mixin registry, keyed by lowercase canonical class
+// identifier (`'halfling'`, `'warrior'`, `'cleric'`, …). Each entry is
+// a mutator function invoked during `PlayerData.defineSchema()` to
+// contribute class-specific fields onto the schema (typically into
+// `schema.skills.fields` or `schema.class.fields`). Populated via the
+// `game.dcc.registerClassMixin` extension helper. Phase 4 §2.1 — the
+// long-term direction is for every class-bound field on the monolithic
+// Player schema to relocate to its class mixin; session 1 ships the
+// infrastructure plus a built-in `'halfling'` mixin for `sneakAndHide`.
+DCC.classMixins = {}
+
+// Per-class identity + mechanical defaults registry, keyed by lowercase
+// canonical class identifier (`'halfling'`, `'warrior'`, `'cleric'`, …).
+// Each entry packages the `system.*` writes that the legacy class-sheet
+// subclasses inlined into their `_prepareContext` first-open block:
+// localized `class.className` / `details.sheetClass`, enriched-HTML
+// `classLink` (and optional `mightyDeedsLink` / `spellcastingLink` /
+// `spellburnLink`), plus scalar mechanical defaults (critRange,
+// attackBonusMode, addClassLevelToInitiative, etc.). Applied via the
+// `applyClassDefaults` helper exported alongside the registration hook.
+// Populated by the `game.dcc.registerClassDefaults` extension helper.
+// Phase 5 §2.11 — the long-term direction is to collapse per-class sheet
+// subclasses into a single composable `DCCSheet`; this registry is the
+// data-side half of that collapse.
+DCC.classDefaults = {}
+
+// Per-class starting-items registry, keyed by lowercase canonical class
+// identifier. Each entry is an array of `{ nameKey, type, img?, system? }`
+// item-data descriptors auto-created on a Player document the first time
+// its class sheet opens (gated on `applyClassDefaults` returning
+// `'initialized'`). Today only `dwarf` has an entry (the ShieldBash
+// weapon); the registry exists for homebrew classes that need
+// auto-created starting equipment. Populated by the
+// `game.dcc.registerClassStartingItems` extension helper.
+DCC.classStartingItems = {}
+
+// Per-class sheet-parts registry, keyed by lowercase canonical class
+// identifier. Each entry packages the per-class Handlebars part
+// definitions (CLASS_PARTS-shaped: `partKey → { id, template }`) and
+// tab declarations (CLASS_TABS-shaped: `group → { tabs: [...] }`) that
+// the class sheet renders. The shared `DCCSheet` base class consumes
+// this registry via inherited static getters keyed on
+// `this.CLASS_ID`, so the per-class subclasses in
+// `module/actor-sheets-dcc.js` collapse to thin stubs that just pin
+// `static CLASS_ID`. Populated by the `game.dcc.registerSheetPart`
+// extension helper. Phase 5 §2.11 — sheet markup composition.
+DCC.sheetParts = {}
+
+// Per-class level-data-pack item-name prefix registry, keyed by
+// lowercase canonical class identifier (`'cleric'`, `'warrior'`, …).
+// Each value is the capitalized-or-lowercase prefix that appears on
+// the `{prefix}-{level}` items inside the level-data compendium
+// packs registered via `CONFIG.DCC.levelDataPacks.addPack(...)`.
+// Phase 6 session 3 added this registry so the
+// `registerClassProgressionsFromPacks` loader at
+// `module/adapter/foundry-data-loader.mjs` knows which classIds to
+// walk; homebrew content modules contribute their own entries via
+// `game.dcc.registerHomebrewClassForProgressionLoad(classId, itemPrefix)`.
+DCC.classLevelNames = {}
+
+// Variant ruleset registry, keyed by lowercase variant id (`'dcc'`,
+// `'xcc'`, `'mcc'`). Each entry is `{ id, label, classes,
+// sheetTheme? }` — declarative metadata for the named set of classes
+// active in a world. Phase 6 session 5 added this registry so variant
+// modules (XCC, MCC, future homebrew variants) can ship as Foundry
+// modules rather than overriding `CONFIG.Actor.documentClass`
+// globally. The `dcc.activeVariant` world setting (defaults to
+// `'dcc'`) selects which entry is live; the DCC system dogfoods the
+// helper by seeding the canonical `'dcc'` variant via
+// `module/built-in-variant.mjs` at `init`. Sibling variants register
+// via `game.dcc.registerVariant({...})` from their own `init` hook.
+DCC.variants = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks
@@ -637,128 +464,20 @@ DCC.skillTableLabels = {
   turnUnholy: 'DCC.TurnUnholy'
 }
 
-// Default actor images
-DCC.defaultActorImages = {
-  default: 'systems/dcc/styles/images/actor.webp',
-  Party: 'systems/dcc/styles/images/party.webp'
-}
+// Default actor / item / macro image lookup tables are extracted into
+// ./config/images.mjs and re-composed onto DCC here so the public CONFIG.DCC
+// shape is unchanged. Consumed by module/entity-images.js.
+DCC.defaultActorImages = defaultActorImages
+DCC.defaultItemImages = defaultItemImages
+DCC.macroImages = macroImages
 
-// Default item tokens
-DCC.defaultItemImages = {
-  default: 'systems/dcc/styles/images/item.webp',
-  armor: 'systems/dcc/styles/images/armor.webp',
-  container: 'systems/dcc/styles/images/game-icons-net/knapsack.svg',
-  spell: 'systems/dcc/styles/images/spell.webp',
-  treasure: 'systems/dcc/styles/images/coins.webp',
-  weapon: 'systems/dcc/styles/images/weapon.webp',
-  skill: 'systems/dcc/styles/images/skill.webp'
-}
-
-// Default macro images
-DCC.macroImages = {
-  default: 'systems/dcc/styles/images/game-icons-net/dice-target.svg',
-  defaultDice: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg',
-
-  ability: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg',
-  abilityRollUnder: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-one.svg',
-  str: 'systems/dcc/styles/images/game-icons-net/weight-lifting-up.svg',
-  agl: 'systems/dcc/styles/images/game-icons-net/body-balance.svg',
-  sta: 'systems/dcc/styles/images/game-icons-net/jumping-rope.svg',
-  per: 'systems/dcc/styles/images/game-icons-net/charm.svg',
-  int: 'systems/dcc/styles/images/game-icons-net/brain.svg',
-  lck: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-one.svg',
-
-  attackBonus: 'systems/dcc/styles/images/game-icons-net/d4.svg',
-  backstab: 'systems/dcc/styles/images/game-icons-net/backstab.svg',
-  hitDice: 'systems/dcc/styles/images/game-icons-net/dice-six-faces-six.svg',
-  initiative: 'systems/dcc/styles/images/game-icons-net/stairs-goal.svg',
-  luckDie: 'systems/dcc/styles/images/game-icons-net/horseshoe.svg',
-
-  applyDisapproval: 'systems/dcc/styles/images/game-icons-net/lightning-tear.svg',
-  rollDisapproval: 'systems/dcc/styles/images/game-icons-net/lightning-branches.svg',
-
-  savingThrow: 'systems/dcc/styles/images/game-icons-net/dodging.svg',
-  ref: 'systems/dcc/styles/images/game-icons-net/dodging.svg',
-  frt: 'systems/dcc/styles/images/game-icons-net/mighty-force.svg',
-  wil: 'systems/dcc/styles/images/game-icons-net/psychic-waves.svg',
-
-  skillCheck: 'systems/dcc/styles/images/game-icons-net/skills.svg',
-  divineAid: 'systems/dcc/styles/images/game-icons-net/hand-of-god.svg',
-  turnUnholy: 'systems/dcc/styles/images/game-icons-net/disintegrate.svg',
-  layOnHands: 'systems/dcc/styles/images/game-icons-net/glowing-hands.svg',
-  sneakSilently: 'systems/dcc/styles/images/game-icons-net/cloak-dagger.svg',
-  pickPockets: 'systems/dcc/styles/images/game-icons-net/snatch.svg',
-  pickLock: 'systems/dcc/styles/images/game-icons-net/lockpicks.svg',
-  disableTrap: 'systems/dcc/styles/images/game-icons-net/box-trap.svg',
-  disguiseSelf: 'systems/dcc/styles/images/game-icons-net/domino-mask.svg',
-  handlePoison: 'systems/dcc/styles/images/game-icons-net/poison-bottle.svg',
-  castSpellFromScroll: 'systems/dcc/styles/images/game-icons-net/scroll-unfurled.svg',
-  hideInShadows: 'systems/dcc/styles/images/game-icons-net/hidden.svg',
-  climbSheerSurfaces: 'systems/dcc/styles/images/game-icons-net/mountain-climbing.svg',
-  findTrap: 'systems/dcc/styles/images/game-icons-net/wolf-trap.svg',
-  forgeDocument: 'systems/dcc/styles/images/game-icons-net/scroll-quill.svg',
-  readLanguages: 'systems/dcc/styles/images/game-icons-net/read.svg',
-  sneakAndHide: 'systems/dcc/styles/images/game-icons-net/cloak-dagger.svg',
-  shieldBash: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
-  detectSecretDoors: 'systems/dcc/styles/images/game-icons-net/secret-door.svg',
-
-  spellCheck: 'systems/dcc/styles/images/game-icons-net/bolt-spell-cast.svg',
-
-  d3: 'systems/dcc/styles/images/game-icons-net/dice-six-faces-three.svg',
-  d4: 'systems/dcc/styles/images/game-icons-net/d4.svg',
-  d5: 'systems/dcc/styles/images/game-icons-net/dice-six-faces-five.svg',
-  d6: 'systems/dcc/styles/images/game-icons-net/dice-six-faces-six.svg',
-  d8: 'systems/dcc/styles/images/game-icons-net/dice-eight-faces-eight.svg',
-  d10: 'systems/dcc/styles/images/game-icons-net/d10.svg',
-  d12: 'systems/dcc/styles/images/game-icons-net/d12.svg',
-  d20: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg'
-}
-
-// Actor importer warning threshold
-DCC.actorImporterPromptThreshold = 25
-
-// Packs for finding items when importing actors
-DCC.actorImporterItemPacks = [
-  'dcc-core-book.dcc-core-ammunition',
-  'dcc-core-book.dcc-core-armor',
-  'dcc-core-book.dcc-core-equipment',
-  'dcc-core-book.dcc-core-weapons',
-  'dcc-core-book.dcc-core-mounts',
-  'dcc-core-book.dcc-core-spells-wizard-1',
-  'dcc-core-book.dcc-core-spells-wizard-2',
-  'dcc-core-book.dcc-core-spells-wizard-3',
-  'dcc-core-book.dcc-core-spells-wizard-4',
-  'dcc-core-book.dcc-core-spells-wizard-5',
-  'dcc-core-book.dcc-core-spells-cleric-1',
-  'dcc-core-book.dcc-core-spells-cleric-2',
-  'dcc-core-book.dcc-core-spells-cleric-3',
-  'dcc-core-book.dcc-core-spells-cleric-4',
-  'dcc-core-book.dcc-core-spells-cleric-5',
-  'dcc-core-book.dcc-core-spells-patron'
-]
-
-// Compendium pack for birth augur active effects used by the actor importer
-DCC.birthAugurEffectsPack = 'dcc-core-book.dcc-core-birth-augur-effects'
-
-// Name re-mappings for the actor importer
-DCC.actorImporterNameMap = {
-  'Hammer (as club)': ['Club'],
-  'Razor (as dagger)': ['Dagger'],
-  'Cleaver (as axe)': ['Axe'],
-  'Cudgel (as staff)': ['Staff'],
-  'Awl (as dagger)': ['Dagger'],
-  'Crowbar (as club)': ['Club'],
-  'Shovel (as staff)': ['Staff'],
-  'Pick (as club)': ['Club'],
-  'Quill (as dart)': ['Dart'],
-  'Scissors (as dagger)': ['Dagger'],
-  'Pitchfork (as spear)': ['Spear'],
-  'Trowel (as dagger)': ['Dagger'],
-  'Knife (as dagger)': ['Dagger'],
-  'Stick (as club)': ['Club'],
-  'Patron Bond/Invoke Patron': ['Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron'],
-  'Demon Summoning': ['Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name'],
-  Blessing: ['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object']
-}
+// Remaining actor-importer tables (threshold / item packs / birth-augur pack /
+// name map) extracted into ./config/actor-importer.mjs and re-composed onto DCC
+// here so the public CONFIG.DCC shape is unchanged. Consumed by
+// module/parser.js.
+DCC.actorImporterPromptThreshold = actorImporterPromptThreshold
+DCC.actorImporterItemPacks = actorImporterItemPacks
+DCC.birthAugurEffectsPack = birthAugurEffectsPack
+DCC.actorImporterNameMap = actorImporterNameMap
 
 export default DCC

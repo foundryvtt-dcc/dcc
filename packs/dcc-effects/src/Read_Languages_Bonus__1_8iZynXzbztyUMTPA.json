@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.readLanguages.value",
+      "key": "system.skills.readLanguages.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

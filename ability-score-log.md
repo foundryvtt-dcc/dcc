@@ -1,0 +1,352 @@
+# Ability Score Change Log — Design Sketch
+
+Optional (world-setting gated) tracking of ability score changes with a reason,
+a per-actor history log, recovery expectations, and one-click "Heal" revert.
+
+## Why
+
+Ability scores in DCC/MCC change for many reasons with *different recovery rules*:
+
+| Cause | Recovery (per core book) |
+|---|---|
+| Monster/trap ability damage | 1 pt per night's rest, 2 pts per day of bed rest |
+| Spellburn (Str/Agl/Sta; MCC glowburn) | Same as ability damage — "lost ability scores heal back at the normal rate" |
+| Luck spend (thief/halfling) | Regenerates `level` points per night, up to natural max |
+| Luck spend/burn (everyone else) | **Does not heal** — permanent barring divine intervention |
+| Roll the Body survival | **Permanent** −1 to Str/Agl/Sta (random) |
+| Saved from bleeding out | **Permanent** −1 Stamina + scar |
+| Corruption / disapproval | **Permanent** barring magical restoration |
+
+Players (and judges) lose track of which points come back when. The system should
+remember for them.
+
+## Existing scaffolding (already in main — unused)
+
+The data layer for this feature is **already in place**:
+
+- `module/data/actor/base-actor.mjs:134` — `abilityLog` ArrayField:
+  `{ timestamp, ability, change, type, source, newValue }`. Nothing writes to it yet.
+- `module/data/fields/ability-field.mjs:20-22` — per-ability `spent` (voluntary loss)
+  and `damage` (involuntary loss) NumberFields. Also unused.
+- `module/__integration__/data-models.test.js:600` — integration test already exercises
+  round-tripping `abilityLog` entries.
+
+## Data model changes
+
+Extend the `abilityLog` entry schema in `base-actor.mjs` (additive, no migration needed
+since the array is empty everywhere):
+
+```javascript
+abilityLog: new ArrayField(new SchemaField({
+  id: new StringField({ required: true }),        // foundry.utils.randomID(), needed to target entries for heal/delete
+  timestamp: new NumberField({ integer: true }),
+  ability: new StringField(),                     // str, agl, sta, per, int, lck
+  change: new NumberField({ integer: true }),     // negative = loss, positive = gain
+  maxChange: new NumberField({ integer: true, initial: 0 }), // nonzero when the gain also raised max (permanent blessings)
+  type: new StringField(),                        // see "Reason types" below
+  source: new StringField(),                      // free text: spell name, monster, etc.
+  newValue: new NumberField({ integer: true }),   // value after the change
+  hpChange: new NumberField({ integer: true, initial: 0 }), // HP adjustment applied alongside (Stamina modifier threshold crossings)
+  healedAmount: new NumberField({ integer: true, min: 0, initial: 0 }), // points healed back so far (0..|change|); entry is fully healed when == |change|
+  healedTimestamp: new NumberField({ integer: true, nullable: true })   // most recent heal
+}), { initial: [] })
+```
+
+### Reason types
+
+Defined as `CONFIG.DCC.abilityLogTypes` in `module/config.js` (key → i18n label),
+each with a *recovery class* used for display:
+
+| type | recovery class | shown as |
+|---|---|---|
+| `damage` | `rest` | "Heals 1/night, 2/day bed rest" |
+| `spellburn` | `rest` | same (covers MCC glowburn) |
+| `luckSpend` | `luckRegen` or `permanent` | derived from actor class: thief/halfling → "Regenerates {level}/night"; otherwise "Permanent (Luck does not heal)" |
+| `rollTheBody` | `permanent` | "Permanent injury (Roll the Body)" |
+| `bleedOut` | `permanent` | "Permanent (saved from bleeding out)" |
+| `corruption` | `permanent` | "Permanent (corruption/disapproval)" |
+| `heal` | — | a restoration (positive change; also written by the Heal button) |
+| `otherTemporary` | `rest` | "Temporary — heals 1/night, 2/day bed rest"; note **required** explaining why |
+| `otherPermanent` | `permanent` | "Permanent"; note **required** explaining why |
+| `manual` | `unknown` | "—" (fallback for untyped direct edits that bypass the dialog) |
+
+Recovery class is **derived at render time** (from `type` + actor class for Luck), not
+stored — so class changes and future rule modules stay correct retroactively.
+
+### `spent` / `damage` fields
+
+Leave them out of v1. The log is the source of truth; if we later want an at-a-glance
+"12 (−3 spellburn)" tooltip on the sheet, compute it from unhealed log entries rather
+than maintaining parallel counters that can drift.
+
+## Setting
+
+`module/settings.js`:
+
+```javascript
+game.settings.register('dcc', 'enableAbilityScoreLog', {
+  name: 'DCC.SettingEnableAbilityScoreLog',
+  hint: 'DCC.SettingEnableAbilityScoreLogHint',
+  scope: 'world',
+  type: Boolean,
+  default: false,
+  config: true
+})
+```
+
+No `requiresReload` — the sheet checks the setting at render time.
+
+## UX
+
+### 1. Editing an ability score (setting ON)
+
+Mirror the existing `hit-points-config.js` pattern (click HP → `HitPointsConfig`
+ApplicationV2 dialog). In `templates/actor-partial-pc-common.html` (the inline
+`abilityScore` partial at line 206) and the NPC equivalent:
+
+- When the setting is on, render the `value` input `readonly` with a
+  `data-action="editAbilityScore"` (cursor: pointer), keeping `max` editable as-is.
+- Clicking opens **`AbilityScoreConfig`** (`module/ability-score-config.js`), a small
+  ApplicationV2 form dialog:
+
+```text
+┌─ Strength — Bonnie the Wizard ────────────────┐
+│ Current: 12   Max: 12                          │
+│ New value: [ 9 ]   (or delta: [-3])            │
+│                                                │
+│ Reason:                                        │
+│  (•) Spellburn                                 │
+│  ( ) Ability damage (monster, trap, …)         │
+│  ( ) Luck spend            [Luck only]         │
+│  ( ) Roll the Body injury                      │
+│  ( ) Saved from bleeding out (Stamina)         │
+│  ( ) Corruption / disapproval                  │
+│  ( ) Healing / recovery                        │
+│  ( ) Temporary change (note why)               │
+│  ( ) Permanent change (note why)               │
+│                                                │
+│ Source/note: [ Invoke Patron________ ]         │
+│                                                │
+│ [x] Also adjust Max          [gains only]      │
+│                                                │
+│ Recovery: Heals 1/night, 2/day bed rest        │  ← updates live with radio choice
+│                                                │
+│              [ Apply ]                         │
+└────────────────────────────────────────────────┘
+```
+
+- The radio list is filtered contextually: `luckSpend` only for `lck`; `bleedOut`
+  preselected default only for `sta`; `spellburn` only for str/agl/sta (and shown for
+  all physical stats in MCC worlds where glowburn allows any). The two generic
+  "Temporary change" / "Permanent change" options always appear last — they cover
+  everything the rule-specific reasons don't (curses, magic items, quest effects,
+  judge rulings) while still recording the one fact the log exists to answer: does
+  this heal or not. For both, the Source/note field is **required** (Apply disabled
+  until filled) so the "why" is always captured.
+- **Gains work too** — e.g. "a god blessed me with a permanent +2 Str" is a positive
+  delta with `otherPermanent` and a note. When the change is a *gain*, an
+  "Also adjust Max" checkbox appears (default **checked** for permanent types,
+  unchecked for temporary): a permanent blessing raises the natural maximum alongside
+  the value, so the new ceiling is correct for all later Heal-cap math. Temporary
+  boosts (e.g. a potion) leave max alone and are naturally clipped back when they
+  expire.
+- On submit, **one** `actor.update()` writes both the new value and the appended log
+  entry, passing `{ dcc: { abilityLogged: true } }` in update options so the fallback
+  hook (below) doesn't double-log.
+
+Setting OFF → inputs behave exactly as today; zero behavior change.
+
+### 1a. Stamina → hit points
+
+The core book: "Your Stamina modifier affects hit points (even at level 0)" — the
+Stamina modifier is added to the HP gained at each level (minimum 1 hp/level). RAW is
+silent on whether mid-career Stamina loss retroactively reduces HP, so this is
+**offered, never silent**:
+
+- When a Stamina edit in the dialog crosses a modifier threshold
+  (`CONFIG.DCC.abilityModifiers` lookup, old mod vs. new), the dialog shows a
+  pre-checked checkbox: *"Also adjust hit points by −2 (Stamina modifier +1 → 0,
+  level 2)"*. ΔHP = (newMod − oldMod) × max(1, level), applied to both `hp.max` and
+  `hp.value` (value clamped ≥ 0, max clamped ≥ max(1, level) per the
+  minimum-1-hp-per-level rule). Judges who don't play with retroactive HP just
+  uncheck it.
+- The applied amount is recorded on the log entry as `hpChange`.
+- **Heal clicks are symmetric per step**: each 1-point Stamina heal recomputes the
+  modifier before/after that single point; if the step crosses a threshold back,
+  the same ΔHP formula restores the hit points (and accumulates into `hpChange`,
+  which trends back toward 0). Doing it per step — rather than per entry — means
+  partial healing and interleaved changes stay correct.
+- Automatic spellburn logging (Stamina burn) and the fallback hook do **not** touch
+  HP — only the dialog offers it, because only there is a human confirming.
+- The chat card mentions it: "…loses 2 Stamina (Spellburn — Invoke Patron) and 2 hit
+  points (modifier +1 → 0)".
+
+### 2. Automatic logging from existing flows
+
+These flows already know the reason, so no dialog — just append a typed entry:
+
+- **Spellburn** — both apply sites: `module/actor.js:1560` (roll modifier callback)
+  and `module/item.js:343` (spell check). One entry per burned ability,
+  `type: 'spellburn'`, `source` = spell/patron name. Covers MCC glowburn for free
+  (the `item.js:330` comment already notes glowburn *is* spellburn).
+- **Luck spend** — `module/actor.js:1445`, `type: 'luckSpend'`, `source` = what it
+  modified (e.g. the roll name).
+- (Later, optional) Lay on Hands ability restoration → `type: 'heal'`.
+
+### 3. Fallback: direct/manual edits
+
+A `preUpdateActor` hook (alongside the existing ones in `module/dcc.js:1095`):
+if the setting is on, a `system.abilities.*.value` change arrives, and
+`options.dcc?.abilityLogged` is not set, append a `type: 'manual'` entry recording the
+delta. This catches macros, modules (dcc-qol, xcc, …), and GM bar edits without
+breaking them — they still work, they just get logged with reason "Other".
+
+(Why log-in-hook rather than block-and-prompt: ApplicationV2 `preUpdate` can't await a
+dialog without cancelling the update, and silently rewriting other modules' updates is
+hostile. Log everything, prompt only on sheet clicks.)
+
+### 4. The log viewer
+
+A single small history icon (`fa-clock-rotate-left`) anchored to the **top-right
+corner of the `.ability-scores` column** (`actor-partial-pc-common.html:248`),
+absolutely positioned so it borrows empty corner space rather than adding a grid row
+(the column's `repeat(5, 68px)` rows and per-box pixel grids stay untouched).
+Tooltip "Ability Score Log", subdued styling like the ability-effects icons,
+rendered only when the setting is on — sheet is pixel-identical when disabled.
+`data-action="viewAbilityLog"`, opening **`AbilityScoreLogDialog`** (ApplicationV2,
+pattern: `fleeting-luck.js`). Placement rationale: the log covers all six abilities
+equally, so the button shouldn't visually belong to any one box; per-ability icons
+(×6) are noise, and the dialog filters by ability internally instead. A secondary
+entry in the sheet's header controls menu provides a fallback access point.
+
+See `mockups/ability-score-log-mockup.html` for a visual mockup of the button
+placement, edit dialog, and log viewer.
+
+```text
+┌─ Ability Score Log — Bonnie the Wizard ──────────────────────────────────┐
+│ Date         Ability  Change  Reason       Source         Recovery       │
+│ ──────────────────────────────────────────────────────────────────────── │
+│ 2026-06-12   Str      −3      Spellburn    Invoke Patron  1/night · healed 1/3 [Heal] │
+│ 2026-06-12   Lck      −2      Luck spend   Attack roll    Permanent          │
+│ 2026-06-10   Sta      −1      Roll the Body  —            Permanent          │
+│ 2026-06-09   Agl      −2      Spellburn    Magic Missile  ✓ healed 2026-06-10 │
+│                                                              [🗑 per row, GM] │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+- Rows sorted newest-first; fully healed rows dimmed with a checkmark instead of the
+  button.
+- **Heal** button: heals **1 point per click** — the rules' natural quantum (a night's
+  rest = one click; a day of bed rest = two; Lay on Hands = whatever it rolled).
+  Each click restores `min(ability.max, value + 1)` and increments `healedAmount`
+  (+ updates `healedTimestamp`), in a single `update()` with the `abilityLogged`
+  options flag. The row shows progress ("healed 1/3") until `healedAmount == |change|`,
+  then dims. **Shift-click heals the full remainder** for judge fiat or big magical
+  restores. Healing never deletes the row (history is the point).
+- Permanent-class entries (luck spend for non-thieves, Roll the Body, bleed-out,
+  corruption, permanent change) get **no Heal button**. If something strange happens
+  (divine intervention, restoration magic), record it as a new manual change through
+  the edit dialog — "Healing / recovery" with a note — which keeps the original
+  permanent loss and its restoration both visible in the history.
+- Positive entries (heals, blessings, awards) have no Heal button — you don't heal
+  a gain. Recording a revoked blessing is just a new negative entry (or GM delete).
+- GM-only trash icon per row for bookkeeping mistakes; players can only use Heal.
+- Empty state: localized "No ability score changes recorded."
+
+Timestamps: store `Date.now()`; display world calendar later if ever needed.
+
+### 5. Chat cards
+
+Every log entry written through the dialog or the automatic flows also emits a chat
+card (speaker = the actor), matching the system's existing card styling:
+
+```text
+⚔ Bonnie the Wizard loses 3 Strength
+   Spellburn — Invoke Patron
+   Heals 1 point per night's rest, 2 per day of bed rest
+```
+
+- Losses, gains ("…gains 2 Strength — Blessed by Gorhan (permanent)"), and Heal
+  restores ("…recovers 1 Strength — Spellburn healing, 2 of 3 healed") all get cards.
+  **Luck spends
+  included** — the card is where non-thieves get reminded the loss is permanent.
+- The card shows the reason, note, and recovery expectation — so the table hears the
+  fiction, not just the bookkeeping.
+- The fallback `manual` hook entries do **not** emit cards (modules/macros may make
+  rapid silent updates; only deliberate, typed changes deserve table-wide announcements).
+- Implementation: one `ChatMessage.create()` in `logAbilityChange()` behind an
+  `announce` parameter — dialog and automation pass `true`, the hook passes `false`.
+
+## Files touched
+
+| File | Change |
+|---|---|
+| `module/data/actor/base-actor.mjs` | extend `abilityLog` entry schema (`id`, `maxChange`, `healedAmount`, `healedTimestamp`) |
+| `module/config.js` | `DCC.abilityLogTypes` + recovery-class map |
+| `module/settings.js` | register `enableAbilityScoreLog` |
+| `module/ability-score-config.js` | **new** — edit dialog (pattern: `hit-points-config.js`) |
+| `module/ability-score-log.js` | **new** — log viewer dialog + `logAbilityChange(actor, entry)` helper + Heal/delete actions |
+| `module/actor-sheet.js` | `editAbilityScore` / `viewAbilityLog` actions; pass setting flag into context |
+| `templates/actor-partial-pc-common.html` | readonly+action on value input when enabled; log button |
+| `templates/actor-partial-npc-common.html` | same (or PC-only for v1 — see open questions) |
+| `templates/dialog-ability-score-config.html` | **new** |
+| `templates/dialog-ability-score-log.html` | **new** |
+| `templates/chat-card-ability-change.html` | **new** — chat card for losses/gains/heals |
+| `module/actor.js` | log spellburn (`:1560`) and luck spend (`:1445`) |
+| `module/item.js` | log spellburn (`:343`) |
+| `module/dcc.js` | `preUpdateActor` fallback logger |
+| `lang/en.json` + translations | new `DCC.AbilityLog*` keys |
+| `styles/dcc.scss` | log dialog table, dimmed healed rows, log button |
+
+## Edge cases
+
+- **Max changes too**: only `value` edits go through the dialog; `max` edits stay free
+  (level-up bookkeeping shouldn't be ceremonious). The fallback hook could log max
+  changes as `manual` — proposed: don't, keep noise down.
+- **Heal when value has since changed**: each restore is relative (`value + 1`),
+  capped at max — not "set back to `newValue − change`" — so interleaved changes
+  compose correctly.
+- **Over-heal**: guarded by the `healedAmount` cap — the button disappears (row dims)
+  once `healedAmount == |change|`, and each click is also clamped to `ability.max`.
+- **Active Effects on abilities**: AEs modify derived values, not `value`; the log only
+  tracks the base `value`, so no interaction. The existing ability-effects icons
+  (`actor-partial-pc-common.html:216`) already cover AE visibility.
+- **Dependent modules** (dcc-qol, xcc, mcc-classes, dcc-crawl-classes): they update
+  abilities via `actor.update()`; with the setting on they get `manual` log entries,
+  no breakage. Export `logAbilityChange()` on `game.dcc` so they can opt in with
+  proper types (MCC glowburn, plastic surgery, etc.).
+- **Log growth**: unbounded array on the actor. Fine in practice (entries are tiny);
+  GM delete covers cleanup. Revisit only if it ever matters.
+
+## Open questions
+
+1. NPC sheets too, or PC-only for v1? (Lean: PC-only; monsters' stat changes are
+   rarely worth a paper trail.)
+2. ~~Should chat cards for Luck spends be suppressed?~~ Resolved: no — Luck spends
+   get chat cards like everything else.
+
+## Test plan
+
+- Unit (`module/__tests__/`): `logAbilityChange` appends well-formed entries; each
+  Heal click restores exactly 1, clamps to max, increments `healedAmount`; shift-click
+  heals the remainder; no further healing once `healedAmount == |change|`;
+  recovery-class derivation (thief Luck vs wizard Luck); fallback hook skips when
+  `abilityLogged` flag present; setting off → no hook writes;
+  `otherTemporary`/`otherPermanent` reject submission with an empty note;
+  permanent-class and positive entries render no Heal button; Stamina threshold
+  crossing computes ΔHP = Δmod × max(1, level), clamps, records `hpChange`, and
+  per-step heals restore HP symmetrically (no HP change when checkbox unchecked or
+  when the step doesn't cross a threshold).
+- Integration: extend `data-models.test.js:600` round-trip for the new entry fields.
+- E2E: enable setting, click Str, pick Spellburn, apply −3, open log, click Heal
+  twice, verify value +2 and row shows "healed 2/3"; third click fully heals and dims
+  the row.
+
+## Implementation order
+
+1. Schema extension + config types + setting + i18n keys (mechanical, low risk)
+2. `logAbilityChange` helper + unit tests
+3. Edit dialog + sheet wiring (PC template)
+4. Log viewer dialog + Heal/delete
+5. Auto-logging in spellburn/luck-spend paths + fallback hook
+6. SCSS, E2E, dependent-module smoke check

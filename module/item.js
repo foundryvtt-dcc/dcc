@@ -1,16 +1,22 @@
-/* global Item, foundry, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
+/* global Item, foundry, game, ui, Roll, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
-
-const MAX_CONTAINER_DEPTH = 3
+import { ContainerItemMixin } from './item/container-mixin.mjs'
+import { CurrencyItemMixin } from './item/currency-mixin.mjs'
+import { SpellItemMixin } from './item/spell-mixin.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
- * Extend the base Item entity for DCC RPG
+ * Extend the base Item entity for DCC RPG.
+ * Spell-roll members (spell check + manifestation + mercurial magic) live in
+ * {@link SpellItemMixin}; container-support members (weight/capacity/depth
+ * getters + containment validation) live in {@link ContainerItemMixin};
+ * treasure-value / currency members live in {@link CurrencyItemMixin}.
+ * See `module/item/`.
  * @extends {Item}
  */
-class DCCItem extends Item {
+class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))) {
   /**
    * True while a charged magic item cast is awaiting its roll dialog,
    * so a second click cannot start a concurrent cast (issue #500)
@@ -74,7 +80,7 @@ class DCCItem extends Item {
       // Two-Weapon Fighting Dice Modifications
       if (this.system.twoWeaponPrimary || this.system.twoWeaponSecondary) {
         const agilityScore = this.actor?.system?.abilities?.agl?.value || 0
-        const isHalfling = this.actor?.system?.details?.sheetClass === 'Halfling'
+        const isHalfling = this.actor?.classId === 'halfling'
 
         // Calculate dice penalty based on agility and weapon hand
         let dicePenalty = 0
@@ -255,151 +261,84 @@ class DCCItem extends Item {
   }
 
   /**
-   * Roll a Spell Check using this item
-   * @param {String} abilityId    The ability used for this spell
-   * @param options
+   * After creation, fix up orphaned container references from transfers.
+   * When a container and its contents are transferred via Item Piles, the contents
+   * arrive with system.container pointing to the old container ID. This method
+   * re-associates them with the new container by matching on the sourceContainerName flag.
+   * @param {object} data
+   * @param {object} options
+   * @param {string} userId
    */
-  async rollSpellCheck (abilityId = '', options = {}) {
-    if (this.type !== 'spell') { return }
-
-    const actor = this.actor || this.parent
-
-    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') {
-      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
-        actor: actor.name,
-        spell: this.name
-      }))
-    }
-
-    const ability = actor.system.abilities[abilityId] || {}
-    ability.label = CONFIG.DCC.abilities[abilityId]
-    const spell = this.name
-    options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
-    const die = this.system.spellCheck.die
-    let bonus = this.system.spellCheck.value.toString()
-
-    // Consolidate the spell check value so that the modifier dialog is not too wide
-    // Unless people are using variables, in which case the DCC roll parser needs to deal with those
-    if (bonus.includes('@')) {
-      bonus = Roll.safeEval(bonus)
-    }
-
-    // Calculate check penalty if relevant
-    let checkPenalty
-    if (this.system.config.inheritCheckPenalty) {
-      checkPenalty = parseInt(actor.system.attributes.ac.checkPenalty || '0')
-    } else {
-      checkPenalty = parseInt(this.system.spellCheck.penalty || '0')
-    }
-
-    // Determine the casting mode
-    const castingMode = this.system.config.castingMode || 'wizard'
-
-    // Collate terms for the roll
-    const terms = [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: die
-      },
-      {
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
-        formula: bonus
-      },
-      {
-        type: 'CheckPenalty',
-        formula: checkPenalty,
-        apply: castingMode === 'wizard' // Idol magic does not incur a checkPenalty
-      }
-    ]
-
-    // Add spell-specific other bonus if present
-    const otherBonus = this.system.spellCheck.otherBonus
-    if (otherBonus) {
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.SpellOtherBonus'),
-        formula: otherBonus
+  async _onCreate (data, options, userId) {
+    await super._onCreate(data, options, userId)
+    if (this.isContainer && this.parent) {
+      // Check for orphaned items from Item Piles TRANSFER handler
+      // These items were transferred alongside the container but have stale
+      // system.container refs pointing to the old container ID
+      const orphaned = this.parent.items.filter(i => {
+        if (!i.system.container) return false
+        if (this.parent.items.get(i.system.container)) return false
+        return i.flags?.dcc?.sourceContainerName === this.name
       })
-    }
-
-    // Clerics cannot spellburn.
-    // Track the total points burned so the result handler can surface it via
-    // the `dcc.afterSpellCheckResult` payload — MCC glowburn IS spellburn, and
-    // its patron manifestation keys off the amount burned.
-    let spellburnTotal = 0
-    if (castingMode !== 'cleric') {
-      const sbStr = actor.system.abilities.str.value
-      const sbAgl = actor.system.abilities.agl.value
-      const sbSta = actor.system.abilities.sta.value
-      terms.push({
-        type: 'Spellburn',
-        formula: '+0',
-        str: sbStr,
-        agl: sbAgl,
-        sta: sbSta,
-        callback: (formula, term) => {
-          // Record the points burned (original minus the dialog's reduced
-          // values), then apply the spellburn.
-          spellburnTotal = (sbStr - term.str) + (sbAgl - term.agl) + (sbSta - term.sta)
-          actor.update({
-            'system.abilities.str.value': term.str,
-            'system.abilities.agl.value': term.agl,
-            'system.abilities.sta.value': term.sta
-          })
+      if (orphaned.length > 0) {
+        const updates = orphaned.map(i => ({
+          _id: i.id,
+          'system.container': this.id,
+          'flags.dcc.-=sourceContainerName': null
+        }))
+        try {
+          await this.parent.updateEmbeddedDocuments('Item', updates)
+        } catch (err) {
+          console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`, err)
         }
-      })
-    }
-
-    // Roll the spell check
-    const roll = await game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options)
-    await roll.evaluate()
-
-    if (roll.dice.length > 0) {
-      roll.dice[0].options.dcc = {
-        lowerThreshold: actor.system.class.disapproval
       }
     }
+  }
 
-    // Lookup the appropriate table
-    const resultsRef = this.system.results
-    if (!resultsRef.table) {
-      return ui.notifications.warn(game.i18n.localize('DCC.NoSpellResultsTableWarning'))
+  /**
+   * Before deletion, release contained items so they aren't orphaned.
+   * This handles programmatic deletion (API, macros, modules) where deleteDialog is bypassed.
+   * @param {object} options
+   * @param {object} user
+   */
+  async _preDelete (options, user) {
+    await super._preDelete(options, user)
+    if (this.isContainer && this.parent && this.contents.length > 0) {
+      const updates = this.contents.map(i => ({
+        _id: i.id,
+        'system.container': null
+      }))
+      await this.parent.updateEmbeddedDocuments('Item', updates)
     }
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table.replace('RollTable.', '')
-    let resultsTable
-    // If a collection is specified then check the appropriate pack for the spell
-    if (resultsRef.collection) {
-      const pack = game.packs.get(resultsRef.collection)
-      if (pack) {
-        const entry = pack.index.find(predicate)
-        resultsTable = await pack.getDocument(entry._id)
-      }
-    }
-    // Otherwise fall back to searching the world
-    if (!resultsTable) {
-      resultsTable = game.tables.contents.find(predicate)
-    }
+  }
 
-    let flavor = spell
-    if (ability.label) {
-      flavor += ` (${game.i18n.localize(ability.label)})`
+  /**
+   * Override deleteDialog for containers with contents.
+   * Warns the user that contained items will also be deleted and requires confirmation.
+   * @param {object} [options] - Options passed to the parent deleteDialog
+   * @returns {Promise<Item|false|null>}
+   */
+  async deleteDialog (options = {}) {
+    if (!this.isContainer || !this.parent || this.contents.length === 0) {
+      return super.deleteDialog(options)
     }
-
-    // Tell the system to handle the spell check result
-    await game.dcc.processSpellCheck(actor, {
-      rollTable: resultsTable,
-      roll,
-      item: this,
-      flavor,
-      manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
-      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
-      forceCrit: options.forceCrit,
-      forceFumble: options.forceFumble,
-      suppressPatronTaint: options.suppressPatronTaint,
-      spellburn: spellburnTotal
+    const contentsCount = this.contents.length
+    return Dialog.confirm({
+      title: `${game.i18n.localize('DOCUMENT.Delete')}: ${this.name}`,
+      content: `<p>${game.i18n.format('DCC.ContainerDeleteConfirm', { count: contentsCount })}</p>`,
+      yes: async () => {
+        const deleteIds = this.contents.map(i => i.id)
+        deleteIds.push(this.id)
+        try {
+          await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
+        } catch (err) {
+          console.error(`DCC | Failed to delete container "${this.name}" and its contents`, err)
+          return null
+        }
+        return this
+      },
+      no: () => null,
+      defaultYes: false
     })
   }
 
@@ -531,584 +470,6 @@ class DCCItem extends Item {
     const freshCharges = this.system.charges || {}
     if (freshCharges.max > 0) {
       await this.update({ 'system.charges.value': Math.max(0, (freshCharges.value || 0) - 1) })
-    }
-  }
-
-  /**
-   * Check for an existing manifestation
-   * @return
-   */
-  hasExistingManifestation () {
-    return this.system?.manifestation?.value || this.system?.manifestation?.description
-  }
-
-  /**
-   * Check for an existing mercurial magic effect
-   * @return
-   */
-  hasExistingMercurialMagic () {
-    return this.system?.mercurialEffect?.value || this.system?.mercurialEffect?.summary || this.system.mercurialEffect.description
-  }
-
-  /**
-   * Roll a or lookup new manifestation for a spell item
-   * @param {Number} lookup   Optional entry number to lookup instead of rolling
-   * @param options
-   * @return
-   */
-  async rollManifestation (lookup = undefined, options = {}) {
-    if (this.type !== 'spell') { return }
-
-    const actor = this.actor
-    if (!actor) { return }
-
-    let roll
-
-    if (lookup) {
-      // Look up a manifestation by value
-      roll = new Roll('@value', {
-        value: lookup
-      })
-    } else {
-      const terms = [
-        {
-          type: 'Die',
-          formula: '1d100'
-        }
-      ]
-
-      // Otherwise roll for a manifestation
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-    }
-
-    // Lookup the manifestation table if available
-    let manifestationResult = null
-    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-side-effect-tables'
-    const manifestationTableName = `${this.name} Manifestation`
-    const pack = game.packs.get(manifestationPackName)
-    if (pack) {
-      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
-      if (entry) {
-        const table = await pack.getDocument(entry._id)
-        manifestationResult = await table.draw({ roll })
-      } else {
-        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
-      }
-    }
-
-    // Local Lookup
-    if (!manifestationResult) {
-      const table = game.tables.getName(manifestationTableName)
-      if (table) {
-        manifestationResult = await table.draw({ roll })
-      }
-    }
-
-    // Grab the result from the table if present
-    if (manifestationResult) {
-      roll = manifestationResult.roll
-    } else {
-      // Fall back to displaying just the roll
-      await roll.evaluate()
-      roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: game.i18n.localize('DCC.ManifestationRoll'),
-        flags: {
-          'dcc.RollType': 'Manifestation'
-        }
-      })
-    }
-
-    // Stow away the data in the appropriate fields
-    const updates = {}
-    updates['system.manifestation.value'] = roll.total
-    updates['system.manifestation.description'] = ''
-
-    if (manifestationResult) {
-      try {
-        let result = manifestationResult.results[0].description.replace(';', '')
-        result = result.charAt(0).toUpperCase() + result.slice(1)
-        updates['system.manifestation.description'] = `<p>${result}</p>`
-      } catch (err) {
-        console.error(`Couldn't extract Manifestation result from table:\n${err}`)
-      }
-    }
-
-    this.update(updates)
-  }
-
-  /**
-   * Roll a or lookup new mercurial effect for a spell item
-   * @param {Number} lookup   Optional entry number to lookup instead of rolling
-   * @param options
-   * @return
-   */
-  async rollMercurialMagic (lookup = undefined, options = {}) {
-    if (this.type !== 'spell') { return }
-
-    const actor = this.actor
-    if (!actor) { return }
-
-    const abilityId = 'lck'
-    const ability = actor.system.abilities[abilityId]
-    ability.label = CONFIG.DCC.abilities[abilityId]
-
-    let roll
-
-    if (lookup) {
-      // Look up a mercurial effect by value
-      roll = new Roll('@value', {
-        value: lookup
-      })
-    } else {
-      const modifier = (ability.mod * 10).toString()
-      const terms = [
-        {
-          type: 'Die',
-          formula: '1d100'
-        },
-        {
-          type: 'Modifier',
-          label: game.i18n.localize('DCC.AbilityLck'),
-          formula: ensurePlus(modifier)
-        }
-      ]
-
-      // Otherwise roll for a mercurial effect
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-    }
-
-    // Lookup the mercurial magic table if available
-    let mercurialMagicResult = null
-    const mercurialMagicTableName = CONFIG.DCC.mercurialMagicTable
-    if (mercurialMagicTableName) {
-      const mercurialMagicTablePath = mercurialMagicTableName.split('.')
-      let pack
-      if (mercurialMagicTablePath.length === 3) {
-        pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
-      }
-      if (pack) {
-        const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
-        if (entry) {
-          const table = await pack.getDocument(entry._id)
-          mercurialMagicResult = await table.draw({ roll })
-        }
-      }
-    }
-
-    // Fall back to searching world tables by name
-    if (!mercurialMagicResult) {
-      const worldTableName = mercurialMagicTableName
-        ? mercurialMagicTableName.split('.').pop()
-        : 'Table 5-2: Mercurial Magic'
-      const table = game.tables.getName(worldTableName)
-      if (table) {
-        mercurialMagicResult = await table.draw({ roll })
-      }
-    }
-
-    // Grab the result from the table if present
-    if (mercurialMagicResult) {
-      roll = mercurialMagicResult.roll
-    } else {
-      // Fall back to displaying just the roll
-      await roll.evaluate()
-      roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: game.i18n.localize('DCC.MercurialMagicRoll'),
-        flags: {
-          'dcc.RollType': 'MercurialMagic'
-        }
-      })
-    }
-
-    // Stow away the data in the appropriate fields
-    const updates = {}
-    updates['system.mercurialEffect.value'] = roll.total
-    updates['system.mercurialEffect.summary'] = ''
-    updates['system.mercurialEffect.description'] = ''
-
-    if (mercurialMagicResult) {
-      try {
-        const result = mercurialMagicResult.results[0].description
-        const split = result.split('.')
-        updates['system.mercurialEffect.summary'] = split[0]
-        updates['system.mercurialEffect.description'] = `<p>${result}</p>`
-      } catch (err) {
-        console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
-      }
-    }
-
-    this.update(updates)
-  }
-
-  /* -------------------------------------------- */
-  /*  Container Support                            */
-  /* -------------------------------------------- */
-
-  /**
-   * Is this item a container type?
-   * @returns {boolean}
-   */
-  get isContainer () {
-    return this.type === 'container'
-  }
-
-  /**
-   * Is this item contained inside another item?
-   * @returns {boolean}
-   */
-  get isContained () {
-    return !!this.system.container
-  }
-
-  /**
-   * Get the items contained in this container
-   * @returns {DCCItem[]}
-   */
-  get contents () {
-    if (!this.isContainer || !this.parent) return []
-    return this.parent.items.filter(i => i.system.container === this.id)
-  }
-
-  /**
-   * Get the total weight of contents, applying weight reduction
-   * @returns {number}
-   */
-  get contentsWeight () {
-    if (!this.isContainer) return 0
-    let total = 0
-    for (const item of this.contents) {
-      const weight = parseFloat(item.system.weight) || 0
-      const quantity = parseInt(item.system.quantity) || 1
-      total += weight * quantity
-    }
-    const reduction = this.system.weightReduction || 0
-    return total * (1 - reduction / 100)
-  }
-
-  /**
-   * Get total weight: container's own weight + reduced contents weight
-   * @returns {number}
-   */
-  get totalWeight () {
-    const ownWeight = (parseFloat(this.system.weight) || 0) * (parseInt(this.system.quantity) || 1)
-    return ownWeight + this.contentsWeight
-  }
-
-  /**
-   * Get remaining weight capacity
-   * @returns {number|null} null if unlimited
-   */
-  get availableWeightCapacity () {
-    if (!this.isContainer) return null
-    const maxWeight = this.system.capacity?.weight || 0
-    if (maxWeight <= 0) return null
-    return Math.max(0, maxWeight - this.contentsWeight)
-  }
-
-  /**
-   * Get remaining item count capacity
-   * @returns {number|null} null if unlimited
-   */
-  get availableItemCapacity () {
-    if (!this.isContainer) return null
-    const maxItems = this.system.capacity?.items || 0
-    if (maxItems <= 0) return null
-    return Math.max(0, maxItems - this.contentsItemCount)
-  }
-
-  /**
-   * Get the total item count of contents, factoring in quantity
-   * @returns {number}
-   */
-  get contentsItemCount () {
-    if (!this.isContainer) return 0
-    return this.contents.reduce((total, item) => {
-      return total + (parseInt(item.system.quantity) || 1)
-    }, 0)
-  }
-
-  /**
-   * Calculate the nesting depth of this item in container hierarchy
-   * @returns {number} 0 if not contained, 1+ for nesting level
-   */
-  get containerDepth () {
-    if (!this.isContained || !this.parent) return 0
-    let depth = 0
-    let current = this
-    while (current.system.container && depth <= MAX_CONTAINER_DEPTH) {
-      depth++
-      current = this.parent.items.get(current.system.container)
-      if (!current) break
-    }
-    return depth
-  }
-
-  /**
-   * Check if adding an item to this container would create a circular reference
-   * @param {string} itemId - ID of the item to check
-   * @returns {boolean} true if circular
-   */
-  wouldCreateCircularContainment (itemId) {
-    if (this.id === itemId) return true
-    if (!this.isContained || !this.parent) return false
-    let current = this
-    let steps = 0
-    while (current.system.container && steps <= MAX_CONTAINER_DEPTH) {
-      if (current.system.container === itemId) return true
-      current = this.parent.items.get(current.system.container)
-      if (!current) break
-      steps++
-    }
-    return false
-  }
-
-  /**
-   * Check if an item can be added to this container
-   * @param {DCCItem} item - The item to check
-   * @returns {{allowed: boolean, reason: string|null}}
-   */
-  canContainItem (item) {
-    if (!this.isContainer) {
-      return { allowed: false, reason: 'DCC.ContainerNotAContainer' }
-    }
-    if (item.system.container === undefined) {
-      return { allowed: false, reason: 'DCC.ContainerItemNotPhysical' }
-    }
-    if (item.id === this.id) {
-      return { allowed: false, reason: 'DCC.ContainerCannotContainSelf' }
-    }
-    if (this.wouldCreateCircularContainment(item.id)) {
-      return { allowed: false, reason: 'DCC.ContainerCircularReference' }
-    }
-    // Check nesting depth
-    if (item.isContainer) {
-      const itemDepth = item.isContained ? item.containerDepth : 0
-      const thisDepth = this.containerDepth
-      if (thisDepth + itemDepth + 1 >= MAX_CONTAINER_DEPTH) {
-        return { allowed: false, reason: 'DCC.ContainerMaxDepth' }
-      }
-    }
-    // Check item capacity
-    if (this.availableItemCapacity !== null) {
-      const itemQuantity = parseInt(item.system.quantity) || 1
-      if (itemQuantity > this.availableItemCapacity) {
-        return { allowed: false, reason: 'DCC.ContainerFull' }
-      }
-    }
-    // Check weight capacity
-    if (this.availableWeightCapacity !== null) {
-      const itemWeight = (parseFloat(item.system.weight) || 0) * (parseInt(item.system.quantity) || 1)
-      if (itemWeight > this.availableWeightCapacity) {
-        return { allowed: false, reason: 'DCC.ContainerTooHeavy' }
-      }
-    }
-    return { allowed: true, reason: null }
-  }
-
-  /**
-   * After creation, fix up orphaned container references from transfers.
-   * When a container and its contents are transferred via Item Piles, the contents
-   * arrive with system.container pointing to the old container ID. This method
-   * re-associates them with the new container by matching on the sourceContainerName flag.
-   * @param {object} data
-   * @param {object} options
-   * @param {string} userId
-   */
-  async _onCreate (data, options, userId) {
-    await super._onCreate(data, options, userId)
-    if (this.isContainer && this.parent) {
-      // Check for orphaned items from Item Piles TRANSFER handler
-      // These items were transferred alongside the container but have stale
-      // system.container refs pointing to the old container ID
-      const orphaned = this.parent.items.filter(i => {
-        if (!i.system.container) return false
-        if (this.parent.items.get(i.system.container)) return false
-        return i.flags?.dcc?.sourceContainerName === this.name
-      })
-      if (orphaned.length > 0) {
-        const updates = orphaned.map(i => ({
-          _id: i.id,
-          'system.container': this.id,
-          'flags.dcc.-=sourceContainerName': null
-        }))
-        try {
-          await this.parent.updateEmbeddedDocuments('Item', updates)
-        } catch (err) {
-          console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`, err)
-        }
-      }
-    }
-  }
-
-  /**
-   * Before deletion, release contained items so they aren't orphaned.
-   * This handles programmatic deletion (API, macros, modules) where deleteDialog is bypassed.
-   * @param {object} options
-   * @param {object} user
-   */
-  async _preDelete (options, user) {
-    await super._preDelete(options, user)
-    if (this.isContainer && this.parent && this.contents.length > 0) {
-      const updates = this.contents.map(i => ({
-        _id: i.id,
-        'system.container': null
-      }))
-      await this.parent.updateEmbeddedDocuments('Item', updates)
-    }
-  }
-
-  /**
-   * Override deleteDialog for containers with contents.
-   * Warns the user that contained items will also be deleted and requires confirmation.
-   * @param {object} [options] - Options passed to the parent deleteDialog
-   * @returns {Promise<Item|false|null>}
-   */
-  async deleteDialog (options = {}) {
-    if (!this.isContainer || !this.parent || this.contents.length === 0) {
-      return super.deleteDialog(options)
-    }
-    const contentsCount = this.contents.length
-    return Dialog.confirm({
-      title: `${game.i18n.localize('DOCUMENT.Delete')}: ${this.name}`,
-      content: `<p>${game.i18n.format('DCC.ContainerDeleteConfirm', { count: contentsCount })}</p>`,
-      yes: async () => {
-        const deleteIds = this.contents.map(i => i.id)
-        deleteIds.push(this.id)
-        try {
-          await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
-        } catch (err) {
-          console.error(`DCC | Failed to delete container "${this.name}" and its contents`, err)
-          return null
-        }
-        return this
-      },
-      no: () => null,
-      defaultYes: false
-    })
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Determine if this item needs to have its treasure value rolled
-   * @return {Boolean}  True if any value field contains a rollable formula
-   */
-  needsValueRoll () {
-    for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.system.value[currency]
-      if (!formula) continue
-      try {
-        const roll = new Roll(formula.toString())
-        if (!roll.isDeterministic) {
-          return true
-        }
-      } catch (e) {
-        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
-      }
-    }
-
-    return false
-  }
-
-  /**
-   * Roll to determine the value of this item
-   */
-  async rollValue () {
-    const updates = {}
-    const valueRolls = {}
-
-    for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.system.value[currency] || '0'
-      try {
-        const roll = new Roll(formula.toString())
-        await roll.evaluate()
-        updates['system.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
-      } catch (e) {
-        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
-      }
-    }
-
-    const speaker = { alias: this.actor.name, id: this.actor.id }
-    const messageData = {
-      user: game.user.id,
-      speaker,
-      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-      content: game.i18n.format('DCC.ResolveValueEmote', {
-        itemName: this.name,
-        pp: valueRolls.pp,
-        ep: valueRolls.ep,
-        gp: valueRolls.gp,
-        sp: valueRolls.sp,
-        cp: valueRolls.cp
-      }),
-      sound: CONFIG.sounds.dice,
-      flags: {
-        'dcc.RollType': 'LootValue'
-      }
-    }
-    await CONFIG.ChatMessage.documentClass.create(messageData)
-
-    this.update(updates)
-  }
-
-  /**
-   * Shift currency to the next highest denomination
-   */
-  async convertCurrencyUpward (currency) {
-    const currencyRank = CONFIG.DCC.currencyRank
-    const currencyValue = CONFIG.DCC.currencyValue
-    // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
-      return
-    }
-    // Find the rank of this currency
-    const rank = currencyRank.indexOf(currency)
-    // Make sure there's a currency to convert to
-    if (rank >= 0 && rank < currencyRank.length - 1) {
-      // What are we converting to?
-      const toCurrency = currencyRank[rank + 1]
-      // Calculate the conversion factor
-      const conversionFactor = currencyValue[toCurrency] / currencyValue[currency]
-      // Check we have enough currency
-      if (this.system.value[currency] >= conversionFactor) {
-        // Apply the conversion
-        const updates = {}
-        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
-        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
-        this.update(updates)
-      }
-    }
-  }
-
-  /**
-   * Shift currency to the next lowest denomination
-   */
-  async convertCurrencyDownward (currency) {
-    const currencyRank = CONFIG.DCC.currencyRank
-    const currencyValue = CONFIG.DCC.currencyValue
-    // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
-      return
-    }
-    // Find the rank of this currency
-    const rank = currencyRank.indexOf(currency)
-    // Make sure there's a currency to convert to
-    if (rank >= 1) {
-      // What are we converting to?
-      const toCurrency = currencyRank[rank - 1]
-      // Check we have enough currency
-      if (this.system.value[currency] >= 1) {
-        // Calculate the conversion factor
-        const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
-        // Apply the conversion
-        const updates = {}
-        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - 1
-        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
-        this.update(updates)
-      }
     }
   }
 }

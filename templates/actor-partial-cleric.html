@@ -61,19 +61,19 @@
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
           <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}"
                  data-action="rollSkillCheck" data-drag="true" data-drag-action="skill">
-            {{localize "DCC.DivineAid"}}
+            {{localize "DCC.DivineAid"}}{{#if system.skills.divineAid.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.divineAid.otherMod sign=true}})</span>{{/if}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
           <label class="skill-check rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill" title="{{localize 'DCC.TurnUnholyHint'}}">
-            {{localize "DCC.TurnUnholy"}}
+            {{localize "DCC.TurnUnholy"}}{{#if system.skills.turnUnholy.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.turnUnholy.otherMod sign=true}})</span>{{/if}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.turnUnholy.value}}</div>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
           <label class="skill-check rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill" title="{{localize 'DCC.LayOnHandsHint'}}">
-            {{localize "DCC.LayOnHands"}}
+            {{localize "DCC.LayOnHands"}}{{#if system.skills.layOnHands.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.layOnHands.otherMod sign=true}})</span>{{/if}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
         </div>
