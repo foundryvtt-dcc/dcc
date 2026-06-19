@@ -75,8 +75,26 @@ to be in the lib (not just an adapter translation issue):
 These override the default "never commit/push without being asked"
 rule. They apply only to the scoped context described.
 
+- **Commit and push on any non-`main` branch without asking.** On any
+  branch other than `main`, when a unit of work is complete and the fast
+  Vitest suite (`npm test`) is green, **commit** locally and
+  `git push origin <branch>` without asking. This covers feature / fix
+  branches, merges of `main` into them, and similar work. Use
+  conventional-commit messages matching the branch's existing history.
+  For changes touching the core attack / sheet / chat paths, prefer
+  running the full Playwright E2E suite before pushing, and say so if you
+  pushed without it. Still pause and ask if: `npm test` is failing,
+  `git status` shows unexpected untracked files, the pre-commit hook
+  rewrites code in ways that should be reviewed, or the work is
+  incomplete.
+- **Never commit or push directly to `main` without being asked.** The
+  default rule still applies to `main`: branch first, and only push to
+  `main` (or open a PR into it) when explicitly told to.
+
 - **Auto-commit refactor slices on `refactor/dcc-core-lib-adapter`;
-  push per batch.** When a Phase-N session-M slice is complete (code +
+  push per batch.** This is a stricter regime layered on the general
+  rule above — on this branch, push is gated on the full E2E suite, not
+  just Vitest. When a Phase-N session-M slice is complete (code +
   Vitest + docs, Vitest green), **commit** it locally without asking.
   Commit-message format matches the established history on this branch:
   `feat(adapter): Phase <N> session <M> — <short slice description>`
