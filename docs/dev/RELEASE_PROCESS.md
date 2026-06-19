@@ -10,6 +10,11 @@ For automated release process:
 1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge all changes into main
 1. Commit `version.txt` File with new release version number in it (no 'v')
+   — this is the **only** file you hand-edit for a release. The
+   `Create GitHub Release` workflow syncs `package.json` **and**
+   `package-lock.json` to that version (via `npm version --no-git-tag-version`)
+   before the release action rewrites `system.json` and commits the lot, so the
+   lockfile no longer drifts behind the bumped `package.json`.
 1. GitHub Action will automatically create a draft release
 1. Edit draft release notes and title
 1. Publish the release
