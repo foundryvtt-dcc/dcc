@@ -49,6 +49,12 @@ class RollMock {
     return true
   }
 
+  static fromTerms (terms) {
+    const inst = new RollMock('')
+    inst.terms = terms
+    return inst
+  }
+
   constructor (rollData) {
     this.rollData = rollData
     // Store the formula as a string property

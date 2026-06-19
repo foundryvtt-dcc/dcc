@@ -5,7 +5,7 @@
     <div class="grid-col-span-12 grid-tpl-max label-font p-5 grid-row-gap-8">
       <div class="grid-tpl-max-25 grid-col-gap-8" data-skill="sneakAndHide">
         <label class="skill-check rollable" for="system.skills.sneakAndHide.value" data-action="rollSkillCheck">
-          {{localize "DCC.Stealth"}}
+          {{localize "DCC.Stealth"}}{{#if system.skills.sneakAndHide.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.sneakAndHide.otherMod sign=true}})</span>{{/if}}
         </label>
         <input id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value"
                value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>

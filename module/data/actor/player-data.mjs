@@ -2,12 +2,17 @@
 /**
  * Data model for Player actors
  * Players use all class templates merged together:
- * common, config, player, cleric, thief, halfling, warrior, wizard, dwarf, elf
+ * common, config, player, cleric, thief, warrior, wizard, dwarf, elf.
+ * Class-specific fields (starting with halfling's `sneakAndHide` as of
+ * Phase 4 session 1) are contributed via the `game.dcc.registerClassMixin`
+ * registry instead of living in the static schema body — see
+ * `applyClassMixins` below and `docs/dev/EXTENSION_API.md`.
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
+import { isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
+import { applyClassMixins } from '../../extension-api.mjs'
 
-const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
+const { SchemaField, StringField, BooleanField, HTMLField, NumberField } = foundry.data.fields
 
 export class PlayerData extends BaseActorData {
   /**
@@ -57,145 +62,51 @@ export class PlayerData extends BaseActorData {
     const schema = {
       ...super.defineSchema(),
 
-      // Class information
+      // Class information. After Phase 4 sessions 1–6, every
+      // class-specific field on `system.class.*` lives on its
+      // respective `CONFIG.DCC.classMixins` entry — only `className`
+      // (the cross-class identity field) remains in the static body.
+      // Wizard + elf class fields (knownSpells / maxSpellLevel /
+      // spellCheckOtherMod / spellCheckDieOverride / spellCheckOverride
+      // / patron / patronTaintChance / familiar / corruption) are
+      // attached by the `'wizard'` and `'elf'` mixins; cleric /
+      // thief / warrior fields by their respective mixins. See
+      // `module/built-in-class-mixins.mjs` for the full table.
+      //
+      // The four link fields (`classLink` + per-class
+      // `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`)
+      // are cross-class enriched-HTML blobs the sheet's `_prepareContext`
+      // writes via `registerClassDefaults`'s `enrichHtml` bag. Pre-Phase
+      // 5 session 3 these weren't registered in the schema — sibling
+      // modules (xcc-core-book et al.) had been contributing `classLink`
+      // via `dcc.definePlayerSchema`, so writes survived only when a
+      // sibling was loaded; `mightyDeedsLink` / `spellcastingLink` /
+      // `spellburnLink` writes were always stripped, and the templates
+      // `{{{system.class.<field>}}}` rendered empty. Registering them
+      // here closes the latent gap so the sheet writes survive in
+      // every world configuration.
       class: new SchemaField({
         className: new StringField({ initial: 'Zero-Level' }),
-
-        // Cleric fields
-        spellCheck: new NumberField({ initial: 1, integer: true }),
-        spellCheckAbility: new StringField({ initial: 'per' }),
-        spellsLevel1: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel2: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel3: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel4: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel5: new NumberField({ initial: 0, integer: true, min: 0 }),
-        deity: new StringField({ nullable: true, initial: null }),
-        disapproval: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
-        disapprovalTable: new StringField({ initial: 'Disapproval' }),
-
-        // Thief fields
-        luckDie: new DiceField({ initial: '1d3' }),
-        backstab: new StringField({ initial: '0' }),
-
-        // Warrior fields
-        luckyWeapon: new StringField({ nullable: true, initial: null }),
-        luckyWeaponMod: new StringField({ initial: '+0' }),
-
-        // Wizard fields
-        knownSpells: new NumberField({ initial: 0, integer: true, min: 0 }),
-        maxSpellLevel: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellCheckOtherMod: new StringField({ nullable: true, initial: null }),
-        spellCheckDieOverride: new StringField({ nullable: true, initial: null }),
-        spellCheckOverride: new StringField({ nullable: true, initial: null }),
-        patron: new StringField({ nullable: true, initial: null }),
-        patronTaintChance: new StringField({ initial: '1%' }),
-        familiar: new StringField({ nullable: true, initial: null }),
-        corruption: new HTMLField({ initial: '' })
+        classLink: new HTMLField({ initial: '' }),
+        mightyDeedsLink: new HTMLField({ initial: '' }),
+        spellcastingLink: new HTMLField({ initial: '' }),
+        spellburnLink: new HTMLField({ initial: '' })
       }),
 
-      // Skills - all class skills in one place
+      // Skills. Only `detectSecretDoors` is a base-body skill —
+      // every other class skill lives on a class mixin (cleric:
+      // divineAid/turnUnholy/layOnHands; thief: 12-skill block;
+      // halfling: sneakAndHide; dwarf: shieldBash). The base shape
+      // here is the non-Elf default; the `'elf'` mixin replaces it
+      // with the HeightenedSenses overrides (label / ability='int'
+      // / value='+4').
       skills: new SchemaField({
-        // Player skill (from player template)
-        // Note: Elf template overrides with label=DCC.HeightenedSenses, ability=int, value=+4
         detectSecretDoors: new SchemaField({
           label: new StringField({ initial: 'DCC.DetectSecretDoors' }),
-          ability: new StringField({ initial: '' }), // Empty for non-Elf, 'int' for Elf
-          value: new StringField({ initial: '+0' })
-        }),
-
-        // Cleric skills
-        divineAid: new SchemaField({
-          label: new StringField({ initial: 'DCC.DivineAid' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true }),
-          drainDisapproval: new NumberField({ initial: 10, integer: true })
-        }),
-        turnUnholy: new SchemaField({
-          label: new StringField({ initial: 'DCC.TurnUnholy' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true })
-        }),
-        layOnHands: new SchemaField({
-          label: new StringField({ initial: 'DCC.LayOnHands' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true })
-        }),
-
-        // Thief skills
-        sneakSilently: new SchemaField({
-          label: new StringField({ initial: 'DCC.SneakSilently' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        hideInShadows: new SchemaField({
-          label: new StringField({ initial: 'DCC.HideInShadows' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        pickPockets: new SchemaField({
-          label: new StringField({ initial: 'DCC.PickPocket' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        climbSheerSurfaces: new SchemaField({
-          label: new StringField({ initial: 'DCC.ClimbSheerSurfaces' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        pickLock: new SchemaField({
-          label: new StringField({ initial: 'DCC.PickLock' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        findTrap: new SchemaField({
-          label: new StringField({ initial: 'DCC.FindTrap' }),
-          ability: new StringField({ initial: 'int' }),
-          value: new StringField({ initial: '0' })
-        }),
-        disableTrap: new SchemaField({
-          label: new StringField({ initial: 'DCC.DisableTrap' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        forgeDocument: new SchemaField({
-          label: new StringField({ initial: 'DCC.ForgeDocument' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        disguiseSelf: new SchemaField({
-          label: new StringField({ initial: 'DCC.DisguiseSelf' }),
-          ability: new StringField({ initial: 'per' }),
-          value: new StringField({ initial: '0' })
-        }),
-        readLanguages: new SchemaField({
-          label: new StringField({ initial: 'DCC.ReadLanguages' }),
-          ability: new StringField({ initial: 'int' }),
-          value: new StringField({ initial: '0' })
-        }),
-        handlePoison: new SchemaField({
-          label: new StringField({ initial: 'DCC.HandlePoison' }),
-          value: new StringField({ initial: '0' })
-        }),
-        castSpellFromScroll: new SchemaField({
-          label: new StringField({ initial: 'DCC.CastSpellFromScroll' }),
-          ability: new StringField({ initial: 'int' }),
-          die: new DiceField({ initial: '1d10' }),
-          value: new StringField({ initial: '0' })
-        }),
-
-        // Halfling skills
-        sneakAndHide: new SchemaField({
-          label: new StringField({ initial: 'DCC.SneakAndHide' }),
-          value: new StringField({ initial: '+3' })
-        }),
-
-        // Dwarf skills
-        shieldBash: new SchemaField({
-          label: new StringField({ initial: 'DCC.ShieldBash' }),
-          ability: new StringField({ initial: 'str' }),
-          die: new DiceField({ initial: '1d14' }),
+          ability: new StringField({ initial: '' }),
           value: new StringField({ initial: '+0' }),
-          useDeed: new BooleanField({ initial: true })
+          // AE-modifier target (never AE the editable `value`); see #714.
+          otherMod: new NumberField({ initial: 0, integer: true })
         })
       }),
 
@@ -221,6 +132,15 @@ export class PlayerData extends BaseActorData {
         showSwimFlySpeed: new BooleanField({ initial: false })
       })
     }
+
+    /**
+     * Apply registered class mixins BEFORE the public extension hook
+     * fires so `dcc.definePlayerSchema` handlers can observe (and
+     * further mutate) mixin-contributed fields. Order within the
+     * registry is deterministic (sorted classId keys) — see
+     * `applyClassMixins`.
+     */
+    applyClassMixins(schema)
 
     /**
      * Allow modules to extend the Player schema by adding fields to existing SchemaFields

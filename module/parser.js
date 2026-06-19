@@ -348,3 +348,7 @@ async function _applyBirthAugurEffect (actor, birthAugurText) {
 }
 
 export default { onRenderActorDirectory, createActors }
+
+// Exposed for unit testing — the birth-augur effect application is otherwise
+// only reachable through the heavyweight createActors import pipeline.
+export { _applyBirthAugurEffect }

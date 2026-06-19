@@ -1,0 +1,130 @@
+/* ----------------------------------------- */
+/*  Party Sheet                              */
+/* ----------------------------------------- */
+
+.dcc .party-name {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+
+  label {
+    font-size: 13px;
+  }
+
+  input {
+    flex: 1;
+  }
+}
+
+.dcc .party-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+  grid-gap: 10px;
+
+  .character-row {
+    border: var(--system-party-sheet-border);
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 96px repeat(12, 1fr);
+
+    .ac-summary {
+      margin-top: 3px;
+    }
+
+    .name {
+      grid-column: 1 / span 13;
+      grid-row: 1;
+      padding-top: 0;
+    }
+
+    .portrait {
+      grid-column: 1;
+      grid-row: 2 / span 4;
+
+      img {
+        height: 90px;
+        width: 90px;
+        padding: 6px;
+        cursor: pointer;
+
+        // Fixed 90x90 box stretched non-square member portraits; letterbox
+        // them instead so the aspect ratio is preserved (mirrors the PC and
+        // NPC portrait treatment).
+        object-fit: contain;
+      }
+    }
+
+    .occupation {
+      grid-column: span 7;
+      margin-top: 3px;
+    }
+
+    .special {
+      grid-column: span 11;
+    }
+
+    .hp-summary {
+      grid-column: span 2;
+      margin-top: 3px;
+
+      &.clickable {
+        cursor: pointer;
+        border-radius: 3px;
+        padding: 1px 4px;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.1);
+        }
+      }
+    }
+
+    .fa-heart.clickable {
+      cursor: pointer;
+
+      &:hover {
+        color: var(--system-damage-color);
+      }
+    }
+
+    .weapon {
+      grid-column: span 1;
+      justify-self: end;
+      margin-right: 5px;
+    }
+
+    .weapon-dropdown {
+      grid-column: span 4;
+      margin-bottom: 5px;
+    }
+
+    .filler {
+      grid-column: span 2;
+    }
+
+    .party-control {
+      justify-self: end;
+      margin-left: 10px;
+    }
+
+    .fa-shield-alt,
+    .fa-heart {
+      justify-self: end;
+      margin-top: 5px;
+    }
+  }
+
+  .empty-party {
+    text-align: center;
+    padding: 2rem;
+
+    p {
+      font-family: var(--system-data-font), serif;
+      font-style: italic;
+      color: var(--system-text-muted-color);
+      margin: 0;
+    }
+  }
+}
+

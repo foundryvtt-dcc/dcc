@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.forgeDocument.value",
+      "key": "system.skills.forgeDocument.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

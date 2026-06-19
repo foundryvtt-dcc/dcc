@@ -1,0 +1,672 @@
+/* ----------------------------------------- */
+/*  Actor Sheet
+  /* ----------------------------------------- */
+
+.dcc .character {
+  .character-grid {
+    column-gap: 8px;
+    display: grid;
+    grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
+    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
+    height: 100%;
+  }
+
+  .ability-scores {
+    display: grid;
+    grid-template-rows: repeat(5, 68px);
+    position: relative;
+
+    // Ability Score Log button - floats just above the top-right corner of
+    // the column (the corner itself is filled by the first score box) rather
+    // than adding a grid row
+    .ability-log-button {
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      height: 20px;
+      line-height: 20px;
+      opacity: 0.65;
+      padding: 0;
+      position: absolute;
+      right: 0;
+      top: -16px;
+      width: 20px;
+      z-index: 2;
+
+      &:hover {
+        box-shadow: none;
+        opacity: 1;
+      }
+
+      i {
+        color: var(--system-primary-color);
+        font-size: 14px;
+      }
+    }
+
+    .ability-box {
+      align-items: center;
+      display: grid;
+      font-size: 14px;
+      grid-template-columns: 85px 37px 60px;
+      grid-template-rows: 19px 20px 20px;
+
+      input {
+        border-width: 0 0 1px 0;
+        font-size: 14px;
+        margin-right: 3px;
+      }
+
+      > label {
+        grid-column-end: span 2;
+      }
+
+      > label[for='system.abilities.sta.value'],
+      label[for='system.abilities.lck.value'] {
+        padding-top: 1.5px;
+      }
+    }
+
+    .ability-score {
+      align-self: stretch;
+      border: 5px solid var(--system-border-color);
+      display: grid;
+      grid-row-end: span 3;
+      position: relative;
+
+      input {
+        align-self: center;
+        justify-self: center;
+        border: 0;
+        font-size: 30px;
+        height: 46px;
+        width: 47px;
+      }
+
+      .ability-effects {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .ability-effect-icon {
+          width: 16px;
+          height: 16px;
+          border: 0;
+          border-radius: 2px;
+          cursor: help;
+          opacity: 0.8;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+
+  .ac-and-hp {
+    display: grid;
+    grid-template-rows: 65px 19px 20px;
+    position: relative;
+    text-align: center;
+
+    input {
+      align-self: center;
+      border: 0;
+      font-size: 24px;
+      height: 28px;
+      justify-self: center;
+      margin-bottom: 5px;
+      width: 37px;
+
+      // Shrink the font for multi-digit AC/HP so the value stays inside the
+      // 37px box (three digits overflow at the base size).
+      &[data-len='3'] {
+        font-size: 20px;
+      }
+
+      &[data-len='4'] {
+        font-size: 15px;
+      }
+
+      &[data-len='5'] {
+        font-size: 12px;
+      }
+    }
+
+    .ac-effects,
+    .hp-effects {
+      position: absolute;
+      top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 10;
+    }
+
+    .ac-effects {
+      left: 2px;
+    }
+
+    .hp-effects {
+      right: 2px;
+    }
+
+    .attribute-effect-icon {
+      width: 16px;
+      height: 16px;
+      border: 0;
+      border-radius: 2px;
+      cursor: help;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .combat-basics {
+    align-items: center;
+    border: var(--system-frame-border);
+    border-top: 0;
+    column-gap: 5px;
+    display: grid;
+    font-size: 13px;
+    grid-column-end: span 3;
+    grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
+    grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+
+    label {
+      padding-left: 3px;
+      text-align: left;
+      padding-top: 2px;
+    }
+
+    input {
+      background: var(--system-input-background);
+      font-size: 14px;
+      height: 17px;
+      vertical-align: middle;
+      margin-right: 8px;
+      border: 0;
+    }
+
+    select {
+      background: var(--system-input-background);
+      font-size: 14px;
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 8px;
+      border: 0;
+    }
+  }
+
+  .languages,
+  .lucky-roll {
+    border: var(--system-frame-border);
+    border-top: 0;
+    display: grid;
+    font-size: 12px;
+    grid-column: 2;
+    grid-column-end: span 3;
+    grid-template-rows: 19px 19px;
+    height: 59px;
+    text-align: left;
+
+    label {
+      text-align: left;
+      padding-left: 3px;
+    }
+  }
+
+  .lucky-roll {
+    height: 79px;
+  }
+
+  .languages textarea {
+    background: none;
+    border: 0;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    grid-row: 2;
+    height: 17px;
+    min-height: 38px;
+  }
+
+  .lucky-roll textarea {
+    background: none;
+    border: 0;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    grid-row: 2;
+    height: 17px;
+    min-height: 58px;
+    overflow: hidden;
+    padding: 2px 5px 2px 5px;
+    resize: none;
+    text-align: left;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .melee-missile-attack-damage {
+    align-items: center;
+    display: grid;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row: 3;
+    grid-template-columns: subgrid;
+    grid-template-rows: 69px 69px;
+
+    .box-border {
+      position: relative;
+    }
+
+    input {
+      border: 0;
+      font-size: 14px;
+      height: 15px;
+      margin: 4px 8px 4px 8px;
+    }
+
+    label {
+      font-size: 12px;
+      padding-bottom: 2px;
+      height: 32px;
+      padding-top: 1px;
+    }
+
+    .attack-bonus-effects {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .attack-bonus-effect-icon {
+        width: 14px;
+        height: 14px;
+        border: 0;
+        border-radius: 2px;
+        cursor: help;
+        opacity: 0.8;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  .name-and-level {
+    column-gap: 12px;
+    display: grid;
+    grid-column-end: span 4;
+    grid-template-rows: minmax(20px, auto) minmax(20px, auto);
+    grid-template-columns: minmax(160px, auto) minmax(113px, auto) minmax(170px, auto);
+    text-align: left;
+
+    label {
+      font-size: 13px;
+      margin-right: 3px;
+    }
+  }
+
+  .portrait {
+    border: var(--system-frame-border);
+    border-top: 0;
+    display: grid;
+    grid-row: 7;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row-end: span 3;
+    grid-template-rows: 19px auto;
+    font-size: 14px;
+
+    img {
+      border: 0;
+      justify-self: center;
+      align-self: center;
+
+      // The img carries fixed height/width="100px" attributes, so a
+      // non-square portrait was stretched to fill the square. Letterbox it
+      // within the box instead (mirrors the NPC portrait treatment).
+      object-fit: contain;
+    }
+  }
+
+  .row-separator {
+    border-bottom: 2px dotted var(--system-secondary-color);
+    margin-bottom: 3px;
+  }
+
+  .saving-throws {
+    border: 0;
+    display: grid;
+    grid-column: 2;
+    grid-row: 5;
+    grid-row-end: span 3;
+    grid-template-rows: repeat(3, 68px);
+    margin: 0;
+    padding: 0;
+  }
+
+  .saving-throw-box {
+    align-items: center;
+    background: var(--system-frame-background);
+    column-gap: 7px;
+    display: grid;
+    grid-template-columns: 54px 55px;
+    height: 59px;
+    text-align: left;
+
+    .save-value {
+      position: relative;
+
+      input {
+        align-self: center;
+        background: var(--system-background);
+        border-radius: 100px;
+        font-size: 18px;
+        height: 50px;
+        margin-left: 5px;
+        width: 50px;
+      }
+
+      .save-effects {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .save-effect-icon {
+          width: 14px;
+          height: 14px;
+          border: 0;
+          border-radius: 2px;
+          cursor: help;
+          opacity: 0.8;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
+    }
+
+    label {
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--system-frame-title-color);
+    }
+  }
+}
+
+.dcc {
+  .npc-grid {
+    display: grid;
+    grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+    min-height: 100%;
+
+    textarea {
+      background: none;
+      border: 0;
+      font-family: var(--system-data-font), serif;
+      font-size: 12px;
+      line-height: 15px;
+      padding: 0;
+      resize: none;
+      text-align: left;
+
+      &:focus {
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        box-shadow: none;
+        outline: none;
+      }
+    }
+
+    .ac-and-hp {
+      display: grid;
+      font-size: 12px;
+      grid-template-rows: 50px 15px 17px;
+      position: relative;
+      text-align: center;
+
+      input {
+        align-self: center;
+        border: 0;
+        font-size: 22px;
+
+        // The default input height (17px) is shorter than the 22px line, so
+        // the tall digits were clipped top and bottom. Give them enough
+        // vertical room; the input is centred in the 50px shield row.
+        height: 26px;
+
+        // Three-digit AC/HP (e.g. 200) still fit at 22px; only shrink the
+        // font once values reach four or more digits so they don't overflow
+        // the shield.
+        &[data-len='4'] {
+          font-size: 18px;
+        }
+
+        &[data-len='5'] {
+          font-size: 14px;
+        }
+      }
+
+      .ac-effects,
+      .hp-effects {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        position: absolute;
+        top: 2px;
+        z-index: 10;
+      }
+
+      .ac-effects {
+        left: 2px;
+      }
+
+      .hp-effects {
+        right: 2px;
+      }
+
+      .attribute-effect-icon {
+        border: 0;
+        border-radius: 2px;
+        cursor: help;
+        height: 16px;
+        opacity: 0.8;
+        width: 16px;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .combat-basics {
+      column-gap: min(5px);
+      display: grid;
+      grid-template-columns: 77px minmax(75px, 1fr) 69px minmax(15px, 1fr);
+      grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
+      padding: 1px 5px 2px 3px;
+
+      label {
+        font-size: 12px;
+      }
+    }
+
+    .name-and-level {
+      column-gap: 12px;
+      display: grid;
+      grid-template-columns: subgrid;
+      text-align: left;
+
+      label {
+        font-size: 13px;
+      }
+    }
+
+    .portrait {
+      .portrait-wrap {
+        height: calc(100% - 19px);
+        width: 100%;
+      }
+
+      img {
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+      }
+    }
+
+    .saving-throws {
+      display: grid;
+      row-gap: min(4px);
+      margin: 0 0 0.25px 0;
+      padding: 0;
+
+      .saving-throw-box {
+        align-items: center;
+        background: var(--system-frame-background);
+        display: grid;
+        grid-template-columns: 24px auto;
+        text-align: left;
+
+        input {
+          align-self: center;
+          background: var(--system-background);
+          border-radius: 10px;
+          font-size: 12px;
+          height: 20px;
+          margin-left: 5px;
+          width: 20px;
+
+          // The save value carries a sign, so a double-digit modifier is
+          // three characters (e.g. +12) and overflows the 20px circle at the
+          // base size. Shrink the font to keep multi-digit saves inside.
+          &[data-len='3'] {
+            font-size: 10px;
+          }
+
+          &[data-len='4'] {
+            font-size: 8px;
+            letter-spacing: -0.5px;
+          }
+        }
+
+        .save-label-effects {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--system-frame-title-color);
+          }
+
+          .save-effects {
+            display: flex;
+            gap: 2px;
+
+            .save-effect-icon {
+              width: 12px;
+              height: 12px;
+              border: 0;
+              border-radius: 2px;
+              cursor: help;
+              opacity: 0.8;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+// Welcome Dialog
+.welcome-dialog {
+  aside {
+    display: grid;
+    grid-template-columns: 100%;
+    padding: 8px;
+  }
+
+  h2 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 24px;
+    margin: 20px 0 0 0;
+  }
+
+  h3 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 20px;
+    margin: 0;
+  }
+}
+
+// Release Notes Chat Card
+.dcc-release-notes-card {
+  p {
+    font-family: var(--system-heading-font), serif;
+  }
+
+  button {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    color: var(--system-primary-color);
+    cursor: pointer;
+    font-family: var(--system-data-font), serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 8px;
+
+    &:hover {
+      background: var(--system-secondary-color);
+      border-color: var(--system-accent-color);
+    }
+
+    &:active {
+      background: var(--system-value-display-background-color);
+    }
+
+    i {
+      margin-right: 6px;
+      width: 16px;
+    }
+  }
+
+  .dcc-release-message {
+    color: var(--system-primary-color);
+    font-family: var(--system-data-font), serif;
+    margin-top: 8px;
+    padding: 8px;
+  }
+}
+

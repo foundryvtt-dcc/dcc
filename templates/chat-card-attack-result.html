@@ -31,6 +31,9 @@
     </li></ol>
   </div>
 {{/if}}
+{{#if message.system.critTableLookupHint}}
+  <div class="pt-8 crit-lookup-hint"><em>{{message.system.critTableLookupHint}}</em></div>
+{{/if}}
 {{#if message.system.fumbleInlineRoll}}
   <div class="pt-8"><strong>{{message.system.fumblePrompt}}!</strong> {{{message.system.fumbleInlineRoll}}}</div>
 {{/if}}

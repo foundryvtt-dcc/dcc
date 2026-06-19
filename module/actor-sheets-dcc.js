@@ -1,161 +1,47 @@
-/* global game, foundry */
+/* global game */
 // noinspection JSClosureCompilerSyntax
 
 /**
- * DCC specific character sheet overrides
+ * DCC PC sheet bases + per-class subclasses.
+ *
+ * `DCCSheet` is the Player-side intermediate between `DCCActorSheet`
+ * (NPC base) and the per-class subclasses. It consumes the
+ * `CONFIG.DCC.sheetParts` registry via inherited static getters keyed
+ * on `static CLASS_ID`, so each per-class subclass is a 4-line stub
+ * that just pins its classId. `_prepareContext` runs the shared
+ * `applyClassDefaults` + `applyClassStartingItems` write/auto-create
+ * pair gated on `this.constructor.CLASS_ID` resolving to a registered
+ * entry.
+ *
+ * Sibling modules registering a homebrew class do the four-call
+ * sequence in their `init` hook (see `EXTENSION_API.md`):
+ *
+ *   game.dcc.registerClassMixin('<id>', mixinFn)
+ *   game.dcc.registerClassDefaults('<id>', defaults)
+ *   game.dcc.registerClassStartingItems('<id>', items)  // optional
+ *   game.dcc.registerSheetPart('<id>', { parts, tabs })
+ *
+ * Then a tiny sheet subclass:
+ *
+ *   class MyHomebrewSheet extends DCCSheet {
+ *     static DEFAULT_OPTIONS = { position: { height: 660 } }
+ *     static CLASS_ID = '<id>'
+ *   }
+ *
+ * registered via `game.dcc.registerActorSheet('Player', MyHomebrewSheet, …)`.
  */
 
 import DCCActorSheet from './actor-sheet.js'
-
-const { TextEditor } = foundry.applications.ux
-
-/**
- * Extend the zero-level/NPC sheet for a Cleric
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetCleric extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    clericSpells: {
-      id: 'clericSpells',
-      template: 'systems/dcc/templates/actor-partial-cleric-spells.html'
-    },
-    cleric: {
-      id: 'cleric',
-      template: 'systems/dcc/templates/actor-partial-cleric.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'cleric', group: 'sheet', label: 'DCC.Cleric' },
-        { id: 'clericSpells', group: 'sheet', label: 'DCC.ClericSpells' }
-      ]
-    }
-  }
-
-  /** @inheritDoc */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Cleric') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Cleric'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
-        'system.details.sheetClass': 'Cleric',
-        'system.class.spellCheckAbility': 'per',
-        'system.details.critRange': 20,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.config.showBackstab': false,
-        'system.config.showSpells': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
-      })
-    }
-
-    return context
-  }
-}
+import { applyClassDefaults, applyClassStartingItems } from './extension-api.mjs'
 
 /**
- * Extend the zero-level/NPC sheet for a Thief
+ * Shared Player-side sheet base. Reads parts + tabs from the
+ * `CONFIG.DCC.sheetParts` registry by `this.CLASS_ID`; the per-class
+ * subclasses below pin that field and inherit everything else.
+ *
  * @extends {DCCActorSheet}
  */
-class DCCActorSheetThief extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    thief: {
-      id: 'thief',
-      template: 'systems/dcc/templates/actor-partial-thief.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'thief', group: 'sheet', label: 'DCC.Thief' }
-      ]
-    }
-  }
-
-  /** @override */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Thief') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Thief'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
-        'system.details.sheetClass': 'Thief',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.showBackstab': true,
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showSpells': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
-      })
-    }
-
-    return context
-  }
-}
-
-/**
- * Extend the zero-level/NPC sheet for a Halfling
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetHalfling extends DCCActorSheet {
+class DCCSheet extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
@@ -164,385 +50,110 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   }
 
   /**
-   * Parts specific to this class
-   **/
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    halfling: {
-      id: 'halfling',
-      template: 'systems/dcc/templates/actor-partial-halfling.html'
-    }
-  }
+   * Lowercase canonical class identifier (`'halfling'`, `'cleric'`, …)
+   * — pinned by each per-class subclass. Resolves the entry in
+   * `CONFIG.DCC.sheetParts` used for `CLASS_PARTS` + `CLASS_TABS` and
+   * the `classId` passed to `applyClassDefaults` /
+   * `applyClassStartingItems` on first open. Subclasses MUST override.
+   * @type {string | null}
+   */
+  static CLASS_ID = null
 
   /**
-   * Tabs specific to this class
-   **/
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'halfling', group: 'sheet', label: 'DCC.Halfling' }
-      ]
-    }
+   * Inherited static getter — resolves CLASS_PARTS from
+   * `CONFIG.DCC.sheetParts[this.CLASS_ID].parts` at lookup time.
+   * `this` in a static getter is the class the getter is accessed on
+   * (e.g. `DCCActorSheetCleric.CLASS_PARTS` → `this === DCCActorSheetCleric`
+   * → `this.CLASS_ID === 'cleric'` → registry lookup).
+   */
+  static get CLASS_PARTS () {
+    if (!this.CLASS_ID) return {}
+    return globalThis.CONFIG?.DCC?.sheetParts?.[this.CLASS_ID]?.parts ?? {}
   }
 
-  /** @override */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Halfling') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Halfling'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink')),
-        'system.details.sheetClass': 'Halfling',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
-      })
-    }
-
-    return context
-  }
-}
-
-/**
- * Extend the zero-level/NPC sheet for a Warrior
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetWarrior extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    warrior: {
-      id: 'warrior',
-      template: 'systems/dcc/templates/actor-partial-warrior.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'warrior', group: 'sheet', label: 'DCC.Warrior' }
-      ]
-    }
+  /** Inherited static getter for tabs — same resolution pattern. */
+  static get CLASS_TABS () {
+    if (!this.CLASS_ID) return {}
+    return globalThis.CONFIG?.DCC?.sheetParts?.[this.CLASS_ID]?.tabs ?? {}
   }
 
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Warrior') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Warrior'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
-        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
-        'system.details.sheetClass': 'Warrior',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'autoPerAttack',
-        'system.config.addClassLevelToInitiative': true,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
-        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
-      })
-    }
-
-    return context
-  }
-}
-
-/**
- * Extend the zero-level/NPC sheet for a Wizard
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetWizard extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    wizard: {
-      id: 'wizard',
-      template: 'systems/dcc/templates/actor-partial-wizard.html'
-    },
-    wizardSpells: {
-      id: 'wizardSpells',
-      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'wizard', group: 'sheet', label: 'DCC.Wizard' },
-        { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
-      ]
-    }
-  }
-
-  /** @inheritDoc */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Wizard') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Wizard'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
-        'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
-        'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink')),
-        'system.details.sheetClass': 'Wizard',
-        'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
-        'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
-        'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
-      })
-    }
-
-    return context
-  }
-}
-
-/**
- * Extend the zero-level/NPC sheet for a Dwarf
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetDwarf extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    dwarf: {
-      id: 'dwarf',
-      template: 'systems/dcc/templates/actor-partial-dwarf.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'dwarf', group: 'sheet', label: 'DCC.Dwarf' }
-      ]
-    }
-  }
-
-  /** @inheritDoc */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Dwarf') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Dwarf'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
-        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
-        'system.details.sheetClass': 'Dwarf',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'autoPerAttack',
-        'system.skills.shieldBash.useDeed': true,
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false
-      })
-
-      // Check if the dwarf has a shield bash weapon
-      const shieldBashName = game.i18n.localize('DCC.ShieldBash')
-      const hasBashWeapon = this.options.document.items.some(item =>
-        item.type === 'weapon' &&
-        item.name === shieldBashName
-      )
-
-      // If no shield bash weapon exists, create it
-      if (!hasBashWeapon) {
-        // Create the item after this render completes
-        await this.options.document.createEmbeddedDocuments('Item', [{
-          name: shieldBashName,
-          type: 'weapon',
-          img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
-          system: {
-            melee: true,
-            damage: '1d3',
-            config: {
-              actionDieOverride: '1d14'
-            }
-          }
-        }])
-        // Explicitly trigger a re-render to show the new item
-        this.render(false)
+    const classId = this.constructor.CLASS_ID
+    if (classId) {
+      const result = await applyClassDefaults(this.options.document, classId)
+      if (result === 'initialized') {
+        const created = await applyClassStartingItems(this.options.document, classId)
+        if (created.length > 0) this.render(false)
       }
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
-        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
-      })
     }
-
     return context
   }
 }
 
 /**
- * Extend the zero-level/NPC sheet for an Elf
- * @extends {DCCActorSheet}
+ * Extend the zero-level/NPC sheet for a Cleric.
+ * @extends {DCCSheet}
  */
-class DCCActorSheetElf extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 660
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    elf: {
-      id: 'elf',
-      template: 'systems/dcc/templates/actor-partial-elf.html'
-    },
-    wizardSpells: {
-      id: 'wizardSpells',
-      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'elf', group: 'sheet', label: 'DCC.Elf' },
-        { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
-      ]
-    }
-  }
-
-  /** @inheritDoc */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Elf') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Elf'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink')),
-        'system.details.sheetClass': 'Elf',
-        'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
-      })
-    }
-
-    return context
-  }
+class DCCActorSheetCleric extends DCCSheet {
+  static CLASS_ID = 'cleric'
 }
 
 /**
- * Extend the sheet for a generic upper level character
+ * Extend the zero-level/NPC sheet for a Thief.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetThief extends DCCSheet {
+  static CLASS_ID = 'thief'
+}
+
+/**
+ * Extend the zero-level/NPC sheet for a Halfling.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetHalfling extends DCCSheet {
+  static CLASS_ID = 'halfling'
+}
+
+/**
+ * Extend the zero-level/NPC sheet for a Warrior.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetWarrior extends DCCSheet {
+  static CLASS_ID = 'warrior'
+}
+
+/**
+ * Extend the zero-level/NPC sheet for a Wizard.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetWizard extends DCCSheet {
+  static CLASS_ID = 'wizard'
+}
+
+/**
+ * Extend the zero-level/NPC sheet for a Dwarf.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetDwarf extends DCCSheet {
+  static CLASS_ID = 'dwarf'
+}
+
+/**
+ * Extend the zero-level/NPC sheet for an Elf.
+ * @extends {DCCSheet}
+ */
+class DCCActorSheetElf extends DCCSheet {
+  static CLASS_ID = 'elf'
+}
+
+/**
+ * Extend the sheet for a generic upper level character.
+ * Stays separate from the per-class subclasses — no `CLASS_ID`, uses
+ * a fully-static `PARTS` declaration, and its initial-setup logic
+ * isn't class-bound (no enriched-HTML link, no auto-created starting
+ * items).
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
@@ -612,6 +223,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
 }
 
 export {
+  DCCSheet,
   DCCActorSheetCleric,
   DCCActorSheetThief,
   DCCActorSheetHalfling,

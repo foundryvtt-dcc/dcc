@@ -1,9 +1,17 @@
-/* global CONFIG, document, fromUuid, game, foundry, ResizeObserver, ui */
+/* global CONFIG, document, game, foundry, ResizeObserver */
 
+import AbilityScoreConfig from './ability-score-config.js'
+import { AbilityScoreLogDialog, abilityScoreLogEnabled } from './ability-score-log.js'
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
+import { applyActiveVariantSheetTheme } from './extension-api.mjs'
+import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
+import { prepareItems } from './actor-sheet/items.mjs'
+import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks } from './actor-sheet/presentation.mjs'
+import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
+import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -30,6 +38,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       applyDisapproval: this.#applyDisapproval,
       castEquipmentSpell: this.#castEquipmentSpell,
       configureActor: this.#configureActor,
+      editAbilityScore: this.#editAbilityScore,
+      viewAbilityLog: this.#viewAbilityLog,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
@@ -75,9 +85,25 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           icon: 'fas fa-code',
           label: 'DCC.ConfigureSheet',
           ownership: 'OWNER'
+        },
+        {
+          action: 'viewAbilityLog',
+          icon: 'fas fa-clock-rotate-left',
+          label: 'DCC.AbilityLogTitle',
+          ownership: 'OWNER'
         }
       ]
     }
+  }
+
+  /** @inheritDoc */
+  _getHeaderControls () {
+    const controls = super._getHeaderControls()
+    // The ability score log is gated by a world setting and PC-only for now
+    if (!abilityScoreLogEnabled() || this.options.document.type !== 'Player') {
+      return controls.filter(c => c.action !== 'viewAbilityLog')
+    }
+    return controls
   }
 
   /** @inheritDoc */
@@ -160,27 +186,29 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.options.classes.push(this.options.document.type === 'Player' ? 'pc' : 'npc')
     }
 
-    const preparedItems = await this.#prepareItems()
+    const preparedItems = await prepareItems(this.options.document)
 
+    const actor = this.options.document
     foundry.utils.mergeObject(context, {
-      abilityEffects: this.#prepareAbilityEffects(),
-      attackBonusEffects: this.#prepareAttackBonusEffects(),
-      saveEffects: this.#prepareSaveEffects(),
-      attributeEffects: this.#prepareAttributeEffects(),
+      abilityScoreLogEnabled: abilityScoreLogEnabled() && this.options.document.type === 'Player',
+      abilityEffects: prepareAbilityEffects(actor),
+      attackBonusEffects: prepareAttackBonusEffects(actor),
+      saveEffects: prepareSaveEffects(actor),
+      attributeEffects: prepareAttributeEffects(actor),
       actor: this.options.document,
-      compendiumLinks: this.#prepareCompendiumLinks(),
+      compendiumLinks: prepareCompendiumLinks(),
       config: CONFIG.DCC,
-      corruptionHTML: await this.#prepareCorruption(),
+      corruptionHTML: await prepareCorruption(actor),
       documentType: 'Actor',
       effects: this.options.document.effects,
       incomplete: {},
-      img: await this.#prepareImage(),
+      img: prepareImage(actor),
       isOwner: this.options.document.isOwner,
       isNPC: this.options.document.type === 'NPC',
       isPC: this.options.document.type === 'Player',
       isZero: this.options.document.system.details.level.value === 0,
       items: this.options.document.items,
-      notesHTML: await this.#prepareNotes(),
+      notesHTML: await prepareNotes(actor),
       parts: {},
       system: this.options.document.system,
       ...preparedItems
@@ -194,6 +222,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
     this.#setupResponsiveTabs()
     this.#fitFixedNumericFields()
+    applyActiveVariantSheetTheme(this.element)
   }
 
   /**
@@ -391,589 +420,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return tabs
   }
 
-  /**
-   * Organize and classify Items for Character sheets.
-   *
-   * @return {undefined}
-   */
-  async #prepareItems () {
-    // Initialize categories
-    const ammunition = []
-    const armor = []
-    const coins = []
-    const containers = []
-    const equipment = []
-    const mounts = []
-    const spells = {}
-    const skills = []
-    const treasure = []
-    const weapons = {
-      melee: [],
-      ranged: []
-    }
-
-    // Convert items collection to array immediately to ensure proper initialization
-    let inventory = [...this.options.document.items]
-
-    if (this.options.document.system.config.sortInventory) {
-      // Lexical sort
-      inventory = inventory.sort((a, b) => a.name.localeCompare(b.name))
-    }
-
-    // Build a set of contained item IDs to filter them from normal categories
-    // Only treat as contained if the referenced container actually exists on this actor
-    const containedItemIds = new Set()
-    for (const i of inventory) {
-      if (i.system.container && this.options.document.items.get(i.system.container)) {
-        containedItemIds.add(i._id)
-      }
-    }
-
-    // Iterate through items, allocating to categories
-    const removeEmptyItems = this.options.document.system.config.removeEmptyItems
-    for (const i of inventory) {
-      // Remove physical items with zero quantity
-      if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
-        await this.options.document.deleteEmbeddedDocuments('Item', [i._id])
-        continue
-      }
-
-      // Fix the icon for items Foundry created with no icon or the mystery-man icon
-      if (!i.img || i.img === 'icons/svg/mystery-man.svg') {
-        i.img = EntityImages.imageForItem(i.type)
-      }
-
-      // Skip contained items — they will be nested under their container
-      if (containedItemIds.has(i._id)) continue
-
-      if (i.type === 'container') {
-        // Build a plain object for template rendering since DCCItem has read-only getters
-        const item = this.options.document.items.get(i._id)
-        const containerData = {
-          _id: i._id,
-          name: i.name,
-          img: i.img,
-          type: i.type,
-          system: i.system,
-          containerContents: item.contents,
-          contentsWeight: item.contentsWeight,
-          contentsItemCount: item.contentsItemCount,
-          totalWeight: item.totalWeight,
-          availableWeightCapacity: item.availableWeightCapacity,
-          availableItemCapacity: item.availableItemCapacity
-        }
-        const maxWeight = i.system.capacity?.weight || 0
-        const maxItems = i.system.capacity?.items || 0
-        const summaryParts = []
-        if (maxWeight > 0) {
-          summaryParts.push(`${Number(containerData.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
-        }
-        if (maxItems > 0) {
-          summaryParts.push(`${containerData.contentsItemCount}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
-        }
-        containerData.capacitySummary = summaryParts.join(', ')
-        containers.push(containerData)
-      } else if (i.type === 'weapon') {
-        if (i.system.melee) {
-          weapons.melee.push(i)
-        } else {
-          weapons.ranged.push(i)
-        }
-      } else if (i.type === 'ammunition') {
-        ammunition.push(i)
-      } else if (i.type === 'armor') {
-        armor.push(i)
-      } else if (i.type === 'equipment') {
-        equipment.push(i)
-      } else if (i.type === 'mount') {
-        mounts.push(i)
-      } else if (i.type === 'spell') {
-        if (!i.system.level) {
-          i.system.level = 0
-        }
-        // Enrich HTML for spell description for tooltips
-        if (i.system.description?.value) {
-          i.descriptionHTML = await TextEditor.enrichHTML(i.system.description.value, {
-            relativeTo: i,
-            secrets: this.options.document.isOwner
-          })
-        }
-        if (spells[i.system.level]) {
-          spells[i.system.level].push(i)
-        } else {
-          spells[i.system.level] = [i]
-        }
-      } else if (i.type === 'skill') {
-        // Resolve the die shown in the Skills "Die" column. A skill
-        // with its own die (useDie) shows that die. With useDie off, a
-        // rollable skill (value / ability / level) inherits the actor's
-        // action die — matching what `rollSkillCheck` actually rolls —
-        // so NPC skills no longer display "--" while still rolling the
-        // action die. A pure description-only skill shows nothing.
-        const skillConfig = i.system.config || {}
-        if (skillConfig.useDie && i.system.die) {
-          i.displayDie = i.system.die
-        } else if (!skillConfig.useDie && (skillConfig.useValue || skillConfig.useAbility || skillConfig.useLevel)) {
-          i.displayDie = this.options.document.getActionDice()[0]?.formula || '1d20'
-        } else {
-          i.displayDie = null
-        }
-        skills.push(i)
-      } else if (i.type === 'treasure') {
-        let treatAsCoins = false
-
-        if (i.system.isCoins) {
-          // Safe to treat as coins if the item's value is resolved
-          const item = this.options.document.items.get(i._id)
-          if (!item.needsValueRoll()) {
-            treatAsCoins = true
-          }
-        }
-
-        if (treatAsCoins) {
-          coins.push(i)
-        } else {
-          treasure.push(i)
-        }
-      }
-    }
-
-    // Combine any extra coins into a single item
-    if (coins.length) {
-      const funds = {
-        pp: parseInt(this.options.document.system.currency.pp),
-        ep: parseInt(this.options.document.system.currency.ep),
-        gp: parseInt(this.options.document.system.currency.gp),
-        sp: parseInt(this.options.document.system.currency.sp),
-        cp: parseInt(this.options.document.system.currency.cp)
-      }
-      let needsUpdate = false
-      for (const c of coins) {
-        funds.pp += parseInt(c.system.value.pp)
-        funds.ep += parseInt(c.system.value.ep)
-        funds.gp += parseInt(c.system.value.gp)
-        funds.sp += parseInt(c.system.value.sp)
-        funds.cp += parseInt(c.system.value.cp)
-        await this.options.document.deleteEmbeddedDocuments('Item', [c._id])
-        needsUpdate = true
-      }
-      if (needsUpdate) {
-        await this.options.document.update({
-          'system.currency': funds
-        }, { diff: true })
-      }
-    }
-
-    // Helper function to calculate total weight for an array of items
-    const calculateWeight = (items) => {
-      let total = 0
-      for (const item of items) {
-        const weight = parseFloat(item.system.weight) || 0
-        const quantity = parseInt(item.system.quantity) || 1
-        total += weight * quantity
-      }
-      return Number.isFinite(total) ? total : 0
-    }
-
-    // Helper function to calculate treasure weight with configurable coin weight
-    // When isCoins is true, weight = total coins / coinsPerPound (default 10)
-    const coinsPerPound = game.settings.get('dcc', 'coinWeight') || 0
-    const calculateTreasureWeight = (items) => {
-      let total = 0
-      for (const item of items) {
-        if (item.system.isCoins && coinsPerPound > 0) {
-          // Configurable coin weight (default: 10 coins = 1 pound)
-          const value = item.system.value || {}
-          const totalCoins = (value.pp || 0) + (value.ep || 0) + (value.gp || 0) + (value.sp || 0) + (value.cp || 0)
-          total += totalCoins / coinsPerPound
-        } else if (!item.system.isCoins) {
-          // Non-coin treasure uses standard weight * quantity
-          const weight = parseFloat(item.system.weight) || 0
-          const quantity = parseInt(item.system.quantity) || 1
-          total += weight * quantity
-        }
-        // If isCoins is true but coinsPerPound is 0, coins have no weight
-      }
-      return Number.isFinite(total) ? total : 0
-    }
-
-    // Calculate container weight (each container's totalWeight includes contents with reduction)
-    const containersWeight = containers.reduce((sum, c) => sum + (c.totalWeight || 0), 0)
-
-    // Calculate weights for each section
-    const meleeWeight = calculateWeight(weapons.melee)
-    const rangedWeight = calculateWeight(weapons.ranged)
-    const armorWeight = calculateWeight(armor)
-    const equipmentWeight = calculateWeight(equipment)
-    const ammunitionWeight = calculateWeight(ammunition)
-    const mountsWeight = calculateWeight(mounts)
-
-    // Calculate treasure weight including actor's currency (configurable coins per pound)
-    const actorCurrency = this.options.document.system.currency || {}
-    const actorCoinCount = (actorCurrency.pp || 0) + (actorCurrency.ep || 0) + (actorCurrency.gp || 0) + (actorCurrency.sp || 0) + (actorCurrency.cp || 0)
-    const actorCoinWeight = coinsPerPound > 0 ? actorCoinCount / coinsPerPound : 0
-    const treasureWeight = calculateTreasureWeight(treasure) + actorCoinWeight
-
-    // Return the inventory object
-    return {
-      'equipment.ammunition': ammunition,
-      'equipment.armor': armor,
-      'equipment.containers': containers,
-      'equipment.equipment': equipment,
-      'equipment.mounts': mounts,
-      'equipment.treasure': treasure,
-      'equipment.weapons': weapons,
-      'equipment.weights': {
-        melee: meleeWeight,
-        ranged: rangedWeight,
-        armor: armorWeight,
-        containers: containersWeight,
-        equipment: equipmentWeight,
-        ammunition: ammunitionWeight,
-        mounts: mountsWeight,
-        treasure: treasureWeight,
-        total: meleeWeight + rangedWeight + armorWeight + containersWeight + equipmentWeight + ammunitionWeight + mountsWeight + treasureWeight
-      },
-      skills,
-      spells
-    }
-  }
-
   /* -------------------------------------------- */
 
   /**
-   * Prepare enriched notes HTML for the actor.
-   * @returns {notes: string}
-   */
-  async #prepareNotes () {
-    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-    return await TextEditor.enrichHTML(this.options.document.system.details.notes.value, context)
-  }
-
-  /**
-   * Prepare enriched corruption HTML for the actor.
-   * @returns {corruption: string}
-   */
-  async #prepareCorruption () {
-    if (this.options.document.system.class) {
-      const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-      const corruption = this.options.document.system.class.corruption || ''
-      return await TextEditor.enrichHTML(corruption, context)
-    }
-    return ''
-  }
-
-  #prepareImage () {
-    // Default images are now set in preCreateActor hook, so this is just a fallback
-    // for actors created before that hook existed
-    if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
-      const img = EntityImages.imageForActor(this.options.document.type)
-      // Only return the image for display - don't update to avoid race conditions
-      // The preCreateActor hook handles setting default images for new actors
-      return img
-    }
-    return this.options.document.img
-  }
-
-  /**
-   * Collect active effects that modify ability scores
-   * Returns an object keyed by ability ID with arrays of effect info
-   */
-  #prepareAbilityEffects () {
-    const abilityEffects = {
-      str: [],
-      agl: [],
-      sta: [],
-      per: [],
-      int: [],
-      lck: []
-    }
-
-    const actor = this.options.document
-
-    // Collect all active effects (from actor and transferred from items)
-    const allEffects = []
-
-    // Effects directly on actor
-    for (const effect of actor.effects) {
-      if (!effect.disabled && !effect.isSuppressed) {
-        allEffects.push(effect)
-      }
-    }
-
-    // Effects from equipped items that transfer
-    for (const item of actor.items) {
-      const isEquipped = item.system?.equipped ?? true
-      if (isEquipped) {
-        for (const effect of item.effects) {
-          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
-            allEffects.push(effect)
-          }
-        }
-      }
-    }
-
-    // Check each effect for ability modifications
-    for (const effect of allEffects) {
-      if (!effect.changes) continue
-
-      for (const change of effect.changes) {
-        const key = change.key
-        // Match patterns like system.abilities.str.value or system.abilities.str.mod
-        const match = key.match(/^system\.abilities\.(\w+)\.(value|mod|max)$/)
-        if (match) {
-          const abilityId = match[1]
-          if (abilityEffects[abilityId]) {
-            // Check if this effect is already added for this ability
-            const existing = abilityEffects[abilityId].find(e => e.id === effect.id)
-            if (!existing) {
-              abilityEffects[abilityId].push({
-                id: effect.id,
-                name: effect.name,
-                img: effect.img || 'icons/svg/aura.svg',
-                value: change.value,
-                type: change.type
-              })
-            }
-          }
-        }
-      }
-    }
-
-    return abilityEffects
-  }
-
-  /**
-   * Collect active effects that modify attack hit/damage bonuses
-   * Returns an object keyed by bonus type with arrays of effect info
-   */
-  #prepareAttackBonusEffects () {
-    const attackBonusEffects = {
-      meleeHit: [],
-      meleeDamage: [],
-      missileHit: [],
-      missileDamage: []
-    }
-
-    const actor = this.options.document
-
-    // Collect all active effects (from actor and transferred from items)
-    const allEffects = []
-
-    // Effects directly on actor
-    for (const effect of actor.effects) {
-      if (!effect.disabled && !effect.isSuppressed) {
-        allEffects.push(effect)
-      }
-    }
-
-    // Effects from equipped items that transfer
-    for (const item of actor.items) {
-      const isEquipped = item.system?.equipped ?? true
-      if (isEquipped) {
-        for (const effect of item.effects) {
-          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
-            allEffects.push(effect)
-          }
-        }
-      }
-    }
-
-    // Map from regex capture groups to effect keys
-    const keyMap = {
-      'attackHitBonus.melee': 'meleeHit',
-      'attackHitBonus.missile': 'missileHit',
-      'attackDamageBonus.melee': 'meleeDamage',
-      'attackDamageBonus.missile': 'missileDamage'
-    }
-
-    // Check each effect for attack bonus modifications
-    for (const effect of allEffects) {
-      if (!effect.changes) continue
-
-      for (const change of effect.changes) {
-        const key = change.key
-        const match = key.match(/^system\.details\.(attackHitBonus|attackDamageBonus)\.(melee|missile)\.(adjustment|value)$/)
-        if (match) {
-          const effectKey = keyMap[`${match[1]}.${match[2]}`]
-          if (effectKey) {
-            const existing = attackBonusEffects[effectKey].find(e => e.id === effect.id)
-            if (!existing) {
-              attackBonusEffects[effectKey].push({
-                id: effect.id,
-                name: effect.name,
-                img: effect.img || 'icons/svg/aura.svg',
-                value: change.value,
-                type: change.type
-              })
-            }
-          }
-        }
-      }
-    }
-
-    return attackBonusEffects
-  }
-
-  /**
-   * Collect active effects that modify saving throws
-   * Returns an object keyed by save ID with arrays of effect info
-   */
-  #prepareSaveEffects () {
-    const saveEffects = {
-      ref: [],
-      frt: [],
-      wil: []
-    }
-
-    const actor = this.options.document
-
-    // Collect all active effects (from actor and transferred from items)
-    const allEffects = []
-
-    // Effects directly on actor
-    for (const effect of actor.effects) {
-      if (!effect.disabled && !effect.isSuppressed) {
-        allEffects.push(effect)
-      }
-    }
-
-    // Effects from equipped items that transfer
-    for (const item of actor.items) {
-      const isEquipped = item.system?.equipped ?? true
-      if (isEquipped) {
-        for (const effect of item.effects) {
-          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
-            allEffects.push(effect)
-          }
-        }
-      }
-    }
-
-    // Check each effect for save modifications
-    for (const effect of allEffects) {
-      if (!effect.changes) continue
-
-      for (const change of effect.changes) {
-        const key = change.key
-        // Match patterns like system.saves.ref.otherBonus or system.saves.ref.value
-        const match = key.match(/^system\.saves\.(\w+)\.(otherBonus|value)$/)
-        if (match) {
-          const saveId = match[1]
-          if (saveEffects[saveId]) {
-            // Check if this effect is already added for this save
-            const existing = saveEffects[saveId].find(e => e.id === effect.id)
-            if (!existing) {
-              saveEffects[saveId].push({
-                id: effect.id,
-                name: effect.name,
-                img: effect.img || 'icons/svg/aura.svg',
-                value: change.value,
-                type: change.type
-              })
-            }
-          }
-        }
-      }
-    }
-
-    return saveEffects
-  }
-
-  /**
-   * Collect active effects that modify AC and HP attributes
-   * Returns an object with ac and hp arrays of effect info
-   */
-  #prepareAttributeEffects () {
-    const attributeEffects = {
-      ac: [],
-      hp: []
-    }
-
-    const actor = this.options.document
-
-    // Collect all active effects (from actor and transferred from items)
-    const allEffects = []
-
-    // Effects directly on actor
-    for (const effect of actor.effects) {
-      if (!effect.disabled && !effect.isSuppressed) {
-        allEffects.push(effect)
-      }
-    }
-
-    // Effects from equipped items that transfer
-    for (const item of actor.items) {
-      const isEquipped = item.system?.equipped ?? true
-      if (isEquipped) {
-        for (const effect of item.effects) {
-          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
-            allEffects.push(effect)
-          }
-        }
-      }
-    }
-
-    // Check each effect for AC and HP modifications
-    for (const effect of allEffects) {
-      if (!effect.changes) continue
-
-      for (const change of effect.changes) {
-        const key = change.key
-        // Match patterns for AC: system.attributes.ac.value, system.attributes.ac.otherMod
-        if (key.match(/^system\.attributes\.ac\.(value|otherMod)$/)) {
-          const existing = attributeEffects.ac.find(e => e.id === effect.id)
-          if (!existing) {
-            attributeEffects.ac.push({
-              id: effect.id,
-              name: effect.name,
-              img: effect.img || 'icons/svg/aura.svg',
-              value: change.value,
-              type: change.type
-            })
-          }
-        }
-        // Match patterns for HP: system.attributes.hp.value, system.attributes.hp.max, system.attributes.hp.temp
-        if (key.match(/^system\.attributes\.hp\.(value|max|temp)$/)) {
-          const existing = attributeEffects.hp.find(e => e.id === effect.id)
-          if (!existing) {
-            attributeEffects.hp.push({
-              id: effect.id,
-              name: effect.name,
-              img: effect.img || 'icons/svg/aura.svg',
-              value: change.value,
-              type: change.type
-            })
-          }
-        }
-      }
-    }
-
-    return attributeEffects
-  }
-
-  /**
-   * Prepare compendium links for the equipment tab
-   * Returns links from CONFIG.DCC if the dcc-core-book module is active
-   * @returns {Object|null} Object with compendium pack names keyed by section, or null if module not active
-   */
-  #prepareCompendiumLinks () {
-    return CONFIG.DCC.coreBookCompendiumLinks
-  }
-
-  /**
-   * Search the object and then its parent elements for a dataset attribute
+   * Search the object and then its parent elements for a dataset attribute.
+   * Thin static wrapper delegating to the `findDataset` free function in
+   * `actor-sheet/drag-drop.mjs` — preserves the public static surface consumed
+   * cross-module (`party-sheet.js`) and documented (`CLICKABLE_ITEMS.md`).
    @param {Object} element    The starting element
    @param {String} attribute  The name of the dataset attribute
    */
   static findDataset (element, attribute) {
-    while (element && !(attribute in element.dataset)) {
-      element = element.parentElement
-    }
-    if (element && attribute in element.dataset) {
-      return element.dataset[attribute]
-    }
-    return null
+    return findDataset(element, attribute)
   }
 
   /**
@@ -1181,216 +639,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Create a macro when a rollable element is dragged
+   * Create a macro when a rollable element is dragged. The `dragData` payload is
+   * built by the `buildDragStartData` free function in
+   * `actor-sheet/drag-drop.mjs`; this wrapper owns the only side effect (writing
+   * the payload to the drag event).
    * @param {Event} event
    * @override */
   _onDragStart (event) {
-    const li = event.currentTarget
-
-    // Check if element is draggable
-    if (!li.dataset.drag) return
-
-    let dragData = null
-
-    // Handle ActiveEffect drags
-    if (li.dataset.dragType === 'ActiveEffect') {
-      const effectId = li.dataset.effectId
-      const effect = this.options.document.effects.get(effectId)
-      if (effect) {
-        dragData = {
-          type: 'ActiveEffect',
-          uuid: effect.uuid,
-          data: effect.toObject()
-        }
-        event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
-      }
-      return
-    }
-
-    // Use data-drag-action for specific drag types
-    const dragAction = li.dataset.dragAction
-
-    // Get common data
-    const actorId = this.options.document.id
-    const classes = event.target.classList
-
-    switch (dragAction) {
-      case 'ability': {
-        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
-        const labelFor = event.target.getAttribute('for') || ''
-        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
-        dragData = {
-          type: 'Ability',
-          actorId,
-          data: {
-            abilityId,
-            rollUnder
-          }
-        }
-      }
-        break
-
-      case 'initiative':
-        dragData = {
-          type: 'Initiative',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'hitDice':
-        dragData = {
-          type: 'Hit Dice',
-          actorId,
-          data: {
-            dice: this.options.document.system.attributes.hitDice.value
-          }
-        }
-        break
-
-      case 'save': {
-        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
-        dragData = {
-          type: 'Save',
-          actorId,
-          data: saveId
-        }
-      }
-        break
-
-      case 'skill': {
-        const skillId = DCCActorSheet.findDataset(event.currentTarget, 'skill')
-        const actorSkill = this.options.document.system.skills[skillId]
-        const skillName = actorSkill ? actorSkill.label : skillId
-        dragData = {
-          type: 'Skill',
-          actorId,
-          data: {
-            skillId,
-            skillName
-          }
-        }
-      }
-        break
-
-      case 'luckDie':
-        dragData = {
-          type: 'Luck Die',
-          actorId,
-          data: {
-            die: this.options.document.system.class.luckDie
-          }
-        }
-        break
-
-      case 'spellCheck': {
-        const ability = DCCActorSheet.findDataset(event.currentTarget, 'ability')
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const spell = DCCActorSheet.findDataset(event.currentTarget, 'spell')
-
-        const dragDataContent = { ability }
-
-        // If we have an itemId, include spell details for item-based macros
-        if (itemId) {
-          const item = this.options.document.items.get(itemId)
-          if (item) {
-            dragDataContent.itemId = itemId
-            dragDataContent.name = item.name
-            dragDataContent.img = item.img
-          }
-        } else if (spell) {
-          // Fallback to spell name from data attribute
-          dragDataContent.name = spell
-        }
-
-        dragData = {
-          type: 'Spell Check',
-          actorId,
-          data: dragDataContent
-        }
-      }
-        break
-
-      case 'attackBonus':
-        dragData = {
-          type: 'Attack Bonus',
-          actorId,
-          data: {
-            die: this.options.document.system.details.attackBonus
-          }
-        }
-        break
-
-      case 'actionDice':
-        dragData = {
-          type: 'Action Dice',
-          actorId,
-          data: {
-            die: this.options.document.system.attributes.actionDice.value || '1d20'
-          }
-        }
-        break
-
-      case 'disapprovalRange':
-        dragData = {
-          type: 'Apply Disapproval',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'disapprovalTable':
-        dragData = {
-          type: 'Roll Disapproval',
-          actorId,
-          data: {}
-        }
-        break
-
-      case 'weapon': {
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const weapon = this.actor.items.get(itemId)
-        if (weapon) {
-          dragData = Object.assign(
-            weapon.toDragData(),
-            {
-              dccType: 'Weapon',
-              actorId,
-              data: weapon,
-              dccData: {
-                weapon,
-                backstab: classes.contains('backstab-button')
-              }
-            }
-          )
-        }
-      }
-        break
-
-      case 'item': {
-        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const item = this.options.document.items.get(itemId)
-        if (item) {
-          // Use 'DCC Item' for spells to prevent Foundry's default macro creation
-          // Use 'Item' for other items to maintain normal drag/drop functionality
-          const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
-
-          dragData = {
-            type: dragType,
-            actorId,
-            uuid: item.uuid,
-            data: item,
-            system: {
-              item
-            }
-          }
-        }
-      }
-        break
-    }
-
+    const dragData = buildDragStartData(this.options.document, event)
     if (dragData) {
-      if (this.options.document.isToken) dragData.tokenId = this.options.document.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     }
   }
@@ -1441,6 +698,45 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       document: this.options.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
+    }).render(true)
+  }
+
+  /**
+   * Open the ability score edit dialog (Ability Score Log enabled)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #editAbilityScore (event, target) {
+    event.preventDefault()
+    const abilityId = target.closest('[data-ability]')?.dataset.ability
+    if (!abilityId) return
+    await new AbilityScoreConfig({
+      document: this.options.document,
+      abilityId,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 340) / 2
+      }
+    }).render(true)
+  }
+
+  /**
+   * Open the ability score log viewer (Ability Score Log enabled)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #viewAbilityLog (event, target) {
+    event.preventDefault()
+    await new AbilityScoreLogDialog({
+      document: this.options.document,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + 60
+      }
     }).render(true)
   }
 
@@ -1508,7 +804,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollUnder
     })
 
-    this.options.document.rollAbilityCheck(ability, options)
+    await this.options.document.rollAbilityCheck(ability, options)
   }
 
   /**
@@ -1597,6 +893,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollSpellCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const dataset = target.parentElement.dataset
+    // Optional label override for raw (no-item) spell checks. Lets a
+    // class/module relabel the chat flavor of a class-level spell check
+    // (e.g. MCC's "Mutation Check" / "Wetware Program Check") via a
+    // `data-check-label` attribute on the rollable cell. Inert for item
+    // casts (they already flavor with the item name).
+    if (dataset.checkLabel) options.checkLabel = dataset.checkLabel
     if (dataset.itemId) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
@@ -1647,7 +949,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')
     })
-    this.options.document.rollWeaponAttack(itemId, options)
+    await this.options.document.rollWeaponAttack(itemId, options)
   }
 
   /** @override */
@@ -1802,67 +1104,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<boolean|undefined>} false if handled with error, true if handled, undefined if not a container drop
    */
   async _handleContainerDrop (event, data) {
-    // Find the closest container drop target
-    const containerEl = event.target.closest('[data-container-id]')
-    if (!containerEl) return undefined
-
-    const containerId = containerEl.dataset.containerId
-    const container = this.options.document.items.get(containerId)
-    if (!container) return undefined
-
-    // Get the dropped item
-    let item
-    try {
-      item = await fromUuid(data.uuid)
-    } catch (err) {
-      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
-      return false
-    }
-    if (!item) return false
-
-    // Item already on this actor — just set the container reference
-    if (item.parent?.id === this.options.document.id) {
-      const check = container.canContainItem(item)
-      if (!check.allowed) {
-        ui.notifications.warn(game.i18n.localize(check.reason))
-        return false
-      }
-      try {
-        await item.update({ 'system.container': containerId })
-      } catch (err) {
-        console.error(`DCC | Failed to add item "${item.name}" to container`, err)
-        return false
-      }
-      return true
-    }
-
-    // Item from sidebar, compendium, or another actor — create on actor inside the container
-    const itemData = item.toObject ? item.toObject() : data.data
-    if (!itemData) return undefined
-    // Validate capacity (circularity checks don't apply for items not yet on the actor)
-    if (container.availableItemCapacity !== null) {
-      const itemQuantity = parseInt(itemData.system?.quantity) || 1
-      if (itemQuantity > container.availableItemCapacity) {
-        ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
-        return false
-      }
-    }
-    if (container.availableWeightCapacity !== null) {
-      const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
-      if (itemWeight > container.availableWeightCapacity) {
-        ui.notifications.warn(game.i18n.localize('DCC.ContainerTooHeavy'))
-        return false
-      }
-    }
-    itemData.system = itemData.system || {}
-    itemData.system.container = containerId
-    try {
-      await this.options.document.createEmbeddedDocuments('Item', [itemData])
-    } catch (err) {
-      console.error('DCC | Failed to create item in container', err)
-      return false
-    }
-    return true
+    return handleContainerDrop(this.options.document, event, data)
   }
 
   /**
@@ -1873,29 +1115,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<ActiveEffect|boolean>}
    */
   async _onDropActiveEffect (event, data) {
-    const actor = this.options.document
-    if (!actor.isOwner) return false
-
-    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
-    let effectData = data.data
-    if (!effectData && data.uuid) {
-      const effect = await fromUuid(data.uuid)
-      if (!effect) return false
-      effectData = effect.toObject()
-    }
-    if (!effectData) return false
-
-    // Prepare the effect data for creation on the actor
-    // Use foundry.utils.deepClone to preserve all effect data including module flags (e.g., aura settings)
-    const createData = foundry.utils.deepClone(effectData)
-    // Override specific fields for actor-based effects
-    delete createData._id // Remove ID so a new one is generated
-    createData.origin = actor.uuid // Set origin to this actor
-    createData.transfer = false // Effects directly on actors don't transfer
-    createData.img = createData.img || 'icons/svg/aura.svg'
-
-    // Create the effect on the actor
-    return actor.createEmbeddedDocuments('ActiveEffect', [createData])
+    return dropActiveEffect(this.options.document, data)
   }
 }
 

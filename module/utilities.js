@@ -1,5 +1,7 @@
 /* global game, CONFIG */
 
+import { critTableDocCache, critTableLinkCache } from './adapter/table-cache.mjs'
+
 /**
  * Remove keys from an update data object that are overridden by active effects
  * Prevents form submission from persisting computed in-memory values,
@@ -109,34 +111,50 @@ export async function getCritTableResult (roll, critTableName) {
 
   let critTableCanonical = 'Crit Table ' + critTableSuffix
 
-  // Check to see if this is the Elemental Crit/Fumble table
+  // Check to see if this is the Elemental Crit/Fumble table.
+  // `addPack` is idempotent (duplicate inserts are no-ops in
+  // `TablePackManager.addPack`), so re-running on every EL crit while
+  // the doc cache is warm is safe.
   if (critTableSuffix === 'EL') {
     critTableCanonical = 'Crit/Fumble Table EL'
     CONFIG.DCC.criticalHitPacks.addPack('dcc-core-book.dcc-monster-fumble-tables')
   }
 
-  // Lookup the crit table if available
-  let critResult = null
-  for (const criticalHitPackName of CONFIG.DCC?.criticalHitPacks?.packs || []) {
-    if (criticalHitPackName) {
-      const pack = game.packs.get(criticalHitPackName)
-      if (pack) {
-        const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
-        if (entry) {
-          const table = await pack.getDocument(entry._id)
-          critResult = table.getResultsForRoll(roll.total)
-          return critResult[0] || 'Unable to find crit result'
-        }
-      }
-    }
+  // Cache hit — the loaded RollTable doc is stable per session;
+  // `getResultsForRoll(roll.total)` is cheap once the doc is in hand.
+  let critTable = critTableDocCache.get(critTableCanonical)
+  if (critTable === undefined) {
+    critTable = await resolveCritTable(critTableCanonical)
+    critTableDocCache.set(critTableCanonical, critTable)
   }
 
-  // Try in the local world if we've gotten this far and not returned
-  const worldCritTables = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
-  if (worldCritTables) {
-    critResult = worldCritTables.getResultsForRoll(roll.total)
+  if (critTable) {
+    const critResult = critTable.getResultsForRoll(roll.total)
     return critResult[0] || 'Unable to find crit result'
   }
+}
+
+/**
+ * Walk the configured critical-hit packs + world tables for a crit
+ * table whose name starts with `critTableCanonical`. Returns the
+ * loaded Foundry `RollTable` document, or `null` when no match is
+ * found. Pulled out of `getCritTableResult` so the cache-miss path
+ * is a single named call.
+ */
+async function resolveCritTable (critTableCanonical) {
+  for (const criticalHitPackName of CONFIG.DCC?.criticalHitPacks?.packs || []) {
+    if (!criticalHitPackName) continue
+    const pack = game.packs.get(criticalHitPackName)
+    if (!pack) continue
+    const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
+    if (!entry) continue
+    return await pack.getDocument(entry._id)
+  }
+
+  const worldCritTable = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
+  if (worldCritTable) return worldCritTable
+
+  return null
 }
 
 /**
@@ -146,6 +164,28 @@ export async function getCritTableResult (roll, critTableName) {
  * @returns {string} - A UUID link if the table is found, otherwise just the display text
  */
 export async function getCritTableLink (critTableSuffix, displayText) {
+  // Cache the resolved `@UUID[...]` prefix (without `{displayText}`)
+  // so chat-card re-renders with different labels still get one walk.
+  // A cached `null` means "no table found" and skips the rebuild.
+  let uuidPrefix = critTableLinkCache.get(critTableSuffix)
+  if (uuidPrefix === undefined) {
+    uuidPrefix = resolveCritTableLink(critTableSuffix)
+    critTableLinkCache.set(critTableSuffix, uuidPrefix)
+  }
+
+  if (uuidPrefix === null) return displayText
+  return `${uuidPrefix}{${displayText}}`
+}
+
+/**
+ * Walk the configured critical-hit packs + world tables for a crit
+ * table whose name starts with the canonical form of
+ * `critTableSuffix`. Returns the `@UUID[Compendium...|RollTable...]`
+ * prefix (string) for the matching entry, or `null` when no match is
+ * found. The caller concatenates `{displayText}` so the same suffix
+ * can render with different labels.
+ */
+function resolveCritTableLink (critTableSuffix) {
   let critTableCanonical = 'Crit Table ' + critTableSuffix
 
   // Check to see if this is the Elemental Crit/Fumble table
@@ -155,25 +195,22 @@ export async function getCritTableLink (critTableSuffix, displayText) {
 
   // Look up the crit table in compendium packs
   for (const criticalHitPackName of CONFIG.DCC?.criticalHitPacks?.packs || []) {
-    if (criticalHitPackName) {
-      const pack = game.packs.get(criticalHitPackName)
-      if (pack) {
-        const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
-        if (entry) {
-          return `@UUID[Compendium.${criticalHitPackName}.${entry._id}]{${displayText}}`
-        }
-      }
+    if (!criticalHitPackName) continue
+    const pack = game.packs.get(criticalHitPackName)
+    if (!pack) continue
+    const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
+    if (entry) {
+      return `@UUID[Compendium.${criticalHitPackName}.${entry._id}]`
     }
   }
 
   // Try in the local world
   const worldCritTable = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
   if (worldCritTable) {
-    return `@UUID[RollTable.${worldCritTable.id}]{${displayText}}`
+    return `@UUID[RollTable.${worldCritTable.id}]`
   }
 
-  // No table found, return plain text
-  return displayText
+  return null
 }
 
 /**

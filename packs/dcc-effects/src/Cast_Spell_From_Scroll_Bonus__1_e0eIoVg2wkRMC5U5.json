@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.castSpellFromScroll.value",
+      "key": "system.skills.castSpellFromScroll.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

@@ -1,20 +1,29 @@
-const { test, expect } = require('@playwright/test')
+/* eslint-disable no-undef -- Browser globals (game, ui, Actor, Item) used in page.evaluate callbacks */
+const { expect, createSessionTest } = require('./fixtures')
 
 /**
  * E2E tests for DCC TypeDataModels
  * Tests actual data validation and persistence in a live Foundry instance
  *
- * PREREQUISITES:
- * 1. Start Foundry: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing
- * 2. Run tests: npm test
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
+ * fvtt CLI installPath/dataPath, and launch command. TL;DR:
+ *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
+ *   npm test
  *
- * The tests will automatically log in as Gamemaster (no password).
+ * Tests auto-log in as Gamemaster (no password). Close any manual
+ * Foundry browser tab first — a logged-in Gamemaster disables the
+ * join-page select option and the spec will time out.
  */
 
-test.describe('DCC TypeDataModels E2E Tests', () => {
-  // Store console errors for each test
-  let consoleErrors = []
+// Module-scoped console-error capture. The fixture attaches the listener ONCE
+// per worker (via onConsole below); beforeEach clears this array and afterEach
+// asserts on it. Safe as a module global with workers:1 (playwright.config.js).
+const consoleErrors = []
+const test = createSessionTest({
+  onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
+})
 
+test.describe('DCC TypeDataModels E2E Tests', () => {
   // Check that Foundry is running before all tests (simple fetch check)
   test.beforeAll(async () => {
     let serverUp
@@ -35,73 +44,44 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    // Reset console errors for this test
-    consoleErrors = []
-
-    // Listen for console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        consoleErrors.push(msg.text())
-      }
-    })
-
-    // Set viewport to a reasonable size that fits on screen
-    await page.setViewportSize({ width: 1280, height: 800 })
-
-    // Navigate to join page
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    // Check if we're already in the game (session persisted)
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-
-    if (!isInGame) {
-      // We need to log in - wait for join page
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-
-      // Select Gamemaster
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-
-      // Click join button (no password needed)
-      await page.click('button[name="join"]')
-
-      // Wait for game to load
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    // Wait for Foundry to fully initialize
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-
-    // Remove any Foundry notification banners (e.g. hardware acceleration warning)
-    // These are persistent and can't be dismissed by clicking
-    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
-
-    // Clean up leftover test actors/items from previous failed runs
-    /* eslint-disable no-undef */
+    // Login + system boot is handled ONCE per worker by the sessionPage
+    // fixture; here we only do world-state hygiene (close windows, purge test
+    // actors/items, clear banners) and then reset captured console errors LAST.
+    //
+    // Clearing the console-error buffer at the END (not the start) matters
+    // under session reuse: a prior test may delete an actor without awaiting
+    // its directory re-render (e.g. the "Action Die Test" teardown), emitting a
+    // transient `Actor "<id>" does not exist` log shortly after the test ends.
+    // With a fresh page per test that noise was discarded by the reload; with a
+    // reused page it would otherwise count against THIS test's zero-error gate.
+    // Cleaning up + settling + clearing here scopes the gate to the test body.
     await page.evaluate(async () => {
+      document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
       const testNames = ['Test Player', 'Test NPC', 'Persistence Test', 'Action Die Test', 'Test Weapon', 'Test Armor', 'Test Treasure']
+      for (const app of Object.values(ui.windows)) {
+        try { await app.close() } catch {}
+      }
       for (const actor of game.actors.filter(a => testNames.includes(a.name))) {
-        await actor.delete()
+        try { await actor.delete() } catch {}
       }
       for (const item of game.items.filter(i => testNames.includes(i.name))) {
-        await item.delete()
+        try { await item.delete() } catch {}
       }
-    })
-    /* eslint-enable no-undef */
+    }).catch(() => {})
 
-    // Close any welcome dialogs
-    const dccDialog = page.locator('#dcc-welcome-dialog')
-    if (await dccDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
+    // Welcome dialogs are dismissed once in the fixture; re-dismiss only if one
+    // reappeared.
+    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
+      const dialog = page.locator(sel)
+      if (await dialog.isVisible({ timeout: 300 }).catch(() => false)) {
+        await page.keyboard.press('Escape')
+      }
     }
 
-    const coreBookDialog = page.locator('#dcc-core-book-welcome-dialog')
-    if (await coreBookDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-    }
+    // Let prior-test teardown re-renders drain, THEN clear — so the zero-error
+    // gate in afterEach measures only this test's body.
+    await page.waitForTimeout(400)
+    consoleErrors.length = 0
   })
 
   test.afterEach(async () => {
@@ -149,6 +129,179 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.click('#context-menu li:has-text("Delete")')
       await page.waitForSelector('dialog.application', { timeout: 2000 })
       await page.click('button[data-action="yes"]')
+    })
+
+    test('actor derived-stat computation survives actor/derived-stats-mixin.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the four derived-stat computation
+      // helpers (computeMeleeAndMissileAttackAndDamage / computeSavingThrows /
+      // computeSpellCheck / computeInitiative) moved out of actor.js into the
+      // DerivedStatsMixin in module/actor/derived-stats-mixin.mjs; DCCActor now
+      // extends DerivedStatsMixin(ActiveEffectsMixin(Actor)). This probe calls each
+      // extracted method directly on a live actor and asserts the derived writes
+      // (saves with bonuses + override, initiative, spell-check formula) the
+      // extraction must preserve — reading the actor's own ability mods so it is
+      // robust to the DCC modifier table.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Derived Stats Probe', type: 'Player' })
+          observed.aglMod = parseInt(actor.system.abilities.agl.mod)
+
+          // Saving throws: agl mod + class + other bonus; override wins on frt.
+          actor.system.saves.ref.classBonus = 2
+          actor.system.saves.ref.otherBonus = 1
+          actor.system.saves.frt.override = 5
+          actor.computeSavingThrows()
+          observed.ref = actor.system.saves.ref.value
+          observed.frt = actor.system.saves.frt.value
+
+          // Initiative: agl mod + otherMod (no class level).
+          actor.system.attributes.init.otherMod = 1
+          actor.computeInitiative({ addClassLevelToInitiative: false })
+          observed.init = actor.system.attributes.init.value
+
+          // Spell check: produces a non-empty formula string and fires the stable hook.
+          let hookFired = false
+          const hookId = Hooks.on('dcc.afterComputeSpellCheck', () => { hookFired = true })
+          actor.system.details.level.value = 3
+          actor.computeSpellCheck()
+          Hooks.off('dcc.afterComputeSpellCheck', hookId)
+          observed.spellCheck = actor.system.class.spellCheck
+          observed.hookFired = hookFired
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      const signed = (n) => (n >= 0 ? `+${n}` : `${n}`)
+      expect(result.ref).toBe(signed(result.aglMod + 3)) // agl mod + class 2 + other 1
+      expect(result.frt).toBe('+5') // override wins
+      expect(result.init).toBe(result.aglMod + 1) // agl mod + otherMod
+      expect(result.spellCheck).toBeTruthy()
+      expect(result.hookFired).toBe(true) // stable dcc.afterComputeSpellCheck hook preserved
+    })
+
+    test('actor roll-input accessors survive actor/roll-data-mixin.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the three roll-input accessors
+      // (getRollData / getAttackBonusMode / getActionDice) moved out of actor.js
+      // into the RollDataMixin in module/actor/roll-data-mixin.mjs; DCCActor now
+      // extends RollDataMixin(DerivedStatsMixin(ActiveEffectsMixin(Actor))). This
+      // probe drives each extracted accessor on a live actor and asserts the public
+      // shape the sheet/adapter/XCC consumers depend on — getRollData's ability
+      // shorthands + super-augmentation, getAttackBonusMode normalization, and
+      // getActionDice's comma-list parse + untrained preset + legacy + migration.
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Roll Data Probe', type: 'Player' })
+
+          // getRollData: augments super.getRollData() with DCC shorthands.
+          const rollData = actor.getRollData()
+          observed.str = rollData.str
+          observed.actorStrMod = parseInt(actor.system.abilities.str.mod)
+          observed.cl = rollData.cl
+          observed.level = actor.system.details.level.value
+          observed.hasXp = Object.prototype.hasOwnProperty.call(rollData, 'xp') // Player only
+
+          // getAttackBonusMode: known modes pass through, invalid -> 'flat'.
+          actor.system.config.attackBonusMode = 'autoPerAttack'
+          observed.knownMode = actor.getAttackBonusMode()
+          actor.system.config.attackBonusMode = 'bogus'
+          observed.invalidMode = actor.getAttackBonusMode()
+
+          // getActionDice: comma list -> presets, untrained appends 1d10, + -> ,
+          actor.system.config.actionDice = '1d20+1d14'
+          const dice = actor.getActionDice({ includeUntrained: true })
+          observed.dice = dice.map(d => d.formula)
+          observed.migratedActionDice = actor.system.config.actionDice
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.str).toBe(result.actorStrMod) // getRollData str shorthand = ability mod
+      expect(result.cl).toBe(result.level) // caster-level shorthand mirrors level
+      expect(result.hasXp).toBe(true) // Player-only xp shorthand present
+      expect(result.knownMode).toBe('autoPerAttack')
+      expect(result.invalidMode).toBe('flat') // invalid mode normalizes to flat
+      expect(result.dice).toEqual(['1d20', '1d14', '1d10']) // parsed + untrained preset
+      expect(result.migratedActionDice).toBe('1d20,1d14') // implicit + -> , migration persisted
+    })
+
+    test('buildDamageBreakdown survives actor/damage-breakdown.mjs extraction', async ({ page }) => {
+      // Phase 7 (Appendix-A actor.js shrinkage): the pure _buildDamageBreakdown
+      // method moved out of actor.js into a free function in
+      // module/actor/damage-breakdown.mjs (it reads nothing off the actor). This
+      // probe imports the live-served module and confirms the deployed helper
+      // reproduces the multi-type summing + single-type null contract that
+      // _rollDamage's chat breakdown depends on.
+      const result = await page.evaluate(async () => {
+        const mod = await import('../../../../../../../../systems/dcc/module/actor/damage-breakdown.mjs')
+        const op = (operator) => ({ operator })
+        const die = (total, flavor = '') => ({ total, flavor })
+        return {
+          single: mod.buildDamageBreakdown({ terms: [die(6, 'fire')] }),
+          twoType: mod.buildDamageBreakdown({ terms: [die(3, ''), op('+'), die(5, 'fire')] }),
+          accumulated: mod.buildDamageBreakdown({ terms: [die(2, 'cold'), op('+'), die(3, 'cold'), op('+'), die(4, 'fire')] })
+        }
+      })
+
+      expect(result.single).toBeNull() // single damage type -> no breakdown
+      expect(result.twoType).toBe('3 + 5 fire')
+      expect(result.accumulated).toBe('5 cold + 4 fire') // same-flavor terms summed, operators skipped
+    })
+
+    test('§2.1 schema-slimming: the lib Character projection of a live halfling is class-clean', async ({ page }) => {
+      // §2.1 resolution guard (see docs/dev/SCHEMA_SLIMMING.md). Foundry's static
+      // one-schema-per-subtype model means a live halfling carries EVERY class's
+      // schema fields (shieldBash / disapproval / knownSpells / thief skills…).
+      // The resolution is that the lib is the class-clean read-side source of
+      // truth: actorToCharacter projects the actor reading only cross-class fields.
+      // This drives the real adapter projection on a live halfling and asserts the
+      // produced Character carries no foreign-class state even though the actor's
+      // schema does — proving the roll path is independent of the un-slimmable
+      // monolithic schema.
+      const result = await page.evaluate(async () => {
+        const { actorToCharacter } = await import('../../../../../../../../systems/dcc/module/adapter/character-accessors.mjs')
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Halfling Projection Probe', type: 'Player' })
+          await actor.update({ 'system.class.className': 'Halfling', 'system.details.sheetClass': 'Halfling' })
+          // The live actor carries the monolithic schema's foreign-class fields.
+          const carriesShieldBash = actor.system.skills?.shieldBash !== undefined
+          const carriesKnownSpells = actor.system.class?.knownSpells !== undefined
+
+          const character = actorToCharacter(actor)
+          return {
+            carriesShieldBash,
+            carriesKnownSpells,
+            classId: character.classInfo?.classId,
+            topKeys: Object.keys(character).sort(),
+            stateKeys: Object.keys(character.state).sort(),
+            hasSkills: Object.prototype.hasOwnProperty.call(character, 'skills'),
+            hasClericState: character.state.cleric !== undefined,
+            hasWizardState: character.state.wizard !== undefined
+          }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      // The actor's schema DOES carry foreign-class fields (the un-slimmable part)...
+      expect(result.carriesShieldBash).toBe(true)
+      expect(result.carriesKnownSpells).toBe(true)
+      // ...but the lib projection is class-clean: only identity/state/classInfo,
+      // state has only abilities/saves, and the classId is halfling.
+      expect(result.classId).toBe('halfling')
+      expect(result.topKeys).toEqual(['classInfo', 'identity', 'state'])
+      expect(result.stateKeys).toEqual(['abilities', 'saves'])
+      expect(result.hasSkills).toBe(false)
+      expect(result.hasClericState).toBe(false)
+      expect(result.hasWizardState).toBe(false)
     })
 
     test('can create a new NPC actor', async ({ page }) => {

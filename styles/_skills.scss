@@ -1,0 +1,57 @@
+/* ----------------------------------------- */
+/*  Skills
+  /* ----------------------------------------- */
+
+.dcc .skill-list {
+  column-gap: 5px;
+  display: grid;
+  font-family: var(--system-data-font), serif;
+  grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 2px 5px;
+  text-align: center;
+
+  img {
+    border: 0;
+    box-sizing: content-box;
+  }
+
+  input {
+    text-align: center;
+  }
+
+  .skill {
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 5px;
+  }
+
+  .skill-summary-text {
+    grid-column: 1 / -1;
+    color: var(--system-text-muted-color);
+    font-size: 0.9em;
+    padding-top: 4px;
+    text-align: left !important;
+    width: 100%;
+  }
+}
+
+/* Active-Effect skill-modifier indicator shown beside a skill label when
+   `otherMod` is non-zero (e.g. "Pick Lock (+1)"). Editable base value stays
+   in the input; this surfaces the effect contribution. */
+.dcc .skill-ae-mod {
+  color: var(--system-text-muted-color);
+  font-size: 0.9em;
+}
+
+.dcc .skills-bg {
+  background-image: url('./images/FCI-spots-8-14-Four-Potion-Bottles.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 540px;
+}
+

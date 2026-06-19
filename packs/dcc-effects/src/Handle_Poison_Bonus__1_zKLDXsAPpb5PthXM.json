@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.handlePoison.value",
+      "key": "system.skills.handlePoison.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

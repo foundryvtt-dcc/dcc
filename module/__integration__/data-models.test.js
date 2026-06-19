@@ -107,6 +107,16 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
     // Class defaults
     expect(data.class.className).toBe('Zero-Level')
     expect(data.class.disapproval).toBe(1)
+    // Link fields registered in Phase 5 session 3 — these used to be
+    // ad-hoc strings the class sheet wrote that Foundry silently
+    // stripped (only `classLink` survived, via a sibling
+    // `dcc.definePlayerSchema` hook). Now part of the base schema so
+    // writes from `applyClassDefaults` actually persist on
+    // `system.class.*`.
+    expect(data.class.classLink).toBe('')
+    expect(data.class.mightyDeedsLink).toBe('')
+    expect(data.class.spellcastingLink).toBe('')
+    expect(data.class.spellburnLink).toBe('')
     // Config defaults
     expect(data.config.computeAC).toBe(true)
     expect(data.config.sortInventory).toBe(true)
@@ -144,6 +154,24 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
     expect(data.abilities.agl.value).toBe(14)
     expect(data.details.level.value).toBe(5)
     expect(data.class.className).toBe('Warrior')
+  })
+
+  test('ability value may be 0 (schema min: 0, DCC RAW spellburn-to-0)', () => {
+    // Per DCC RAW a physical ability may be burned/drained all the way to 0
+    // (burning Stamina to 0 is lethal). AbilityField.value uses min: 0, so the
+    // real Foundry NumberField accepts 0 — the prior min: 1 silently clamped a
+    // floor-0 spellburn write back up to 1 (caught by the adapter-dispatch
+    // burn-to-0 browser test).
+    const burned = new PlayerData({ abilities: { sta: { value: 0, max: 12 } } })
+    expect(burned.abilities.sta.value).toBe(0)
+
+    // The floor holds at 0 — a negative value clamps up to 0, never below.
+    const overburned = new PlayerData({ abilities: { sta: { value: -3, max: 12 } } })
+    expect(overburned.abilities.sta.value).toBe(0)
+
+    // `max` keeps its own min: 1 floor (a ceiling of 0 is nonsensical).
+    const zeroMax = new PlayerData({ abilities: { sta: { value: 0, max: 0 } } })
+    expect(zeroMax.abilities.sta.max).toBe(1)
   })
 
   test('WeaponData constructs with defaults', () => {
@@ -341,6 +369,29 @@ describe('Data Migration (real Foundry migration pipeline)', () => {
     const source = { description: { judge: { value: '<p>secret</p>' } } }
     const migrated = BaseItemData.migrateData(source)
     expect(migrated.description.judge).toEqual({ value: '<p>secret</p>' })
+  })
+
+  // Restored rollable-treasure-value feature: an item's value is a
+  // TreasureValueField (StringField per denomination), so a die formula must
+  // survive migrateData (the pre-V14 parseInt coercion silently destroyed it).
+  test('PhysicalItemData migrateData preserves a rollable treasure value formula', () => {
+    const source = { value: { gp: '3d100', sp: '2d6+1' } }
+    const migrated = PhysicalItemData.migrateData(source)
+    expect(migrated.value.gp).toBe('3d100')
+    expect(migrated.value.sp).toBe('2d6+1')
+  })
+
+  test('PhysicalItemData migrateData stringifies a legacy integer value (no data loss)', () => {
+    const source = { value: { gp: 7, cp: 0 } }
+    const migrated = PhysicalItemData.migrateData(source)
+    expect(migrated.value.gp).toBe('7')
+    expect(migrated.value.cp).toBe('0')
+  })
+
+  test('TreasureData constructs with a value formula intact (StringField persists)', () => {
+    const data = new TreasureData({ value: { gp: '3d100' } })
+    expect(data.value.gp).toBe('3d100')
+    expect(data.value.pp).toBe('0') // untouched denominations default to '0'
   })
 })
 
@@ -598,14 +649,55 @@ describe('Edge cases caught by real Foundry code', () => {
   test('ArrayField with SchemaField elements works', () => {
     const data = new PlayerData({
       abilityLog: [
-        { timestamp: 1000, ability: 'str', change: -2, type: 'spellburn', source: 'Magic Missile', newValue: 8 },
-        { timestamp: 2000, ability: 'str', change: 1, type: 'recovery', source: 'Rest', newValue: 9 }
+        { id: 'log1', timestamp: 1000, ability: 'str', change: -2, type: 'spellburn', source: 'Magic Missile', newValue: 8 },
+        { id: 'log2', timestamp: 2000, ability: 'str', change: 1, type: 'recovery', source: 'Rest', newValue: 9 }
       ]
     })
     expect(data.abilityLog).toHaveLength(2)
     expect(data.abilityLog[0].ability).toBe('str')
     expect(data.abilityLog[0].change).toBe(-2)
     expect(data.abilityLog[1].type).toBe('recovery')
+  })
+
+  test('abilityLog entries round-trip the heal-tracking fields', () => {
+    const data = new PlayerData({
+      abilityLog: [
+        {
+          id: 'log1',
+          timestamp: 1000,
+          ability: 'sta',
+          change: -3,
+          maxChange: 0,
+          type: 'damage',
+          source: 'Giant rat',
+          newValue: 9,
+          hpChange: -2,
+          healedAmount: 1,
+          healedTimestamp: 2000
+        },
+        {
+          id: 'log2',
+          timestamp: 3000,
+          ability: 'str',
+          change: 2,
+          maxChange: 2,
+          type: 'otherPermanent',
+          source: 'Blessed by Gorhan',
+          newValue: 14
+        }
+      ]
+    })
+    expect(data.abilityLog[0].id).toBe('log1')
+    expect(data.abilityLog[0].hpChange).toBe(-2)
+    expect(data.abilityLog[0].healedAmount).toBe(1)
+    expect(data.abilityLog[0].healedTimestamp).toBe(2000)
+    expect(data.abilityLog[1].maxChange).toBe(2)
+    // Heal-tracking fields default sensibly when omitted
+    expect(data.abilityLog[1].hpChange).toBe(0)
+    expect(data.abilityLog[1].healedAmount).toBe(0)
+    expect(data.abilityLog[1].healedTimestamp).toBeNull()
+    // Source data preserved for round-tripping
+    expect(data._source.abilityLog[0].healedAmount).toBe(1)
   })
 
   test('NumberField with min/max constraints via real validation', () => {

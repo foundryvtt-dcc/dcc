@@ -1,0 +1,371 @@
+/* global rollToMessageMock, ChatMessage */
+/**
+ * Adapter round-trip test — Phase 1 (skill check).
+ *
+ * Exercises the full adapter flow for a skill check:
+ *   DCCActor._rollSkillCheckViaAdapter →
+ *   _resolveSkill (built-in slot or skill item) →
+ *   actorToCharacter →
+ *   libRollCheck (formula mode) → new Roll(formula).evaluate() →
+ *   libRollCheck (evaluate mode, pre-rolled natural) →
+ *   chat-renderer (builds ChatMessage, preserves legacy flags).
+ *
+ * Mirrors adapter-saving-throw.test.js / adapter-ability-check.test.js.
+ */
+
+import { expect, test, vi } from 'vitest'
+import '../__mocks__/foundry.js'
+import DCCActor from '../actor.js'
+import DCCItem from '../item.js'
+
+// Mock actor-level-change like actor.test.js does
+vi.mock('../actor-level-change.js')
+
+// noinspection JSCheckFunctionSignatures
+const actor = new DCCActor()
+
+test('adapter path skips DCCRoll.createRoll for a built-in skill with a die', async () => {
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  // customDieSkill is defined in __mocks__/foundry.js — die '1d14', no ability.
+  await actor.rollSkillCheck('customDieSkill')
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData, toMessageOpts] = rollToMessageMock.mock.calls[0]
+
+  expect(messageData.flavor).toBe('Custom Die Skill')
+  expect(messageData.flags['dcc.RollType']).toBe('SkillCheck')
+  expect(messageData.flags['dcc.SkillId']).toBe('customDieSkill')
+  // dcc.ItemId is emitted for built-in slots too — legacy behavior
+  // downstream modules (token-action-hud-dcc, dcc-qol) parse.
+  expect(messageData.flags['dcc.ItemId']).toBe('customDieSkill')
+  expect(messageData.flags['dcc.isSkillCheck']).toBe(true)
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  expect(libResult.skillId).toBe('skill:customDieSkill')
+  expect(libResult.die).toBe('d14')
+  expect(Array.isArray(libResult.modifiers)).toBe(true)
+
+  expect(toMessageOpts).toEqual({ create: false })
+  expect(chatMessageCreateSpy).toHaveBeenCalledTimes(1)
+
+  chatMessageCreateSpy.mockRestore()
+})
+
+test('adapter path attaches ability id for skills that roll against one', async () => {
+  rollToMessageMock.mockClear()
+
+  // customDieSkillWithInt has ability: 'int', die: '1d24'.
+  await actor.rollSkillCheck('customDieSkillWithInt')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flavor).toBe('Custom Die Skill With Int (Intelligence)')
+  expect(messageData.flags['dcc.Ability']).toBe('int')
+  expect(messageData.flags['dcc.libResult'].die).toBe('d24')
+})
+
+test('adapter path emits skill-value modifier with the skill label as origin', async () => {
+  rollToMessageMock.mockClear()
+
+  // customDieAndValueSkill has die '1d14' + value 3, no ability.
+  await actor.rollSkillCheck('customDieAndValueSkill')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  const valueMod = messageData.flags['dcc.libResult'].modifiers.find(
+    (m) => m.origin?.id === 'skill-value'
+  )
+  expect(valueMod).toBeDefined()
+  expect(valueMod.kind).toBe('add')
+  expect(valueMod.value).toBe(3)
+  expect(valueMod.origin.label).toBe('Custom Die And Value Skill')
+})
+
+test('adapter path handles a skill item (useDie, useValue, useAbility, useLevel)', async () => {
+  rollToMessageMock.mockClear()
+
+  const skillItem = new DCCItem({
+    name: 'itemBackstab',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: true,
+        useDie: true,
+        useLevel: true,
+        useValue: true
+      },
+      ability: 'agl',
+      die: '1d20',
+      value: '+2',
+      description: {
+        value: 'A skill item with a description.'
+      }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+  actor.system.details.level.value = 3
+
+  await actor.rollSkillCheck('itemBackstab')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flavor).toBe('itemBackstab (Agility)')
+  expect(messageData.flags['dcc.ItemId']).toBe('itemBackstab')
+  expect(messageData.flags['dcc.Ability']).toBe('agl')
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult.die).toBe('d20')
+
+  // Level modifier present (level 3).
+  const levelMod = libResult.modifiers.find(
+    (m) => m.origin?.category === 'level'
+  )
+  expect(levelMod).toBeDefined()
+  expect(levelMod.value).toBe(3)
+
+  // Skill description is appended to the rendered content.
+  expect(messageData.system.skillDescription).toBe(
+    'A skill item with a description.'
+  )
+
+  // Reset itemTypes mock so later tests don't see this skill item.
+  global.itemTypesMock.mockReset()
+})
+
+test('description-only skill item routes to the adapter and posts the description card', async () => {
+  // Legacy-decom step 4: the `!resolved.hasDie` description-only gate
+  // now routes through `_emitSkillDescriptionViaAdapter` (was legacy).
+  // It posts a plain ChatMessage.create with the description — no
+  // Roll.toMessage call, no lib round-trip — preserving the legacy
+  // content / flavor / flags / system payload exactly.
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  const descOnlyItem = new DCCItem({
+    name: 'loreOnly',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: false
+      },
+      description: {
+        value: 'Forbidden lore about cosmic indifference.'
+      }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(descOnlyItem)
+    }
+  })
+
+  await actor.rollSkillCheck('loreOnly')
+
+  // No Roll.toMessage — the description path calls ChatMessage.create directly.
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  // One message created with the description, legacy flags, and system payload.
+  const createCalls = chatMessageCreateSpy.mock.calls.filter(
+    (call) => call[0]?.flags?.['dcc.SkillId'] === 'loreOnly'
+  )
+  expect(createCalls.length).toBe(1)
+  const messageData = createCalls[0][0]
+  expect(messageData.flags['dcc.RollType']).toBe('SkillCheck')
+  expect(messageData.flags['dcc.ItemId']).toBe('loreOnly')
+  expect(messageData.flags['dcc.isSkillCheck']).toBe(true)
+  expect(messageData.content).toContain('Forbidden lore about cosmic indifference.')
+  expect(messageData.content).toContain('skill-description')
+  expect(messageData.system.skillId).toBe('loreOnly')
+  expect(messageData.system.skillDescription).toBe(
+    'Forbidden lore about cosmic indifference.'
+  )
+
+  chatMessageCreateSpy.mockRestore()
+  global.itemTypesMock.mockReset()
+})
+
+test('description-only skill item with no description emits nothing', async () => {
+  // Faithful to the legacy early-return: when the item carries no
+  // description value there is nothing to roll and nothing to show,
+  // so no chat message is created (only the dispatch log fires).
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  const blankItem = new DCCItem({
+    name: 'blankSkill',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: false
+      },
+      description: { value: '' }
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(blankItem)
+    }
+  })
+
+  await actor.rollSkillCheck('blankSkill')
+
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  const createCalls = chatMessageCreateSpy.mock.calls.filter(
+    (call) => call[0]?.flags?.['dcc.SkillId'] === 'blankSkill'
+  )
+  expect(createCalls.length).toBe(0)
+
+  chatMessageCreateSpy.mockRestore()
+  global.itemTypesMock.mockReset()
+})
+
+test('NPC skill item with useDie:false + a value modifier inherits the actor action die', async () => {
+  // Regression: imported NPCs carry skill items configured with
+  // `useDie: false` but a flat `value` (e.g. "Divine Aid +4"). Before
+  // the fix the missing-die fallback only matched built-in slots, so
+  // these rolled with no action die. Now the rollable item inherits the
+  // actor's action die and rolls it (d20 + value) through the adapter.
+  rollToMessageMock.mockClear()
+
+  const npcSkill = new DCCItem({
+    name: 'Divine Aid',
+    type: 'skill',
+    system: {
+      config: {
+        useSummary: true,
+        useAbility: false,
+        useDie: false,
+        useLevel: false,
+        useValue: true,
+        showLastResult: false,
+        applyCheckPenalty: false
+      },
+      ability: 'int',
+      die: '1d20',
+      value: '4'
+    }
+  })
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(npcSkill)
+    }
+  })
+
+  await actor.rollSkillCheck('Divine Aid')
+
+  // Adapter path fired (Roll.toMessage), not the description-only legacy path.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  // Inherited the actor's action die (mock actor: 1d20 -> lib 'd20').
+  expect(libResult.die).toBe('d20')
+  // Flat +4 skill value carried through as a modifier.
+  const valueMod = libResult.modifiers.find((m) => m.origin?.id === 'skill-value')
+  expect(valueMod).toBeDefined()
+  expect(valueMod.value).toBe(4)
+
+  global.itemTypesMock.mockReset()
+})
+
+test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // Simulate the user submitting the dialog with a bumped die (1d24)
+  // and an extra +3 bonus on top of the skill's modifiers. The mock
+  // Roll returned here is the same shape the real dialog yields.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => {
+    return {
+      formula: '1d24+3',
+      total: 14,
+      dice: [{ results: [11], total: 11, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d24', number: 1, faces: 24 },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 3 }
+      ],
+      _evaluated: true
+    }
+  })
+
+  await actor.rollSkillCheck('customDieAndValueSkill', { showModifierDialog: true })
+
+  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  const createCall = global.dccRollCreateRollMock.mock.calls[0]
+  // First arg is the term descriptors; verify the skill-value
+  // compound term is present so the dialog could surface it.
+  const termsArg = createCall[0]
+  expect(Array.isArray(termsArg)).toBe(true)
+  expect(termsArg.some(t => t.type === 'Die' && t.formula === '1d14')).toBe(true)
+  expect(termsArg.some(t => t.type === 'Compound' && t.formula === '3')).toBe(true)
+  // Third arg is the options bag — must request the dialog adapter-side.
+  expect(createCall[2].showModifierDialog).toBe(true)
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  // Die was bumped to d24 by the dialog.
+  expect(libResult.die).toBe('d24')
+  // The skill-value modifier was REPLACED by a single flat user total
+  // (the dialog flattens per-source attribution). No 'skill-value'
+  // origin remains; instead one 'dialog-modifier' origin carries the
+  // entire post-dialog total.
+  const skillValueMod = libResult.modifiers.find(
+    (m) => m.origin?.id === 'skill-value'
+  )
+  expect(skillValueMod).toBeUndefined()
+  const dialogMod = libResult.modifiers.find(
+    (m) => m.origin?.id === 'dialog-modifier'
+  )
+  expect(dialogMod).toBeDefined()
+  expect(dialogMod.kind).toBe('add')
+  expect(dialogMod.value).toBe(3)
+})
+
+test('adapter path returns undefined when user cancels the dialog', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // RollModifierDialog cancel resolves with `null`.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => null)
+
+  const result = await actor.rollSkillCheck('customDieAndValueSkill', { showModifierDialog: true })
+
+  expect(result).toBeUndefined()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+})
+
+// Regression: rollSkillCheck must NOT crash when the requested skill
+// can't be resolved. Pre-fix, an unknown id (no built-in slot, no
+// matching skill item) crashed on `skill.value` against an undefined
+// skill. Now mirrors the rollSpellCheck shape: warns the user and
+// returns without rolling.
+test('rollSkillCheck warns and returns when the skill is unknown', async () => {
+  rollToMessageMock.mockClear()
+  global.uiNotificationsWarnMock.mockClear()
+  // Make sure no skill item shadows the request.
+  global.itemTypesMock.mockReturnValue({ skill: { find: vi.fn().mockReturnValue(undefined) } })
+
+  await expect(actor.rollSkillCheck('thisSkillDoesNotExist')).resolves.toBeUndefined()
+
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(global.uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  // Localized message — mock's i18n.format returns the key + interpolated args.
+  const [msg] = global.uiNotificationsWarnMock.mock.calls[0]
+  expect(msg).toContain('thisSkillDoesNotExist')
+
+  global.itemTypesMock.mockReset()
+})

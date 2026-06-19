@@ -83,7 +83,7 @@ describe('lookupCriticalRoll', () => {
     expect(html.messageContent.innerHTML.match(/crit-result/g)).toHaveLength(1)
   })
 
-  it('appends the unavailable message when the crit table has no result', async () => {
+  it('appends the manual-lookup hint when the crit table has no result', async () => {
     getCritTableResult.mockResolvedValue(null)
     const message = makeCritMessage()
     message.system = { critTableName: 'II' }
@@ -91,7 +91,7 @@ describe('lookupCriticalRoll', () => {
 
     await lookupCriticalRoll(message, html)
 
-    expect(html.messageContent.innerHTML).toContain('CritTableUnavailable')
+    expect(html.messageContent.innerHTML).toContain('crit-lookup-hint')
     expect(html.messageContent.innerHTML).not.toContain('crit-result')
   })
 

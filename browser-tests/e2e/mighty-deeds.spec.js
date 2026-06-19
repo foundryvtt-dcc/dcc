@@ -88,6 +88,15 @@ async function attackUntilDeed (page, ids, wantSuccess) {
   }, { ...ids, wantSuccess })
 }
 
+/**
+ * Toggle the off-by-default `mightyDeedsEnabled` world setting (issue #319).
+ * @param {import('@playwright/test').Page} page
+ * @param {boolean} enabled
+ */
+async function setMightyDeedsEnabled (page, enabled) {
+  await page.evaluate((value) => game.settings.set('dcc', 'mightyDeedsEnabled', value), enabled)
+}
+
 test.describe('Mighty Deeds E2E Tests', () => {
   let consoleErrors = []
 
@@ -151,6 +160,9 @@ test.describe('Mighty Deeds E2E Tests', () => {
       }
     })
 
+    // Reset the deed prompt to its off-by-default state for test isolation (issue #319)
+    await setMightyDeedsEnabled(page, false)
+
     // Close any welcome dialogs
     for (const selector of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
       const dialog = page.locator(selector)
@@ -182,6 +194,7 @@ test.describe('Mighty Deeds E2E Tests', () => {
 
   test('a successful deed offers the table prompt and Roll Deed posts the result', async ({ page }) => {
     const fixtures = await createDeedFixtures(page)
+    await setMightyDeedsEnabled(page, true)
 
     const success = await attackUntilDeed(page, fixtures, true)
     expect(success, 'no successful deed in 30 attacks').not.toBeNull()
@@ -224,11 +237,26 @@ test.describe('Mighty Deeds E2E Tests', () => {
 
   test('a failed deed shows no table prompt', async ({ page }) => {
     const fixtures = await createDeedFixtures(page)
+    await setMightyDeedsEnabled(page, true)
 
     const failure = await attackUntilDeed(page, fixtures, false)
     expect(failure, 'no failed deed in 30 attacks').not.toBeNull()
     expect(failure.deedDieRollResult).toBeLessThan(3)
     expect(failure.deedTables).toEqual([])
     expect(failure.contentHasPrompt).toBe(false)
+  })
+
+  test('with the setting disabled (default), a successful deed shows no prompt', async ({ page }) => {
+    const fixtures = await createDeedFixtures(page)
+    // mightyDeedsEnabled is left at its default (false) by beforeEach.
+    // The table is still registered, but the attack card must not offer it.
+    expect(fixtures.registryEntry).toEqual({ name: 'E2E Deed Table', path: 'E2E Deed Table' })
+
+    const success = await attackUntilDeed(page, fixtures, true)
+    expect(success, 'no successful deed in 30 attacks').not.toBeNull()
+    expect(success.deedDieRollResult).toBeGreaterThanOrEqual(3)
+    // Feature off: no tables attached and no prompt rendered even on a deed success
+    expect(success.deedTables).toEqual([])
+    expect(success.contentHasPrompt).toBe(false)
   })
 })

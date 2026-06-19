@@ -1,0 +1,40 @@
+/* ----------------------------------------- */
+/*  Hit Points Config Dialog                 */
+/* ----------------------------------------- */
+
+.dcc.hit-points-config {
+  .hp-display {
+    text-align: center;
+    font-size: 1.8em;
+    font-family: var(--system-data-font), serif;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+
+    .hp-current {
+      color: var(--system-damage-color);
+      font-weight: bold;
+    }
+
+    .hp-separator {
+      margin: 0 4px;
+      color: var(--system-primary-color);
+    }
+
+    .hp-max {
+      color: var(--system-primary-color);
+    }
+  }
+
+  input[name='adjustment'] {
+    text-align: center;
+  }
+
+  .hint {
+    font-size: 0.85em;
+    color: var(--system-text-muted-color);
+    font-style: italic;
+    margin: 0;
+  }
+}
+

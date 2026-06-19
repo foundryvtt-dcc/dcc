@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.skills.hideInShadows.value",
+      "key": "system.skills.hideInShadows.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

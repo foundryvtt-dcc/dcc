@@ -1,0 +1,214 @@
+/* ----------------------------------------- */
+/*  Tabs                                     */
+/* ----------------------------------------- */
+
+.dcc.sheet {
+  .sheet-tabs.tabs {
+    font-family: var(--system-heading-font), serif;
+    max-height: 25px;
+    border-top: 0;
+    margin-bottom: 8px;
+  }
+
+  /* Responsive tabs with overflow dropdown */
+  .sheet-tabs.responsive-tabs {
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    .tabs-container {
+      display: flex;
+      flex: 1 1 auto;
+      overflow: hidden;
+      min-width: 0;
+      justify-content: space-evenly; /* Evenly distribute tabs */
+
+      a[data-tab] {
+        flex: 0 0 auto;
+        white-space: nowrap;
+
+        &.tab-hidden {
+          display: none;
+        }
+      }
+    }
+
+    .tabs-overflow {
+      flex: 0 0 auto;
+      position: relative;
+      display: none; /* Hidden by default, shown by JS when needed */
+
+      &.has-overflow {
+        display: block;
+      }
+
+      .tabs-overflow-button {
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        padding: 4px 8px;
+        color: var(--color-text-dark-secondary);
+        font-size: 1em;
+
+        &:hover {
+          color: var(--color-text-dark-primary);
+        }
+
+        i {
+          pointer-events: none;
+        }
+      }
+
+      .tabs-overflow-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 100;
+        background: var(--system-tab-overflow-background);
+        border: 1px solid var(--system-tab-overflow-border-color);
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        min-width: 150px;
+        padding: 4px 0;
+
+        &.open {
+          display: block;
+        }
+
+        a[data-tab] {
+          display: block;
+          padding: 6px 12px;
+          color: var(--system-tab-overflow-text-color);
+          text-decoration: none;
+          white-space: nowrap;
+
+          &:hover {
+            background: var(--system-tab-overflow-hover-background);
+            color: var(--system-tab-overflow-hover-text-color);
+          }
+
+          &.active {
+            color: var(--system-tab-overflow-active-text-color);
+            font-weight: bold;
+          }
+
+          &::before {
+            font-family: var(--system-icon-font), serif;
+            padding-right: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  a[data-tab] {
+    padding: 4px 0 4px 0;
+
+    &::before {
+      font-family: var(--system-icon-font), serif;
+      padding-right: 5px;
+    }
+  }
+
+  a[data-tab='armor']::before {
+    content: '\f3ed';
+  }
+
+  a[data-tab='character']::before {
+    content: '\f007';
+  }
+
+
+  a[data-tab='cleric']::before {
+    content: '\f3ed';
+  }
+
+  a[data-tab='description']::before {
+    content: '\f249';
+  }
+
+  a[data-tab='dwarf']::before {
+    content: '\f6eb';
+  }
+
+  a[data-tab='effects']::before {
+    content: '\e59f';
+  }
+
+  a[data-tab='elf']::before {
+    content: '\f56b';
+  }
+
+  a[data-tab='equipment']::before {
+    content: '\f71d';
+  }
+
+  a[data-tab='halfling']::before {
+    content: '\e139';
+  }
+
+  a[data-tab='item']::before {
+    content: '\f723';
+  }
+
+  a[data-tab='judge-description']::before {
+    content: '\e3a5';
+  }
+
+  a[data-tab='level']::before {
+    content: '\f3bf';
+  }
+
+  a[data-tab='levelLawful']::before {
+    content: '\f24e';
+  }
+
+  a[data-tab='levelNeutral']::before {
+    content: '\3d';
+  }
+
+  a[data-tab='levelChaotic']::before {
+    content: '\f7d4';
+  }
+
+  a[data-tab='manifestation']::before {
+    content: '\f890';
+  }
+
+  a[data-tab='mercurial']::before {
+    content: '\f72b';
+  }
+
+  a[data-tab='notes']::before {
+    content: '\f249';
+  }
+
+  a[data-tab='skills']::before {
+    content: '\f5dc';
+  }
+
+  a[data-tab='clericSpells']::before,
+  a[data-tab='spells']::before,
+  a[data-tab='wizardSpells']::before,
+  a[data-tab='spell']::before, {
+    content: '\f6b8';
+  }
+
+  a[data-tab='warrior']::before {
+    content: '\f6eb';
+  }
+
+  a[data-tab='weapon']::before {
+    content: '\f71d';
+  }
+
+  a[data-tab='wizard']::before {
+    content: '\f6e8';
+  }
+
+  a[data-tab='thief']::before {
+    content: '\f504';
+  }
+}
+
