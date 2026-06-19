@@ -2517,9 +2517,13 @@ test.describe('DCC Extension API', () => {
 
     expect(result.isFunction).toBe(true)
     expect(result.exposedKey).toBe(true)
-    expect(result.registeredIds).toEqual([
+    // The 7 canonical PC classes must always be seeded. Assert they are a
+    // subset (not an exact match) so the test stays green in worlds where
+    // sibling homebrew modules (xcc / mcc-classes / dcc-crawl-classes)
+    // register additional classIds via the same helper.
+    expect(result.registeredIds).toEqual(expect.arrayContaining([
       'cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard'
-    ])
+    ]))
     expect(result.clericPrefix).toBe('cleric')
     expect(result.warriorPrefix).toBe('warrior')
   })
