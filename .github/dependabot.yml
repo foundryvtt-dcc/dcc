@@ -1,0 +1,34 @@
+# Dependabot configuration
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Policy: do not open update PRs for releases that are less than a week
+# old. The `cooldown.default-days: 7` setting makes Dependabot wait 7
+# days after a version is published before proposing it, so freshly
+# released (and most likely to be yanked/broken) versions are skipped.
+# Cooldown applies to version updates only — security updates are exempt
+# and still come through immediately.
+version: 2
+updates:
+  # Root system dependencies (package.json / package-lock.json)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
+  # Playwright end-to-end test dependencies
+  - package-ecosystem: "npm"
+    directory: "/browser-tests/e2e"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
+  # GitHub Actions used by the CI / release workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
