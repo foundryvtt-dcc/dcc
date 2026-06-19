@@ -17,7 +17,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
       - name: GitHub Release
         id: github-release
         uses: foundryvtt-dcc/foundry-release-action@main
