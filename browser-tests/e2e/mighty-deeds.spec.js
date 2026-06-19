@@ -233,6 +233,13 @@ test.describe('Mighty Deeds E2E Tests', () => {
       4: 'Knockdown'
     }[success.deedDieRollResult] || 'Throw'
     expect(result.content).toContain(expected)
+
+    // One-shot: the button disables after posting and a second click adds no further result
+    await expect(button).toBeDisabled()
+    const countAfterFirst = await page.evaluate(() => game.messages.size)
+    await button.click({ force: true }).catch(() => {})
+    await page.waitForTimeout(500)
+    expect(await page.evaluate(() => game.messages.size)).toBe(countAfterFirst)
   })
 
   test('a failed deed shows no table prompt', async ({ page }) => {

@@ -366,22 +366,33 @@ export const attachMightyDeedListeners = function (message, html) {
  * @param {Object} event The originating click event
  */
 const _onRollMightyDeed = async function (event) {
-  const container = event.target.closest('.deed-table-prompt')
-  if (!container) { return }
+  const button = event.currentTarget
+  // One-shot: ignore repeat clicks and guard against a double-fire while the
+  // async table lookup is in flight. Re-enabled below only if the lookup fails.
+  if (button.disabled) { return }
+  const select = button.closest('.deed-table-prompt')?.querySelector('.deed-table-select')
+  const reEnable = () => { button.disabled = false; if (select) { select.disabled = false } }
+  button.disabled = true
+  if (select) { select.disabled = true }
+
+  const container = button.closest('.deed-table-prompt')
+  if (!container) { reEnable(); return }
 
   const deedRoll = parseInt(container.getAttribute('data-deed-roll'))
   const tablePath = container.querySelector('.deed-table-select')?.value
-  if (!tablePath || isNaN(deedRoll)) { return }
+  if (!tablePath || isNaN(deedRoll)) { reEnable(); return }
 
   const table = await getTableFromPath(tablePath)
   if (!table) {
     ui.notifications.warn(game.i18n.format('DCC.MightyDeedTableNotFound', { table: tablePath }))
+    reEnable()
     return
   }
 
   const result = table.getResultsForRoll(deedRoll)[0]
   if (!result) {
     ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds'))
+    reEnable()
     return
   }
 
