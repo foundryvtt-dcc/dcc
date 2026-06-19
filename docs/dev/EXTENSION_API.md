@@ -89,6 +89,7 @@ audited sibling modules for the path before slimming.
 | `dcc.postActorImport` | `module/parser.js:273` | `xcc` (self-emission) | §2.5 | Fired after Purple Sorcerer / stat-block import. |
 | `dcc.registerCriticalHitsPack` | `module/settings.js:76` | `dcc-core-book`, `xcc-core-book` (emitters) | §2.10, §2.11 | Emitted by settings change AND re-emitted by content packs during `dcc.ready`. |
 | `dcc.registerDisapprovalPack` | `module/settings.js:124` | `dcc-core-book`, `xcc-core-book`, `dcc-annual-1` (emitters) | §2.10, §2.11 | Same pattern. |
+| `dcc.registerMightyDeedsPack` | `module/settings.js` (onChange emitter); handler in `module/settings-table-hooks.mjs` | `dcc-core-book` (companion pack, emitter) | §2.10, §2.11 | Same pattern as `registerDisapprovalPack`. Registers a compendium of Mighty Deed result tables surfaced on the attack card's deed prompt (issue #319). Emitted by the `mightyDeedsCompendium` settings change AND re-emitted by content packs during `dcc.ready`. The prompt itself is gated behind the off-by-default `mightyDeedsEnabled` world setting. |
 | `dcc.registerLevelDataPack` | *(system listens; emitted by packs)* | `dcc-core-book`, `xcc-core-book`, `dcc-crawl-classes` (emitters); system listens at `dcc.js:923` | §2.10, §2.11 | System is a *listener* here, not an emitter. Class progressions come in through this. |
 | `dcc.setFumbleTable` | `module/settings.js:108` | `dcc-core-book`, `xcc-core-book` (emitters) | §2.10 | |
 | `dcc.setDivineAidTable` | `module/settings.js:172` | `dcc-core-book` (emitter) | §2.10 | |
