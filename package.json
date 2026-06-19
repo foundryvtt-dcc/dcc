@@ -10,7 +10,7 @@
     "husky": "^9.1.7",
     "sass": "^1.99.0",
     "standard": "^17.1.2",
-    "stylelint": "^17.12.0",
+    "stylelint": "^17.13.0",
     "stylelint-config-sass-guidelines": "^13.0.0",
     "vitest": "^4.1.7"
   },
