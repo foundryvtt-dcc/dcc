@@ -25,7 +25,8 @@ vi.mock('../chat.js', () => ({
   emoteDamageRoll: vi.fn(),
   emoteInitiativeRoll: vi.fn(),
   emoteSavingThrowRoll: vi.fn(),
-  emoteSkillCheckRoll: vi.fn()
+  emoteSkillCheckRoll: vi.fn(),
+  attachMightyDeedListeners: vi.fn()
 }))
 
 vi.mock('../parser.js', () => ({
@@ -201,6 +202,8 @@ describe('onRenderChatMessageHTML', () => {
     expect(chat.enforceMinimumDamage).toHaveBeenCalledWith(message, html)
     expect(SpellResult.processChatMessage).toHaveBeenCalledWith(message, html, {})
     expect(TableResult.processChatMessage).toHaveBeenCalledWith(message, html, {})
+    // Mighty Deed prompt listeners are attached after the emote/lookup passes (issue #319)
+    expect(chat.attachMightyDeedListeners).toHaveBeenCalledWith(message, html)
   })
 
   test('forwards the dcc.ItemId flag onto a data-item-id attribute', async () => {

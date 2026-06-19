@@ -150,6 +150,36 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Enable the Mighty Deed table prompt on attack cards (issue #319).
+   * Off by default — when disabled the attack card never offers the deed
+   * table dropdown, regardless of which deed tables exist in the world.
+   */
+  game.settings.register('dcc', 'mightyDeedsEnabled', {
+    name: 'DCC.SettingMightyDeedsEnabled',
+    hint: 'DCC.SettingMightyDeedsEnabledHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Compendium to look in for Mighty Deed tables
+   */
+  game.settings.register('dcc', 'mightyDeedsCompendium', {
+    name: 'DCC.SettingMightyDeedsTablesCompendium',
+    hint: 'DCC.SettingMightyDeedsTablesCompendiumHint',
+    scope: 'world',
+    config: manualConfig,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerMightyDeedsPack', value, true)
+    }
+  })
+
+  /**
    * Table to use for turn unholy
    */
   game.settings.register('dcc', 'turnUnholyTable', {

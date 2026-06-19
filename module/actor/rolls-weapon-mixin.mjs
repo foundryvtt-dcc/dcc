@@ -1,4 +1,4 @@
-/* global game, Hooks, Roll, ChatMessage, ui, foundry */
+/* global CONFIG, game, Hooks, Roll, ChatMessage, ui, foundry */
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from '../utilities.js'
 import {
@@ -146,6 +146,14 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
 
+    // On a successful deed, offer a prompt to look up the deed die result on a Mighty Deed table (issue #319).
+    // Gated on the `mightyDeedsEnabled` world setting (off by default) so the prompt never appears unless a GM opts in.
+    let deedTables = []
+    if (deedRollSuccess && game.settings.get('dcc', 'mightyDeedsEnabled')) {
+      deedTables = Object.values(CONFIG.DCC.mightyDeedsTables || {})
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     // Crit roll
     let critRollFormula = ''
     let critInlineRoll = ''
@@ -272,6 +280,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         deedDieRoll,
         deedDieRollResult,
         deedRollSuccess,
+        deedTables,
         fumbleInlineRoll,
         fumblePrompt,
         fumbleRoll,

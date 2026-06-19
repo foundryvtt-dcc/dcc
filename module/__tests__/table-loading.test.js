@@ -400,6 +400,16 @@ describe('onImportAdventure', () => {
 describe('onCreateRollTable', () => {
   beforeEach(() => {
     globalThis.CONFIG.DCC.disapprovalTables = {}
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
+  })
+
+  test('adds the table to mightyDeedsTables when the name contains "Deed" (issue #319)', () => {
+    onCreateRollTable({ name: 'Mighty Deed: Disarm' })
+
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['Mighty Deed: Disarm']).toEqual({
+      name: 'Mighty Deed: Disarm',
+      path: 'Mighty Deed: Disarm'
+    })
   })
 
   test('adds the table to disapprovalTables when the name contains "Disapproval"', () => {
@@ -432,6 +442,7 @@ describe('onDeleteRollTable', () => {
       'Cleric Disapproval': { name: 'Cleric Disapproval', path: 'Cleric Disapproval' },
       'Other Table': { name: 'Other Table', path: 'Other Table' }
     }
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
 
     onDeleteRollTable({ name: 'Cleric Disapproval' })
 
@@ -439,8 +450,22 @@ describe('onDeleteRollTable', () => {
     expect(globalThis.CONFIG.DCC.disapprovalTables['Other Table']).toBeDefined()
   })
 
+  test('removes the table from mightyDeedsTables by name (issue #319)', () => {
+    globalThis.CONFIG.DCC.disapprovalTables = {}
+    globalThis.CONFIG.DCC.mightyDeedsTables = {
+      'Mighty Deed': { name: 'Mighty Deed', path: 'Mighty Deed' },
+      'Other Deed': { name: 'Other Deed', path: 'Other Deed' }
+    }
+
+    onDeleteRollTable({ name: 'Mighty Deed' })
+
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['Mighty Deed']).toBeUndefined()
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['Other Deed']).toBeDefined()
+  })
+
   test('is a no-op when the named table is not currently tracked', () => {
     globalThis.CONFIG.DCC.disapprovalTables = {}
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
 
     expect(() => onDeleteRollTable({ name: 'Not Present' })).not.toThrow()
   })
@@ -451,6 +476,7 @@ describe('onUpdateRollTable', () => {
     globalThis.CONFIG.DCC.disapprovalTables = {
       'Cleric Disapproval': { name: 'Cleric Disapproval', path: 'Cleric Disapproval' }
     }
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
     globalThis.game.tables = Object.assign([], { getName: vi.fn() })
 
     onUpdateRollTable({ name: 'Cleric Disapproval' }, { description: 'changed' })
@@ -463,6 +489,7 @@ describe('onUpdateRollTable', () => {
       'Cleric Disapproval': { name: 'Cleric Disapproval', path: 'dcc-core.dcc-tables.Cleric Disapproval' },
       'Old World Name': { name: 'Old World Name', path: 'Old World Name' }
     }
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
     globalThis.game.tables = Object.assign(
       [{ name: 'New World Disapproval' }],
       { getName: vi.fn() }
@@ -491,6 +518,7 @@ describe('onUpdateRollTable', () => {
     globalThis.CONFIG.DCC.disapprovalTables = {
       'Stale Disapproval': { name: 'Stale Disapproval', path: 'Stale Disapproval' }
     }
+    globalThis.CONFIG.DCC.mightyDeedsTables = {}
     globalThis.game.tables = Object.assign(
       [{ name: 'Renamed Random Table' }],
       { getName: vi.fn() }
@@ -503,6 +531,36 @@ describe('onUpdateRollTable', () => {
 
     expect(globalThis.CONFIG.DCC.disapprovalTables['Stale Disapproval']).toBeUndefined()
     expect(globalThis.CONFIG.DCC.disapprovalTables['Renamed Random Table']).toBeUndefined()
+  })
+
+  test('preserves compendium deed entries and rebuilds the world half on rename (issue #319)', () => {
+    globalThis.CONFIG.DCC.disapprovalTables = {}
+    globalThis.CONFIG.DCC.mightyDeedsTables = {
+      'Core Deed': { name: 'Core Deed', path: 'dcc-core-book.dcc-tables.Core Deed' },
+      'Old Deed Name': { name: 'Old Deed Name', path: 'Old Deed Name' }
+    }
+    globalThis.game.tables = Object.assign(
+      [{ name: 'New World Deed' }],
+      { getName: vi.fn() }
+    )
+
+    onUpdateRollTable(
+      { name: 'New World Deed' },
+      { name: 'New World Deed' }
+    )
+
+    // Compendium deed entry survives (its path contains a dot)
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['Core Deed']).toEqual({
+      name: 'Core Deed',
+      path: 'dcc-core-book.dcc-tables.Core Deed'
+    })
+    // Stale world deed entry is gone after rebuild
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['Old Deed Name']).toBeUndefined()
+    // New world deed entry from game.tables walk is present
+    expect(globalThis.CONFIG.DCC.mightyDeedsTables['New World Deed']).toEqual({
+      name: 'New World Deed',
+      path: 'New World Deed'
+    })
   })
 })
 

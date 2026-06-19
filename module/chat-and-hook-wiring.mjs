@@ -117,6 +117,9 @@ export async function onRenderChatMessageHTML (message, html, data) {
   // Process table result navigation AFTER emote/lookup functions have modified the HTML
   // This ensures event listeners are attached to the final DOM elements
   TableResult.processChatMessage(message, html, data)
+
+  // Attach Mighty Deed table prompt listeners after the emote functions have modified the HTML (issue #319)
+  chat.attachMightyDeedListeners(message, html)
 }
 
 /**

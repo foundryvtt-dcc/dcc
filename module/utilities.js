@@ -214,6 +214,32 @@ function resolveCritTableLink (critTableSuffix) {
 }
 
 /**
+ * Resolve a RollTable from a path string
+ * @param {string} tablePath - a world table name, or a compendium path like 'scope.pack-name.Table Name'
+ * @returns {Promise<Object|null>} - the RollTable document, or null if not found
+ */
+export async function getTableFromPath (tablePath) {
+  if (!tablePath) { return null }
+
+  // Compendium paths have at least three components: scope, pack name, table name
+  const pathComponents = tablePath.split('.')
+  if (pathComponents.length >= 3) {
+    const packName = pathComponents.slice(0, 2).join('.')
+    const tableName = pathComponents.slice(2).join('.')
+    const pack = game.packs.get(packName)
+    if (pack) {
+      const entry = pack.index.find((entity) => entity.name === tableName)
+      if (entry) {
+        return pack.getDocument(entry._id)
+      }
+    }
+  }
+
+  // Fall back to a world table by name
+  return game.tables.getName(tablePath) || null
+}
+
+/**
  * Draw a result from the fumble table
  * @param roll - roll instance to use
  * @param localTableName - name of the local world table to check first (e.g. 'Table 4-2: Fumbles')

@@ -23,6 +23,13 @@ export function onRegisterDisapprovalPack (value, fromSystemSetting = false) {
   }
 }
 
+export function onRegisterMightyDeedsPack (value, fromSystemSetting = false) {
+  const mightyDeedsPacks = CONFIG.DCC.mightyDeedsPacks
+  if (mightyDeedsPacks) {
+    mightyDeedsPacks.addPack(value, fromSystemSetting)
+  }
+}
+
 export function onRegisterCriticalHitsPack (value, fromSystemSetting = false) {
   const criticalHitPacks = CONFIG.DCC.criticalHitPacks
   if (criticalHitPacks) {
@@ -97,6 +104,7 @@ export function onSetTurnUnholyTable (value, fromSystemSetting = false) {
 
 export const SETTINGS_TABLE_HOOKS = Object.freeze({
   'dcc.registerDisapprovalPack': onRegisterDisapprovalPack,
+  'dcc.registerMightyDeedsPack': onRegisterMightyDeedsPack,
   'dcc.registerCriticalHitsPack': onRegisterCriticalHitsPack,
   'dcc.setDivineAidTable': onSetDivineAidTable,
   'dcc.setFumbleTable': onSetFumbleTable,

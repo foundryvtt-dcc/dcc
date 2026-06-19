@@ -10,6 +10,7 @@ import {
   SETTINGS_TABLE_HOOKS,
   onRegisterCriticalHitsPack,
   onRegisterDisapprovalPack,
+  onRegisterMightyDeedsPack,
   onRegisterLevelDataPack,
   onRegisterMercurialMagicTable,
   onSetDivineAidTable,
@@ -207,6 +208,7 @@ describe('onSetTurnUnholyTable', () => {
 describe('SETTINGS_TABLE_HOOKS dispatch table', () => {
   test('routes each documented hook name to the corresponding handler', () => {
     expect(SETTINGS_TABLE_HOOKS['dcc.registerDisapprovalPack']).toBe(onRegisterDisapprovalPack)
+    expect(SETTINGS_TABLE_HOOKS['dcc.registerMightyDeedsPack']).toBe(onRegisterMightyDeedsPack)
     expect(SETTINGS_TABLE_HOOKS['dcc.registerCriticalHitsPack']).toBe(onRegisterCriticalHitsPack)
     expect(SETTINGS_TABLE_HOOKS['dcc.setDivineAidTable']).toBe(onSetDivineAidTable)
     expect(SETTINGS_TABLE_HOOKS['dcc.setFumbleTable']).toBe(onSetFumbleTable)
@@ -217,12 +219,13 @@ describe('SETTINGS_TABLE_HOOKS dispatch table', () => {
     expect(SETTINGS_TABLE_HOOKS['dcc.setTurnUnholyTable']).toBe(onSetTurnUnholyTable)
   })
 
-  test('covers exactly the nine documented hook names', () => {
+  test('covers exactly the ten documented hook names', () => {
     expect(Object.keys(SETTINGS_TABLE_HOOKS).sort()).toEqual([
       'dcc.registerCriticalHitsPack',
       'dcc.registerDisapprovalPack',
       'dcc.registerLevelDataPack',
       'dcc.registerMercurialMagicTable',
+      'dcc.registerMightyDeedsPack',
       'dcc.setDivineAidTable',
       'dcc.setFumbleTable',
       'dcc.setLayOnHandsTable',
@@ -254,8 +257,8 @@ describe('registerSettingsTableHooks', () => {
     }
   })
 
-  test('registers exactly nine listeners — one per dispatch-table entry', () => {
+  test('registers exactly ten listeners — one per dispatch-table entry', () => {
     registerSettingsTableHooks()
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(9)
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(10)
   })
 })

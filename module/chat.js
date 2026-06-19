@@ -1,7 +1,7 @@
-/* global canvas, foundry, game, ui */
+/* global canvas, foundry, game, ui, ChatMessage */
 // noinspection DuplicatedCode
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, addDamageFlavorToRolls } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls } from './utilities.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -270,6 +270,16 @@ export const emoteAttackRoll = function (message, html) {
       deedDieHTML = `<span class="inline-roll${critical}" title="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</span>`
     }
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
+
+    // Re-add the Mighty Deed table prompt, since the emote replaces the card content
+    if (message.system.deedTables?.length) {
+      const options = message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
+      deedRollHTML += `
+        <div class="deed-table-prompt" data-deed-roll="${message.system.deedDieRollResult}">
+          <select class="deed-table-select" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
+          <button type="button" class="roll-deed-table">${game.i18n.localize('DCC.RollDeed')}</button>
+        </div>`
+    }
   }
 
   let crit = ''
@@ -338,6 +348,70 @@ export const emoteAttackRoll = function (message, html) {
   if (header) {
     header.remove()
   }
+}
+
+/**
+ * Attach listeners for the Mighty Deed table prompt on attack cards
+ * @param message
+ * @param html
+ */
+export const attachMightyDeedListeners = function (message, html) {
+  html.querySelectorAll('.roll-deed-table').forEach(el => {
+    el.addEventListener('click', _onRollMightyDeed.bind(message))
+  })
+}
+
+/**
+ * Look up the deed die result on the selected Mighty Deed table and post the result to chat
+ * @param {Object} event The originating click event
+ */
+const _onRollMightyDeed = async function (event) {
+  const button = event.currentTarget
+  // One-shot: ignore repeat clicks and guard against a double-fire while the
+  // async table lookup is in flight. Re-enabled below only if the lookup fails.
+  if (button.disabled) { return }
+  const select = button.closest('.deed-table-prompt')?.querySelector('.deed-table-select')
+  const reEnable = () => { button.disabled = false; if (select) { select.disabled = false } }
+  button.disabled = true
+  if (select) { select.disabled = true }
+
+  const container = button.closest('.deed-table-prompt')
+  if (!container) { reEnable(); return }
+
+  const deedRoll = parseInt(container.getAttribute('data-deed-roll'))
+  const tablePath = container.querySelector('.deed-table-select')?.value
+  if (!tablePath || isNaN(deedRoll)) { reEnable(); return }
+
+  const table = await getTableFromPath(tablePath)
+  if (!table) {
+    ui.notifications.warn(game.i18n.format('DCC.MightyDeedTableNotFound', { table: tablePath }))
+    reEnable()
+    return
+  }
+
+  const result = table.getResultsForRoll(deedRoll)[0]
+  if (!result) {
+    ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds'))
+    reEnable()
+    return
+  }
+
+  const resultText = await TextEditor.enrichHTML(addDamageFlavorToRolls(result.description))
+  const actor = game.actors.get(this.system?.actorId)
+  await ChatMessage.create({
+    user: game.user.id,
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: game.i18n.format('DCC.MightyDeedRollFlavor', { table: table.name, roll: deedRoll }),
+    flags: {
+      'dcc.isMightyDeed': true
+    },
+    content: `
+      <div class="table-draw deed-table-result" data-table-name="${table.name}" data-current-roll="${deedRoll}">
+        <ol class="table-results"><li class="table-result">
+          <div class="result-text">${resultText}</div>
+        </li></ol>
+      </div>`
+  })
 }
 
 /**

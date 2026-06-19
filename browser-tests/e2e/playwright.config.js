@@ -15,7 +15,13 @@ module.exports = defineConfig({
   timeout: 60000, // 60 seconds per test
   use: {
     baseURL: 'http://localhost:30000',
-    trace: 'on-first-retry'
+    trace: 'on-first-retry',
+    launchOptions: {
+      // Hardware-accelerated WebGL in headless Chromium (Metal on macOS).
+      // Without it Foundry detects SwiftShader and shows a permanent
+      // "hardware acceleration" banner that intercepts clicks in tests.
+      args: process.platform === 'darwin' ? ['--use-angle=metal'] : []
+    }
   },
   projects: [
     {

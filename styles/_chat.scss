@@ -61,6 +61,37 @@ a.inline-roll {
   }
 }
 
+.deed-table-prompt {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+
+  .deed-table-select,
+  .roll-deed-table {
+    background: var(--chat-background);
+    border: 1px solid var(--color-border-light-primary);
+    color: var(--chat-primary-color);
+  }
+
+  .deed-table-select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .roll-deed-table {
+    flex: 0 0 auto;
+    font-family: var(--system-label-font), serif;
+    line-height: 1.5;
+    padding: 0 8px;
+    width: auto;
+  }
+}
+
+// The deed result card has no result-range navigation column, so let the text span the full width
+.table-draw.deed-table-result .table-results .table-result {
+  grid-template-columns: auto;
+}
+
 .flavor-text {
   font-family: var(--system-label-font), serif;
 

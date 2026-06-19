@@ -12,7 +12,8 @@ import {
   getCritTableResult,
   getFumbleTableResult,
   getFumbleTableNameFromCritTableName,
-  getNPCFumbleTableResult
+  getNPCFumbleTableResult,
+  getTableFromPath
 } from '../utilities.js'
 import { clearAllTableCaches, critTableDocCache, critTableLinkCache } from '../adapter/table-cache.mjs'
 
@@ -520,6 +521,68 @@ describe('Utilities', () => {
       mockEntry.name = 'Crit/Fumble Table EL'
       const link = await getCritTableLink('EL', 'elemental crit')
       expect(link).toBe('@UUID[Compendium.dcc-core-book.dcc-crit-tables.crit-link-id]{elemental crit}')
+    })
+  })
+
+  describe('getTableFromPath', () => {
+    let mockPack
+    let mockTable
+
+    beforeEach(() => {
+      mockTable = {
+        name: 'Deed: Trips and Throws',
+        getResultsForRoll: vi.fn()
+      }
+
+      mockPack = {
+        index: [{ _id: 'deed-table-id', name: 'Deed: Trips and Throws' }],
+        getDocument: vi.fn().mockResolvedValue(mockTable)
+      }
+
+      global.game = {
+        packs: {
+          get: vi.fn().mockReturnValue(mockPack)
+        },
+        tables: {
+          getName: vi.fn().mockReturnValue(null)
+        }
+      }
+    })
+
+    it('returns null for an empty path', async () => {
+      expect(await getTableFromPath('')).toBeNull()
+      expect(await getTableFromPath(null)).toBeNull()
+    })
+
+    it('resolves a compendium path', async () => {
+      const result = await getTableFromPath('some-module.deed-tables.Deed: Trips and Throws')
+      expect(global.game.packs.get).toHaveBeenCalledWith('some-module.deed-tables')
+      expect(mockPack.getDocument).toHaveBeenCalledWith('deed-table-id')
+      expect(result).toBe(mockTable)
+    })
+
+    it('resolves a world table by name', async () => {
+      const worldTable = { name: 'Deed: Disarm' }
+      global.game.tables.getName.mockReturnValue(worldTable)
+
+      const result = await getTableFromPath('Deed: Disarm')
+      expect(global.game.tables.getName).toHaveBeenCalledWith('Deed: Disarm')
+      expect(result).toBe(worldTable)
+    })
+
+    it('falls back to a world table when the pack is missing', async () => {
+      global.game.packs.get.mockReturnValue(null)
+      const worldTable = { name: 'some-module.deed-tables.Deed: Trips and Throws' }
+      global.game.tables.getName.mockReturnValue(worldTable)
+
+      const result = await getTableFromPath('some-module.deed-tables.Deed: Trips and Throws')
+      expect(result).toBe(worldTable)
+    })
+
+    it('returns null when nothing matches', async () => {
+      global.game.packs.get.mockReturnValue(null)
+      const result = await getTableFromPath('Nonexistent Table')
+      expect(result).toBeNull()
     })
   })
 
