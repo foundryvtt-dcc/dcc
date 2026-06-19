@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "Rotwelsch",
   "DCC.LayOnHands": "Hand auflegen",
   "DCC.LayOnHandsHint": "Klicke für einen Hände-auflegen-Wurf, CMD/STRG-Klick für mehr Optionen",
+  "DCC.LayOnHandsManifestationHint": "Bearbeite die Zauber-Manifestation für Hand auflegen (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Hand-auflegen-Manifestation",
   "DCC.Level": "Stufe",
   "DCC.LevelChanged": "Stufe geändert auf {level}",
   "DCC.LevelUpHint": "Stufe ändern",

@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "Caló de ladrones",
   "DCC.LayOnHands": "Imposición de manos",
   "DCC.LayOnHandsHint": "Haz clic para tirar un chequeo de imposición de manos, CMD/CTRL clic para más opciones",
+  "DCC.LayOnHandsManifestationHint": "Edita la Manifestación de conjuro para Imposición de manos (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Manifestación de Imposición de manos",
   "DCC.Level": "Nivel",
   "DCC.LevelChanged": "Nivel cambiado a {level}",
   "DCC.LevelUpHint": "Cambiar nivel",

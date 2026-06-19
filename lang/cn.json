@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "盗贼黑话",
   "DCC.LayOnHands": "按手礼",
   "DCC.LayOnHandsHint": "点击投骰按手礼检定，⌘\/Ctrl 以获取更多选项",
+  "DCC.LayOnHandsManifestationHint": "编辑按手礼的法术显现（DCC 年刊）",
+  "DCC.LayOnHandsManifestationTitle": "按手礼显现",
   "DCC.Level": "等级",
   "DCC.LevelChanged": "等级变为 {level}",
   "DCC.LevelUpHint": "改变等级",

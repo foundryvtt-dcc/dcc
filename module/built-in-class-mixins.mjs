@@ -73,7 +73,16 @@ export const BUILT_IN_CLASS_MIXINS = {
       drainDisapproval: new fields.NumberField({ initial: 10, integer: true })
     })
     schema.skills.fields.turnUnholy = disapprovalSkill('DCC.TurnUnholy')
-    schema.skills.fields.layOnHands = disapprovalSkill('DCC.LayOnHands')
+    // Lay on Hands carries an optional Spell Manifestation (DCC Annual).
+    // Mirrors the spell item's `manifestation` shape so the same chat
+    // rendering applies (#426). Scoped to Lay on Hands only for now.
+    schema.skills.fields.layOnHands = disapprovalSkill('DCC.LayOnHands', {
+      manifestation: new fields.SchemaField({
+        value: new fields.StringField({ initial: '' }),
+        description: new fields.StringField({ initial: '' }),
+        displayInChat: new fields.BooleanField({ initial: true })
+      })
+    })
   },
   dwarf (schema) {
     const fields = foundry.data.fields

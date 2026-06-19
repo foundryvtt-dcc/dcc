@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "Gergo dei ladri",
   "DCC.LayOnHands": "Imposizione delle mani",
   "DCC.LayOnHandsHint": "Clicca per effettuare una prova di Imposizione delle mani, tieni premuto CMD/CTRL per ulteriori opzioni",
+  "DCC.LayOnHandsManifestationHint": "Modifica la Manifestazione dell'incantesimo per Imposizione delle mani (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Manifestazione di Imposizione delle mani",
   "DCC.Level": "Livello",
   "DCC.LevelChanged": "Livello modificato: {level}",
   "DCC.LevelUpHint": "Cambia Livello",

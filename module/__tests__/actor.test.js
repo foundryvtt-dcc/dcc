@@ -1219,6 +1219,38 @@ test('rollSkillCheck routes layOnHands via adapter (D4 skill-table)', async () =
   expect(rollToMessageMock).toHaveBeenCalled()
 })
 
+test('rollSkillCheck passes the Lay on Hands manifestation to the chat card (#426)', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  // A skill table routes Lay on Hands through SpellResult.addChatMessage,
+  // where the manifestation surfaces in the chat card.
+  const addChatMessageMock = vi.fn()
+  const originalSpellResult = game.dcc.SpellResult
+  game.dcc.SpellResult = { addChatMessage: addChatMessageMock }
+  game.dcc.getSkillTable.mockResolvedValue({
+    getResultsForRoll: () => [{ text: 'Healing' }]
+  })
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.layOnHands = {
+    label: 'DCC.LayOnHands',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true,
+    manifestation: { value: '7', description: 'A warm golden glow', displayInChat: true }
+  }
+
+  await actor.rollSkillCheck('layOnHands')
+
+  expect(addChatMessageMock).toHaveBeenCalledTimes(1)
+  const opts = addChatMessageMock.mock.calls[0][3]
+  expect(opts.manifestation).toEqual(actor.system.skills.layOnHands.manifestation)
+
+  game.dcc.SpellResult = originalSpellResult
+})
+
 test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D4 skill-table)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
