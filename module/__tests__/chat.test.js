@@ -6,7 +6,7 @@ vi.mock('../utilities.js', async (importOriginal) => {
   return { ...actual, getCritTableResult: vi.fn() }
 })
 
-const { lookupCriticalRoll } = await import('../chat.js')
+const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners } = await import('../chat.js')
 const { getCritTableResult } = await import('../utilities.js')
 
 /**
@@ -103,5 +103,78 @@ describe('lookupCriticalRoll', () => {
     await lookupCriticalRoll(message, html)
 
     expect(html.messageContent.innerHTML).toBe('<span>roll</span>')
+  })
+})
+
+describe('buildMightyDeedPrompt', () => {
+  it('returns empty string when the message has no deed tables', () => {
+    expect(buildMightyDeedPrompt({ system: {} })).toBe('')
+    expect(buildMightyDeedPrompt({ system: { deedTables: [] } })).toBe('')
+    expect(buildMightyDeedPrompt(undefined)).toBe('')
+  })
+
+  it('renders a self-describing prompt with an option per deed table', () => {
+    const message = {
+      system: {
+        deedDieRollResult: 4,
+        deedTables: [
+          { name: 'Deeds of Arms', path: 'world.deeds-of-arms' },
+          { name: 'Deeds II', path: 'dcc.tables.Deeds II' }
+        ]
+      }
+    }
+
+    const html = buildMightyDeedPrompt(message)
+
+    // The deed roll travels on the container so the click handler is self-contained
+    expect(html).toContain('data-deed-roll="4"')
+    expect(html).toContain('class="deed-table-prompt"')
+    expect(html).toContain('<button type="button" class="roll-deed-table"')
+    // One <option> per configured table, carrying its lookup path
+    expect(html).toContain('<option value="world.deeds-of-arms">Deeds of Arms</option>')
+    expect(html).toContain('<option value="dcc.tables.Deeds II">Deeds II</option>')
+  })
+})
+
+describe('attachMightyDeedListeners', () => {
+  // Minimal DOM stand-in: a container holding fake .roll-deed-table buttons,
+  // each tracking how many click listeners were attached.
+  function makeButton () {
+    return {
+      dataset: {},
+      listeners: 0,
+      addEventListener (type) {
+        if (type === 'click') this.listeners++
+      }
+    }
+  }
+
+  function makeCardElement (buttons) {
+    return {
+      querySelectorAll (selector) {
+        return selector === '.roll-deed-table' ? buttons : []
+      }
+    }
+  }
+
+  it('attaches a click handler to each deed-roll button', () => {
+    const buttons = [makeButton(), makeButton()]
+    attachMightyDeedListeners({}, makeCardElement(buttons))
+
+    expect(buttons[0].listeners).toBe(1)
+    expect(buttons[1].listeners).toBe(1)
+    expect(buttons[0].dataset.deedListenerAttached).toBe('true')
+  })
+
+  it('is idempotent — a second call does not double-bind the same button (#319)', () => {
+    const buttons = [makeButton()]
+    const card = makeCardElement(buttons)
+
+    // Both the system render hook and a card-replacing module (dcc-qol) may
+    // call this on the same DOM; the guard must prevent a double roll.
+    attachMightyDeedListeners({}, card)
+    attachMightyDeedListeners({}, card)
+
+    expect(buttons[0].listeners).toBe(1)
   })
 })

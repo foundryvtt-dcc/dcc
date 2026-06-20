@@ -56,6 +56,7 @@ vi.mock('../handlebars-helpers.mjs', () => ({ registerDCCHandlebarsHelpers: vi.f
 vi.mock('../macros.mjs', () => ({ getMacroActor: vi.fn(), getMacroOptions: vi.fn(), rollDCCWeaponMacro: vi.fn() }))
 vi.mock('../spell-check-processor.mjs', () => ({ processSpellCheck: vi.fn() }))
 vi.mock('../table-loading.mjs', () => ({ getSkillTable: vi.fn() }))
+vi.mock('../chat.js', () => ({ attachMightyDeedListeners: vi.fn(), buildMightyDeedPrompt: vi.fn() }))
 vi.mock('../vendor/dcc-core-lib/data/classes/progression-utils.js', () => ({
   registerClassProgression: vi.fn(),
   registerClassProgressions: vi.fn()
@@ -214,7 +215,8 @@ describe('assembleGameDccNamespace', () => {
       'registerActorSheet', 'registerClassDefaults', 'registerClassMixin',
       'registerClassProgression', 'registerClassProgressions', 'registerClassStartingItems',
       'registerHomebrewClassForProgressionLoad', 'registerItemSheet', 'registerSheetPart', 'registerVariant',
-      'rollDCCWeaponMacro', 'getMacroActor', 'getMacroOptions'
+      'rollDCCWeaponMacro', 'getMacroActor', 'getMacroOptions',
+      'attachMightyDeedListeners', 'buildMightyDeedPrompt'
     ]) {
       expect(keys).toContain(expected)
     }
