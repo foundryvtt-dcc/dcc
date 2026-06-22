@@ -39,22 +39,25 @@ export function isActiveGM () {
   return !!game.user?.isGM && game.user === game.users?.activeGM
 }
 
-async function runHandler (action, payload) {
+async function runHandler (action, payload, userId) {
   const handler = handlers.get(action)
   if (!handler) {
     console.warn(`DCC | No socket handler registered for action '${action}'`)
     return undefined
   }
-  return handler(payload)
+  return handler(payload, userId)
 }
 
 /**
  * Socket message dispatcher. Only the active GM acts on an incoming message;
- * every other client ignores it.
+ * every other client ignores it. The requesting user's id rides in the
+ * envelope so handlers can authorize the request (e.g. only let an owner mark
+ * their own chat card). It is client-supplied, so handlers must treat it as a
+ * claim — pair it with a capability/allowlist check, never trust it alone.
  */
 export async function onSocketMessage (message) {
   if (!message || !isActiveGM()) return
-  await runHandler(message.action, message.payload)
+  await runHandler(message.action, message.payload, message.userId)
 }
 
 /**
@@ -67,12 +70,12 @@ export async function onSocketMessage (message) {
  * @returns {Promise<any>} the handler's result when run locally, else undefined
  */
 export async function executeAsGM (action, payload) {
-  if (isActiveGM()) return runHandler(action, payload)
+  if (isActiveGM()) return runHandler(action, payload, game.user?.id)
   if (!game.users?.activeGM) {
     ui.notifications?.warn(game.i18n.localize('DCC.SocketNoGMWarning'))
     return undefined
   }
-  game.socket.emit(DCC_SOCKET, { action, payload })
+  game.socket.emit(DCC_SOCKET, { action, payload, userId: game.user?.id })
   return undefined
 }
 

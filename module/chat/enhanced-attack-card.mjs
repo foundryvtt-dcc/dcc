@@ -159,12 +159,15 @@ export async function buildEnhancedCardData (message, actor, weapon) {
   }
 }
 
+/** The only flags a client may ask the GM to set on a card — button-clicked state. */
+const CLICKED_FLAGS = new Set(['damageButtonClicked', 'critButtonClicked', 'fumbleButtonClicked'])
+
 /** Write a clicked-state flag on the card — directly if owned, else via the GM. */
 async function markButtonClicked (message, key) {
   if (game.user?.isGM || message.isAuthor) {
     await message.setFlag('dcc', key, true)
   } else {
-    await executeAsGM(UPDATE_FLAGS_ACTION, { messageId: message.id, key, value: true })
+    await executeAsGM(UPDATE_FLAGS_ACTION, { messageId: message.id, key })
   }
 }
 
@@ -263,10 +266,23 @@ export async function renderEnhancedAttackCard (message, html) {
   return true
 }
 
-/** GM-side handler: set a `dcc` flag on a message a non-owner clicked. */
-async function updateMessageFlagsHandler ({ messageId, key, value }) {
+/**
+ * GM-side handler: mark a card's button as clicked on behalf of the requester.
+ * Hardened against a crafted socket payload — only the three known
+ * button-clicked flags may be set (never an arbitrary key/value), the message
+ * must exist, and the requesting user must be a GM or own that message.
+ *
+ * @param {{messageId: string, key: string}} payload
+ * @param {string} [userId] requesting user id (client-supplied; verified here)
+ */
+async function updateMessageFlagsHandler ({ messageId, key } = {}, userId) {
+  if (!CLICKED_FLAGS.has(key)) return
   const message = game.messages?.get(messageId)
-  if (message && key) await message.setFlag('dcc', key, value)
+  if (!message) return
+  const sender = userId ? game.users?.get(userId) : null
+  if (!sender) return
+  if (!sender.isGM && !message.testUserPermission?.(sender, 'OWNER')) return
+  await message.setFlag('dcc', key, true)
 }
 
 /** Register the GM-side message-flag socket handler. Call once at ready. */

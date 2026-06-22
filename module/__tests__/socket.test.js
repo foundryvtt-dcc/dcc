@@ -13,8 +13,8 @@ let originalUI
 
 /** Configure the current client: 'activeGM' | 'player' | 'secondaryGM' | 'noGM'. */
 function setClient (role) {
-  const activeGm = { isGM: true }
-  const me = role === 'activeGM' ? activeGm : { isGM: role === 'secondaryGM' }
+  const activeGm = { isGM: true, id: 'gm' }
+  const me = role === 'activeGM' ? activeGm : { isGM: role === 'secondaryGM', id: role }
   globalThis.game = {
     user: me,
     users: { activeGM: role === 'noGM' ? null : activeGm },
@@ -51,7 +51,7 @@ describe('executeAsGM', () => {
     const result = await executeAsGM('local-run', { x: 1 })
 
     expect(result).toBe(42)
-    expect(handler).toHaveBeenCalledWith({ x: 1 })
+    expect(handler).toHaveBeenCalledWith({ x: 1 }, 'gm') // local run passes the GM's own id
     expect(globalThis.game.socket.emit).not.toHaveBeenCalled()
   })
 
@@ -62,7 +62,7 @@ describe('executeAsGM', () => {
 
     await executeAsGM('emit-player', { dmg: 3 })
 
-    expect(globalThis.game.socket.emit).toHaveBeenCalledWith(DCC_SOCKET, { action: 'emit-player', payload: { dmg: 3 } })
+    expect(globalThis.game.socket.emit).toHaveBeenCalledWith(DCC_SOCKET, { action: 'emit-player', payload: { dmg: 3 }, userId: 'player' })
     expect(handler).not.toHaveBeenCalled()
   })
 
@@ -86,9 +86,9 @@ describe('onSocketMessage', () => {
     const handler = vi.fn()
     registerSocketHandler('incoming', handler)
 
-    await onSocketMessage({ action: 'incoming', payload: { a: 1 } })
+    await onSocketMessage({ action: 'incoming', payload: { a: 1 }, userId: 'player' })
 
-    expect(handler).toHaveBeenCalledWith({ a: 1 })
+    expect(handler).toHaveBeenCalledWith({ a: 1 }, 'player') // sender id forwarded to the handler
   })
 
   test('non-active-GM clients ignore incoming messages', async () => {

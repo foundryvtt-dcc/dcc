@@ -150,13 +150,54 @@ describe('buildEnhancedCardData', () => {
 })
 
 describe('registerEnhancedCardSocket', () => {
-  test('registers a GM handler that sets the dcc flag on the named message', async () => {
+  function getHandler () {
     registerEnhancedCardSocket()
     expect(registerSocketHandler).toHaveBeenCalledWith('dcc.updateMessageFlags', expect.any(Function))
-    const handler = registerSocketHandler.mock.calls[0][1]
+    return registerSocketHandler.mock.calls[0][1]
+  }
+
+  test('a GM requester sets the allowlisted clicked flag', async () => {
+    const handler = getHandler()
     const setFlag = vi.fn()
-    globalThis.game.messages = { get: vi.fn(() => ({ setFlag })) }
-    await handler({ messageId: 'm', key: 'damageButtonClicked', value: true })
+    globalThis.game.messages = { get: vi.fn(() => ({ setFlag, testUserPermission: () => false })) }
+    globalThis.game.users = { get: vi.fn(() => ({ isGM: true })) }
+    await handler({ messageId: 'm', key: 'damageButtonClicked' }, 'gm')
     expect(setFlag).toHaveBeenCalledWith('dcc', 'damageButtonClicked', true)
+  })
+
+  test('a non-GM owner of the message is allowed', async () => {
+    const handler = getHandler()
+    const setFlag = vi.fn()
+    globalThis.game.messages = { get: vi.fn(() => ({ setFlag, testUserPermission: () => true })) }
+    globalThis.game.users = { get: vi.fn(() => ({ isGM: false })) }
+    await handler({ messageId: 'm', key: 'critButtonClicked' }, 'owner')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'critButtonClicked', true)
+  })
+
+  test('rejects a non-allowlisted key (no arbitrary flag writes)', async () => {
+    const handler = getHandler()
+    const setFlag = vi.fn()
+    globalThis.game.messages = { get: vi.fn(() => ({ setFlag, testUserPermission: () => true })) }
+    globalThis.game.users = { get: vi.fn(() => ({ isGM: true })) }
+    await handler({ messageId: 'm', key: 'isToHit' }, 'gm')
+    expect(setFlag).not.toHaveBeenCalled()
+  })
+
+  test('rejects a non-GM non-owner requester', async () => {
+    const handler = getHandler()
+    const setFlag = vi.fn()
+    globalThis.game.messages = { get: vi.fn(() => ({ setFlag, testUserPermission: () => false })) }
+    globalThis.game.users = { get: vi.fn(() => ({ isGM: false })) }
+    await handler({ messageId: 'm', key: 'damageButtonClicked' }, 'stranger')
+    expect(setFlag).not.toHaveBeenCalled()
+  })
+
+  test('rejects when the sender id is unknown', async () => {
+    const handler = getHandler()
+    const setFlag = vi.fn()
+    globalThis.game.messages = { get: vi.fn(() => ({ setFlag, testUserPermission: () => true })) }
+    globalThis.game.users = { get: vi.fn(() => null) }
+    await handler({ messageId: 'm', key: 'damageButtonClicked' }, 'ghost')
+    expect(setFlag).not.toHaveBeenCalled()
   })
 })
