@@ -5,6 +5,15 @@
 
 When you are about to do a release, and not before:
 
+> **Publishing is the maintainer's job, always.** The `Create GitHub Release`
+> workflow only ever produces a **draft**. The maintainer reviews it and
+> manually publishes (promotes) it — publishing is what fires the
+> `release: published` workflows that push the version to Foundry's registry.
+> **Automated assistants must never publish or promote a release** (no
+> `gh release edit --draft=false`, no marking latest) unless the maintainer
+> explicitly asks for it in that session. The default is: stop at the draft and
+> hand off.
+
 For automated release process:
 1. You need to have the foundry-cli installed ([https://github.com/FoundryApp/foundry-cli](https://github.com/foundryvtt/foundryvtt-cli))
 1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
@@ -15,9 +24,11 @@ For automated release process:
    `package-lock.json` to that version (via `npm version --no-git-tag-version`)
    before the release action rewrites `system.json` and commits the lot, so the
    lockfile no longer drifts behind the bumped `package.json`.
-1. GitHub Action will automatically create a draft release
-1. Edit draft release notes and title
-1. Publish the release
+1. GitHub Action will automatically create a **draft** release (it never
+   publishes — the workflow always stops at a draft)
+1. Edit the draft release notes and title
+1. **The maintainer manually publishes the draft** (see the callout above —
+   assistants must not publish unless explicitly told)
 
 For manual release process:
 1. You need to have the foundry-cli installed ([https://github.com/FoundryApp/foundry-cli](https://github.com/foundryvtt/foundryvtt-cli))

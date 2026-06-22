@@ -63,14 +63,29 @@ Release v0.66.27
 * Add responsive tabs dropdown for actor sheets (Tim L. White)
 ```
 
-## 5. Publish the Release
+## 5. Hand Off the Draft — Do NOT Publish
+
+The release stays a **draft**. **Do not publish or promote it.** The maintainer
+publishes the draft manually. Stop here and tell the maintainer that draft
+`v{version}` is ready (with notes), and they will push it out.
+
+Publishing is what fires the downstream `release: published` workflows
+(`foundry-website-update`, `update-foundry-manifest-after-release`) that push the
+version to Foundry's registry — that step is the maintainer's call, not yours.
+
+Only run the publish command if the maintainer **explicitly tells you to in that
+session**:
 
 ```bash
+# ONLY when explicitly instructed by the maintainer:
 gh release edit v{version} --draft=false --latest
 ```
 
 ## Important
 
-- GitHub Action auto-creates draft release when version.txt updates on main
-- Never manually edit system.json version - it's auto-generated
-- If action fails, check logs with `gh run view`
+- GitHub Action auto-creates a **draft** release when version.txt updates on main.
+- **Never publish/promote a release** (no `gh release edit --draft=false`, no
+  marking latest) unless the maintainer explicitly tells you to. The default is
+  always: leave the draft for the maintainer to push out.
+- Never manually edit system.json version - it's auto-generated.
+- If action fails, check logs with `gh run view`.
