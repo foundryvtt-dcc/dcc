@@ -5,8 +5,11 @@ import {
   makeAttackRoll as libMakeAttackRoll,
   rollDamage as libRollDamage,
   rollCritical as libRollCritical,
-  rollFumble as libRollFumble
+  rollFumble as libRollFumble,
+  getMonsterFumbleDie
 } from '../vendor/dcc-core-lib/index.js'
+import { qolHandlingCombat } from '../integrations.mjs'
+import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
@@ -164,10 +167,17 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let critTableLookupHint = '' // Set when no crit table is available (look-it-up prompt)
     let critRollTotal = null
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
+    // Monster crit vs a PC: a defending PC's Luck always alters the monster's
+    // crit (RAW). Only when this actor is an NPC, the rule's automation is on,
+    // and dcc-qol isn't driving combat. 0 (no PC target) is a no-op.
+    const defenderLuckMod = (this.isNPC && !qolHandlingCombat() && game.settings.get('dcc', 'playerLuckVsMonsterCrits'))
+      ? (highestPcTargetLuckMod(options.targets) ?? 0)
+      : 0
     if (attackRollResult.crit) {
       const critDispatch = await this._rollCritical(weapon, {
         automate: automateDamageFumblesCrits,
         luckMod,
+        defenderLuckMod,
         critTableName
       })
       critRollFormula = critDispatch.critRollFormula
@@ -199,12 +209,19 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let fumbleRollTotal = null
     let isNPCFumble = false
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
+    // Optional Monster Fumbles rule (DCC Yearbook #8): a monster fumbling
+    // against PC(s) steps its fumble die by the highest targeted PC's Luck.
+    // null (rule off / no PC target / dcc-qol active) leaves the flat NPC die.
+    const monsterFumbleLuckMod = (this.isNPC && !qolHandlingCombat() && game.settings.get('dcc', 'monsterFumbles'))
+      ? highestPcTargetLuckMod(options.targets)
+      : null
     if (attackRollResult.fumble) {
       const fumbleDispatch = await this._rollFumble(weapon, {
         automate: automateDamageFumblesCrits,
         luckMod,
         inverseLuckMod,
         useNPCFumbles,
+        monsterFumbleLuckMod,
         fumbleTableName,
         originalFumbleTableName
       })
@@ -794,9 +811,12 @@ export const RollsWeaponMixin = (Base) => class extends Base {
   async _rollCritical (weapon, ctx) {
     logDispatch('rollCritical', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { automate, luckMod, critTableName } = ctx
+    const { automate, luckMod, defenderLuckMod = 0, critTableName } = ctx
     const critDie = weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'
-    const critRollFormula = `${critDie}${luckMod}`
+    // A defending PC's Luck is subtracted from the monster's crit roll (RAW):
+    // +Luck lowers the result, -Luck raises it.
+    const defenderLuckTerm = defenderLuckMod ? ensurePlus((-defenderLuckMod).toString(), false) : ''
+    const critRollFormula = `${critDie}${luckMod}${defenderLuckTerm}`
     const criticalText = game.i18n.localize('DCC.Critical')
     const critTableText = game.i18n.localize('DCC.CritTable')
     const critTableDisplayText = `${critTableText} ${critTableName}`
@@ -831,6 +851,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const critInput = buildCriticalInput({
       critDie,
       luckModifier: parseInt(this.system.abilities.lck.mod) || 0,
+      defenderLuckModifier: defenderLuckMod,
       critTableName
     })
     const libResult = libRollCritical(critInput, () => naturalCrit)
@@ -893,11 +914,14 @@ export const RollsWeaponMixin = (Base) => class extends Base {
   async _rollFumble (weapon, ctx) {
     logDispatch('rollFumble', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { automate, inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx
+    const { automate, inverseLuckMod, useNPCFumbles, monsterFumbleLuckMod = null, originalFumbleTableName } = ctx
     let fumbleTableName = ctx.fumbleTableName
+    // NPC fumble die: flat 1d10, or — under the optional Monster Fumbles rule
+    // (Yearbook #8) — stepped along the dice chain by the targeted PC's Luck.
+    const npcFumbleDie = monsterFumbleLuckMod !== null ? getMonsterFumbleDie(monsterFumbleLuckMod) : '1d10'
     let fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
     if (this.isNPC && useNPCFumbles) {
-      fumbleRollFormula = '1d10'
+      fumbleRollFormula = npcFumbleDie
     }
 
     if (!automate) {
@@ -927,7 +951,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const fumbleRollTotal = fumbleRoll.total
 
     const naturalFumble = fumbleRoll.dice[0]?.total ?? fumbleRoll.total
-    const fumbleDie = this.isNPC && useNPCFumbles ? '1d10' : this.system.attributes.fumble.die
+    const fumbleDie = this.isNPC && useNPCFumbles ? npcFumbleDie : this.system.attributes.fumble.die
     const fumbleInput = buildFumbleInput({
       fumbleDie,
       luckModifier: parseInt(this.system.abilities.lck.mod) || 0

@@ -384,6 +384,34 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Automate the RAW rule that a targeted PC's Luck modifier alters an incoming
+   * monster critical hit (positive Luck lowers the monster's roll, negative
+   * raises it). Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'playerLuckVsMonsterCrits', {
+    name: 'DCC.SettingPlayerLuckVsMonsterCrits',
+    hint: 'DCC.SettingPlayerLuckVsMonsterCritsHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Optional Monster Fumbles rule (DCC Yearbook #8): when a monster fumbles
+   * against PC(s), step its fumble die along the dice chain by the highest
+   * targeted PC's Luck (base 1d10). Off by default; inert while dcc-qol is active.
+   */
+  game.settings.register('dcc', 'monsterFumbles', {
+    name: 'DCC.SettingMonsterFumbles',
+    hint: 'DCC.SettingMonsterFumblesHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {
