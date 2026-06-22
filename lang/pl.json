@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "Żaden Mistrz Gry nie jest połączony, więc nie udało się wykonać tej akcji. MG musi być online.",
   "DCC.SettingAutoApplyDamage": "Automatycznie zadawaj obrażenia celowi",
   "DCC.SettingAutoApplyDamageHint": "Gdy atak trafia oznaczony cel, automatycznie zadaje mu wylosowane obrażenia (wykonywane przez MG). Ignorowane, gdy moduł DCC Quality of Life jest aktywny.",
+  "DCC.SettingAutoApplyDeadStatus": "Automatycznie nadawaj status martwy BN-om",
+  "DCC.SettingAutoApplyDeadStatusHint": "Automatycznie nadaje efekt statusu martwy bohaterowi niezależnemu, który spada do 0 punktów wytrzymałości. Ignorowane, gdy moduł DCC Quality of Life jest aktywny.",
   "DCC.MediumRangePenalty": "Średni zasięg",
   "DCC.WeaponOutOfRangeTitle": "Cel poza zasięgiem",
   "DCC.WeaponOutOfRangeContent": "{weapon} nie może dosięgnąć celu oddalonego o {distance} stóp (poza zasięgiem dalekim). Strzelić mimo to?",

@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "Nessun Game Master è connesso, quindi questa azione non può essere completata. Un GM deve essere online.",
   "DCC.SettingAutoApplyDamage": "Applica automaticamente i danni al bersaglio",
   "DCC.SettingAutoApplyDamageHint": "Quando un attacco colpisce un bersaglio selezionato, applica automaticamente i danni tirati (eseguito dal GM). Ignorato quando il modulo DCC Quality of Life è attivo.",
+  "DCC.SettingAutoApplyDeadStatus": "Applica automaticamente lo stato morto ai PNG",
+  "DCC.SettingAutoApplyDeadStatusHint": "Applica automaticamente l'effetto di stato morto a un personaggio non giocante che scende a 0 punti ferita. Ignorato quando il modulo DCC Quality of Life è attivo.",
   "DCC.MediumRangePenalty": "Gittata media",
   "DCC.WeaponOutOfRangeTitle": "Bersaglio fuori portata",
   "DCC.WeaponOutOfRangeContent": "{weapon} non può raggiungere un bersaglio a {distance} piedi (oltre la sua gittata lunga). Sparare comunque?",

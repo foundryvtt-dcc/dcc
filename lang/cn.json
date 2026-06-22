@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "没有连接的游戏主持人，因此无法完成此操作。必须有一名 GM 在线。",
   "DCC.SettingAutoApplyDamage": "自动对目标施加伤害",
   "DCC.SettingAutoApplyDamageHint": "当攻击命中目标标记时，自动对其施加掷出的伤害（由 GM 执行）。当 DCC Quality of Life 模块启用时忽略此项。",
+  "DCC.SettingAutoApplyDeadStatus": "自动对 NPC 施加死亡状态",
+  "DCC.SettingAutoApplyDeadStatusHint": "当非玩家角色的生命值降至 0 时，自动施加死亡状态效果。当 DCC Quality of Life 模块启用时忽略此项。",
   "DCC.MediumRangePenalty": "中距离",
   "DCC.WeaponOutOfRangeTitle": "目标超出射程",
   "DCC.WeaponOutOfRangeContent": "{weapon} 无法击中 {distance} 英尺外的目标（超出其远距离射程）。仍要射击吗？",

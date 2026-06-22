@@ -35,6 +35,7 @@ import TableResult from './table-result.js'
 import { setupItemPilesForDCC } from './item-piles-support.js'
 import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
+import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -395,6 +396,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   preCreateItem: { handler: onPreCreateItem, once: false },
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
   preUpdateActor: { handler: onPreUpdateActor, once: false },
+  updateActor: { handler: onUpdateActorForDeath, once: false },
   updateCombat: { handler: onUpdateCombat, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }

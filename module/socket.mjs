@@ -30,8 +30,12 @@ export function registerSocketHandler (action, handler) {
   handlers.set(action, handler)
 }
 
-/** Whether this client is the GM responsible for handling socket actions. */
-function isActiveGM () {
+/**
+ * Whether this client is the GM responsible for handling GM-side work — the
+ * single active GM Foundry designates. Used to ensure GM-side reactions run
+ * exactly once even with several GMs connected.
+ */
+export function isActiveGM () {
   return !!game.user?.isGM && game.user === game.users?.activeGM
 }
 

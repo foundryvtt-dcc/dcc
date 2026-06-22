@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "No hay ningún Director de Juego conectado, por lo que no se pudo completar esta acción. Un DJ debe estar en línea.",
   "DCC.SettingAutoApplyDamage": "Aplicar daño al objetivo automáticamente",
   "DCC.SettingAutoApplyDamageHint": "Cuando un ataque impacta a un objetivo seleccionado, aplica automáticamente el daño tirado (lo realiza el DJ). Se ignora mientras el módulo DCC Quality of Life esté activo.",
+  "DCC.SettingAutoApplyDeadStatus": "Aplicar estado de muerto a los PNJ automáticamente",
+  "DCC.SettingAutoApplyDeadStatusHint": "Aplica automáticamente el efecto de estado de muerto a un personaje no jugador que cae a 0 puntos de golpe. Se ignora mientras el módulo DCC Quality of Life esté activo.",
   "DCC.MediumRangePenalty": "Alcance medio",
   "DCC.WeaponOutOfRangeTitle": "Objetivo fuera de alcance",
   "DCC.WeaponOutOfRangeContent": "{weapon} no puede alcanzar un objetivo a {distance} pies (más allá de su alcance largo). ¿Disparar igualmente?",

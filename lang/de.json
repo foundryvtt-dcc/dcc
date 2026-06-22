@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "Es ist kein Spielleiter verbunden, daher konnte diese Aktion nicht ausgeführt werden. Ein SL muss online sein.",
   "DCC.SettingAutoApplyDamage": "Schaden automatisch auf Ziel anwenden",
   "DCC.SettingAutoApplyDamageHint": "Wenn ein Angriff ein anvisiertes Token trifft, wird der gewürfelte Schaden automatisch darauf angewendet (vom SL ausgeführt). Wird ignoriert, solange das Modul DCC Quality of Life aktiv ist.",
+  "DCC.SettingAutoApplyDeadStatus": "Tot-Status automatisch auf NSC anwenden",
+  "DCC.SettingAutoApplyDeadStatusHint": "Wendet automatisch den Status „tot\" auf einen Nichtspielercharakter an, der auf 0 Trefferpunkte fällt. Wird ignoriert, solange das Modul DCC Quality of Life aktiv ist.",
   "DCC.MediumRangePenalty": "Mittlere Reichweite",
   "DCC.WeaponOutOfRangeTitle": "Ziel außer Reichweite",
   "DCC.WeaponOutOfRangeContent": "{weapon} kann ein Ziel in {distance} Fuß Entfernung nicht erreichen (jenseits der großen Reichweite). Trotzdem schießen?",

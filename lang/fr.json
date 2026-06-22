@@ -659,6 +659,8 @@
   "DCC.SocketNoGMWarning": "Aucun Maître de Jeu n'est connecté, cette action n'a donc pas pu être effectuée. Un MJ doit être en ligne.",
   "DCC.SettingAutoApplyDamage": "Appliquer automatiquement les dégâts à la cible",
   "DCC.SettingAutoApplyDamageHint": "Lorsqu'une attaque touche une cible ciblée, applique automatiquement les dégâts obtenus (effectué par le MJ). Ignoré tant que le module DCC Quality of Life est actif.",
+  "DCC.SettingAutoApplyDeadStatus": "Appliquer automatiquement le statut mort aux PNJ",
+  "DCC.SettingAutoApplyDeadStatusHint": "Applique automatiquement l'effet de statut mort à un personnage non-joueur qui tombe à 0 point de vie. Ignoré tant que le module DCC Quality of Life est actif.",
   "DCC.MediumRangePenalty": "Portée moyenne",
   "DCC.WeaponOutOfRangeTitle": "Cible hors de portée",
   "DCC.WeaponOutOfRangeContent": "{weapon} ne peut pas atteindre une cible à {distance} pieds (au-delà de sa portée longue). Tirer quand même ?",

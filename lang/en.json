@@ -666,6 +666,8 @@
   "DCC.SocketNoGMWarning": "No Gamemaster is connected, so this action could not be completed. A GM must be online.",
   "DCC.SettingAutoApplyDamage": "Auto-apply damage to target",
   "DCC.SettingAutoApplyDamageHint": "When an attack hits a targeted token, automatically apply the rolled damage to it (performed by the GM). Ignored while the DCC Quality of Life module is active.",
+  "DCC.SettingAutoApplyDeadStatus": "Auto-apply dead status to NPCs",
+  "DCC.SettingAutoApplyDeadStatusHint": "Automatically apply the dead status effect to a non-player character that drops to 0 hit points. Ignored while the DCC Quality of Life module is active.",
   "DCC.MediumRangePenalty": "Medium Range",
   "DCC.WeaponOutOfRangeTitle": "Target Out of Range",
   "DCC.WeaponOutOfRangeContent": "{weapon} cannot reach a target {distance} ft away (beyond its long range). Fire anyway?",
