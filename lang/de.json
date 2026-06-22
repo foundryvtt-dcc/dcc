@@ -664,6 +664,8 @@
   "DCC.SettingMonsterFumbles": "Monster-Patzer (Jahrbuch #8)",
   "DCC.SettingMonsterFumblesHint": "Optionale Regel aus DCC-Jahrbuch #8: Wenn ein Monster gegen Spielercharaktere patzt, wird sein Patzerwürfel um den höchsten Glücks-Modifikator der anvisierten SC entlang der Würfelkette verschoben (Basis 1d10). Wird ignoriert, solange das Modul DCC Quality of Life aktiv ist.",
   "DCC.SocketNoGMWarning": "Es ist kein Spielleiter verbunden, daher konnte diese Aktion nicht ausgeführt werden. Ein SL muss online sein.",
+  "DCC.SettingAutoApplyDamage": "Schaden automatisch auf Ziel anwenden",
+  "DCC.SettingAutoApplyDamageHint": "Wenn ein Angriff ein anvisiertes Token trifft, wird der gewürfelte Schaden automatisch darauf angewendet (vom SL ausgeführt). Wird ignoriert, solange das Modul DCC Quality of Life aktiv ist.",
   "DCC.MediumRangePenalty": "Mittlere Reichweite",
   "DCC.WeaponOutOfRangeTitle": "Ziel außer Reichweite",
   "DCC.WeaponOutOfRangeContent": "{weapon} kann ein Ziel in {distance} Fuß Entfernung nicht erreichen (jenseits der großen Reichweite). Trotzdem schießen?",

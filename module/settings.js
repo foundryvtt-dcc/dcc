@@ -412,6 +412,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Automatically apply a hit's rolled damage to the targeted token (via the
+   * GM). Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'autoApplyDamage', {
+    name: 'DCC.SettingAutoApplyDamage',
+    hint: 'DCC.SettingAutoApplyDamageHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {

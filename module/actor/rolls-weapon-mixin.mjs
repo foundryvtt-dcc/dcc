@@ -10,6 +10,7 @@ import {
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
+import { autoApplyAttackDamage } from '../auto-apply-damage.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
@@ -339,6 +340,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Output the results
     ChatMessage.applyMode(messageData, messageMode)
     ChatMessage.create(messageData)
+
+    // Auto-apply damage to a hit target (setting-gated; routes through the GM
+    // socket). Fire-and-forget — it swallows its own errors.
+    autoApplyAttackDamage(options, attackRollResult, damageRoll)
   }
 
   /**

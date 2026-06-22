@@ -664,6 +664,8 @@
   "DCC.SettingMonsterFumbles": "Pifias de monstruos (Anuario n.º 8)",
   "DCC.SettingMonsterFumblesHint": "Regla opcional del Anuario n.º 8 de DCC: cuando un monstruo pifia contra personajes jugadores, ajusta su dado de pifia a lo largo de la cadena de dados según el mayor modificador de Suerte de los PJ objetivo (base 1d10). Se ignora mientras el módulo DCC Quality of Life esté activo.",
   "DCC.SocketNoGMWarning": "No hay ningún Director de Juego conectado, por lo que no se pudo completar esta acción. Un DJ debe estar en línea.",
+  "DCC.SettingAutoApplyDamage": "Aplicar daño al objetivo automáticamente",
+  "DCC.SettingAutoApplyDamageHint": "Cuando un ataque impacta a un objetivo seleccionado, aplica automáticamente el daño tirado (lo realiza el DJ). Se ignora mientras el módulo DCC Quality of Life esté activo.",
   "DCC.MediumRangePenalty": "Alcance medio",
   "DCC.WeaponOutOfRangeTitle": "Objetivo fuera de alcance",
   "DCC.WeaponOutOfRangeContent": "{weapon} no puede alcanzar un objetivo a {distance} pies (más allá de su alcance largo). ¿Disparar igualmente?",

@@ -657,6 +657,8 @@
   "DCC.SettingMonsterFumbles": "Maladresses de monstres (Annuaire n°8)",
   "DCC.SettingMonsterFumblesHint": "Règle optionnelle de l'Annuaire n°8 de DCC : lorsqu'un monstre rate face à des personnages joueurs, décale son dé de maladresse le long de la chaîne de dés selon le plus haut modificateur de Chance des PJ ciblés (base 1d10). Ignoré tant que le module DCC Quality of Life est actif.",
   "DCC.SocketNoGMWarning": "Aucun Maître de Jeu n'est connecté, cette action n'a donc pas pu être effectuée. Un MJ doit être en ligne.",
+  "DCC.SettingAutoApplyDamage": "Appliquer automatiquement les dégâts à la cible",
+  "DCC.SettingAutoApplyDamageHint": "Lorsqu'une attaque touche une cible ciblée, applique automatiquement les dégâts obtenus (effectué par le MJ). Ignoré tant que le module DCC Quality of Life est actif.",
   "DCC.MediumRangePenalty": "Portée moyenne",
   "DCC.WeaponOutOfRangeTitle": "Cible hors de portée",
   "DCC.WeaponOutOfRangeContent": "{weapon} ne peut pas atteindre une cible à {distance} pieds (au-delà de sa portée longue). Tirer quand même ?",
