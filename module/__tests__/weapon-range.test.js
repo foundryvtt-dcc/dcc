@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { measureTokenDistance, onModifyAttackRollTermsForRange } from '../weapon-range.mjs'
+import { measureTokenDistance, onModifyAttackRollTermsForRange, onModifyAttackRollTermsForFiringIntoMelee, onModifyAttackRollTerms } from '../weapon-range.mjs'
 
 let originalGame
 let originalFoundry
@@ -43,8 +43,9 @@ beforeEach(() => {
   originalFoundry = globalThis.foundry
   globalThis.game = {
     modules: { get: vi.fn(() => undefined) }, // dcc-qol inactive
-    settings: { get: vi.fn(() => true) }, // checkWeaponRange on
-    canvas: { dimensions: { size: 100, distance: 5 } },
+    // both opt-in settings on by default; individual tests override
+    settings: { get: vi.fn((scope, key) => ({ checkWeaponRange: true, firingIntoMeleePenalty: true }[key] ?? false)) },
+    canvas: { dimensions: { size: 100, distance: 5 }, tokens: { placeables: [] } },
     i18n: { localize: (k) => k, format: (k) => k }
   }
   globalThis.foundry = { applications: { api: { DialogV2: { confirm: vi.fn(() => Promise.resolve(false)) } } } }
@@ -141,5 +142,86 @@ describe('onModifyAttackRollTermsForRange — out of range', () => {
     expect(result).toBe(true)
     expect(globalThis.foundry.applications.api.DialogV2.confirm).not.toHaveBeenCalled()
     expect(terms[0].formula).toBe('1d16') // stepped down like long range
+  })
+})
+
+describe('onModifyAttackRollTermsForFiringIntoMelee', () => {
+  const FRIENDLY = 1
+  const HOSTILE = -1
+  const attacker = { id: 'att', x: 0, y: 0, width: 1, height: 1, disposition: FRIENDLY }
+  const target = { id: 'tgt', x: 1000, y: 0, width: 1, height: 1, disposition: HOSTILE }
+  const placeable = (doc) => ({ document: doc })
+  const allyAdjacent = { id: 'ally', x: 1100, y: 0, width: 1, height: 1, disposition: FRIENDLY } // one grid from target
+  const allyFar = { id: 'allyFar', x: 1300, y: 0, width: 1, height: 1, disposition: FRIENDLY } // two grids away
+  const enemyAdjacent = { id: 'enemy', x: 900, y: 0, width: 1, height: 1, disposition: HOSTILE }
+
+  function run (extraPlaceables = [], opts = {}) {
+    globalThis.game.canvas.tokens.placeables = [placeable(target), ...extraPlaceables]
+    const terms = actionDieTerms()
+    const proceed = onModifyAttackRollTermsForFiringIntoMelee(terms, makeActor(), rangedWeapon, { token: attacker, targets: makeTargets(target), ...opts })
+    return { terms, proceed }
+  }
+
+  test('applies -1 when an ally is in melee with the target', () => {
+    const { terms, proceed } = run([placeable(allyAdjacent)])
+    expect(proceed).toBe(true)
+    expect(terms).toHaveLength(3)
+    expect(terms[2]).toMatchObject({ type: 'Modifier', label: 'DCC.FiringIntoMeleePenalty', formula: -1 })
+  })
+
+  test('no penalty when only enemies are adjacent to the target', () => {
+    expect(run([placeable(enemyAdjacent)]).terms).toHaveLength(2)
+  })
+
+  test('no penalty when allies are beyond melee range', () => {
+    expect(run([placeable(allyFar)]).terms).toHaveLength(2)
+  })
+
+  test("excludes the attacker's own token from the melee check", () => {
+    const attackerAdjacent = { ...attacker, x: 1100 } // shooter standing next to target
+    globalThis.game.canvas.tokens.placeables = [placeable(target), placeable(attackerAdjacent)]
+    const terms = actionDieTerms()
+    onModifyAttackRollTermsForFiringIntoMelee(terms, makeActor(), rangedWeapon, { token: attackerAdjacent, targets: makeTargets(target) })
+    expect(terms).toHaveLength(2)
+  })
+
+  test('stands down when dcc-qol is active', () => {
+    globalThis.game.modules.get.mockReturnValue({ active: true })
+    expect(run([placeable(allyAdjacent)]).terms).toHaveLength(2)
+  })
+
+  test('stands down when the firingIntoMeleePenalty setting is off', () => {
+    globalThis.game.settings.get.mockImplementation((scope, key) => key !== 'firingIntoMeleePenalty')
+    expect(run([placeable(allyAdjacent)]).terms).toHaveLength(2)
+  })
+
+  test('ignores melee weapons', () => {
+    globalThis.game.canvas.tokens.placeables = [placeable(target), placeable(allyAdjacent)]
+    const terms = actionDieTerms()
+    onModifyAttackRollTermsForFiringIntoMelee(terms, makeActor(), { id: 'm', name: 'Sword', system: { melee: true } }, { token: attacker, targets: makeTargets(target) })
+    expect(terms).toHaveLength(2)
+  })
+})
+
+describe('onModifyAttackRollTerms (combined dispatcher)', () => {
+  const attacker = { id: 'att', x: 0, y: 0, width: 1, height: 1, disposition: 1 }
+
+  test('applies both firing-into-melee and range penalties in one pass', () => {
+    const tgt = { id: 'tgt', x: (100 / 5) * 100, y: 0, width: 1, height: 1, disposition: -1 } // 100 ft → medium
+    const ally = { id: 'ally', x: tgt.x + 100, y: 0, width: 1, height: 1, disposition: 1 } // adjacent to target
+    globalThis.game.canvas.tokens.placeables = [{ document: tgt }, { document: ally }]
+    const terms = actionDieTerms()
+    const proceed = onModifyAttackRollTerms(terms, makeActor(), rangedWeapon, { token: attacker, targets: makeTargets(tgt) })
+    expect(proceed).toBe(true)
+    const labels = terms.filter(t => t.type === 'Modifier').map(t => t.label)
+    expect(labels).toContain('DCC.FiringIntoMeleePenalty')
+    expect(labels).toContain('DCC.MediumRangePenalty')
+  })
+
+  test('returns false (cancelling) when the range rule prompts out-of-range', () => {
+    const tgt = { id: 'tgt', x: (300 / 5) * 100, y: 0, width: 1, height: 1, disposition: -1 } // 300 ft → out of range
+    globalThis.game.canvas.tokens.placeables = [{ document: tgt }]
+    const terms = actionDieTerms()
+    expect(onModifyAttackRollTerms(terms, makeActor(), rangedWeapon, { token: attacker, targets: makeTargets(tgt) })).toBe(false)
   })
 })

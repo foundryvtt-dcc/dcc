@@ -110,4 +110,67 @@ test.describe('Missile weapon range penalties', () => {
     expect(result.offProceed).toBe(true)
     expect(result.offLen).toBe(2)
   })
+
+  test('firing-into-melee applies -1 when an ally is adjacent to the target (live tokens)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      let createdSceneId = null
+      if (!game.canvas?.ready || !game.canvas?.scene) {
+        const scene = await Scene.create({
+          name: 'DCC FIM Probe',
+          width: 6000,
+          height: 5000,
+          grid: { type: 1, size: 100, distance: 5, units: 'ft' }
+        })
+        createdSceneId = scene.id
+        await scene.view()
+      }
+      const scene = game.canvas.scene
+      const gs = game.canvas.dimensions.size
+
+      const npc = await Actor.create({ name: 'DCC Probe Target', type: 'NPC' })
+      const ally = await Actor.create({ name: 'DCC Probe Ally', type: 'Player' })
+      const tx = 1500
+      const ty = 1500
+      const created = await scene.createEmbeddedDocuments('Token', [
+        { name: 'Tgt', actorId: npc.id, x: tx, y: ty, width: 1, height: 1, disposition: -1 },
+        { name: 'Ally', actorId: ally.id, x: tx + gs, y: ty, width: 1, height: 1, disposition: 1 }
+      ])
+      const targetDoc = created[0]
+      // Wait for the target's placeable to exist on the canvas.
+      const deadline = Date.now() + 4000
+      while (Date.now() < deadline && !game.canvas.tokens.get(targetDoc.id)) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      const targetToken = game.canvas.tokens.get(targetDoc.id)
+
+      const prevFim = game.settings.get('dcc', 'firingIntoMeleePenalty')
+      const prevRange = game.settings.get('dcc', 'checkWeaponRange')
+      await game.settings.set('dcc', 'firingIntoMeleePenalty', true)
+      await game.settings.set('dcc', 'checkWeaponRange', false) // isolate the firing-into-melee rule
+
+      const weapon = { id: 'probe', name: 'Probe Bow', system: { melee: false, range: '70/140/210' } }
+      const attacker = { id: 'shooter', x: tx, y: ty - 10 * gs, width: 1, height: 1, disposition: 1 }
+      const terms = [
+        { type: 'Die', label: 'Action Die', formula: '1d20', presets: [] },
+        { type: 'Compound', dieLabel: 'Deed', modifierLabel: 'To Hit', formula: '+0' }
+      ]
+      const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, {}, weapon, { token: attacker, targets: new Set([targetToken]) })
+      const fimTerm = terms.find(t => t.type === 'Modifier')
+      const placeableFound = !!targetToken
+
+      await game.settings.set('dcc', 'firingIntoMeleePenalty', prevFim)
+      await game.settings.set('dcc', 'checkWeaponRange', prevRange)
+      await scene.deleteEmbeddedDocuments('Token', created.map(d => d.id))
+      await npc.delete()
+      await ally.delete()
+      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
+
+      return { proceed, termCount: terms.length, fimTerm, placeableFound }
+    })
+
+    expect(result.placeableFound).toBe(true)
+    expect(result.proceed).toBe(true)
+    expect(result.termCount).toBe(3)
+    expect(result.fimTerm).toMatchObject({ type: 'Modifier', formula: -1 })
+  })
 })

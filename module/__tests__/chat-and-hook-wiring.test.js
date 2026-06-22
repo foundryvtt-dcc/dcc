@@ -86,7 +86,7 @@ const {
 } = await import('../chat-and-hook-wiring.mjs')
 
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
-const { onModifyAttackRollTermsForRange } = await import('../weapon-range.mjs')
+const { onModifyAttackRollTerms } = await import('../weapon-range.mjs')
 
 let originalGame
 let originalFoundry
@@ -742,7 +742,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
     expect(onCalls.updateCombat).toEqual([onUpdateCombat])
     expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
-    expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTermsForRange])
+    expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTerms])
   })
 
   test('wires the once-only item-piles-ready handler via Hooks.once', () => {

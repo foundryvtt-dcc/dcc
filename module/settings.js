@@ -370,6 +370,20 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Apply the firing-into-melee -1 penalty (rulebook p. 96) when a ranged
+   * attack targets a creature engaged in melee with one of the attacker's
+   * allies. Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'firingIntoMeleePenalty', {
+    name: 'DCC.SettingFiringIntoMelee',
+    hint: 'DCC.SettingFiringIntoMeleeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {

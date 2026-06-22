@@ -1,25 +1,30 @@
 /* global game, foundry */
 
 /**
- * Missile-weapon range checking + penalties (DCC core rulebook p. 96).
+ * Missile-attack term modifiers based on the target's position, applied via the
+ * system's own `dcc.modifyAttackRollTerms` hook — the same extension point the
+ * dcc-qol module uses. Two RAW rules (DCC core rulebook p. 96), each behind its
+ * own opt-in setting:
  *
- * Listens to the system's own `dcc.modifyAttackRollTerms` hook — the same
- * extension point the dcc-qol module uses — and, for a ranged weapon fired at
- * a selected target, applies the RAW range penalty: medium range = -2 to the
- * attack roll, long range = -1d (the action die steps down one rung), beyond
- * long range = an out-of-range confirmation dialog.
+ * - **Range penalties** (`checkWeaponRange`): medium range = -2 to the attack
+ *   roll, long range = -1d (action die steps down one rung), beyond long range
+ *   = an out-of-range confirmation dialog.
+ * - **Firing into melee** (`firingIntoMeleePenalty`): -1 to the attack roll
+ *   when a ranged attack targets a creature engaged in melee with one of the
+ *   attacker's allies.
  *
- * The *rule* (band thresholds + penalty values) lives in `dcc-core-lib`
- * (`parseMissileRange` / `getMissileRangePenalty`); only the Foundry-specific
- * pieces live here — token-distance measurement and the confirmation dialog.
+ * The *rules* (band thresholds, penalty values) live in `dcc-core-lib`
+ * (`parseMissileRange` / `getMissileRangePenalty` / `getFiringIntoMeleePenalty`);
+ * only the Foundry-specific pieces live here — token-distance measurement,
+ * adjacency/disposition detection, and the confirmation dialog.
  *
- * Gated twice: it stands down entirely when the dcc-qol module is active (it
- * drives this — see `qolHandlingCombat`) and when the `checkWeaponRange`
- * setting is off (the default), so existing worlds are unaffected until they
- * opt in.
+ * Both stand down entirely when the dcc-qol module is active (it drives these —
+ * see `qolHandlingCombat`), and each is off by default, so existing worlds are
+ * unaffected until they opt in. `onModifyAttackRollTerms` is the combined hook
+ * entry point registered by the chat-and-hook wiring.
  */
 
-import { parseMissileRange, getMissileRangePenalty } from './vendor/dcc-core-lib/index.js'
+import { parseMissileRange, getMissileRangePenalty, getFiringIntoMeleePenalty } from './vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from './integrations.mjs'
 
 /**
@@ -147,4 +152,70 @@ export function onModifyAttackRollTermsForRange (terms, actor, weapon, options =
   }
 
   return true
+}
+
+/**
+ * Tokens on the attacker's side (same disposition) that are in melee range of
+ * the target — i.e. allies the shot could stray into. The attacker's own token
+ * and the target are excluded. "In melee range" is one grid step
+ * (`scene.distance`), measured with the same diagonal rule as range checks.
+ *
+ * @param {TokenDocument} targetDoc - the target token document
+ * @param {TokenDocument} attackerDoc - the attacker token document (for disposition + self-exclusion)
+ * @returns {object[]} the allied token documents engaged with the target
+ */
+function getAlliesInMeleeWithTarget (targetDoc, attackerDoc) {
+  const dims = game.canvas?.dimensions
+  if (!dims) return []
+  const placeables = game.canvas?.tokens?.placeables ?? []
+  const meleeRange = dims.distance
+  return placeables
+    .map(p => p?.document)
+    .filter(doc =>
+      doc &&
+      doc.id !== targetDoc.id &&
+      doc.id !== attackerDoc?.id &&
+      doc.disposition === attackerDoc?.disposition &&
+      measureTokenDistance(targetDoc, doc) <= meleeRange
+    )
+}
+
+/**
+ * `dcc.modifyAttackRollTerms` handler for the firing-into-melee penalty. Pushes
+ * a -1 modifier when a ranged weapon targets a creature engaged in melee with
+ * one of the attacker's allies (DCC core rulebook p. 96).
+ *
+ * @returns {boolean} always true (this rule never cancels the roll)
+ */
+export function onModifyAttackRollTermsForFiringIntoMelee (terms, actor, weapon, options = {}) {
+  if (qolHandlingCombat()) return true
+  if (!game.settings.get('dcc', 'firingIntoMeleePenalty')) return true
+  if (weapon?.system?.melee) return true // ranged weapons only
+
+  const targetDoc = getFirstTargetDoc(options?.targets)
+  const attackerDoc = getAttackerTokenDoc(actor, options)
+  if (!targetDoc || !attackerDoc) return true
+
+  const allies = getAlliesInMeleeWithTarget(targetDoc, attackerDoc)
+  const penalty = getFiringIntoMeleePenalty(allies.length > 0)
+  if (penalty !== 0) {
+    terms.push({
+      type: 'Modifier',
+      label: game.i18n.localize('DCC.FiringIntoMeleePenalty'),
+      formula: penalty // -1
+    })
+  }
+  return true
+}
+
+/**
+ * Combined `dcc.modifyAttackRollTerms` entry point: runs the firing-into-melee
+ * and range rules in turn. Returns false (cancelling the roll) if either rule
+ * does — currently only the range out-of-range dialog, which re-invokes the
+ * attack itself on confirmation.
+ */
+export function onModifyAttackRollTerms (terms, actor, weapon, options = {}) {
+  const meleeOk = onModifyAttackRollTermsForFiringIntoMelee(terms, actor, weapon, options)
+  const rangeOk = onModifyAttackRollTermsForRange(terms, actor, weapon, options)
+  return meleeOk !== false && rangeOk !== false
 }
