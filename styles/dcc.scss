@@ -7,7 +7,10 @@
 //
 // Theming variables live in styles/variables.css — those are the
 // `--system-*` CSS custom properties referenced throughout the
-// partials, with light/dark overrides in `:root` / `.theme-dark`.
+// partials. Light values are scoped to `:root, .theme-light` and dark
+// values to `.theme-dark`, so a sheet whose per-sheet theme differs
+// from the interface theme re-establishes its own values locally
+// instead of inheriting the wrong theme from an ancestor.
 //
 // To add a new section, create `_<name>.scss` and add a matching
 // `@use '<name>';` below at the correct source-order position
