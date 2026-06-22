@@ -44,3 +44,25 @@ To change System Settings, you can click the 3 gears (**Game Settings**) in the 
 **Show Welcome Dialog on Startup** will show the Welcome Dialog when you first open the game. If this is unchecked, it will not show the Welcome Dialog.
 
 **Strict Critical Hit Rules** when enabled, makes critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24. This setting follows strict RAW interpretation of how critical hits work with the dice chain.
+
+## Combat Automation
+
+These settings add automated combat rules to the system. They are **all off by default**, and each can be turned on independently. They act on the **targeted** token, so for the target-based options (range, firing into melee, damage, monster Luck) you must target a token when you attack — hover over it and press **T**.
+
+> **Using the DCC Quality of Life (dcc-qol) module?** Leave these off. While dcc-qol is active it provides this automation, and the system steps aside so the two never apply a rule twice. These built-in settings are intended for tables that do **not** run dcc-qol.
+
+**Check missile weapon range** applies the DCC range penalties to a ranged (missile) attack against a targeted token, based on the distance between the attacker and the target (DCC core rulebook, p. 96):
+
+- **Medium range:** −2 to the attack roll.
+- **Long range:** the action die drops one step down the dice chain (e.g. d20 → d16).
+- **Beyond long range:** a prompt asks whether to fire anyway; if you confirm, the shot is made at the long-range penalty.
+
+**Firing into melee penalty** applies a −1 penalty when a ranged attack targets a creature that is in melee with one of the attacker's allies (DCC core rulebook, p. 96) — representing the risk of hitting your friend.
+
+**Player Luck vs monster crits** applies a targeted player character's Luck modifier to a monster's critical hit against them, per DCC rules: a positive Luck modifier reduces the monster's crit roll, a negative one increases it. (When several PCs are targeted, the highest Luck applies.)
+
+**Monster fumbles (Yearbook #8)** is the optional rule from DCC Yearbook #8: when a monster fumbles against player characters, its fumble die is stepped along the dice chain by the highest targeted PC's Luck modifier (base 1d10 → e.g. 1d14 for a +2-Luck target, 1d6 for a −3-Luck target). With this off, monster fumbles use the standard flat 1d10.
+
+**Auto-apply damage to target** automatically applies a hit's rolled damage to the targeted token. The application is performed by the GM, so it works even when a player attacks a monster they don't own. Damage is only applied when the attack hits (the attack total meets the target's AC, or it is a critical hit); a miss or fumble applies nothing.
+
+**Auto-apply dead status to NPCs** automatically adds the "dead" status effect to a non-player character whose hit points drop to 0 or below. Player characters are left alone (at 0 HP they are dying and may recover per DCC rules). The status is added automatically but not removed automatically — a GM can clear it if the creature is healed or revived.

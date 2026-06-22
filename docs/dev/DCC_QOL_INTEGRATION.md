@@ -339,43 +339,66 @@ sufficient — no reactive re-checking needed.
 
 ---
 
-## 9. Suggested phasing
+## 9. Implementation status
 
-Smallest-risk-first; each phase is independently shippable and independently
-useful. Per the project's refactor-testing regime, each phase wants Vitest +
-a Playwright probe, with the full E2E suite once per batch.
+Work lives on branch **`feat/dcc-qol-integration`** (off `main`). The lib side
+shipped as **`@moonloch/dcc-core-lib` v0.12.0** (PR #9, merged) and is vendored
+at `module/vendor/dcc-core-lib/`.
 
-1. **RAW rules in the lib (in progress).** Add the rule logic to
-   `dcc-core-lib` as pure functions (PRs + regression tests), then
-   `sync-core-lib`, then wire into `dcc.modifyAttackRollTerms` behind the §4b
-   settings. No card changes yet — penalties just surface as roll-term tags in
-   the existing card. Status:
-   - ✅ **Missile range penalty** — `parseMissileRange` +
-     `getMissileRangePenalty` landed on lib branch
-     `feat/combat-missile-range-penalty` (v0.12.0, 12 tests). *Proves the
-     lib→sync→wire→E2E seam.* System-side wiring + Playwright probe still TODO.
-   - The lib **already has** `checkFiringIntoMelee()` and `isEngagedInMelee()`
-     (the friendly-fire d100 rule + adjacency predicate) and a `luckModifier`
-     input on `rollCritical` — so firing-into-melee, friendly fire, and
-     luck-vs-crit are largely *wiring existing lib capability*, not new lib
-     code. The Foundry-side token geometry/disposition detection is the real
-     work for those.
-2. **The coexistence guard (§7).** Land `module/integrations.mjs` +
-   registration-gate before any §4 feature ships enabled. Cheap; do it
-   alongside the first system-side wiring in phase 1.
-3. **Socket foundation** — `module/socket.mjs` + init wiring + tests. No
-   user-visible change; unblocks the privileged-automation features.
-4. **Privileged automation** — `autoApplyDamage`, `autoApplyDeadStatus` on top
-   of phase 3's socket.
-5. **Enhanced cards** — the big one. Full/compact templates, hit/miss, colored
-   + separated buttons, persisted button state. Resolve the `emoteRolls`
-   mutual-exclusion here.
-6. **Module retirement** — once core is at parity, drop dcc-qol; the guard
-   predicate goes `false` and the §4 settings default on (§7).
+**Shipped (8 slices, all green):**
+
+| Feature | Setting (world, default off) | System file | Lib helper |
+|---------|------------------------------|-------------|------------|
+| Coexistence guard | — | `module/integrations.mjs` (`qolHandlingCombat`) | — |
+| Missile range penalties | `checkWeaponRange` | `module/weapon-range.mjs` | `parseMissileRange`, `getMissileRangePenalty` |
+| Firing-into-melee −1 | `firingIntoMeleePenalty` | `module/weapon-range.mjs` | `getFiringIntoMeleePenalty` |
+| Defender Luck vs monster crit | `playerLuckVsMonsterCrits` | `rolls-weapon-mixin._rollCritical` + `combat-targeting.mjs` | `CriticalInput.defenderLuckModifier` |
+| Monster fumbles (Yearbook #8) | `monsterFumbles` | `rolls-weapon-mixin._rollFumble` + `combat-targeting.mjs` | `getMonsterFumbleDie` |
+| Native socket | — | `module/socket.mjs` (`executeAsGM`, active-GM election; `game.dcc.socket`) | — |
+| Auto-apply damage | `autoApplyDamage` | `module/auto-apply-damage.mjs` | — |
+| Auto-dead status | `autoApplyDeadStatus` | `module/auto-dead-status.mjs` | — |
+
+Range + firing-into-melee run through one combined `onModifyAttackRollTerms`
+dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1896);
+each slice has a Playwright probe in `browser-tests/e2e/` (`weapon-range`,
+`monster-luck`, `socket`, `auto-apply-damage`, `auto-dead-status`). The only
+red in the full E2E run is the pre-existing `extension-api` class-progression
+env failure (uncompiled level pack), unrelated to this work.
+
+**Gating as built (deviates from §7's plan — reconcile or accept):** every
+handler is **always registered** and checks `qolHandlingCombat()` + its setting
+**per execution** (the "belt-and-suspenders" layer), rather than the
+registration-time gate + `config: !qolHandlingCombat()` setting-hiding that §7
+proposed. This is simpler and, with all settings defaulting off, equally safe;
+the cost is the §4 toggles remain *visible* even when dcc-qol is active (a GM
+could turn one on and see nothing happen because the guard suppresses it). If
+that's undesirable, add the setting-visibility gate later.
+
+**Not yet built:**
+- **Friendly fire** — lib `checkFiringIntoMelee` is ready; needs Foundry-side
+  ally detection, the d100 resolution, and chat-card buttons (UI-heavy).
+- **Enhanced attack cards** — hit/miss banner, colored/separated buttons,
+  full/compact layouts. The big template rewrite; collides with `emoteRolls`.
+- **Module retirement** — once at parity, drop dcc-qol and flip defaults (§10).
 
 ---
 
 ## 10. Open questions
+
+- **Defaults / on-by-default (under active discussion).** Everything ships
+  **off** today to preserve existing-world behavior on a system update. The
+  RAW rules (`checkWeaponRange`, `firingIntoMeleePenalty`,
+  `playerLuckVsMonsterCrits`) have a case for defaulting **on** at the dcc-qol
+  retirement milestone (they're rules-correct and inert without targeting);
+  the optional rule (`monsterFumbles`) and the conveniences (`autoApplyDamage`,
+  `autoApplyDeadStatus`) should stay opt-in. Note the coexistence guard means
+  defaults only affect worlds **without** dcc-qol.
+- **Setting-visibility gate:** adopt §7's `config: !qolHandlingCombat()` so the
+  toggles hide while dcc-qol is active? (See §9 gating note.)
+- **`emoteRolls` future:** does the enhanced card *replace* emote rendering, or
+  remain a mutually-exclusive mode? (plain / emote / enhanced is a lot to test.)
+- **Ownership of FF randomness** in the lib — the d100 must be a Foundry `Roll`
+  in the system, with the lib only classifying the outcome.
 
 - **Setting scope:** card presentation client-scoped (like `emoteRolls`) or
   world-scoped (like dcc-qol)? Recommend client for presentation, world for
