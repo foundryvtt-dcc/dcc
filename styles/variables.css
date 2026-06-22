@@ -1,5 +1,11 @@
-/* System Theme Variables */
-:root {
+/* System Theme Variables.
+   Light values are scoped to BOTH `:root` and `.theme-light` so a sheet
+   whose per-application theme is light re-establishes them locally even
+   when the interface theme is dark (otherwise the sheet inherits the
+   `.theme-dark` values from `body` and renders with broken/transparent
+   backgrounds). See the `.theme-dark` overrides below. */
+:root,
+.theme-light {
   --system-accent-color: var(--system-primary-color);
   --system-background-art-filter: none;
   --system-background: url('/ui/parchment.jpg');
