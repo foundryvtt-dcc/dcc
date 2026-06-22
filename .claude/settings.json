@@ -44,7 +44,12 @@
       "Bash(sed:*)",
       "WebFetch(domain:forums.forge-vtt.com)",
       "WebFetch(domain:foundryvtt.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git fetch:*)",
+      "Bash(git grep:*)",
+      "Bash(git ls-tree:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__list_console_messages"
     ],
     "deny": []
   }
