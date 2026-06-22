@@ -385,14 +385,15 @@ that's undesirable, add the setting-visibility gate later.
 
 ## 10. Open questions
 
-- **Defaults / on-by-default (under active discussion).** Everything ships
-  **off** today to preserve existing-world behavior on a system update. The
-  RAW rules (`checkWeaponRange`, `firingIntoMeleePenalty`,
-  `playerLuckVsMonsterCrits`) have a case for defaulting **on** at the dcc-qol
-  retirement milestone (they're rules-correct and inert without targeting);
-  the optional rule (`monsterFumbles`) and the conveniences (`autoApplyDamage`,
-  `autoApplyDeadStatus`) should stay opt-in. Note the coexistence guard means
-  defaults only affect worlds **without** dcc-qol.
+- **Defaults / on-by-default — DECIDED: all off for this release.** All six
+  settings ship **off** (opt-in) to preserve existing-world behavior on a
+  system update; advertise them in release notes / the welcome dialog. Revisit
+  defaulting the **RAW subset** (`checkWeaponRange`, `firingIntoMeleePenalty`,
+  `playerLuckVsMonsterCrits`) on at the dcc-qol **retirement** milestone, with
+  player-facing communication; the optional rule (`monsterFumbles`) and the
+  conveniences (`autoApplyDamage`, `autoApplyDeadStatus`) stay opt-in
+  regardless. (Decision 2026-06-22. The coexistence guard means defaults only
+  affect worlds **without** dcc-qol, so this is low-stakes until retirement.)
 - **Setting-visibility gate:** adopt §7's `config: !qolHandlingCombat()` so the
   toggles hide while dcc-qol is active? (See §9 gating note.)
 - **`emoteRolls` future:** does the enhanced card *replace* emote rendering, or
