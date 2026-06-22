@@ -356,6 +356,20 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Check missile-weapon range and apply RAW penalties (rulebook p. 96):
+   * medium range -2, long range -1d, beyond long range a confirmation dialog.
+   * Off by default; inert while the dcc-qol module is active (it drives this).
+   */
+  game.settings.register('dcc', 'checkWeaponRange', {
+    name: 'DCC.SettingCheckWeaponRange',
+    hint: 'DCC.SettingCheckWeaponRangeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {

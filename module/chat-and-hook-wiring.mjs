@@ -34,6 +34,7 @@ import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
 import { setupItemPilesForDCC } from './item-piles-support.js'
 import { createDCCMacro } from './macros.mjs'
+import { onModifyAttackRollTermsForRange } from './weapon-range.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -384,6 +385,7 @@ export function onGetProseMirrorMenuDropDowns (menu, items) {
 }
 
 export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
+  'dcc.modifyAttackRollTerms': { handler: onModifyAttackRollTermsForRange, once: false },
   hotbarDrop: { handler: onHotbarDrop, once: false },
   renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },

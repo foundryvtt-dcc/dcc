@@ -86,6 +86,7 @@ const {
 } = await import('../chat-and-hook-wiring.mjs')
 
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
+const { onModifyAttackRollTermsForRange } = await import('../weapon-range.mjs')
 
 let originalGame
 let originalFoundry
@@ -690,9 +691,10 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the twelve documented hook names', () => {
+  test('covers exactly the thirteen documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
+      'dcc.modifyAttackRollTerms',
       'getChatMessageContextOptions',
       'getCompendiumContextOptions',
       'getProseMirrorMenuDropDowns',
@@ -740,6 +742,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
     expect(onCalls.updateCombat).toEqual([onUpdateCombat])
     expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
+    expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTermsForRange])
   })
 
   test('wires the once-only item-piles-ready handler via Hooks.once', () => {
@@ -748,11 +751,11 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly twelve Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly thirteen Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Eleven dispatch-table listeners + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(12)
+    // Twelve dispatch-table listeners + the ability-score-log fallback logger
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(13)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })
