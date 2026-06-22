@@ -25,7 +25,7 @@ rollDamage, getTwoHandedDamageDie, getWeaponDamage, buildDamageFormula, applyMin
 // Crits
 rollCritical, determineCritTable, getCritTable, getCritDie, buildCritFormula, parseCritExtraDamage, 
 // Fumbles
-rollFumble, buildFumbleFormula, isFumble, getFumbleDie, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, 
+rollFumble, buildFumbleFormula, isFumble, getFumbleDie, getMonsterFumbleDie, MONSTER_FUMBLE_BASE_DIE, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, 
 // Initiative
 rollInitiative, calculateInitiativeModifier, buildInitiativeFormula, getInitiativeDie, sortByInitiative, isInitiativeTied, } from "./index.js";
 // =============================================================================
@@ -942,6 +942,34 @@ describe("Critical Hit System", () => {
             const result = rollCritical(input, roller);
             expect(result.total).toBe(1); // Minimum 1
         });
+        // DCC RAW: a PC's Luck modifier always alters a monster's critical hit —
+        // positive Luck reduces the monster's roll, negative Luck grants a bonus.
+        describe("defenderLuckModifier (crit scored against a PC)", () => {
+            it("should reduce the monster's crit roll by a positive defender Luck", () => {
+                const roller = createMockRoller(12);
+                const result = rollCritical({ critTable: "III", critDie: "d20", luckModifier: 0, defenderLuckModifier: 2 }, roller);
+                expect(result.total).toBe(10); // 12 - 2
+                expect(result.roll.modifiers).toContainEqual({ source: "Target's Luck", value: -2 });
+            });
+            it("should grant the monster a bonus for a negative defender Luck", () => {
+                const roller = createMockRoller(12);
+                const result = rollCritical({ critTable: "III", critDie: "d20", luckModifier: 0, defenderLuckModifier: -1 }, roller);
+                expect(result.total).toBe(13); // 12 - (-1)
+                expect(result.roll.modifiers).toContainEqual({ source: "Target's Luck", value: 1 });
+            });
+            it("should stack with the roller's own Luck and not appear when zero/omitted", () => {
+                const roller = createMockRoller(10);
+                const withBoth = rollCritical({ critTable: "III", critDie: "d20", luckModifier: 1, defenderLuckModifier: 3 }, roller);
+                expect(withBoth.total).toBe(8); // 10 + 1 - 3
+                const without = rollCritical({ critTable: "III", critDie: "d20", luckModifier: 0 }, roller);
+                expect(without.roll.modifiers.some(m => m.source === "Target's Luck")).toBe(false);
+            });
+            it("should still enforce the minimum crit roll of 1", () => {
+                const roller = createMockRoller(3);
+                const result = rollCritical({ critTable: "III", critDie: "d20", luckModifier: 0, defenderLuckModifier: 10 }, roller);
+                expect(result.total).toBe(1); // max(1, 3 - 10)
+            });
+        });
     });
     describe("getCritTable / getCritDie (registry-backed)", () => {
         // Minimal synthetic progression to exercise the registry delegation.
@@ -1067,6 +1095,26 @@ describe("Fumble System", () => {
             expect(getFumbleDie("banded")).toBe("d16");
             expect(getFumbleDie("half-plate")).toBe("d16");
             expect(getFumbleDie("full-plate")).toBe("d16");
+        });
+    });
+    // Optional Monster Fumbles rule (DCC Yearbook #8): a targeted PC's Luck
+    // modifier steps the monster's fumble die along the dice chain, base 1d10 at +0.
+    describe("getMonsterFumbleDie", () => {
+        it("should reproduce the annual's PC-Luck → monster fumble die chain", () => {
+            expect(getMonsterFumbleDie(-3)).toBe("1d6");
+            expect(getMonsterFumbleDie(-2)).toBe("1d7");
+            expect(getMonsterFumbleDie(-1)).toBe("1d8");
+            expect(getMonsterFumbleDie(0)).toBe("1d10");
+            expect(getMonsterFumbleDie(1)).toBe("1d12");
+            expect(getMonsterFumbleDie(2)).toBe("1d14");
+            expect(getMonsterFumbleDie(3)).toBe("1d16");
+        });
+        it("should default to the base 1d10 at +0 Luck", () => {
+            expect(getMonsterFumbleDie(0)).toBe(MONSTER_FUMBLE_BASE_DIE);
+        });
+        it("should keep stepping along the dice chain past the printed table", () => {
+            expect(getMonsterFumbleDie(5)).toBe("1d24");
+            expect(getMonsterFumbleDie(-5)).toBe("1d4");
         });
     });
     describe("getArmorType", () => {

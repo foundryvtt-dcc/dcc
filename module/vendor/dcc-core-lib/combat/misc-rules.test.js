@@ -14,7 +14,9 @@ checkDroppedTorch,
 // Falling
 calculateFallingDamage, formatFallingDamage, 
 // Firing into melee
-checkFiringIntoMelee, 
+FIRING_INTO_MELEE_PENALTY, getFiringIntoMeleePenalty, checkFiringIntoMelee, 
+// Missile range
+parseMissileRange, getMissileRangePenalty, 
 // Grappling
 getGrappleSizeBonus, getGrappleModifier, resolveGrapple, formatGrappleResult, 
 // Equipment recovery
@@ -274,6 +276,15 @@ describe("Falling Damage", () => {
 // Firing Into Melee Tests
 // =============================================================================
 describe("Firing Into Melee", () => {
+    describe("getFiringIntoMeleePenalty", () => {
+        it("should apply the RAW -1 penalty when firing into melee", () => {
+            expect(getFiringIntoMeleePenalty(true)).toBe(-1);
+            expect(getFiringIntoMeleePenalty(true)).toBe(FIRING_INTO_MELEE_PENALTY);
+        });
+        it("should apply no penalty when the target is not engaged in melee", () => {
+            expect(getFiringIntoMeleePenalty(false)).toBe(0);
+        });
+    });
     it("should not hit ally if roll is over 50", () => {
         const roller = createMockRoller(75);
         const result = checkFiringIntoMelee(2, [12, 14], 3, roller);
@@ -300,6 +311,80 @@ describe("Firing Into Melee", () => {
     it("should return no hit if no allies in melee", () => {
         const result = checkFiringIntoMelee(0, [], 3);
         expect(result.hitAlly).toBe(false);
+    });
+});
+// =============================================================================
+// Missile Range Tests
+// =============================================================================
+describe("Missile Range", () => {
+    describe("parseMissileRange", () => {
+        it("should parse the canonical short/medium/long form", () => {
+            expect(parseMissileRange("30/60/120")).toEqual({ short: 30, medium: 60, long: 120 });
+        });
+        it("should tolerate surrounding whitespace", () => {
+            expect(parseMissileRange(" 30 / 60 / 120 ")).toEqual({ short: 30, medium: 60, long: 120 });
+        });
+        it("should treat a single value as the maximum reach with no penalty bands", () => {
+            expect(parseMissileRange("60")).toEqual({ short: 60, medium: 60, long: 60 });
+        });
+        it("should tolerate foot marks on each segment", () => {
+            expect(parseMissileRange("70'/140'/210'")).toEqual({ short: 70, medium: 140, long: 210 });
+        });
+        it("should tolerate inch marks and a single decorated value", () => {
+            expect(parseMissileRange('30"/60"/120"')).toEqual({ short: 30, medium: 60, long: 120 });
+            expect(parseMissileRange("60'")).toEqual({ short: 60, medium: 60, long: 60 });
+        });
+        it("should tolerate smart quotes and word units", () => {
+            expect(parseMissileRange("30’/60’/120’")).toEqual({ short: 30, medium: 60, long: 120 });
+            expect(parseMissileRange("30 ft/60 ft/120 ft")).toEqual({ short: 30, medium: 60, long: 120 });
+        });
+        it("should return null for unparseable input", () => {
+            expect(parseMissileRange("")).toBeNull();
+            expect(parseMissileRange("close")).toBeNull();
+            expect(parseMissileRange("30/60")).toBeNull();
+        });
+    });
+    describe("getMissileRangePenalty", () => {
+        const bands = { short: 30, medium: 60, long: 120 };
+        it("should apply no penalty at or within short range", () => {
+            const result = getMissileRangePenalty(30, bands);
+            expect(result.band).toBe("short");
+            expect(result.attackModifier).toBe(0);
+            expect(result.actionDieSteps).toBe(0);
+            expect(result.outOfRange).toBe(false);
+        });
+        it("should treat point-blank / zero distance as short range", () => {
+            expect(getMissileRangePenalty(0, bands).band).toBe("short");
+        });
+        it("should apply a -2 attack penalty at medium range", () => {
+            const result = getMissileRangePenalty(45, bands);
+            expect(result.band).toBe("medium");
+            expect(result.attackModifier).toBe(-2);
+            expect(result.actionDieSteps).toBe(0);
+        });
+        it("should step the action die down once at long range", () => {
+            const result = getMissileRangePenalty(100, bands, "1d20");
+            expect(result.band).toBe("long");
+            expect(result.attackModifier).toBe(0);
+            expect(result.actionDieSteps).toBe(-1);
+            expect(result.actionDie).toBe("1d16");
+        });
+        it("should report the die-step at long range even without a concrete action die", () => {
+            const result = getMissileRangePenalty(100, bands);
+            expect(result.band).toBe("long");
+            expect(result.actionDieSteps).toBe(-1);
+            expect(result.actionDie).toBeUndefined();
+        });
+        it("should flag targets beyond long range as out of range", () => {
+            const result = getMissileRangePenalty(121, bands);
+            expect(result.band).toBe("out-of-range");
+            expect(result.outOfRange).toBe(true);
+            expect(result.attackModifier).toBe(0);
+        });
+        it("should respect band boundaries inclusively", () => {
+            expect(getMissileRangePenalty(60, bands).band).toBe("medium");
+            expect(getMissileRangePenalty(120, bands).band).toBe("long");
+        });
     });
 });
 // =============================================================================
