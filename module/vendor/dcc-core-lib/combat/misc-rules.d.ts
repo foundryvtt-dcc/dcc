@@ -244,6 +244,27 @@ export declare function checkDroppedTorch(roller?: DiceRoller): {
  */
 export declare function calculateFallingDamage(distanceFeet: number, roller?: DiceRoller): FallingDamageResult;
 /**
+ * To-hit penalty for making a missile attack at a target engaged in melee
+ * (DCC core rulebook p. 96). A flat -1 regardless of how many combatants are
+ * involved.
+ *
+ * This is the *attack-roll* penalty for shooting into a melee. It is distinct
+ * from the *friendly-fire* check that happens when such a shot misses — see
+ * {@link checkFiringIntoMelee}.
+ */
+export declare const FIRING_INTO_MELEE_PENALTY = -1;
+/**
+ * Get the to-hit penalty for a missile attack into melee.
+ *
+ * The lib owns the RAW penalty value; whether the target is actually engaged
+ * in melee is a positional question the caller answers (Foundry-side, from
+ * token adjacency and disposition).
+ *
+ * @param targetEngagedInMelee - Whether an ally/combatant is in melee with the target
+ * @returns The attack-roll penalty (-1 when firing into melee, 0 otherwise)
+ */
+export declare function getFiringIntoMeleePenalty(targetEngagedInMelee: boolean): number;
+/**
  * Check if a missed ranged attack hits an ally in melee
  *
  * @param numAlliesInMelee - Number of allies engaged with the target
@@ -254,6 +275,80 @@ export declare function calculateFallingDamage(distanceFeet: number, roller?: Di
  * @returns Result of firing into melee
  */
 export declare function checkFiringIntoMelee(numAlliesInMelee: number, allyACs: number[], attackBonus: number, roller?: DiceRoller): FiringIntoMeleeResult;
+/**
+ * The three DCC missile range bands, plus the beyond-maximum case.
+ *
+ * Per the DCC core rulebook (p. 96), a missile weapon lists three range
+ * increments. A target within short range is attacked normally; medium range
+ * imposes a -2 penalty to the attack roll; long range imposes a -1d penalty
+ * (the action die steps down one rung on the dice chain). Beyond long range
+ * the target cannot be attacked.
+ */
+export type MissileRangeBand = "short" | "medium" | "long" | "out-of-range";
+/**
+ * A missile weapon's three range increments, in the scene's distance unit
+ * (typically feet). Each value is the maximum distance for that band.
+ */
+export interface MissileRangeBands {
+    /** Maximum distance for short range (no penalty) */
+    short: number;
+    /** Maximum distance for medium range (-2 to attack) */
+    medium: number;
+    /** Maximum distance for long range (-1d to the action die) */
+    long: number;
+}
+/**
+ * The penalty owed for a missile attack at a given distance.
+ */
+export interface MissileRangePenalty {
+    /** Which range band the target falls into */
+    band: MissileRangeBand;
+    /** Flat modifier to the attack roll (e.g. -2 at medium range, 0 otherwise) */
+    attackModifier: number;
+    /** Dice-chain steps applied to the action die (e.g. -1 at long range, 0 otherwise) */
+    actionDieSteps: number;
+    /** The action die after applying {@link actionDieSteps} (only when an action die was supplied) */
+    actionDie?: string | undefined;
+    /** Whether the target is beyond the weapon's maximum (long) range */
+    outOfRange: boolean;
+}
+/**
+ * Parse a DCC missile range string into structured bands.
+ *
+ * Accepts the canonical "short/medium/long" form (e.g. "30/60/120") and the
+ * single-value form some weapons use (e.g. "60"), where the lone value is the
+ * maximum reach with no intermediate penalty bands. Each segment may carry a
+ * trailing unit marker — feet (`30'`), inches (`30"`), smart quotes (`30’`,
+ * `30”`), or a word unit (`30 ft`) — which is ignored; only the leading number
+ * is read, so the bands come back in whatever unit the string used (no unit
+ * conversion is performed). Surrounding whitespace is tolerated. Returns null
+ * for unparseable or non-positive input.
+ *
+ * @param range - The weapon's range string
+ * @returns Structured range bands, or null if the string can't be parsed
+ */
+export declare function parseMissileRange(range: string): MissileRangeBands | null;
+/**
+ * Classify a missile attack's distance into a range band and report the
+ * penalty owed, per DCC core rulebook p. 96.
+ *
+ * - Short range (or point blank): no penalty.
+ * - Medium range: -2 to the attack roll.
+ * - Long range: -1d, i.e. the action die steps down one rung on the dice chain.
+ * - Beyond long range: out of range (no penalty is computed; the caller decides
+ *   whether to forbid or confirm the shot).
+ *
+ * When an `actionDie` is supplied, the resulting (possibly stepped-down) die is
+ * returned in {@link MissileRangePenalty.actionDie}; the flat
+ * {@link MissileRangePenalty.attackModifier} and {@link MissileRangePenalty.actionDieSteps}
+ * are always returned so callers without a concrete die can still apply the rule.
+ *
+ * @param distance - Measured distance to the target, in the same unit as the bands
+ * @param bands - The weapon's range bands (see {@link parseMissileRange})
+ * @param actionDie - The attacker's action die (e.g. "1d20"), optional
+ * @returns The range band and the penalty owed
+ */
+export declare function getMissileRangePenalty(distance: number, bands: MissileRangeBands, actionDie?: string): MissileRangePenalty;
 /**
  * Calculate size bonus for grappling
  *

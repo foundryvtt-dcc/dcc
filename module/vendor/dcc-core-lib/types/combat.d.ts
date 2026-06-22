@@ -220,8 +220,16 @@ export interface CriticalInput {
     critTable: CritTableId;
     /** Crit die formula (e.g., "d12", "2d20", or "d30+2"). */
     critDie: CritDieFormula;
-    /** Luck modifier */
+    /** Luck modifier (the roller's own Luck; added to the crit roll) */
     luckModifier: number;
+    /**
+     * Defending PC's Luck modifier, for a critical hit scored *against* that PC.
+     * Per DCC RAW a PC's Luck modifier always alters a monster's critical hit:
+     * a positive modifier reduces the monster's roll, a negative one grants a
+     * bonus to it. Applied as a subtraction of this value from the crit total.
+     * Omit (or 0) when the crit is not against a luck-bearing defender.
+     */
+    defenderLuckModifier?: number | undefined;
     /** Level (adds to crit roll for some classes) */
     level?: number | undefined;
     /** Additional crit modifiers (from items, spells, etc.) */

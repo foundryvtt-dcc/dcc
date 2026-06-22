@@ -42,15 +42,21 @@ const FUMBLE_ARMOR_TYPE_PLACEHOLDER = 'unarmored'
  * resolves to (e.g. `'III'`); the lib records it on the result but does
  * not validate it, so unknown table names pass through untouched.
  *
- * @param {{critDie: string, luckModifier: number, critTableName: string}} args
+ * `defenderLuckModifier` (optional) is a targeted PC's Luck for a monster crit
+ * scored against them — per RAW it reduces (positive) or boosts (negative) the
+ * monster's crit roll. Only set when truthy so ordinary crits are unchanged.
+ *
+ * @param {{critDie: string, luckModifier: number, defenderLuckModifier?: number, critTableName: string}} args
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').CriticalInput}
  */
-export function buildCriticalInput ({ critDie, luckModifier, critTableName }) {
-  return {
+export function buildCriticalInput ({ critDie, luckModifier, defenderLuckModifier, critTableName }) {
+  const input = {
     critTable: critTableName || DEFAULT_CRIT_TABLE,
     critDie: normalizeLibDie(critDie),
     luckModifier
   }
+  if (defenderLuckModifier) input.defenderLuckModifier = defenderLuckModifier
+  return input
 }
 
 /**

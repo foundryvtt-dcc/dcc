@@ -234,6 +234,29 @@ export function calculateFallingDamage(distanceFeet, roller) {
 // Firing Into Melee
 // =============================================================================
 /**
+ * To-hit penalty for making a missile attack at a target engaged in melee
+ * (DCC core rulebook p. 96). A flat -1 regardless of how many combatants are
+ * involved.
+ *
+ * This is the *attack-roll* penalty for shooting into a melee. It is distinct
+ * from the *friendly-fire* check that happens when such a shot misses — see
+ * {@link checkFiringIntoMelee}.
+ */
+export const FIRING_INTO_MELEE_PENALTY = -1;
+/**
+ * Get the to-hit penalty for a missile attack into melee.
+ *
+ * The lib owns the RAW penalty value; whether the target is actually engaged
+ * in melee is a positional question the caller answers (Foundry-side, from
+ * token adjacency and disposition).
+ *
+ * @param targetEngagedInMelee - Whether an ally/combatant is in melee with the target
+ * @returns The attack-roll penalty (-1 when firing into melee, 0 otherwise)
+ */
+export function getFiringIntoMeleePenalty(targetEngagedInMelee) {
+    return targetEngagedInMelee ? FIRING_INTO_MELEE_PENALTY : 0;
+}
+/**
  * Check if a missed ranged attack hits an ally in melee
  *
  * @param numAlliesInMelee - Number of allies engaged with the target
@@ -277,6 +300,76 @@ export function checkFiringIntoMelee(numAlliesInMelee, allyACs, attackBonus, rol
         allyAttackRoll,
         allyWasHit,
     };
+}
+/**
+ * Parse a DCC missile range string into structured bands.
+ *
+ * Accepts the canonical "short/medium/long" form (e.g. "30/60/120") and the
+ * single-value form some weapons use (e.g. "60"), where the lone value is the
+ * maximum reach with no intermediate penalty bands. Each segment may carry a
+ * trailing unit marker — feet (`30'`), inches (`30"`), smart quotes (`30’`,
+ * `30”`), or a word unit (`30 ft`) — which is ignored; only the leading number
+ * is read, so the bands come back in whatever unit the string used (no unit
+ * conversion is performed). Surrounding whitespace is tolerated. Returns null
+ * for unparseable or non-positive input.
+ *
+ * @param range - The weapon's range string
+ * @returns Structured range bands, or null if the string can't be parsed
+ */
+export function parseMissileRange(range) {
+    if (typeof range !== "string") {
+        return null;
+    }
+    // parseFloat reads the leading number and ignores trailing unit decoration
+    // (30' / 30" / 30’ / 30 ft), so feet/inches marks don't break parsing.
+    const parts = range
+        .split("/")
+        .map(p => parseFloat(p.trim()))
+        .filter(n => Number.isFinite(n) && n > 0);
+    if (parts.length === 3) {
+        const [short, medium, long] = parts;
+        return { short, medium, long };
+    }
+    // Single-value range: the whole distance is "short" with no penalty bands.
+    if (parts.length === 1) {
+        const [only] = parts;
+        return { short: only, medium: only, long: only };
+    }
+    return null;
+}
+/**
+ * Classify a missile attack's distance into a range band and report the
+ * penalty owed, per DCC core rulebook p. 96.
+ *
+ * - Short range (or point blank): no penalty.
+ * - Medium range: -2 to the attack roll.
+ * - Long range: -1d, i.e. the action die steps down one rung on the dice chain.
+ * - Beyond long range: out of range (no penalty is computed; the caller decides
+ *   whether to forbid or confirm the shot).
+ *
+ * When an `actionDie` is supplied, the resulting (possibly stepped-down) die is
+ * returned in {@link MissileRangePenalty.actionDie}; the flat
+ * {@link MissileRangePenalty.attackModifier} and {@link MissileRangePenalty.actionDieSteps}
+ * are always returned so callers without a concrete die can still apply the rule.
+ *
+ * @param distance - Measured distance to the target, in the same unit as the bands
+ * @param bands - The weapon's range bands (see {@link parseMissileRange})
+ * @param actionDie - The attacker's action die (e.g. "1d20"), optional
+ * @returns The range band and the penalty owed
+ */
+export function getMissileRangePenalty(distance, bands, actionDie) {
+    // Point-blank / non-positive distance is treated as short range.
+    if (distance <= bands.short) {
+        return { band: "short", attackModifier: 0, actionDieSteps: 0, actionDie, outOfRange: false };
+    }
+    if (distance <= bands.medium) {
+        return { band: "medium", attackModifier: -2, actionDieSteps: 0, actionDie, outOfRange: false };
+    }
+    if (distance <= bands.long) {
+        const steppedDie = actionDie !== undefined ? bumpDie(actionDie, -1) : undefined;
+        return { band: "long", attackModifier: 0, actionDieSteps: -1, actionDie: steppedDie, outOfRange: false };
+    }
+    return { band: "out-of-range", attackModifier: 0, actionDieSteps: 0, actionDie, outOfRange: true };
 }
 // =============================================================================
 // Grappling

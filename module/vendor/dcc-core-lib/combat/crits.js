@@ -109,6 +109,13 @@ export function rollCritical(input, roller, events) {
         modifiers.push({ source: "Luck", value: input.luckModifier });
         total += input.luckModifier;
     }
+    // A defending PC's Luck always alters a monster's critical hit (DCC RAW):
+    // positive Luck reduces the monster's roll, negative Luck grants a bonus.
+    // Subtract the defender's Luck modifier from the crit total.
+    if (input.defenderLuckModifier !== undefined && input.defenderLuckModifier !== 0) {
+        modifiers.push({ source: "Target's Luck", value: -input.defenderLuckModifier });
+        total -= input.defenderLuckModifier;
+    }
     // Some classes add level to crit rolls (warriors typically don't,
     // but it can be added via the level field if desired)
     if (input.level !== undefined && input.level > 0) {

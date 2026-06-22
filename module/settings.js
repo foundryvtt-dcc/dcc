@@ -268,6 +268,52 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Enhanced attack chat cards (DCC QoL integration): a redesigned attack card
+   * with a hit/miss banner versus the selected target, the weapon image/name
+   * (click to toggle its description), separate Roll Damage / Crit / Fumble
+   * buttons, and a weapon-properties footer. Off by default; client-scoped like
+   * `emoteRolls` (presentation is a per-player choice). Mutually exclusive with
+   * the emote-roll rewrite for attacks — when this is on, the attack card's
+   * emote path is skipped. Inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'enhancedAttackCards', {
+    name: 'DCC.SettingEnhancedAttackCards',
+    hint: 'DCC.SettingEnhancedAttackCardsHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Layout for the enhanced attack card: the full card (complete dice
+   * breakdown, full-width buttons) or a compact card (inline die total,
+   * condensed buttons). Only meaningful when `enhancedAttackCards` is on.
+   */
+  game.settings.register('dcc', 'attackCardFormat', {
+    name: 'DCC.SettingAttackCardFormat',
+    hint: 'DCC.SettingAttackCardFormatHint',
+    scope: 'client',
+    type: String,
+    choices: { full: 'DCC.AttackCardFormatFull', compact: 'DCC.AttackCardFormatCompact' },
+    default: 'full',
+    config: true
+  })
+
+  /**
+   * Show the hit/miss banner versus the selected target on the enhanced attack
+   * card. Only meaningful when `enhancedAttackCards` is on.
+   */
+  game.settings.register('dcc', 'showHitMissOnCard', {
+    name: 'DCC.SettingShowHitMissOnCard',
+    hint: 'DCC.SettingShowHitMissOnCardHint',
+    scope: 'client',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
    * Automatically roll damage, fumbles, and crits for attacks
    */
   game.settings.register('dcc', 'automateDamageFumblesCrits', {
@@ -349,6 +395,103 @@ export const registerSystemSettings = async function () {
   game.settings.register('dcc', 'checkWeaponEquipment', {
     name: 'DCC.SettingWeaponEquipmentCheck',
     hint: 'DCC.SettingWeaponEquipmentCheckHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Check missile-weapon range and apply RAW penalties (rulebook p. 96):
+   * medium range -2, long range -1d, beyond long range a confirmation dialog.
+   * Off by default; inert while the dcc-qol module is active (it drives this).
+   */
+  game.settings.register('dcc', 'checkWeaponRange', {
+    name: 'DCC.SettingCheckWeaponRange',
+    hint: 'DCC.SettingCheckWeaponRangeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Apply the firing-into-melee -1 penalty (rulebook p. 96) when a ranged
+   * attack targets a creature engaged in melee with one of the attacker's
+   * allies. Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'firingIntoMeleePenalty', {
+    name: 'DCC.SettingFiringIntoMelee',
+    hint: 'DCC.SettingFiringIntoMeleeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automate the RAW rule that a targeted PC's Luck modifier alters an incoming
+   * monster critical hit (positive Luck lowers the monster's roll, negative
+   * raises it). Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'playerLuckVsMonsterCrits', {
+    name: 'DCC.SettingPlayerLuckVsMonsterCrits',
+    hint: 'DCC.SettingPlayerLuckVsMonsterCritsHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Optional Monster Fumbles rule (DCC Yearbook #8): when a monster fumbles
+   * against PC(s), step its fumble die along the dice chain by the highest
+   * targeted PC's Luck (base 1d10). Off by default; inert while dcc-qol is active.
+   */
+  game.settings.register('dcc', 'monsterFumbles', {
+    name: 'DCC.SettingMonsterFumbles',
+    hint: 'DCC.SettingMonsterFumblesHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automate friendly fire (DCC core rulebook p. 96): when a missile attack
+   * into melee misses, a 50% chance the stray shot is directed at a random
+   * ally engaged with the target, who is then attacked normally. Off by
+   * default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'automateFriendlyFire', {
+    name: 'DCC.SettingAutomateFriendlyFire',
+    hint: 'DCC.SettingAutomateFriendlyFireHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically apply a hit's rolled damage to the targeted token (via the
+   * GM). Off by default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'autoApplyDamage', {
+    name: 'DCC.SettingAutoApplyDamage',
+    hint: 'DCC.SettingAutoApplyDamageHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically apply the "dead" status to an NPC that drops to 0 HP. Off by
+   * default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'autoApplyDeadStatus', {
+    name: 'DCC.SettingAutoApplyDeadStatus',
+    hint: 'DCC.SettingAutoApplyDeadStatusHint',
     scope: 'world',
     type: Boolean,
     default: false,
