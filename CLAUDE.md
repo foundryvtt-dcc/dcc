@@ -163,6 +163,7 @@ fail, don't push.
 - [Testing](docs/dev/TESTING.md) - Test suite, mocks, coverage
 - [Pack Management](docs/dev/PACKS.md) - Compendium JSON/LevelDB workflow
 - [Internationalization](docs/dev/I18N.md) - Translation system
+- [DCC-QOL Integration](docs/dev/DCC_QOL_INTEGRATION.md) - Analysis: folding dcc-qol features into core behind settings
 
 ### Reference Docs
 - [V14](docs/dev/V14.md) - V14 reference: data models, Active Effects V2, API changes
