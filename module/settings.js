@@ -268,6 +268,52 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Enhanced attack chat cards (DCC QoL integration): a redesigned attack card
+   * with a hit/miss banner versus the selected target, the weapon image/name
+   * (click to toggle its description), separate Roll Damage / Crit / Fumble
+   * buttons, and a weapon-properties footer. Off by default; client-scoped like
+   * `emoteRolls` (presentation is a per-player choice). Mutually exclusive with
+   * the emote-roll rewrite for attacks — when this is on, the attack card's
+   * emote path is skipped. Inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'enhancedAttackCards', {
+    name: 'DCC.SettingEnhancedAttackCards',
+    hint: 'DCC.SettingEnhancedAttackCardsHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Layout for the enhanced attack card: the full card (complete dice
+   * breakdown, full-width buttons) or a compact card (inline die total,
+   * condensed buttons). Only meaningful when `enhancedAttackCards` is on.
+   */
+  game.settings.register('dcc', 'attackCardFormat', {
+    name: 'DCC.SettingAttackCardFormat',
+    hint: 'DCC.SettingAttackCardFormatHint',
+    scope: 'client',
+    type: String,
+    choices: { full: 'DCC.AttackCardFormatFull', compact: 'DCC.AttackCardFormatCompact' },
+    default: 'full',
+    config: true
+  })
+
+  /**
+   * Show the hit/miss banner versus the selected target on the enhanced attack
+   * card. Only meaningful when `enhancedAttackCards` is on.
+   */
+  game.settings.register('dcc', 'showHitMissOnCard', {
+    name: 'DCC.SettingShowHitMissOnCard',
+    hint: 'DCC.SettingShowHitMissOnCardHint',
+    scope: 'client',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
    * Automatically roll damage, fumbles, and crits for attacks
    */
   game.settings.register('dcc', 'automateDamageFumblesCrits', {

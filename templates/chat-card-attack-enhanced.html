@@ -1,0 +1,122 @@
+{{!--
+  Enhanced attack card (DCC QoL integration). Rendered in place of the plain
+  card by enhanced-attack-card.mjs when the enhancedAttackCards setting is on.
+  One template serves both layouts; `compact` switches between them.
+  Banner classes (attack-hit / attack-miss) drive the colored left border.
+--}}
+<div class="dcc-enhanced-card chat-card{{#if compact}} compact{{/if}}{{#if isFumble}} attack-miss{{else}}{{#if hasTarget}}{{#if hitsTarget}} attack-hit{{else}} attack-miss{{/if}}{{else}} attack-hit{{/if}}{{/if}}">
+  <header class="card-header flexrow">
+    <h3 class="flavor-text">
+      {{#if isBackstab}}<img src="/systems/dcc/styles/images/backstab.png" title="{{localize 'DCC.Backstab'}}" width="20" height="20" class="backstab-icon" />{{/if}}
+      {{#if hasDescription}}
+        <span class="weapon-name-clickable" data-action="toggle-weapon-description" title="{{localize 'DCC.ToggleWeaponDescription'}}">{{flavorText}}</span>
+      {{else}}
+        <span>{{flavorText}}</span>
+      {{/if}}
+    </h3>
+    {{#if isPC}}
+      <img src="{{weaponImg}}" title="{{weaponName}}" width="36" height="36" class="{{#if hasDescription}}weapon-image-clickable{{else}}token-image{{/if}}"{{#if hasDescription}} data-action="toggle-weapon-description"{{/if}} />
+    {{else}}
+      <img src="{{actorImg}}" title="{{actorName}}" width="36" height="36" class="token-image" />
+    {{/if}}
+  </header>
+
+  {{#if hasDescription}}
+    <div class="weapon-description dcc-hidden">
+      <div class="description-content">{{{weaponDescription}}}</div>
+    </div>
+  {{/if}}
+
+  <div class="dice-section{{#if compact}} compact-dice-section centered{{/if}}">{{{diceHTML}}}</div>
+
+  {{#if deedDieRollResult}}
+    <div class="pt-8 deed-result{{#if deedRollSuccess}} critical{{/if}}">
+      <strong>{{localize "DCC.DeedDie"}}:</strong> {{deedDieRollResult}}
+    </div>
+  {{/if}}
+  {{#if deedPromptHTML}}{{{deedPromptHTML}}}{{/if}}
+
+  {{#if showHitMiss}}
+    <div class="chat-details centered">
+      {{#if isFumble}}
+        <div class="roll-result status-failure">{{localize "DCC.Fumble"}}!</div>
+      {{else if hasTarget}}
+        {{#if hitsTarget}}
+          <div class="roll-result status-success">{{#if isCrit}}{{localize "DCC.AttackHitsCrit"}}{{else}}{{localize "DCC.AttackHits"}}{{/if}} {{targetName}}!</div>
+        {{else}}
+          <div class="roll-result status-failure">{{localize "DCC.AttackMisses"}} {{targetName}}.</div>
+        {{/if}}
+      {{else}}
+        <div class="roll-result status-info">{{#if isCrit}}{{localize "DCC.AttackHitsCritNoTarget"}}{{else}}{{localize "DCC.AttackHitsAC" ac=hitsAc}}{{/if}}</div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{!-- Damage / Crit / Fumble: buttons when manual, rolled results when automated --}}
+  <div class="card-buttons{{#if compact}} compact-buttons-grid{{else}} centered{{/if}}">
+    {{#if isFumble}}
+      {{#unless automated}}
+        {{#if canUserModify}}<button type="button" class="enhanced-card-button{{#if compact}} compact-button{{/if}}{{#if fumbleButtonClicked}}{{#unless isGM}} disabled{{/unless}}{{/if}}" data-action="roll-fumble">{{localize "DCC.RollFumble"}}</button>{{/if}}
+      {{/unless}}
+    {{else}}
+      {{#unless suppressDamage}}
+        {{#unless automated}}
+          {{#if canUserModify}}<button type="button" class="enhanced-card-button damage-button{{#if compact}} compact-button{{/if}}{{#if damageButtonClicked}}{{#unless isGM}} disabled{{/unless}}{{/if}}" data-action="roll-damage">{{localize "DCC.RollDamage"}}{{#unless compact}}{{#if damageRollFormula}} ({{damageRollFormula}}){{/if}}{{/unless}}</button>{{/if}}
+        {{/unless}}
+      {{/unless}}
+      {{#if isCrit}}
+        {{#unless automated}}
+          {{#if canUserModify}}<button type="button" class="enhanced-card-button crit-button{{#if compact}} compact-button{{/if}}{{#if critButtonClicked}}{{#unless isGM}} disabled{{/unless}}{{/if}}" data-action="roll-crit">{{localize "DCC.RollCritical"}}</button>{{/if}}
+        {{/unless}}
+      {{/if}}
+    {{/if}}
+  </div>
+
+  {{!-- Automated rolled results (mirrors the plain card so TableResult nav works) --}}
+  {{#if automated}}
+    {{#if damageInlineRoll}}
+      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{damagePrompt}}:</strong> {{{damageInlineRoll}}}</div>
+    {{/if}}
+    {{#if critInlineRoll}}
+      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{critPrompt}}!</strong> {{{critInlineRoll}}}</div>
+    {{/if}}
+    {{#if critResult}}
+      <div class="table-draw crit-result pt-8" data-table-name="{{critTableName}}" data-current-roll="{{critRollTotal}}">
+        <ol class="table-results"><li class="table-result">
+          <div class="result-range">
+            <i class="fas fa-sort-up crit-shift-down" data-tooltip="{{localize 'DCC.CritShiftDown'}}"></i>
+            <i class="fas fa-sort-down crit-shift-up" data-tooltip="{{localize 'DCC.CritShiftUp'}}"></i>
+          </div>
+          <div class="result-text">{{{critResult}}}</div>
+        </li></ol>
+      </div>
+    {{/if}}
+    {{#if critTableLookupHint}}
+      <div class="pt-8 crit-lookup-hint"><em>{{critTableLookupHint}}</em></div>
+    {{/if}}
+    {{#if fumbleInlineRoll}}
+      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{fumblePrompt}}!</strong> {{{fumbleInlineRoll}}}</div>
+    {{/if}}
+    {{#if fumbleResult}}
+      <div class="table-draw fumble-result pt-8" data-table-name="{{originalFumbleTableName}}" data-current-roll="{{fumbleRollTotal}}" data-is-npc="{{isNPCFumble}}">
+        <ol class="table-results"><li class="table-result">
+          <div class="result-range">
+            <i class="fas fa-sort-up fumble-shift-down" data-tooltip="{{localize 'DCC.FumbleShiftDown'}}"></i>
+            <i class="fas fa-sort-down fumble-shift-up" data-tooltip="{{localize 'DCC.FumbleShiftUp'}}"></i>
+          </div>
+          <div class="result-text">{{{fumbleResult}}}</div>
+        </li></ol>
+      </div>
+    {{/if}}
+  {{/if}}
+
+  {{#if twoWeaponNote}}
+    <div class="pt-8"><em>{{twoWeaponNote}}</em></div>
+  {{/if}}
+
+  {{#if properties.length}}
+    <footer class="card-footer centered">
+      {{#each properties}}<span class="tag">{{this}}</span>{{/each}}
+    </footer>
+  {{/if}}
+</div>

@@ -345,27 +345,52 @@ Work lives on branch **`feat/dcc-qol-integration`** (off `main`). The lib side
 shipped as **`@moonloch/dcc-core-lib` v0.12.0** (PR #9, merged) and is vendored
 at `module/vendor/dcc-core-lib/`.
 
-**Shipped (9 slices, all green):**
+**Shipped (10 slices, all green):**
 
-| Feature | Setting (world, default off) | System file | Lib helper |
+| Feature | Setting (default off) | System file | Lib helper |
 |---------|------------------------------|-------------|------------|
 | Coexistence guard | — | `module/integrations.mjs` (`qolHandlingCombat`) | — |
-| Missile range penalties | `checkWeaponRange` | `module/weapon-range.mjs` | `parseMissileRange`, `getMissileRangePenalty` |
-| Firing-into-melee −1 | `firingIntoMeleePenalty` | `module/weapon-range.mjs` | `getFiringIntoMeleePenalty` |
-| Defender Luck vs monster crit | `playerLuckVsMonsterCrits` | `rolls-weapon-mixin._rollCritical` + `combat-targeting.mjs` | `CriticalInput.defenderLuckModifier` |
-| Monster fumbles (Yearbook #8) | `monsterFumbles` | `rolls-weapon-mixin._rollFumble` + `combat-targeting.mjs` | `getMonsterFumbleDie` |
+| Missile range penalties | `checkWeaponRange` (world) | `module/weapon-range.mjs` | `parseMissileRange`, `getMissileRangePenalty` |
+| Firing-into-melee −1 | `firingIntoMeleePenalty` (world) | `module/weapon-range.mjs` | `getFiringIntoMeleePenalty` |
+| Defender Luck vs monster crit | `playerLuckVsMonsterCrits` (world) | `rolls-weapon-mixin._rollCritical` + `combat-targeting.mjs` | `CriticalInput.defenderLuckModifier` |
+| Monster fumbles (Yearbook #8) | `monsterFumbles` (world) | `rolls-weapon-mixin._rollFumble` + `combat-targeting.mjs` | `getMonsterFumbleDie` |
 | Native socket | — | `module/socket.mjs` (`executeAsGM`, active-GM election; `game.dcc.socket`) | — |
-| Auto-apply damage | `autoApplyDamage` | `module/auto-apply-damage.mjs` | — |
-| Auto-dead status | `autoApplyDeadStatus` | `module/auto-dead-status.mjs` | — |
-| Friendly fire | `automateFriendlyFire` | `module/friendly-fire.mjs` | `checkFiringIntoMelee` |
+| Auto-apply damage | `autoApplyDamage` (world) | `module/auto-apply-damage.mjs` | — |
+| Auto-dead status | `autoApplyDeadStatus` (world) | `module/auto-dead-status.mjs` | — |
+| Friendly fire | `automateFriendlyFire` (world) | `module/friendly-fire.mjs` | `checkFiringIntoMelee` |
+| Enhanced attack cards | `enhancedAttackCards` / `attackCardFormat` / `showHitMissOnCard` (client) | `module/chat/enhanced-attack-card.mjs` + `templates/chat-card-attack-enhanced.html` | — |
 
 Range + firing-into-melee run through one combined `onModifyAttackRollTerms`
-dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1910);
+dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1926);
 each slice has a Playwright probe in `browser-tests/e2e/` (`weapon-range`,
 `monster-luck`, `socket`, `auto-apply-damage`, `auto-dead-status`,
-`friendly-fire`). The only red in the full E2E run is the pre-existing
-`extension-api` class-progression env failure (uncompiled level pack),
-unrelated to this work.
+`friendly-fire`, `enhanced-attack-card`). The only red in the full E2E run is
+the pre-existing `extension-api` class-progression env failure (uncompiled
+level pack) plus the self-documented `sheet-ui` `#prepareItems`
+container-linkage flake — both unrelated to this work.
+
+**Enhanced attack cards as built.** A third attack-card render mode alongside
+plain and emote, gated by the **client** setting `enhancedAttackCards` (off by
+default; `attackCardFormat` full/compact + `showHitMissOnCard` tune it).
+Decisions (confirmed 2026-06-22): **action buttons + persisted state** (full
+dcc-qol parity), **mutually exclusive with `emoteRolls`** for attack cards, and
+**both full + compact layouts** in one slice. It renders in the
+`renderChatMessageHTML` hook (`shouldRenderEnhancedAttackCard` /
+`renderEnhancedAttackCard`), replacing `.message-content`; the wiring takes the
+enhanced branch *before* the emote/lookup pipeline and returns, so the two never
+both rewrite the card (crit/fail highlight, TableResult navigation, and the
+Mighty Deed prompt still run on the new content). Hit/miss vs the selected
+target is computed at attack time (`attackHitsTarget`) and stored in
+`dcc.hasTarget`/`hitsTarget`/`targetName` flags (targets are stripped from
+system data before create). When `automateDamageFumblesCrits` is **off** the
+card shows **Roll Damage / Crit / Fumble** buttons: clicking rolls via
+`DCCRoll.createRoll` (honoring the modifier dialog) and posts a standalone roll
+message — the system's existing crit/fumble lookup renders the table on it —
+then marks the card so the button disables for non-GM viewers on re-render. The
+clicked-state flag is written directly by the author/GM or routed through a new
+GM socket action `dcc.updateMessageFlags`. When automation is **on** the card
+shows the rolled totals + navigable crit/fumble tables (mirroring the plain
+card). Friendly fire stays automatic (no FF button — see the FF slice).
 
 **Friendly fire as built (automated, not button-driven).** dcc-qol surfaces a
 "Friendly Fire Check" *button* on its enhanced attack card; the system has no
@@ -397,8 +422,6 @@ could turn one on and see nothing happen because the guard suppresses it). If
 that's undesirable, add the setting-visibility gate later.
 
 **Not yet built:**
-- **Enhanced attack cards** — hit/miss banner, colored/separated buttons,
-  full/compact layouts. The big template rewrite; collides with `emoteRolls`.
 - **Module retirement** — once at parity, drop dcc-qol and flip defaults (§10).
 
 ---
@@ -416,8 +439,11 @@ that's undesirable, add the setting-visibility gate later.
   affect worlds **without** dcc-qol, so this is low-stakes until retirement.)
 - **Setting-visibility gate:** adopt §7's `config: !qolHandlingCombat()` so the
   toggles hide while dcc-qol is active? (See §9 gating note.)
-- **`emoteRolls` future:** does the enhanced card *replace* emote rendering, or
-  remain a mutually-exclusive mode? (plain / emote / enhanced is a lot to test.)
+- ~~**`emoteRolls` future:** does the enhanced card *replace* emote rendering,
+  or remain a mutually-exclusive mode?~~ **DECIDED 2026-06-22: mutually
+  exclusive.** When `enhancedAttackCards` is on, the attack-card emote path is
+  skipped; `emoteRolls` still drives every other roll type. Three modes (plain /
+  emote / enhanced) coexist with minimal disruption to existing emote tests.
 - ~~**Ownership of FF randomness** in the lib — the d100 must be a Foundry
   `Roll` in the system, with the lib only classifying the outcome.~~ **RESOLVED
   2026-06-22:** the friendly-fire slice rolls every die (d100, ally index,
@@ -425,19 +451,10 @@ that's undesirable, add the setting-visibility gate later.
   lib's `checkFiringIntoMelee` via a sequenced roller — lib classifies, Foundry
   owns randomness. See §9 "Friendly fire as built".
 
-- **Setting scope:** card presentation client-scoped (like `emoteRolls`) or
-  world-scoped (like dcc-qol)? Recommend client for presentation, world for
-  rules/automation.
-- **`emoteRolls` future:** does the enhanced card *replace* emote rendering,
-  or do they remain two mutually-exclusive presentation modes? (Three modes —
-  plain / emote / enhanced — is a lot of surface to test.)
-- **Defaults at the cutover:** ship off (preserve current behavior, opt-in) vs.
-  on (best first-run experience but changes every existing world). Recommend
-  off, with the welcome dialog advertising the new toggle.
+- ~~**Setting scope:** card presentation client- or world-scoped?~~ **DECIDED
+  2026-06-22: client** for the three presentation settings (`enhancedAttackCards`,
+  `attackCardFormat`, `showHitMissOnCard`), matching `emoteRolls`. Rules /
+  automation settings stay world-scoped.
 - **Do we want auto-dead / luck-vs-crit in core at all,** or leave the
   opinionated bits in the module even after the cutover?
-- **Ownership of FF randomness** in the lib (the lib forbids `Math.random()`
-  in some contexts) — the d100 roll must be a Foundry `Roll` in the system,
-  with the lib only classifying the outcome.
-```
 

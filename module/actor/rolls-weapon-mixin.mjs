@@ -10,7 +10,7 @@ import {
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
-import { autoApplyAttackDamage } from '../auto-apply-damage.mjs'
+import { autoApplyAttackDamage, attackHitsTarget } from '../auto-apply-damage.mjs'
 import { maybeFriendlyFire } from '../friendly-fire.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
@@ -246,6 +246,16 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       'dcc.isCrit': attackRollResult.crit,
       'dcc.isNaturalCrit': attackRollResult.naturalCrit,
       'dcc.isMelee': weapon.system?.melee
+    }
+    // Hit/miss vs the selected target, computed here while the targets are in
+    // hand (they're stripped from system data before create). Read back by the
+    // enhanced attack card's hit/miss banner.
+    const primaryTarget = options.targets?.first?.()
+    const primaryTargetActor = primaryTarget?.actor
+    if (primaryTargetActor) {
+      flags['dcc.hasTarget'] = true
+      flags['dcc.hitsTarget'] = attackHitsTarget(attackRollResult, primaryTargetActor)
+      flags['dcc.targetName'] = primaryTarget?.name ?? primaryTargetActor.name ?? ''
     }
     if (attackRollResult.libResult) {
       flags['dcc.libResult'] = attackRollResult.libResult

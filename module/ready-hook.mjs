@@ -27,6 +27,7 @@ import { registerTables, setupCoreBookCompendiumLinks } from './table-loading.mj
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 import { registerSocket } from './socket.mjs'
 import { registerAutoApplyDamageHandler } from './auto-apply-damage.mjs'
+import { registerEnhancedCardSocket } from './chat/enhanced-attack-card.mjs'
 
 /**
  * Determine whether to show the Release Notes/Credits chat card for this user,
@@ -84,6 +85,7 @@ export async function onReady () {
   // handlers run only on the active GM. See module/socket.mjs.
   registerSocket()
   registerAutoApplyDamageHandler()
+  registerEnhancedCardSocket()
 
   checkReleaseNotes()
   // Await world migration before continuing the ready chain so
