@@ -25,6 +25,7 @@ import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import { registerTables, setupCoreBookCompendiumLinks } from './table-loading.mjs'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
+import { registerSocket } from './socket.mjs'
 
 /**
  * Determine whether to show the Release Notes/Credits chat card for this user,
@@ -76,6 +77,11 @@ export async function onReady () {
 
   // Register the KeyState tracker
   game.dcc.KeyState = new KeyState()
+
+  // Wire the system socket (game.socket is available at ready). Lets player
+  // clients request GM-side actions (damage/status application) — registered
+  // handlers run only on the active GM. See module/socket.mjs.
+  registerSocket()
 
   checkReleaseNotes()
   // Await world migration before continuing the ready chain so

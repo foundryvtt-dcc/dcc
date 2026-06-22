@@ -663,6 +663,7 @@
   "DCC.SettingPlayerLuckVsMonsterCritsHint": "Apply a targeted PC's Luck modifier to a monster's critical hit roll against them (positive Luck reduces the crit, negative increases it), per DCC rules. Ignored while the DCC Quality of Life module is active.",
   "DCC.SettingMonsterFumbles": "Monster fumbles (Yearbook #8)",
   "DCC.SettingMonsterFumblesHint": "Optional rule from DCC Yearbook #8: when a monster fumbles against player characters, step its fumble die along the dice chain by the highest targeted PC's Luck modifier (base 1d10). Ignored while the DCC Quality of Life module is active.",
+  "DCC.SocketNoGMWarning": "No Gamemaster is connected, so this action could not be completed. A GM must be online.",
   "DCC.MediumRangePenalty": "Medium Range",
   "DCC.WeaponOutOfRangeTitle": "Target Out of Range",
   "DCC.WeaponOutOfRangeContent": "{weapon} cannot reach a target {distance} ft away (beyond its long range). Fire anyway?",

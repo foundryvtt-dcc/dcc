@@ -663,6 +663,7 @@
   "DCC.SettingPlayerLuckVsMonsterCritsHint": "根据 DCC 规则，将目标 PC 的运气调整值应用于怪物对其的重击骰（正运气降低重击，负运气提高重击）。当 DCC Quality of Life 模块启用时忽略此项。",
   "DCC.SettingMonsterFumbles": "怪物失误（年鉴 #8）",
   "DCC.SettingMonsterFumblesHint": "来自 DCC 年鉴 #8 的可选规则：当怪物对玩家角色失误时，按目标 PC 中最高的运气调整值沿骰阶调整其失误骰（基础为 1d10）。当 DCC Quality of Life 模块启用时忽略此项。",
+  "DCC.SocketNoGMWarning": "没有连接的游戏主持人，因此无法完成此操作。必须有一名 GM 在线。",
   "DCC.MediumRangePenalty": "中距离",
   "DCC.WeaponOutOfRangeTitle": "目标超出射程",
   "DCC.WeaponOutOfRangeContent": "{weapon} 无法击中 {distance} 英尺外的目标（超出其远距离射程）。仍要射击吗？",
