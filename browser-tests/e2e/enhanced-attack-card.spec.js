@@ -13,10 +13,8 @@ const test = createSessionTest()
 test.describe('Enhanced attack cards', () => {
   test('an attack renders the enhanced card with a hit banner + damage button', async ({ page }) => {
     const result = await page.evaluate(async () => {
-      let createdSceneId = null
       if (!game.canvas?.ready || !game.canvas?.scene) {
         const scene = await Scene.create({ name: 'DCC Enhanced Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
-        createdSceneId = scene.id
         await scene.view()
       }
       const scene = game.canvas.scene
@@ -68,7 +66,6 @@ test.describe('Enhanced attack cards', () => {
       await scene.deleteEmbeddedDocuments('Token', [tokenDoc.id])
       await target.delete()
       await attacker.delete()
-      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
 
       return out
     })

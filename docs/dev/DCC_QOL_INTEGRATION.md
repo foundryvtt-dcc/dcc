@@ -364,10 +364,16 @@ Range + firing-into-melee run through one combined `onModifyAttackRollTerms`
 dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1926);
 each slice has a Playwright probe in `browser-tests/e2e/` (`weapon-range`,
 `monster-luck`, `socket`, `auto-apply-damage`, `auto-dead-status`,
-`friendly-fire`, `enhanced-attack-card`). The only red in the full E2E run is
-the pre-existing `extension-api` class-progression env failure (uncompiled
-level pack) plus the self-documented `sheet-ui` `#prepareItems`
-container-linkage flake — both unrelated to this work.
+`friendly-fire`, `enhanced-attack-card`). The persistent red in the full E2E
+run is the pre-existing `extension-api` class-progression env failure
+(uncompiled level pack). Beyond that, the live-canvas / container specs
+(`weapon-range` firing-into-melee, `sheet-ui` drag/drop + `#prepareItems`) are
+load-sensitive timing flakes: ~2–3 flake per full run, a *different* subset each
+run, and every one passes on an isolated rerun. A `cleanWorldState` auto-fixture
+(see `TESTING.md`) now backstops the actual state-bleed class (leaked
+actors/tokens/targets when a spec throws before its own cleanup) and the canvas
+probes no longer churn the scene; the residual rendering races are a known,
+separate de-flaking task. None of these are caused by this work.
 
 **Enhanced attack cards as built.** A third attack-card render mode alongside
 plain and emote, gated by the **client** setting `enhancedAttackCards` (off by

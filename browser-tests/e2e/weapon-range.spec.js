@@ -20,7 +20,6 @@ const test = createSessionTest()
 test.describe('Missile weapon range penalties', () => {
   test('registered hook applies RAW range penalties and respects the setting', async ({ page }) => {
     const result = await page.evaluate(async () => {
-      let createdSceneId = null
       if (!game.canvas?.dimensions) {
         const scene = await Scene.create({
           name: 'DCC Range Probe',
@@ -28,7 +27,6 @@ test.describe('Missile weapon range penalties', () => {
           height: 5000,
           grid: { type: 1, size: 100, distance: 5, units: 'ft' }
         })
-        createdSceneId = scene.id
         await scene.view()
       }
       const dim = game.canvas.dimensions
@@ -69,7 +67,6 @@ test.describe('Missile weapon range penalties', () => {
       const offProceed = callHook(offTerms, { token: attacker, targets: mkTargets(targetAtFeet(100)) })
 
       await game.settings.set('dcc', 'checkWeaponRange', prevSetting)
-      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
 
       return {
         hookRegistered,
@@ -113,7 +110,6 @@ test.describe('Missile weapon range penalties', () => {
 
   test('firing-into-melee applies -1 when an ally is adjacent to the target (live tokens)', async ({ page }) => {
     const result = await page.evaluate(async () => {
-      let createdSceneId = null
       if (!game.canvas?.ready || !game.canvas?.scene) {
         const scene = await Scene.create({
           name: 'DCC FIM Probe',
@@ -121,7 +117,6 @@ test.describe('Missile weapon range penalties', () => {
           height: 5000,
           grid: { type: 1, size: 100, distance: 5, units: 'ft' }
         })
-        createdSceneId = scene.id
         await scene.view()
       }
       const scene = game.canvas.scene
@@ -136,9 +131,12 @@ test.describe('Missile weapon range penalties', () => {
         { name: 'Ally', actorId: ally.id, x: tx + gs, y: ty, width: 1, height: 1, disposition: 1 }
       ])
       const targetDoc = created[0]
-      // Wait for the target's placeable to exist on the canvas.
+      const allyDoc = created[1]
+      // Wait for BOTH placeables on the canvas — the ally must be rendered for
+      // getAlliesInMeleeWithTarget to find it, and under a loaded shared
+      // session it can lag behind the target (flaked termCount to 2).
       const deadline = Date.now() + 4000
-      while (Date.now() < deadline && !game.canvas.tokens.get(targetDoc.id)) {
+      while (Date.now() < deadline && !(game.canvas.tokens.get(targetDoc.id) && game.canvas.tokens.get(allyDoc.id))) {
         await new Promise(resolve => setTimeout(resolve, 50))
       }
       const targetToken = game.canvas.tokens.get(targetDoc.id)
@@ -163,7 +161,6 @@ test.describe('Missile weapon range penalties', () => {
       await scene.deleteEmbeddedDocuments('Token', created.map(d => d.id))
       await npc.delete()
       await ally.delete()
-      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
 
       return { proceed, termCount: terms.length, fimTerm, placeableFound }
     })

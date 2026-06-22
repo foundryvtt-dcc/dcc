@@ -14,10 +14,8 @@ const test = createSessionTest()
 test.describe('Auto-apply damage', () => {
   test('damage from a hit is applied to the targeted token via the GM', async ({ page }) => {
     const result = await page.evaluate(async () => {
-      let createdSceneId = null
       if (!game.canvas?.ready || !game.canvas?.scene) {
         const scene = await Scene.create({ name: 'DCC AutoDmg Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
-        createdSceneId = scene.id
         await scene.view()
       }
       const scene = game.canvas.scene
@@ -69,7 +67,6 @@ test.describe('Auto-apply damage', () => {
       await scene.deleteEmbeddedDocuments('Token', [tokenDoc.id])
       await npc.delete()
       await attacker.delete()
-      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
 
       return { startHp, endHp, fumbled }
     })

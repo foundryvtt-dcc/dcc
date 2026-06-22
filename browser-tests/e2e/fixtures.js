@@ -104,7 +104,47 @@ function createSessionTest ({ onConsole } = {}) {
 
     page: async ({ sessionPage }, use) => {
       await use(sessionPage)
-    }
+    },
+
+    // Auto-fixture: keep the reused session from bleeding state between tests.
+    // The page is NOT reset between tests, so a spec that creates actors /
+    // tokens — and skips its own cleanup because it threw first — would leave
+    // them on the shared canvas for later tests (stray tokens perturb
+    // token-distance rules; leftover targets/selection perturb target-driven
+    // rolls). After each test we clear targets + selection and delete the
+    // actors it created plus those actors' tokens on every scene. We do NOT
+    // delete scenes: the canvas-probe specs create one only when none exists
+    // and then reuse it, so leaving it persistent keeps the canvas settled —
+    // deleting it would re-init the canvas mid-run and `game.canvas.dimensions`
+    // would briefly go stale, flaking the live-token distance tests. Stray
+    // tokens are cleaned by actor (deleting an actor removes its tokens), which
+    // is lightweight and does not churn the canvas. Best-effort: failures here
+    // never fail the test.
+    cleanWorldState: [async ({ page }, use) => {
+      await page.evaluate(() => {
+        globalThis.__dccBaseline = { actors: game.actors.contents.map(a => a.id) }
+      }).catch(() => {})
+
+      await use()
+
+      await page.evaluate(async () => {
+        const baseline = globalThis.__dccBaseline || { actors: [] }
+        try { await game.user?.updateTokenTargets?.([]) } catch { /* best effort */ }
+        try { game.canvas?.tokens?.releaseAll?.() } catch { /* best effort */ }
+        try {
+          const baseActors = new Set(baseline.actors)
+          const newActorIds = game.actors.contents.map(a => a.id).filter(id => !baseActors.has(id))
+          if (newActorIds.length) {
+            const newSet = new Set(newActorIds)
+            for (const scene of game.scenes.contents) {
+              const strayIds = scene.tokens.filter(t => newSet.has(t.actorId)).map(t => t.id)
+              if (strayIds.length) await scene.deleteEmbeddedDocuments('Token', strayIds)
+            }
+            await Actor.deleteDocuments(newActorIds)
+          }
+        } catch { /* best effort */ }
+      }).catch(() => {})
+    }, { auto: true }]
   })
 }
 

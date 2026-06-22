@@ -14,10 +14,8 @@ const test = createSessionTest()
 test.describe('Friendly fire', () => {
   test('a missed missile shot into melee posts a friendly-fire card', async ({ page }) => {
     const result = await page.evaluate(async () => {
-      let createdSceneId = null
       if (!game.canvas?.ready || !game.canvas?.scene) {
         const scene = await Scene.create({ name: 'DCC FF Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
-        createdSceneId = scene.id
         await scene.view()
       }
       const scene = game.canvas.scene
@@ -41,8 +39,10 @@ test.describe('Friendly fire', () => {
       const [targetToken] = await scene.createEmbeddedDocuments('Token', [{ name: 'Tgt', actorId: target.id, actorLink: true, x: 500, y: 500, width: 1, height: 1, disposition: -1 }])
       const [allyToken] = await scene.createEmbeddedDocuments('Token', [{ name: 'Ally', actorId: allyActor.id, actorLink: true, x: 600, y: 500, width: 1, height: 1, disposition: 1 }])
 
+      // Wait for BOTH placeables — the ally must be on the canvas for the
+      // friendly-fire ally detection (it can lag the target under load).
       const deadline0 = Date.now() + 3000
-      while (Date.now() < deadline0 && !game.canvas.tokens.get(targetToken.id)) await new Promise(resolve => setTimeout(resolve, 50))
+      while (Date.now() < deadline0 && !(game.canvas.tokens.get(targetToken.id) && game.canvas.tokens.get(allyToken.id))) await new Promise(resolve => setTimeout(resolve, 50))
       game.canvas.tokens.get(targetToken.id).setTarget(true, { releaseOthers: true })
 
       const before = game.messages.size
@@ -74,7 +74,6 @@ test.describe('Friendly fire', () => {
       await target.delete()
       await allyActor.delete()
       await attacker.delete()
-      if (createdSceneId) await game.scenes.get(createdSceneId)?.delete()
 
       return out
     })
