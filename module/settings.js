@@ -412,6 +412,21 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Automate friendly fire (DCC core rulebook p. 96): when a missile attack
+   * into melee misses, a 50% chance the stray shot is directed at a random
+   * ally engaged with the target, who is then attacked normally. Off by
+   * default; inert while the dcc-qol module is active.
+   */
+  game.settings.register('dcc', 'automateFriendlyFire', {
+    name: 'DCC.SettingAutomateFriendlyFire',
+    hint: 'DCC.SettingAutomateFriendlyFireHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Automatically apply a hit's rolled damage to the targeted token (via the
    * GM). Off by default; inert while the dcc-qol module is active.
    */

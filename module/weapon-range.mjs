@@ -58,7 +58,7 @@ export function measureTokenDistance (token1, token2) {
  * The first targeted token's document, or null. `options.targets` is a
  * `Set<Token>` (the user's current targets at roll time).
  */
-function getFirstTargetDoc (targets) {
+export function getFirstTargetDoc (targets) {
   if (!(targets instanceof Set) || targets.size === 0) return null
   return targets.first()?.document ?? null
 }
@@ -67,7 +67,7 @@ function getFirstTargetDoc (targets) {
  * Resolve the attacker's token document: an explicit `options.token` wins,
  * otherwise the actor's first active token on the canvas.
  */
-function getAttackerTokenDoc (actor, options) {
+export function getAttackerTokenDoc (actor, options) {
   const token = options?.token
   if (token) {
     if (typeof token === 'object' && 'x' in token) return token
@@ -164,7 +164,7 @@ export function onModifyAttackRollTermsForRange (terms, actor, weapon, options =
  * @param {TokenDocument} attackerDoc - the attacker token document (for disposition + self-exclusion)
  * @returns {object[]} the allied token documents engaged with the target
  */
-function getAlliesInMeleeWithTarget (targetDoc, attackerDoc) {
+export function getAlliesInMeleeWithTarget (targetDoc, attackerDoc) {
   const dims = game.canvas?.dimensions
   if (!dims) return []
   const placeables = game.canvas?.tokens?.placeables ?? []

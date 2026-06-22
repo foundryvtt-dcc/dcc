@@ -11,6 +11,7 @@ import {
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
 import { autoApplyAttackDamage } from '../auto-apply-damage.mjs'
+import { maybeFriendlyFire } from '../friendly-fire.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
@@ -344,6 +345,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Auto-apply damage to a hit target (setting-gated; routes through the GM
     // socket). Fire-and-forget — it swallows its own errors.
     autoApplyAttackDamage(options, attackRollResult, damageRoll)
+
+    // Friendly fire: a missed missile shot into melee may stray into an ally
+    // (setting-gated). Fire-and-forget — it swallows its own errors.
+    maybeFriendlyFire(this, options, attackRollResult, weapon)
   }
 
   /**

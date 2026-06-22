@@ -16,7 +16,22 @@
 import { qolHandlingCombat } from './integrations.mjs'
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
 
-const APPLY_DAMAGE_ACTION = 'dcc.applyDamage'
+export const APPLY_DAMAGE_ACTION = 'dcc.applyDamage'
+
+/**
+ * Apply damage to an actor through the GM (the active GM runs the
+ * `actor.applyDamage`). Shared by the auto-apply-damage and friendly-fire
+ * paths so the privileged-write action name lives in one place. No-op for
+ * non-positive amounts.
+ *
+ * @param {string} actorUuid - UUID of the actor (or its token) to damage
+ * @param {number} amount - positive damage amount
+ * @returns {Promise<void>}
+ */
+export async function applyDamageViaGM (actorUuid, amount) {
+  if (!actorUuid || !(amount > 0)) return
+  await executeAsGM(APPLY_DAMAGE_ACTION, { actorUuid, amount })
+}
 
 /**
  * Whether the attack hit the target: a fumble always misses, a crit always
@@ -53,7 +68,7 @@ export async function autoApplyAttackDamage (options, attackRollResult, damageRo
     const targetActor = target?.actor
     if (!targetActor) return
     if (!attackHitsTarget(attackRollResult, targetActor)) return
-    await executeAsGM(APPLY_DAMAGE_ACTION, { actorUuid: targetActor.uuid, amount })
+    await applyDamageViaGM(targetActor.uuid, amount)
   } catch (err) {
     console.error('DCC | auto-apply damage failed', err)
   }

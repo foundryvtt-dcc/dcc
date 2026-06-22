@@ -345,7 +345,7 @@ Work lives on branch **`feat/dcc-qol-integration`** (off `main`). The lib side
 shipped as **`@moonloch/dcc-core-lib` v0.12.0** (PR #9, merged) and is vendored
 at `module/vendor/dcc-core-lib/`.
 
-**Shipped (8 slices, all green):**
+**Shipped (9 slices, all green):**
 
 | Feature | Setting (world, default off) | System file | Lib helper |
 |---------|------------------------------|-------------|------------|
@@ -357,13 +357,35 @@ at `module/vendor/dcc-core-lib/`.
 | Native socket | — | `module/socket.mjs` (`executeAsGM`, active-GM election; `game.dcc.socket`) | — |
 | Auto-apply damage | `autoApplyDamage` | `module/auto-apply-damage.mjs` | — |
 | Auto-dead status | `autoApplyDeadStatus` | `module/auto-dead-status.mjs` | — |
+| Friendly fire | `automateFriendlyFire` | `module/friendly-fire.mjs` | `checkFiringIntoMelee` |
 
 Range + firing-into-melee run through one combined `onModifyAttackRollTerms`
-dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1896);
+dispatcher on `dcc.modifyAttackRollTerms`. Tests: full Vitest green (~1910);
 each slice has a Playwright probe in `browser-tests/e2e/` (`weapon-range`,
-`monster-luck`, `socket`, `auto-apply-damage`, `auto-dead-status`). The only
-red in the full E2E run is the pre-existing `extension-api` class-progression
-env failure (uncompiled level pack), unrelated to this work.
+`monster-luck`, `socket`, `auto-apply-damage`, `auto-dead-status`,
+`friendly-fire`). The only red in the full E2E run is the pre-existing
+`extension-api` class-progression env failure (uncompiled level pack),
+unrelated to this work.
+
+**Friendly fire as built (automated, not button-driven).** dcc-qol surfaces a
+"Friendly Fire Check" *button* on its enhanced attack card; the system has no
+enhanced card yet (§9 "Not yet built"), so the system version is fully
+automated off the `automateFriendlyFire` setting. It fires from the
+weapon-attack dispatch (alongside `autoApplyAttackDamage`) whenever a *missed*
+missile attack (a fumble counts as a miss, matching dcc-qol's `!hitsTarget`
+eligibility) targets a creature engaged in melee with one of the attacker's
+allies. The lib `checkFiringIntoMelee` owns the rule (50% threshold, random
+ally pick, to-hit-vs-AC); all dice are Foundry `Roll`s whose naturals are
+replayed into the lib via a sequenced roller (the §10 "d100 must be a Foundry
+Roll, lib only classifies" resolution). The stray attack's bonus is rolled
+inside Foundry (`buildAllyAttackFormula` → `1d20 + <toHit>`) and fed to the lib
+as the natural with a 0 bonus, so formula bonuses (deed dice, etc.) resolve
+natively. A result chat card (`flags.dcc.isFriendlyFire`) is always posted when
+the check runs. **Damage decision:** on a stray hit the weapon damage is rolled
+and shown; it is auto-applied to the struck ally **only when `autoApplyDamage`
+is also on** (composing with that setting / its GM socket action), otherwise
+the GM applies it manually. The ally damage write reuses the auto-apply slice's
+`dcc.applyDamage` socket action via the shared `applyDamageViaGM` helper.
 
 **Gating as built (deviates from §7's plan — reconcile or accept):** every
 handler is **always registered** and checks `qolHandlingCombat()` + its setting
@@ -375,8 +397,6 @@ could turn one on and see nothing happen because the guard suppresses it). If
 that's undesirable, add the setting-visibility gate later.
 
 **Not yet built:**
-- **Friendly fire** — lib `checkFiringIntoMelee` is ready; needs Foundry-side
-  ally detection, the d100 resolution, and chat-card buttons (UI-heavy).
 - **Enhanced attack cards** — hit/miss banner, colored/separated buttons,
   full/compact layouts. The big template rewrite; collides with `emoteRolls`.
 - **Module retirement** — once at parity, drop dcc-qol and flip defaults (§10).
@@ -398,8 +418,12 @@ that's undesirable, add the setting-visibility gate later.
   toggles hide while dcc-qol is active? (See §9 gating note.)
 - **`emoteRolls` future:** does the enhanced card *replace* emote rendering, or
   remain a mutually-exclusive mode? (plain / emote / enhanced is a lot to test.)
-- **Ownership of FF randomness** in the lib — the d100 must be a Foundry `Roll`
-  in the system, with the lib only classifying the outcome.
+- ~~**Ownership of FF randomness** in the lib — the d100 must be a Foundry
+  `Roll` in the system, with the lib only classifying the outcome.~~ **RESOLVED
+  2026-06-22:** the friendly-fire slice rolls every die (d100, ally index,
+  stray attack, damage) as a Foundry `Roll` and replays the naturals into the
+  lib's `checkFiringIntoMelee` via a sequenced roller — lib classifies, Foundry
+  owns randomness. See §9 "Friendly fire as built".
 
 - **Setting scope:** card presentation client-scoped (like `emoteRolls`) or
   world-scoped (like dcc-qol)? Recommend client for presentation, world for
