@@ -17,6 +17,7 @@
  */
 
 import TablePackManager from './table-pack-manager.js'
+import { clearCritTableCaches } from './adapter/table-cache.mjs'
 
 /**
  * Module-private predicate. Reads `game.i18n` per call so the localized
@@ -168,8 +169,14 @@ export function registerTables () {
     CONFIG.DCC.mightyDeedsPacks._updateHook(CONFIG.DCC.mightyDeedsPacks)
   }
 
-  // Create manager for critical hit table packs and register the system setting
-  CONFIG.DCC.criticalHitPacks = new TablePackManager()
+  // Create manager for critical hit table packs and register the system
+  // setting. The updateHook drops the crit-table lookup caches whenever the
+  // pack set changes (system-setting seed, or a content module's
+  // `dcc.registerCriticalHitsPack`), so a lookup cached before the relevant
+  // pack registered can't leave a sticky `null`/stale entry. See issue #768.
+  CONFIG.DCC.criticalHitPacks = new TablePackManager({
+    updateHook: () => clearCritTableCaches()
+  })
   CONFIG.DCC.criticalHitPacks.addPack(game.settings.get('dcc', 'critsCompendium'), true)
 
   // D3b — manager for patron-taint manifestation table packs. Seeded

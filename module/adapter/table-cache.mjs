@@ -74,6 +74,23 @@ export function clearAllTableCaches () {
 }
 
 /**
+ * Clear just the two crit-table caches. Called when the set or order of
+ * `CONFIG.DCC.criticalHitPacks` changes (a pack is seeded from the system
+ * setting, or a content module registers one via
+ * `dcc.registerCriticalHitsPack`). Without this, a lookup that ran before
+ * the relevant pack was registered — common during the `dcc.ready` chain,
+ * where dcc-core-book registers its pack and MCC promotes its own — leaves
+ * a sticky cached `null` (or a now-superseded table) that only a
+ * world-RollTable CRUD event would otherwise invalidate. That poisoned
+ * entry is what surfaces as a crit card showing the "look it up in your
+ * rulebook" hint even though the table is present. See issue #768.
+ */
+export function clearCritTableCaches () {
+  critTableLinkCache.clear()
+  critTableDocCache.clear()
+}
+
+/**
  * World-RollTable lifecycle hooks that invalidate all caches. A
  * single GM edit (rename / row change / delete) can shift which world
  * table answers a name lookup or what its rows resolve to; the safest

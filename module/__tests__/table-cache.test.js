@@ -19,6 +19,7 @@ import {
   TABLE_CACHE_INVALIDATION_HOOKS,
   TABLE_CACHES,
   clearAllTableCaches,
+  clearCritTableCaches,
   critTableDocCache,
   critTableLinkCache,
   disapprovalTableCache,
@@ -82,6 +83,29 @@ describe('clearAllTableCaches', () => {
 
   test('is safe to call when caches are already empty', () => {
     expect(() => clearAllTableCaches()).not.toThrow()
+  })
+})
+
+describe('clearCritTableCaches', () => {
+  test('drops only the two crit caches, leaving the others intact', () => {
+    disapprovalTableCache.set('A', { rows: [] })
+    mercurialMagicTableCache.set('B', { rows: [] })
+    critTableLinkCache.set('III', '@UUID[Compendium.x.y]')
+    // A sticky cached `null` from a lookup that ran before the crit pack
+    // registered — the exact poison this clear exists to drop (issue #768).
+    critTableDocCache.set('Crit Table III', null)
+
+    clearCritTableCaches()
+
+    expect(critTableLinkCache.size).toBe(0)
+    expect(critTableDocCache.size).toBe(0)
+    // Non-crit caches are untouched — pack registration only affects crits.
+    expect(disapprovalTableCache.size).toBe(1)
+    expect(mercurialMagicTableCache.size).toBe(1)
+  })
+
+  test('is safe to call when caches are already empty', () => {
+    expect(() => clearCritTableCaches()).not.toThrow()
   })
 })
 
