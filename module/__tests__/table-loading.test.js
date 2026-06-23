@@ -18,6 +18,7 @@ import {
   registerTables,
   setupCoreBookCompendiumLinks
 } from '../table-loading.mjs'
+import { critTableDocCache, critTableLinkCache } from '../adapter/table-cache.mjs'
 
 let originalCONFIG
 let originalGame
@@ -114,6 +115,22 @@ describe('registerTables', () => {
     // Patron-taint registry seeded with both core + xcc side-effect packs
     expect(globalThis.CONFIG.DCC.patronTaintPacks.packs).toContain('dcc-core-book.dcc-core-spell-side-effect-tables')
     expect(globalThis.CONFIG.DCC.patronTaintPacks.packs).toContain('xcc-core-book.xcc-core-spell-side-effect-tables')
+  })
+
+  test('criticalHitPacks.addPack clears the crit-table caches (drops a sticky null cached before the pack registered — issue #768)', () => {
+    registerTables()
+
+    // Simulate a crit lookup that ran before any crit pack was registered:
+    // the doc cache holds a sticky null and the link cache a stale entry.
+    critTableDocCache.set('Crit Table III', null)
+    critTableLinkCache.set('III', '@UUID[RollTable.stale]')
+
+    // dcc-core-book registering its crit pack must invalidate those entries
+    // so the next lookup re-walks and finds the now-registered table.
+    globalThis.CONFIG.DCC.criticalHitPacks.addPack('dcc-core-book.dcc-core-crits-and-fumbles')
+
+    expect(critTableDocCache.size).toBe(0)
+    expect(critTableLinkCache.size).toBe(0)
   })
 
   test('seeds the disapproval-pack registry from the disapprovalCompendium system setting when present', () => {

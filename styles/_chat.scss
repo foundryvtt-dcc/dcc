@@ -64,6 +64,10 @@ a.inline-roll {
 .deed-table-prompt {
   align-items: center;
   display: flex;
+  // Wrap instead of overflowing if a host chat card (e.g. dcc-qol) forces
+  // the button wider than the row — the button drops to its own line rather
+  // than spilling past the card's right edge. See issue #768.
+  flex-wrap: wrap;
   gap: 5px;
 
   .deed-table-select,
@@ -79,9 +83,11 @@ a.inline-roll {
   }
 
   .roll-deed-table {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     font-family: var(--system-label-font), serif;
     line-height: 1.5;
+    // Never exceed the row width, whatever a host card's button rules say.
+    max-width: 100%;
     padding: 0 8px;
     width: auto;
   }

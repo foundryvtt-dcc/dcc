@@ -717,6 +717,7 @@ a.inline-roll {
 .deed-table-prompt {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
 }
 .deed-table-prompt .deed-table-select,
@@ -730,9 +731,10 @@ a.inline-roll {
   min-width: 0;
 }
 .deed-table-prompt .roll-deed-table {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   font-family: var(--system-label-font), serif;
   line-height: 1.5;
+  max-width: 100%;
   padding: 0 8px;
   width: auto;
 }
