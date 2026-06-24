@@ -207,6 +207,27 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await expect(healedRow.locator('.heal-button')).toHaveCount(0)
   })
 
+  test('clicking the ability title rolls a check without opening the edit dialog (issue #779)', async ({ page }) => {
+    await createAndOpenActor(page)
+
+    // With the log enabled the title label drops its `for=` so a click is not
+    // forwarded to the readonly value input (which carries the edit action).
+    const strTitle = page.locator('.dcc.actor.sheet .ability-box[data-ability="str"] label.box-title.rollable')
+    await expect(strTitle).not.toHaveAttribute('for')
+
+    const messagesBefore = await page.evaluate(() => game.messages.size)
+
+    await strTitle.click()
+    await page.waitForTimeout(600)
+
+    // The check rolled (a chat card was created) ...
+    const messagesAfter = await page.evaluate(() => game.messages.size)
+    expect(messagesAfter).toBe(messagesBefore + 1)
+
+    // ... and the edit dialog did NOT pop open on top of the roll
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(0)
+  })
+
   test('direct API updates are logged as manual entries, flagged updates are not', async ({ page }) => {
     await createAndOpenActor(page)
 
