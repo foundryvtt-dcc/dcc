@@ -63,7 +63,14 @@ beforeEach(() => {
   originalGame = globalThis.game
   originalFoundry = globalThis.foundry
   originalFetch = globalThis.fetch
-  globalThis.game = { i18n: { localize: vi.fn((k) => k) } }
+  // `migrateActorData` reads the stored version for its gated fixups. Default
+  // to the ceiling so the version-gated branches (e.g. the 0.50 attackHitBonus
+  // split) are no-ops for the data-driven cases below; the gated suite
+  // overrides this per-test.
+  globalThis.game = {
+    i18n: { localize: vi.fn((k) => k) },
+    settings: { get: vi.fn(() => 0.68) }
+  }
   globalThis.foundry = stubFoundry()
 })
 
@@ -77,6 +84,45 @@ afterEach(() => {
 describe('migrateActorData — no-op baseline', () => {
   test('a fully-migrated actor produces an empty updateData', async () => {
     expect(await migrateActorData(cleanActor())).toEqual({})
+  })
+})
+
+// Version-gated fixup (issue #774): worlds at/below 0.50 predate the
+// melee/missile attackHitBonus split, so their per-mode bonus must be seeded
+// from the legacy flat attackBonus. Worlds in the (0.22, 0.66) band reach this
+// branch because the data-model floor is now 0.22, not 0.66.
+describe('migrateActorData — attackHitBonus from legacy attackBonus (<=0.50)', () => {
+  test('seeds melee/missile attackHitBonus from attackBonus for a pre-0.50 world', async () => {
+    globalThis.game.settings.get = vi.fn(() => 0.34)
+    const actor = cleanActor()
+    actor.system.details.attackBonus = '+3'
+    expect(await migrateActorData(actor)).toEqual({
+      'system.details.attackHitBonus.melee.value': '+3',
+      'system.details.attackHitBonus.missile.value': '+3'
+    })
+  })
+
+  test('fires at the 0.50 boundary', async () => {
+    globalThis.game.settings.get = vi.fn(() => 0.50)
+    const actor = cleanActor()
+    actor.system.details.attackBonus = '+1'
+    expect(await migrateActorData(actor)).toEqual({
+      'system.details.attackHitBonus.melee.value': '+1',
+      'system.details.attackHitBonus.missile.value': '+1'
+    })
+  })
+
+  test('is a no-op for a post-0.50 world even when attackBonus is present', async () => {
+    globalThis.game.settings.get = vi.fn(() => 0.67)
+    const actor = cleanActor()
+    actor.system.details.attackBonus = '+3'
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('is a no-op when attackBonus is absent (nothing to copy)', async () => {
+    globalThis.game.settings.get = vi.fn(() => 0.34)
+    const actor = cleanActor()
+    expect(await migrateActorData(actor)).toEqual({})
   })
 })
 
