@@ -148,6 +148,42 @@ describe('SpellItemMixin extraction', () => {
       })
     })
 
+    // Issue #773: manifestation must roll the table's own die (1d4 here), never a
+    // hardcoded 1d100 — a d100 lands outside the small table's range and never
+    // matches a result.
+    test('rollManifestation rolls the manifestation table die, not 1d100', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const drawnRoll = new FakeRoll('1d4', { value: 3 })
+      const table = {
+        formula: '1d4',
+        draw: vi.fn(async () => ({
+          roll: drawnRoll,
+          results: [{ description: 'caster glows faintly' }]
+        }))
+      }
+      const entry = { _id: 'tbl1', name: 'Probe Spell Manifestation' }
+      global.game.packs = {
+        get: vi.fn(() => ({
+          index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+          getDocument: vi.fn(async () => table)
+        }))
+      }
+      const createRoll = vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 3 }))
+      global.game.dcc = { DCCRoll: { createRoll } }
+
+      await item.rollManifestation()
+
+      expect(createRoll).toHaveBeenCalledTimes(1)
+      expect(createRoll.mock.calls[0][0][0].formula).toBe('1d4')
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 3,
+        'system.manifestation.description': '<p>Caster glows faintly</p>'
+      }))
+    })
+
     test('rollMercurialMagic no-ops for a non-spell item', async () => {
       const item = makeSpell()
       Object.defineProperty(item, 'type', { value: 'armor', configurable: true })
