@@ -1853,6 +1853,18 @@ a.inline-roll {
   font-size: 0.9em;
 }
 
+/* Inline edit affordance for the Lay on Hands Spell Manifestation editor
+   (#426). Muted until hovered so it doesn't compete with the rollable label. */
+.dcc .lay-on-hands-manifestation-edit {
+  margin-left: 4px;
+  color: var(--system-text-muted-color);
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.dcc .lay-on-hands-manifestation-edit:hover {
+  color: inherit;
+}
+
 .dcc .skills-bg {
   background-image: url("./images/FCI-spots-8-14-Four-Potion-Bottles.webp");
   background-repeat: no-repeat;

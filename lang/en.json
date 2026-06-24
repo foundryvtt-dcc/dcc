@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "Thieves' Cant",
   "DCC.LayOnHands": "Lay on Hands",
   "DCC.LayOnHandsHint": "Click to roll a Lay on Hands check, CMD/CTRL click for more options",
+  "DCC.LayOnHandsManifestationHint": "Edit the Spell Manifestation for Lay on Hands (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Lay on Hands Manifestation",
   "DCC.Level": "Level",
   "DCC.LevelChanged": "Level Changed to {level}",
   "DCC.LevelUpHint": "Change level",

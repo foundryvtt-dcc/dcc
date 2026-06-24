@@ -21,6 +21,7 @@ class SpellResult {
     crit = false,
     fumble = false,
     item = undefined,
+    manifestation: manifestationOverride = undefined,
     patronTaint = undefined
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
@@ -53,7 +54,12 @@ class SpellResult {
 
     let manifestation = {}
     let mercurial = {}
-    if (item) {
+    // An explicit manifestation override (e.g. the built-in cleric Lay on
+    // Hands ability, which has no spell item — #426) takes precedence over
+    // the item-derived manifestation.
+    if (manifestationOverride) {
+      manifestation = manifestationOverride.displayInChat ? manifestationOverride : {}
+    } else if (item) {
       manifestation = item.system?.manifestation?.displayInChat ? item.system?.manifestation : {}
       mercurial = item.system?.mercurialEffect?.displayInChat ? item.system?.mercurialEffect : {}
     }

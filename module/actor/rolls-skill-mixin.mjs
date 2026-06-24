@@ -397,8 +397,12 @@ export const RollsSkillMixin = (Base) => class extends Base {
         result = skillTable.getResultsForRoll(roll.total)
       }
 
+      // Built-in cleric Lay on Hands carries an optional Spell
+      // Manifestation on the actor skill (no spell item) — surface it in
+      // the chat card when present (#426).
+      const skillManifestation = this.system.skills?.[skillId]?.manifestation
       await game.dcc.SpellResult.addChatMessage(roll, skillTable, result, {
-        crit, fumble, item: skillItem
+        crit, fumble, item: skillItem, manifestation: skillManifestation
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same

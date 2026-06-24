@@ -61,6 +61,38 @@ describe('addChatMessage flag construction', () => {
   })
 })
 
+describe('manifestation override (Lay on Hands — #426)', () => {
+  // Capture the context handed to the chat-card template so we can assert
+  // which manifestation object is rendered.
+  let lastContext
+  beforeEach(() => {
+    lastContext = null
+    globalThis.foundry.applications.handlebars.renderTemplate = async (_tpl, ctx) => {
+      lastContext = ctx
+      return '<div class="card"></div>'
+    }
+  })
+
+  test('an explicit manifestation override is rendered when displayInChat is true', async () => {
+    const manifestation = { value: '5', description: 'A halo of light', displayInChat: true }
+    await SpellResult.addChatMessage(null, rollTable, result, { manifestation })
+    expect(lastContext.manifestation).toEqual(manifestation)
+  })
+
+  test('the override is suppressed when displayInChat is false', async () => {
+    const manifestation = { value: '5', description: 'A halo of light', displayInChat: false }
+    await SpellResult.addChatMessage(null, rollTable, result, { manifestation })
+    expect(lastContext.manifestation).toEqual({})
+  })
+
+  test('the override takes precedence over an item-derived manifestation', async () => {
+    const manifestation = { description: 'Skill manifestation', displayInChat: true }
+    const item = { id: 'lay', system: { manifestation: { description: 'Item manifestation', displayInChat: true } } }
+    await SpellResult.addChatMessage(null, rollTable, result, { item, manifestation })
+    expect(lastContext.manifestation).toEqual(manifestation)
+  })
+})
+
 describe('processChatMessage navigation wiring', () => {
   const htmlWith = (upEls, downEls) => ({
     querySelectorAll: vi.fn((sel) => (sel === '.spell-shift-up' ? upEls : sel === '.spell-shift-down' ? downEls : []))

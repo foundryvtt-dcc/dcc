@@ -5,6 +5,7 @@ import { AbilityScoreLogDialog, abilityScoreLogEnabled } from './ability-score-l
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
+import LayOnHandsManifestationConfig from './lay-on-hands-manifestation-config.js'
 import EntityImages from './entity-images.js'
 import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
@@ -42,6 +43,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       viewAbilityLog: this.#viewAbilityLog,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
+      editLayOnHandsManifestation: this.#editLayOnHandsManifestation,
       decreaseQty: this.#decreaseQty,
       increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
@@ -698,6 +700,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       document: this.options.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
+    }).render(true)
+  }
+
+  /**
+   * Open the Lay on Hands Spell Manifestation editor (#426)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #editLayOnHandsManifestation (event, target) {
+    event.preventDefault()
+    await new LayOnHandsManifestationConfig({
+      document: this.options.document,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 460) / 2
+      }
     }).render(true)
   }
 

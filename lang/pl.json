@@ -412,6 +412,8 @@
   "DCC.LanguagesThievesCant": "Złodziejski Slang",
   "DCC.LayOnHands": "Nakładanie Rąk",
   "DCC.LayOnHandsHint": "Kliknij aby rzucić test Nakładania Rąk, klik CMD/CTRL dla więcej opcji",
+  "DCC.LayOnHandsManifestationHint": "Edytuj Manifestację Zaklęcia dla Nakładania Rąk (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Manifestacja Nakładania Rąk",
   "DCC.Level": "Poziom",
   "DCC.LevelChanged": "Poziom Zmieniony na {level}",
   "DCC.LevelTooltip": "Kliknij 'Poziom' aby zmienić poziom swojej postaci jeśli moduł Książki Podstawowej jest zainstalowany",

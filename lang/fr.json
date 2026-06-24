@@ -399,6 +399,8 @@
   "DCC.LanguagesThievesCant": "Argot des Voleurs",
   "DCC.LayOnHands": "Imp. mains",
   "DCC.LayOnHandsHint": "Cliquez pour lancer un test d'Imposition des Mains, CMD/CTRL clic pour plus d'options",
+  "DCC.LayOnHandsManifestationHint": "Modifier la Manifestation de sort pour l'Imposition des Mains (DCC Annual)",
+  "DCC.LayOnHandsManifestationTitle": "Manifestation d'Imposition des Mains",
   "DCC.Level": "Niveau",
   "DCC.LevelChanged": "Niveau Changé à {level}",
   "DCC.LevelChaotic": "Chaotique",

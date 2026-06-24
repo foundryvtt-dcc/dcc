@@ -74,6 +74,7 @@
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
           <label class="skill-check rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill" title="{{localize 'DCC.LayOnHandsHint'}}">
             {{localize "DCC.LayOnHands"}}{{#if system.skills.layOnHands.otherMod}} <span class="skill-ae-mod" title="{{localize 'DCC.SkillActiveEffectModHint'}}">({{numberFormat system.skills.layOnHands.otherMod sign=true}})</span>{{/if}}
+            <a class="lay-on-hands-manifestation-edit" data-action="editLayOnHandsManifestation" title="{{localize 'DCC.LayOnHandsManifestationHint'}}"><i class="fas fa-wand-sparkles"></i></a>
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
         </div>
