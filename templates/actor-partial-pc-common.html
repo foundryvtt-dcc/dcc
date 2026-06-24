@@ -205,7 +205,11 @@
     {{!-- Ability Scores --}}
     {{#* inline "abilityScore"}}
       <div class="ability-box" id="{{id}}" data-ability="{{id}}">
-        <label for="system.abilities.{{id}}.value" class="box-title rollable"
+        {{!-- When the Ability Score Log is enabled the value input becomes an
+              editAbilityScore action target; dropping the label's `for=` here
+              stops a title click from being forwarded to that input and firing
+              the edit dialog on top of the ability check (see issue #779). --}}
+        <label {{#unless @root.abilityScoreLogEnabled}}for="system.abilities.{{id}}.value"{{/unless}} class="box-title rollable"
                title="{{localize (concat 'DCC.Roll' (localize ability.label) 'CheckHint')}}"
                data-action="rollAbilityCheck" data-drag="true" data-drag-action="ability">
           {{localize ability.label}}
