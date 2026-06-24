@@ -10,7 +10,7 @@
  * returns (threaded onto the `dcc.ready` payload):
  *   - non-GM client      → `true`,  never runs migrateWorld
  *   - already migrated    → `true`,  skips (no migrateWorld)
- *   - pre-V14 world      → `false`, error toast, no migrateWorld
+ *   - ancient world (<0.22) → `false`, error toast, no migrateWorld
  *   - V14-era / fresh    → awaits migrateWorld; `true` on a clean run
  *
  * Globals (`game` / `ui` / `foundry`) are stubbed per-test in the same
@@ -84,8 +84,8 @@ describe('checkMigrations', () => {
     expect(globalThis.game.settings.set).not.toHaveBeenCalled()
   })
 
-  test('pre-V14 world is blocked: error toast, no migration, reports incomplete', async () => {
-    globalThis.game = stubGame({ storedVersion: 0.30 })
+  test('ancient world (<0.22) is blocked: error toast, no migration, reports incomplete', async () => {
+    globalThis.game = stubGame({ storedVersion: 0.20 })
 
     const result = await checkMigrations()
 
