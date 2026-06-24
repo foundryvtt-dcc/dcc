@@ -276,11 +276,30 @@ a.inline-roll {
     gap: 6px;
     justify-content: space-between;
 
+    // Constrain the title to match the dcc-qol module card: without an
+    // explicit font-size/line-height the h3 inherits the large default chat
+    // heading size and the header balloons (issue #778). 36px line-height
+    // matches the 36px weapon/token image so the row stays compact.
     .flavor-text {
       align-items: center;
       display: flex;
+      flex: 1;
+      font-size: 14px;
+      font-weight: bold;
       gap: 4px;
+      line-height: 36px;
       margin: 0;
+    }
+
+    // Mirror the module card's 36px rounded thumbnail. Scoped to the header's
+    // direct img child so the backstab icon nested inside the h3 keeps its own
+    // 20px size.
+    > img {
+      border: 0;
+      border-radius: 3px;
+      flex: 0 0 36px;
+      height: 36px;
+      width: 36px;
     }
 
     .backstab-icon {
