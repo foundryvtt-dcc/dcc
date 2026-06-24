@@ -33,6 +33,37 @@ export declare function getFumbleDie(armorType: ArmorType): DieType;
  */
 export declare function getArmorType(armorName: string): ArmorType;
 /**
+ * Base monster fumble die under the optional Monster Fumbles rule, at a +0
+ * targeted-PC Luck modifier (DCC Yearbook #8). The die steps along the dice
+ * chain from here as the PC's Luck rises or falls.
+ */
+export declare const MONSTER_FUMBLE_BASE_DIE = "1d10";
+/**
+ * Optional "Monster Fumbles" rule (DCC Yearbook #8). When a monster fumbles
+ * (natural 1 on its attack die) against a PC, the targeted PC's Luck modifier
+ * always alters the monster's fumble die: starting from 1d10 at +0, each +1
+ * steps the die one rung UP the dice chain (d10 → d12 → d14 → d16) and each -1
+ * steps it one rung DOWN (d10 → d8 → d7 → d6). When several PCs are targeted,
+ * the caller passes the highest Luck modifier among them.
+ *
+ * This is distinct from the core fumble rule (`rollFumble`), where the
+ * *fumbler's own* Luck is a flat modifier on the roll. Here a *defending* PC's
+ * Luck resizes the *die*, so the result is meant to be rolled directly (or fed
+ * to `rollFumble` via `fumbleDieOverride` with `luckModifier: 0`). Modifiers
+ * are applied one chain-step per point and extrapolate past the printed ±3
+ * table; a modifier that would run off either end of the dice chain leaves the
+ * die unchanged (the dice-chain helper's clamp behaviour).
+ *
+ * @param targetLuckModifier - The (highest) targeted PC's Luck modifier
+ * @returns The monster's fumble die formula (e.g. "1d14")
+ *
+ * @example
+ * getMonsterFumbleDie(2)   // "1d14" — creature attacking a +2 Luck PC
+ * getMonsterFumbleDie(-3)  // "1d6"
+ * getMonsterFumbleDie(0)   // "1d10"
+ */
+export declare function getMonsterFumbleDie(targetLuckModifier: number): string;
+/**
  * Roll a fumble
  *
  * In DCC, fumbles use a die based on armor worn. Heavier armor

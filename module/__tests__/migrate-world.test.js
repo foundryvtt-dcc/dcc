@@ -24,6 +24,7 @@ beforeEach(() => {
   info = vi.fn()
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'log').mockImplementation(() => {})
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
 
   // The shared foundry mock's utils bag omits isEmpty (migrateActorData gates
   // .update() on it); provide a faithful implementation.
@@ -62,7 +63,7 @@ describe('migrateWorld orchestration', () => {
     expect(info.mock.calls.some(([m]) => m.includes('DCC.MigrationComplete'))).toBe(true)
   })
 
-  test('a per-document update failure leaves the version UNSTAMPED and warns', async () => {
+  test('a per-document update failure STILL stamps the version (forward progress) and warns', async () => {
     const ok = worldActor('Good')
     const bad = worldActor('Bad', vi.fn(async () => { throw new Error('update rejected') }))
     globalThis.game.actors = [ok, bad]
@@ -72,9 +73,14 @@ describe('migrateWorld orchestration', () => {
     // The good actor still migrates; the failure is caught + accumulated, not thrown.
     expect(ok.update).toHaveBeenCalled()
     expect(bad.update).toHaveBeenCalled()
-    // Version is NOT stamped, so the idempotent migrations re-run next load.
-    expect(settingsSet).not.toHaveBeenCalled()
-    // The GM is warned with the failure count rather than silently swallowing it.
+    // Forward-progress (issue #777): the version IS stamped even with a
+    // failure, so `migrateWorld` is NOT re-run on the next load — a single
+    // permanently-failing document can no longer re-sweep the whole world
+    // every boot (the loop that, on an Item Piles world, re-corrupted a
+    // freshly-restored backup).
+    expect(settingsSet).toHaveBeenCalledWith('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
+    // The GM is still warned with the failure count rather than silently
+    // swallowing it, and `migrationComplete` reflects that it was not clean.
     expect(warn).toHaveBeenCalledTimes(1)
     expect(warn.mock.calls[0][0]).toContain('DCC.MigrationFailures')
     expect(warn.mock.calls[0][0]).toContain('"count":1')

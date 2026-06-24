@@ -91,6 +91,16 @@ rule. They apply only to the scoped context described.
   default rule still applies to `main`: branch first, and only push to
   `main` (or open a PR into it) when explicitly told to.
 
+- **Never publish or promote a GitHub release.** The `Create GitHub
+  Release` workflow (triggered by a `version.txt` bump landing on `main`)
+  **always** produces a *draft*, and the maintainer publishes it manually
+  — publishing is what fires the `release: published` workflows that push
+  the version to Foundry's registry. Do **not** run
+  `gh release edit --draft=false`, mark a release latest, or otherwise
+  promote/publish a release unless the maintainer **explicitly** tells you
+  to in that session. Default: stop at the draft and hand off. See
+  `docs/dev/RELEASE_PROCESS.md` and the `/release` skill.
+
 - **Auto-commit refactor slices on `refactor/dcc-core-lib-adapter`;
   push per batch.** This is a stricter regime layered on the general
   rule above — on this branch, push is gated on the full E2E suite, not
@@ -163,6 +173,7 @@ fail, don't push.
 - [Testing](docs/dev/TESTING.md) - Test suite, mocks, coverage
 - [Pack Management](docs/dev/PACKS.md) - Compendium JSON/LevelDB workflow
 - [Internationalization](docs/dev/I18N.md) - Translation system
+- [DCC-QOL Integration](docs/dev/DCC_QOL_INTEGRATION.md) - Analysis: folding dcc-qol features into core behind settings
 
 ### Reference Docs
 - [V14](docs/dev/V14.md) - V14 reference: data models, Active Effects V2, API changes

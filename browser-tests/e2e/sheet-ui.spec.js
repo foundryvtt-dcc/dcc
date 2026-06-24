@@ -518,6 +518,14 @@ test.describe('DCC Sheet UI', () => {
           ])
           const sheet = actor.sheet
 
+          // _handleContainerDrop resolves the dropped item via fromUuid, whose
+          // global index can lag a tick behind the awaited createEmbeddedDocuments
+          // under the loaded shared session — flaking containerResult to false.
+          // Wait for the stowable to be resolvable before driving the handler.
+          for (let i = 0; i < 40 && !(await fromUuid(stowable.uuid)); i++) {
+            await new Promise(resolve => setTimeout(resolve, 25))
+          }
+
           // Container drop: synthesize an event whose target resolves to the
           // container element via closest('[data-container-id]'). The item is
           // already on the actor, so the handler just sets system.container.

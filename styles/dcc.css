@@ -717,6 +717,7 @@ a.inline-roll {
 .deed-table-prompt {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
 }
 .deed-table-prompt .deed-table-select,
@@ -730,9 +731,10 @@ a.inline-roll {
   min-width: 0;
 }
 .deed-table-prompt .roll-deed-table {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   font-family: var(--system-label-font), serif;
   line-height: 1.5;
+  max-width: 100%;
   padding: 0 8px;
   width: auto;
 }
@@ -874,6 +876,111 @@ a.inline-roll {
 .dcc .tab.notes-bg.active prose-mirror {
   line-height: 24px;
   min-height: 0;
+}
+
+/* ----------------------------------------- */
+/*  Enhanced attack card (QoL integration)   */
+/* ----------------------------------------- */
+.dcc-enhanced-card {
+  /* Hit/miss accent down the left edge */
+  border-left: 3px solid transparent;
+  padding-left: 6px;
+}
+.dcc-enhanced-card.attack-hit {
+  border-left-color: green;
+}
+.dcc-enhanced-card.attack-miss {
+  border-left-color: red;
+}
+.dcc-enhanced-card .card-header {
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.dcc-enhanced-card .card-header .flavor-text {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  font-size: 14px;
+  font-weight: bold;
+  gap: 4px;
+  line-height: 36px;
+  margin: 0;
+}
+.dcc-enhanced-card .card-header > img {
+  border: 0;
+  border-radius: 3px;
+  flex: 0 0 36px;
+  height: 36px;
+  width: 36px;
+}
+.dcc-enhanced-card .card-header .backstab-icon {
+  vertical-align: middle;
+}
+.dcc-enhanced-card .weapon-name-clickable,
+.dcc-enhanced-card .weapon-image-clickable {
+  cursor: pointer;
+}
+.dcc-enhanced-card .weapon-description {
+  border-bottom: 1px solid var(--color-border-light-primary);
+  border-top: 1px solid var(--color-border-light-primary);
+  font-size: 0.9em;
+  margin: 4px 0;
+  padding: 4px 0;
+}
+.dcc-enhanced-card .weapon-description.dcc-hidden {
+  display: none;
+}
+.dcc-enhanced-card .centered {
+  text-align: center;
+}
+.dcc-enhanced-card .roll-result {
+  font-weight: 700;
+}
+.dcc-enhanced-card .roll-result.status-success {
+  color: green;
+}
+.dcc-enhanced-card .roll-result.status-failure {
+  color: red;
+}
+.dcc-enhanced-card .roll-result.status-info {
+  color: var(--system-primrary-text);
+}
+.dcc-enhanced-card .card-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+.dcc-enhanced-card .card-buttons.centered {
+  justify-content: center;
+}
+.dcc-enhanced-card .card-buttons button {
+  flex: 1 1 auto;
+}
+.dcc-enhanced-card.compact .compact-dice-section {
+  margin: 2px 0;
+}
+.dcc-enhanced-card.compact .compact-buttons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.dcc-enhanced-card.compact .compact-button {
+  flex: 1 1 auto;
+  font-size: 0.85em;
+  padding: 1px 4px;
+}
+.dcc-enhanced-card .enhanced-card-button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.dcc-enhanced-card .card-footer .tag {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 3px;
+  font-size: 0.8em;
+  margin: 2px;
+  padding: 0 4px;
 }
 
 /* ----------------------------------------- */

@@ -46,6 +46,35 @@ A batch version of **Set Up Player Token**. Updates all Player-type actors and t
 | Vision | Not set | Enabled |
 | Actor link | Not set | Enabled |
 
+## Repair Sheet Overrides
+
+A GM-only troubleshooting macro for a specific corruption: actor and item
+sheets that suddenly render as a stripped panel showing only the **name and
+portrait, with no body** (no abilities, attacks, equipment, etc.).
+
+This is almost always caused by another module — most often **Item Piles** —
+writing a *sheet override* onto your documents that forces them to use a
+different sheet. Because the override is stored on the documents (and in a
+world setting), it survives disabling the module and even restoring a world
+backup, so the broken sheets persist.
+
+Running this macro:
+
+1. Scans every actor and item for an Item Piles sheet override
+   (`flags.core.sheetClass` / `flags.item-piles`) and checks the world's
+   default sheet registration.
+2. Shows you a count of what it found and asks for confirmation.
+3. Removes those overrides so the documents fall back to their normal DCC
+   sheets, then reloads the page.
+
+It only touches overrides that reference Item Piles — any other sheet
+override you have set deliberately is left alone. If nothing is found, it
+tells you and makes no changes. **Back up your world before running it.**
+
+If the macro reports "nothing to repair" but your sheets are still broken
+with all modules disabled, the cause is something other than a sheet
+override — please [report it](Reporting-Bugs.md) with the details.
+
 ## Dragging Rollable Items to the Macro Bar
 
 Any rollable item (weapons, spells, skills, etc.) can be dragged directly to the macro bar for quick access:

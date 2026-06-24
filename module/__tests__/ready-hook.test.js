@@ -50,6 +50,7 @@ function makeGame (overrides = {}) {
       FleetingLuck: { init: vi.fn() },
       SpellDuel: { init: vi.fn() }
     },
+    socket: { on: vi.fn() },
     packs: { get: vi.fn() },
     ...overrides
   }

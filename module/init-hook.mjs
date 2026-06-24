@@ -44,6 +44,7 @@ import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable } from './table-loading.mjs'
+import { attachMightyDeedListeners, buildMightyDeedPrompt } from './chat.js'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 
 // Import data models
@@ -103,7 +104,8 @@ export const TEMPLATE_PATHS = Object.freeze([
   'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
   'systems/dcc/templates/roll-modifier-partial-spellburn.html',
   'systems/dcc/templates/party-sheet-partial-party.html',
-  'systems/dcc/templates/party-sheet-partial-tabs.html'
+  'systems/dcc/templates/party-sheet-partial-tabs.html',
+  'systems/dcc/templates/chat-card-attack-enhanced.html'
 ])
 
 /**
@@ -219,6 +221,11 @@ export function assembleGameDccNamespace () {
     SpellResult,
     TableResult,
     getSkillTable,
+    // Mighty Deed table prompt helpers — exposed so card-replacing modules
+    // (e.g. dcc-qol) can render the prompt in their own attack card and wire
+    // up the system's lookup handler. See docs/dev/EXTENSION_API.md.
+    attachMightyDeedListeners,
+    buildMightyDeedPrompt,
     logAbilityChange, // Exported for dependent modules (MCC glowburn, etc.)
     processSpellCheck,
     getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md

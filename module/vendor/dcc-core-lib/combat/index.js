@@ -17,7 +17,7 @@ export { rollDamage, calculateDamageModifier, getTwoHandedDamageDie, getWeaponDa
 // Critical hit functions
 export { rollCritical, calculateCritModifier, determineCritTable, getCritTable, getCritDie, buildCritFormula, parseCritExtraDamage, DEFAULT_CRIT_DIE, } from "./crits.js";
 // Fumble functions
-export { rollFumble, calculateFumbleModifier, buildFumbleFormula, isFumble, getFumbleDie, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, FUMBLE_DICE, ARMOR_CHECK_PENALTY, ARMOR_SPEED_PENALTY, } from "./fumbles.js";
+export { rollFumble, calculateFumbleModifier, buildFumbleFormula, isFumble, getFumbleDie, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, getMonsterFumbleDie, FUMBLE_DICE, MONSTER_FUMBLE_BASE_DIE, ARMOR_CHECK_PENALTY, ARMOR_SPEED_PENALTY, } from "./fumbles.js";
 // Initiative functions
 export { rollInitiative, calculateInitiativeModifier, buildInitiativeFormula, getInitiativeDie, sortByInitiative, isInitiativeTied, DEFAULT_INITIATIVE_DIE, TWO_HANDED_INITIATIVE_DIE, } from "./initiative.js";
 // Morale functions
@@ -45,7 +45,9 @@ checkDroppedTorch,
 // Falling functions
 calculateFallingDamage, formatFallingDamage, 
 // Firing into melee functions
-checkFiringIntoMelee, 
+FIRING_INTO_MELEE_PENALTY, getFiringIntoMeleePenalty, checkFiringIntoMelee, 
+// Missile range functions
+parseMissileRange, getMissileRangePenalty, 
 // Grappling functions
 getGrappleSizeBonus, getGrappleModifier, resolveGrapple, formatGrappleResult, 
 // Equipment recovery functions

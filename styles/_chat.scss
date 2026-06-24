@@ -64,6 +64,10 @@ a.inline-roll {
 .deed-table-prompt {
   align-items: center;
   display: flex;
+  // Wrap instead of overflowing if a host chat card (e.g. dcc-qol) forces
+  // the button wider than the row — the button drops to its own line rather
+  // than spilling past the card's right edge. See issue #768.
+  flex-wrap: wrap;
   gap: 5px;
 
   .deed-table-select,
@@ -79,9 +83,11 @@ a.inline-roll {
   }
 
   .roll-deed-table {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     font-family: var(--system-label-font), serif;
     line-height: 1.5;
+    // Never exceed the row width, whatever a host card's button rules say.
+    max-width: 100%;
     padding: 0 8px;
     width: auto;
   }
@@ -245,6 +251,144 @@ a.inline-roll {
     prose-mirror {
       line-height: 24px;
       min-height: 0;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Enhanced attack card (QoL integration)   */
+/* ----------------------------------------- */
+.dcc-enhanced-card {
+  /* Hit/miss accent down the left edge */
+  border-left: 3px solid transparent;
+  padding-left: 6px;
+
+  &.attack-hit {
+    border-left-color: green;
+  }
+
+  &.attack-miss {
+    border-left-color: red;
+  }
+
+  .card-header {
+    align-items: center;
+    gap: 6px;
+    justify-content: space-between;
+
+    // Constrain the title to match the dcc-qol module card: without an
+    // explicit font-size/line-height the h3 inherits the large default chat
+    // heading size and the header balloons (issue #778). 36px line-height
+    // matches the 36px weapon/token image so the row stays compact.
+    .flavor-text {
+      align-items: center;
+      display: flex;
+      flex: 1;
+      font-size: 14px;
+      font-weight: bold;
+      gap: 4px;
+      line-height: 36px;
+      margin: 0;
+    }
+
+    // Mirror the module card's 36px rounded thumbnail. Scoped to the header's
+    // direct img child so the backstab icon nested inside the h3 keeps its own
+    // 20px size.
+    > img {
+      border: 0;
+      border-radius: 3px;
+      flex: 0 0 36px;
+      height: 36px;
+      width: 36px;
+    }
+
+    .backstab-icon {
+      vertical-align: middle;
+    }
+  }
+
+  .weapon-name-clickable,
+  .weapon-image-clickable {
+    cursor: pointer;
+  }
+
+  .weapon-description {
+    border-bottom: 1px solid var(--color-border-light-primary);
+    border-top: 1px solid var(--color-border-light-primary);
+    font-size: 0.9em;
+    margin: 4px 0;
+    padding: 4px 0;
+
+    &.dcc-hidden {
+      display: none;
+    }
+  }
+
+  .centered {
+    text-align: center;
+  }
+
+  .roll-result {
+    font-weight: 700;
+
+    &.status-success {
+      color: green;
+    }
+
+    &.status-failure {
+      color: red;
+    }
+
+    &.status-info {
+      color: var(--system-primrary-text);
+    }
+  }
+
+  .card-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0;
+
+    &.centered {
+      justify-content: center;
+    }
+
+    button {
+      flex: 1 1 auto;
+    }
+  }
+
+  &.compact {
+    .compact-dice-section {
+      margin: 2px 0;
+    }
+
+    .compact-buttons-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .compact-button {
+      flex: 1 1 auto;
+      font-size: 0.85em;
+      padding: 1px 4px;
+    }
+  }
+
+  .enhanced-card-button.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .card-footer {
+    .tag {
+      border: 1px solid var(--color-border-light-primary);
+      border-radius: 3px;
+      font-size: 0.8em;
+      margin: 2px;
+      padding: 0 4px;
     }
   }
 }

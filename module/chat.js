@@ -272,14 +272,7 @@ export const emoteAttackRoll = function (message, html) {
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
 
     // Re-add the Mighty Deed table prompt, since the emote replaces the card content
-    if (message.system.deedTables?.length) {
-      const options = message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
-      deedRollHTML += `
-        <div class="deed-table-prompt" data-deed-roll="${message.system.deedDieRollResult}">
-          <select class="deed-table-select" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
-          <button type="button" class="roll-deed-table">${game.i18n.localize('DCC.RollDeed')}</button>
-        </div>`
-    }
+    deedRollHTML += buildMightyDeedPrompt(message)
   }
 
   let crit = ''
@@ -351,13 +344,47 @@ export const emoteAttackRoll = function (message, html) {
 }
 
 /**
- * Attach listeners for the Mighty Deed table prompt on attack cards
- * @param message
- * @param html
+ * Build the Mighty Deed table prompt markup for an attack message.
+ *
+ * Returns the `<select>` + "Roll Deed" button shown when a warrior's/dwarf's
+ * deed die succeeds and the GM has Mighty Deed tables configured. Returns an
+ * empty string when there are no tables to offer.
+ *
+ * Exposed via `game.dcc.buildMightyDeedPrompt` so card-replacing modules
+ * (e.g. dcc-qol) can render the identical prompt inside their own attack
+ * card instead of having the system's version clobbered. The markup is
+ * self-describing — `data-deed-roll` + the selected option carry everything
+ * {@link attachMightyDeedListeners}/{@link _onRollMightyDeed} need.
+ * @param {ChatMessage} message The attack chat message
+ * @returns {string} The prompt HTML, or '' when no deed tables are available
+ */
+export const buildMightyDeedPrompt = function (message) {
+  if (!message?.system?.deedTables?.length) { return '' }
+  const options = message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
+  return `
+        <div class="deed-table-prompt" data-deed-roll="${message.system.deedDieRollResult}">
+          <select class="deed-table-select" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
+          <button type="button" class="roll-deed-table">${game.i18n.localize('DCC.RollDeed')}</button>
+        </div>`
+}
+
+/**
+ * Attach listeners for the Mighty Deed table prompt on attack cards.
+ *
+ * Also exposed via `game.dcc.attachMightyDeedListeners` so card-replacing
+ * modules can wire up the prompt after they rebuild the card content. Safe to
+ * call more than once on the same DOM — already-wired buttons are skipped — so
+ * the system hook and a module can both call it without double-binding. The
+ * click handler derives its message from the DOM rather than the `message`
+ * argument, so it works regardless of who renders the prompt.
+ * @param {ChatMessage} message The attack chat message (unused; kept for call-site compatibility)
+ * @param {HTMLElement} html The rendered message element to search within
  */
 export const attachMightyDeedListeners = function (message, html) {
   html.querySelectorAll('.roll-deed-table').forEach(el => {
-    el.addEventListener('click', _onRollMightyDeed.bind(message))
+    if (el.dataset.deedListenerAttached) { return }
+    el.dataset.deedListenerAttached = 'true'
+    el.addEventListener('click', _onRollMightyDeed)
   })
 }
 
@@ -397,7 +424,12 @@ const _onRollMightyDeed = async function (event) {
   }
 
   const resultText = await TextEditor.enrichHTML(addDamageFlavorToRolls(result.description))
-  const actor = game.actors.get(this.system?.actorId)
+  // Derive the source message (and its actor) from the DOM rather than a bound
+  // `this`, so the handler works whether the system or a card-replacing module
+  // (e.g. dcc-qol) attached it.
+  const messageElement = button.closest('[data-message-id]')
+  const message = messageElement ? game.messages.get(messageElement.dataset.messageId) : null
+  const actor = game.actors.get(message?.system?.actorId)
   await ChatMessage.create({
     user: game.user.id,
     speaker: ChatMessage.getSpeaker({ actor }),

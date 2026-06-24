@@ -34,6 +34,9 @@ import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
 import { setupItemPilesForDCC } from './item-piles-support.js'
 import { createDCCMacro } from './macros.mjs'
+import { onModifyAttackRollTerms } from './weapon-range.mjs'
+import { onUpdateActorForDeath } from './auto-dead-status.mjs'
+import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -53,6 +56,23 @@ export async function onRenderChatMessageHTML (message, html, data) {
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)
   }
+
+  // Enhanced attack card (client setting) — renders in place of the plain card
+  // and is mutually exclusive with the emote rewrite for attacks. When it
+  // renders we still run crit/fail highlight, TableResult navigation, and the
+  // Mighty Deed listeners against the new content, then bail before the emote /
+  // lookup pipeline below (which would re-render or double-process the card).
+  if (shouldRenderEnhancedAttackCard(message)) {
+    const rendered = await renderEnhancedAttackCard(message, html)
+    if (rendered) {
+      chat.highlightCriticalSuccessFailure(message, html, data)
+      chat.enforceMinimumDamage(message, html)
+      TableResult.processChatMessage(message, html, data)
+      chat.attachMightyDeedListeners(message, html)
+      return
+    }
+  }
+
   chat.highlightCriticalSuccessFailure(message, html, data)
   chat.enforceMinimumDamage(message, html)
   SpellResult.processChatMessage(message, html, data)
@@ -384,6 +404,7 @@ export function onGetProseMirrorMenuDropDowns (menu, items) {
 }
 
 export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
+  'dcc.modifyAttackRollTerms': { handler: onModifyAttackRollTerms, once: false },
   hotbarDrop: { handler: onHotbarDrop, once: false },
   renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },
@@ -393,6 +414,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   preCreateItem: { handler: onPreCreateItem, once: false },
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
   preUpdateActor: { handler: onPreUpdateActor, once: false },
+  updateActor: { handler: onUpdateActorForDeath, once: false },
   updateCombat: { handler: onUpdateCombat, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }

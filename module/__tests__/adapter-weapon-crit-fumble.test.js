@@ -100,6 +100,15 @@ test('buildCriticalInput normalizes Foundry-style die and records luck + table',
   })
 })
 
+test('buildCriticalInput omits defenderLuckModifier unless a non-zero value is given', () => {
+  // ordinary crit (PC attacker, or no targeted-PC Luck) — field absent
+  expect(buildCriticalInput({ critDie: '1d10', luckModifier: 0, critTableName: 'I', defenderLuckModifier: 0 }))
+    .not.toHaveProperty('defenderLuckModifier')
+  // monster crit vs a +2-Luck PC — field carried through to the lib
+  expect(buildCriticalInput({ critDie: '1d10', luckModifier: 0, critTableName: 'I', defenderLuckModifier: 2 }))
+    .toMatchObject({ defenderLuckModifier: 2 })
+})
+
 test('buildCriticalInput falls back to crit table I when name is empty', () => {
   expect(buildCriticalInput({
     critDie: 'd14',
