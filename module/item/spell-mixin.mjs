@@ -4,6 +4,26 @@ import { logSpellburn } from '../ability-score-log.js'
 import { ensurePlus } from '../utilities.js'
 
 /**
+ * Determine the die formula to roll for a manifestation table.
+ *
+ * Manifestation tables are small dice (1d3/1d4/1d5/1d6/1d8/1d10), one per spell.
+ * Prefer the table's own `formula`; if a table ships without one (a few core-book
+ * tables do), derive `1dN` from its highest result range so the roll still lands
+ * inside the table. With no table at all, fall back to 1d100 so a bare roll still
+ * produces something. See issue #773.
+ *
+ * @param {RollTable|null} table - the resolved manifestation table, if any
+ * @returns {string} a die formula such as `1d4`
+ */
+function manifestationDieFormula (table) {
+  if (!table) { return '1d100' }
+  if (table.formula && table.formula.trim()) { return table.formula }
+  const max = (table.results?.contents ?? table.results ?? [])
+    .reduce((hi, r) => Math.max(hi, r.range?.[1] ?? 0), 0)
+  return max > 0 ? `1d${max}` : '1d100'
+}
+
+/**
  * Spell-behavior mixin for {@link DCCItem}.
  *
  * Phase 7 (Appendix-A item.js shrinkage): the spell-item roll block —
@@ -206,6 +226,26 @@ export const SpellItemMixin = (Base) => class extends Base {
     const actor = this.actor
     if (!actor) { return }
 
+    // Resolve the manifestation table first (compendium first, then world) so we
+    // can roll its own die. Each manifestation table is a small die (1d3/1d4/etc.),
+    // never 1d100 — rolling a hardcoded 1d100 lands outside the table's range and
+    // never matches a result. See issue #773.
+    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-side-effect-tables'
+    const manifestationTableName = `${this.name} Manifestation`
+    let table = null
+    const pack = game.packs.get(manifestationPackName)
+    if (pack) {
+      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
+      if (entry) {
+        table = await pack.getDocument(entry._id)
+      } else {
+        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      }
+    }
+    if (!table) {
+      table = game.tables.getName(manifestationTableName)
+    }
+
     let roll
 
     if (lookup) {
@@ -217,35 +257,18 @@ export const SpellItemMixin = (Base) => class extends Base {
       const terms = [
         {
           type: 'Die',
-          formula: '1d100'
+          formula: manifestationDieFormula(table)
         }
       ]
 
-      // Otherwise roll for a manifestation
+      // Otherwise roll for a manifestation on the table's own die
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
-    // Lookup the manifestation table if available
+    // Draw the manifestation from the table using our roll
     let manifestationResult = null
-    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-side-effect-tables'
-    const manifestationTableName = `${this.name} Manifestation`
-    const pack = game.packs.get(manifestationPackName)
-    if (pack) {
-      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
-      if (entry) {
-        const table = await pack.getDocument(entry._id)
-        manifestationResult = await table.draw({ roll })
-      } else {
-        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
-      }
-    }
-
-    // Local Lookup
-    if (!manifestationResult) {
-      const table = game.tables.getName(manifestationTableName)
-      if (table) {
-        manifestationResult = await table.draw({ roll })
-      }
+    if (table) {
+      manifestationResult = await table.draw({ roll })
     }
 
     // Grab the result from the table if present
