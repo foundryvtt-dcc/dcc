@@ -108,34 +108,55 @@ export function classifyMigrationDecision (currentVersion) {
  * stamp / notify policy is unit-testable in isolation (same pattern as
  * `classifyMigrationDecision`).
  *
- * Policy: a clean run stamps the world at `NEEDS_MIGRATION_VERSION` and
- * shows the "complete" notification. A run with any failed document does
- * NOT advance the version (so the world stays flagged and re-runs the —
- * idempotent — migrations on the next load after the GM resolves the
- * issue) and surfaces a `ui.notifications.warn` carrying the count. The
- * pre-this-change behavior swallowed each failure with a bare
- * `console.error` and stamped the version regardless, leaving a GM with
- * a green "complete" toast over a partially-migrated world.
+ * Policy: a completed run ALWAYS advances the stored version to
+ * `NEEDS_MIGRATION_VERSION` — `stampVersion` is `true` whether the run was
+ * clean or hit per-document failures. A clean run also shows the "complete"
+ * notification; a run with failures stamps anyway but warns the GM with the
+ * failure count (and logs each stack) so the failed documents are visible
+ * for manual repair.
+ *
+ * Why stamp on failure (issue #777): the previous policy left the version
+ * UNSTAMPED on any failure so the idempotent migrations would re-run next
+ * load. But `checkMigrations` re-runs `migrateWorld` on EVERY subsequent
+ * boot until it's stamped, and `migrateWorld` `.update()`s every actor and
+ * item each pass. A single permanently-failing document (e.g. one an active
+ * sheet-overriding module like Item Piles rejects in its own update hook)
+ * therefore turned world load into a perpetual world-wide `update()` storm —
+ * and, with that module live, re-fired its hooks every boot, so restoring a
+ * clean backup never stuck (the next load re-mutated it). Guaranteeing
+ * forward progress sweeps a partially-failing world exactly ONCE; the GM
+ * fixes the flagged documents and re-migrates them manually (e.g. via the
+ * "Repair Sheet Overrides" macro) rather than the system re-sweeping forever.
+ *
+ * `clean` is surfaced separately so callers can keep the prior
+ * `migrationComplete` semantics (true only for a fully-clean run) on the
+ * `dcc.ready` payload while the version is stamped regardless.
  *
  * @param {Array<{type: string, name: string}>} failures - One entry per
  *   document whose migration threw. Empty array means a clean run.
- * @returns {{ stampVersion: boolean, notify: 'complete'|'failures', failureCount: number }}
+ * @returns {{ stampVersion: boolean, clean: boolean, notify: 'complete'|'failures', failureCount: number }}
  */
 export function migrationOutcome (failures) {
   const failureCount = Array.isArray(failures) ? failures.length : 0
-  return failureCount === 0
-    ? { stampVersion: true, notify: 'complete', failureCount: 0 }
-    : { stampVersion: false, notify: 'failures', failureCount }
+  const clean = failureCount === 0
+  return {
+    stampVersion: true,
+    clean,
+    notify: clean ? 'complete' : 'failures',
+    failureCount
+  }
 }
 
 /**
  * Migrate the current world to the current version of the system
  *
  * @return {Promise<{ migrationComplete: boolean }>}  Resolves once the
- *   migration finishes. `migrationComplete` is `true` for a clean run
- *   (version stamped) and `false` if any document failed (version left
- *   unstamped so the idempotent migrations re-run next load). The flag is
- *   threaded onto the `dcc.ready` payload via `checkMigrations`.
+ *   migration finishes. `migrationComplete` is `true` for a clean run and
+ *   `false` if any document failed. Either way the stored version is now
+ *   stamped (issue #777) — a failing world is swept once, not on every
+ *   load — so `migrationComplete: false` means "stamped, but some documents
+ *   need manual repair", not "will re-run next load". The flag is threaded
+ *   onto the `dcc.ready` payload via `checkMigrations`.
  */
 export const migrateWorld = async function () {
   ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
@@ -195,21 +216,26 @@ export const migrateWorld = async function () {
     failures.push(...await migrateCompendium(p))
   }
 
-  // Decide the finish: a clean run stamps the world at
-  // `NEEDS_MIGRATION_VERSION` (so subsequent loads classify as 'skip'
-  // in `classifyMigrationDecision`) and shows the "complete" toast; a
-  // run with failures leaves the version unstamped (the idempotent
-  // data-driven migrations re-run on the next load) and warns the GM
-  // with the count rather than silently swallowing the errors.
+  // Decide the finish: stamp the world at `NEEDS_MIGRATION_VERSION`
+  // unconditionally once the run completes (so subsequent loads classify
+  // as 'skip' in `classifyMigrationDecision` and the world is swept once,
+  // not re-swept on every boot — issue #777). A clean run shows the
+  // "complete" toast; a run with failures stamps anyway but logs the
+  // failed documents and warns the GM with the count so they can be
+  // repaired and re-migrated manually rather than the system re-running
+  // the whole world's updates forever.
   const outcome = migrationOutcome(failures)
   if (outcome.stampVersion) {
     game.settings.set('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
+  }
+  if (outcome.clean) {
     ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
   } else {
+    console.warn(`DCC | Migration completed with ${outcome.failureCount} failed document(s); version stamped to halt the re-run loop. Failed:`, failures)
     ui.notifications.warn(game.i18n.format('DCC.MigrationFailures', { count: outcome.failureCount }), { permanent: true })
   }
 
-  return { migrationComplete: outcome.stampVersion }
+  return { migrationComplete: outcome.clean }
 }
 
 /* -------------------------------------------- */
@@ -230,8 +256,10 @@ export const migrateWorld = async function () {
  * world fully migrated:
  *   - `true`  — nothing to migrate (already at the ceiling), a non-GM
  *               client (never migrates locally), or a clean `migrateWorld`.
- *   - `false` — a pre-V14 world was refused (blocked), or `migrateWorld`
- *               finished with per-document failures (version left unstamped).
+ *   - `false` — an ancient world was refused (blocked), or `migrateWorld`
+ *               finished with per-document failures (version still stamped
+ *               to halt the re-run loop; flagged documents need manual
+ *               repair — issue #777).
  *
  * @returns {Promise<{ migrationComplete: boolean }>}
  */

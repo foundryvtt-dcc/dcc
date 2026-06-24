@@ -1,0 +1,29 @@
+{
+  "name": "Repair Sheet Overrides",
+  "type": "script",
+  "author": "QljWNZW91EoRV9gI",
+  "img": "icons/svg/repair.svg",
+  "scope": "global",
+  "command": "/*\n * DCC — Repair Sheet Overrides\n *\n * Symptom this fixes: actor / item sheets render as a stripped \"name + image\"\n * panel with no body (often after an Item Piles mishap that flags every\n * document and forces its sheet). The override lives on the DOCUMENTS\n * (flags.core.sheetClass / flags.item-piles) and/or the world's default sheet\n * map (core.sheetClasses), so it survives disabling the module and restoring\n * a world backup. Clearing it lets the documents fall back to their normal\n * DCC sheets.\n *\n * Safe to run repeatedly. GM only. BACK UP YOUR WORLD FIRST.\n * https://github.com/foundryvtt-dcc/dcc/issues/777\n */\nif (!game.user.isGM) {\n  ui.notifications.warn('Only a GM can run the DCC sheet-override repair.')\n  return\n}\n\n// Matches the Item Piles package id in a registered sheet class string\n// (e.g. \"item-piles.ItemPileInventoryApp\") or its document-flag namespace.\nconst PATTERN = /item-?piles/i\n\n// --- Scan documents -------------------------------------------------------\nconst targets = []\nfor (const collection of [game.actors, game.items]) {\n  for (const doc of collection) {\n    const sheetClass = doc.getFlag('core', 'sheetClass')\n    const hasPileFlag = !!doc.flags?.['item-piles']\n    if ((typeof sheetClass === 'string' && PATTERN.test(sheetClass)) || hasPileFlag) {\n      targets.push({ doc, sheetClass: sheetClass || null, hasPileFlag })\n    }\n  }\n}\n\n// --- Scan the world default sheet map -------------------------------------\nconst sheetClasses = game.settings.get('core', 'sheetClasses') || {}\nconst worldDefaults = []\nfor (const docType of ['Actor', 'Item']) {\n  for (const [subtype, cls] of Object.entries(sheetClasses[docType] || {})) {\n    if (typeof cls === 'string' && PATTERN.test(cls)) worldDefaults.push(`${docType}.${subtype}`)\n  }\n}\n\nconst actorCount = targets.filter(t => t.doc.documentName === 'Actor').length\nconst itemCount = targets.filter(t => t.doc.documentName === 'Item').length\n\nif (!targets.length && !worldDefaults.length) {\n  ui.notifications.info('DCC: no Item Piles sheet overrides found — nothing to repair.')\n  return\n}\n\n// --- Confirm --------------------------------------------------------------\nconst content = `\n  <p>This clears Item Piles sheet overrides so documents fall back to their DCC sheets:</p>\n  <ul>\n    <li><strong>${actorCount}</strong> actor(s)</li>\n    <li><strong>${itemCount}</strong> item(s)</li>\n    <li><strong>${worldDefaults.length}</strong> world default sheet registration(s)</li>\n  </ul>\n  <p>For each flagged document it removes <code>flags.core.sheetClass</code> and the\n  <code>flags.item-piles</code> data, and strips any Item Piles entry from the world's\n  default sheet map. Overrides that do <em>not</em> reference Item Piles are left untouched.</p>\n  <p><strong>Back up your world first.</strong> The page reloads when the repair finishes.</p>\n`\n\nconst confirmed = await foundry.applications.api.DialogV2.confirm({\n  window: { title: 'DCC — Repair Sheet Overrides' },\n  content,\n  modal: true,\n  rejectClose: false\n})\nif (!confirmed) return\n\n// --- Apply ----------------------------------------------------------------\nlet repaired = 0\nconst failures = []\nfor (const { doc, sheetClass, hasPileFlag } of targets) {\n  const update = {}\n  if (sheetClass) update['flags.core.-=sheetClass'] = null\n  if (hasPileFlag) update['flags.-=item-piles'] = null\n  if (foundry.utils.isEmpty(update)) continue\n  try {\n    await doc.update(update)\n    repaired++\n  } catch (err) {\n    console.error(`DCC repair: failed on ${doc.documentName} \"${doc.name}\" (${doc.id})`, err)\n    failures.push(`${doc.documentName} \"${doc.name}\"`)\n  }\n}\n\nif (worldDefaults.length) {\n  const updated = foundry.utils.deepClone(sheetClasses)\n  for (const docType of ['Actor', 'Item']) {\n    for (const subtype of Object.keys(updated[docType] || {})) {\n      if (typeof updated[docType][subtype] === 'string' && PATTERN.test(updated[docType][subtype])) {\n        delete updated[docType][subtype]\n      }\n    }\n  }\n  try {\n    await game.settings.set('core', 'sheetClasses', updated)\n  } catch (err) {\n    console.error('DCC repair: failed to update core.sheetClasses', err)\n    failures.push('world default sheet map')\n  }\n}\n\nconsole.log('DCC sheet-override repair complete.', { repaired, worldDefaults, failures })\nif (failures.length) {\n  ui.notifications.warn(`DCC repair finished with ${failures.length} failure(s) — see the console (F12). Repaired ${repaired} document(s).`)\n} else {\n  ui.notifications.info(`DCC repair complete: ${repaired} document(s) cleaned, ${worldDefaults.length} world default(s) reset. Reloading…`)\n  setTimeout(() => foundry.utils.debouncedReload(), 1500)\n}",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {}
+  },
+  "_id": "DCCRepairShts1AB",
+  "_stats": {
+    "coreVersion": "13.342",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!macros!DCCRepairShts1AB"
+}
