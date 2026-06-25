@@ -314,12 +314,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Automatically roll damage, fumbles, and crits for attacks
+   * Automatically roll damage, fumbles, and crits for attacks.
+   *
+   * World-scoped: automation governs shared chat-card content (whether a card
+   * carries a resolved damage/crit/fumble roll or a manual Roll button) and
+   * whether players can roll their own damage, so it is a table-wide decision
+   * the GM owns — not a per-client preference. A client scope let a player's
+   * default (automatic) override a GM's manual choice and made enhanced cards
+   * render inconsistently between viewers (issue #783).
    */
   game.settings.register('dcc', 'automateDamageFumblesCrits', {
     name: 'DCC.SettingAutomateDamageFumblesCrits',
     hint: 'DCC.SettingAutomateDamageFumblesCritsHint',
-    scope: 'client',
+    scope: 'world',
     type: Boolean,
     default: true,
     config: true
