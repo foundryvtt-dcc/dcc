@@ -2,9 +2,9 @@
  * Stable extension-API helpers exposed via `game.dcc`.
  *
  * Each export here is **stable from day one** per
- * `docs/dev/EXTENSION_API.md` — the surface relieves an
- * `ARCHITECTURE_REIMAGINED.md §2` pain point that would otherwise
- * leak into core if module authors had to invent their own boilerplate.
+ * `docs/dev/EXTENSION_API.md` — the surface relieves a pain point that
+ * would otherwise leak into core if module authors had to invent their
+ * own boilerplate.
  *
  * Stay narrow: each helper does ONE thing and binds to ONE existing
  * pain point.
@@ -601,8 +601,7 @@ export function registerHomebrewClassForProgressionLoad (classId, itemPrefix, de
  * Register a variant ruleset. Variants give the system a named identity
  * for the active set of classes ("dcc", "xcc", "mcc") so sibling content
  * modules can ship as a Foundry module rather than overriding
- * `CONFIG.Actor.documentClass` globally. Closes the
- * `ARCHITECTURE_REIMAGINED.md §2.5 / §3.6` pressure point that
+ * `CONFIG.Actor.documentClass` globally. Closes the pressure point that
  * previously forced variants like XCC to fight the system for the
  * documentClass slot.
  *

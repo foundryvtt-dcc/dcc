@@ -711,7 +711,7 @@ test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async
 })
 
 test('naked spell check honors options.checkLabel as the chat flavor base (raw-check relabel)', async () => {
-  // SPELL_CHECK_LABEL_OVERRIDE: a raw (no-item) spell check rolled from
+  // checkLabel override: a raw (no-item) spell check rolled from
   // a class cell can carry a label override so e.g. MCC's "Mutation
   // Check" reads correctly in chat instead of the generic "Spell Check".
   // `checkLabel` is an i18n key or a literal — `localize` passes a

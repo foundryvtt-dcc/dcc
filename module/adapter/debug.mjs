@@ -49,8 +49,7 @@ export function logDispatch (rollType, path, details = {}) {
  * e2e run, the safety net has served its purpose and each `warnIfDivergent`
  * call can be removed (the surrounding two-pass stays — it is the adapter's
  * design, not scaffolding). Until then, keep them: a silent lib bump that
- * shifts a total is exactly what this is here to catch. Tracked against
- * ARCHITECTURE_REIMAGINED.md §8.6.
+ * shifts a total is exactly what this is here to catch.
  *
  * @param {string} rollType - e.g. 'rollToHit', 'rollDamage', 'rollCritical'
  * @param {number} foundryTotal - Foundry Roll's final total

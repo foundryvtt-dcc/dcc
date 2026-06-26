@@ -11,8 +11,7 @@
  * Sharing the registration list between `module/dcc.js`'s `init` hook
  * and the integration-test setup (`module/__integration__/setup-foundry.js`)
  * means new class mixins land in one place and both environments stay
- * in sync. See `docs/dev/CLASS_DECOMPOSITION.md` §3.1 and
- * `docs/dev/EXTENSION_API.md` for the broader contract.
+ * in sync. See `docs/dev/EXTENSION_API.md` for the broader contract.
  */
 import { DiceField } from './data/fields/_module.mjs'
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Sync @moonloch/dcc-core-lib's built dist/ into module/vendor/dcc-core-lib/.
 // Foundry loads system files directly (no bundler), so we vendor the lib's
-// compiled ESM output and commit it. See docs/dev/ARCHITECTURE_REIMAGINED.md.
+// compiled ESM output and commit it. See the "Working with dcc-core-lib"
+// section of CLAUDE.md for the vendor-sync workflow.
 //
 // Source of truth defaults to the co-evolving checkout at
 // /Users/timlwhite/WebstormProjects/dcc-core-lib. Override with
