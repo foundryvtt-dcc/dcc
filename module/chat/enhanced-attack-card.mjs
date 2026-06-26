@@ -62,14 +62,16 @@ export function resolveAttackActor (message) {
 }
 
 /**
- * Weapon-properties footer tags: damage formula, range (missile only), and a
- * backstab marker. Raw weapon values — no i18n churn.
+ * Weapon-properties footer tags: range (missile only) and a backstab marker.
+ * Raw weapon values — no i18n churn.
+ *
+ * The damage formula is deliberately omitted: the card already shows the rolled
+ * damage (or a Roll Damage button), and on a warrior/dwarf the formula's
+ * unrolled deed die duplicated the "Deed Die" line and read as clutter (#786).
  */
 export function getWeaponProperties (weapon, { isBackstab } = {}) {
   if (!weapon) return []
   const tags = []
-  const damage = weapon.system?.damage
-  if (damage) tags.push(String(damage))
   if (weapon.system?.melee === false && weapon.system?.range) tags.push(String(weapon.system.range))
   if (isBackstab && weapon.system?.backstabDamage) tags.push(game.i18n.localize('DCC.Backstab'))
   return tags

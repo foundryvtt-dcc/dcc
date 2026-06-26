@@ -89,12 +89,12 @@ describe('resolveAttackActor', () => {
 })
 
 describe('getWeaponProperties', () => {
-  test('lists damage and (for missiles) range', () => {
-    expect(getWeaponProperties(weapon, {})).toEqual(['1d6', '30/60/120'])
+  test('lists range for missiles (damage formula is intentionally omitted, #786)', () => {
+    expect(getWeaponProperties(weapon, {})).toEqual(['30/60/120'])
   })
-  test('omits range for melee weapons and adds a backstab tag', () => {
+  test('omits range and damage for melee weapons and adds a backstab tag', () => {
     const melee = { system: { melee: true, damage: '1d8', backstabDamage: '2d8' } }
-    expect(getWeaponProperties(melee, { isBackstab: true })).toEqual(['1d8', 'DCC.Backstab'])
+    expect(getWeaponProperties(melee, { isBackstab: true })).toEqual(['DCC.Backstab'])
   })
   test('empty for no weapon', () => {
     expect(getWeaponProperties(null, {})).toEqual([])

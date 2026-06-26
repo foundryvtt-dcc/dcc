@@ -470,6 +470,7 @@
   "DCC.MercurialMagicRerollPrompt": "Przerzucić czy Sprawdzić Rzut Merkurialnej Magii?",
   "DCC.MercurialMagicRoll": "Rzut Merkurialnej Magii",
   "DCC.MercurialTabHint": "Rzuć i skonfiguruj merkurialną magię dla tego czaru",
+  "DCC.MightyDeedChooseTable": "Wybierz Czyn",
   "DCC.MightyDeedRollFlavor": "Potężny Czyn ({roll}) na {table}",
   "DCC.MightyDeedTableNotFound": "Nie znaleziono tabeli Czynów {table}",
   "DCC.MightyDeedTableSelectHint": "Wybierz tabelę Czynów, w której zostanie sprawdzony wynik Kostki Czynu",

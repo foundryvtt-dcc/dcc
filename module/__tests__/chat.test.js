@@ -3,7 +3,9 @@ import '../__mocks__/foundry.js'
 
 vi.mock('../utilities.js', async (importOriginal) => {
   const actual = await importOriginal()
-  return { ...actual, getCritTableResult: vi.fn() }
+  // getTableFromPath → null keeps the fire-and-forget inline deed render from
+  // reaching `document` in this node-env test (the DOM path is covered E2E).
+  return { ...actual, getCritTableResult: vi.fn(), getTableFromPath: vi.fn(async () => null) }
 })
 
 const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners } = await import('../chat.js')
@@ -113,7 +115,7 @@ describe('buildMightyDeedPrompt', () => {
     expect(buildMightyDeedPrompt(undefined)).toBe('')
   })
 
-  it('renders a self-describing prompt with an option per deed table', () => {
+  it('renders a self-describing picker with a "Choose Deed" placeholder and an option per table', () => {
     const message = {
       system: {
         deedDieRollResult: 4,
@@ -126,10 +128,14 @@ describe('buildMightyDeedPrompt', () => {
 
     const html = buildMightyDeedPrompt(message)
 
-    // The deed roll travels on the container so the click handler is self-contained
+    // The deed roll travels on the container so the lookup is self-contained
     expect(html).toContain('data-deed-roll="4"')
     expect(html).toContain('class="deed-table-prompt"')
-    expect(html).toContain('<button type="button" class="roll-deed-table"')
+    // Picking a table is a lookup, not a roll — no button
+    expect(html).not.toContain('roll-deed-table')
+    expect(html).not.toContain('<button')
+    // Nothing pre-selected: a disabled placeholder leads the list
+    expect(html).toContain('<option value="" disabled selected>')
     // One <option> per configured table, carrying its lookup path
     expect(html).toContain('<option value="world.deeds-of-arms">Deeds of Arms</option>')
     expect(html).toContain('<option value="dcc.tables.Deeds II">Deeds II</option>')
@@ -137,44 +143,78 @@ describe('buildMightyDeedPrompt', () => {
 })
 
 describe('attachMightyDeedListeners', () => {
-  // Minimal DOM stand-in: a container holding fake .roll-deed-table buttons,
-  // each tracking how many click listeners were attached.
-  function makeButton () {
+  // Minimal DOM stand-ins. The prompt holds a <select> whose value starts on
+  // the empty placeholder; getTableFromPath is mocked to null so the
+  // fire-and-forget inline render bails before touching `document`.
+  function makeSelect (options = []) {
+    return {
+      value: '',
+      disabled: false,
+      options,
+      changeListeners: 0,
+      addEventListener (type) { if (type === 'change') this.changeListeners++ }
+    }
+  }
+
+  function makePrompt (select) {
     return {
       dataset: {},
-      listeners: 0,
-      addEventListener (type) {
-        if (type === 'click') this.listeners++
-      }
+      nextElementSibling: null,
+      getAttribute: (name) => (name === 'data-deed-roll' ? '4' : null),
+      querySelector: (sel) => (sel === '.deed-table-select' ? select : null)
     }
   }
 
-  function makeCardElement (buttons) {
+  function makeCard (prompts) {
     return {
-      querySelectorAll (selector) {
-        return selector === '.roll-deed-table' ? buttons : []
-      }
+      querySelectorAll: (sel) => (sel === '.deed-table-prompt' ? prompts : [])
     }
   }
 
-  it('attaches a click handler to each deed-roll button', () => {
-    const buttons = [makeButton(), makeButton()]
-    attachMightyDeedListeners({}, makeCardElement(buttons))
+  it('wires a change listener and marks the prompt when the user may edit', () => {
+    const select = makeSelect([{ value: 'world.t' }])
+    const prompt = makePrompt(select)
+    const message = { isAuthor: true, getFlag: () => undefined }
 
-    expect(buttons[0].listeners).toBe(1)
-    expect(buttons[1].listeners).toBe(1)
-    expect(buttons[0].dataset.deedListenerAttached).toBe('true')
+    attachMightyDeedListeners(message, makeCard([prompt]))
+
+    expect(select.changeListeners).toBe(1)
+    expect(select.disabled).toBe(false)
+    expect(prompt.dataset.deedListenerAttached).toBe('true')
   })
 
-  it('is idempotent — a second call does not double-bind the same button (#319)', () => {
-    const buttons = [makeButton()]
-    const card = makeCardElement(buttons)
+  it('disables the picker for a viewer who is neither author nor GM', () => {
+    const select = makeSelect()
+    const prompt = makePrompt(select)
+    const message = { isAuthor: false, getFlag: () => undefined }
+
+    attachMightyDeedListeners(message, makeCard([prompt]))
+
+    expect(select.disabled).toBe(true)
+    expect(select.changeListeners).toBe(0)
+  })
+
+  it('reflects a persisted table choice onto the picker', () => {
+    const select = makeSelect([{ value: 'world.t' }, { value: 'world.u' }])
+    const prompt = makePrompt(select)
+    const message = { isAuthor: true, getFlag: (scope, key) => (key === 'deedSelectedTable' ? 'world.u' : undefined) }
+
+    attachMightyDeedListeners(message, makeCard([prompt]))
+
+    expect(select.value).toBe('world.u')
+  })
+
+  it('is idempotent — a second call does not double-bind the same prompt (#319)', () => {
+    const select = makeSelect([{ value: 'world.t' }])
+    const prompt = makePrompt(select)
+    const card = makeCard([prompt])
+    const message = { isAuthor: true, getFlag: () => undefined }
 
     // Both the system render hook and a card-replacing module (dcc-qol) may
-    // call this on the same DOM; the guard must prevent a double roll.
-    attachMightyDeedListeners({}, card)
-    attachMightyDeedListeners({}, card)
+    // call this on the same DOM; the guard must prevent double-wiring.
+    attachMightyDeedListeners(message, card)
+    attachMightyDeedListeners(message, card)
 
-    expect(buttons[0].listeners).toBe(1)
+    expect(select.changeListeners).toBe(1)
   })
 })
