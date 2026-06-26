@@ -1,10 +1,12 @@
 const { test, expect } = require('@playwright/test')
 
 /**
- * E2E tests for Mighty Deed table prompts (issue #319)
+ * E2E tests for Mighty Deed table prompts (issue #319; inline-lookup rework #786)
  * Create a world deed table, attack with a warrior until the deed die
  * succeeds (3+), and verify the attack chat card offers the deed table
- * prompt and that clicking Roll Deed posts the table result to chat.
+ * picker — and that choosing a table looks the (already-rolled) deed die
+ * result up *inline* on the same card (no new roll, no separate chat
+ * message, no "Roll Deed" button) and persists the choice on the message.
  *
  * PREREQUISITES:
  * 1. Start Foundry: npx @foundryvtt/foundryvtt-cli launch --world=v14
@@ -192,7 +194,7 @@ test.describe('Mighty Deeds E2E Tests', () => {
     expect(afterDelete).toBeNull()
   })
 
-  test('a successful deed offers the table prompt and Roll Deed posts the result', async ({ page }) => {
+  test('a successful deed offers the picker and looks the result up inline (no button, no new message)', async ({ page }) => {
     const fixtures = await createDeedFixtures(page)
     await setMightyDeedsEnabled(page, true)
 
@@ -203,43 +205,54 @@ test.describe('Mighty Deeds E2E Tests', () => {
     expect(success.deedTables).toContainEqual({ name: 'E2E Deed Table', path: 'E2E Deed Table' })
     expect(success.contentHasPrompt).toBe(true)
 
-    // Select the test table and click Roll Deed on the rendered chat card
+    // Bring the card into view
     await page.evaluate(() => ui.sidebar.expand())
     await page.click('button[data-tab="chat"]')
     await page.waitForTimeout(500)
     await page.evaluate(() => ui.chat.scrollBottom({ immediate: true }))
     const card = page.locator(`#chat .chat-message[data-message-id="${success.messageId}"]`)
-    await card.locator('.deed-table-select').selectOption('E2E Deed Table')
-    const button = card.locator('.roll-deed-table')
-    await button.scrollIntoViewIfNeeded()
-    await expect(button).toBeVisible()
 
+    // Picking a deed is a lookup of the already-rolled deed die, not a new roll:
+    // there is no "Roll Deed" button, nothing is preselected (a disabled
+    // "Choose Deed" placeholder leads), and no result shows until a table is picked.
+    await expect(card.locator('.roll-deed-table')).toHaveCount(0)
+    const select = card.locator('.deed-table-select')
+    await expect(select).toBeVisible()
+    expect(await select.inputValue(), 'nothing preselected — placeholder is empty').toBe('')
+    await expect(card.locator('.deed-table-result'), 'no lookup shown until a table is picked').toHaveCount(0)
+
+    // Pick the test table → the looked-up result renders inline on the SAME card,
+    // and no new chat message is posted.
     const messagesBefore = await page.evaluate(() => game.messages.size)
-    await button.click()
-    await expect.poll(async () => {
-      return page.evaluate(() => game.messages.size)
-    }, { timeout: 10000 }).toBeGreaterThan(messagesBefore)
+    await select.selectOption('E2E Deed Table')
 
-    const result = await page.evaluate(() => {
-      const msg = game.messages.contents.at(-1)
-      return { flavor: msg.flavor, content: msg.content, isMightyDeed: msg.getFlag('dcc', 'isMightyDeed') }
-    })
-    expect(result.isMightyDeed).toBe(true)
-    expect(result.flavor).toContain('E2E Deed Table')
-    expect(result.flavor).toContain(`(${success.deedDieRollResult})`)
-    // The posted result is the table entry matching the deed die value
+    const result = card.locator('.deed-table-result')
+    await expect(result).toBeVisible({ timeout: 10000 })
+    // The inline result is the table entry matching the deed die value
     const expected = {
       3: 'Off-balance',
       4: 'Knockdown'
     }[success.deedDieRollResult] || 'Throw'
-    expect(result.content).toContain(expected)
+    await expect(result).toContainText(expected)
 
-    // One-shot: the button disables after posting and a second click adds no further result
-    await expect(button).toBeDisabled()
-    const countAfterFirst = await page.evaluate(() => game.messages.size)
-    await button.click({ force: true }).catch(() => {})
+    // No standalone Mighty Deed message was created — the lookup is inline now,
+    // whereas the old "Roll Deed" flow posted a separate chat message. The
+    // unchanged message count proves nothing new was posted (a global
+    // isMightyDeed scan would false-positive on stale messages from old runs).
     await page.waitForTimeout(500)
-    expect(await page.evaluate(() => game.messages.size)).toBe(countAfterFirst)
+    expect(await page.evaluate(() => game.messages.size)).toBe(messagesBefore)
+
+    // The choice is persisted on the message (shared with other viewers / GM)
+    expect(
+      await page.evaluate((id) => game.messages.get(id).getFlag('dcc', 'deedSelectedTable'), success.messageId)
+    ).toBe('E2E Deed Table')
+
+    // ...and survives a re-render (as clicking Damage/Crit later would trigger):
+    // the picker reflects the stored choice and the result is re-derived from it.
+    await page.evaluate((id) => ui.chat.updateMessage(game.messages.get(id)), success.messageId)
+    const reRendered = page.locator(`#chat .chat-message[data-message-id="${success.messageId}"]`)
+    await expect(reRendered.locator('.deed-table-result')).toContainText(expected)
+    expect(await reRendered.locator('.deed-table-select').inputValue()).toBe('E2E Deed Table')
   })
 
   test('a failed deed shows no table prompt', async ({ page }) => {
