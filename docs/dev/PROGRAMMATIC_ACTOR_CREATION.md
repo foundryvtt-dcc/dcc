@@ -62,8 +62,7 @@ the Foundry-only mechanical defaults:
 
 Homebrew classes contribute their own entries via
 `game.dcc.registerClassDefaults(classId, defaults)` — see
-[`EXTENSION_API.md`](EXTENSION_API.md) and
-[`CLASS_DECOMPOSITION.md` §3.3](CLASS_DECOMPOSITION.md).
+[`EXTENSION_API.md`](EXTENSION_API.md).
 
 > **Key point:** this is *sheet-driven*. `Actor.create()` does not open a
 > sheet, so none of these fields are written at create time. Rendering
@@ -171,8 +170,7 @@ assuming `Actor.create` populated it.**
 ## Caveat: the open-source system ships no level data
 
 The DCC class-progression *data* is copyrighted Goodman Games material
-and lives in the private `dcc-official-data` repo (see
-[`ARCHITECTURE_REIMAGINED.md` §8.1](ARCHITECTURE_REIMAGINED.md)). The
+and lives in the private `dcc-official-data` repo. The
 open-source system ships only the **registration surface**:
 `game.dcc.registerClassProgression(s)` and the level-data-pack loader.
 
@@ -192,9 +190,6 @@ sibling content pack) registers its packs.
 
 ## Related
 
-- [`CLASS_DECOMPOSITION.md` §3.3 (defaults), §3.5 (lib progression)](CLASS_DECOMPOSITION.md)
 - [`EXTENSION_API.md`](EXTENSION_API.md) — `registerClassDefaults`,
   `registerClassProgression(s)`, `registerHomebrewClassForProgressionLoad`
-- [`ARCHITECTURE_REIMAGINED.md` §8.1](ARCHITECTURE_REIMAGINED.md) — why
-  class data ships separately
 - User-facing: [`../user-guide/Level-Up.md`](../user-guide/Level-Up.md)

@@ -1,7 +1,7 @@
 # Pre-Release Process (off-branch test builds)
 
-How to cut a **Foundry-installable pre-release from any branch** (e.g.
-`refactor/dcc-core-lib-adapter`) so testers can install it by pasting a
+How to cut a **Foundry-installable pre-release from any branch** (e.g. a
+`fix/*` or `feature/*` branch) so testers can install it by pasting a
 manifest URL into Foundry — without touching `main` or the stable
 "Latest" release.
 
@@ -32,14 +32,12 @@ is ideal):
 | `system.json` | The manifest the tester's URL points at. Its `manifest` field self-references this same URL (so Foundry's update check stays pinned to this pre-release line); its `download` field points at the zip. |
 | `dcc.zip` | The packaged system, files at the **zip root** (`system.json` at top level, no wrapping folder). |
 
-## Critical branch-specific gotchas
+## Critical gotchas
 
-- **`module/vendor/dcc-core-lib/` MUST be in the zip.** On
-  `refactor/dcc-core-lib-adapter` the system imports the vendored lib at
-  runtime. The stable `main` zip does **not** contain `module/vendor/`, so
-  you cannot reuse a `main` build — you must build from the branch's
-  working tree (which includes `vendor/`). Always verify it's present in
-  the zip (the build script below asserts this).
+- **`module/vendor/dcc-core-lib/` MUST be in the zip.** The system imports
+  the vendored lib at runtime. It is committed to the repo, so any build
+  (from `main` or a branch) includes it — but always verify it's present
+  in the zip (the build script below asserts this).
 - **Compiled assets are gitignored.** `styles/dcc.css` is committed but
   may be stale — rebuild it. The LevelDB packs Foundry actually loads
   (`packs/**/*.ldb`, `CURRENT`, `MANIFEST*`, `LOG*`) are gitignored; only
