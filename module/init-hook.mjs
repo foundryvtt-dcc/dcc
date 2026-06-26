@@ -22,6 +22,7 @@ import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
+import DCCChatMessage from './chat-message.js'
 import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
@@ -177,6 +178,9 @@ export function registerDocumentConfig () {
   CONFIG.Actor.documentClass = DCCActor
   CONFIG.Item.documentClass = DCCItem
   CONFIG.Combatant.documentClass = DCCCombatant
+  // Restores the V13 `getSpeakerActor()` instance method removed in V14, so
+  // modules/macros still calling it (e.g. dcc-qol) don't throw on card render.
+  CONFIG.ChatMessage.documentClass = DCCChatMessage
 }
 
 /**
