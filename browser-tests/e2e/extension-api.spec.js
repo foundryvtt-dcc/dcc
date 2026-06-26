@@ -1539,16 +1539,19 @@ test.describe('DCC Extension API', () => {
     expect(result.ctorName).not.toBe('AsyncFunction')
   })
 
-  test('DCC migrationOutcome gates version-stamping on a clean run + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
-    // Phase 7 session 11: `migrateWorld` now accumulates per-document
-    // failures and applies the pure `migrationOutcome(failures)` policy
-    // — a clean run stamps the world version + shows the "complete"
-    // toast; any failure leaves the version unstamped and raises a
-    // `ui.notifications.warn(DCC.MigrationFailures, { count })`. This
-    // probe imports the live-served module to confirm the deployed
-    // helper's stamp/notify decisions and that the new i18n key is
-    // registered + interpolates the {count} placeholder. It does NOT
-    // run migrateWorld (which would mutate the live world).
+  test('DCC migrationOutcome always stamps the version for forward progress (#777), surfacing clean separately + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
+    // Phase 7 session 11: `migrateWorld` accumulates per-document failures
+    // and applies the pure `migrationOutcome(failures)` policy. Issue #777
+    // changed that policy to guarantee forward progress: the world version
+    // is now stamped REGARDLESS of failures (a partially-failing world is
+    // swept exactly once, not re-migrated on every boot), so `stampVersion`
+    // is always true. `clean` is surfaced separately so callers keep the
+    // prior `migrationComplete` semantics (true only for a fully-clean run),
+    // and any failure still raises `ui.notifications.warn(DCC.MigrationFailures,
+    // { count })`. This probe imports the live-served module to confirm the
+    // deployed helper's stamp/notify decisions and that the i18n key is
+    // registered + interpolates the {count} placeholder. It does NOT run
+    // migrateWorld (which would mutate the live world).
     const result = await page.evaluate(async () => {
       const mod = await import('../../../../../../../../systems/dcc/module/migrations.js')
 
@@ -1572,10 +1575,10 @@ test.describe('DCC Extension API', () => {
     })
 
     expect(result.isFunction).toBe(true)
-    // Clean run → stamp + complete.
-    expect(result.clean).toEqual({ stampVersion: true, notify: 'complete', failureCount: 0 })
-    // Failed run → no stamp + warn with the exact count.
-    expect(result.failed).toEqual({ stampVersion: false, notify: 'failures', failureCount: 2 })
+    // Clean run → stamp + complete, clean true.
+    expect(result.clean).toEqual({ stampVersion: true, clean: true, notify: 'complete', failureCount: 0 })
+    // Failed run → still stamps (forward progress, #777), clean false, warn with the exact count.
+    expect(result.failed).toEqual({ stampVersion: true, clean: false, notify: 'failures', failureCount: 2 })
     // The new failure-summary i18n key is registered and interpolates.
     expect(result.i18nResolves).toBe(true)
     expect(result.i18nInterpolatesCount).toBe(true)
