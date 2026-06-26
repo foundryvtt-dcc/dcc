@@ -470,6 +470,7 @@
   "DCC.MercurialMagicRerollPrompt": "Tira ancora o Guarda?",
   "DCC.MercurialMagicRoll": "Tiri Magia Mercuriale",
   "DCC.MercurialTabHint": "Tira e configura l'effetto mercuriale per questo Incantesimo",
+  "DCC.MightyDeedChooseTable": "Scegli Cimento",
   "DCC.MightyDeedRollFlavor": "Prode Cimento ({roll}) su {table}",
   "DCC.MightyDeedTableNotFound": "Tabella dei Cimenti {table} non trovata",
   "DCC.MightyDeedTableSelectHint": "Scegli la tabella dei Cimenti su cui consultare il risultato del Dado Cimento",

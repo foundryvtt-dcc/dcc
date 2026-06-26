@@ -645,7 +645,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // fallback now also covers rollable skill items, so they inherit
       // the actor's action die and route through the adapter.
       await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'NPC Skill InheritDie', type: 'NPC' })
+        // 'P1 ' prefix so the describe's beforeEach/afterEach actor sweep deletes
+        // it (it's an NPC, but the prefix is just the fixture-cleanup marker).
+        const actor = await Actor.create({ name: 'P1 NPC Skill InheritDie', type: 'NPC' })
         await actor.update({ 'system.config.actionDice': '1d20' })
         await actor.createEmbeddedDocuments('Item', [{
           name: 'NPC-DivineAid',
@@ -659,7 +661,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         }])
       })
       await page.evaluate(async () => {
-        await game.actors.getName('NPC Skill InheritDie').rollSkillCheck('NPC-DivineAid')
+        await game.actors.getName('P1 NPC Skill InheritDie').rollSkillCheck('NPC-DivineAid')
       })
       const line = await waitForAdapterLog('rollSkillCheck')
       assertPath(line, 'adapter', { skillId: 'NPC-DivineAid' })

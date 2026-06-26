@@ -1,4 +1,4 @@
-/* global canvas, foundry, game, ui, ChatMessage */
+/* global canvas, foundry, game, ui, document, console */
 // noinspection DuplicatedCode
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls } from './utilities.js'
@@ -346,103 +346,127 @@ export const emoteAttackRoll = function (message, html) {
 /**
  * Build the Mighty Deed table prompt markup for an attack message.
  *
- * Returns the `<select>` + "Roll Deed" button shown when a warrior's/dwarf's
- * deed die succeeds and the GM has Mighty Deed tables configured. Returns an
- * empty string when there are no tables to offer.
+ * Returns the table-picker `<select>` shown when a warrior's/dwarf's deed die
+ * succeeds and the GM has Mighty Deed tables configured. Returns an empty
+ * string when there are no tables to offer.
+ *
+ * The deed die is rolled as part of the attack, so there is nothing left to
+ * roll — picking a table is a *lookup* of the existing deed result, not a new
+ * roll. {@link attachMightyDeedListeners} renders that lookup inline beneath
+ * the picker (and persists the choice), so this markup carries no button.
  *
  * Exposed via `game.dcc.buildMightyDeedPrompt` so card-replacing modules
- * (e.g. dcc-qol) can render the identical prompt inside their own attack
- * card instead of having the system's version clobbered. The markup is
+ * (e.g. dcc-qol) can render the identical prompt inside their own attack card
+ * instead of having the system's version clobbered. The markup is
  * self-describing — `data-deed-roll` + the selected option carry everything
- * {@link attachMightyDeedListeners}/{@link _onRollMightyDeed} need.
+ * {@link attachMightyDeedListeners} needs.
  * @param {ChatMessage} message The attack chat message
  * @returns {string} The prompt HTML, or '' when no deed tables are available
  */
 export const buildMightyDeedPrompt = function (message) {
   if (!message?.system?.deedTables?.length) { return '' }
-  const options = message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
+  // Lead with a disabled "Choose Deed" placeholder so nothing is pre-selected —
+  // the attacker declared their deed, so they pick it and only then see a result.
+  const placeholder = `<option value="" disabled selected>${game.i18n.localize('DCC.MightyDeedChooseTable')}</option>`
+  const options = placeholder + message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
   return `
         <div class="deed-table-prompt" data-deed-roll="${message.system.deedDieRollResult}">
           <select class="deed-table-select" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
-          <button type="button" class="roll-deed-table">${game.i18n.localize('DCC.RollDeed')}</button>
         </div>`
 }
 
 /**
- * Attach listeners for the Mighty Deed table prompt on attack cards.
+ * Render the looked-up Mighty Deed result inline, just after its prompt.
  *
- * Also exposed via `game.dcc.attachMightyDeedListeners` so card-replacing
- * modules can wire up the prompt after they rebuild the card content. Safe to
- * call more than once on the same DOM — already-wired buttons are skipped — so
- * the system hook and a module can both call it without double-binding. The
- * click handler derives its message from the DOM rather than the `message`
- * argument, so it works regardless of who renders the prompt.
- * @param {ChatMessage} message The attack chat message (unused; kept for call-site compatibility)
- * @param {HTMLElement} html The rendered message element to search within
+ * The deed die value rode in on `data-deed-roll`; this looks that value up on
+ * the currently-selected table and injects (replacing any prior injection) a
+ * `.deed-table-result` block beneath the picker. No new roll, no extra chat
+ * message — the result lives on the attack card itself.
+ * @param {HTMLElement} prompt The `.deed-table-prompt` container
+ * @param {{notify?: boolean}} [opts] `notify` surfaces lookup failures to the
+ *   user — true for an explicit table change, false for passive re-renders so
+ *   a missing table doesn't spam every time the card redraws.
  */
-export const attachMightyDeedListeners = function (message, html) {
-  html.querySelectorAll('.roll-deed-table').forEach(el => {
-    if (el.dataset.deedListenerAttached) { return }
-    el.dataset.deedListenerAttached = 'true'
-    el.addEventListener('click', _onRollMightyDeed)
-  })
-}
+const renderDeedResultInline = async function (prompt, { notify = false } = {}) {
+  const deedRoll = parseInt(prompt.getAttribute('data-deed-roll'))
+  const tablePath = prompt.querySelector('.deed-table-select')?.value
 
-/**
- * Look up the deed die result on the selected Mighty Deed table and post the result to chat
- * @param {Object} event The originating click event
- */
-const _onRollMightyDeed = async function (event) {
-  const button = event.currentTarget
-  // One-shot: ignore repeat clicks and guard against a double-fire while the
-  // async table lookup is in flight. Re-enabled below only if the lookup fails.
-  if (button.disabled) { return }
-  const select = button.closest('.deed-table-prompt')?.querySelector('.deed-table-select')
-  const reEnable = () => { button.disabled = false; if (select) { select.disabled = false } }
-  button.disabled = true
-  if (select) { select.disabled = true }
+  // Replace, don't stack: drop a result we injected for a previous selection.
+  const prior = prompt.nextElementSibling
+  if (prior?.classList?.contains('deed-table-result')) { prior.remove() }
 
-  const container = button.closest('.deed-table-prompt')
-  if (!container) { reEnable(); return }
-
-  const deedRoll = parseInt(container.getAttribute('data-deed-roll'))
-  const tablePath = container.querySelector('.deed-table-select')?.value
-  if (!tablePath || isNaN(deedRoll)) { reEnable(); return }
+  if (!tablePath || isNaN(deedRoll)) { return }
 
   const table = await getTableFromPath(tablePath)
   if (!table) {
-    ui.notifications.warn(game.i18n.format('DCC.MightyDeedTableNotFound', { table: tablePath }))
-    reEnable()
+    if (notify) { ui.notifications.warn(game.i18n.format('DCC.MightyDeedTableNotFound', { table: tablePath })) }
     return
   }
-
-  const result = table.getResultsForRoll(deedRoll)[0]
+  const result = table.getResultsForRoll(deedRoll)?.[0]
   if (!result) {
-    ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds'))
-    reEnable()
+    if (notify) { ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds')) }
     return
   }
 
   const resultText = await TextEditor.enrichHTML(addDamageFlavorToRolls(result.description))
-  // Derive the source message (and its actor) from the DOM rather than a bound
-  // `this`, so the handler works whether the system or a card-replacing module
-  // (e.g. dcc-qol) attached it.
-  const messageElement = button.closest('[data-message-id]')
-  const message = messageElement ? game.messages.get(messageElement.dataset.messageId) : null
-  const actor = game.actors.get(message?.system?.actorId)
-  await ChatMessage.create({
-    user: game.user.id,
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: game.i18n.format('DCC.MightyDeedRollFlavor', { table: table.name, roll: deedRoll }),
-    flags: {
-      'dcc.isMightyDeed': true
-    },
-    content: `
-      <div class="table-draw deed-table-result" data-table-name="${table.name}" data-current-roll="${deedRoll}">
-        <ol class="table-results"><li class="table-result">
-          <div class="result-text">${resultText}</div>
-        </li></ol>
-      </div>`
+  const div = document.createElement('div')
+  div.className = 'table-draw deed-table-result pt-8'
+  div.dataset.tableName = table.name
+  div.dataset.currentRoll = String(deedRoll)
+  div.innerHTML = `<ol class="table-results"><li class="table-result"><div class="result-text">${resultText}</div></li></ol>`
+  prompt.insertAdjacentElement('afterend', div)
+}
+
+/**
+ * Wire the Mighty Deed table prompt on attack cards: reflect the persisted
+ * table choice, show its looked-up result inline, and let the attacker change
+ * the table.
+ *
+ * Picking a deed is the attacker's call, so only the message author (or a GM)
+ * may change the table; the choice is stored on the message (`dcc.deedSelectedTable`)
+ * so the looked-up result is identical for every viewer and survives the card
+ * re-rendering when Damage/Crit is clicked later. Everyone else sees the
+ * persisted result with a disabled picker.
+ *
+ * Also exposed via `game.dcc.attachMightyDeedListeners` so card-replacing
+ * modules can wire up the prompt after they rebuild the card content. Safe to
+ * call more than once on the same DOM — already-wired prompts are skipped — so
+ * the system hook and a module can both call it without double-binding.
+ * @param {ChatMessage} message The attack chat message
+ * @param {HTMLElement} html The rendered message element to search within
+ */
+export const attachMightyDeedListeners = function (message, html) {
+  html.querySelectorAll('.deed-table-prompt').forEach(prompt => {
+    if (prompt.dataset.deedListenerAttached) { return }
+    prompt.dataset.deedListenerAttached = 'true'
+
+    const select = prompt.querySelector('.deed-table-select')
+    if (!select) { return }
+
+    // Reflect a previously-stored choice (shared across viewers, survives
+    // re-render); otherwise the first option stands as the default.
+    const stored = message?.getFlag?.('dcc', 'deedSelectedTable')
+    if (stored && Array.from(select.options).some(o => o.value === stored)) {
+      select.value = stored
+    }
+
+    const canEdit = !!(game.user?.isGM || message?.isAuthor)
+    if (canEdit) {
+      select.addEventListener('change', () => {
+        // Update this viewer immediately, then persist so the choice (and its
+        // result) re-render the same way for everyone.
+        renderDeedResultInline(prompt, { notify: true })
+          .catch(err => console.error('DCC | deed result render failed', err))
+        Promise.resolve(message?.setFlag?.('dcc', 'deedSelectedTable', select.value))
+          .catch(err => console.error('DCC | deed table selection persist failed', err))
+      })
+    } else {
+      select.disabled = true
+    }
+
+    // Show the lookup for the current selection on render.
+    renderDeedResultInline(prompt)
+      .catch(err => console.error('DCC | deed result render failed', err))
   })
 }
 

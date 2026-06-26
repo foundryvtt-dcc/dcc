@@ -61,35 +61,19 @@ a.inline-roll {
   }
 }
 
+// Picking a deed table is a lookup of the already-rolled deed die, so the row
+// is just the table picker — its result renders inline beneath (see #786).
 .deed-table-prompt {
-  align-items: center;
   display: flex;
-  // Wrap instead of overflowing if a host chat card (e.g. dcc-qol) forces
-  // the button wider than the row — the button drops to its own line rather
-  // than spilling past the card's right edge. See issue #768.
-  flex-wrap: wrap;
-  gap: 5px;
+  justify-content: center;
+  margin: 4px 0;
 
-  .deed-table-select,
-  .roll-deed-table {
+  .deed-table-select {
     background: var(--chat-background);
     border: 1px solid var(--color-border-light-primary);
     color: var(--chat-primary-color);
-  }
-
-  .deed-table-select {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .roll-deed-table {
-    flex: 0 1 auto;
-    font-family: var(--system-label-font), serif;
-    line-height: 1.5;
-    // Never exceed the row width, whatever a host card's button rules say.
+    // Never spill past the card's right edge, whatever a host card imposes.
     max-width: 100%;
-    padding: 0 8px;
-    width: auto;
   }
 }
 

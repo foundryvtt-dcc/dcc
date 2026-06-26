@@ -75,10 +75,10 @@
   {{!-- Automated rolled results (mirrors the plain card so TableResult nav works) --}}
   {{#if automated}}
     {{#if damageInlineRoll}}
-      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{damagePrompt}}:</strong> {{{damageInlineRoll}}}</div>
+      <div class="pt-8 centered"><strong>{{damagePrompt}}:</strong> {{{damageInlineRoll}}}</div>
     {{/if}}
     {{#if critInlineRoll}}
-      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{critPrompt}}!</strong> {{{critInlineRoll}}}</div>
+      <div class="pt-8 centered">{{{critInlineRoll}}}</div>
     {{/if}}
     {{#if critResult}}
       <div class="table-draw crit-result pt-8" data-table-name="{{critTableName}}" data-current-roll="{{critRollTotal}}">
@@ -95,7 +95,7 @@
       <div class="pt-8 crit-lookup-hint"><em>{{critTableLookupHint}}</em></div>
     {{/if}}
     {{#if fumbleInlineRoll}}
-      <div class="pt-8{{#if compact}} centered{{/if}}"><strong>{{fumblePrompt}}!</strong> {{{fumbleInlineRoll}}}</div>
+      <div class="pt-8 centered"><strong>{{fumblePrompt}}!</strong> {{{fumbleInlineRoll}}}</div>
     {{/if}}
     {{#if fumbleResult}}
       <div class="table-draw fumble-result pt-8" data-table-name="{{originalFumbleTableName}}" data-current-roll="{{fumbleRollTotal}}" data-is-npc="{{isNPCFumble}}">
