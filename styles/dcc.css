@@ -934,6 +934,11 @@ a.inline-roll {
 .dcc-enhanced-card .centered {
   text-align: center;
 }
+.dcc-enhanced-card .deed-table-prompt {
+  justify-content: center;
+  margin: 4px auto 0;
+  max-width: 90%;
+}
 .dcc-enhanced-card .roll-result {
   font-weight: 700;
 }

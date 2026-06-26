@@ -328,6 +328,15 @@ a.inline-roll {
     text-align: center;
   }
 
+  // Center the Mighty Deed prompt (select + Roll Deed button) and keep it from
+  // stretching edge-to-edge, so it sits in line with the card's centered body
+  // instead of hugging the left margin. See issue #786.
+  .deed-table-prompt {
+    justify-content: center;
+    margin: 4px auto 0;
+    max-width: 90%;
+  }
+
   .roll-result {
     font-weight: 700;
 
