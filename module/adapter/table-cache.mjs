@@ -41,8 +41,7 @@
  * the walk would return null again unless a world-table CRUD event
  * fires (which is when the cache invalidates).
  *
- * See `docs/00-progress.md` "PR #720 review backlog" → "Uncached
- * compendium walks" for the surfacing context.
+ * Surfaced in PR #720's review backlog (uncached compendium walks).
  */
 
 export const disapprovalTableCache = new Map()

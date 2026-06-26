@@ -6,9 +6,8 @@
  * Stable extension surface — `game.dcc.processSpellCheck` is published
  * via the init hook in `module/dcc.js` and consumed by `DCCItem.rollSpellCheck`,
  * `DCCActor.rollSpellCheck`'s adapter-declined paths, and sibling content
- * modules. See `docs/dev/EXTENSION_API.md`'s Stable surface table and
- * `docs/00-progress.md`'s Decision #6 (permanent stable API, no
- * deprecation path).
+ * modules. See `docs/dev/EXTENSION_API.md`'s Stable surface table
+ * (permanent stable API, no deprecation path).
  *
  * Originally a pure (byte-identical) extraction of the inline definition;
  * since extended with the explicit `castingMode` override (issue #375).

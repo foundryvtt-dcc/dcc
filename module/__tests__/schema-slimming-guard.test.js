@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
 
-// §2.1 schema-slimming resolution guard (see docs/dev/SCHEMA_SLIMMING.md).
+// Schema-slimming resolution guard.
 //
 // §2.1 ("the Player schema is monolithic") cannot be resolved by making a
 // halfling's schema differ from a wizard's — Foundry's defineSchema() is static,

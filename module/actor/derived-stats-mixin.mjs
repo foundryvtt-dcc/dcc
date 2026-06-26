@@ -128,8 +128,8 @@ export const DerivedStatsMixin = (Base) => class extends Base {
 
     // Stable extension hook — modules can adjust `system.class.spellCheck`
     // (and any related skill mirror fields) here without subclassing
-    // DCCActor. Closes ARCHITECTURE_REIMAGINED.md §2.5 "Actor document
-    // class customization" for XCC's blaster-die / elf-trickster
+    // DCCActor. Closes the "Actor document class customization" pain
+    // point for XCC's blaster-die / elf-trickster
     // computation. See docs/dev/EXTENSION_API.md.
     Hooks.callAll('dcc.afterComputeSpellCheck', this)
   }

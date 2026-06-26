@@ -119,8 +119,7 @@ export const TEMPLATE_PATHS = Object.freeze([
  *   registration table lives in `module/built-in-class-mixins.mjs` so the
  *   integration-test setup can register the same set without duplicating
  *   mixin bodies. Sibling modules contribute their own classes' mixins via
- *   `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md` +
- *   `docs/dev/CLASS_DECOMPOSITION.md`).
+ *   `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md`).
  * - Class defaults (Phase 5 session 1) lift the per-class `_prepareContext`
  *   first-open default-write blocks off each sheet subclass onto a registry;
  *   sheets call `applyClassDefaults(actor, classId)`.
