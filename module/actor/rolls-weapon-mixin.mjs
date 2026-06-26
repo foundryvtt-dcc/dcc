@@ -241,6 +241,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
 
     const flags = {
       'dcc.isToHit': true,
+      // Record the automation decision made here, at creation time, so viewers
+      // render the card from what actually happened rather than re-deriving it
+      // from their own setting (issue #783). The enhanced attack card reads this
+      // to choose Roll buttons vs. resolved results consistently for everyone.
+      'dcc.automated': automateDamageFumblesCrits,
       'dcc.isBackstab': options.backstab,
       'dcc.isFumble': attackRollResult.fumble,
       'dcc.isCrit': attackRollResult.crit,

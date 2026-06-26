@@ -25,6 +25,7 @@ vi.mock('../actor-sheets-dcc.js', () => ({
   DCCActorSheetGeneric: { name: 'Generic' }
 }))
 vi.mock('../combatant.js', () => ({ default: { name: 'DCCCombatant' } }))
+vi.mock('../chat-message.js', () => ({ default: { name: 'DCCChatMessage' } }))
 vi.mock('../item.js', () => ({ default: { name: 'DCCItem' } }))
 vi.mock('../item-sheet.js', () => ({ default: { name: 'DCCItemSheet' } }))
 vi.mock('../dcc-roll.js', () => ({ default: { name: 'DCCRoll' } }))
@@ -116,7 +117,8 @@ beforeEach(() => {
     Dice: { fulfillment: {} },
     Actor: {},
     Item: {},
-    Combatant: {}
+    Combatant: {},
+    ChatMessage: {}
   }
   globalThis.game = { settings: { register: vi.fn() } }
   globalThis.Hooks = { once: vi.fn() }
@@ -159,6 +161,7 @@ describe('registerDocumentConfig', () => {
     expect(globalThis.CONFIG.Actor.documentClass.name).toBe('DCCActor')
     expect(globalThis.CONFIG.Item.documentClass.name).toBe('DCCItem')
     expect(globalThis.CONFIG.Combatant.documentClass.name).toBe('DCCCombatant')
+    expect(globalThis.CONFIG.ChatMessage.documentClass.name).toBe('DCCChatMessage')
     expect(globalThis.CONFIG.ActiveEffect.documentClass.name).toBe('DCCActiveEffect')
   })
 
