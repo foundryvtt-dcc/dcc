@@ -78,7 +78,7 @@ actor has multiple dice.
   reactions / judge override), resetting a stale round first.
 - **Gating.** Three sub-settings (`trackActionDiceInCombat`,
   `autoResetActionDice`, `hideSingleActionDiePips`), each ANDed with the master.
-  `spendCombatantActionDie` is exported now (Phase 3 auto-spend will call it).
+  `spendCombatantActionDie` is exported and now called by Phase 3 auto-spend.
 - Covered by `module/__tests__/action-dice-tracker.test.js` (pure logic) and
   `browser-tests/e2e/action-dice-tracker.spec.js` (live render/reset/toggle +
   the off-path).
@@ -137,15 +137,22 @@ is the authoring comma string and stays the single source of truth.
 that single value. The whole roll path consumes one die today — the feature's job
 is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 
-**First steps for a fresh session (Phase 3):** the per-round budget now lives on
-`combatant.flags.dcc.actionDice` and `module/action-dice-tracker.mjs` exposes
-`spendCombatantActionDie(combatant, index, round)` plus the lib's
-`nextActionDie(slots, state, action)`. Phase 3 wires the roll path: when an
-attack/spell/check resolves in combat, pick the slot via `nextActionDie`, call
-`spendCombatantActionDie` to mark it (the tracker pip flips automatically on the
-combatant flag update), default the roll dialog's action-die preset to the next
-unspent die, and add the "Action N of M" chat line. Keep every new branch behind
-the master gate (`multipleActionDiceEnabled()` in the tracker module, or
+**First steps for a fresh session (Phase 3 continued):** the weapon-attack path
+is wired (see above) and `module/action-dice-tracker.mjs` already exposes the
+reusable spend surface — `planActionDie(actor, action)`,
+`spendPlannedActionDie(plan)`, `formatActionDiceChatLine(descriptor)`,
+`getCombatantForActor`, `slotRollFormula` — built on the lib's
+`nextActionDie(slots, state, action)`. The next slice repeats the
+weapon-attack pattern on the **spell** (`action: 'spell'`), **skill**, and
+**ability-check** (`action: 'check'`) roll paths: in each dispatcher
+(`module/actor/rolls-spell-mixin.mjs`, `rolls-skill-mixin.mjs`,
+`rolls-check-mixin.mjs`) call `planActionDie` before the roll, default the
+action-die formula to the chosen extra slot, `spendPlannedActionDie` after a
+non-cancelled roll, and surface `formatActionDiceChatLine` in that path's chat
+template. Then close out the **D2 per-die rider** (apply `slot.modifier` via the
+lib's `actionDieRollTerms` + suppress the generic attack bonus; add the §10
+regression test). Keep every new branch behind the master gate
+(`multipleActionDiceEnabled()` in the tracker module, or
 `DCCActor.multipleActionDiceEnabled()`).
 
 ## TL;DR — recommendation
