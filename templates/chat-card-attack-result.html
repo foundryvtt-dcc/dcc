@@ -1,4 +1,7 @@
 {{{message.system.attackRollHTML}}}
+{{#if message.system.actionDiceChatLine}}
+  <div class="pt-8 action-dice-line"><em>{{message.system.actionDiceChatLine}}</em></div>
+{{/if}}
 {{#if message.system.deedDieRollResult}}
   <div class="pt-8 deed-result{{#if message.system.deedRollSuccess}} critical{{/if}}">
     <strong>{{localize "DCC.DeedDie"}}:</strong> {{{message.system.deedDieRollResult}}}

@@ -6,8 +6,11 @@
 > pass added 2026-06-26. Lib primitives built/merged/vendored 2026-06-26.
 > Phase 0 (master setting) + Phase 1 (derived `actionDice.list` + PC/NPC chip
 > row) implemented 2026-06-26. Phase 2 (combat-tracker pips + auto-reset +
-> click-to-toggle) implemented 2026-06-26. **Next: Phase 3 — auto-spend +
-> smart preset default + chat "Action N of M".**
+> click-to-toggle) implemented 2026-06-26. Phase 3 **weapon-attack path**
+> (auto-spend + smart preset default + chat "Action N of M") implemented
+> 2026-06-27. **Next: Phase 3 continued — extend auto-spend to the spell /
+> skill / ability-check roll paths + D2 per-die rider — then Phase 4 (soft
+> spells-only filtering).**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -80,8 +83,52 @@ actor has multiple dice.
   `browser-tests/e2e/action-dice-tracker.spec.js` (live render/reset/toggle +
   the off-path).
 
-**What is NOT started (system layer):** Phase 3 (auto-spend + smart preset
-default + chat "Action N of M"), Phase 4 (soft spells-only filtering). See §9.
+**What is DONE (system layer — Phase 3, weapon-attack path):**
+
+- **Roll-path helpers.** `module/action-dice-tracker.mjs` gained the auto-spend
+  surface: `getCombatantForActor(actor)` (first combatant by actor id),
+  `planActionDie(actor, action)` (off-path `null` when the setting is off / not
+  in combat / no budget; otherwise the next eligible slot via the lib's
+  `nextActionDie`, plus `count`/`spentCount` for the chat line — a pure read, no
+  write), `spendPlannedActionDie(plan)` (spends the chosen slot via
+  `spendCombatantActionDie`, no-op when over budget, returns the descriptor),
+  `slotRollFormula(slot)`, and `formatActionDiceChatLine(descriptor)` (localized
+  "Action N of M · die" / "Action N of M — over budget").
+- **Weapon attack integration.** `module/actor/rolls-weapon-mixin.mjs`
+  `_rollWeaponAttackDispatch` plans before the roll and spends after (so a
+  cancelled dialog spends nothing). The smart preset default only overrides the
+  die for an **extra** slot (index > 0) via `options._actionDieFormula`, read in
+  `rollToHit` — so the **first** action of a round, and the entire off-path,
+  stay byte-identical. The lib's `attackInput.actionDie` is realigned to the
+  override so crit/fumble classification matches the rolled die. The chat card
+  (`templates/chat-card-attack-result.html`) renders the "Action N of M" line.
+- **i18n.** `DCC.ActionDiceChatLine` / `DCC.ActionDiceChatLineOverBudget` added
+  and translated in all seven lang files.
+- Covered by new `module/__tests__/action-dice-tracker.test.js` cases (plan /
+  spend / format / over-budget / spells-only-ineligible) and a live
+  `browser-tests/e2e/action-dice-tracker.spec.js` probe walking the per-round
+  budget (slot 0 → slot 1 → over budget) plus the off-path.
+
+**Known limitations of this slice (carried to the next Phase-3 session):**
+
+- **Only the weapon-attack path is wired.** Spell checks, skill checks, and
+  ability checks do not yet plan/spend an action die or show the chat line —
+  `planActionDie` already accepts `'spell'` / `'check'`, so wiring them is the
+  next slice. (Spell *filtering* — offering only the spells-only die for a spell
+  check, warning on a weapon attack with no attack-capable die — is Phase 4.)
+- **D2 per-die rider not applied.** An extra slot's `modifier` (the `1d20+4`
+  rider) is not yet added to the roll / reconciled against the attack bonus;
+  `slotRollFormula` emits only `1dN`. Riders sit on slot 0 in practice (which
+  is never overridden), so the common cases are correct, but the §10 D2
+  regression test is still owed.
+- **Player-client spends rely on combatant-update permission.** The write goes
+  direct (`combatant.setFlag`), which a player may lack permission for; the
+  failure is swallowed (so no error) but the pip won't move and the player's
+  "N of M" stays at 1. The GM-run-monsters headline (Sim 2) works. Routing the
+  spend through a GM socket is a future hardening.
+
+**What is NOT started (system layer):** Phase 3 spell / skill / ability-check
+paths + D2 rider (above), Phase 4 (soft spells-only filtering). See §9.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -550,8 +597,13 @@ yet beyond the Phase-1 surface below).
    hooks, `renderCombatTracker` pip injection, click-to-toggle — all in
    `module/action-dice-tracker.mjs`, gated behind the master + three
    sub-settings. *The judge-facing win.*
-3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."** Wire
-   roll resolution to spend a pip and default the dialog to the next unspent die.
+3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."**
+   Wire roll resolution to spend a pip and default the dialog to the next unspent
+   die. **Weapon-attack path ✅ DONE (2026-06-27)** — helpers in
+   `action-dice-tracker.mjs` (`planActionDie` / `spendPlannedActionDie` /
+   `formatActionDiceChatLine`), integrated in `rolls-weapon-mixin.mjs`, chat line
+   in `chat-card-attack-result.html`. **Remaining:** the spell / skill /
+   ability-check paths and the D2 per-die rider (see §0 limitations).
 4. **Phase 4 — soft spells-only filtering.** Filter presets by `use` tag; warn
    (don't block) when no compatible die remains.
 

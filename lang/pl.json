@@ -79,6 +79,8 @@
   "DCC.ActionDieUseAny": "dowolna akcja",
   "DCC.ActionDieUseSpell": "tylko zaklęcia",
   "DCC.ActionDieUseAttack": "tylko ataki",
+  "DCC.ActionDiceChatLine": "Akcja {n} z {m} · {die}",
+  "DCC.ActionDiceChatLineOverBudget": "Akcja {n} z {m} — przekroczono limit",
   "DCC.ActionSave": "Zapisz",
   "DCC.ActionDie": "Kostka Akcji",
   "DCC.ActorImport": "Importuj Postać(ci)",

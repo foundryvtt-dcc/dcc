@@ -79,6 +79,8 @@
   "DCC.ActionDieUseAny": "cualquier acción",
   "DCC.ActionDieUseSpell": "solo conjuros",
   "DCC.ActionDieUseAttack": "solo ataques",
+  "DCC.ActionDiceChatLine": "Acción {n} de {m} · {die}",
+  "DCC.ActionDiceChatLineOverBudget": "Acción {n} de {m} — sin dados disponibles",
   "DCC.ActionSave": "Guardar",
   "DCC.ActionDie": "D.Acción",
   "DCC.ActorImport": "Importar Actor(es)",

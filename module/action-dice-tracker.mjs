@@ -23,7 +23,7 @@
  * wiring, DOM injection) live here.
  */
 
-import { resetActionDice, isActionDiceStateCurrent, spendActionDie } from './vendor/dcc-core-lib/index.js'
+import { resetActionDice, isActionDiceStateCurrent, spendActionDie, nextActionDie } from './vendor/dcc-core-lib/index.js'
 import { actionDieLabel } from './handlebars-helpers.mjs'
 
 const FLAG_SCOPE = 'dcc'
@@ -203,6 +203,96 @@ export async function spendCombatantActionDie (combatant, index, round) {
   } catch (_e) {
     // No permission — ignore.
   }
+}
+
+// --- Phase 3: roll-path auto-spend --------------------------------------
+
+/**
+ * The combatant in the active combat whose actor is `actor`, or `null`. Matches
+ * the first combatant by actor id (a linked actor may drive several tokens; the
+ * action-die budget is per-combatant, so the first match is the sane default for
+ * auto-spend).
+ * @param {Actor} actor
+ * @returns {Combatant|null}
+ */
+export function getCombatantForActor (actor) {
+  const combat = game?.combat
+  if (!combat || !actor) return null
+  for (const combatant of combat.combatants) {
+    if (combatant.actor?.id === actor.id) return combatant
+  }
+  return null
+}
+
+/** The roll formula (e.g. `"1d14"`) for a planned slot. */
+export function slotRollFormula (slot) {
+  return slot?.die ? `1${slot.die}` : ''
+}
+
+/**
+ * Plan the action-die spend for `actor` taking `action` (`'attack'`, `'spell'`,
+ * `'check'`). Returns `null` — the off-path signal — when the feature is off,
+ * the actor is not in the active combat, or it has no action-die budget; the
+ * caller then keeps today's single-die behavior. Otherwise returns the next
+ * eligible slot (`choice`, or `null` when over budget / no eligible die remains)
+ * plus the counts the "Action N of M" chat line needs. Pure read — it computes
+ * the would-be-reset state for a stale round but never writes; the write happens
+ * in {@link spendPlannedActionDie} after the roll resolves.
+ * @param {Actor} actor
+ * @param {string} action
+ * @returns {{combatant:Combatant, round:number, choice:{slot:object,index:number}|null, count:number, spentCount:number}|null}
+ */
+export function planActionDie (actor, action) {
+  if (!multipleActionDiceEnabled()) return null
+  const combatant = getCombatantForActor(actor)
+  if (!combatant) return null
+  const slots = getCombatantSlots(combatant)
+  if (slots.length < 1) return null
+  const round = game.combat.round
+  const stored = readActionDiceState(combatant)
+  const state = (stored && isActionDiceStateCurrent(stored, round))
+    ? stored
+    : resetActionDice(slots, round)
+  const choice = nextActionDie(slots, state, action)
+  const spentCount = (state.spent || []).filter(Boolean).length
+  return { combatant, round, choice, count: slots.length, spentCount }
+}
+
+/**
+ * Spend the planned slot (when one is available) and return the descriptor for
+ * the "Action N of M" chat line. When over budget (`choice` is `null`) nothing
+ * is written and the descriptor flags it. Returns `null` when there is no plan
+ * (off-path), so the caller renders no line.
+ * @param {object|null} plan - from {@link planActionDie}
+ * @returns {Promise<{actionNumber:number,count:number,overBudget:boolean,die:string}|null>}
+ */
+export async function spendPlannedActionDie (plan) {
+  if (!plan) return null
+  const { combatant, round, choice, count, spentCount } = plan
+  if (choice) {
+    await spendCombatantActionDie(combatant, choice.index, round)
+  }
+  return {
+    actionNumber: spentCount + 1,
+    count,
+    overBudget: !choice,
+    die: choice ? slotRollFormula(choice.slot) : ''
+  }
+}
+
+/**
+ * The localized "Action N of M" chat line for a spend descriptor, or `''` when
+ * there is nothing to show (no descriptor ⇒ off-path).
+ * @param {object|null} descriptor - from {@link spendPlannedActionDie}
+ * @returns {string}
+ */
+export function formatActionDiceChatLine (descriptor) {
+  if (!descriptor) return ''
+  const { actionNumber, count, overBudget, die } = descriptor
+  if (overBudget) {
+    return game.i18n.format('DCC.ActionDiceChatLineOverBudget', { n: actionNumber, m: count })
+  }
+  return game.i18n.format('DCC.ActionDiceChatLine', { n: actionNumber, m: count, die })
 }
 
 // --- Hook handlers ------------------------------------------------------

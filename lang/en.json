@@ -79,6 +79,8 @@
   "DCC.ActionDieUseAny": "any action",
   "DCC.ActionDieUseSpell": "spells only",
   "DCC.ActionDieUseAttack": "attacks only",
+  "DCC.ActionDiceChatLine": "Action {n} of {m} · {die}",
+  "DCC.ActionDiceChatLineOverBudget": "Action {n} of {m} — over budget",
   "DCC.ActionSave": "Save",
   "DCC.ActionDie": "Action Die",
   "DCC.ActorImport": "Import Actor(s)",

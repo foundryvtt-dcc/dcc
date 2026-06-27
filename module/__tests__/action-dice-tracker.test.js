@@ -17,7 +17,12 @@ import {
   autoResetEnabled,
   resetActiveCombatantActionDice,
   toggleActionDiePip,
-  spendCombatantActionDie
+  spendCombatantActionDie,
+  getCombatantForActor,
+  slotRollFormula,
+  planActionDie,
+  spendPlannedActionDie,
+  formatActionDiceChatLine
 } from '../action-dice-tracker.mjs'
 
 // A controllable game stub. settings is a Map keyed "module.key"; i18n echoes.
@@ -221,5 +226,142 @@ describe('spendCombatantActionDie', () => {
     const c = combatantWith(slots(2), { round: 1, spent: [true, true] })
     await spendCombatantActionDie(c, 1, 9)
     expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 9, spent: [false, true] })
+  })
+})
+
+// --- Phase 3: roll-path auto-spend --------------------------------------
+
+// A combatant whose actor carries an id (planActionDie matches by actor id).
+const makeCombatant = (list, flagState, actorId = 'a1') => ({
+  actor: { id: actorId, system: { attributes: { actionDice: { list } } }, isOwner: true },
+  getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice' ? flagState : undefined),
+  setFlag: vi.fn(async () => {})
+})
+const setCombat = (combatant, round = 1) => {
+  globalThis.game.combat = { round, combatants: [combatant] }
+}
+
+describe('getCombatantForActor', () => {
+  test('finds the combatant by actor id', () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    setCombat(c)
+    expect(getCombatantForActor({ id: 'hero' })).toBe(c)
+  })
+
+  test('null when no combat, no actor, or no match', () => {
+    expect(getCombatantForActor({ id: 'hero' })).toBeNull() // no game.combat
+    setCombat(makeCombatant(slots(2), null, 'hero'))
+    expect(getCombatantForActor(null)).toBeNull()
+    expect(getCombatantForActor({ id: 'other' })).toBeNull()
+  })
+})
+
+describe('slotRollFormula', () => {
+  test('prefixes the bare die with a count of 1', () => {
+    expect(slotRollFormula({ die: 'd14' })).toBe('1d14')
+    expect(slotRollFormula(undefined)).toBe('')
+  })
+})
+
+describe('planActionDie', () => {
+  test('null on the off-path (master setting off)', () => {
+    setCombat(makeCombatant(slots(2), null, 'hero'))
+    expect(planActionDie({ id: 'hero' }, 'attack')).toBeNull()
+  })
+
+  test('null when the actor is not in combat', () => {
+    set('multipleActionDice', true)
+    expect(planActionDie({ id: 'hero' }, 'attack')).toBeNull()
+  })
+
+  test('null when the combatant has no action-die budget', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(0), null, 'hero'))
+    expect(planActionDie({ id: 'hero' }, 'attack')).toBeNull()
+  })
+
+  test('picks the first slot on a fresh round and counts zero spent', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2), null, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice.index).toBe(0)
+    expect(plan).toMatchObject({ round: 5, count: 2, spentCount: 0 })
+  })
+
+  test('picks the next unspent slot from the stored current-round state', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2), { round: 5, spent: [true, false] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice.index).toBe(1)
+    expect(plan.spentCount).toBe(1)
+  })
+
+  test('treats a stale stored state as a fresh round', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2), { round: 1, spent: [true, true] }, 'hero'), 9)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice.index).toBe(0)
+    expect(plan.spentCount).toBe(0)
+  })
+
+  test('over budget — both dice spent — yields a null choice', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2), { round: 5, spent: [true, true] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice).toBeNull()
+    expect(plan.spentCount).toBe(2)
+  })
+
+  test('a spells-only extra die is ineligible for an attack', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2, { 1: 'spell' }), { round: 5, spent: [true, false] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice).toBeNull() // only the spells-only die is left
+  })
+})
+
+describe('spendPlannedActionDie', () => {
+  test('null plan returns null and writes nothing', async () => {
+    expect(await spendPlannedActionDie(null)).toBeNull()
+  })
+
+  test('spends the chosen slot and describes the action', async () => {
+    const c = makeCombatant(slots(2), { round: 5, spent: [true, false] }, 'hero')
+    setCombat(c, 5)
+    set('multipleActionDice', true)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 5, spent: [true, true] })
+    expect(descriptor).toEqual({ actionNumber: 2, count: 2, overBudget: false, die: '1d16' })
+  })
+
+  test('over budget writes nothing and flags the descriptor', async () => {
+    const c = makeCombatant(slots(2), { round: 5, spent: [true, true] }, 'hero')
+    setCombat(c, 5)
+    set('multipleActionDice', true)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).not.toHaveBeenCalled()
+    expect(descriptor).toEqual({ actionNumber: 3, count: 2, overBudget: true, die: '' })
+  })
+})
+
+describe('formatActionDiceChatLine', () => {
+  beforeEach(() => {
+    globalThis.game.i18n.format = (k, d) => `${k}|${JSON.stringify(d)}`
+  })
+
+  test('empty string for no descriptor (off-path)', () => {
+    expect(formatActionDiceChatLine(null)).toBe('')
+  })
+
+  test('normal line carries n, m and die', () => {
+    expect(formatActionDiceChatLine({ actionNumber: 1, count: 2, overBudget: false, die: '1d20' }))
+      .toBe('DCC.ActionDiceChatLine|{"n":1,"m":2,"die":"1d20"}')
+  })
+
+  test('over-budget line uses the over-budget key', () => {
+    expect(formatActionDiceChatLine({ actionNumber: 3, count: 2, overBudget: true, die: '' }))
+      .toBe('DCC.ActionDiceChatLineOverBudget|{"n":3,"m":2}')
   })
 })

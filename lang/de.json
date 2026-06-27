@@ -79,6 +79,8 @@
   "DCC.ActionDieUseAny": "beliebige Aktion",
   "DCC.ActionDieUseSpell": "nur Zauber",
   "DCC.ActionDieUseAttack": "nur Angriffe",
+  "DCC.ActionDiceChatLine": "Aktion {n} von {m} · {die}",
+  "DCC.ActionDiceChatLineOverBudget": "Aktion {n} von {m} — über dem Limit",
   "DCC.ActionSave": "Speichern",
   "DCC.ActionDie": "Aktionswürfel",
   "DCC.ActorImport": "Akteur(e) importieren",

@@ -17,6 +17,7 @@ import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, par
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
+import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -79,10 +80,27 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Accumulate all rolls for sending to the chat message
     const rolls = []
 
+    // Multiple action dice (Phase 3) — when enabled and this actor is in
+    // combat, default the action die to the next unspent eligible slot and
+    // spend it after the roll. `planActionDie` returns null on the off-path
+    // (setting off / not in combat / no budget), leaving today's behavior.
+    // A stale `_actionDieFormula` from a reused options object is cleared
+    // first; only an extra die (slot index > 0) overrides the weapon's die,
+    // so the first action of the round stays byte-identical to today.
+    delete options._actionDieFormula
+    const actionDicePlan = planActionDie(this, 'attack')
+    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+      options._actionDieFormula = slotRollFormula(actionDicePlan.choice.slot)
+    }
+
     // Attack roll
     options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
     if (!attackRollResult) return // <-- if the attack roll is cancelled, return
+
+    // Spend the planned die (the tracker pip flips on the flag update) and
+    // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
 
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
@@ -323,7 +341,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         targets: game.user.targets,
         weaponId,
         weaponName: weapon.name,
-        twoWeaponNote
+        twoWeaponNote,
+        actionDiceChatLine
       }
     }
 
@@ -389,7 +408,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // formula below) — rather than calling it three times.
     const actionDicePresets = this.getActionDice({ includeUntrained: true })
     const actorActionDice = actionDicePresets[0].formula
-    const die = weapon.system?.actionDie || actorActionDice
+    // `_actionDieFormula` is the multiple-action-dice next-unspent override
+    // (Phase 3), set by `_rollWeaponAttackDispatch` only for an extra die; it
+    // is absent on the off-path so `die` resolves exactly as today.
+    let die = weapon.system?.actionDie || actorActionDice
+    if (options._actionDieFormula) die = options._actionDieFormula
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
 
     if (!Roll.validate(toHit)) {
@@ -487,6 +510,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     attackRoll.dice[0].options.dcc = { upperThreshold: critRange }
 
     const attackInput = buildAttackInput(this, weapon, actorActionDice)
+    // Keep the lib on the same die Foundry rolled when the multiple-action-dice
+    // override picked an extra die (buildAttackInput otherwise prefers the
+    // weapon's first-die `actionDie`), so crit/fumble classification and the
+    // lib total match the evaluated Roll.
+    if (options._actionDieFormula) {
+      attackInput.actionDie = normalizeLibDie(options._actionDieFormula)
+    }
     attackInput.threatRange = critRange
     // Reflect in-place mutations of the action-die term (e.g. dcc-qol's
     // long-range `DiceChain.bumpDie` rewriting `terms[0].formula` from
