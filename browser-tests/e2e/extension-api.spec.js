@@ -1541,10 +1541,12 @@ test.describe('DCC Extension API', () => {
 
   test('DCC migrationOutcome gates version-stamping on a clean run + DCC.MigrationFailures resolves (Phase 7 session 11)', async ({ page }) => {
     // Phase 7 session 11: `migrateWorld` now accumulates per-document
-    // failures and applies the pure `migrationOutcome(failures)` policy
-    // — a clean run stamps the world version + shows the "complete"
-    // toast; any failure leaves the version unstamped and raises a
-    // `ui.notifications.warn(DCC.MigrationFailures, { count })`. This
+    // failures and applies the pure `migrationOutcome(failures)` policy.
+    // Since #777 (forward-progress stamping) the version is *always*
+    // stamped — even on partial failure — so a re-sweep can't get stuck;
+    // the `clean` flag (true only for a fully-clean run) drives the
+    // "complete" toast vs. the `ui.notifications.warn(DCC.MigrationFailures,
+    // { count })` warning instead. This
     // probe imports the live-served module to confirm the deployed
     // helper's stamp/notify decisions and that the new i18n key is
     // registered + interpolates the {count} placeholder. It does NOT
@@ -1573,9 +1575,9 @@ test.describe('DCC Extension API', () => {
 
     expect(result.isFunction).toBe(true)
     // Clean run → stamp + complete.
-    expect(result.clean).toEqual({ stampVersion: true, notify: 'complete', failureCount: 0 })
-    // Failed run → no stamp + warn with the exact count.
-    expect(result.failed).toEqual({ stampVersion: false, notify: 'failures', failureCount: 2 })
+    expect(result.clean).toEqual({ stampVersion: true, clean: true, notify: 'complete', failureCount: 0 })
+    // Failed run → still stamp (forward progress, #777), but warn with the exact count.
+    expect(result.failed).toEqual({ stampVersion: true, clean: false, notify: 'failures', failureCount: 2 })
     // The new failure-summary i18n key is registered and interpolates.
     expect(result.i18nResolves).toBe(true)
     expect(result.i18nInterpolatesCount).toBe(true)
