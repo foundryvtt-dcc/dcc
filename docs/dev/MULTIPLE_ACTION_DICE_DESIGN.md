@@ -5,7 +5,9 @@
 > Author: design pass for cyface, 2026-06-25. Master-setting + consumer-impact
 > pass added 2026-06-26. Lib primitives built/merged/vendored 2026-06-26.
 > Phase 0 (master setting) + Phase 1 (derived `actionDice.list` + PC/NPC chip
-> row) implemented 2026-06-26. **Next: Phase 2 — combat-tracker pips.**
+> row) implemented 2026-06-26. Phase 2 (combat-tracker pips + auto-reset +
+> click-to-toggle) implemented 2026-06-26. **Next: Phase 3 — auto-spend +
+> smart preset default + chat "Action N of M".**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -56,12 +58,30 @@ Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
 
 Net: with the setting **off** (default) the sheets and derivation are
 byte-identical to before; the chip row only appears once a table opts in and the
-actor has multiple dice. No combat-tracker pips, no auto-spend, no roll-dialog
-or chat changes yet.
+actor has multiple dice.
 
-**What is NOT started (system layer):** Phase 2 (combat-tracker pips +
-auto-reset), Phase 3 (auto-spend + smart preset default + chat "Action N of M"),
-Phase 4 (soft spells-only filtering). See §9.
+**What is DONE (system layer — Phase 2):**
+
+- **Combat-tracker pips.** `module/action-dice-tracker.mjs` owns the Foundry
+  side: a `renderCombatTracker` hook injects one pip per action die into each
+  combatant `<li>` (● ready / ○ spent / ⊛ spells-only), built by the pure
+  `buildActionDicePips`. Per-round spend state lives on the combatant
+  (`flags.dcc.actionDice = { round, spent[] }`), scoped to the encounter (D4).
+- **Auto-reset.** `combatTurn` / `combatRound` hooks call
+  `resetActiveCombatantActionDice` — GM-only, refilling the active combatant's
+  budget when its stored round is stale. Rendering also treats a stale state as
+  all-ready, so a new round looks fresh even before the write lands.
+- **Click-to-toggle.** `toggleActionDiePip` flips a pip by hand (off-turn
+  reactions / judge override), resetting a stale round first.
+- **Gating.** Three sub-settings (`trackActionDiceInCombat`,
+  `autoResetActionDice`, `hideSingleActionDiePips`), each ANDed with the master.
+  `spendCombatantActionDie` is exported now (Phase 3 auto-spend will call it).
+- Covered by `module/__tests__/action-dice-tracker.test.js` (pure logic) and
+  `browser-tests/e2e/action-dice-tracker.spec.js` (live render/reset/toggle +
+  the off-path).
+
+**What is NOT started (system layer):** Phase 3 (auto-spend + smart preset
+default + chat "Action N of M"), Phase 4 (soft spells-only filtering). See §9.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -70,12 +90,16 @@ is the authoring comma string and stays the single source of truth.
 that single value. The whole roll path consumes one die today — the feature's job
 is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 
-**First steps for a fresh session (Phase 2):** the derived
-`system.attributes.actionDice.list` is already available on prepared actors when
-the setting is on — Phase 2 consumes it to build per-combatant tracker pips. Wire
-`combatTurn`/`combatRound` hooks to `resetActionDice`, persist
-`combatant.flags.dcc.actionDice` round-state (§5), and render pips in the tracker
-template. Keep every new branch behind `DCCActor.multipleActionDiceEnabled()`.
+**First steps for a fresh session (Phase 3):** the per-round budget now lives on
+`combatant.flags.dcc.actionDice` and `module/action-dice-tracker.mjs` exposes
+`spendCombatantActionDie(combatant, index, round)` plus the lib's
+`nextActionDie(slots, state, action)`. Phase 3 wires the roll path: when an
+attack/spell/check resolves in combat, pick the slot via `nextActionDie`, call
+`spendCombatantActionDie` to mark it (the tracker pip flips automatically on the
+combatant flag update), default the roll dialog's action-die preset to the next
+unspent die, and add the "Action N of M" chat line. Keep every new branch behind
+the master gate (`multipleActionDiceEnabled()` in the tracker module, or
+`DCCActor.multipleActionDiceEnabled()`).
 
 ## TL;DR — recommendation
 
@@ -521,8 +545,11 @@ yet beyond the Phase-1 surface below).
    single text box renders unchanged. The `*tag` authoring grammar is owned by the
    lib's `parseActionDice` (already vendored); wizard spells-only is inferred from
    `classId`, so no pack data changed.
-2. **Phase 2 — combat-tracker pips + auto-reset.** Combatant flag, `combatTurn`/
-   `combatRound` hooks, tracker template, click-to-toggle. *The judge-facing win.*
+2. **Phase 2 — combat-tracker pips + auto-reset. ✅ DONE (2026-06-26).**
+   Combatant flag (`flags.dcc.actionDice`), `combatTurn`/`combatRound` reset
+   hooks, `renderCombatTracker` pip injection, click-to-toggle — all in
+   `module/action-dice-tracker.mjs`, gated behind the master + three
+   sub-settings. *The judge-facing win.*
 3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."** Wire
    roll resolution to spend a pip and default the dialog to the next unspent die.
 4. **Phase 4 — soft spells-only filtering.** Filter presets by `use` tag; warn

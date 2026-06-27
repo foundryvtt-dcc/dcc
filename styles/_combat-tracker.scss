@@ -1,0 +1,35 @@
+// Action-dice pips in the combat tracker (multiple-action-dice feature,
+// Phase 2). Injected into each combatant row by
+// module/action-dice-tracker.mjs. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+
+.dcc-action-dice-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  margin-top: 2px;
+
+  &.interactive .dcc-action-die-pip {
+    cursor: pointer;
+  }
+
+  .dcc-action-die-pip {
+    font-size: 11px;
+    line-height: 1;
+    user-select: none;
+
+    &.ready {
+      color: var(--color-level-success, #282);
+    }
+
+    &.spent {
+      color: var(--color-text-dark-inactive, #7a7971);
+    }
+
+    // A spells-only (restricted) die reads as its ⊛ mark regardless of
+    // spent state; dim it once used.
+    &.restricted.spent {
+      opacity: 0.55;
+    }
+  }
+}

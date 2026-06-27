@@ -2931,6 +2931,31 @@ a.inline-roll {
   padding: 8px;
 }
 
+.dcc-action-dice-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  margin-top: 2px;
+}
+.dcc-action-dice-pips.interactive .dcc-action-die-pip {
+  cursor: pointer;
+}
+.dcc-action-dice-pips .dcc-action-die-pip {
+  font-size: 11px;
+  line-height: 1;
+  user-select: none;
+}
+.dcc-action-dice-pips .dcc-action-die-pip.ready {
+  color: var(--color-level-success, #282);
+}
+.dcc-action-dice-pips .dcc-action-die-pip.spent {
+  color: var(--color-text-dark-inactive, #7a7971);
+}
+.dcc-action-dice-pips .dcc-action-die-pip.restricted.spent {
+  opacity: 0.55;
+}
+
 /* Effects styling */
 .dcc .item-list-effects {
   grid-template-columns: 30px 1fr 80px 70px 120px;

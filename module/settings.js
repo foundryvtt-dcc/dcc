@@ -180,6 +180,38 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Multiple action dice — sub-options. These only have effect when the master
+   * `multipleActionDice` setting above is on; each gate ANDs the master with its
+   * own switch (see module/action-dice-tracker.mjs). Phase 2 of the feature.
+   */
+  game.settings.register('dcc', 'trackActionDiceInCombat', {
+    name: 'DCC.SettingTrackActionDiceInCombat',
+    hint: 'DCC.SettingTrackActionDiceInCombatHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  game.settings.register('dcc', 'autoResetActionDice', {
+    name: 'DCC.SettingAutoResetActionDice',
+    hint: 'DCC.SettingAutoResetActionDiceHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  game.settings.register('dcc', 'hideSingleActionDiePips', {
+    name: 'DCC.SettingHideSingleActionDiePips',
+    hint: 'DCC.SettingHideSingleActionDiePipsHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
    * Compendium to look in for Mighty Deed tables
    */
   game.settings.register('dcc', 'mightyDeedsCompendium', {
