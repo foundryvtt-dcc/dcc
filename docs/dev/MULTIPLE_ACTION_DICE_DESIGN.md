@@ -1,8 +1,48 @@
 # Surfacing Multiple Action Dice — Design Exploration
 
-> Status: **design / RFC** — no code yet. Branch `claude/multiple-action-dice-design`.
+> Status: **lib layer landed; system layer not started.** Branch
+> `claude/multiple-action-dice-design-5vsxr8`.
 > Author: design pass for cyface, 2026-06-25. Master-setting + consumer-impact
-> pass added 2026-06-26.
+> pass added 2026-06-26. Lib primitives built/merged/vendored 2026-06-26.
+
+## 0. Implementation status & handoff (read this first)
+
+**What is DONE (lib layer):** The rules-correct primitives now live in
+`@moonloch/dcc-core-lib` and are **already vendored into this repo** at
+`module/vendor/dcc-core-lib/` (v0.12.0, commit `4a20286`, from
+`moonloch/dcc-core-lib` PR #10, merged). They are purely additive — no existing
+lib export changed — so nothing in the system behaves differently until the
+system *calls* them. **Do not re-design these; import them.** Exported surface
+(see `module/vendor/dcc-core-lib/combat/action-dice.js` + `types/combat.d.ts`):
+
+| Export | Role |
+|---|---|
+| `parseActionDice(input, { className })` | `"1d20+4, 1d16*spell"` / `"2d20"` / array → `ActionDieSlot[]` (expands `Nd`, `+N`=rider, `+dice`=separator, `*tag`=use) |
+| `classExtraActionDieUse(className)` | `"spell"` for **wizard only**, else `"any"` (elf/cleric are casters but unrestricted — verified vs core-book) |
+| `nextActionDie(slots, state, action)` | next unspent eligible slot, or `null` (preset default + auto-spend) |
+| `spendActionDie(state, index)` / `resetActionDice(slots, round)` / `isActionDiceStateCurrent(state, round)` | pure per-round budget state transitions |
+| `actionDieRollTerms(slot)` | D2 reconciliation → `{ die, modifier, suppressAttackBonus }` |
+| `actionMatchesUse(use, action)` | eligibility test |
+
+Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
+`ActionDieRollTerms`.
+
+**What is NOT started (system layer):** No system code exists yet — no setting,
+no derivation, no sheet/tracker/dialog/chat changes. The next unit of work is
+**Phase 0 + Phase 1** in §9.
+
+**Where the truth lives today (so you don't re-derive it):** `config.actionDice`
+is the authoring comma string and stays the single source of truth.
+`actor-level-change.js` collapses it to the first die in
+`attributes.actionDice.value`; `item.js` derives `item.system.actionDie` from
+that single value. The whole roll path consumes one die today — the feature's job
+is to stop discarding the rest (§11.1), gated behind the master setting (§8).
+
+**First steps for a fresh session:** (1) register `multipleActionDice` (default
+OFF) — Phase 0; (2) in `prepareData`, derive `actionDice.list` via
+`parseActionDice(config.actionDice, { className })` (no consumer branches on it
+unless the setting is on — §5); (3) build the sheet chip row — Phase 1. Keep
+today's code as the `else` branch; prove "off ⇒ identical" with a test (§11.4).
 
 ## TL;DR — recommendation
 
@@ -450,9 +490,11 @@ which makes it a trivially safe first merge and gives playtesters the toggle to 
 4. **Phase 4 — soft spells-only filtering.** Filter presets by `use` tag; warn
    (don't block) when no compatible die remains.
 
-The mechanic-correct, lib-owned bits (which die a roll *consumes*, restriction
-semantics) likely belong in `@moonloch/dcc-core-lib` so the rules live with the
-roll logic; the tracker UI, sheet chips, and Foundry hook wiring stay in the system.
+**Lib layer — DONE (2026-06-26).** The mechanic-correct, lib-owned bits (which die
+a roll *consumes*, restriction semantics, the per-die-rider reconciliation) now
+live in `@moonloch/dcc-core-lib` and are vendored here — see §0 for the exported
+surface. The tracker UI, sheet chips, and Foundry hook wiring stay in the system
+(the phases above).
 
 **Lib changes must be additive and opt-in at the call site.** Any new
 `@moonloch/dcc-core-lib` capability (e.g. "given a list of action dice and a chosen
