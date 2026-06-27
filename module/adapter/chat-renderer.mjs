@@ -435,6 +435,10 @@ export async function renderSavingThrow ({
  *   rendered chat content.
  * @param {Object} params.result - The lib's SkillCheckResult.
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
+ *   not in combat), in which case the content is byte-identical to before;
+ *   when present it rides under the rolled formula + breakdown.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSkillCheck ({
@@ -445,7 +449,8 @@ export async function renderSkillCheck ({
   abilityLabel,
   skillItem,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flavor = `${skillLabel}${abilityLabel}`
 
@@ -481,16 +486,22 @@ export async function renderSkillCheck ({
     systemData.skillDescription = description
   }
 
-  // Manual roll render when either the breakdown or the skill-item
-  // description needs to ride under the rolled formula (matches the
-  // pre-extraction skill-description path; the breakdown sits between
-  // the roll and the description).
-  if (breakdownHtml || description) {
+  const actionDiceHtml = actionDiceChatLine
+    ? `<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
+    : ''
+
+  // Manual roll render when the breakdown, the skill-item description,
+  // or the multiple-action-dice line needs to ride under the rolled
+  // formula (matches the pre-extraction skill-description path; the
+  // breakdown sits between the roll and the description, the action-dice
+  // line last). Off-path (no action-dice line, no breakdown/description)
+  // leaves `content` unset so `toMessage` builds the default body.
+  if (breakdownHtml || description || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
     const descriptionHtml = description
       ? `<div class="skill-description">${description}</div>`
       : ''
-    toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}`
+    toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}${actionDiceHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })

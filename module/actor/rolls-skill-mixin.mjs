@@ -8,6 +8,7 @@ import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
+import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
 
 /**
  * Skill-check dispatch mixin for {@link DCCActor}.
@@ -230,6 +231,17 @@ export const RollsSkillMixin = (Base) => class extends Base {
     const definition = this._buildSkillDefinition(skillId, resolved)
     let modifiers = this._buildSkillCheckModifiers(skillId, resolved)
 
+    // Multiple action dice (Phase 3) — when enabled and this actor is in
+    // combat, plan the next eligible action-die slot for this check and
+    // spend it after the roll resolves. `planActionDie` returns null on the
+    // off-path (setting off / not in combat / no budget), leaving today's
+    // behavior. Only an *extra* die (slot index > 0) overrides the check's
+    // die, so the first action of the round stays byte-identical to today.
+    const actionDicePlan = planActionDie(this, 'check')
+    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+      definition.roll.die = actionDicePlan.choice.slot.die
+    }
+
     if (options.showModifierDialog) {
       const dialogTerms = this._buildSkillCheckRollTerms(skillId, resolved)
       const prompt = await promptRollModifierDialog(dialogTerms, {
@@ -291,6 +303,11 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     const skillLabel = game.i18n.localize(skill.label)
 
+    // Spend the planned die (the tracker pip flips on the flag update) and
+    // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.
+    // Reached only after a non-cancelled dialog, so a cancel spends nothing.
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
+
     await renderSkillCheck({
       actor: this,
       skillId,
@@ -299,7 +316,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       abilityLabel,
       skillItem,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
 
     if (skillItem && skillItem.system.config.showLastResult) {

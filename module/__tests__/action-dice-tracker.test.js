@@ -318,6 +318,21 @@ describe('planActionDie', () => {
     const plan = planActionDie({ id: 'hero' }, 'attack')
     expect(plan.choice).toBeNull() // only the spells-only die is left
   })
+
+  test("a 'check' action spends the next unrestricted die (skill-check path)", () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2), { round: 5, spent: [true, false] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'check')
+    expect(plan.choice.index).toBe(1)
+    expect(plan.choice.slot.die).toBe('d16')
+  })
+
+  test("a spells-only extra die is ineligible for a 'check'", () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2, { 1: 'spell' }), { round: 5, spent: [true, false] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'check')
+    expect(plan.choice).toBeNull() // spells-only die can't take a skill check
+  })
 })
 
 describe('spendPlannedActionDie', () => {
