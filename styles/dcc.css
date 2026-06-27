@@ -2527,6 +2527,32 @@ a.inline-roll {
   margin-right: 8px;
   border: 0;
 }
+.dcc .character .combat-basics .action-dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-right: 8px;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip {
+  align-items: center;
+  background: var(--system-input-background);
+  border: var(--system-frame-border);
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 2px;
+  line-height: 1;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip.restricted {
+  font-style: italic;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip .action-die-mark {
+  font-size: 11px;
+  opacity: 0.8;
+}
 .dcc .character .languages,
 .dcc .character .lucky-roll {
   border: var(--system-frame-border);

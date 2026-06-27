@@ -20,6 +20,7 @@
  */
 
 import EntityImages from '../entity-images.js'
+import { actionDieLabel } from '../handlebars-helpers.mjs'
 
 /**
  * Enrich the actor's notes HTML for sheet display.
@@ -81,4 +82,57 @@ export function prepareImage (actor, {
  */
 export function prepareCompendiumLinks (config = globalThis.CONFIG?.DCC) {
   return config?.coreBookCompendiumLinks
+}
+
+/**
+ * Action-dice sheet context for the multiple-action-dice feature.
+ *
+ * The derived `system.attributes.actionDice.list` is built in
+ * `DCCActor#prepareDerivedData` only when the `multipleActionDice` master
+ * setting is on (see docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md). This helper
+ * exposes a single `showActionDiceChips` boolean so the template can swap
+ * the single text box for the chip row without doing length comparisons in
+ * Handlebars. Chips appear only when the feature is on AND the actor has
+ * 2+ dice — a single-die actor sees today's box unchanged either way
+ * (§3: the per-die UI activates only for actors with multiple dice).
+ * @param {Actor} actor - the sheet's `options.document`.
+ * @param {object} [deps] - injectable globals (default to the live ones).
+ * @param {object} [deps.settings] - `game.settings` (for the master switch).
+ * @param {object} [deps.i18n] - `game.i18n` (for chip tooltips).
+ * @returns {{multipleActionDice: boolean, actionDiceChips: Array, showActionDiceChips: boolean}}
+ */
+export function prepareActionDiceContext (actor, {
+  settings = globalThis.game?.settings,
+  i18n = globalThis.game?.i18n
+} = {}) {
+  let enabled = false
+  try {
+    enabled = settings?.get('dcc', 'multipleActionDice') === true
+  } catch (_e) {
+    enabled = false
+  }
+  const list = actor?.system?.attributes?.actionDice?.list
+  const slots = Array.isArray(list) ? list : []
+  const localize = (key) => i18n?.localize ? i18n.localize(key) : key
+  const useLabel = (use) => localize({
+    spell: 'DCC.ActionDieUseSpell',
+    attack: 'DCC.ActionDieUseAttack'
+  }[use] || 'DCC.ActionDieUseAny')
+  const format = i18n?.format
+    ? (key, data) => i18n.format(key, data)
+    : (key) => key
+  const actionDiceChips = slots.map((slot) => ({
+    label: actionDieLabel(slot),
+    use: slot.use || 'any',
+    restricted: !!slot.use && slot.use !== 'any',
+    tooltip: format('DCC.ActionDiceChipHint', {
+      slot: (slot.slot ?? 0) + 1,
+      use: useLabel(slot.use)
+    })
+  }))
+  return {
+    multipleActionDice: enabled,
+    actionDiceChips,
+    showActionDiceChips: enabled && actionDiceChips.length > 1
+  }
 }

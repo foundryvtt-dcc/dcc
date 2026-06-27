@@ -124,6 +124,16 @@
       >
 
       {{!-- Action Dice --}}
+      {{#if showActionDiceChips}}
+      <label title="{{localize 'DCC.ActionDiceEdit'}}">{{localize "DCC.ActionDice"}}</label>
+      <div class="action-dice-chips" title="{{localize 'DCC.ActionDiceEdit'}}">
+        {{#each actionDiceChips}}
+        <span class="action-die-chip{{#if this.restricted}} restricted{{/if}}" title="{{this.tooltip}}">
+          {{this.label}}{{#if this.restricted}}<span class="action-die-mark">&#8859;</span>{{/if}}
+        </span>
+        {{/each}}
+      </div>
+      {{else}}
       <label for="system.attributes.actionDice.value" title="{{localize 'DCC.ActionDiceSheetHint'}}">{{localize "DCC.ActionDie"}}</label>
       <input id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
              size="3"
@@ -132,6 +142,7 @@
              data-dtype="String"
              placeholder="1d20"
       >
+      {{/if}}
 
       {{!-- Crit Die --}}
       <label for="system.attributes.critical.die" class="rollable" data-action="rollCritDie">{{localize "DCC.CritDie"}}</label>

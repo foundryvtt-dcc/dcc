@@ -164,6 +164,22 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Multiple action dice — the master switch for the per-round action-die
+   * budget feature (sheet chips, combat-tracker pips, auto-spend). Default
+   * OFF: when off the system runs today's single-action-die code paths
+   * verbatim. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+   */
+  game.settings.register('dcc', 'multipleActionDice', {
+    name: 'DCC.SettingMultipleActionDice',
+    hint: 'DCC.SettingMultipleActionDiceHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Compendium to look in for Mighty Deed tables
    */
   game.settings.register('dcc', 'mightyDeedsCompendium', {

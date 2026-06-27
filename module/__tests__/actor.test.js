@@ -2002,3 +2002,60 @@ test('rollSkillCheck blocks lost wizard casting mode skill items', async () => {
   global.itemTypesMock.mockReset()
   game.settings.get = originalGet
 })
+
+// --- Multiple action dice (Phase 0/1) ----------------------------------
+// Pure-helper tests for the derived action-dice list and its master-switch
+// gate. Kept at the static-helper level (mirroring computeSpeedValue) because
+// the mock Actor base has no prepareDerivedData — see the note above. The
+// load-bearing guarantee is "off ⇒ no derived list", proven directly here.
+
+test('deriveActionDiceList returns null when the feature is off', () => {
+  expect(DCCActor.deriveActionDiceList({
+    enabled: false,
+    authoring: '1d20,1d14',
+    className: 'warrior'
+  })).toBeNull()
+})
+
+test('deriveActionDiceList parses every die when on (warrior: both any)', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20,1d14',
+    className: 'warrior'
+  })
+  expect(list).toHaveLength(2)
+  expect(list.map(s => s.die)).toEqual(['d20', 'd14'])
+  expect(list.map(s => s.use)).toEqual(['any', 'any'])
+})
+
+test('deriveActionDiceList infers the wizard second die as spells-only', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20,1d16',
+    className: 'wizard'
+  })
+  expect(list.map(s => s.use)).toEqual(['any', 'spell'])
+})
+
+test('deriveActionDiceList stores a per-die rider as the slot modifier', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20+4, 1d20, 1d16',
+    className: 'warrior'
+  })
+  expect(list.map(s => s.modifier)).toEqual([4, 0, 0])
+})
+
+test('multipleActionDiceEnabled reflects the setting and defaults off when unregistered', () => {
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'multipleActionDice') return true
+    return originalGet(module, key)
+  })
+  expect(DCCActor.multipleActionDiceEnabled()).toBe(true)
+
+  game.settings.get = vi.fn(() => { throw new Error('not registered') })
+  expect(DCCActor.multipleActionDiceEnabled()).toBe(false)
+
+  game.settings.get = originalGet
+})

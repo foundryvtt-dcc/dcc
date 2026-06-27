@@ -1,9 +1,11 @@
 # Surfacing Multiple Action Dice — Design Exploration
 
-> Status: **lib layer landed; system layer not started.** Branch
-> `claude/multiple-action-dice-design-5vsxr8`.
+> Status: **lib layer landed; system Phase 0 + Phase 1 (data + sheet chips)
+> landed.** Branch `claude/multiple-action-dice-design-5vsxr8`.
 > Author: design pass for cyface, 2026-06-25. Master-setting + consumer-impact
 > pass added 2026-06-26. Lib primitives built/merged/vendored 2026-06-26.
+> Phase 0 (master setting) + Phase 1 (derived `actionDice.list` + PC/NPC chip
+> row) implemented 2026-06-26. **Next: Phase 2 — combat-tracker pips.**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -27,9 +29,39 @@ system *calls* them. **Do not re-design these; import them.** Exported surface
 Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
 `ActionDieRollTerms`.
 
-**What is NOT started (system layer):** No system code exists yet — no setting,
-no derivation, no sheet/tracker/dialog/chat changes. The next unit of work is
-**Phase 0 + Phase 1** in §9.
+**What is DONE (system layer — Phase 0 + Phase 1):**
+
+- **Phase 0 — master setting.** `multipleActionDice` (world, default OFF,
+  `requiresReload`) registered in `module/settings.js` with i18n in all seven
+  lang files. `DCCActor.multipleActionDiceEnabled()` reads it defensively
+  (absent/unregistered ⇒ off).
+- **Phase 1 (data).** `DCCActor.prepareDerivedData` derives
+  `system.attributes.actionDice.list` via the pure static
+  `DCCActor.deriveActionDiceList({ enabled, authoring, className })` — returns
+  `null` (no list written) when the setting is off, so the off-path is the
+  untouched incumbent. Authoring string is read from `config.actionDice`
+  (falls back to `attributes.actionDice.value`); `className` is `this.classId`
+  so the wizard spells-only inference falls out for free. Covered by
+  `module/__tests__/actor.test.js` (off ⇒ null; warrior/wizard/rider cases).
+- **Phase 1 (sheet chips).** `prepareActionDiceContext(actor)` in
+  `module/actor-sheet/presentation.mjs` exposes `showActionDiceChips`
+  (= setting on **and** 2+ dice) + display-ready `actionDiceChips` (label via
+  the new `actionDieLabel` Handlebars helper, localized tooltip, `restricted`
+  flag). PC (`actor-partial-pc-common.html`) and NPC
+  (`actor-partial-npc-common.html`) templates swap the single text box for the
+  chip row only when `showActionDiceChips`; otherwise the existing input
+  renders verbatim. Styling in `styles/_actor-sheet.scss` (`.action-dice-chips`
+  / `.action-die-chip`). Covered by `actor-sheet-presentation.test.js` and
+  `handlebars-helpers.test.js`.
+
+Net: with the setting **off** (default) the sheets and derivation are
+byte-identical to before; the chip row only appears once a table opts in and the
+actor has multiple dice. No combat-tracker pips, no auto-spend, no roll-dialog
+or chat changes yet.
+
+**What is NOT started (system layer):** Phase 2 (combat-tracker pips +
+auto-reset), Phase 3 (auto-spend + smart preset default + chat "Action N of M"),
+Phase 4 (soft spells-only filtering). See §9.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -38,11 +70,12 @@ is the authoring comma string and stays the single source of truth.
 that single value. The whole roll path consumes one die today — the feature's job
 is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 
-**First steps for a fresh session:** (1) register `multipleActionDice` (default
-OFF) — Phase 0; (2) in `prepareData`, derive `actionDice.list` via
-`parseActionDice(config.actionDice, { className })` (no consumer branches on it
-unless the setting is on — §5); (3) build the sheet chip row — Phase 1. Keep
-today's code as the `else` branch; prove "off ⇒ identical" with a test (§11.4).
+**First steps for a fresh session (Phase 2):** the derived
+`system.attributes.actionDice.list` is already available on prepared actors when
+the setting is on — Phase 2 consumes it to build per-combatant tracker pips. Wire
+`combatTurn`/`combatRound` hooks to `resetActionDice`, persist
+`combatant.flags.dcc.actionDice` round-state (§5), and render pips in the tracker
+template. Keep every new branch behind `DCCActor.multipleActionDiceEnabled()`.
 
 ## TL;DR — recommendation
 
@@ -474,15 +507,20 @@ without the live tracking.
 
 ## 9. Suggested rollout (each phase independently shippable)
 
-**Phase 0 — the master setting, first.** Register `multipleActionDice` (default OFF)
-before anything else, so every subsequent phase wires its gate into a switch that
-already exists. Phase 0 ships with no behavior change (the flag gates nothing yet),
-which makes it a trivially safe first merge and gives playtesters the toggle to find.
+**Phase 0 — the master setting, first. ✅ DONE (2026-06-26).** Registered
+`multipleActionDice` (world, default OFF, `requiresReload`) in `module/settings.js`
+with i18n in all seven lang files, so every subsequent phase wires its gate into a
+switch that already exists. Ships with no behavior change (the flag gates nothing
+yet beyond the Phase-1 surface below).
 
-1. **Phase 1 — data + sheet chips.** Add the derived `actionDice.list`, the `*tag`
-   grammar (back-compat), and the chip-row editor on PC and NPC sheets. No tracking
-   yet. *Immediately fixes "the second die is invisible."* All of it gated behind the
-   master setting; off ⇒ the existing single text box renders unchanged.
+1. **Phase 1 — data + sheet chips. ✅ DONE (2026-06-26).** Added the derived
+   `actionDice.list` (via the pure static `DCCActor.deriveActionDiceList`, off ⇒
+   `null`) and the chip row on PC and NPC sheets (display-only; the `[+]`/inline
+   editor and click-to-roll are deferred to later phases). *Immediately fixes "the
+   second die is invisible."* Gated behind the master setting; off ⇒ the existing
+   single text box renders unchanged. The `*tag` authoring grammar is owned by the
+   lib's `parseActionDice` (already vendored); wizard spells-only is inferred from
+   `classId`, so no pack data changed.
 2. **Phase 2 — combat-tracker pips + auto-reset.** Combatant flag, `combatTurn`/
    `combatRound` hooks, tracker template, click-to-toggle. *The judge-facing win.*
 3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."** Wire
