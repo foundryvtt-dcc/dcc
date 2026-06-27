@@ -47,6 +47,73 @@ export interface AttackInput {
     isBackstab?: boolean | undefined;
 }
 /**
+ * What an action die may be spent on.
+ *
+ * In DCC, the **wizard** is the only core class that restricts an extra
+ * action die: its second die "can only be used for spell checks." Every
+ * other class — including the elf and cleric, who are also casters — may
+ * use its extra dice for anything. See `classExtraActionDieUse`.
+ *
+ * Extensible by design (homebrew may add `"turnUndead"`, `"mightyDeed"`, …);
+ * unknown tags simply never match a given `ActionType`.
+ */
+export type ActionDieUse = "any" | "spell" | "attack" | (string & {});
+/**
+ * The kind of action a roll represents, used to test eligibility against
+ * an `ActionDieSlot.use` tag.
+ */
+export type ActionType = "attack" | "spell" | "check";
+/**
+ * One action die in an actor's per-round budget. A high-level warrior's
+ * `"1d20+1, 1d20, 1d14"` becomes three slots; an NPC's `"2d20"` becomes two.
+ *
+ * `die` is always a single die (count 1) — NPC stat blocks like `"2d20"`
+ * expand to two separate slots rather than one slot of count 2.
+ */
+export interface ActionDieSlot {
+    /** 0-based position in the budget (slot 0 is the primary die). */
+    slot: number;
+    /** The die for this slot, e.g. `"d20"`, `"d16"`. */
+    die: DieType;
+    /**
+     * Per-die rider parsed from a `"1d20+4"` authoring token (DCC top-end
+     * warriors carry a flat bonus on their first action die). `0` when the
+     * slot has no rider. This is the action die's *own* adjustment — see the
+     * `suppressAttackBonus` note on `actionDieRollTerms`.
+     */
+    modifier: number;
+    /** What this slot may be spent on. */
+    use: ActionDieUse;
+}
+/**
+ * Live per-round spend state for an actor's action dice. Owned and
+ * persisted by the caller (e.g. a Foundry combatant flag); the lib only
+ * provides pure transitions over it.
+ */
+export interface ActionDiceState {
+    /** The combat round these `spent` flags are valid for. */
+    round: number;
+    /** Parallel to the slot list: `spent[i]` is true once slot `i` is used. */
+    spent: boolean[];
+}
+/**
+ * Roll terms for a chosen action-die slot, reconciling the slot's own
+ * modifier against the generic attack/spell bonus. See `actionDieRollTerms`.
+ */
+export interface ActionDieRollTerms {
+    /** The die to roll for this action. */
+    die: DieType;
+    /** The slot's per-die modifier (0 when none). */
+    modifier: number;
+    /**
+     * When true, the slot carries its own authoritative modifier and the
+     * caller must NOT also add the generic attack-bonus term for this action
+     * (otherwise `"1d20+4"` would roll `+4+4`). When false, the caller applies
+     * its normal attack-bonus / ability-modifier logic.
+     */
+    suppressAttackBonus: boolean;
+}
+/**
  * Two-weapon fighting configuration derived from the attacker's Agility
  * (DCC core rules Table 4-3, plus halfling class overrides). Reductions
  * step each hand's action die DOWN the dice chain.

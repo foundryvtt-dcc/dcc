@@ -1,14 +1,27 @@
 # Surfacing Multiple Action Dice — Design Exploration
 
 > Status: **design / RFC** — no code yet. Branch `claude/multiple-action-dice-design`.
-> Author: design pass for cyface, 2026-06-25.
+> Author: design pass for cyface, 2026-06-25. Master-setting + consumer-impact
+> pass added 2026-06-26.
 
 ## TL;DR — recommendation
 
 Treat the action die not as a string the player reads off their sheet, but as a
 **per-round budget that the system tracks and spends for you**. Build it in three
-layers, each shippable on its own and each gated behind a setting so tables that
-don't want it never see it:
+layers, each shippable on its own.
+
+**The whole feature lives behind a single master setting (`multipleActionDice`,
+default OFF).** This is the load-bearing constraint, not a nicety: the only way to
+get real playtesting is to let people opt in inside their own live games. With the
+setting **off**, every code path, sheet, tracker, roll, and chat card behaves
+**exactly as it does today** — no derived data is consumed, no UI changes, no
+behavioral drift. With it **on**, the new approach activates. See **§8** for the
+setting design and **§11** for why this also means **no content changes to
+dcc-core-book, dcc-crawl-classes, or sibling modules** — we *derive and relocate*,
+we don't re-author.
+
+Build it in three layers, each shippable on its own and each gated behind the
+master setting so tables that don't want it never see it:
 
 1. **Data**: promote action dice from a flat `"1d20,1d16"` string to a small
    structured list (`die`, `modifier`, `use` tag) while keeping the string as the
@@ -40,9 +53,26 @@ Important wrinkles the system has to respect:
   have `1d20, 1d16`. At the very top end you see things like `1d20+4, 1d20, 1d16`
   (three dice; the `+4` is the attack bonus riding on the first die, not a fourth
   die).
-- **Class restrictions.** A **wizard's** extra action dice can only be used to
-  **cast spells**, never to make a second weapon attack. Warriors have no such
-  restriction. So a die needs to know *what it may be spent on*.
+- **Class restrictions (verified against the core-book class text, 2026-06-26).**
+  The **wizard is the *only* core class that restricts an extra action die**: "A
+  wizard's first action die can be used for attacks or spell checks, but his second
+  action die can only be used for spell checks." **Every other class is
+  unrestricted**, including the casters:
+  - **Elf** — explicitly *not* spell-only: "he can make two attacks, the first with
+    a d20 attack roll and the second with a d14; or he may combine an attack with a
+    spell check." (The natural trap is to lump the elf in with the wizard — RAW
+    differs precisely here.)
+  - **Cleric** — "can use his action dice for attack rolls or spell checks" (no
+    first-vs-second distinction).
+  - **Warrior / Dwarf** — "always use their action dice for attacks"; the extra die
+    is a literal second *attack*.
+  - **Thief** — "any normal activity, including attacks and skill checks."
+  - **Halfling** — "attacks or skill checks."
+
+  So only the wizard needs a `use: "spell"` tag on its extra die; for everyone else
+  the extra die is `any`. A die still needs to know *what it may be spent on*, but
+  the inference rule is narrow: **wizard ⇒ slots ≥ 1 are spell-only; all other
+  classes ⇒ all slots `any`.**
 - **The deed die is NOT an action die.** A warrior's Mighty Deed die (`d3`/`d4`…)
   rides on a single attack as a bonus; it does not grant an extra action. The
   design must keep these visually and structurally distinct so we don't imply a
@@ -77,9 +107,14 @@ waiting" or "you've used it."
    it should rarely ask the user to do bookkeeping by hand.
 2. **Surface at the point of use.** The reminder belongs in the combat tracker
    (judge) and the attack area (player), not in a config dialog.
-3. **Zero-cost when off.** A single character with `1d20` should see *nothing new*.
-   Everything below activates only when an actor has 2+ dice, and the live tracking
-   is behind a setting.
+3. **Off by default, behind one master switch.** The entire feature is gated by a
+   single setting (`multipleActionDice`, default OFF). When off, the system runs
+   today's code paths verbatim — not "a stripped-down new path that happens to look
+   the same," but the *actual* existing path, so there is zero behavioral risk for
+   tables that don't opt in. This is what makes in-the-wild playtesting safe. When
+   on, a single character with `1d20` still sees *nothing new* (the per-die UI
+   activates only for actors with 2+ dice); the master switch and the
+   2+-dice check are independent gates.
 4. **Don't break authoring.** `"1d20,1d16"` typed in Config must keep working; the
    structured model is derived from it.
 5. **Respect the rules, gently.** Enforce wizard spells-only by *filtering presets*,
@@ -133,6 +168,14 @@ Keep `config.actionDice` as the **authoring string** (back-compat, NPC parser, h
 edits). Derive a structured list from it; persist live round-state on the combatant,
 not the actor, so it's scoped to the encounter.
 
+> **Master-switch gating.** The derived `actionDice.list` and all live round-state
+> are only built/consumed when `multipleActionDice` is on. When the setting is off
+> the system never reads `.list`; the roll path keeps using the single
+> `attributes.actionDice.value` (the first die) exactly as today. Building `.list`
+> is cheap and side-effect-free, so it may be computed unconditionally in
+> `prepareData` and simply ignored when off — but **nothing downstream may branch on
+> `.list` unless the setting is on.**
+
 ```jsonc
 // Derived (computed in prepareData from the config string) — NOT hand-edited
 system.actionDice.list = [
@@ -155,6 +198,17 @@ Act 1d24+1d20  (NPC)       → parser already handles "+" as a separator
 - `use` ∈ `any | spell | attack` (extensible: `mightyDeed`, `turnUndead`…).
 - The `*tag` suffix is optional; absent ⇒ `any`. Fully backward compatible — every
   existing `"1d20,1d16"` parses to two `any` dice.
+- **Spells-only is *inferred*, not authored.** The `*spell` grammar exists as an
+  escape hatch, but we do **not** want to rewrite dcc-core-book's wizard
+  level-data to add it (that would be a content change — see §11). Instead, the
+  derivation tags the *extra* dice (slots ≥ 1) as `use: "spell"` **only when the
+  actor is a wizard** — the single class RAW restricts (see §1; the elf and cleric
+  are casters but their extra dice are unrestricted). So the existing unchanged
+  `"1d20,1d16"` string on a wizard produces the correct spells-only second die for
+  free, and on every other class produces two `any` dice. The lib owns this rule as
+  a pure `classExtraActionDieUse(className)` helper (returns `"spell"` for `wizard`,
+  `"any"` otherwise); the system applies it when building slots. The `*tag` suffix
+  is reserved for one-off homebrew overrides.
 
 **Live round-state (per combatant flag, auto-managed):**
 
@@ -331,28 +385,64 @@ Zara (Wizard 4) wants to swing her dagger and then cast.
 
 ---
 
-## 8. Settings (keep it from bogging down)
+## 8. Settings (the master switch + sub-options)
+
+The **master switch is the headline**. Everything else is a sub-option that only
+has meaning when the master is on.
 
 ```
 DCC System Settings → Combat
-  ☑ Track action dice in combat tracker        (default: on)
-  ☑ Auto-reset action dice at start of turn     (default: on)
-  ☐ Hide pips for single-action-die actors      (default: on — declutter)
-  ☐ Enforce spells-only dice as hard block       (default: off — soft filter)
-  ☐ Show "Action N of M" line in chat cards      (default: on)
+  ☐ Multiple action dice  (MASTER, default: OFF)   ← the opt-in for playtesters
+  │     When OFF, every path below is dead and the system behaves exactly as it
+  │     does today. When ON, the options below take effect.
+  │
+  ├─ ☑ Action-dice chips on sheets                 (default: on)
+  ├─ ☑ Track action dice in combat tracker          (default: on)
+  ├─ ☑ Auto-reset action dice at start of turn       (default: on)
+  ├─ ☐ Hide pips for single-action-die actors        (default: on — declutter)
+  ├─ ☐ Enforce spells-only dice as hard block         (default: off — soft filter)
+  └─ ☐ Show "Action N of M" line in chat cards        (default: on)
 ```
 
-Everything degrades gracefully: turn all of it off and you're back to today's
-behavior, plus the nicer sheet chip row (which is itself just a prettier editor for
-the same string).
+**Why a master switch and not just the granular settings?** Three reasons:
+
+1. **Safe opt-in for live playtesting.** Players can flip one setting in their own
+   game, try it for a session, and flip it back with total confidence that "off"
+   means "the build everyone else is running." Per-feature toggles don't give that
+   all-or-nothing guarantee, and a half-on state is exactly the kind of thing that
+   generates confusing bug reports.
+2. **One guard to reason about.** Every gate in the code is `if
+   (game.settings.get('dcc', 'multipleActionDice'))`. Reviewers and the E2E suite
+   can prove "off ⇒ today's behavior" by checking a single flag, not six.
+3. **Clean removal / GA path.** When the feature graduates, we flip the default and
+   eventually inline the on-path; until then the off-path is the untouched
+   incumbent.
+
+**Implementation note — the off-path must be the *real* incumbent path, not a
+parallel reimplementation.** The cheapest correct design keeps today's code exactly
+as the `else` branch and adds the new behavior as the `if` branch, rather than
+routing both through a new unified code path "that should be equivalent." Equivalent
+is a claim; identical is a fact. Each guarded site (prepareData derivation, sheet
+template, combat tracker, roll dialog presets, auto-spend, chat card, any lib call)
+checks the master setting and falls through to the existing logic when off.
+
+Everything degrades gracefully: with the master off you are byte-for-byte on today's
+behavior; with it on but the sub-options off you get the data model and chip row
+without the live tracking.
 
 ---
 
 ## 9. Suggested rollout (each phase independently shippable)
 
+**Phase 0 — the master setting, first.** Register `multipleActionDice` (default OFF)
+before anything else, so every subsequent phase wires its gate into a switch that
+already exists. Phase 0 ships with no behavior change (the flag gates nothing yet),
+which makes it a trivially safe first merge and gives playtesters the toggle to find.
+
 1. **Phase 1 — data + sheet chips.** Add the derived `actionDice.list`, the `*tag`
    grammar (back-compat), and the chip-row editor on PC and NPC sheets. No tracking
-   yet. *Immediately fixes "the second die is invisible."*
+   yet. *Immediately fixes "the second die is invisible."* All of it gated behind the
+   master setting; off ⇒ the existing single text box renders unchanged.
 2. **Phase 2 — combat-tracker pips + auto-reset.** Combatant flag, `combatTurn`/
    `combatRound` hooks, tracker template, click-to-toggle. *The judge-facing win.*
 3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."** Wire
@@ -363,6 +453,16 @@ the same string).
 The mechanic-correct, lib-owned bits (which die a roll *consumes*, restriction
 semantics) likely belong in `@moonloch/dcc-core-lib` so the rules live with the
 roll logic; the tracker UI, sheet chips, and Foundry hook wiring stay in the system.
+
+**Lib changes must be additive and opt-in at the call site.** Any new
+`@moonloch/dcc-core-lib` capability (e.g. "given a list of action dice and a chosen
+slot, return the roll terms") is *new surface* — the existing entry points the
+system already calls keep their current signatures and behavior. When
+`multipleActionDice` is off, the system calls the lib exactly as it does today
+(single die in, same terms out), so a vendor-synced lib with the new functions
+present changes nothing for non-opted-in tables. The new functions are only reached
+from the master-on branch. This keeps the lib bump safe to vendor-sync ahead of, or
+independently from, flipping the setting on.
 
 ---
 
@@ -377,6 +477,7 @@ Four choices gated implementation. All four are now **decided** (cyface,
 | D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **✅ (b) Real per-die rider** *(overrides the recommended default)* — each slot can carry its own modifier; see reconciliation note below | Phase 1 |
 | D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **✅ (a) One pip** *(= recommended)* — matches RAW and the existing TWF model | Phase 3 |
 | D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **✅ (a) Chips only** *(= recommended)* — no natural reset signal exists out of combat | Phase 1–2 |
+| D5 | **Opt-in model** — how tables get the feature | (a) Always on once shipped · (b) Single master setting, default OFF, off ⇒ today's behavior exactly · (c) Per-feature settings only, no master | **✅ (b) Master setting, default OFF** (cyface, 2026-06-26) — required for safe in-the-wild playtesting; see §8 | Phase 0 (all) |
 
 **D2 reconciliation (real per-die rider).** Because the `+4` is now a genuine slot
 modifier rather than a cosmetic echo of the attack bonus, the implementation must
@@ -400,4 +501,87 @@ Carried-over confirmations (no real fork, just things to verify during build):
   pip covers the rare out-of-turn ability. Confirm nothing needs more than that.
 - **Deed die separation.** Keep the warrior's Mighty Deed die clearly *out* of the
   action-dice chip row so no one reads it as an extra action.
-```
+- **Dwarf shield bash is not an action-die slot.** RAW: "A dwarf's shield bash is
+  always in addition to his base action dice," and a dwarf with multiple action dice
+  "still receive[s] only one shield bash each round." Model it (if at all) as a
+  separate bonus attack, never as a pip in the action-dice budget.
+
+---
+
+## 11. Impact on data sources & consumers — *relocate and derive, don't re-author*
+
+The guiding goal here matches cyface's instinct: **change as little downstream data
+as possible.** The action-die value already lives in these places as a plain string;
+the new feature should *read it from where it already is* and *render it somewhere
+new*, not require every pack and module to be re-authored.
+
+### 11.1 The data already supports this
+
+Grounding fact from the current codebase: the multi-die comma string is **already
+present** end-to-end. It is *not* something we have to introduce.
+
+- **dcc-core-book / dcc-crawl-classes class level-data packs** set it directly in
+  their `levelData` strings, e.g.
+  `system.attributes.actionDice.value=1d20,1d14` (and `system.config.actionDice`).
+  Multi-die rows like `1d20,1d20`, `1d20,1d20,1d14` already exist in the wizard /
+  cleric / warrior level data.
+- **`actor-level-change.js`** copies that string into `config.actionDice` and, when
+  it contains a comma, stores **only the first die** back into
+  `attributes.actionDice.value`.
+- **`item.js`** derives `item.system.actionDie` from that single
+  `attributes.actionDice.value` (or an override). The whole roll path consumes one
+  die.
+
+So today the second die is *parsed and discarded* at the actor-level-change step.
+The new feature's job is to **stop discarding it** — derive `actionDice.list` from
+the same string and surface the extra slots — not to add new authored data.
+
+### 11.2 Consumer-by-consumer impact (target: zero content changes)
+
+| Consumer | Reads action dice how | Change needed | Notes |
+|---|---|---|---|
+| **dcc-core-book** (class level-data, pregens) | `levelData` strings set `attributes.actionDice.value` / `config.actionDice` | **None** | The comma string is already there. We derive `.list` from it in the system. Wizard spells-only is **inferred from class** (§5), so we do *not* add `*spell` to pack data. |
+| **dcc-crawl-classes** (97 level-data files) | Same `levelData` mechanism | **None** | Same as above. |
+| **mcc-classes** | No action-die references found | **None** | Not a consumer. |
+| **dcc-qol** | Only a test mock references it | **None** | No runtime dependency. |
+| **xcc** (11 custom actor sheets) | Renders its own action-die box in custom sheet templates | **None required; opt-in later** | When the master setting is off, xcc sheets are untouched. When on, xcc keeps showing today's single box unless/until it adopts the shared chip partial — i.e. the feature *degrades to the first die* there, it doesn't break. Adopting the chip row in xcc is a follow-up, not a blocker. |
+| **NPC / PC parsers** | Write `config.actionDice` from stat blocks | **None** | They already produce the comma string (PC parser turns `+` into `,`). The derivation reads it. |
+
+The single structural rule that buys all those "None"s: **`config.actionDice`
+(the comma string) stays the one source of truth, in the same field, set the same
+way.** Everything new is *derived* from it inside the system's `prepareData`. Nobody
+upstream has to learn a new schema.
+
+### 11.3 The one real internal relocation
+
+There is exactly one place where today's behavior actively *destroys* information we
+now want: `actor-level-change.js` collapsing `1d20,1d14` down to its first die in
+`attributes.actionDice.value`. Two options, both master-gated:
+
+- **Preferred:** leave `attributes.actionDice.value` exactly as today (first die) so
+  the off-path and every existing reader is untouched, and have the **derivation**
+  read the *full* string from `config.actionDice` (which already retains all dice).
+  This is a pure read-relocation: the multi-die truth is taken from `config`, the
+  legacy single-die field is left alone. **No migration, no behavior change when
+  off.**
+- **Rejected:** widening `attributes.actionDice.value` to hold the whole list. That
+  would ripple into every reader (`item.js`, the templates, xcc, mocks) and break the
+  "off ⇒ identical" guarantee. Don't.
+
+So the answer to "do we have to change core-book / other modules?" is: **no — we
+relocate where the *system* reads the existing string (prefer `config.actionDice`,
+which already keeps every die) and where it *renders* it (chip row, tracker pips),
+and we infer the wizard restriction from class instead of authoring it.** The packs
+and sibling modules keep their current data and only benefit once a table opts in.
+
+### 11.4 Testing the guarantee
+
+Because "off ⇒ today's behavior" is the whole safety story, the E2E/unit suites must
+**prove** it, not assume it:
+
+- A unit test asserting that with `multipleActionDice` off, an actor authored with
+  `1d20,1d14` produces the **same** `item.system.actionDie` (`1d20`) and the same
+  roll terms as on `main`.
+- An E2E test toggling the setting on and confirming the chip row / pips appear, then
+  off and confirming the single text box returns and a rolled attack is byte-identical.
+- The D2 double-counting regression test (§10) run in **both** setting states.
