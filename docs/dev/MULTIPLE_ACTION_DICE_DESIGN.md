@@ -365,18 +365,22 @@ roll logic; the tracker UI, sheet chips, and Foundry hook wiring stay in the sys
 
 ---
 
-## 10. Open questions
+## 10. Decisions to make
 
-1. **`1d20+4` modifier semantics.** Is the `+4` an action-die rider distinct from
-   the actor's attack bonus, or just a display convenience that the existing attack
-   bonus already accounts for? Affects whether `modifier` is additive or cosmetic.
-2. **Reactions / off-turn actions.** DCC mostly lacks reactions, but some abilities
-   act out of turn. Click-to-toggle covers it manually; do we need more?
-3. **Non-combat multi-action.** Outside combat there's no tracker. Do we track at
-   all there, or only offer the sheet chip row? (Proposed: chips only, no budget.)
-4. **Two-weapon fighting interaction.** TWF already steps dice down per weapon. Does
-   a TWF attack consume one pip or two? (Proposed: it's still one action → one pip,
-   rolled as two dice — but worth confirming against RAW.)
-5. **Deed die confusion.** Confirm the mockups keep the deed die clearly *out* of
-   the action-dice chip row so no one reads it as an extra action.
+Four choices gate implementation. Each has a recommended default so the project can
+proceed without blocking; revisit before the phase that depends on it.
+
+| # | Decision | Options | Recommended default | Blocks |
+|---|----------|---------|---------------------|--------|
+| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **(a) Soft filter** — trusts the judge, won't fight rule-benders, keeps the escape hatch | Phase 4 |
+| D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **(a) Display only** — least risk of double-counting the bonus | Phase 1 |
+| D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **(a) One pip** — matches RAW and the existing TWF model | Phase 3 |
+| D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **(a) Chips only** — no natural reset signal exists out of combat | Phase 1–2 |
+
+Carried-over confirmations (no real fork, just things to verify during build):
+
+- **Reactions / off-turn actions.** DCC mostly lacks reactions; click-to-toggle on a
+  pip covers the rare out-of-turn ability. Confirm nothing needs more than that.
+- **Deed die separation.** Keep the warrior's Mighty Deed die clearly *out* of the
+  action-dice chip row so no one reads it as an extra action.
 ```
