@@ -148,7 +148,7 @@ system.actionDice.list = [
 ```
 1d20, 1d16                 → two unrestricted dice
 1d20, 1d16*spell           → second die castable for spells only
-1d20+4, 1d20, 1d16         → first die carries a +4 (attack bonus shorthand)
+1d20+4, 1d20, 1d16         → first die carries its own +4 rider (slot modifier; see D2)
 Act 1d24+1d20  (NPC)       → parser already handles "+" as a separator
 ```
 
@@ -322,9 +322,10 @@ Zara (Wizard 4) wants to swing her dagger and then cast.
 
 1. Turn begins → pips `●●●`; tracker shows `1d20 1d20 1d16`.
 2. First attack defaults to **1d20** and auto-applies the **+4** carried on slot 0.
-   (`+4` is stored as the slot's `modifier`, applied on top of the normal attack
-   bonus — or, if you prefer, treated purely as display and the existing attack
-   bonus stays authoritative; see Open Questions.)
+   Per **D2 (real per-die rider)**, `+4` is stored as `list[0].modifier` and is the
+   authoritative per-die adjustment for this action: the roll is `1d20+4`, with the
+   generic attack-bonus term suppressed for this slot so the bonus isn't applied
+   twice.
 3. Second attack defaults to the next **1d20** (no rider). Third to **1d16**.
 4. Three pips, three clicks, no mental tracking of which die is next.
 
@@ -365,17 +366,33 @@ roll logic; the tracker UI, sheet chips, and Foundry hook wiring stay in the sys
 
 ---
 
-## 10. Decisions to make
+## 10. Decisions (resolved)
 
-Four choices gate implementation. Each has a recommended default so the project can
-proceed without blocking; revisit before the phase that depends on it.
+Four choices gated implementation. All four are now **decided** (cyface,
+2026-06-27); the chosen option is marked ✅ and the rest of this doc reflects them.
 
-| # | Decision | Options | Recommended default | Blocks |
-|---|----------|---------|---------------------|--------|
-| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **(a) Soft filter** — trusts the judge, won't fight rule-benders, keeps the escape hatch | Phase 4 |
-| D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **(a) Display only** — least risk of double-counting the bonus | Phase 1 |
-| D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **(a) One pip** — matches RAW and the existing TWF model | Phase 3 |
-| D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **(a) Chips only** — no natural reset signal exists out of combat | Phase 1–2 |
+| # | Decision | Options | Decision | Blocks |
+|---|----------|---------|----------|--------|
+| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **✅ (a) Soft filter** *(= recommended)* — trusts the judge, keeps the escape hatch | Phase 4 |
+| D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **✅ (b) Real per-die rider** *(overrides the recommended default)* — each slot can carry its own modifier; see reconciliation note below | Phase 1 |
+| D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **✅ (a) One pip** *(= recommended)* — matches RAW and the existing TWF model | Phase 3 |
+| D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **✅ (a) Chips only** *(= recommended)* — no natural reset signal exists out of combat | Phase 1–2 |
+
+**D2 reconciliation (real per-die rider).** Because the `+4` is now a genuine slot
+modifier rather than a cosmetic echo of the attack bonus, the implementation must
+avoid **double-counting**:
+
+- Store it as `actionDice.list[0].modifier = 4`, parsed from the `1d20+4` authoring
+  token (and from NPC stat-block strings).
+- The slot modifier is the **action die's own** bonus. It is applied to the roll
+  *in place of, or reconciled with,* the actor-level attack bonus — not stacked
+  blindly on top. Concretely: when a slot carries a modifier, treat that modifier as
+  the authoritative per-die adjustment for that action and suppress the generic
+  attack-bonus term for that slot, so `1d20+4` rolls `1d20+4` (not `1d20+4+4`).
+- Slots without an explicit modifier (`1d20`, `1d16`) fall back to the normal
+  attack-bonus / ability-modifier logic exactly as today.
+- This needs a focused regression test: a `1d20+4, 1d20, 1d16` actor must roll
+  `+4` on the first action and the actor's normal bonus on the second and third.
 
 Carried-over confirmations (no real fork, just things to verify during build):
 
