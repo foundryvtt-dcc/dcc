@@ -8,10 +8,11 @@
 > row) implemented 2026-06-26. Phase 2 (combat-tracker pips + auto-reset +
 > click-to-toggle) implemented 2026-06-26. Phase 3 **weapon-attack path**
 > (auto-spend + smart preset default + chat "Action N of M") implemented
-> 2026-06-27. Phase 3 **skill-check path** (same auto-spend pattern via
-> `_rollSkillCheckViaAdapter` + `renderSkillCheck`) implemented 2026-06-27.
-> **Next: Phase 3 continued — extend auto-spend to the spell + ability-check
-> roll paths + D2 per-die rider — then Phase 4 (soft spells-only filtering).**
+> 2026-06-27. Phase 3 **skill-check** + **ability-check** paths (same auto-spend
+> pattern via `_rollSkillCheckViaAdapter` / `_rollAbilityCheck*` +
+> `renderSkillCheck` / `renderAbilityCheck`) implemented 2026-06-27.
+> **Next: Phase 3 continued — extend auto-spend to the spell roll path + D2
+> per-die rider — then Phase 4 (soft spells-only filtering).**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -134,21 +135,46 @@ actor has multiple dice.
   twice (slot 0 d20 → slot 1 d16) and asserting the per-round flag advance + the
   emitted action-dice line.
 
+**What is DONE (system layer — Phase 3, ability-check path):**
+
+- **Ability-check integration.** `module/actor/rolls-check-mixin.mjs` wires both
+  the non-dialog `_rollAbilityCheckViaAdapter` and the dialog
+  `_rollAbilityCheckWithDialog` branches: `planActionDie(this, 'check')` before
+  the roll, spend after (the dialog cancel returns first, so it spends nothing).
+  The non-dialog branch's die default is special — `libRollAbilityCheck` always
+  defaults to `d20`, so an **extra** slot routes through
+  `libRollCheck({ ability, die })` instead to roll the smaller die; slot 0 and
+  the off-path stay on the unchanged `libRollAbilityCheck` call. The dialog
+  branch seeds its default die from the slot and lets the user's choice win.
+- **Chat line.** `renderAbilityCheck` gained the same optional
+  `actionDiceChatLine` param as `renderSkillCheck`, appended as a
+  `.dcc-action-dice-line` div; empty on the off-path ⇒ byte-identical content.
+- **Scope.** Standard + dialog ability checks only. **Roll-under (Luck) checks
+  stay unwired** — they are a naked `1d20` roll-under-the-score mechanic, and
+  swapping in a smaller die would change the success odds, so spending there
+  needs a rules call; deferred. Saves / initiative / hit-dice are **not**
+  action-die actions and stay unwired.
+- Covered by a live `action-dice-tracker.spec.js` probe driving
+  `rollAbilityCheck('str')` twice (slot 0 d20 → slot 1 d16) and asserting the
+  per-round flag advance + the emitted action-dice line.
+
 **Known limitations of this slice (carried to the next Phase-3 session):**
 
-- **Spell checks and ability checks are not yet wired.** `planActionDie` already
-  accepts `'spell'` / `'check'`; the spell path
-  (`rolls-spell-mixin.mjs` — naked / generic / wizard-cleric `calculateSpellCheck`
-  branches, each calling `renderSpellCheck`) and the ability-check path
-  (`rolls-check-mixin.mjs` `_rollAbilityCheckViaAdapter` + dialog + roll-under,
-  each calling `renderAbilityCheck`) repeat the skill-check pattern next: plan,
-  default the die (spell via `options.actionDieOverride` which the adapter
-  already threads for the dialog; ability via `definition.roll.die` /
-  inline-config die), spend after a non-cancelled roll, pass the line to the
-  renderer. Saves / initiative / hit-dice are **not** action-die actions and
-  stay unwired. (Spell *filtering* — offering only the spells-only die for a
-  spell check, warning on a weapon attack with no attack-capable die — is
-  Phase 4.)
+- **Spell checks are not yet wired.** `planActionDie` already accepts `'spell'`;
+  the spell path (`rolls-spell-mixin.mjs` — naked / generic / wizard-cleric
+  `calculateSpellCheck` branches, each calling `renderSpellCheck`) repeats the
+  skill/ability pattern next: plan in `_rollSpellCheckDispatch`, default the die
+  via the **existing** `options.actionDieOverride` hook the adapter already
+  threads for the modifier dialog (verify `buildSpellCastInput` honours it for
+  the generic `_castViaCastSpell` branch), spend after a non-cancelled roll, pass
+  the line to `renderSpellCheck` (add the optional param the same way). Mind that
+  a shown dialog's `actionDie` should win over the action-dice default. (Spell
+  *filtering* — offering only the spells-only die for a spell check, warning on a
+  weapon attack with no attack-capable die — is Phase 4.)
+- **Skill-table / description sub-branches unwired.** The skill mixin's
+  `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) and description-only
+  branch don't spend; those special abilities are rarely the round's "second
+  action die." Fold them in if wanted.
 - **D2 per-die rider not applied.** An extra slot's `modifier` (the `1d20+4`
   rider) is not yet added to the roll / reconciled against the attack bonus;
   `slotRollFormula` emits only `1dN`. Riders sit on slot 0 in practice (which
@@ -160,9 +186,9 @@ actor has multiple dice.
   "N of M" stays at 1. The GM-run-monsters headline (Sim 2) works. Routing the
   spend through a GM socket is a future hardening.
 
-**What is NOT started (system layer):** Phase 3 spell + ability-check paths +
-the skill-table/description sub-branches + D2 rider (above), Phase 4 (soft
-spells-only filtering). See §9.
+**What is NOT started (system layer):** Phase 3 spell path + the
+skill-table/description sub-branches + roll-under Luck + D2 rider (above),
+Phase 4 (soft spells-only filtering). See §9.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -171,18 +197,18 @@ is the authoring comma string and stays the single source of truth.
 that single value. The whole roll path consumes one die today — the feature's job
 is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 
-**First steps for a fresh session (Phase 3 continued):** the weapon-attack and
-**skill-check** paths are wired (see above). `module/action-dice-tracker.mjs`
-exposes the reusable spend surface — `planActionDie(actor, action)`,
-`spendPlannedActionDie(plan)`, `formatActionDiceChatLine(descriptor)`,
-`getCombatantForActor`, `slotRollFormula` — built on the lib's
-`nextActionDie(slots, state, action)`. The skill-check slice is the worked
-reference: `rolls-skill-mixin.mjs` `_rollSkillCheckViaAdapter` plans before the
-formula pass, defaults `definition.roll.die` to the chosen extra slot, spends
-after the roll, and threads `actionDiceChatLine` into `renderSkillCheck` (which
-appends a `.dcc-action-dice-line` div). The next slice repeats that on the
-**spell** (`action: 'spell'`) and **ability-check** (`action: 'check'`) roll
-paths:
+**First steps for a fresh session (Phase 3 continued):** the weapon-attack,
+**skill-check**, and **ability-check** paths are wired (see above).
+`module/action-dice-tracker.mjs` exposes the reusable spend surface —
+`planActionDie(actor, action)`, `spendPlannedActionDie(plan)`,
+`formatActionDiceChatLine(descriptor)`, `getCombatantForActor`,
+`slotRollFormula` — built on the lib's `nextActionDie(slots, state, action)`.
+The skill/ability slices are the worked reference: plan before the formula pass,
+default the die to the chosen extra slot (skill via `definition.roll.die`;
+ability via `libRollCheck({ ability, die })`), spend after a non-cancelled roll,
+and thread `actionDiceChatLine` into the renderer (which appends a
+`.dcc-action-dice-line` div). The next slice repeats that on the **spell**
+(`action: 'spell'`) roll path:
 - **Spell** (`rolls-spell-mixin.mjs`): plan in `_rollSpellCheckDispatch`; the
   die override rides the **existing** `options.actionDieOverride` hook the
   adapter already threads for the modifier dialog (`_castNakedViaAdapter`,
@@ -191,20 +217,14 @@ paths:
   roll evaluates; pass the line to `renderSpellCheck` (add the optional param the
   same way `renderSkillCheck` got it). Mind that a shown dialog's `actionDie`
   should win over the action-dice default.
-- **Ability check** (`rolls-check-mixin.mjs`): `_rollAbilityCheckViaAdapter`
-  calls `libRollAbilityCheck(abilityId, …)`, whose die defaults to `d20`; to
-  override, switch to the inline-config form `libRollCheck({ ability: abilityId,
-  die: slot.die }, …)` for the extra-die case (the dialog branch already builds a
-  `definition.roll.die`, so override there directly). Spend + line, pass to
-  `renderAbilityCheck`. Saves / initiative / hit-dice are **not** action-die
-  actions — leave them.
 
-Also fold in the skill-table / disapproval-range branch (`_skillTableViaAdapter`)
-and the description-only branch if a spend there is wanted. Then close out the
-**D2 per-die rider** (apply `slot.modifier` via the lib's `actionDieRollTerms` +
-suppress the generic attack bonus; add the §10 regression test). Keep every new
-branch behind the master gate — `planActionDie` already returns `null` off-path,
-so a missing plan is the byte-identical incumbent.
+Also fold in the skill-table / disapproval-range branch (`_skillTableViaAdapter`),
+the description-only branch, and roll-under Luck checks if a spend there is
+wanted. Then close out the **D2 per-die rider** (apply `slot.modifier` via the
+lib's `actionDieRollTerms` + suppress the generic attack bonus; add the §10
+regression test). Keep every new branch behind the master gate — `planActionDie`
+already returns `null` off-path, so a missing plan is the byte-identical
+incumbent.
 
 ## TL;DR — recommendation
 
@@ -662,8 +682,10 @@ yet beyond the Phase-1 surface below).
    `formatActionDiceChatLine`), integrated in `rolls-weapon-mixin.mjs`, chat line
    in `chat-card-attack-result.html`. **Skill-check path ✅ DONE (2026-06-27)** —
    same pattern in `rolls-skill-mixin.mjs` `_rollSkillCheckViaAdapter`, chat line
-   via `renderSkillCheck`'s new `actionDiceChatLine` param. **Remaining:** the
-   spell / ability-check paths, the skill-table sub-branch, and the D2 per-die
+   via `renderSkillCheck`'s new `actionDiceChatLine` param. **Ability-check path
+   ✅ DONE (2026-06-27)** — `rolls-check-mixin.mjs` non-dialog + dialog branches,
+   chat line via `renderAbilityCheck`'s new param (roll-under Luck deferred).
+   **Remaining:** the spell path, the skill-table sub-branch, and the D2 per-die
    rider (see §0 limitations).
 4. **Phase 4 — soft spells-only filtering.** Filter presets by `use` tag; warn
    (don't block) when no compatible die remains.

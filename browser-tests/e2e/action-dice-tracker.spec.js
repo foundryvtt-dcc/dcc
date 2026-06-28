@@ -287,4 +287,77 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsAction2).toBe(true)
     expect(result.lastMentionsD16).toBe(true)
   })
+
+  // Phase 3 (continued): the ability-check roll path spends an action die and
+  // surfaces the "Action N of M" line. Drives the real `rollAbilityCheck`
+  // dispatcher: a 2-die actor in combat rolls a Strength check twice — the
+  // first action spends slot 0 (d20), the second spends slot 1 (d16) and the
+  // emitted chat card carries the localized action-dice line.
+  test('ability-check rolls spend the per-round budget and emit the action line', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      const createdMessageIds = []
+      try {
+        actor = await Actor.create({
+          name: 'P3 AbilityCheck Spend Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16' } }
+        })
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate() // planActionDie reads game.combat (the active one)
+        const combatant = combat.combatants.contents[0]
+
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+
+        // Action 1 → slot 0 (d20).
+        await actor.rollAbilityCheck('str')
+        const flag1 = combatant.getFlag('dcc', 'actionDice')
+
+        // Action 2 → slot 1 (d16).
+        await actor.rollAbilityCheck('str')
+        const flag2 = combatant.getFlag('dcc', 'actionDice')
+
+        const actorMsgs = game.messages.contents.filter(m => m.speaker?.actor === actor.id)
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+        const lastContent = actorMsgs[actorMsgs.length - 1]?.content || ''
+        const firstContent = actorMsgs[0]?.content || ''
+
+        return {
+          flag1Spent: flag1?.spent,
+          flag2Spent: flag2?.spent,
+          firstHasLine: firstContent.includes('dcc-action-dice-line'),
+          lastHasLine: lastContent.includes('dcc-action-dice-line'),
+          lastMentionsAction2: lastContent.includes('2 of 2'),
+          lastMentionsD16: lastContent.includes('1d16')
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // The per-round budget advances one slot per ability check.
+    expect(result.flag1Spent).toEqual([true, false])
+    expect(result.flag2Spent).toEqual([true, true])
+
+    // Both emitted cards carry the action-dice line; the second names the
+    // smaller die and "Action 2 of 2".
+    expect(result.firstHasLine).toBe(true)
+    expect(result.lastHasLine).toBe(true)
+    expect(result.lastMentionsAction2).toBe(true)
+    expect(result.lastMentionsD16).toBe(true)
+  })
 })
