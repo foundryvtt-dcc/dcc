@@ -135,7 +135,8 @@ actor has multiple dice.
   is wired. The skill-table / disapproval-range branch (`_skillTableViaAdapter`
   — Turn Unholy, cleric Lay on Hands) and the description-only branch do not yet
   spend; those special abilities are rarely the round's "second action die," so
-  they are deferred with the spell / ability-check paths below.
+  they remain an optional sub-branch (the spell + ability-check paths landed in
+  later slices — see their DONE sections below).
 - Covered by new `action-dice-tracker.test.js` `'check'`-action eligibility
   cases and a live `action-dice-tracker.spec.js` probe driving `rollSkillCheck`
   twice (slot 0 d20 → slot 1 d16) and asserting the per-round flag advance + the
