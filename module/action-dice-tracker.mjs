@@ -224,9 +224,21 @@ export function getCombatantForActor (actor) {
   return null
 }
 
-/** The roll formula (e.g. `"1d14"`) for a planned slot. */
+/**
+ * The roll formula for a planned slot, including its own per-die rider when it
+ * carries one — `"1d14"`, or `"1d20+4"` for a slot with `modifier: 4` (the D2
+ * `1d20+4` case). The rider rides slot 0 in practice (the high-level
+ * `1d20+4, 1d20, 1d16` line), and slot 0 is never the weapon-path die override,
+ * so the modifier surfaces in the "Action N of M" chat line — matching the die
+ * the incumbent path actually rolls from `attributes.actionDice.value` — rather
+ * than being silently dropped. Extra slots carry no rider in real data, so this
+ * is a pure display improvement there.
+ */
 export function slotRollFormula (slot) {
-  return slot?.die ? `1${slot.die}` : ''
+  if (!slot?.die) return ''
+  const mod = Number(slot.modifier) || 0
+  if (!mod) return `1${slot.die}`
+  return `1${slot.die}${mod > 0 ? '+' : ''}${mod}`
 }
 
 /**

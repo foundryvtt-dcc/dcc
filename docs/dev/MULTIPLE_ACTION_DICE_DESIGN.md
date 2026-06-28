@@ -12,9 +12,12 @@
 > (same auto-spend pattern via the `_roll*`/`_cast*` dispatchers +
 > `renderSkillCheck` / `renderAbilityCheck` / `renderSpellCheck`) implemented
 > 2026-06-27 — every primary roll path (attack / skill / ability / spell) now
-> spends an action die and shows "Action N of M".
-> **Next: Phase 3 cleanup — D2 per-die rider (+ the skill-table / roll-under
-> sub-branches if wanted) — then Phase 4 (soft spells-only filtering).**
+> spends an action die and shows "Action N of M". D2 per-die rider closed for the
+> realistic `1d20+4` case (rider rides slot 0, shown in the chat line, no leak)
+> 2026-06-27.
+> **Next: Phase 4 (soft spells-only filtering); optional — the skill-table /
+> roll-under sub-branch spends + the homebrew extra-slot-rider suppression
+> sliver.**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -190,21 +193,35 @@ actor has multiple dice.
   `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) and description-only
   branch don't spend; those special abilities are rarely the round's "second
   action die." Fold them in if wanted.
-- **D2 per-die rider not applied.** An extra slot's `modifier` (the `1d20+4`
-  rider) is not yet added to the roll / reconciled against the attack bonus;
-  `slotRollFormula` emits only `1dN`. Riders sit on slot 0 in practice (which
-  is never overridden), so the common cases are correct, but the §10 D2
-  regression test is still owed.
+- **D2 per-die rider — realistic case closed; extra-slot riders are a sliver.**
+  The high-level `1d20+4, 1d20, 1d16` line is handled: the derivation captures
+  the `+4` on slot 0 only (`deriveActionDiceList` → `modifier: [4, 0, 0]`), the
+  incumbent first attack already rolls `1d20+4` because
+  `actor-level-change.js` writes the first die *with its rider* into
+  `attributes.actionDice.value` (and `item.js` derives the weapon's `actionDie`
+  from it), and `slotRollFormula` now carries the modifier so the "Action 1 of 3"
+  chat line reads `1d20+4` — matching the rolled die — while the extra slots stay
+  bare (`1d20` / `1d16`). The `+4` therefore rides slot 0 once and never leaks
+  onto actions 2–3, the §10 no-double-count guard, now locked by unit
+  (`slotRollFormula` + rider cases) and e2e (`a 1d20+4 line rides the +4 on the
+  first action only`) tests. **Residual sliver:** a *homebrew* extra slot that
+  carries its own rider (e.g. `1d20, 1d16+2`) would roll the rider via the
+  override formula but **not** suppress the generic attack bonus per the lib's
+  `actionDieRollTerms(slot).suppressAttackBonus` — real data never authors this
+  (riders attach to slot 0), and the Foundry weapon path fuses the attack bonus
+  into `toHit`, so the clean suppression needs the attack-bonus term separated
+  first; deferred until a real consumer needs it.
 - **Player-client spends rely on combatant-update permission.** The write goes
   direct (`combatant.setFlag`), which a player may lack permission for; the
   failure is swallowed (so no error) but the pip won't move and the player's
   "N of M" stays at 1. The GM-run-monsters headline (Sim 2) works. Routing the
   spend through a GM socket is a future hardening.
 
-**What is NOT started (system layer):** Phase 3 cleanup — the
-skill-table/description sub-branches + roll-under Luck + D2 rider (above) —
-and Phase 4 (soft spells-only filtering). See §9. The four primary roll paths
-(attack / skill / ability / spell) are all wired.
+**What is NOT started (system layer):** Phase 4 (soft spells-only filtering),
+and the optional cleanup — the skill-table/description sub-branch + roll-under
+Luck spends + the homebrew extra-slot-rider suppression sliver (above). See §9.
+The four primary roll paths (attack / skill / ability / spell) are all wired and
+the realistic D2 `1d20+4` rider is closed.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -223,22 +240,25 @@ The worked pattern in every path: plan before the formula pass, default the die
 to the chosen extra slot (skill via `definition.roll.die`; ability via
 `libRollCheck({ ability, die })`; spell via `options.actionDieOverride`), spend
 after a non-cancelled roll, and thread `actionDiceChatLine` into the renderer
-(which appends a `.dcc-action-dice-line` div). What remains:
+(which appends a `.dcc-action-dice-line` div). The **D2 per-die rider** realistic
+case is also closed: `slotRollFormula` now carries `slot.modifier`, the
+derivation pins the rider to slot 0, and the incumbent first attack already rolls
+`1d20+4` from `attributes.actionDice.value` — so the chat line matches the rolled
+die and the `+4` never leaks onto actions 2–3 (locked by unit + e2e). What
+remains:
 
-- **D2 per-die rider** (the headline cleanup). `slotRollFormula` emits only
-  `1dN`, dropping any `slot.modifier`. Apply `slot.modifier` via the lib's
-  `actionDieRollTerms(slot)` → `{ die, modifier, suppressAttackBonus }`, and
-  suppress the generic attack bonus for that slot, in the weapon path. **Note the
-  trap (see §5 / §10):** the incumbent `getActionDice` does
-  `config.actionDice.replaceAll('+', ',')`, mangling a `1d20+4` rider into a
-  bogus separate `,4` preset, and slot 0 is never overridden — so to make a
-  `1d20+4` first action actually roll `1d20+4` (attack bonus suppressed) you must
-  extend the override gate to `index > 0 || slot.modifier !== 0`. Add the §10
-  regression test in both setting states.
+- **Phase 4 — soft spells-only filtering.** Filter the roll-dialog presets by the
+  slot's `use` tag and warn (don't block) when no compatible die remains (D1).
 - **Optional sub-branches.** Fold the spend into the skill mixin's
   `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) + description-only
   branch, and the check mixin's roll-under Luck branch, if a spend there is
   wanted (each has a rules nuance — roll-under odds change with die size).
+- **Homebrew extra-slot-rider suppression (sliver).** A homebrew `1d20, 1d16+2`
+  would roll its rider via the override but not suppress the generic attack bonus
+  per `actionDieRollTerms(slot).suppressAttackBonus`. Real data never authors a
+  rider on an extra slot (riders attach to slot 0), and the Foundry weapon path
+  fuses the attack bonus into `toHit`, so the clean suppression needs the
+  attack-bonus term separated first. Defer until a real consumer needs it.
 
 Keep every new branch behind the master gate — `planActionDie` already returns
 `null` off-path, so a missing plan is the byte-identical incumbent.
@@ -706,8 +726,10 @@ yet beyond the Phase-1 surface below).
    plan + all three cast branches spend via `_spendActionDiceLine`, die default
    via the existing `actionDieOverride` hook, chat line via `renderSpellCheck`'s
    new param; a wizard's spells-only die is correctly offered for a cast.
-   **Remaining:** the D2 per-die rider + optional skill-table / roll-under
-   sub-branches (see §0 limitations).
+   **D2 per-die rider ✅ DONE (realistic case, 2026-06-27)** — `slotRollFormula`
+   carries the rider, the `1d20+4` line shows it on action 1 only, no leak (see
+   §0). **Remaining:** the optional skill-table / roll-under sub-branch spends +
+   the homebrew extra-slot-rider suppression sliver (see §0 limitations).
 4. **Phase 4 — soft spells-only filtering.** Filter presets by `use` tag; warn
    (don't block) when no compatible die remains.
 
@@ -757,6 +779,21 @@ avoid **double-counting**:
   attack-bonus / ability-modifier logic exactly as today.
 - This needs a focused regression test: a `1d20+4, 1d20, 1d16` actor must roll
   `+4` on the first action and the actor's normal bonus on the second and third.
+
+> **Implementation note (2026-06-27).** The realistic case is handled without a
+> bespoke suppression: `actor-level-change.js` already writes the first die *with
+> its rider* into `attributes.actionDice.value` (`"1d20+4"`), so the incumbent
+> first attack rolls `1d20+4` once — the `+4` is *not* a separate stacked term, so
+> there is nothing to double-count. The derivation pins the rider to slot 0
+> (`modifier: [4, 0, 0]`), the weapon path only ever overrides extra slots (which
+> carry no rider in real data), and `slotRollFormula` now surfaces the rider in the
+> "Action N of M" chat line so it matches the rolled die. The regression test is
+> the unit `slotRollFormula` rider cases + the e2e `a 1d20+4 line rides the +4 on
+> the first action only` probe (`['1d20+4', '1d20', '1d16']`). The lib's
+> `actionDieRollTerms(slot).suppressAttackBonus` is only needed for a *homebrew*
+> rider on an extra slot (`1d20, 1d16+2`), which real data never authors and the
+> Foundry `toHit` (attack bonus fused with ability mods) can't cleanly suppress —
+> deferred until a consumer needs it.
 
 Carried-over confirmations (no real fork, just things to verify during build):
 

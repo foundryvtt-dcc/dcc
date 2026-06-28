@@ -259,7 +259,26 @@ describe('getCombatantForActor', () => {
 describe('slotRollFormula', () => {
   test('prefixes the bare die with a count of 1', () => {
     expect(slotRollFormula({ die: 'd14' })).toBe('1d14')
+    expect(slotRollFormula({ die: 'd16', modifier: 0 })).toBe('1d16')
     expect(slotRollFormula(undefined)).toBe('')
+  })
+
+  test('appends a non-zero per-die rider (D2 1d20+4)', () => {
+    expect(slotRollFormula({ die: 'd20', modifier: 4 })).toBe('1d20+4')
+    expect(slotRollFormula({ die: 'd16', modifier: -1 })).toBe('1d16-1')
+  })
+
+  // D2 (§10): the `1d20+4, 1d20, 1d16` line keeps its rider on slot 0 only, so
+  // the +4 is shown once (on the first action, matching the die the incumbent
+  // path rolls from `attributes.actionDice.value`) and never leaks onto the
+  // extra dice — the guard against double-counting the attack bonus.
+  test('a 1d20+4 line rides the +4 on slot 0 and leaves the extras bare', () => {
+    const list = [
+      { slot: 0, die: 'd20', modifier: 4, use: 'any' },
+      { slot: 1, die: 'd20', modifier: 0, use: 'any' },
+      { slot: 2, die: 'd16', modifier: 0, use: 'any' }
+    ]
+    expect(list.map(slotRollFormula)).toEqual(['1d20+4', '1d20', '1d16'])
   })
 })
 

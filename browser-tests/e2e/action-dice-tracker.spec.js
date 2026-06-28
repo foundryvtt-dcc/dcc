@@ -361,6 +361,60 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsD16).toBe(true)
   })
 
+  // Phase 3 / D2 (§10): the high-level `1d20+4, 1d20, 1d16` line keeps its +4
+  // rider on slot 0 only. The action-die chat line names `1d20+4` for the first
+  // action (matching the die the incumbent path rolls from
+  // `attributes.actionDice.value`) and bare smaller dice for the next two — the
+  // +4 never leaks onto the extra dice, the guard against double-counting the
+  // attack bonus. Walked deterministically via plan/spend (no random rolls).
+  test('a 1d20+4 line rides the +4 on the first action only', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/action-dice-tracker.mjs')
+
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      try {
+        // config carries the full line; value carries the first die WITH its
+        // rider (what actor-level-change.js writes for a real high-level actor).
+        actor = await Actor.create({
+          name: 'P3 D2 Rider Probe',
+          type: 'Player',
+          system: {
+            config: { actionDice: '1d20+4,1d20,1d16' },
+            attributes: { actionDice: { value: '1d20+4' } }
+          }
+        })
+        const derivedModifiers = (actor.system.attributes.actionDice.list || []).map(s => s.modifier)
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+
+        const dice = []
+        for (let i = 0; i < 3; i++) {
+          const plan = mod.planActionDie(actor, 'attack')
+          const desc = await mod.spendPlannedActionDie(plan)
+          dice.push(desc.die)
+        }
+        return { derivedModifiers, dice }
+      } finally {
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // The rider is captured on slot 0 only by the derivation.
+    expect(result.derivedModifiers).toEqual([4, 0, 0])
+
+    // The chat-line die names the rider once (action 1) and bare extras after —
+    // no +4 leak onto the second or third action.
+    expect(result.dice).toEqual(['1d20+4', '1d20', '1d16'])
+  })
+
   // Phase 3 (continued): the spell-check roll path spends an action die and
   // surfaces the "Action N of M" line. Drives the real `rollSpellCheck`
   // dispatcher with a generic-castingMode spell (the side-effect-free
