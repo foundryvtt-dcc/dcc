@@ -543,6 +543,10 @@ export async function renderSkillCheck ({
  * @param {Object} params.result - The lib's SpellCheckResult
  *   (see dcc-core-lib/types/spells.d.ts).
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
+ *   not in combat) ⇒ byte-identical content; when present it rides under
+ *   the rolled formula + breakdown + naked-cast verdict.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSpellCheck ({
@@ -550,7 +554,8 @@ export async function renderSpellCheck ({
   spellItem,
   flavor,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flags = {
     'dcc.RollType': 'SpellCheck',
@@ -596,9 +601,12 @@ export async function renderSpellCheck ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  if (breakdownHtml || nakedHtml) {
+  const actionDiceHtml = actionDiceChatLine
+    ? `<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
+    : ''
+  if (breakdownHtml || nakedHtml || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}`
+    toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}${actionDiceHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })
