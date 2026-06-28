@@ -68,6 +68,8 @@
   "DCC.ActionDieUseAttack": "attaques uniquement",
   "DCC.ActionDiceChatLine": "Action {n} sur {m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "Action {n} sur {m} — dépassement",
+  "DCC.ActionDiceChatLineNoEligibleDie": "Action {n} sur {m} — aucun dé d'action éligible",
+  "DCC.ActionDiceNoEligibleWarning": "Aucun dé d'action disponible pour {action} ({dice} réservé à d'autres usages)",
   "DCC.ActionDie": "Dé(s) action",
   "DCC.ActionSave": "Jet de sauvegarde",
   "DCC.ActorImport": "Importer acteur(s)",

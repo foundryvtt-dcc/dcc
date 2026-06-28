@@ -23,7 +23,7 @@
  * wiring, DOM injection) live here.
  */
 
-import { resetActionDice, isActionDiceStateCurrent, spendActionDie, nextActionDie } from './vendor/dcc-core-lib/index.js'
+import { resetActionDice, isActionDiceStateCurrent, spendActionDie, nextActionDie, actionMatchesUse } from './vendor/dcc-core-lib/index.js'
 import { actionDieLabel } from './handlebars-helpers.mjs'
 
 const FLAG_SCOPE = 'dcc'
@@ -267,7 +267,15 @@ export function planActionDie (actor, action) {
     : resetActionDice(slots, round)
   const choice = nextActionDie(slots, state, action)
   const spentCount = (state.spent || []).filter(Boolean).length
-  return { combatant, round, choice, count: slots.length, spentCount }
+  // The dice that are still unspent but cannot take `action` because their
+  // `use` tag restricts them (a wizard's spells-only die for a weapon attack —
+  // Sim 3 / D1). When `choice` is null and this is non-empty, the actor is not
+  // over budget — it has dice left, just none eligible — so the soft filter
+  // warns rather than reading "over budget".
+  const restrictedUnspentDice = slots
+    .filter((slot, i) => !((state.spent || [])[i] ?? false) && !actionMatchesUse(slot.use, action))
+    .map(slot => slotRollFormula(slot))
+  return { combatant, round, choice, count: slots.length, spentCount, restrictedUnspentDice }
 }
 
 /**
@@ -280,7 +288,7 @@ export function planActionDie (actor, action) {
  */
 export async function spendPlannedActionDie (plan) {
   if (!plan) return null
-  const { combatant, round, choice, count, spentCount } = plan
+  const { combatant, round, choice, count, spentCount, restrictedUnspentDice = [] } = plan
   if (choice) {
     await spendCombatantActionDie(combatant, choice.index, round)
   }
@@ -288,6 +296,10 @@ export async function spendPlannedActionDie (plan) {
     actionNumber: spentCount + 1,
     count,
     overBudget: !choice,
+    // No eligible die *despite* having dice left: the remaining unspent dice are
+    // restricted to other uses (Sim 3 / D1). Distinct from plain over-budget so
+    // the chat line and the soft-filter warning read correctly.
+    noEligibleDie: !choice && restrictedUnspentDice.length > 0,
     die: choice ? slotRollFormula(choice.slot) : ''
   }
 }
@@ -300,11 +312,48 @@ export async function spendPlannedActionDie (plan) {
  */
 export function formatActionDiceChatLine (descriptor) {
   if (!descriptor) return ''
-  const { actionNumber, count, overBudget, die } = descriptor
+  const { actionNumber, count, overBudget, noEligibleDie, die } = descriptor
   if (overBudget) {
+    if (noEligibleDie) {
+      return game.i18n.format('DCC.ActionDiceChatLineNoEligibleDie', { n: actionNumber, m: count })
+    }
     return game.i18n.format('DCC.ActionDiceChatLineOverBudget', { n: actionNumber, m: count })
   }
   return game.i18n.format('DCC.ActionDiceChatLine', { n: actionNumber, m: count, die })
+}
+
+/**
+ * The localized i18n key for an action type, used to name the action in the
+ * soft-filter warning ("No action die available for an attack …").
+ * @param {string} action - `'attack'` / `'spell'` / `'check'`
+ * @returns {string}
+ */
+function actionLabelKey (action) {
+  return {
+    attack: 'DCC.Attack',
+    spell: 'DCC.SpellCheck',
+    check: 'DCC.Check'
+  }[action] || 'DCC.Check'
+}
+
+/**
+ * The soft spells-only warning (D1) for a plan whose only remaining dice are
+ * restricted to other uses — e.g. a wizard attacking when just the spells-only
+ * die is left. Returns the localized string, or `null` when the plan has an
+ * eligible die (or is off-path / over budget with nothing left). The roll path
+ * surfaces this via `ui.notifications.warn` but never blocks the roll (the soft
+ * filter trusts the judge; D1a).
+ * @param {object|null} plan - from {@link planActionDie}
+ * @param {string} action
+ * @returns {string|null}
+ */
+export function noEligibleActionDieWarning (plan, action) {
+  const restricted = plan?.restrictedUnspentDice
+  if (!plan || plan.choice || !restricted || restricted.length === 0) return null
+  return game.i18n.format('DCC.ActionDiceNoEligibleWarning', {
+    action: game.i18n.localize(actionLabelKey(action)),
+    dice: restricted.join(', ')
+  })
 }
 
 // --- Hook handlers ------------------------------------------------------

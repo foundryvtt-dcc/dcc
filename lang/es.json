@@ -81,6 +81,8 @@
   "DCC.ActionDieUseAttack": "solo ataques",
   "DCC.ActionDiceChatLine": "Acción {n} de {m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "Acción {n} de {m} — sin dados disponibles",
+  "DCC.ActionDiceChatLineNoEligibleDie": "Acción {n} de {m} — sin dado de acción válido",
+  "DCC.ActionDiceNoEligibleWarning": "No hay dado de acción disponible para {action} ({dice} restringido a otros usos)",
   "DCC.ActionSave": "Guardar",
   "DCC.ActionDie": "D.Acción",
   "DCC.ActorImport": "Importar Actor(es)",

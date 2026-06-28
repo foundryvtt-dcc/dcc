@@ -22,7 +22,8 @@ import {
   slotRollFormula,
   planActionDie,
   spendPlannedActionDie,
-  formatActionDiceChatLine
+  formatActionDiceChatLine,
+  noEligibleActionDieWarning
 } from '../action-dice-tracker.mjs'
 
 // A controllable game stub. settings is a Map keyed "module.key"; i18n echoes.
@@ -336,6 +337,16 @@ describe('planActionDie', () => {
     setCombat(makeCombatant(slots(2, { 1: 'spell' }), { round: 5, spent: [true, false] }, 'hero'), 5)
     const plan = planActionDie({ id: 'hero' }, 'attack')
     expect(plan.choice).toBeNull() // only the spells-only die is left
+    // …and the soft filter records the unspent-but-restricted die (D1).
+    expect(plan.restrictedUnspentDice).toEqual(['1d16'])
+  })
+
+  test('over budget (all spent) records no restricted dice', () => {
+    set('multipleActionDice', true)
+    setCombat(makeCombatant(slots(2, { 1: 'spell' }), { round: 5, spent: [true, true] }, 'hero'), 5)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    expect(plan.choice).toBeNull()
+    expect(plan.restrictedUnspentDice).toEqual([]) // nothing left at all ⇒ over budget, not "no eligible die"
   })
 
   test("a 'check' action spends the next unrestricted die (skill-check path)", () => {
@@ -366,7 +377,7 @@ describe('spendPlannedActionDie', () => {
     const plan = planActionDie({ id: 'hero' }, 'attack')
     const descriptor = await spendPlannedActionDie(plan)
     expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 5, spent: [true, true] })
-    expect(descriptor).toEqual({ actionNumber: 2, count: 2, overBudget: false, die: '1d16' })
+    expect(descriptor).toEqual({ actionNumber: 2, count: 2, overBudget: false, noEligibleDie: false, die: '1d16' })
   })
 
   test('over budget writes nothing and flags the descriptor', async () => {
@@ -376,7 +387,17 @@ describe('spendPlannedActionDie', () => {
     const plan = planActionDie({ id: 'hero' }, 'attack')
     const descriptor = await spendPlannedActionDie(plan)
     expect(c.setFlag).not.toHaveBeenCalled()
-    expect(descriptor).toEqual({ actionNumber: 3, count: 2, overBudget: true, die: '' })
+    expect(descriptor).toEqual({ actionNumber: 3, count: 2, overBudget: true, noEligibleDie: false, die: '' })
+  })
+
+  test('no eligible die (spells-only left) flags noEligibleDie, not plain over budget', async () => {
+    const c = makeCombatant(slots(2, { 1: 'spell' }), { round: 5, spent: [true, false] }, 'hero')
+    setCombat(c, 5)
+    set('multipleActionDice', true)
+    const plan = planActionDie({ id: 'hero' }, 'attack')
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).not.toHaveBeenCalled() // nothing spent — no eligible die
+    expect(descriptor).toEqual({ actionNumber: 2, count: 2, overBudget: true, noEligibleDie: true, die: '' })
   })
 })
 
@@ -397,5 +418,25 @@ describe('formatActionDiceChatLine', () => {
   test('over-budget line uses the over-budget key', () => {
     expect(formatActionDiceChatLine({ actionNumber: 3, count: 2, overBudget: true, die: '' }))
       .toBe('DCC.ActionDiceChatLineOverBudget|{"n":3,"m":2}')
+  })
+
+  test('no-eligible-die line uses its own key, not over-budget', () => {
+    expect(formatActionDiceChatLine({ actionNumber: 2, count: 2, overBudget: true, noEligibleDie: true, die: '' }))
+      .toBe('DCC.ActionDiceChatLineNoEligibleDie|{"n":2,"m":2}')
+  })
+})
+
+describe('noEligibleActionDieWarning', () => {
+  test('null when there is an eligible die, no plan, or nothing restricted left', () => {
+    expect(noEligibleActionDieWarning(null, 'attack')).toBeNull()
+    expect(noEligibleActionDieWarning({ choice: { index: 0 }, restrictedUnspentDice: ['1d16'] }, 'attack')).toBeNull()
+    expect(noEligibleActionDieWarning({ choice: null, restrictedUnspentDice: [] }, 'attack')).toBeNull()
+  })
+
+  test('formats the warning naming the action and the restricted dice', () => {
+    globalThis.game.i18n.format = (k, d) => `${k}|${d.action}|${d.dice}`
+    const warning = noEligibleActionDieWarning({ choice: null, restrictedUnspentDice: ['1d16'] }, 'attack')
+    // action label localizes via DCC.Attack (echoed by the localize stub)
+    expect(warning).toBe('DCC.ActionDiceNoEligibleWarning|DCC.Attack|1d16')
   })
 })

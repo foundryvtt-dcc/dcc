@@ -17,7 +17,7 @@ import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, par
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
-import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
+import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning } from '../action-dice-tracker.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -92,6 +92,12 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
       options._actionDieFormula = slotRollFormula(actionDicePlan.choice.slot)
     }
+    // Soft spells-only filter (Phase 4 / D1a): if the only action dice left are
+    // restricted to other uses (a wizard's spells-only die can't make a weapon
+    // attack), warn — but never block. The roll proceeds on the default die and
+    // the chat line reads "no eligible action die".
+    const noEligibleWarning = noEligibleActionDieWarning(actionDicePlan, 'attack')
+    if (noEligibleWarning) ui.notifications.warn(noEligibleWarning)
 
     // Attack roll
     options.targets = game.user.targets // Add targets set to options

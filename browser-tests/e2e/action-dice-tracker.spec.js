@@ -192,20 +192,104 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.offPlanNull).toBe(true)
 
     expect(result.choice1).toBe(0)
-    expect(result.desc1).toEqual({ actionNumber: 1, count: 2, overBudget: false, die: '1d20' })
+    expect(result.desc1).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, die: '1d20' })
     expect(result.flag1.spent).toEqual([true, false])
 
     expect(result.choice2).toBe(1)
-    expect(result.desc2).toEqual({ actionNumber: 2, count: 2, overBudget: false, die: '1d16' })
+    expect(result.desc2).toEqual({ actionNumber: 2, count: 2, overBudget: false, noEligibleDie: false, die: '1d16' })
     expect(result.flag2.spent).toEqual([true, true])
 
     expect(result.choice3Null).toBe(true)
-    expect(result.desc3).toEqual({ actionNumber: 3, count: 2, overBudget: true, die: '' })
+    // Both dice 'any' and both spent ⇒ over budget, not "no eligible die".
+    expect(result.desc3).toEqual({ actionNumber: 3, count: 2, overBudget: true, noEligibleDie: false, die: '' })
 
     // The chat line localizes (real i18n, not the key) and names the die.
     expect(result.line1).toContain('1d20')
     expect(result.line1).not.toContain('ActionDiceChatLine')
     expect(result.line3).not.toContain('ActionDiceChatLineOverBudget')
+  })
+
+  // Phase 4 (soft spells-only filtering / D1): a wizard's second die is
+  // spells-only (authored `1d16*spell`), so once the first die is spent a
+  // weapon attack finds no eligible die. The plan records the restricted die,
+  // the chat line reads "no eligible action die" (not "over budget"), and the
+  // soft-filter warning names the action + die — but the roll is never blocked.
+  test('a spells-only die is not offered for a weapon attack — warn, not block', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/action-dice-tracker.mjs')
+
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      try {
+        // Explicit `*spell` tag ⇒ slot 1 is spells-only regardless of class.
+        actor = await Actor.create({
+          name: 'P4 SpellsOnly Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16*spell' } }
+        })
+        const uses = (actor.system.attributes.actionDice.list || []).map(s => s.use)
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+
+        // Fresh round: the first eligible die for either action is slot 0 (the
+        // unrestricted 'any' die comes first — 'any' matches everything).
+        const freshSpellChoice = mod.planActionDie(actor, 'spell').choice?.index ?? null
+
+        // Attack action 1 → slot 0 (the 'any' die). Spend it.
+        const atkPlan1 = mod.planActionDie(actor, 'attack')
+        await mod.spendPlannedActionDie(atkPlan1)
+
+        // With slot 0 spent: the spells-only die is now the next die — eligible
+        // for a spell (index 1) but NOT for a weapon attack (no eligible die).
+        const spellAfterSpend = mod.planActionDie(actor, 'spell').choice?.index ?? null
+        const atkPlan2 = mod.planActionDie(actor, 'attack')
+        const desc2 = await mod.spendPlannedActionDie(atkPlan2)
+        const warning = mod.noEligibleActionDieWarning(atkPlan2, 'attack')
+        const line2 = mod.formatActionDiceChatLine(desc2)
+
+        return {
+          uses,
+          freshSpellChoice,
+          atk1ChoiceIndex: atkPlan1.choice?.index ?? null,
+          spellAfterSpend,
+          atk2ChoiceNull: atkPlan2.choice === null,
+          atk2Restricted: atkPlan2.restrictedUnspentDice,
+          desc2,
+          warning,
+          line2
+        }
+      } finally {
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // Slot 1 is spells-only; slot 0 is unrestricted.
+    expect(result.uses).toEqual(['any', 'spell'])
+
+    // On a fresh round both actions take slot 0 (the unrestricted die first).
+    expect(result.freshSpellChoice).toBe(0)
+    expect(result.atk1ChoiceIndex).toBe(0)
+
+    // After slot 0 is spent, the spells-only die serves a spell (index 1) but
+    // not a weapon attack — which finds no eligible die (not "over budget":
+    // the spells-only die is unspent, just ineligible).
+    expect(result.spellAfterSpend).toBe(1)
+    expect(result.atk2ChoiceNull).toBe(true)
+    expect(result.atk2Restricted).toEqual(['1d16'])
+    expect(result.desc2.noEligibleDie).toBe(true)
+
+    // The warning localizes (real i18n) and names the restricted die; the chat
+    // line uses the no-eligible-die wording, not over-budget.
+    expect(result.warning).toContain('1d16')
+    expect(result.warning).not.toContain('ActionDiceNoEligibleWarning')
+    expect(result.line2).toContain('no eligible')
   })
 
   // Phase 3 (continued): the skill-check roll path spends an action die and
