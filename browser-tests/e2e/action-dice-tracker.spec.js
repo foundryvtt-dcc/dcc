@@ -292,6 +292,57 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.line2).toContain('no eligible')
   })
 
+  // Phase 4 (preset filtering / Sim 3 step 2): the roll-modifier dialog's
+  // action-die presets are filtered by the slot's use tag, so a weapon attack
+  // never offers a spells-only die. Exercises the live `getActionDice` against a
+  // real derived `actionDice.list` (built because the master setting is on).
+  test('getActionDice filters the spells-only preset for an attack, not a spell', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+
+      let actor
+      try {
+        // Master OFF first: no derived list ⇒ forAction is a no-op (off-path).
+        await game.settings.set('dcc', 'multipleActionDice', false)
+        actor = await Actor.create({
+          name: 'P4 Preset Filter Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16*spell' } }
+        })
+        const offFormulas = actor.getActionDice({ includeUntrained: true, forAction: 'attack' }).map(d => d.formula)
+
+        // Master ON: prepareDerivedData builds the list (slot 1 = spells-only).
+        await game.settings.set('dcc', 'multipleActionDice', true)
+        actor.prepareData()
+        const uses = (actor.system.attributes.actionDice.list || []).map(s => s.use)
+
+        const attackFormulas = actor.getActionDice({ includeUntrained: true, forAction: 'attack' }).map(d => d.formula)
+        const spellFormulas = actor.getActionDice({ includeUntrained: true, forAction: 'spell' }).map(d => d.formula)
+        const unfilteredFormulas = actor.getActionDice({ includeUntrained: true }).map(d => d.formula)
+
+        return { offFormulas, uses, attackFormulas, spellFormulas, unfilteredFormulas }
+      } finally {
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // Off-path: forAction does nothing without a derived list (both dice shown).
+    expect(result.offFormulas.some(f => f.startsWith('1d16'))).toBe(true)
+
+    // On: slot 1 is spells-only.
+    expect(result.uses).toEqual(['any', 'spell'])
+
+    // A weapon attack drops the spells-only die but keeps the d20 + untrained.
+    expect(result.attackFormulas).toContain('1d20')
+    expect(result.attackFormulas).toContain('1d10')
+    expect(result.attackFormulas.some(f => f.startsWith('1d16'))).toBe(false)
+
+    // A spell check keeps the spells-only die; no filter without forAction.
+    expect(result.spellFormulas.some(f => f.startsWith('1d16'))).toBe(true)
+    expect(result.unfilteredFormulas.some(f => f.startsWith('1d16'))).toBe(true)
+  })
+
   // Phase 3 (continued): the skill-check roll path spends an action die and
   // surfaces the "Action N of M" line. Drives the real `rollSkillCheck`
   // dispatcher end-to-end: a 2-die actor in combat rolls a skill twice — the

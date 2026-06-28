@@ -412,7 +412,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // reuse it for all three consumers — `die` (the [0] formula), the
     // action-die term `presets`, and `buildAttackInput` (passed the [0]
     // formula below) — rather than calling it three times.
-    const actionDicePresets = this.getActionDice({ includeUntrained: true })
+    //
+    // `forAction: 'attack'` applies the soft spells-only filter (Phase 4): a
+    // wizard's spells-only die is dropped from the preset list so the dialog
+    // never offers it for an attack. Slot 0 is always unrestricted, so the
+    // `[0].formula` default die is unaffected; off-path (master off / no derived
+    // list) the filter is a no-op and the presets are byte-identical.
+    const actionDicePresets = this.getActionDice({ includeUntrained: true, forAction: 'attack' })
     const actorActionDice = actionDicePresets[0].formula
     // `_actionDieFormula` is the multiple-action-dice next-unspent override
     // (Phase 3), set by `_rollWeaponAttackDispatch` only for an extra die; it

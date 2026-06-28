@@ -707,7 +707,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
         type: 'Die',
         label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        // Soft filter (Phase 4): a spells-only die can't take a skill check.
+        presets: this.getActionDice({ includeUntrained: true, forAction: 'check' })
       })
     }
 

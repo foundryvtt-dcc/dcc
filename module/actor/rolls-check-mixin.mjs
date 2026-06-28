@@ -223,7 +223,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        // Soft filter (Phase 4): a spells-only die can't take an ability check.
+        presets: this.getActionDice({ includeUntrained: true, forAction: 'check' })
       },
       {
         type: 'Modifier',

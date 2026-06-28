@@ -14,11 +14,12 @@
 > 2026-06-27 — every primary roll path (attack / skill / ability / spell) now
 > spends an action die and shows "Action N of M". D2 per-die rider closed for the
 > realistic `1d20+4` case (rider rides slot 0, shown in the chat line, no leak)
-> 2026-06-27. Phase 4 **soft spells-only filtering** (no-eligible-die distinct
-> from over-budget + weapon-path warn, never block — D1a) implemented 2026-06-27.
-> **Next (all optional): roll-dialog preset filtering (Sim 3 step 2), the
-> skill-table / roll-under sub-branch spends, and the homebrew extra-slot-rider
-> suppression sliver.**
+> 2026-06-27. Phase 4 **soft spells-only filtering** — no-eligible-die distinct
+> from over-budget + weapon-path warn (never block, D1a), plus **roll-dialog
+> preset filtering** (the spells-only die isn't offered for an attack, Sim 3
+> step 2) — implemented 2026-06-27.
+> **Next (all optional): the skill-table / roll-under sub-branch spends, and the
+> homebrew extra-slot-rider suppression sliver.**
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -208,19 +209,29 @@ actor has multiple dice.
   (`npm run compare-lang` clean).
 - Covered by new `action-dice-tracker.test.js` cases (`restrictedUnspentDice`,
   `noEligibleDie` descriptor, `noEligibleActionDieWarning`,
-  `formatActionDiceChatLine` no-eligible branch) and a live probe (`a spells-only
-  die is not offered for a weapon attack — warn, not block`): a `1d20,1d16*spell`
-  actor's spell can use the spells-only die once slot 0 is spent, but a second
-  attack finds no eligible die → warning + no-eligible chat line.
+  `formatActionDiceChatLine` no-eligible branch), a `getActionDice` filtering unit
+  test, and two live probes (`a spells-only die is not offered for a weapon attack
+  — warn, not block`: the spells-only die serves a spell once slot 0 is spent but
+  a second attack finds no eligible die; `getActionDice filters the spells-only
+  preset for an attack, not a spell`: the dialog preset list drops the spells-only
+  die for an attack, keeps it for a spell, and is a no-op off-path).
+- **Roll-dialog preset filtering (Sim 3 step 2).** `getActionDice` gained an
+  optional `forAction` (`'attack'` / `'spell'` / `'check'`): when the derived
+  `actionDice.list` exists (master on), it drops presets whose slot's `use` can't
+  take the action — so the roll-modifier dialog never offers a wizard's
+  spells-only die for a weapon attack. Wired at the preset call sites:
+  `rolls-weapon-mixin.rollToHit` (`'attack'`), the ability-check dialog and the
+  skill term-builder (`'check'`); the spell dialog builds no preset list, and a
+  spell check would keep the die anyway. The correlation is best-effort by index
+  and gated on the list's existence (the `getActionDice()[0]` default-die calls
+  pass no `forAction`, so they're untouched); slot 0 is always unrestricted, so
+  the default die is never filtered. Off-path (master off / no list) the preset
+  list is byte-identical. The rider-mangling caveat is moot here: rider actors are
+  unrestricted (all `any`), so nothing is filtered for them regardless of the
+  index drift `replaceAll('+', ',')` causes.
 - **Scope.** The pre-roll warn is wired on the **weapon** path (the canonical
-  Sim 3 case); skill / ability checks already surface the no-eligible chat line
-  post-roll via the shared `formatActionDiceChatLine`. **Roll-dialog preset
-  filtering** (greying / hiding the spells-only preset *in the dialog* — Sim 3
-  step 2) is **not** done here: presets come from `getActionDice` (the
-  comma-string, which `replaceAll('+', ',')` mangles a `1d20+4` rider into a bogus
-  `,4` entry), so correlating presets with the derived list's `use` tags by index
-  is fragile for rider actors. Deferred until the preset source is reconciled with
-  the derived `actionDice.list`.
+  Sim 3 case); skill / ability checks surface the no-eligible chat line post-roll
+  via the shared `formatActionDiceChatLine`, and all dialogs now filter presets.
 
 **Known limitations (carried to the next session):**
 
@@ -253,11 +264,10 @@ actor has multiple dice.
   spend through a GM socket is a future hardening.
 
 **What is NOT started (system layer):** all remaining items are optional polish —
-the roll-dialog preset filtering (Sim 3 step 2; deferred for the preset-source
-fragility above), the skill-table/description sub-branch + roll-under Luck spends,
-and the homebrew extra-slot-rider suppression sliver. See §9. The four primary
-roll paths (attack / skill / ability / spell) are all wired, the realistic D2
-`1d20+4` rider is closed, and Phase 4 soft spells-only warn/filter (D1a) is in.
+the skill-table/description sub-branch + roll-under Luck spends, and the homebrew
+extra-slot-rider suppression sliver. See §9. The four primary roll paths (attack /
+skill / ability / spell) are all wired, the realistic D2 `1d20+4` rider is closed,
+and Phase 4 soft spells-only filtering (warn + dialog preset filter, D1a) is in.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -269,21 +279,15 @@ is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 **First steps for a fresh session (optional polish only):** all four primary roll
 paths — weapon-attack, **skill-check**, **ability-check**, **spell-check** — are
 wired, the realistic **D2** rider is closed, and **Phase 4** soft spells-only
-(no-eligible-die distinction + weapon-path warn) is in (see above).
-`module/action-dice-tracker.mjs` exposes the reusable surface —
+(no-eligible-die distinction + weapon-path warn + dialog preset filtering) is in
+(see above). `module/action-dice-tracker.mjs` exposes the reusable surface —
 `planActionDie(actor, action)` (now also `restrictedUnspentDice`),
 `spendPlannedActionDie(plan)` (now also `noEligibleDie`),
 `formatActionDiceChatLine(descriptor)`, `noEligibleActionDieWarning(plan,
 action)`, `getCombatantForActor`, `slotRollFormula` — built on the lib's
-`nextActionDie` / `actionMatchesUse`. What remains, all optional:
+`nextActionDie` / `actionMatchesUse`; `getActionDice({ forAction })`
+(roll-data-mixin) filters dialog presets by `use`. What remains, all optional:
 
-- **Roll-dialog preset filtering (Sim 3 step 2).** Hide / grey the spells-only
-  preset *inside* the `RollModifierDialog` for an attack. The blocker: presets
-  come from `getActionDice` (the comma-string), which `replaceAll('+', ',')`
-  mangles a `1d20+4` rider into a bogus `,4` entry, so correlating presets with
-  `system.attributes.actionDice.list` by index is unreliable for rider actors.
-  Reconcile the preset source with the derived list first (have `getActionDice`
-  read `actionDice.list` when the master is on), then filter by `use`.
 - **Optional sub-branches.** Fold the spend into the skill mixin's
   `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) + description-only
   branch, and the check mixin's roll-under Luck branch, if a spend there is
@@ -765,13 +769,14 @@ yet beyond the Phase-1 surface below).
    carries the rider, the `1d20+4` line shows it on action 1 only, no leak (see
    §0). **Remaining:** the optional skill-table / roll-under sub-branch spends +
    the homebrew extra-slot-rider suppression sliver (see §0 limitations).
-4. **Phase 4 — soft spells-only filtering. ✅ DONE (warn half, 2026-06-27).**
+4. **Phase 4 — soft spells-only filtering. ✅ DONE (2026-06-27).**
    `planActionDie` distinguishes "no eligible die" (unspent-but-restricted) from
    over-budget; the weapon path warns via `noEligibleActionDieWarning` +
    `ui.notifications.warn` and never blocks (D1a), and the chat line reads
-   `DCC.ActionDiceChatLineNoEligibleDie`. **Remaining (optional):** filtering the
-   spells-only preset *inside* the roll dialog (Sim 3 step 2) — deferred for the
-   preset-source fragility in §0.
+   `DCC.ActionDiceChatLineNoEligibleDie`. The roll-modifier dialog also filters
+   its presets — `getActionDice({ forAction })` drops the spells-only die for an
+   attack / check (Sim 3 step 2) while keeping it for a spell, gated on the
+   derived `actionDice.list` so the off-path is byte-identical.
 
 **Lib layer — DONE (2026-06-26).** The mechanic-correct, lib-owned bits (which die
 a roll *consumes*, restriction semantics, the per-die-rider reconciliation) now
@@ -798,7 +803,7 @@ Four choices gated implementation. All four are now **decided** (cyface,
 
 | # | Decision | Options | Decision | Blocks |
 |---|----------|---------|----------|--------|
-| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **✅ (a) Soft filter** *(= recommended)* — trusts the judge, keeps the escape hatch. **Implemented (warn half) 2026-06-27:** weapon-path `ui.notifications.warn` + no-eligible-die chat line, roll never blocked; in-dialog preset hiding deferred (§0). | Phase 4 |
+| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **✅ (a) Soft filter** *(= recommended)* — trusts the judge, keeps the escape hatch. **Implemented 2026-06-27:** dialog presets filtered by `use` (`getActionDice({ forAction })`) so the spells-only die isn't offered for an attack/check; weapon-path `ui.notifications.warn` + no-eligible-die chat line when none remains; roll never blocked. | Phase 4 |
 | D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **✅ (b) Real per-die rider** *(overrides the recommended default)* — each slot can carry its own modifier; see reconciliation note below | Phase 1 |
 | D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **✅ (a) One pip** *(= recommended)* — matches RAW and the existing TWF model | Phase 3 |
 | D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **✅ (a) Chips only** *(= recommended)* — no natural reset signal exists out of combat | Phase 1–2 |
