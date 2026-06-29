@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml } from '../adapter/chat-renderer.mjs'
+import { actionDiceLineHtml, applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml } from '../adapter/chat-renderer.mjs'
 
 // A representative lib SkillCheckResult-shaped object. Carries every
 // core field the flag projects plus the spell-only extras so the
@@ -231,5 +231,25 @@ describe('applyFleetingLuck', () => {
     // Also safe when game itself has no dcc namespace at all.
     globalThis.game = {}
     expect(() => applyFleetingLuck({ a: 1 }, { total: 5 })).not.toThrow()
+  })
+})
+
+describe('actionDiceLineHtml', () => {
+  test('empty / falsy line renders nothing (the off-path)', () => {
+    expect(actionDiceLineHtml('')).toBe('')
+    expect(actionDiceLineHtml(undefined)).toBe('')
+    expect(actionDiceLineHtml(null)).toBe('')
+  })
+
+  test('wraps a normal line in the shared div', () => {
+    expect(actionDiceLineHtml('Action 2 of 3 · 1d16'))
+      .toBe('<div class="dcc-action-dice-line">Action 2 of 3 · 1d16</div>')
+  })
+
+  test('escapes HTML so the line is never an injection surface', () => {
+    // The line is i18n-built today, but the renderer must escape it to match
+    // the Handlebars-escaped attack-card templates (review M1).
+    expect(actionDiceLineHtml('<img src=x onerror=alert(1)> & "q"'))
+      .toBe('<div class="dcc-action-dice-line">&lt;img src=x onerror=alert(1)&gt; &amp; &quot;q&quot;</div>')
   })
 })

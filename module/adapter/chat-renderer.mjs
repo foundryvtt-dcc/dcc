@@ -87,6 +87,17 @@ function escapeHtml (value) {
 }
 
 /**
+ * The multiple-action-dice "Action N of M" line as an HTML fragment, or `''`
+ * when the line is empty (the off-path). The text is escaped — it is i18n-built
+ * today, but escaping keeps this seam consistent with the Handlebars-escaped
+ * attack-card templates and removes any injection surface if a die label ever
+ * carries markup. Shared by every renderer so the four call sites stay in sync.
+ */
+export function actionDiceLineHtml (line) {
+  return line ? `<div class="dcc-action-dice-line">${escapeHtml(line)}</div>` : ''
+}
+
+/**
  * Format a number as a signed string for the breakdown (`+3`, `-1`,
  * `+0`). Returns `null` for a non-finite input so the caller can skip
  * the row rather than render `+NaN`.
@@ -263,9 +274,7 @@ export async function renderAbilityCheck ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  const actionDiceHtml = actionDiceChatLine
-    ? `<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
-    : ''
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
   // Manual render when a breakdown or the multiple-action-dice line needs to
   // ride under the rolled formula; off-path (neither present) leaves `content`
   // unset so `toMessage` builds the default body byte-identically.
@@ -357,7 +366,7 @@ export async function renderAbilityCheckRollUnder ({
   // `toMessage` builds the default body byte-identically.
   if (actionDiceChatLine) {
     const rollHTML = await foundryRoll.render()
-    toMessageData.content = `${rollHTML}<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
+    toMessageData.content = `${rollHTML}${actionDiceLineHtml(actionDiceChatLine)}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
@@ -510,9 +519,7 @@ export async function renderSkillCheck ({
     systemData.skillDescription = description
   }
 
-  const actionDiceHtml = actionDiceChatLine
-    ? `<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
-    : ''
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
 
   // Manual roll render when the breakdown, the skill-item description,
   // or the multiple-action-dice line needs to ride under the rolled
@@ -614,9 +621,7 @@ export async function renderSpellCheck ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  const actionDiceHtml = actionDiceChatLine
-    ? `<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
-    : ''
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
   if (breakdownHtml || nakedHtml || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
     toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}${actionDiceHtml}`
