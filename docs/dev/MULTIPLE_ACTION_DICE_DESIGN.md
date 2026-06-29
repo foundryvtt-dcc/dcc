@@ -17,9 +17,11 @@
 > 2026-06-27. Phase 4 **soft spells-only filtering** — no-eligible-die distinct
 > from over-budget + weapon-path warn (never block, D1a), plus **roll-dialog
 > preset filtering** (the spells-only die isn't offered for an attack, Sim 3
-> step 2) — implemented 2026-06-27.
-> **Next (all optional): the skill-table / roll-under sub-branch spends, and the
-> homebrew extra-slot-rider suppression sliver.**
+> step 2) — implemented 2026-06-27. Remaining sub-branch spends (roll-under Luck,
+> skill-table) + GM-socket player-spend hardening implemented 2026-06-28; the
+> homebrew extra-slot-rider sliver resolved as a deliberate won't-fix.
+> **Feature complete.** Every documented item is landed or resolved; what's left
+> is live playtesting behind the master setting.
 
 ## 0. Implementation status & handoff (read this first)
 
@@ -132,12 +134,13 @@ actor has multiple dice.
   formula + breakdown as a `.dcc-action-dice-line` div. Empty on the off-path ⇒
   content is byte-identical (the renderer only forces a manual render when a
   breakdown / description / action line is present).
-- **Scope of this slice.** Only the standard `_rollSkillCheckViaAdapter` branch
-  is wired. The skill-table / disapproval-range branch (`_skillTableViaAdapter`
-  — Turn Unholy, cleric Lay on Hands) and the description-only branch do not yet
-  spend; those special abilities are rarely the round's "second action die," so
-  they remain an optional sub-branch (the spell + ability-check paths landed in
-  later slices — see their DONE sections below).
+- **Scope of this slice.** This slice wired the standard
+  `_rollSkillCheckViaAdapter` branch; the skill-table / disapproval-range branch
+  (`_skillTableViaAdapter` — Turn Unholy, cleric Lay on Hands) and the
+  description-only branch landed in a later slice (the table branch spends a die;
+  description-only deliberately doesn't, being a no-roll display) — see the
+  "remaining sub-branches" DONE section below. The spell + ability-check paths
+  also landed in later slices.
 - Covered by new `action-dice-tracker.test.js` `'check'`-action eligibility
   cases and a live `action-dice-tracker.spec.js` probe driving `rollSkillCheck`
   twice (slot 0 d20 → slot 1 d16) and asserting the per-round flag advance + the
@@ -233,41 +236,54 @@ actor has multiple dice.
   Sim 3 case); skill / ability checks surface the no-eligible chat line post-roll
   via the shared `formatActionDiceChatLine`, and all dialogs now filter presets.
 
-**Known limitations (carried to the next session):**
+**What is DONE (system layer — remaining sub-branches + GM-socket hardening):**
 
-- **Skill-table / description sub-branches unwired.** The skill mixin's
-  `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) and description-only
-  branch don't spend; those special abilities are rarely the round's "second
-  action die." Fold them in if wanted.
-- **D2 per-die rider — realistic case closed; extra-slot riders are a sliver.**
-  The high-level `1d20+4, 1d20, 1d16` line is handled: the derivation captures
-  the `+4` on slot 0 only (`deriveActionDiceList` → `modifier: [4, 0, 0]`), the
-  incumbent first attack already rolls `1d20+4` because
-  `actor-level-change.js` writes the first die *with its rider* into
-  `attributes.actionDice.value` (and `item.js` derives the weapon's `actionDie`
-  from it), and `slotRollFormula` now carries the modifier so the "Action 1 of 3"
-  chat line reads `1d20+4` — matching the rolled die — while the extra slots stay
-  bare (`1d20` / `1d16`). The `+4` therefore rides slot 0 once and never leaks
-  onto actions 2–3, the §10 no-double-count guard, now locked by unit
-  (`slotRollFormula` + rider cases) and e2e (`a 1d20+4 line rides the +4 on the
-  first action only`) tests. **Residual sliver:** a *homebrew* extra slot that
-  carries its own rider (e.g. `1d20, 1d16+2`) would roll the rider via the
-  override formula but **not** suppress the generic attack bonus per the lib's
-  `actionDieRollTerms(slot).suppressAttackBonus` — real data never authors this
-  (riders attach to slot 0), and the Foundry weapon path fuses the attack bonus
-  into `toHit`, so the clean suppression needs the attack-bonus term separated
-  first; deferred until a real consumer needs it.
-- **Player-client spends rely on combatant-update permission.** The write goes
-  direct (`combatant.setFlag`), which a player may lack permission for; the
-  failure is swallowed (so no error) but the pip won't move and the player's
-  "N of M" stays at 1. The GM-run-monsters headline (Sim 2) works. Routing the
-  spend through a GM socket is a future hardening.
+- **Roll-under Luck checks spend.** `_rollLuckCheckViaAdapter` plans + spends a
+  `'check'` die and shows the line; the spent slot's die is rolled (consistent
+  with every other path), so a second-action Luck check rolls the smaller die.
+  `renderAbilityCheckRollUnder` gained the `actionDiceChatLine` param. Roll-under
+  succeeds on ≤ the Luck score, so a smaller die improves the odds — a RAW quirk
+  of differently-sized action dice, taken as the deliberate consistent behaviour.
+- **Skill-table sub-branch spends.** `_skillTableViaAdapter` (Turn Unholy, cleric
+  Lay on Hands, spell-like skills) spends a `'check'` die. No die override — these
+  roll a class-specific die, not the generic action die — and no chat line (the
+  `SpellResult.addChatMessage` card builds its own content). Description-only
+  skills are **not** an action (no roll), so they deliberately don't spend.
+- **Player spends route through the GM (item 3, the old permission limitation).**
+  `spendCombatantActionDie` / `toggleActionDiePip` now persist via a shared
+  `writeActionDiceState`: the GM and combatant owners write directly; everyone
+  else routes the write to the active GM through the `WRITE_ACTION_DICE` socket
+  action (registered at ready beside the other handlers). So a player rolling
+  their own attack advances the pip even without combatant-update permission. The
+  GM-side handler resolves the combatant and authorises the requester against
+  actor ownership (`testUserPermission('OWNER')`) before writing — the `userId`
+  is a client claim paired with a real permission check (see `socket.mjs`), so a
+  player can only spend their own dice.
+- Covered by unit tests (`writeActionDiceHandler` write / ownership-reject /
+  malformed-state; the GM-direct vs non-owner-GM-round-trip routing) and two live
+  probes (`roll-under Luck checks spend the budget and roll the spent die`; `the
+  GM-side socket handler writes a requested action-die spend`).
 
-**What is NOT started (system layer):** all remaining items are optional polish —
-the skill-table/description sub-branch + roll-under Luck spends, and the homebrew
-extra-slot-rider suppression sliver. See §9. The four primary roll paths (attack /
-skill / ability / spell) are all wired, the realistic D2 `1d20+4` rider is closed,
-and Phase 4 soft spells-only filtering (warn + dialog preset filter, D1a) is in.
+**Resolved by deliberate decision (not implemented — won't-fix):**
+
+- **D2 homebrew extra-slot-rider suppression.** The realistic `1d20+4, 1d20, 1d16`
+  line is fully handled (the `+4` rides slot 0, shown in the chat line, never
+  leaks — see §10). The only unhandled case is a *homebrew* rider on an **extra**
+  slot (e.g. `1d20, 1d16+2`): it would roll the rider via the override but not
+  suppress the generic attack bonus per `actionDieRollTerms(slot).suppressAttackBonus`.
+  Real data never authors a rider on an extra slot (riders attach to slot 0 — the
+  attack-bonus convention), and Foundry's `toHit` fuses the attack bonus with
+  ability mods, so clean suppression would need the attack-bonus term separated
+  first — disproportionate risk for an unauthored case. **Decision: leave it**
+  until a real consumer authors such data; the lib primitive (`actionDieRollTerms`)
+  is ready if/when that happens.
+
+**What is NOT started (system layer):** nothing outstanding. Every roll path
+(attack / skill / ability / spell), every check sub-branch (roll-under Luck,
+skill-table), the realistic D2 rider, Phase 4 soft spells-only (warn + dialog
+preset filter), and GM-socket player spends are all in; the homebrew
+extra-slot-rider sliver is a documented won't-fix. The feature is ready for live
+playtesting behind the master setting.
 
 **Where the truth lives today (so you don't re-derive it):** `config.actionDice`
 is the authoring comma string and stays the single source of truth.
@@ -276,28 +292,21 @@ is the authoring comma string and stays the single source of truth.
 that single value. The whole roll path consumes one die today — the feature's job
 is to stop discarding the rest (§11.1), gated behind the master setting (§8).
 
-**First steps for a fresh session (optional polish only):** all four primary roll
-paths — weapon-attack, **skill-check**, **ability-check**, **spell-check** — are
-wired, the realistic **D2** rider is closed, and **Phase 4** soft spells-only
-(no-eligible-die distinction + weapon-path warn + dialog preset filtering) is in
-(see above). `module/action-dice-tracker.mjs` exposes the reusable surface —
-`planActionDie(actor, action)` (now also `restrictedUnspentDice`),
-`spendPlannedActionDie(plan)` (now also `noEligibleDie`),
+**Reference for a fresh session (feature complete):** every roll path —
+weapon-attack, **skill-check**, **ability-check**, **spell-check** — plus the
+**roll-under Luck** and **skill-table** check sub-branches spend a die; the
+realistic **D2** rider is closed; **Phase 4** soft spells-only (no-eligible-die
+distinction + weapon-path warn + dialog preset filtering) is in; and player
+spends route through the **GM socket** (`WRITE_ACTION_DICE`).
+`module/action-dice-tracker.mjs` exposes the reusable surface —
+`planActionDie(actor, action)` (with `restrictedUnspentDice`),
+`spendPlannedActionDie(plan)` (with `noEligibleDie`),
 `formatActionDiceChatLine(descriptor)`, `noEligibleActionDieWarning(plan,
-action)`, `getCombatantForActor`, `slotRollFormula` — built on the lib's
-`nextActionDie` / `actionMatchesUse`; `getActionDice({ forAction })`
-(roll-data-mixin) filters dialog presets by `use`. What remains, all optional:
-
-- **Optional sub-branches.** Fold the spend into the skill mixin's
-  `_skillTableViaAdapter` (Turn Unholy, cleric Lay on Hands) + description-only
-  branch, and the check mixin's roll-under Luck branch, if a spend there is
-  wanted (each has a rules nuance — roll-under odds change with die size).
-- **Homebrew extra-slot-rider suppression (sliver).** A homebrew `1d20, 1d16+2`
-  would roll its rider via the override but not suppress the generic attack bonus
-  per `actionDieRollTerms(slot).suppressAttackBonus`. Real data never authors a
-  rider on an extra slot (riders attach to slot 0), and the Foundry weapon path
-  fuses the attack bonus into `toHit`, so the clean suppression needs the
-  attack-bonus term separated first. Defer until a real consumer needs it.
+action)`, `spendCombatantActionDie` / `toggleActionDiePip` (GM-routed via
+`writeActionDiceState`), `getCombatantForActor`, `slotRollFormula` — built on the
+lib's `nextActionDie` / `actionMatchesUse`; `getActionDice({ forAction })`
+(roll-data-mixin) filters dialog presets by `use`. The only intentionally
+unbuilt case is the homebrew extra-slot-rider suppression (won't-fix above).
 
 Keep every new branch behind the master gate — `planActionDie` already returns
 `null` off-path, so a missing plan is the byte-identical incumbent.
@@ -767,8 +776,9 @@ yet beyond the Phase-1 surface below).
    new param; a wizard's spells-only die is correctly offered for a cast.
    **D2 per-die rider ✅ DONE (realistic case, 2026-06-27)** — `slotRollFormula`
    carries the rider, the `1d20+4` line shows it on action 1 only, no leak (see
-   §0). **Remaining:** the optional skill-table / roll-under sub-branch spends +
-   the homebrew extra-slot-rider suppression sliver (see §0 limitations).
+   §0). **Roll-under Luck + skill-table sub-branch spends ✅ DONE (2026-06-28)**,
+   and **player spends route through the GM socket ✅ DONE (2026-06-28)** — see §0.
+   The homebrew extra-slot-rider suppression is a documented won't-fix.
 4. **Phase 4 — soft spells-only filtering. ✅ DONE (2026-06-27).**
    `planActionDie` distinguishes "no eligible die" (unspent-but-restricted) from
    over-budget; the weapon path warns via `noEligibleActionDieWarning` +
