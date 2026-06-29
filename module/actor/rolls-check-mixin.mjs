@@ -338,9 +338,22 @@ export const RollsCheckMixin = (Base) => class extends Base {
     const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
     const character = actorToCharacter(this)
 
-    // Roll-under is a naked d20 — no modifiers, so no formula pass is
+    // Multiple action dice (Phase 3): a Luck check is an action, so plan + spend
+    // a die. Consistent with every other check path, the spent slot's die is the
+    // one rolled — so a second-action Luck check rolls the smaller action die
+    // (e.g. 1d16) and the chat line names the die actually rolled. Roll-under
+    // succeeds on a roll ≤ the Luck score, so a *smaller* die happens to improve
+    // the odds; that asymmetry is just a consequence of differently-sized action
+    // dice (RAW doesn't special-case it), not a bug. Off-path (`null`) ⇒ naked
+    // 1d20, no spend, no line — byte-identical to before.
+    const actionDicePlan = planActionDie(this, 'check')
+    const rollUnderDie = (actionDicePlan?.choice && actionDicePlan.choice.index > 0)
+      ? `1${actionDicePlan.choice.slot.die}`
+      : '1d20'
+
+    // Roll-under is a naked die — no modifiers, so no formula pass is
     // needed. Foundry evaluates the die so chat shows the real result.
-    const foundryRoll = new Roll('1d20')
+    const foundryRoll = new Roll(rollUnderDie)
     await foundryRoll.evaluate()
     const primaryDie = foundryRoll.dice?.[0]
     const natural = primaryDie?.total ?? foundryRoll.total
@@ -351,12 +364,15 @@ export const RollsCheckMixin = (Base) => class extends Base {
       label: abilityLabel
     })
 
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
+
     return renderAbilityCheckRollUnder({
       actor: this,
       abilityId,
       abilityLabel,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
   }
 

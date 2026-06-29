@@ -6,6 +6,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { executeAsGM } from '../socket.mjs'
+
 import {
   effectiveSpent,
   buildActionDicePips,
@@ -23,12 +25,22 @@ import {
   planActionDie,
   spendPlannedActionDie,
   formatActionDiceChatLine,
-  noEligibleActionDieWarning
+  noEligibleActionDieWarning,
+  writeActionDiceHandler,
+  WRITE_ACTION_DICE
 } from '../action-dice-tracker.mjs'
+
+// The tracker routes privileged combatant writes through the system socket; mock
+// it so the routing decision (direct write vs GM round-trip) is observable.
+vi.mock('../socket.mjs', () => ({
+  executeAsGM: vi.fn(),
+  registerSocketHandler: vi.fn()
+}))
 
 // A controllable game stub. settings is a Map keyed "module.key"; i18n echoes.
 let settings
 beforeEach(() => {
+  executeAsGM.mockClear()
   settings = new Map()
   globalThis.game = {
     user: { isGM: true },
@@ -227,6 +239,66 @@ describe('spendCombatantActionDie', () => {
     const c = combatantWith(slots(2), { round: 1, spent: [true, true] })
     await spendCombatantActionDie(c, 1, 9)
     expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 9, spent: [false, true] })
+  })
+
+  test('a GM writes the flag directly (no socket round-trip)', async () => {
+    const c = combatantWith(slots(2), { round: 4, spent: [false, false] }) // game.user.isGM = true
+    await spendCombatantActionDie(c, 0, 4)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 4, spent: [true, false] })
+    expect(executeAsGM).not.toHaveBeenCalled()
+  })
+
+  test('a non-GM non-owner routes the write to the active GM', async () => {
+    globalThis.game.user.isGM = false
+    const c = combatantWith(slots(2), { round: 4, spent: [false, false] })
+    c.isOwner = false
+    c.uuid = 'Combat.x.Combatant.y'
+    await spendCombatantActionDie(c, 1, 4)
+    expect(c.setFlag).not.toHaveBeenCalled()
+    expect(executeAsGM).toHaveBeenCalledWith(WRITE_ACTION_DICE, {
+      combatantUuid: 'Combat.x.Combatant.y',
+      state: { round: 4, spent: [false, true] }
+    })
+  })
+})
+
+describe('writeActionDiceHandler (GM-side socket handler)', () => {
+  const setupCombatant = (writeMock, owns) => ({
+    actor: { testUserPermission: vi.fn(() => owns) },
+    setFlag: writeMock
+  })
+
+  test('writes the requested state when the requester owns the actor', async () => {
+    const setFlag = vi.fn(async () => {})
+    const combatant = setupCombatant(setFlag, true)
+    globalThis.fromUuid = vi.fn(async () => combatant)
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true, false] } }, 'p1')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 3, spent: [true, false] })
+    delete globalThis.fromUuid
+  })
+
+  test('rejects a requester who does not own the actor', async () => {
+    const setFlag = vi.fn(async () => {})
+    const combatant = setupCombatant(setFlag, false)
+    globalThis.fromUuid = vi.fn(async () => combatant)
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'intruder' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true] } }, 'intruder')
+    expect(setFlag).not.toHaveBeenCalled()
+    delete globalThis.fromUuid
+  })
+
+  test('ignores a malformed state', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 'x' } }, 'p1')
+    await writeActionDiceHandler({ combatantUuid: 'c' }, 'p1')
+    expect(setFlag).not.toHaveBeenCalled()
+    delete globalThis.fromUuid
   })
 })
 

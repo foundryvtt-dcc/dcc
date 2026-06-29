@@ -1,4 +1,4 @@
-/* global game, document, HTMLElement */
+/* global game, document, HTMLElement, fromUuid */
 
 /**
  * Combat-tracker action-dice pips — Phase 2 of the multiple-action-dice
@@ -25,9 +25,60 @@
 
 import { resetActionDice, isActionDiceStateCurrent, spendActionDie, nextActionDie, actionMatchesUse } from './vendor/dcc-core-lib/index.js'
 import { actionDieLabel } from './handlebars-helpers.mjs'
+import { executeAsGM, registerSocketHandler } from './socket.mjs'
 
 const FLAG_SCOPE = 'dcc'
 const FLAG_KEY = 'actionDice'
+
+/** Socket action: write a combatant's action-dice state on the active GM. */
+export const WRITE_ACTION_DICE = 'dcc.writeActionDice'
+
+/**
+ * Persist a combatant's per-round action-dice state, routing through the active
+ * GM when this client can't update the combatant itself. A player owns their
+ * actor but usually not the combatant, so a direct `setFlag` is rejected and the
+ * pip never moves (the Phase-3 limitation); routing the write to the GM fixes
+ * that. The GM and combatant owners write directly (and without a GM, an owner's
+ * direct write still works). The computed `state` is sent verbatim — the GM-side
+ * handler authorizes it against actor ownership before writing.
+ * @param {Combatant} combatant
+ * @param {{round:number, spent:boolean[]}} state
+ * @returns {Promise<void>}
+ */
+async function writeActionDiceState (combatant, state) {
+  if (game.user?.isGM || combatant?.isOwner) {
+    try {
+      await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
+      return
+    } catch (_e) {
+      // Optimistic ownership but the update was rejected — fall through to the GM.
+    }
+  }
+  await executeAsGM(WRITE_ACTION_DICE, { combatantUuid: combatant?.uuid, state })
+}
+
+/**
+ * GM-side socket handler for {@link WRITE_ACTION_DICE}: resolve the combatant and
+ * write the requested state, but only after confirming the requesting user owns
+ * the combatant's actor (the `userId` is a client claim — see socket.mjs — so it
+ * is paired with this ownership check; a player can only spend their own dice).
+ * @param {{combatantUuid:string, state:object}} payload
+ * @param {string} userId - the requesting user's id (from the socket envelope)
+ * @returns {Promise<void>}
+ */
+export async function writeActionDiceHandler ({ combatantUuid, state }, userId) {
+  if (!combatantUuid || !state || typeof state.round !== 'number' || !Array.isArray(state.spent)) return
+  const combatant = await fromUuid(combatantUuid)
+  if (!combatant) return
+  const user = game.users?.get(userId)
+  if (user && combatant.actor && !combatant.actor.testUserPermission(user, 'OWNER')) return
+  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
+}
+
+/** Register the GM-side action-dice write handler. Call once at ready. */
+export function registerActionDiceSocketHandler () {
+  registerSocketHandler(WRITE_ACTION_DICE, writeActionDiceHandler)
+}
 
 /**
  * Defensive boolean read of a DCC world setting — absent/unregistered ⇒ false,
@@ -158,8 +209,8 @@ export async function resetActiveCombatantActionDice (combat) {
 /**
  * Toggle a single pip by hand (off-turn reaction / judge override). Reads the
  * current-round state (resetting a stale one first so a fresh round starts
- * all-ready), flips `spent[index]`, and persists. Requires permission to update
- * the combatant; Foundry rejects otherwise and the catch swallows it.
+ * all-ready), flips `spent[index]`, and persists via {@link writeActionDiceState}
+ * (which routes through the GM when this client can't update the combatant).
  * @param {Combatant} combatant
  * @param {number} index
  * @param {number} round
@@ -175,17 +226,14 @@ export async function toggleActionDiePip (combatant, index, round) {
   // spendActionDie sets spent=true; to toggle, rebuild the array directly.
   const spent = effectiveSpent(base, round, slots.length)
   spent[index] = !spent[index]
-  try {
-    await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, { round, spent })
-  } catch (_e) {
-    // No permission to update this combatant — silently ignore.
-  }
+  await writeActionDiceState(combatant, { round, spent })
 }
 
 /**
- * Mark the first unspent slot matching `index` spent — used by Phase 3
- * auto-spend (exported now so the contract is fixed). Persists a current-round
- * state, resetting a stale one first.
+ * Mark the indexed slot spent (Phase 3 auto-spend). Persists a current-round
+ * state, resetting a stale one first, via {@link writeActionDiceState} — so a
+ * player rolling their own attack advances the pip even when they can't update
+ * the combatant directly (the write is routed to the active GM).
  * @param {Combatant} combatant
  * @param {number} index
  * @param {number} round
@@ -198,11 +246,7 @@ export async function spendCombatantActionDie (combatant, index, round) {
   const base = (stored && isActionDiceStateCurrent(stored, round))
     ? stored
     : resetActionDice(slots, round)
-  try {
-    await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, spendActionDie(base, index))
-  } catch (_e) {
-    // No permission — ignore.
-  }
+  await writeActionDiceState(combatant, spendActionDie(base, index))
 }
 
 // --- Phase 3: roll-path auto-spend --------------------------------------

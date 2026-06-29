@@ -292,6 +292,114 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.line2).toContain('no eligible')
   })
 
+  // Phase 3 (hardening): player action-die spends route through the active GM
+  // (a player owns their actor but not the combatant, so a direct setFlag is
+  // rejected). Exercises the registered `WRITE_ACTION_DICE` socket handler
+  // end-to-end via the GM socket API — resolve combatant, ownership check, write.
+  test('the GM-side socket handler writes a requested action-die spend', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const mod = await import('../../../../../../../../systems/dcc/module/action-dice-tracker.mjs')
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      try {
+        actor = await Actor.create({
+          name: 'P3 Socket Spend Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16' } }
+        })
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        const combatant = combat.combatants.contents[0]
+
+        const socketExposed = !!game.dcc?.socket?.executeAsGM
+        // As the active GM, executeAsGM runs the registered handler locally.
+        await game.dcc.socket.executeAsGM(mod.WRITE_ACTION_DICE, {
+          combatantUuid: combatant.uuid,
+          state: { round: combat.round, spent: [true, false] }
+        })
+        const flag = combatant.getFlag('dcc', 'actionDice')
+        return { socketExposed, flagSpent: flag?.spent, flagRound: flag?.round, round: combat.round }
+      } finally {
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    expect(result.socketExposed).toBe(true)
+    expect(result.flagSpent).toEqual([true, false])
+    expect(result.flagRound).toBe(result.round)
+  })
+
+  // Phase 3 (sub-branch): a roll-under Luck check is an action, so it spends a
+  // die and shows the line. The spent slot's die is rolled (consistent with
+  // other check paths), so the second action rolls the smaller die — exercises
+  // the `_rollLuckCheckViaAdapter` branch + `renderAbilityCheckRollUnder`.
+  test('roll-under Luck checks spend the budget and roll the spent die', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      const createdMessageIds = []
+      try {
+        actor = await Actor.create({
+          name: 'P3 RollUnder Spend Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16' } }
+        })
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+        const combatant = combat.combatants.contents[0]
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+
+        await actor.rollAbilityCheck('lck', { rollUnder: true })
+        const flag1 = combatant.getFlag('dcc', 'actionDice')
+        await actor.rollAbilityCheck('lck', { rollUnder: true })
+        const flag2 = combatant.getFlag('dcc', 'actionDice')
+
+        const actorMsgs = game.messages.contents.filter(m => m.speaker?.actor === actor.id)
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+        const firstContent = actorMsgs[0]?.content || ''
+        const lastContent = actorMsgs[actorMsgs.length - 1]?.content || ''
+
+        return {
+          flag1Spent: flag1?.spent,
+          flag2Spent: flag2?.spent,
+          firstHasLine: firstContent.includes('dcc-action-dice-line'),
+          firstMentionsD20: firstContent.includes('1d20'),
+          lastMentionsAction2: lastContent.includes('2 of 2'),
+          lastMentionsD16: lastContent.includes('1d16')
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // Budget advances one slot per Luck check.
+    expect(result.flag1Spent).toEqual([true, false])
+    expect(result.flag2Spent).toEqual([true, true])
+
+    // Action 1 rolls/labels d20 (slot 0); action 2 the smaller d16 (slot 1).
+    expect(result.firstHasLine).toBe(true)
+    expect(result.firstMentionsD20).toBe(true)
+    expect(result.lastMentionsAction2).toBe(true)
+    expect(result.lastMentionsD16).toBe(true)
+  })
+
   // Phase 4 (preset filtering / Sim 3 step 2): the roll-modifier dialog's
   // action-die presets are filtered by the slot's use tag, so a weapon attack
   // never offers a spells-only die. Exercises the live `getActionDice` against a

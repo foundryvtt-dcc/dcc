@@ -369,6 +369,15 @@ export const RollsSkillMixin = (Base) => class extends Base {
     logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'skillTable' })
     const { skill, skillItem, abilityLabel } = resolved
 
+    // Multiple action dice (Phase 3): a result-table skill (Turn Unholy, cleric
+    // Lay on Hands, spell-like skills) is an action, so plan + spend a die to
+    // advance the per-round budget. The die is NOT overridden — these roll a
+    // class-specific die (the cleric spell-check / disapproval die), not the
+    // generic action die, so the slot's size doesn't apply. No "Action N of M"
+    // chat line either: this path renders via `SpellResult.addChatMessage`,
+    // which builds its own card content. Off-path (`null`) ⇒ no spend.
+    const actionDicePlan = planActionDie(this, 'check')
+
     const terms = this._buildSkillCheckRollTerms(skillId, resolved)
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
@@ -382,6 +391,10 @@ export const RollsSkillMixin = (Base) => class extends Base {
     if (!roll._evaluated) {
       await roll.evaluate()
     }
+
+    // Spend the planned action die now the roll has resolved (the tracker pip
+    // flips on the flag update). No chat line — see the planning note above.
+    await spendPlannedActionDie(actionDicePlan)
 
     const skillTable = await game.dcc.getSkillTable(skillId)
 

@@ -310,6 +310,8 @@ export async function renderAbilityCheck ({
  *   lib classified against; the highlight thresholds derive from it so
  *   highlight and success stay consistent.
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll (1d20).
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty off-path ⇒ byte-identical content.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheckRollUnder ({
@@ -317,7 +319,8 @@ export async function renderAbilityCheckRollUnder ({
   abilityId,
   abilityLabel,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
 
@@ -340,14 +343,24 @@ export async function renderAbilityCheckRollUnder ({
     'dcc.isAbilityCheck': true
   }
 
-  const messageData = await foundryRoll.toMessage({
+  const toMessageData = {
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor,
     flags,
     system: {
       checkPenaltyRollIndex: null
     }
-  }, { create: false })
+  }
+
+  // Multiple action dice (Phase 3): append the "Action N of M" line under the
+  // rolled formula when present; off-path (empty) leaves content unset so
+  // `toMessage` builds the default body byte-identically.
+  if (actionDiceChatLine) {
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}<div class="dcc-action-dice-line">${actionDiceChatLine}</div>`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
 
   return ChatMessage.create(messageData)
 }
