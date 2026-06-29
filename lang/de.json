@@ -479,6 +479,7 @@
   "DCC.MercurialMagicRerollPrompt": "Launenhaften Effekt nachschlagen oder erneut auswürfeln?",
   "DCC.MercurialMagicRoll": "Launenhafter Effekt",
   "DCC.MercurialTabHint": "Würfle und konfiguriere launenhafte Magie für diesen Zauber",
+  "DCC.MightyDeedChooseTable": "Großtat wählen",
   "DCC.MightyDeedRollFlavor": "Großtat ({roll}) auf {table}",
   "DCC.MightyDeedTableNotFound": "Großtat-Tabelle {table} nicht gefunden",
   "DCC.MightyDeedTableSelectHint": "Wähle die Großtat-Tabelle, auf der das Kriegerwürfel-Ergebnis nachgeschlagen wird",

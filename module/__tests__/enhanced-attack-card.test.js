@@ -89,12 +89,12 @@ describe('resolveAttackActor', () => {
 })
 
 describe('getWeaponProperties', () => {
-  test('lists damage and (for missiles) range', () => {
-    expect(getWeaponProperties(weapon, {})).toEqual(['1d6', '30/60/120'])
+  test('lists range for missiles (damage formula is intentionally omitted, #786)', () => {
+    expect(getWeaponProperties(weapon, {})).toEqual(['30/60/120'])
   })
-  test('omits range for melee weapons and adds a backstab tag', () => {
+  test('omits range and damage for melee weapons and adds a backstab tag', () => {
     const melee = { system: { melee: true, damage: '1d8', backstabDamage: '2d8' } }
-    expect(getWeaponProperties(melee, { isBackstab: true })).toEqual(['1d8', 'DCC.Backstab'])
+    expect(getWeaponProperties(melee, { isBackstab: true })).toEqual(['DCC.Backstab'])
   })
   test('empty for no weapon', () => {
     expect(getWeaponProperties(null, {})).toEqual([])
@@ -132,12 +132,29 @@ describe('buildEnhancedCardData', () => {
     expect(data.diceHTML).toBe('<a>15</a>')
   })
 
-  test('automated reads the setting and surfaces rolled fields', async () => {
+  test('automated falls back to the live setting for legacy cards (no stored flag)', async () => {
     settings.automateDamageFumblesCrits = true
     const msg = makeMessage({ isToHit: true }, { damageInlineRoll: '<a>7</a>', critResult: 'x' })
     const data = await buildEnhancedCardData(msg, pcActor, weapon)
     expect(data.automated).toBe(true)
     expect(data.damageInlineRoll).toBe('<a>7</a>')
+  })
+
+  // Issue #783: the card is rendered from the creation-time `automated` flag,
+  // not the viewer's live (client-readable) setting, so every viewer sees the
+  // same buttons-vs-results regardless of their own automation preference.
+  test('stored automated:true flag wins over a manual live setting (auto-roll attacker, manual viewer)', async () => {
+    settings.automateDamageFumblesCrits = false
+    const msg = makeMessage({ isToHit: true, automated: true }, { damageInlineRoll: '<a>7</a>' })
+    const data = await buildEnhancedCardData(msg, pcActor, weapon)
+    expect(data.automated).toBe(true)
+  })
+
+  test('stored automated:false flag wins over an automatic live setting (manual attacker, auto viewer)', async () => {
+    settings.automateDamageFumblesCrits = true
+    const msg = makeMessage({ isToHit: true, automated: false }, { damageRollFormula: '1d6' })
+    const data = await buildEnhancedCardData(msg, pcActor, weapon)
+    expect(data.automated).toBe(false)
   })
 
   test('NPC attacker: no weapon description exposed', async () => {

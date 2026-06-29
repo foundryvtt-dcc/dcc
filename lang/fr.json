@@ -466,6 +466,7 @@
   "DCC.MercurialMagicRerollPrompt": "Relancer ou choisir le résultat du jet de magie mercurielle?",
   "DCC.MercurialMagicRoll": "Jet de magie mercurielle",
   "DCC.MercurialTabHint": "Lancer et configurer la magie mercurielle pour ce sort",
+  "DCC.MightyDeedChooseTable": "Choisir le haut fait",
   "DCC.MightyDeedRollFlavor": "Haut fait ({roll}) sur {table}",
   "DCC.MightyDeedTableNotFound": "Table de hauts faits {table} introuvable",
   "DCC.MightyDeedTableSelectHint": "Choisissez la table de hauts faits sur laquelle consulter le résultat du dé de haut fait",

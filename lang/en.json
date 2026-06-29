@@ -479,6 +479,7 @@
   "DCC.MercurialMagicRerollPrompt": "Re-roll or Lookup Mercurial Magic Roll?",
   "DCC.MercurialMagicRoll": "Mercurial Magic Roll",
   "DCC.MercurialTabHint": "Roll and configure mercurial magic for this spell",
+  "DCC.MightyDeedChooseTable": "Choose Deed",
   "DCC.MightyDeedRollFlavor": "Mighty Deed ({roll}) on {table}",
   "DCC.MightyDeedTableNotFound": "Unable to find Mighty Deed table {table}",
   "DCC.MightyDeedTableSelectHint": "Choose the Mighty Deed table to look the deed die result up on",

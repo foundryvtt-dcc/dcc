@@ -479,6 +479,7 @@
   "DCC.MercurialMagicRerollPrompt": "重投或查阅无常魔法投骰？",
   "DCC.MercurialMagicRoll": "无常魔法投骰",
   "DCC.MercurialTabHint": "为此法术投骰并设置无常魔法",
+  "DCC.MightyDeedChooseTable": "选择壮举",
   "DCC.MightyDeedRollFlavor": "在{table}上的武勇壮举（{roll}）",
   "DCC.MightyDeedTableNotFound": "找不到壮举表{table}",
   "DCC.MightyDeedTableSelectHint": "选择用于查询壮举骰结果的壮举表",

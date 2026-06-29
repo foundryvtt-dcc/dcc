@@ -265,6 +265,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
 
     const flags = {
       'dcc.isToHit': true,
+      // Record the automation decision made here, at creation time, so viewers
+      // render the card from what actually happened rather than re-deriving it
+      // from their own setting (issue #783). The enhanced attack card reads this
+      // to choose Roll buttons vs. resolved results consistently for everyone.
+      'dcc.automated': automateDamageFumblesCrits,
       'dcc.isBackstab': options.backstab,
       'dcc.isFumble': attackRollResult.fumble,
       'dcc.isCrit': attackRollResult.crit,
@@ -885,7 +890,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
 
     if (!automate) {
-      const critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
+      const critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] <span style="white-space:nowrap">(${critTableLink})</span>`)
       return {
         critRollFormula,
         critInlineRoll,
@@ -934,7 +939,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     }
     const critResultPrompt = game.i18n.localize('DCC.CritResult')
     const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
-    const critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableLink})`)
+    const critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} <span style="white-space:nowrap">(${critTableLink})</span>`)
 
     return {
       critRollFormula,

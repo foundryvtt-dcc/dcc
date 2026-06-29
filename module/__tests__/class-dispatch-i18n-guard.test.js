@@ -7,7 +7,7 @@
  * class label at sheet-init time (`module/actor-sheets-dcc.js`), so any
  * dispatch like `className === game.i18n.localize('DCC.Halfling')`
  * silently breaks when the user's locale isn't English. The historical
- * bug (`actor.js:1725` per `ARCHITECTURE_REIMAGINED.md §2`) was fixed
+ * bug (`actor.js:1725`) was fixed
  * pre-refactor; C3 audits the codebase to confirm no residuals and
  * plants this guard so a future bug can't drift back in.
  *

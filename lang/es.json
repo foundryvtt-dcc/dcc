@@ -479,6 +479,7 @@
   "DCC.MercurialMagicRerollPrompt": "¿Volver a tirar o buscar la tirada de Magia Mercurial?",
   "DCC.MercurialMagicRoll": "Tirada de Magia Mercurial",
   "DCC.MercurialTabHint": "Tirar y configurar magia mercurial para este hechizo",
+  "DCC.MightyDeedChooseTable": "Elegir hazaña",
   "DCC.MightyDeedRollFlavor": "Hazaña poderosa ({roll}) en {table}",
   "DCC.MightyDeedTableNotFound": "No se encuentra la tabla de hazañas {table}",
   "DCC.MightyDeedTableSelectHint": "Elige la tabla de hazañas en la que consultar el resultado del dado de acción",

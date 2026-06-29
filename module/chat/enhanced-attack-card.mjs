@@ -11,8 +11,10 @@
  * `.message-content`, so it is **mutually exclusive with the emote-roll rewrite
  * for attack cards** (the wiring skips the attack emote path when this renders).
  *
- * The damage/crit/fumble buttons appear only when `automateDamageFumblesCrits`
- * is off (otherwise the rolls are already resolved and shown inline). Clicking a
+ * The damage/crit/fumble buttons appear only when the card was created with
+ * automation off (recorded in the `dcc.automated` flag at creation time — not
+ * re-read from the viewer's live setting, so the card renders the same for
+ * everyone; otherwise the rolls are already resolved and shown inline). Clicking a
  * button rolls via `DCCRoll.createRoll` (honoring the modifier dialog) and posts
  * a standalone roll message — the system's existing crit/fumble table lookup
  * renders the result on that message — then marks the originating card so the
@@ -60,14 +62,16 @@ export function resolveAttackActor (message) {
 }
 
 /**
- * Weapon-properties footer tags: damage formula, range (missile only), and a
- * backstab marker. Raw weapon values — no i18n churn.
+ * Weapon-properties footer tags: range (missile only) and a backstab marker.
+ * Raw weapon values — no i18n churn.
+ *
+ * The damage formula is deliberately omitted: the card already shows the rolled
+ * damage (or a Roll Damage button), and on a warrior/dwarf the formula's
+ * unrolled deed die duplicated the "Deed Die" line and read as clutter (#786).
  */
 export function getWeaponProperties (weapon, { isBackstab } = {}) {
   if (!weapon) return []
   const tags = []
-  const damage = weapon.system?.damage
-  if (damage) tags.push(String(damage))
   if (weapon.system?.melee === false && weapon.system?.range) tags.push(String(weapon.system.range))
   if (isBackstab && weapon.system?.backstabDamage) tags.push(game.i18n.localize('DCC.Backstab'))
   return tags
@@ -88,10 +92,20 @@ export async function buildEnhancedCardData (message, actor, weapon) {
   const hasTarget = !!flag('hasTarget')
   const hitsTarget = !!flag('hitsTarget')
 
-  let automated = false
-  try {
-    automated = game.settings.get('dcc', 'automateDamageFumblesCrits') === true
-  } catch { automated = false }
+  // Whether damage/crit/fumble were auto-rolled is fixed when the card is
+  // created (by the attacker's client), so render from the stored `automated`
+  // flag rather than this viewer's live setting — otherwise the card renders
+  // inconsistently between players and the GM (issue #783). Fall back to the
+  // live setting for legacy cards created before the flag existed.
+  let automated
+  const storedAutomated = flag('automated')
+  if (storedAutomated === undefined) {
+    try {
+      automated = game.settings.get('dcc', 'automateDamageFumblesCrits') === true
+    } catch { automated = false }
+  } else {
+    automated = storedAutomated === true
+  }
 
   let showHitMiss = true
   try {
