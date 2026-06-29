@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { add, dccPackExists, distanceFormat, registerDCCHandlebarsHelpers, stringify } from '../handlebars-helpers.mjs'
+import { actionDieLabel, add, dccPackExists, distanceFormat, registerDCCHandlebarsHelpers, stringify } from '../handlebars-helpers.mjs'
 
 describe('add', () => {
   test('sums two integers', () => {
@@ -106,14 +106,32 @@ describe('registerDCCHandlebarsHelpers', () => {
     globalThis.Handlebars = originalHandlebars
   })
 
-  test('registers add / stringify / distanceFormat / dccPackExists by name', () => {
+  test('registers add / stringify / distanceFormat / dccPackExists / actionDieLabel by name', () => {
     registerDCCHandlebarsHelpers()
 
     const registered = Object.fromEntries(globalThis.Handlebars.registerHelper.mock.calls)
-    expect(Object.keys(registered).sort()).toEqual(['add', 'dccPackExists', 'distanceFormat', 'stringify'])
+    expect(Object.keys(registered).sort()).toEqual(['actionDieLabel', 'add', 'dccPackExists', 'distanceFormat', 'stringify'])
     expect(registered.add).toBe(add)
     expect(registered.stringify).toBe(stringify)
     expect(registered.distanceFormat).toBe(distanceFormat)
     expect(registered.dccPackExists).toBe(dccPackExists)
+    expect(registered.actionDieLabel).toBe(actionDieLabel)
+  })
+
+  describe('actionDieLabel', () => {
+    test('prefixes a bare die with 1 and renders a positive rider', () => {
+      expect(actionDieLabel({ die: 'd20', modifier: 0 })).toBe('1d20')
+      expect(actionDieLabel({ die: 'd20', modifier: 4 })).toBe('1d20+4')
+    })
+
+    test('renders a negative rider and leaves explicit counts alone', () => {
+      expect(actionDieLabel({ die: 'd16', modifier: -1 })).toBe('1d16-1')
+      expect(actionDieLabel({ die: '2d6', modifier: 0 })).toBe('2d6')
+    })
+
+    test('is defensive against malformed slots', () => {
+      expect(actionDieLabel(undefined)).toBe('')
+      expect(actionDieLabel({})).toBe('')
+    })
   })
 })

@@ -157,6 +157,19 @@ describe('buildEnhancedCardData', () => {
     expect(data.automated).toBe(false)
   })
 
+  // Multiple action dice (Phase 3): the enhanced card surfaces the same
+  // "Action N of M" line the plain card does, carried from stored system data.
+  test('carries the multiple-action-dice chat line from stored system data', async () => {
+    const msg = makeMessage({ isToHit: true }, { actionDiceChatLine: 'Action 2 of 3 (1d16)' })
+    const data = await buildEnhancedCardData(msg, pcActor, weapon)
+    expect(data.actionDiceChatLine).toBe('Action 2 of 3 (1d16)')
+  })
+
+  test('off-path: no action-dice line in system data ⇒ undefined (template renders nothing)', async () => {
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, weapon)
+    expect(data.actionDiceChatLine).toBeUndefined()
+  })
+
   test('NPC attacker: no weapon description exposed', async () => {
     const npc = { ...pcActor, type: 'NPC' }
     const withDesc = { ...weapon, system: { ...weapon.system, description: { value: 'desc' } } }

@@ -3,7 +3,7 @@
 /**
  * Chat- and hook-wiring surface extracted from `module/dcc.js`.
  *
- * Twelve `Hooks.on` / `Hooks.once` handlers covering:
+ * `Hooks.on` / `Hooks.once` handlers covering:
  *   - `hotbarDrop` — macro creation when a rollable is dropped on the hotbar
  *   - `renderChatMessageHTML` — chat decorations (crit/fail highlight, minimum-damage
  *     enforcement, spell-result HTML, data-item-id, emote rolls, crit/fumble lookups,
@@ -17,6 +17,9 @@
  *   - `applyActiveEffect` — DiceChain bump for string-valued dice expressions
  *   - `preUpdateActor` — sync prototype-token texture when the actor image changes
  *   - `updateCombat` — Active Effect duration expiry on round advance
+ *   - `combatTurn` / `combatRound` — auto-reset action-die pips at the start of
+ *     a combatant's turn (multiple-action-dice feature, gated)
+ *   - `renderCombatTracker` — inject per-combatant action-die pips (gated)
  *   - `item-piles-ready` — one-shot Item Piles module integration
  *   - `getProseMirrorMenuDropDowns` — sidebar-style menu in the rich-text editor
  *
@@ -35,6 +38,7 @@ import TableResult from './table-result.js'
 import { setupItemPilesForDCC } from './item-piles-support.js'
 import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
+import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice } from './action-dice-tracker.mjs'
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
@@ -416,6 +420,9 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   preUpdateActor: { handler: onPreUpdateActor, once: false },
   updateActor: { handler: onUpdateActorForDeath, once: false },
   updateCombat: { handler: onUpdateCombat, once: false },
+  combatTurn: { handler: onCombatTurnForActionDice, once: false },
+  combatRound: { handler: onCombatRoundForActionDice, once: false },
+  renderCombatTracker: { handler: onRenderCombatTrackerForActionDice, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }
 })

@@ -145,6 +145,10 @@ export async function buildEnhancedCardData (message, actor, weapon) {
     hasDescription: !!weaponDescription,
     weaponDescription,
     diceHTML,
+    // Multiple-action-dice "Action N of M" line (Phase 3). Carried from the
+    // stored system data so the enhanced card shows it under the roll just like
+    // the plain card; empty/absent off-path ⇒ the template renders nothing.
+    actionDiceChatLine: sys.actionDiceChatLine,
     deedDieRollResult: sys.deedDieRollResult,
     deedRollSuccess: sys.deedRollSuccess,
     deedPromptHTML: game.dcc?.buildMightyDeedPrompt?.(message) ?? '',

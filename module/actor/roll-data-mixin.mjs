@@ -1,5 +1,7 @@
 /* global game, ui, foundry */
 
+import { actionMatchesUse } from '../vendor/dcc-core-lib/index.js'
+
 /**
  * Roll-input accessor mixin for {@link DCCActor}.
  *
@@ -95,6 +97,17 @@ export const RollDataMixin = (Base) => class extends Base {
 
   /**
    * Get Action Dice
+   * @param {Object} [options]
+   * @param {boolean} [options.includeUntrained]  Append the 1d10 untrained die.
+   * @param {string} [options.forAction]  Multiple-action-dice soft filter
+   *   (Phase 4 / D1a): `'attack'` / `'spell'` / `'check'`. When the derived
+   *   `system.attributes.actionDice.list` exists (i.e. the master setting is on),
+   *   presets whose corresponding slot's `use` tag bars this action — a wizard's
+   *   spells-only die for a weapon attack — are dropped, so the roll dialog never
+   *   offers an ineligible die (Sim 3). Best-effort by index: a preset with no
+   *   matching slot is kept (the soft filter never hides more than it's sure of,
+   *   and the roll path still warns). Absent `forAction`, or with no derived list
+   *   (master off), the preset list is byte-identical to before.
    * @return {Array}  Array of formulae for the action dice
    */
   getActionDice (options = {}) {
@@ -121,6 +134,23 @@ export const RollDataMixin = (Base) => class extends Base {
       })
     } catch (err) {
       console.error('DCC | Failed to build action dice from config', err)
+    }
+
+    // Soft spells-only preset filter (Phase 4 / D1a). Gated on the derived list
+    // existing — it is only built when the master setting is on — so the off-path
+    // is untouched. Correlate each preset with its slot by index and drop the
+    // ones whose `use` can't take `forAction`. The untrained die (appended below)
+    // is always available, so a fully-filtered list still leaves the override.
+    if (options.forAction) {
+      const list = this.system.attributes?.actionDice?.list
+      if (Array.isArray(list) && list.length) {
+        const eligible = actionDice.filter((_preset, i) => {
+          const slot = list[i]
+          return !slot || actionMatchesUse(slot.use, options.forAction)
+        })
+        actionDice.length = 0
+        actionDice.push(...eligible)
+      }
     }
 
     if (options.includeUntrained) {

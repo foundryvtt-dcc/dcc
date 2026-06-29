@@ -11,6 +11,7 @@ import { actorToCharacter, foundrySaveIdToLib } from '../adapter/character-acces
 import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
+import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
 
 /**
  * Ability/luck/initiative/hit-dice/saving-throw dispatch mixin for
@@ -89,11 +90,22 @@ export const RollsCheckMixin = (Base) => class extends Base {
       return this._rollAbilityCheckWithDialog(abilityId, options, abilityLabel, character)
     }
 
+    // Multiple action dice (Phase 3) — plan the next eligible slot for this
+    // check (off-path `null` ⇒ today's behavior). An *extra* die (slot index
+    // > 0) overrides the d20 the ability-check default uses, routing through
+    // `libRollCheck({ ability, die })` instead of `libRollAbilityCheck`
+    // (which always defaults to d20); slot 0 and the off-path stay on the
+    // unchanged call. A wizard's spells-only die is ineligible for a check.
+    const actionDicePlan = planActionDie(this, 'check')
+    const overrideDie = (actionDicePlan?.choice && actionDicePlan.choice.index > 0)
+      ? actionDicePlan.choice.slot.die
+      : null
+    const runCheck = (mode, roller) => overrideDie
+      ? libRollCheck({ ability: abilityId, die: overrideDie }, character, { mode, roller, luckBurn: options.luckBurn })
+      : libRollAbilityCheck(abilityId, character, { mode, roller, luckBurn: options.luckBurn })
+
     // Pass 1: ask the lib for the formula it wants rolled (no evaluation).
-    const plan = libRollAbilityCheck(abilityId, character, {
-      mode: 'formula',
-      luckBurn: options.luckBurn
-    })
+    const plan = runCheck('formula')
 
     // Foundry rolls the FULL formula so the Roll object has the correct
     // display-total (dice + modifiers), not just the naked dice total.
@@ -110,11 +122,11 @@ export const RollsCheckMixin = (Base) => class extends Base {
     // Pass 2: lib classifies the rolled result (crit / fumble / resources /
     // applied flags on modifiers). The sync roller returns the pre-rolled
     // natural so the lib doesn't re-roll.
-    const result = libRollAbilityCheck(abilityId, character, {
-      mode: 'evaluate',
-      roller: () => natural,
-      luckBurn: options.luckBurn
-    })
+    const result = runCheck('evaluate', () => natural)
+
+    // Spend the planned die (the tracker pip flips on the flag update) and
+    // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
 
     // Non-zero armor check penalty (str/agl) display (legacy-decom
     // step 3). The penalty is NOT applied to the result — the lib roll
@@ -129,7 +141,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
       abilityLabel,
       result,
       foundryRoll,
-      checkPenaltyRoll
+      checkPenaltyRoll,
+      actionDiceChatLine
     })
   }
 
@@ -194,14 +207,24 @@ export const RollsCheckMixin = (Base) => class extends Base {
     const ability = this.system.abilities[abilityId]
     const abilityMod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
-    const die = this.system.attributes.actionDice.value || '1d20'
+
+    // Multiple action dice (Phase 3) — default the dialog's action die to the
+    // next eligible extra slot (index > 0) and spend it after a non-cancelled
+    // roll. Off-path (`null`) keeps the actor's first die exactly as today;
+    // the user can still change the die in the dialog (their choice wins).
+    const actionDicePlan = planActionDie(this, 'check')
+    let die = this.system.attributes.actionDice.value || '1d20'
+    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+      die = `1${actionDicePlan.choice.slot.die}`
+    }
 
     const terms = [
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        // Soft filter (Phase 4): a spells-only die can't take an ability check.
+        presets: this.getActionDice({ includeUntrained: true, forAction: 'check' })
       },
       {
         type: 'Modifier',
@@ -280,13 +303,18 @@ export const RollsCheckMixin = (Base) => class extends Base {
       { alreadyApplied: penaltyApplied }
     )
 
+    // Spend the planned die (reached only after a non-cancelled dialog) and
+    // build the "Action N of M" line. Null plan ⇒ off-path, no line.
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
+
     return renderAbilityCheck({
       actor: this,
       abilityId,
       abilityLabel,
       result,
       foundryRoll,
-      checkPenaltyRoll
+      checkPenaltyRoll,
+      actionDiceChatLine
     })
   }
 
@@ -310,9 +338,22 @@ export const RollsCheckMixin = (Base) => class extends Base {
     const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
     const character = actorToCharacter(this)
 
-    // Roll-under is a naked d20 — no modifiers, so no formula pass is
+    // Multiple action dice (Phase 3): a Luck check is an action, so plan + spend
+    // a die. Consistent with every other check path, the spent slot's die is the
+    // one rolled — so a second-action Luck check rolls the smaller action die
+    // (e.g. 1d16) and the chat line names the die actually rolled. Roll-under
+    // succeeds on a roll ≤ the Luck score, so a *smaller* die happens to improve
+    // the odds; that asymmetry is just a consequence of differently-sized action
+    // dice (RAW doesn't special-case it), not a bug. Off-path (`null`) ⇒ naked
+    // 1d20, no spend, no line — byte-identical to before.
+    const actionDicePlan = planActionDie(this, 'check')
+    const rollUnderDie = (actionDicePlan?.choice && actionDicePlan.choice.index > 0)
+      ? `1${actionDicePlan.choice.slot.die}`
+      : '1d20'
+
+    // Roll-under is a naked die — no modifiers, so no formula pass is
     // needed. Foundry evaluates the die so chat shows the real result.
-    const foundryRoll = new Roll('1d20')
+    const foundryRoll = new Roll(rollUnderDie)
     await foundryRoll.evaluate()
     const primaryDie = foundryRoll.dice?.[0]
     const natural = primaryDie?.total ?? foundryRoll.total
@@ -323,12 +364,15 @@ export const RollsCheckMixin = (Base) => class extends Base {
       label: abilityLabel
     })
 
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
+
     return renderAbilityCheckRollUnder({
       actor: this,
       abilityId,
       abilityLabel,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
   }
 

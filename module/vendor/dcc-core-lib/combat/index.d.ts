@@ -11,6 +11,7 @@
  * - Healing
  */
 export { makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponDice, rollTwoWeaponAttack, isDeedSuccessful, } from "./attack.js";
+export { classExtraActionDieUse, parseActionDice, actionMatchesUse, nextActionDie, spendActionDie, resetActionDice, isActionDiceStateCurrent, actionDieRollTerms, } from "./action-dice.js";
 export { rollDamage, calculateDamageModifier, getTwoHandedDamageDie, getWeaponDamage, buildDamageFormula, applyMinimumDamage, } from "./damage.js";
 export { rollCritical, calculateCritModifier, determineCritTable, getCritTable, getCritDie, buildCritFormula, parseCritExtraDamage, DEFAULT_CRIT_DIE, } from "./crits.js";
 export { rollFumble, calculateFumbleModifier, buildFumbleFormula, isFumble, getFumbleDie, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, getMonsterFumbleDie, FUMBLE_DICE, MONSTER_FUMBLE_BASE_DIE, ARMOR_CHECK_PENALTY, ARMOR_SPEED_PENALTY, } from "./fumbles.js";

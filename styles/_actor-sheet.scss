@@ -205,6 +205,39 @@
       margin-right: 8px;
       border: 0;
     }
+
+    // Action-dice chip row (multiple-action-dice feature). Replaces the
+    // single action-die text box when the master setting is on and the
+    // actor has 2+ dice. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+    .action-dice-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin-right: 8px;
+
+      .action-die-chip {
+        align-items: center;
+        background: var(--system-input-background);
+        border: var(--system-frame-border);
+        border-radius: 10px;
+        display: inline-flex;
+        font-size: 13px;
+        gap: 2px;
+        line-height: 1;
+        padding: 2px 8px;
+        white-space: nowrap;
+
+        &.restricted {
+          font-style: italic;
+        }
+
+        .action-die-mark {
+          font-size: 11px;
+          opacity: 0.8;
+        }
+      }
+    }
   }
 
   .languages,

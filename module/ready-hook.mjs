@@ -28,6 +28,7 @@ import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loade
 import { registerSocket } from './socket.mjs'
 import { registerAutoApplyDamageHandler } from './auto-apply-damage.mjs'
 import { registerEnhancedCardSocket } from './chat/enhanced-attack-card.mjs'
+import { registerActionDiceSocketHandler } from './action-dice-tracker.mjs'
 
 /**
  * Determine whether to show the Release Notes/Credits chat card for this user,
@@ -86,6 +87,7 @@ export async function onReady () {
   registerSocket()
   registerAutoApplyDamageHandler()
   registerEnhancedCardSocket()
+  registerActionDiceSocketHandler()
 
   checkReleaseNotes()
   // Await world migration before continuing the ready chain so

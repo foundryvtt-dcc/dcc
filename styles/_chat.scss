@@ -26,6 +26,27 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Multiple action dice — "Action N of M"   */
+/* ----------------------------------------- */
+// A quiet secondary caption under the rolled formula, shared by the adapter
+// chat renderer (ability / skill / spell checks) and the attack-card templates
+// (plain + enhanced). One class so every context reads identically; alignment
+// stays with the host card (the enhanced card adds `.centered`). Only appears
+// when the multiple-action-dice feature is on — off-path the line is empty and
+// nothing renders. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+//
+// Dim via opacity rather than a fixed grey so it stays a quiet caption in both
+// themes: it inherits the theme-aware chat text colour (#222 on light parchment,
+// #d0beaa on the dark background) and just softens it — a hardcoded mid-grey
+// would wash out on the dark theme.
+.dcc-action-dice-line {
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* ----------------------------------------- */
 /*  Per-modifier breakdown                   */
 /* ----------------------------------------- */
 // Lists each modifier the lib contributed to a check / save / spell

@@ -87,6 +87,17 @@ function escapeHtml (value) {
 }
 
 /**
+ * The multiple-action-dice "Action N of M" line as an HTML fragment, or `''`
+ * when the line is empty (the off-path). The text is escaped — it is i18n-built
+ * today, but escaping keeps this seam consistent with the Handlebars-escaped
+ * attack-card templates and removes any injection surface if a die label ever
+ * carries markup. Shared by every renderer so the four call sites stay in sync.
+ */
+export function actionDiceLineHtml (line) {
+  return line ? `<div class="dcc-action-dice-line">${escapeHtml(line)}</div>` : ''
+}
+
+/**
  * Format a number as a signed string for the breakdown (`+3`, `-1`,
  * `+0`). Returns `null` for a non-finite input so the caller can skip
  * the row rather than render `+NaN`.
@@ -216,6 +227,10 @@ export function buildModifierBreakdownHtml (modifiers, heading = '') {
  *   flagged via `system.checkPenaltyRollIndex` so `emoteAbilityRoll`
  *   (module/chat.js) renders the "If check penalty applies, total is X"
  *   note. The penalty is informational — it is NOT in the primary roll.
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
+ *   not in combat), in which case the content is byte-identical to before;
+ *   when present it rides under the rolled formula + breakdown.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheck ({
@@ -224,7 +239,8 @@ export async function renderAbilityCheck ({
   abilityLabel,
   result,
   foundryRoll,
-  checkPenaltyRoll = null
+  checkPenaltyRoll = null,
+  actionDiceChatLine = ''
 }) {
   const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
@@ -258,9 +274,13 @@ export async function renderAbilityCheck ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  if (breakdownHtml) {
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
+  // Manual render when a breakdown or the multiple-action-dice line needs to
+  // ride under the rolled formula; off-path (neither present) leaves `content`
+  // unset so `toMessage` builds the default body byte-identically.
+  if (breakdownHtml || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessageData.content = `${rollHTML}${breakdownHtml}`
+    toMessageData.content = `${rollHTML}${breakdownHtml}${actionDiceHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
@@ -299,6 +319,8 @@ export async function renderAbilityCheck ({
  *   lib classified against; the highlight thresholds derive from it so
  *   highlight and success stay consistent.
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll (1d20).
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty off-path ⇒ byte-identical content.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheckRollUnder ({
@@ -306,7 +328,8 @@ export async function renderAbilityCheckRollUnder ({
   abilityId,
   abilityLabel,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
 
@@ -329,14 +352,24 @@ export async function renderAbilityCheckRollUnder ({
     'dcc.isAbilityCheck': true
   }
 
-  const messageData = await foundryRoll.toMessage({
+  const toMessageData = {
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor,
     flags,
     system: {
       checkPenaltyRollIndex: null
     }
-  }, { create: false })
+  }
+
+  // Multiple action dice (Phase 3): append the "Action N of M" line under the
+  // rolled formula when present; off-path (empty) leaves content unset so
+  // `toMessage` builds the default body byte-identically.
+  if (actionDiceChatLine) {
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}${actionDiceLineHtml(actionDiceChatLine)}`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
 
   return ChatMessage.create(messageData)
 }
@@ -435,6 +468,10 @@ export async function renderSavingThrow ({
  *   rendered chat content.
  * @param {Object} params.result - The lib's SkillCheckResult.
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
+ *   not in combat), in which case the content is byte-identical to before;
+ *   when present it rides under the rolled formula + breakdown.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSkillCheck ({
@@ -445,7 +482,8 @@ export async function renderSkillCheck ({
   abilityLabel,
   skillItem,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flavor = `${skillLabel}${abilityLabel}`
 
@@ -481,16 +519,20 @@ export async function renderSkillCheck ({
     systemData.skillDescription = description
   }
 
-  // Manual roll render when either the breakdown or the skill-item
-  // description needs to ride under the rolled formula (matches the
-  // pre-extraction skill-description path; the breakdown sits between
-  // the roll and the description).
-  if (breakdownHtml || description) {
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
+
+  // Manual roll render when the breakdown, the skill-item description,
+  // or the multiple-action-dice line needs to ride under the rolled
+  // formula (matches the pre-extraction skill-description path; the
+  // breakdown sits between the roll and the description, the action-dice
+  // line last). Off-path (no action-dice line, no breakdown/description)
+  // leaves `content` unset so `toMessage` builds the default body.
+  if (breakdownHtml || description || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
     const descriptionHtml = description
       ? `<div class="skill-description">${description}</div>`
       : ''
-    toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}`
+    toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}${actionDiceHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
@@ -521,6 +563,10 @@ export async function renderSkillCheck ({
  * @param {Object} params.result - The lib's SpellCheckResult
  *   (see dcc-core-lib/types/spells.d.ts).
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
+ *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
+ *   not in combat) ⇒ byte-identical content; when present it rides under
+ *   the rolled formula + breakdown + naked-cast verdict.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSpellCheck ({
@@ -528,7 +574,8 @@ export async function renderSpellCheck ({
   spellItem,
   flavor,
   result,
-  foundryRoll
+  foundryRoll,
+  actionDiceChatLine = ''
 }) {
   const flags = {
     'dcc.RollType': 'SpellCheck',
@@ -574,9 +621,10 @@ export async function renderSpellCheck ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  if (breakdownHtml || nakedHtml) {
+  const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
+  if (breakdownHtml || nakedHtml || actionDiceHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}`
+    toMessagePayload.content = `${rollHTML}${breakdownHtml}${nakedHtml || ''}${actionDiceHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })

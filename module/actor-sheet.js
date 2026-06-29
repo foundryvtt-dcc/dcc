@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
 import { prepareItems } from './actor-sheet/items.mjs'
-import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks } from './actor-sheet/presentation.mjs'
+import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks, prepareActionDiceContext } from './actor-sheet/presentation.mjs'
 import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
 import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
 
@@ -210,6 +210,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       isPC: this.options.document.type === 'Player',
       isZero: this.options.document.system.details.level.value === 0,
       items: this.options.document.items,
+      ...prepareActionDiceContext(actor),
       notesHTML: await prepareNotes(actor),
       parts: {},
       system: this.options.document.system,

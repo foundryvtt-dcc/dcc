@@ -88,6 +88,11 @@ const {
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
 const { onModifyAttackRollTerms } = await import('../weapon-range.mjs')
 const { onUpdateActorForDeath } = await import('../auto-dead-status.mjs')
+const {
+  onCombatTurnForActionDice,
+  onCombatRoundForActionDice,
+  onRenderCombatTrackerForActionDice
+} = await import('../action-dice-tracker.mjs')
 
 let originalGame
 let originalFoundry
@@ -692,9 +697,11 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the fourteen documented hook names', () => {
+  test('covers exactly the seventeen documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
+      'combatRound',
+      'combatTurn',
       'dcc.modifyAttackRollTerms',
       'getChatMessageContextOptions',
       'getCompendiumContextOptions',
@@ -706,6 +713,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
       'preUpdateActor',
       'renderActorDirectory',
       'renderChatMessageHTML',
+      'renderCombatTracker',
       'updateActor',
       'updateCombat'
     ])
@@ -744,6 +752,9 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
     expect(onCalls.updateActor).toEqual([onUpdateActorForDeath])
     expect(onCalls.updateCombat).toEqual([onUpdateCombat])
+    expect(onCalls.combatTurn).toEqual([onCombatTurnForActionDice])
+    expect(onCalls.combatRound).toEqual([onCombatRoundForActionDice])
+    expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerForActionDice])
     expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
     expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTerms])
   })
@@ -754,11 +765,12 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly fourteen Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly seventeen Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Thirteen dispatch-table listeners + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(14)
+    // Sixteen dispatch-table listeners (incl. the three action-dice combat
+    // hooks) + the ability-score-log fallback logger
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(17)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

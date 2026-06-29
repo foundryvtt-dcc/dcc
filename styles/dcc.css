@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .grid-align-center {
   display: grid;
   align-items: center;
@@ -683,6 +684,16 @@ a.inline-roll {
 
 .emote-note {
   font-size: 0.9em;
+}
+
+/* ----------------------------------------- */
+/*  Multiple action dice — "Action N of M"   */
+/* ----------------------------------------- */
+.dcc-action-dice-line {
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 4px;
+  opacity: 0.8;
 }
 
 /* ----------------------------------------- */
@@ -2514,6 +2525,32 @@ a.inline-roll {
   margin-right: 8px;
   border: 0;
 }
+.dcc .character .combat-basics .action-dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-right: 8px;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip {
+  align-items: center;
+  background: var(--system-input-background);
+  border: var(--system-frame-border);
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 2px;
+  line-height: 1;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip.restricted {
+  font-style: italic;
+}
+.dcc .character .combat-basics .action-dice-chips .action-die-chip .action-die-mark {
+  font-size: 11px;
+  opacity: 0.8;
+}
 .dcc .character .languages,
 .dcc .character .lucky-roll {
   border: var(--system-frame-border);
@@ -2890,6 +2927,31 @@ a.inline-roll {
   font-family: var(--system-data-font), serif;
   margin-top: 8px;
   padding: 8px;
+}
+
+.dcc-action-dice-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  margin-top: 2px;
+}
+.dcc-action-dice-pips.interactive .dcc-action-die-pip {
+  cursor: pointer;
+}
+.dcc-action-dice-pips .dcc-action-die-pip {
+  font-size: 11px;
+  line-height: 1;
+  user-select: none;
+}
+.dcc-action-dice-pips .dcc-action-die-pip.ready {
+  color: var(--color-level-success, #282);
+}
+.dcc-action-dice-pips .dcc-action-die-pip.spent {
+  color: var(--color-text-dark-inactive, #7a7971);
+}
+.dcc-action-dice-pips .dcc-action-die-pip.restricted.spent {
+  opacity: 0.55;
 }
 
 /* Effects styling */

@@ -16,6 +16,7 @@ import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs'
+import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula } from '../action-dice-tracker.mjs'
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -115,6 +116,22 @@ export const RollsSpellMixin = (Base) => class extends Base {
       } else {
         return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNoOwnedItemWarning'))
       }
+    }
+
+    // Multiple action dice (Phase 3) — plan the spell's action-die slot and
+    // default the die to the next eligible extra slot. A spells-only die *is*
+    // eligible for a spell (the canonical wizard "cast with the second die"
+    // case), so a wizard's restricted die is offered here. Off-path
+    // (`planActionDie` → null) leaves today's behavior; the spend happens in
+    // the cast branch after the roll resolves (so a cancelled dialog spends
+    // nothing). Only an extra die (index > 0) overrides the spell-check die —
+    // the first action of a round, and the off-path, stay byte-identical — and
+    // a shown modifier dialog's own `actionDie` choice still wins (it overwrites
+    // `actionDieOverride` in `_applySpellCheckDialogToOptions`).
+    const actionDicePlan = planActionDie(this, 'spell')
+    options._actionDicePlan = actionDicePlan
+    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0 && !options.actionDieOverride) {
+      options.actionDieOverride = slotRollFormula(actionDicePlan.choice.slot)
     }
 
     const castingMode = spellItem?.system?.config?.castingMode
@@ -624,12 +641,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }
 
+    const actionDiceChatLine = await this._spendActionDiceLine(options)
     await renderSpellCheck({
       actor: this,
       spellItem: null,
       flavor,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
 
     // Cleric disapproval: legacy parity. When natural is in the
@@ -671,6 +690,13 @@ export const RollsSpellMixin = (Base) => class extends Base {
   async _castViaCastSpell (spellItem, options) {
     const input = buildSpellCastInput(this, spellItem, options)
 
+    // Multiple action dice (Phase 3) — the generic-cast input builder reads the
+    // spell/actor die directly, so apply the next-unspent-slot override here
+    // (the naked + calculate branches read `actionDieOverride` themselves).
+    if (options.actionDieOverride) {
+      input.actionDie = normalizeLibDie(options.actionDieOverride)
+    }
+
     const plan = libCastSpell(input, { mode: 'formula' })
 
     const foundryRoll = new Roll(plan.formula)
@@ -688,12 +714,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
     })
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options)
+    const actionDiceChatLine = await this._spendActionDiceLine(options)
     await renderSpellCheck({
       actor: this,
       spellItem,
       flavor,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
 
     // Post-result seam parity (see `processSpellCheck`). Generic-mode casts
@@ -935,12 +963,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
     warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
+    const actionDiceChatLine = await this._spendActionDiceLine(options)
     await renderSpellCheck({
       actor: this,
       spellItem,
       flavor,
       result,
-      foundryRoll
+      foundryRoll,
+      actionDiceChatLine
     })
 
     // Post the disapproval roll chat after the main spell-check chat,
@@ -1060,6 +1090,18 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // `castSpell` surfaces the mercurial effect on the result, and
     // `_castViaCalculateSpellCheck`'s post-cast render sees it.
     spellbookEntry.mercurialEffect = effect
+  }
+
+  /**
+   * Spend the planned multiple-action-dice slot (Phase 3) and return the
+   * localized "Action N of M" chat line. Reads the plan stashed on `options`
+   * by `_rollSpellCheckDispatch`; null plan ⇒ off-path ⇒ `''`. Called by each
+   * cast branch after its roll resolves, so a cancelled dialog (which returns
+   * before reaching the cast) spends nothing.
+   * @private
+   */
+  async _spendActionDiceLine (options) {
+    return formatActionDiceChatLine(await spendPlannedActionDie(options?._actionDicePlan))
   }
 
   /**

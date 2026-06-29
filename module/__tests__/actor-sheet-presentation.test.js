@@ -3,7 +3,8 @@ import {
   prepareNotes,
   prepareCorruption,
   prepareImage,
-  prepareCompendiumLinks
+  prepareCompendiumLinks,
+  prepareActionDiceContext
 } from '../actor-sheet/presentation.mjs'
 
 // Phase 7 (Appendix-A actor-sheet.js shrinkage): the four small context-field
@@ -88,5 +89,66 @@ describe('prepareCompendiumLinks', () => {
   test('returns undefined when config or the links table is absent', () => {
     expect(prepareCompendiumLinks({})).toBeUndefined()
     expect(prepareCompendiumLinks(undefined)).toBeUndefined()
+  })
+})
+
+describe('prepareActionDiceContext', () => {
+  // A settings double whose get() returns the configured master-switch value.
+  const settingsReturning = (value) => ({ get: vi.fn(() => value) })
+  // An i18n double: localize echoes the key, format appends the slot/use.
+  const fakeI18n = {
+    localize: (key) => key,
+    format: (key, data) => `${key}:${data.slot}:${data.use}`
+  }
+  const actorWithList = (list) => ({ system: { attributes: { actionDice: { list } } } })
+
+  test('off ⇒ no chips even when a list is present', () => {
+    const ctx = prepareActionDiceContext(
+      actorWithList([{ slot: 0, die: 'd20', use: 'any' }, { slot: 1, die: 'd14', use: 'any' }]),
+      { settings: settingsReturning(false), i18n: fakeI18n }
+    )
+    expect(ctx.multipleActionDice).toBe(false)
+    expect(ctx.showActionDiceChips).toBe(false)
+  })
+
+  test('on + 2 dice ⇒ chips with labels and tooltips', () => {
+    const ctx = prepareActionDiceContext(
+      actorWithList([
+        { slot: 0, die: 'd20', modifier: 0, use: 'any' },
+        { slot: 1, die: 'd16', modifier: 0, use: 'spell' }
+      ]),
+      { settings: settingsReturning(true), i18n: fakeI18n }
+    )
+    expect(ctx.showActionDiceChips).toBe(true)
+    expect(ctx.actionDiceChips.map(c => c.label)).toEqual(['1d20', '1d16'])
+    expect(ctx.actionDiceChips[0].restricted).toBe(false)
+    expect(ctx.actionDiceChips[1].restricted).toBe(true)
+    // tooltip uses 1-based slot number and the localized use label
+    expect(ctx.actionDiceChips[1].tooltip).toBe('DCC.ActionDiceChipHint:2:DCC.ActionDieUseSpell')
+  })
+
+  test('on + single die ⇒ no chips (single-die actors unchanged)', () => {
+    const ctx = prepareActionDiceContext(
+      actorWithList([{ slot: 0, die: 'd20', use: 'any' }]),
+      { settings: settingsReturning(true), i18n: fakeI18n }
+    )
+    expect(ctx.multipleActionDice).toBe(true)
+    expect(ctx.showActionDiceChips).toBe(false)
+  })
+
+  test('on but no derived list ⇒ no chips, no throw', () => {
+    const ctx = prepareActionDiceContext(
+      { system: { attributes: { actionDice: {} } } },
+      { settings: settingsReturning(true), i18n: fakeI18n }
+    )
+    expect(ctx.actionDiceChips).toEqual([])
+    expect(ctx.showActionDiceChips).toBe(false)
+  })
+
+  test('treats a throwing settings.get as off (settings not yet registered)', () => {
+    const settings = { get: vi.fn(() => { throw new Error('not registered') }) }
+    const ctx = prepareActionDiceContext(actorWithList([]), { settings, i18n: fakeI18n })
+    expect(ctx.multipleActionDice).toBe(false)
+    expect(ctx.showActionDiceChips).toBe(false)
   })
 })

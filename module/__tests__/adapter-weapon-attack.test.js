@@ -148,7 +148,9 @@ test('rollToHit computes getActionDice once (hoist regression guard)', async () 
   }
 
   expect(spy).toHaveBeenCalledTimes(1)
-  expect(spy).toHaveBeenCalledWith({ includeUntrained: true })
+  // `forAction: 'attack'` applies the Phase 4 soft spells-only preset filter
+  // (a no-op here — no derived list — but the call site carries it).
+  expect(spy).toHaveBeenCalledWith({ includeUntrained: true, forAction: 'attack' })
 })
 
 test('adapter path result carries lib classification + modifier list', async () => {

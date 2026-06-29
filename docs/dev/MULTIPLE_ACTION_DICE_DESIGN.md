@@ -1,0 +1,948 @@
+# Surfacing Multiple Action Dice — Design Exploration
+
+> Status: **lib layer landed; system Phase 0 + Phase 1 (data + sheet chips)
+> landed.** Branch `claude/multiple-action-dice-design-5vsxr8`.
+> Author: design pass for cyface, 2026-06-25. Master-setting + consumer-impact
+> pass added 2026-06-26. Lib primitives built/merged/vendored 2026-06-26.
+> Phase 0 (master setting) + Phase 1 (derived `actionDice.list` + PC/NPC chip
+> row) implemented 2026-06-26. Phase 2 (combat-tracker pips + auto-reset +
+> click-to-toggle) implemented 2026-06-26. Phase 3 **weapon-attack path**
+> (auto-spend + smart preset default + chat "Action N of M") implemented
+> 2026-06-27. Phase 3 **skill-check** + **ability-check** + **spell-check** paths
+> (same auto-spend pattern via the `_roll*`/`_cast*` dispatchers +
+> `renderSkillCheck` / `renderAbilityCheck` / `renderSpellCheck`) implemented
+> 2026-06-27 — every primary roll path (attack / skill / ability / spell) now
+> spends an action die and shows "Action N of M". D2 per-die rider closed for the
+> realistic `1d20+4` case (rider rides slot 0, shown in the chat line, no leak)
+> 2026-06-27. Phase 4 **soft spells-only filtering** — no-eligible-die distinct
+> from over-budget + weapon-path warn (never block, D1a), plus **roll-dialog
+> preset filtering** (the spells-only die isn't offered for an attack, Sim 3
+> step 2) — implemented 2026-06-27. Remaining sub-branch spends (roll-under Luck,
+> skill-table) + GM-socket player-spend hardening implemented 2026-06-28; the
+> homebrew extra-slot-rider sliver resolved as a deliberate won't-fix.
+> **Feature complete.** Every documented item is landed or resolved; what's left
+> is live playtesting behind the master setting.
+
+## 0. Implementation status & handoff (read this first)
+
+**What is DONE (lib layer):** The rules-correct primitives now live in
+`@moonloch/dcc-core-lib` and are **already vendored into this repo** at
+`module/vendor/dcc-core-lib/` (v0.12.0, commit `4a20286`, from
+`moonloch/dcc-core-lib` PR #10, merged). They are purely additive — no existing
+lib export changed — so nothing in the system behaves differently until the
+system *calls* them. **Do not re-design these; import them.** Exported surface
+(see `module/vendor/dcc-core-lib/combat/action-dice.js` + `types/combat.d.ts`):
+
+| Export | Role |
+|---|---|
+| `parseActionDice(input, { className })` | `"1d20+4, 1d16*spell"` / `"2d20"` / array → `ActionDieSlot[]` (expands `Nd`, `+N`=rider, `+dice`=separator, `*tag`=use) |
+| `classExtraActionDieUse(className)` | `"spell"` for **wizard only**, else `"any"` (elf/cleric are casters but unrestricted — verified vs core-book) |
+| `nextActionDie(slots, state, action)` | next unspent eligible slot, or `null` (preset default + auto-spend) |
+| `spendActionDie(state, index)` / `resetActionDice(slots, round)` / `isActionDiceStateCurrent(state, round)` | pure per-round budget state transitions |
+| `actionDieRollTerms(slot)` | D2 reconciliation → `{ die, modifier, suppressAttackBonus }` |
+| `actionMatchesUse(use, action)` | eligibility test |
+
+Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
+`ActionDieRollTerms`.
+
+**What is DONE (system layer — Phase 0 + Phase 1):**
+
+- **Phase 0 — master setting.** `multipleActionDice` (world, default OFF,
+  `requiresReload`) registered in `module/settings.js` with i18n in all seven
+  lang files. The defensive read (absent/unregistered/throwing ⇒ off) is a
+  single shared helper — `settingEnabled(settings, key)` in
+  `module/action-dice-tracker.mjs`, surfaced as `multipleActionDiceEnabled()`
+  for the live `game.settings` and reused by `DCCActor.prepareDerivedData` and
+  the sheet's `prepareActionDiceContext` (which injects its own `settings`).
+- **Phase 1 (data).** `DCCActor.prepareDerivedData` derives
+  `system.attributes.actionDice.list` via the pure static
+  `DCCActor.deriveActionDiceList({ enabled, authoring, className })` — returns
+  `null` (no list written) when the setting is off, so the off-path is the
+  untouched incumbent. Authoring string is read from `config.actionDice`
+  (falls back to `attributes.actionDice.value`); `className` is `this.classId`
+  so the wizard spells-only inference falls out for free. Covered by
+  `module/__tests__/actor.test.js` (off ⇒ null; warrior/wizard/rider cases).
+- **Phase 1 (sheet chips).** `prepareActionDiceContext(actor)` in
+  `module/actor-sheet/presentation.mjs` exposes `showActionDiceChips`
+  (= setting on **and** 2+ dice) + display-ready `actionDiceChips` (label via
+  the new `actionDieLabel` Handlebars helper, localized tooltip, `restricted`
+  flag). PC (`actor-partial-pc-common.html`) and NPC
+  (`actor-partial-npc-common.html`) templates swap the single text box for the
+  chip row only when `showActionDiceChips`; otherwise the existing input
+  renders verbatim. Styling in `styles/_actor-sheet.scss` (`.action-dice-chips`
+  / `.action-die-chip`). Covered by `actor-sheet-presentation.test.js` and
+  `handlebars-helpers.test.js`.
+
+Net: with the setting **off** (default) the sheets and derivation are
+byte-identical to before; the chip row only appears once a table opts in and the
+actor has multiple dice.
+
+**What is DONE (system layer — Phase 2):**
+
+- **Combat-tracker pips.** `module/action-dice-tracker.mjs` owns the Foundry
+  side: a `renderCombatTracker` hook injects one pip per action die into each
+  combatant `<li>` (● ready / ○ spent / ⊛ spells-only), built by the pure
+  `buildActionDicePips`. Per-round spend state lives on the combatant
+  (`flags.dcc.actionDice = { round, spent[] }`), scoped to the encounter (D4).
+- **Auto-reset.** `combatTurn` / `combatRound` hooks call
+  `resetActiveCombatantActionDice` — GM-only, refilling the active combatant's
+  budget when its stored round is stale. Rendering also treats a stale state as
+  all-ready, so a new round looks fresh even before the write lands.
+- **Click-to-toggle.** `toggleActionDiePip` flips a pip by hand (off-turn
+  reactions / judge override), resetting a stale round first.
+- **Gating.** Three sub-settings (`trackActionDiceInCombat`,
+  `autoResetActionDice`, `hideSingleActionDiePips`), each ANDed with the master.
+  `spendCombatantActionDie` is exported and now called by Phase 3 auto-spend.
+- Covered by `module/__tests__/action-dice-tracker.test.js` (pure logic) and
+  `browser-tests/e2e/action-dice-tracker.spec.js` (live render/reset/toggle +
+  the off-path).
+
+**What is DONE (system layer — Phase 3, weapon-attack path):**
+
+- **Roll-path helpers.** `module/action-dice-tracker.mjs` gained the auto-spend
+  surface: `getCombatantForActor(actor)` (first combatant by actor id),
+  `planActionDie(actor, action)` (off-path `null` when the setting is off / not
+  in combat / no budget; otherwise the next eligible slot via the lib's
+  `nextActionDie`, plus `count`/`spentCount` for the chat line — a pure read, no
+  write), `spendPlannedActionDie(plan)` (spends the chosen slot via
+  `spendCombatantActionDie`, no-op when over budget, returns the descriptor),
+  `slotRollFormula(slot)`, and `formatActionDiceChatLine(descriptor)` (localized
+  "Action N of M · die" / "Action N of M — over budget").
+- **Weapon attack integration.** `module/actor/rolls-weapon-mixin.mjs`
+  `_rollWeaponAttackDispatch` plans before the roll and spends after (so a
+  cancelled dialog spends nothing). The smart preset default only overrides the
+  die for an **extra** slot (index > 0) via `options._actionDieFormula`, read in
+  `rollToHit` — so the **first** action of a round, and the entire off-path,
+  stay byte-identical. The lib's `attackInput.actionDie` is realigned to the
+  override so crit/fumble classification matches the rolled die. Both attack-card
+  templates render the "Action N of M" line — the plain card
+  (`templates/chat-card-attack-result.html`) and the enhanced card
+  (`templates/chat-card-attack-enhanced.html`, carried through
+  `buildEnhancedCardData`).
+- **i18n.** `DCC.ActionDiceChatLine` / `DCC.ActionDiceChatLineOverBudget` added
+  and translated in all seven lang files.
+- Covered by new `module/__tests__/action-dice-tracker.test.js` cases (plan /
+  spend / format / over-budget / spells-only-ineligible) and a live
+  `browser-tests/e2e/action-dice-tracker.spec.js` probe walking the per-round
+  budget (slot 0 → slot 1 → over budget) plus the off-path.
+
+**What is DONE (system layer — Phase 3, skill-check path):**
+
+- **Skill-check integration.** `module/actor/rolls-skill-mixin.mjs`
+  `_rollSkillCheckViaAdapter` plans (`planActionDie(this, 'check')`) before the
+  formula pass and spends after the roll resolves (so a cancelled modifier
+  dialog spends nothing). The smart preset default overrides `definition.roll.die`
+  only for an **extra** slot (index > 0), so the **first** action of a round —
+  and the entire off-path — stay byte-identical. A spells-only die is ineligible
+  for a `'check'`, so a wizard's second die isn't offered for a skill check.
+- **Chat line.** `module/adapter/chat-renderer.mjs` `renderSkillCheck` gained an
+  optional `actionDiceChatLine` param; when non-empty it rides under the rolled
+  formula + breakdown as a `.dcc-action-dice-line` div. Empty on the off-path ⇒
+  content is byte-identical (the renderer only forces a manual render when a
+  breakdown / description / action line is present).
+- **Scope of this slice.** This slice wired the standard
+  `_rollSkillCheckViaAdapter` branch; the skill-table / disapproval-range branch
+  (`_skillTableViaAdapter` — Turn Unholy, cleric Lay on Hands) and the
+  description-only branch landed in a later slice (the table branch spends a die;
+  description-only deliberately doesn't, being a no-roll display) — see the
+  "remaining sub-branches" DONE section below. The spell + ability-check paths
+  also landed in later slices.
+- Covered by new `action-dice-tracker.test.js` `'check'`-action eligibility
+  cases and a live `action-dice-tracker.spec.js` probe driving `rollSkillCheck`
+  twice (slot 0 d20 → slot 1 d16) and asserting the per-round flag advance + the
+  emitted action-dice line.
+
+**What is DONE (system layer — Phase 3, ability-check path):**
+
+- **Ability-check integration.** `module/actor/rolls-check-mixin.mjs` wires both
+  the non-dialog `_rollAbilityCheckViaAdapter` and the dialog
+  `_rollAbilityCheckWithDialog` branches: `planActionDie(this, 'check')` before
+  the roll, spend after (the dialog cancel returns first, so it spends nothing).
+  The non-dialog branch's die default is special — `libRollAbilityCheck` always
+  defaults to `d20`, so an **extra** slot routes through
+  `libRollCheck({ ability, die })` instead to roll the smaller die; slot 0 and
+  the off-path stay on the unchanged `libRollAbilityCheck` call. The dialog
+  branch seeds its default die from the slot and lets the user's choice win.
+- **Chat line.** `renderAbilityCheck` gained the same optional
+  `actionDiceChatLine` param as `renderSkillCheck`, appended as a
+  `.dcc-action-dice-line` div; empty on the off-path ⇒ byte-identical content.
+- **Scope.** Standard + dialog ability checks only. **Roll-under (Luck) checks
+  stay unwired** — they are a naked `1d20` roll-under-the-score mechanic, and
+  swapping in a smaller die would change the success odds, so spending there
+  needs a rules call; deferred. Saves / initiative / hit-dice are **not**
+  action-die actions and stay unwired.
+- Covered by a live `action-dice-tracker.spec.js` probe driving
+  `rollAbilityCheck('str')` twice (slot 0 d20 → slot 1 d16) and asserting the
+  per-round flag advance + the emitted action-dice line.
+
+**What is DONE (system layer — Phase 3, spell-check path):**
+
+- **Spell-check integration.** `module/actor/rolls-spell-mixin.mjs`
+  `_rollSpellCheckDispatch` plans `planActionDie(this, 'spell')` and stashes it on
+  `options._actionDicePlan`; the die default rides the **existing**
+  `options.actionDieOverride` hook the adapter already threads for the modifier
+  dialog (set for an extra slot only when the dialog hasn't already set it, so a
+  shown dialog's `actionDie` still wins). All three cast branches —
+  `_castNakedViaAdapter`, `_castViaCastSpell` (generic; the override is applied to
+  `input.actionDie` here since `buildSpellCastInput` derives the die directly),
+  and `_castViaCalculateSpellCheck` (wizard / cleric) — spend via the shared
+  `_spendActionDiceLine(options)` helper after the roll resolves and pass the line
+  to `renderSpellCheck`. A cancelled dialog returns before the cast, so it spends
+  nothing.
+- **Spells-only die is eligible.** Because `planActionDie(this, 'spell')` matches
+  a `use: 'spell'` slot, a wizard's restricted second die *is* offered for a spell
+  cast — the canonical "attack with the d20, then cast with the d16⊛" sequence
+  (Sim 3) now spends the right die.
+- **Chat line.** `renderSpellCheck` gained the same optional `actionDiceChatLine`
+  param (appended after the naked-cast verdict); empty off-path ⇒ byte-identical.
+- Covered by a live `action-dice-tracker.spec.js` probe driving
+  `rollSpellCheck({ spell })` twice on a generic spell (slot 0 d20 → slot 1 d16)
+  asserting the per-round flag advance + the emitted action-dice line.
+
+**What is DONE (system layer — Phase 4, soft spells-only filtering, D1a):**
+
+- **No-eligible-die is distinguished from over-budget.** `planActionDie` now also
+  returns `restrictedUnspentDice` — the unspent dice whose `use` tag bars them
+  from this action (the lib's `actionMatchesUse`). When `nextActionDie` finds
+  nothing and `restrictedUnspentDice` is non-empty, the actor isn't over budget —
+  it has dice left, just none eligible (Sim 3: a wizard whose only unspent die is
+  spells-only attempting a weapon attack). `spendPlannedActionDie` flags this as
+  `noEligibleDie`, and `formatActionDiceChatLine` emits the distinct
+  `DCC.ActionDiceChatLineNoEligibleDie` line instead of the over-budget one.
+- **Soft warn, never block (D1a).** `noEligibleActionDieWarning(plan, action)`
+  builds the localized `DCC.ActionDiceNoEligibleWarning` (naming the action and
+  the restricted dice); `rolls-weapon-mixin._rollWeaponAttackDispatch` surfaces it
+  via `ui.notifications.warn` when an attack has no eligible die. The roll still
+  proceeds on the default die — the judge's Ctrl-click escape hatch is intact.
+- **i18n.** Both keys added + translated in all seven lang files
+  (`npm run compare-lang` clean).
+- Covered by new `action-dice-tracker.test.js` cases (`restrictedUnspentDice`,
+  `noEligibleDie` descriptor, `noEligibleActionDieWarning`,
+  `formatActionDiceChatLine` no-eligible branch), a `getActionDice` filtering unit
+  test, and two live probes (`a spells-only die is not offered for a weapon attack
+  — warn, not block`: the spells-only die serves a spell once slot 0 is spent but
+  a second attack finds no eligible die; `getActionDice filters the spells-only
+  preset for an attack, not a spell`: the dialog preset list drops the spells-only
+  die for an attack, keeps it for a spell, and is a no-op off-path).
+- **Roll-dialog preset filtering (Sim 3 step 2).** `getActionDice` gained an
+  optional `forAction` (`'attack'` / `'spell'` / `'check'`): when the derived
+  `actionDice.list` exists (master on), it drops presets whose slot's `use` can't
+  take the action — so the roll-modifier dialog never offers a wizard's
+  spells-only die for a weapon attack. Wired at the preset call sites:
+  `rolls-weapon-mixin.rollToHit` (`'attack'`), the ability-check dialog and the
+  skill term-builder (`'check'`); the spell dialog builds no preset list, and a
+  spell check would keep the die anyway. The correlation is best-effort by index
+  and gated on the list's existence (the `getActionDice()[0]` default-die calls
+  pass no `forAction`, so they're untouched); slot 0 is always unrestricted, so
+  the default die is never filtered. Off-path (master off / no list) the preset
+  list is byte-identical. The rider-mangling caveat is moot here: rider actors are
+  unrestricted (all `any`), so nothing is filtered for them regardless of the
+  index drift `replaceAll('+', ',')` causes.
+- **Scope.** The pre-roll warn is wired on the **weapon** path (the canonical
+  Sim 3 case); skill / ability checks surface the no-eligible chat line post-roll
+  via the shared `formatActionDiceChatLine`, and all dialogs now filter presets.
+
+**What is DONE (system layer — remaining sub-branches + GM-socket hardening):**
+
+- **Roll-under Luck checks spend.** `_rollLuckCheckViaAdapter` plans + spends a
+  `'check'` die and shows the line; the spent slot's die is rolled (consistent
+  with every other path), so a second-action Luck check rolls the smaller die.
+  `renderAbilityCheckRollUnder` gained the `actionDiceChatLine` param. Roll-under
+  succeeds on ≤ the Luck score, so a smaller die improves the odds — a RAW quirk
+  of differently-sized action dice, taken as the deliberate consistent behaviour.
+- **Skill-table sub-branch spends.** `_skillTableViaAdapter` (Turn Unholy, cleric
+  Lay on Hands, spell-like skills) spends a `'check'` die. No die override — these
+  roll a class-specific die, not the generic action die — and no chat line (the
+  `SpellResult.addChatMessage` card builds its own content). Description-only
+  skills are **not** an action (no roll), so they deliberately don't spend.
+- **Player spends route through the GM (item 3, the old permission limitation).**
+  `spendCombatantActionDie` / `toggleActionDiePip` now persist via a shared
+  `writeActionDiceState`: the GM and combatant owners write directly; everyone
+  else routes the write to the active GM through the `WRITE_ACTION_DICE` socket
+  action (registered at ready beside the other handlers). So a player rolling
+  their own attack advances the pip even without combatant-update permission. The
+  GM-side handler resolves the combatant and authorises the requester against
+  actor ownership (`testUserPermission('OWNER')`) before writing — the `userId`
+  is a client claim paired with a real permission check (see `socket.mjs`), so a
+  player can only spend their own dice.
+- Covered by unit tests (`writeActionDiceHandler` write / ownership-reject /
+  malformed-state; the GM-direct vs non-owner-GM-round-trip routing) and two live
+  probes (`roll-under Luck checks spend the budget and roll the spent die`; `the
+  GM-side socket handler writes a requested action-die spend`).
+
+**Resolved by deliberate decision (not implemented — won't-fix):**
+
+- **D2 homebrew extra-slot-rider suppression.** The realistic `1d20+4, 1d20, 1d16`
+  line is fully handled (the `+4` rides slot 0, shown in the chat line, never
+  leaks — see §10). The only unhandled case is a *homebrew* rider on an **extra**
+  slot (e.g. `1d20, 1d16+2`): it would roll the rider via the override but not
+  suppress the generic attack bonus per `actionDieRollTerms(slot).suppressAttackBonus`.
+  Real data never authors a rider on an extra slot (riders attach to slot 0 — the
+  attack-bonus convention), and Foundry's `toHit` fuses the attack bonus with
+  ability mods, so clean suppression would need the attack-bonus term separated
+  first — disproportionate risk for an unauthored case. **Decision: leave it**
+  until a real consumer authors such data; the lib primitive (`actionDieRollTerms`)
+  is ready if/when that happens.
+
+**What is NOT started (system layer):** nothing outstanding. Every roll path
+(attack / skill / ability / spell), every check sub-branch (roll-under Luck,
+skill-table), the realistic D2 rider, Phase 4 soft spells-only (warn + dialog
+preset filter), and GM-socket player spends are all in; the homebrew
+extra-slot-rider sliver is a documented won't-fix. The feature is ready for live
+playtesting behind the master setting.
+
+**Where the truth lives today (so you don't re-derive it):** `config.actionDice`
+is the authoring comma string and stays the single source of truth.
+`actor-level-change.js` collapses it to the first die in
+`attributes.actionDice.value`; `item.js` derives `item.system.actionDie` from
+that single value. The whole roll path consumes one die today — the feature's job
+is to stop discarding the rest (§11.1), gated behind the master setting (§8).
+
+**Reference for a fresh session (feature complete):** every roll path —
+weapon-attack, **skill-check**, **ability-check**, **spell-check** — plus the
+**roll-under Luck** and **skill-table** check sub-branches spend a die; the
+realistic **D2** rider is closed; **Phase 4** soft spells-only (no-eligible-die
+distinction + weapon-path warn + dialog preset filtering) is in; and player
+spends route through the **GM socket** (`WRITE_ACTION_DICE`).
+`module/action-dice-tracker.mjs` exposes the reusable surface —
+`planActionDie(actor, action)` (with `restrictedUnspentDice`),
+`spendPlannedActionDie(plan)` (with `noEligibleDie`),
+`formatActionDiceChatLine(descriptor)`, `noEligibleActionDieWarning(plan,
+action)`, `spendCombatantActionDie` / `toggleActionDiePip` (GM-routed via
+`writeActionDiceState`), `getCombatantForActor`, `slotRollFormula` — built on the
+lib's `nextActionDie` / `actionMatchesUse`; `getActionDice({ forAction })`
+(roll-data-mixin) filters dialog presets by `use`. The only intentionally
+unbuilt case is the homebrew extra-slot-rider suppression (won't-fix above).
+
+Keep every new branch behind the master gate — `planActionDie` already returns
+`null` off-path, so a missing plan is the byte-identical incumbent.
+
+## TL;DR — recommendation
+
+Treat the action die not as a string the player reads off their sheet, but as a
+**per-round budget that the system tracks and spends for you**. Build it in three
+layers, each shippable on its own.
+
+**The whole feature lives behind a single master setting (`multipleActionDice`,
+default OFF).** This is the load-bearing constraint, not a nicety: the only way to
+get real playtesting is to let people opt in inside their own live games. With the
+setting **off**, every code path, sheet, tracker, roll, and chat card behaves
+**exactly as it does today** — no derived data is consumed, no UI changes, no
+behavioral drift. With it **on**, the new approach activates. See **§8** for the
+setting design and **§11** for why this also means **no content changes to
+dcc-core-book, dcc-crawl-classes, or sibling modules** — we *derive and relocate*,
+we don't re-author.
+
+Build it in three layers, each shippable on its own and each gated behind the
+master setting so tables that don't want it never see it:
+
+1. **Data**: promote action dice from a flat `"1d20,1d16"` string to a small
+   structured list (`die`, `modifier`, `use` tag) while keeping the string as the
+   authoring shortcut. *(Foundation — invisible to users.)*
+2. **Sheet**: replace the single tiny text box with an **action-dice chip row**
+   that shows every die the actor has, right where attacks already live.
+3. **Combat tracker**: show **action-die pips** per combatant that **auto-reset
+   at the start of that combatant's turn** (Foundry already fires the turn/round
+   hooks) and get **spent automatically** when an attack/spell/check is rolled.
+   This is the headline feature — it lives where the judge already looks, so it's
+   the thing that stops judges forgetting the troll gets two swings.
+
+The wizard "second die is spells-only" caveat falls out of the `use` tag for free:
+a spell-only die simply isn't offered as a preset for a weapon attack, and is
+consumed when a spell check is rolled.
+
+---
+
+## 1. The mechanic and its caveats (rules grounding)
+
+In DCC, a character's **action die** is normally `1d20`. Higher-level characters —
+and many NPCs/monsters — get **more than one action die**, letting them take more
+than one action in a round. A round is one trip through the initiative order; each
+action die buys one action (attack, cast a spell, skill check, etc.).
+
+Important wrinkles the system has to respect:
+
+- **Dice differ in size.** Extra dice are often smaller: a high-level warrior might
+  have `1d20, 1d16`. At the very top end you see things like `1d20+4, 1d20, 1d16`
+  (three dice; the `+4` is the attack bonus riding on the first die, not a fourth
+  die).
+- **Class restrictions (verified against the core-book class text, 2026-06-26).**
+  The **wizard is the *only* core class that restricts an extra action die**: "A
+  wizard's first action die can be used for attacks or spell checks, but his second
+  action die can only be used for spell checks." **Every other class is
+  unrestricted**, including the casters:
+  - **Elf** — explicitly *not* spell-only: "he can make two attacks, the first with
+    a d20 attack roll and the second with a d14; or he may combine an attack with a
+    spell check." (The natural trap is to lump the elf in with the wizard — RAW
+    differs precisely here.)
+  - **Cleric** — "can use his action dice for attack rolls or spell checks" (no
+    first-vs-second distinction).
+  - **Warrior / Dwarf** — "always use their action dice for attacks"; the extra die
+    is a literal second *attack*.
+  - **Thief** — "any normal activity, including attacks and skill checks."
+  - **Halfling** — "attacks or skill checks."
+
+  So only the wizard needs a `use: "spell"` tag on its extra die; for everyone else
+  the extra die is `any`. A die still needs to know *what it may be spent on*, but
+  the inference rule is narrow: **wizard ⇒ slots ≥ 1 are spell-only; all other
+  classes ⇒ all slots `any`.**
+- **The deed die is NOT an action die.** A warrior's Mighty Deed die (`d3`/`d4`…)
+  rides on a single attack as a bonus; it does not grant an extra action. The
+  design must keep these visually and structurally distinct so we don't imply a
+  warrior with a deed die gets two attacks.
+- **NPCs.** Stat blocks read e.g. `Act 2d20` or `Act 1d24+1d20`. The NPC parser
+  already captures this into `config.actionDice`, but the NPC sheet only ever
+  shows *one* die — so the second one is invisible at the table.
+
+---
+
+## 2. Where we are today (and why it falls short)
+
+| Concern | Current state | Problem |
+|---|---|---|
+| Storage | `system.config.actionDice` = comma string `"1d20,1d16"` | Fine as authoring, but carries no per-die metadata (restriction, modifier) |
+| PC sheet | One text box, `attributes.actionDice.value` | Only shows ONE die; the rest hide in the Config dialog |
+| NPC sheet | One text box | Judge sees `1d20`, forgets the `Act 2d20` |
+| Rolling | All dice offered as presets in the roll-modifier dialog | Nothing marks which die you already spent this round |
+| Per-round tracking | **None** | Players and judges track "used my 2nd action yet?" in their heads |
+| Wizard spells-only | **Not coded** | A `1d20,1d16` wizard can illegally make two attacks |
+| Chat output | Roll HTML shows the die that was rolled | Doesn't say "action 2 of 2" or which slot was spent |
+
+The raw capability (multiple dice, selectable as presets) exists. What's missing is
+**surfacing** and **bookkeeping** — the system never says "you have a second action
+waiting" or "you've used it."
+
+---
+
+## 3. Design principles
+
+1. **Track, don't nag.** The system spends dice automatically as actions are rolled;
+   it should rarely ask the user to do bookkeeping by hand.
+2. **Surface at the point of use.** The reminder belongs in the combat tracker
+   (judge) and the attack area (player), not in a config dialog.
+3. **Off by default, behind one master switch.** The entire feature is gated by a
+   single setting (`multipleActionDice`, default OFF). When off, the system runs
+   today's code paths verbatim — not "a stripped-down new path that happens to look
+   the same," but the *actual* existing path, so there is zero behavioral risk for
+   tables that don't opt in. This is what makes in-the-wild playtesting safe. When
+   on, a single character with `1d20` still sees *nothing new* (the per-die UI
+   activates only for actors with 2+ dice); the master switch and the
+   2+-dice check are independent gates.
+4. **Don't break authoring.** `"1d20,1d16"` typed in Config must keep working; the
+   structured model is derived from it.
+5. **Respect the rules, gently.** Enforce wizard spells-only by *filtering presets*,
+   not by hard-blocking — judges can always override (Ctrl-click escape hatch).
+
+---
+
+## 4. Options considered
+
+### Option A — Sheet-only: chip row + smart preset default *(small)*
+Replace the single text box with a chip row of all dice; when rolling, default the
+action-die preset to the next *unspent* die and grey out spent ones. Tracking lives
+on the actor for the current round.
+
+- **Pros:** Cheap, no combat-tracker work, helps players immediately.
+- **Cons:** Judges run monsters from the *combat tracker*, not open sheets — so the
+  exact audience that forgets multiple dice (NPCs) is least helped. No shared
+  reset signal.
+
+### Option B — Combat-tracker pips with auto-reset *(medium, recommended core)*
+Each combatant shows action-die pips in the tracker. Foundry's `combatTurn` /
+`combatRound` hooks reset a combatant's pips at the start of *their* turn; rolling an
+attack/spell/check spends a pip. Clicking a pip toggles it manually for off-turn
+reactions and judge overrides.
+
+- **Pros:** Lives exactly where the judge looks. Auto-reset means **zero manual
+  bookkeeping**. Works identically for PCs and NPCs. Uses machinery Foundry already
+  provides.
+- **Cons:** More moving parts (combatant flags, hook wiring, tracker template).
+  Only meaningful in combat (fine — that's where the mechanic matters).
+
+### Option C — Full action-economy with enforced restriction tags *(large)*
+Everything in B plus strict enforcement: spell-only dice are *unselectable* for
+attacks, the system blocks a third action when only two dice exist, reactions and
+free actions are modeled, etc.
+
+- **Pros:** Most "correct."
+- **Cons:** Heavy; risks bogging down play and fighting judges who want to bend
+  rules. Over-engineered for the stated goal ("surface better without bogging down").
+
+### Verdict
+Ship **B as the core**, fold in **A's sheet chip row** (they share the same data),
+and borrow only the *soft* restriction-filtering from C (filter presets by `use`
+tag, never hard-block). This is the layered recommendation in the TL;DR.
+
+---
+
+## 5. Proposed data model
+
+Keep `config.actionDice` as the **authoring string** (back-compat, NPC parser, hand
+edits). Derive a structured list from it; persist live round-state on the combatant,
+not the actor, so it's scoped to the encounter.
+
+> **Master-switch gating.** The derived `actionDice.list` and all live round-state
+> are only built/consumed when `multipleActionDice` is on. When the setting is off
+> the system never reads `.list`; the roll path keeps using the single
+> `attributes.actionDice.value` (the first die) exactly as today. Building `.list`
+> is cheap and side-effect-free, so it may be computed unconditionally in
+> `prepareData` and simply ignored when off — but **nothing downstream may branch on
+> `.list` unless the setting is on.**
+
+```jsonc
+// Derived (computed in prepareData from the config string) — NOT hand-edited
+system.actionDice.list = [
+  { slot: 0, die: "1d20", modifier: 0,  use: "any"        }, // first die: anything
+  { slot: 1, die: "1d16", modifier: 0,  use: "any"        }  // warrior: anything
+]
+// Wizard example, authored as "1d20,1d16*spell":
+//   { slot: 1, die: "1d16", use: "spell" }    // spells only
+```
+
+**Authoring grammar (superset of today's comma string):**
+
+```
+1d20, 1d16                 → two unrestricted dice
+1d20, 1d16*spell           → second die castable for spells only
+1d20+4, 1d20, 1d16         → first die carries its own +4 rider (slot modifier; see D2)
+Act 1d24+1d20  (NPC)       → parser already handles "+" as a separator
+```
+
+- `use` ∈ `any | spell | attack` (extensible: `mightyDeed`, `turnUndead`…).
+- The `*tag` suffix is optional; absent ⇒ `any`. Fully backward compatible — every
+  existing `"1d20,1d16"` parses to two `any` dice.
+- **Spells-only is *inferred*, not authored.** The `*spell` grammar exists as an
+  escape hatch, but we do **not** want to rewrite dcc-core-book's wizard
+  level-data to add it (that would be a content change — see §11). Instead, the
+  derivation tags the *extra* dice (slots ≥ 1) as `use: "spell"` **only when the
+  actor is a wizard** — the single class RAW restricts (see §1; the elf and cleric
+  are casters but their extra dice are unrestricted). So the existing unchanged
+  `"1d20,1d16"` string on a wizard produces the correct spells-only second die for
+  free, and on every other class produces two `any` dice. The lib owns this rule as
+  a pure `classExtraActionDieUse(className)` helper (returns `"spell"` for `wizard`,
+  `"any"` otherwise); the system applies it when building slots. The `*tag` suffix
+  is reserved for one-off homebrew overrides.
+
+**Live round-state (per combatant flag, auto-managed):**
+
+```jsonc
+combatant.flags.dcc.actionDice = {
+  round: 7,                    // round these pips are valid for
+  spent: [false, true]         // slot 1 has been used this round
+}
+```
+
+Reset rule: on `combatTurn`/`combatRound`, if `flags.dcc.actionDice.round` ≠ current
+round for the active combatant, set `spent` to all-false. Spend rule: when an
+attack/spell/check resolves, mark the first matching unspent slot
+(matching `use`) as spent.
+
+---
+
+## 6. Visual mockups
+
+### 6a. Today (for contrast) — PC sheet, Combat Basics row
+
+```
+┌ Combat Basics ─────────────────────────────────────────────┐
+│ Initiative Die [1d20]   Initiative [+1]                     │
+│ Action Die     [1d20]   ← single box; the 1d16 is hidden    │
+│ Crit Die       [1d8 ]   Attack Bonus [+1d3]                 │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 6b. Proposed — PC sheet action-dice chip row (warrior, level 5: 1d20, 1d14)
+
+```
+┌ Combat Basics ─────────────────────────────────────────────┐
+│ Initiative Die [1d20]   Initiative [+1]                     │
+│                                                             │
+│ Action Dice   ( 1d20 )( 1d14 ) [+]      ← chips, click=roll │
+│ Crit Die       [1d10]   Attack Bonus [+d4]  (Deed die)      │
+└────────────────────────────────────────────────────────────┘
+        │
+        └ Each chip is clickable → rolls an attack/check with THAT die.
+          Hover a chip → "Action die 2 — any action".
+          The [+] opens the inline editor (no need to dig into Config).
+```
+
+Wizard variant (`1d20, 1d16*spell`) — the restriction shows on the chip:
+
+```
+│ Action Dice   ( 1d20 )( 1d16 ⊛ )        ← ⊛ = spells only   │
+│                          └ tooltip: "Action die 2 — spells only" │
+```
+
+### 6c. Combat tracker — the centerpiece (judge's view, mid-encounter)
+
+```
+┌ Combat — Round 7 ──────────────────────────────────────────┐
+│ ▸ 18  Grimjaw (Warrior 5)        ●●            1d20 1d14    │  ← 2 dice, both ready
+│ ▸ 15  Cave Troll          ◀turn  ●○            Act 2d20     │  ← spent 1 of 2 this turn
+│ ▸ 12  Zara (Wizard 4)            ●⊛            1d20 1d16⊛   │  ← die2 = spells-only (⊛)
+│ ▸  9  Kobold                     ●             1d20         │  ← single die: just one pip
+│ ▸  6  Sir Aldric (Warrior 3)     ●●            1d20 1d16    │
+└────────────────────────────────────────────────────────────┘
+
+Legend:  ● ready   ○ spent   ⊛ spells-only   ◀turn current combatant
+Pips auto-reset at the start of each combatant's turn.
+Click a pip to toggle manually (off-turn reactions, judge override).
+Single-die actors show one pip (or none, if "hide single-die pips" is on).
+```
+
+The judge glances at the row and *sees* the troll still has a swing left this turn.
+No memory required.
+
+### 6d. Roll-modifier dialog — next-die default + spent marking
+
+```
+┌ Attack: Greataxe ──────────────────────────────────────────┐
+│ Action Die:   ( 1d20 ✓used )  ( ▸1d14◂ )   ( 1d10 untrained)│
+│                  greyed         default                     │
+│ Attack Bonus: [ +3 ]   Deed Die: [ d4 ]                     │
+│ Modifiers:    [ +0 ]   ☐ Spell Burn  ☐ Lucky               │
+│                                   [ Roll Attack ]           │
+└────────────────────────────────────────────────────────────┘
+
+The dialog defaults the preset to the next UNSPENT die (1d14 here),
+so a player swinging twice just clicks Roll twice and gets d20 then d14.
+```
+
+### 6e. NPC sheet — multiple dice made visible
+
+```
+┌ Cave Troll ────────────────────────────────────────────────┐
+│ Init [+0]   AC [16]   HP [38]                               │
+│ Action Dice  ( 1d20 )( 1d20 )   ← was a single "1d20" box   │
+│ Attacks:  Claw +8 (1d6) ×2   Bite +8 (2d6)                  │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 6f. Chat card — name the action that was spent
+
+```
+┌ Grimjaw attacks with Greataxe ─────────────────────────────┐
+│ Action 1 of 2 · die 1d20                                   │
+│ To Hit: 1d20+3 = (17)+3 = 20   ✓ Hit                       │
+│ Damage: 1d10+3 = 11                                        │
+└────────────────────────────────────────────────────────────┘
+┌ Grimjaw attacks with Greataxe ─────────────────────────────┐
+│ Action 2 of 2 · die 1d14   ← system knows it's the 2nd swing│
+│ To Hit: 1d14+3 = (9)+3 = 12    ✗ Miss                      │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Step-by-step simulations
+
+### Sim 1 — Player, warrior with two action dice (`1d20, 1d14`)
+
+Grimjaw (Warrior 5) is up in initiative and wants to attack twice.
+
+1. Grimjaw's turn begins → tracker pips reset to `●●`.
+2. Player clicks the **Greataxe** attack. Roll dialog opens with the action die
+   defaulted to **1d20** (first unspent). Player clicks **Roll Attack**.
+3. Chat: *"Action 1 of 2 · die 1d20 — Hit, 11 damage."* Tracker pip → `●○`.
+4. Player clicks **Greataxe** again. Dialog now defaults to **1d14** (1d20 shown
+   greyed/✓used). Player clicks **Roll Attack**.
+5. Chat: *"Action 2 of 2 · die 1d14 — Miss."* Tracker pip → `○○`.
+6. Player ends turn. Next round, pips reset on Grimjaw's turn.
+
+> Net player effort vs. today: **the same number of clicks**, but the player never
+> has to remember the second die exists or which one to pick — it's the default.
+
+### Sim 2 — Judge, NPC monster with `Act 2d20` (Cave Troll)
+
+The thing judges forget most. The tracker carries it.
+
+1. Troll's turn begins → pips reset to `●●`. The judge *sees* two pips.
+2. Judge opens the troll's attacks, clicks **Claw** at PC #1. Resolves; pip → `●○`.
+3. The remaining `●` is a standing visual reminder: *the troll still has an action.*
+4. Judge clicks **Claw** (or **Bite**) at PC #2. Pip → `○○`.
+5. If the judge tries a *third* action, both pips are spent — the dialog still lets
+   them roll (soft rule) but the chat card reads *"Action 3 of 2 — over budget,"*
+   a gentle flag rather than a block.
+
+> Net judge effort: **zero bookkeeping.** The reminder is passive and visual; the
+> judge can't miss the second pip the way they miss a number on a hidden sheet.
+
+### Sim 3 — Wizard with a spells-only second die (`1d20, 1d16*spell`)
+
+Zara (Wizard 4) wants to swing her dagger and then cast.
+
+1. Zara's turn begins → pips `●⊛` (second pip marked spells-only).
+2. Player clicks **Dagger** attack. The dialog offers **only 1d20** as a preset —
+   the `1d16⊛` die is filtered out because a weapon attack can't use it. Rolls; the
+   *any* die (1d20) is spent → `○⊛`.
+3. Player casts **Magic Missile**. The spell-check dialog now offers the **1d16⊛**
+   die (its `use:spell` matches). Rolls; spent → `○○`.
+4. If Zara instead tried to attack *twice*, the second attack would find **no
+   unspent attack-capable die** — the dialog warns *"No action die available for a
+   weapon attack (your 1d16 is spells-only),"* and defaults to untrained/override.
+   The judge can Ctrl-click to force it anyway.
+
+> The spells-only rule is enforced by **what's offered**, not by a hard wall — the
+> right thing happens by default, and the override escape hatch is always there.
+
+### Sim 4 — The very-high-level case (`1d20+4, 1d20, 1d16`)
+
+1. Turn begins → pips `●●●`; tracker shows `1d20 1d20 1d16`.
+2. First attack defaults to **1d20** and auto-applies the **+4** carried on slot 0.
+   Per **D2 (real per-die rider)**, `+4` is stored as `list[0].modifier` and is the
+   authoritative per-die adjustment for this action: the roll is `1d20+4`, with the
+   generic attack-bonus term suppressed for this slot so the bonus isn't applied
+   twice.
+3. Second attack defaults to the next **1d20** (no rider). Third to **1d16**.
+4. Three pips, three clicks, no mental tracking of which die is next.
+
+---
+
+## 8. Settings (the master switch + sub-options)
+
+The **master switch is the headline**. Everything else is a sub-option that only
+has meaning when the master is on.
+
+```
+DCC System Settings → Combat
+  ☐ Multiple action dice  (MASTER, default: OFF)   ← the opt-in for playtesters
+  │     When OFF, every path below is dead and the system behaves exactly as it
+  │     does today. When ON, the options below take effect.
+  │
+  ├─ ☑ Action-dice chips on sheets                 (default: on)
+  ├─ ☑ Track action dice in combat tracker          (default: on)
+  ├─ ☑ Auto-reset action dice at start of turn       (default: on)
+  ├─ ☐ Hide pips for single-action-die actors        (default: on — declutter)
+  ├─ ☐ Enforce spells-only dice as hard block         (default: off — soft filter)
+  └─ ☐ Show "Action N of M" line in chat cards        (default: on)
+```
+
+**Why a master switch and not just the granular settings?** Three reasons:
+
+1. **Safe opt-in for live playtesting.** Players can flip one setting in their own
+   game, try it for a session, and flip it back with total confidence that "off"
+   means "the build everyone else is running." Per-feature toggles don't give that
+   all-or-nothing guarantee, and a half-on state is exactly the kind of thing that
+   generates confusing bug reports.
+2. **One guard to reason about.** Every gate in the code is `if
+   (game.settings.get('dcc', 'multipleActionDice'))`. Reviewers and the E2E suite
+   can prove "off ⇒ today's behavior" by checking a single flag, not six.
+3. **Clean removal / GA path.** When the feature graduates, we flip the default and
+   eventually inline the on-path; until then the off-path is the untouched
+   incumbent.
+
+**Implementation note — the off-path must be the *real* incumbent path, not a
+parallel reimplementation.** The cheapest correct design keeps today's code exactly
+as the `else` branch and adds the new behavior as the `if` branch, rather than
+routing both through a new unified code path "that should be equivalent." Equivalent
+is a claim; identical is a fact. Each guarded site (prepareData derivation, sheet
+template, combat tracker, roll dialog presets, auto-spend, chat card, any lib call)
+checks the master setting and falls through to the existing logic when off.
+
+Everything degrades gracefully: with the master off you are byte-for-byte on today's
+behavior; with it on but the sub-options off you get the data model and chip row
+without the live tracking.
+
+---
+
+## 9. Suggested rollout (each phase independently shippable)
+
+**Phase 0 — the master setting, first. ✅ DONE (2026-06-26).** Registered
+`multipleActionDice` (world, default OFF, `requiresReload`) in `module/settings.js`
+with i18n in all seven lang files, so every subsequent phase wires its gate into a
+switch that already exists. Ships with no behavior change (the flag gates nothing
+yet beyond the Phase-1 surface below).
+
+1. **Phase 1 — data + sheet chips. ✅ DONE (2026-06-26).** Added the derived
+   `actionDice.list` (via the pure static `DCCActor.deriveActionDiceList`, off ⇒
+   `null`) and the chip row on PC and NPC sheets (display-only; the `[+]`/inline
+   editor and click-to-roll are deferred to later phases). *Immediately fixes "the
+   second die is invisible."* Gated behind the master setting; off ⇒ the existing
+   single text box renders unchanged. The `*tag` authoring grammar is owned by the
+   lib's `parseActionDice` (already vendored); wizard spells-only is inferred from
+   `classId`, so no pack data changed.
+2. **Phase 2 — combat-tracker pips + auto-reset. ✅ DONE (2026-06-26).**
+   Combatant flag (`flags.dcc.actionDice`), `combatTurn`/`combatRound` reset
+   hooks, `renderCombatTracker` pip injection, click-to-toggle — all in
+   `module/action-dice-tracker.mjs`, gated behind the master + three
+   sub-settings. *The judge-facing win.*
+3. **Phase 3 — auto-spend + smart preset default + chat "Action N of M."**
+   Wire roll resolution to spend a pip and default the dialog to the next unspent
+   die. **Weapon-attack path ✅ DONE (2026-06-27)** — helpers in
+   `action-dice-tracker.mjs` (`planActionDie` / `spendPlannedActionDie` /
+   `formatActionDiceChatLine`), integrated in `rolls-weapon-mixin.mjs`, chat line
+   in `chat-card-attack-result.html`. **Skill-check path ✅ DONE (2026-06-27)** —
+   same pattern in `rolls-skill-mixin.mjs` `_rollSkillCheckViaAdapter`, chat line
+   via `renderSkillCheck`'s new `actionDiceChatLine` param. **Ability-check path
+   ✅ DONE (2026-06-27)** — `rolls-check-mixin.mjs` non-dialog + dialog branches,
+   chat line via `renderAbilityCheck`'s new param (roll-under Luck deferred).
+   **Spell-check path ✅ DONE (2026-06-27)** — `rolls-spell-mixin.mjs` dispatch
+   plan + all three cast branches spend via `_spendActionDiceLine`, die default
+   via the existing `actionDieOverride` hook, chat line via `renderSpellCheck`'s
+   new param; a wizard's spells-only die is correctly offered for a cast.
+   **D2 per-die rider ✅ DONE (realistic case, 2026-06-27)** — `slotRollFormula`
+   carries the rider, the `1d20+4` line shows it on action 1 only, no leak (see
+   §0). **Roll-under Luck + skill-table sub-branch spends ✅ DONE (2026-06-28)**,
+   and **player spends route through the GM socket ✅ DONE (2026-06-28)** — see §0.
+   The homebrew extra-slot-rider suppression is a documented won't-fix.
+4. **Phase 4 — soft spells-only filtering. ✅ DONE (2026-06-27).**
+   `planActionDie` distinguishes "no eligible die" (unspent-but-restricted) from
+   over-budget; the weapon path warns via `noEligibleActionDieWarning` +
+   `ui.notifications.warn` and never blocks (D1a), and the chat line reads
+   `DCC.ActionDiceChatLineNoEligibleDie`. The roll-modifier dialog also filters
+   its presets — `getActionDice({ forAction })` drops the spells-only die for an
+   attack / check (Sim 3 step 2) while keeping it for a spell, gated on the
+   derived `actionDice.list` so the off-path is byte-identical.
+
+**Lib layer — DONE (2026-06-26).** The mechanic-correct, lib-owned bits (which die
+a roll *consumes*, restriction semantics, the per-die-rider reconciliation) now
+live in `@moonloch/dcc-core-lib` and are vendored here — see §0 for the exported
+surface. The tracker UI, sheet chips, and Foundry hook wiring stay in the system
+(the phases above).
+
+**Lib changes must be additive and opt-in at the call site.** Any new
+`@moonloch/dcc-core-lib` capability (e.g. "given a list of action dice and a chosen
+slot, return the roll terms") is *new surface* — the existing entry points the
+system already calls keep their current signatures and behavior. When
+`multipleActionDice` is off, the system calls the lib exactly as it does today
+(single die in, same terms out), so a vendor-synced lib with the new functions
+present changes nothing for non-opted-in tables. The new functions are only reached
+from the master-on branch. This keeps the lib bump safe to vendor-sync ahead of, or
+independently from, flipping the setting on.
+
+---
+
+## 10. Decisions (resolved)
+
+Four choices gated implementation. All four are now **decided** (cyface,
+2026-06-27); the chosen option is marked ✅ and the rest of this doc reflects them.
+
+| # | Decision | Options | Decision | Blocks |
+|---|----------|---------|----------|--------|
+| D1 | **Spells-only enforcement** — what happens when someone aims a spells-only die at a weapon attack | (a) Soft filter: not offered as a preset, chat warns, Ctrl-click override always works · (b) Hard block: refused outright, no override · (c) Setting, default soft | **✅ (a) Soft filter** *(= recommended)* — trusts the judge, keeps the escape hatch. **Implemented 2026-06-27:** dialog presets filtered by `use` (`getActionDice({ forAction })`) so the spells-only die isn't offered for an attack/check; weapon-path `ui.notifications.warn` + no-eligible-die chat line when none remains; roll never blocked. | Phase 4 |
+| D2 | **`1d20+4` modifier semantics** — what the `+4` on slot 0 is | (a) Display only: the existing attack bonus stays authoritative, list stores pure dice · (b) Real per-die rider: store `+4` as a slot modifier added on top | **✅ (b) Real per-die rider** *(overrides the recommended default)* — each slot can carry its own modifier; see reconciliation note below | Phase 1 |
+| D3 | **Two-weapon fighting cost** — pips a TWF attack consumes | (a) One pip: one action that rolls two stepped-down dice · (b) Two pips: each weapon spends a die | **✅ (a) One pip** *(= recommended)* — matches RAW and the existing TWF model | Phase 3 |
+| D4 | **Out-of-combat tracking** — budget when there's no encounter | (a) Chips only, no budget (no rounds to reset against) · (b) Track everywhere with a manual reset button | **✅ (a) Chips only** *(= recommended)* — no natural reset signal exists out of combat | Phase 1–2 |
+| D5 | **Opt-in model** — how tables get the feature | (a) Always on once shipped · (b) Single master setting, default OFF, off ⇒ today's behavior exactly · (c) Per-feature settings only, no master | **✅ (b) Master setting, default OFF** (cyface, 2026-06-26) — required for safe in-the-wild playtesting; see §8 | Phase 0 (all) |
+
+**D2 reconciliation (real per-die rider).** Because the `+4` is now a genuine slot
+modifier rather than a cosmetic echo of the attack bonus, the implementation must
+avoid **double-counting**:
+
+- Store it as `actionDice.list[0].modifier = 4`, parsed from the `1d20+4` authoring
+  token (and from NPC stat-block strings).
+- The slot modifier is the **action die's own** bonus. It is applied to the roll
+  *in place of, or reconciled with,* the actor-level attack bonus — not stacked
+  blindly on top. Concretely: when a slot carries a modifier, treat that modifier as
+  the authoritative per-die adjustment for that action and suppress the generic
+  attack-bonus term for that slot, so `1d20+4` rolls `1d20+4` (not `1d20+4+4`).
+- Slots without an explicit modifier (`1d20`, `1d16`) fall back to the normal
+  attack-bonus / ability-modifier logic exactly as today.
+- This needs a focused regression test: a `1d20+4, 1d20, 1d16` actor must roll
+  `+4` on the first action and the actor's normal bonus on the second and third.
+
+> **Implementation note (2026-06-27).** The realistic case is handled without a
+> bespoke suppression: `actor-level-change.js` already writes the first die *with
+> its rider* into `attributes.actionDice.value` (`"1d20+4"`), so the incumbent
+> first attack rolls `1d20+4` once — the `+4` is *not* a separate stacked term, so
+> there is nothing to double-count. The derivation pins the rider to slot 0
+> (`modifier: [4, 0, 0]`), the weapon path only ever overrides extra slots (which
+> carry no rider in real data), and `slotRollFormula` now surfaces the rider in the
+> "Action N of M" chat line so it matches the rolled die. The regression test is
+> the unit `slotRollFormula` rider cases + the e2e `a 1d20+4 line rides the +4 on
+> the first action only` probe (`['1d20+4', '1d20', '1d16']`). The lib's
+> `actionDieRollTerms(slot).suppressAttackBonus` is only needed for a *homebrew*
+> rider on an extra slot (`1d20, 1d16+2`), which real data never authors and the
+> Foundry `toHit` (attack bonus fused with ability mods) can't cleanly suppress —
+> deferred until a consumer needs it.
+
+Carried-over confirmations (no real fork, just things to verify during build):
+
+- **Reactions / off-turn actions.** DCC mostly lacks reactions; click-to-toggle on a
+  pip covers the rare out-of-turn ability. Confirm nothing needs more than that.
+- **Deed die separation.** Keep the warrior's Mighty Deed die clearly *out* of the
+  action-dice chip row so no one reads it as an extra action.
+- **Dwarf shield bash is not an action-die slot.** RAW: "A dwarf's shield bash is
+  always in addition to his base action dice," and a dwarf with multiple action dice
+  "still receive[s] only one shield bash each round." Model it (if at all) as a
+  separate bonus attack, never as a pip in the action-dice budget.
+
+---
+
+## 11. Impact on data sources & consumers — *relocate and derive, don't re-author*
+
+The guiding goal here matches cyface's instinct: **change as little downstream data
+as possible.** The action-die value already lives in these places as a plain string;
+the new feature should *read it from where it already is* and *render it somewhere
+new*, not require every pack and module to be re-authored.
+
+### 11.1 The data already supports this
+
+Grounding fact from the current codebase: the multi-die comma string is **already
+present** end-to-end. It is *not* something we have to introduce.
+
+- **dcc-core-book / dcc-crawl-classes class level-data packs** set it directly in
+  their `levelData` strings, e.g.
+  `system.attributes.actionDice.value=1d20,1d14` (and `system.config.actionDice`).
+  Multi-die rows like `1d20,1d20`, `1d20,1d20,1d14` already exist in the wizard /
+  cleric / warrior level data.
+- **`actor-level-change.js`** copies that string into `config.actionDice` and, when
+  it contains a comma, stores **only the first die** back into
+  `attributes.actionDice.value`.
+- **`item.js`** derives `item.system.actionDie` from that single
+  `attributes.actionDice.value` (or an override). The whole roll path consumes one
+  die.
+
+So today the second die is *parsed and discarded* at the actor-level-change step.
+The new feature's job is to **stop discarding it** — derive `actionDice.list` from
+the same string and surface the extra slots — not to add new authored data.
+
+### 11.2 Consumer-by-consumer impact (target: zero content changes)
+
+| Consumer | Reads action dice how | Change needed | Notes |
+|---|---|---|---|
+| **dcc-core-book** (class level-data, pregens) | `levelData` strings set `attributes.actionDice.value` / `config.actionDice` | **None** | The comma string is already there. We derive `.list` from it in the system. Wizard spells-only is **inferred from class** (§5), so we do *not* add `*spell` to pack data. |
+| **dcc-crawl-classes** (97 level-data files) | Same `levelData` mechanism | **None** | Same as above. |
+| **mcc-classes** | No action-die references found | **None** | Not a consumer. |
+| **dcc-qol** | Only a test mock references it | **None** | No runtime dependency. |
+| **xcc** (11 custom actor sheets) | Renders its own action-die box in custom sheet templates | **None required; opt-in later** | When the master setting is off, xcc sheets are untouched. When on, xcc keeps showing today's single box unless/until it adopts the shared chip partial — i.e. the feature *degrades to the first die* there, it doesn't break. Adopting the chip row in xcc is a follow-up, not a blocker. |
+| **NPC / PC parsers** | Write `config.actionDice` from stat blocks | **None** | They already produce the comma string (PC parser turns `+` into `,`). The derivation reads it. |
+
+The single structural rule that buys all those "None"s: **`config.actionDice`
+(the comma string) stays the one source of truth, in the same field, set the same
+way.** Everything new is *derived* from it inside the system's `prepareData`. Nobody
+upstream has to learn a new schema.
+
+### 11.3 The one real internal relocation
+
+There is exactly one place where today's behavior actively *destroys* information we
+now want: `actor-level-change.js` collapsing `1d20,1d14` down to its first die in
+`attributes.actionDice.value`. Two options, both master-gated:
+
+- **Preferred:** leave `attributes.actionDice.value` exactly as today (first die) so
+  the off-path and every existing reader is untouched, and have the **derivation**
+  read the *full* string from `config.actionDice` (which already retains all dice).
+  This is a pure read-relocation: the multi-die truth is taken from `config`, the
+  legacy single-die field is left alone. **No migration, no behavior change when
+  off.**
+- **Rejected:** widening `attributes.actionDice.value` to hold the whole list. That
+  would ripple into every reader (`item.js`, the templates, xcc, mocks) and break the
+  "off ⇒ identical" guarantee. Don't.
+
+So the answer to "do we have to change core-book / other modules?" is: **no — we
+relocate where the *system* reads the existing string (prefer `config.actionDice`,
+which already keeps every die) and where it *renders* it (chip row, tracker pips),
+and we infer the wizard restriction from class instead of authoring it.** The packs
+and sibling modules keep their current data and only benefit once a table opts in.
+
+### 11.4 Testing the guarantee
+
+Because "off ⇒ today's behavior" is the whole safety story, the E2E/unit suites must
+**prove** it, not assume it:
+
+- A unit test asserting that with `multipleActionDice` off, an actor authored with
+  `1d20,1d14` produces the **same** `item.system.actionDie` (`1d20`) and the same
+  roll terms as on `main`.
+- An E2E test toggling the setting on and confirming the chip row / pips appear, then
+  off and confirming the single text box returns and a rolled attack is byte-identical.
+- The D2 double-counting regression test (§10) run in **both** setting states.

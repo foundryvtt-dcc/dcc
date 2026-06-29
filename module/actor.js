@@ -10,6 +10,8 @@ import { RollsSpellMixin } from './actor/rolls-spell-mixin.mjs'
 import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
+import { parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -264,12 +266,44 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       this.computeInitiative(config)
     }
 
+    // Derive the structured action-dice list (multiple-action-dice feature).
+    // Gated behind the master setting so that when off the system is
+    // byte-for-byte on today's behavior — nothing reads `.list` and the
+    // single-die path (attributes.actionDice.value) is untouched. The
+    // authoring comma string in `config.actionDice` stays the source of
+    // truth (it retains every die; attributes.actionDice.value keeps only
+    // the first). See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md §5, §11.
+    const actionDiceList = DCCActor.deriveActionDiceList({
+      enabled: multipleActionDiceEnabled(),
+      authoring: config.actionDice || this.system.attributes.actionDice.value || '',
+      className: this.classId
+    })
+    if (actionDiceList) {
+      this.system.attributes.actionDice.list = actionDiceList
+    }
+
     // Re-prepare embedded items so they can see active effect modifications
     // Items initially prepare before applyActiveEffects runs, so they need
     // to re-read actor values that may have been modified by effects
     for (const item of this.items) {
       item.prepareData()
     }
+  }
+
+  /**
+   * Derive the structured action-dice list for the multiple-action-dice
+   * feature, or `null` when the feature is off. Pure so the off ⇒ no-list
+   * guarantee and the wizard spells-only inference are directly unit-testable
+   * without a full actor prepare cycle (mirrors {@link computeSpeedValue}).
+   * @param {object} params
+   * @param {boolean} params.enabled   The master setting state.
+   * @param {string}  params.authoring The action-dice authoring string.
+   * @param {string|null} params.className Canonical class id for use inference.
+   * @returns {import('./vendor/dcc-core-lib/types/combat.js').ActionDieSlot[]|null}
+   */
+  static deriveActionDiceList ({ enabled, authoring, className } = {}) {
+    if (!enabled) return null
+    return parseActionDice(authoring || '', { className })
   }
 
   /**

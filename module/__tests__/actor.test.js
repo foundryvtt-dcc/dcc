@@ -786,6 +786,33 @@ test('getActionDice returns correct dice array', () => {
   expect(withUntrained[2].label).toEqual('Untrained')
 })
 
+test('getActionDice soft-filters spells-only presets by forAction (Phase 4)', () => {
+  // A wizard-style derived list: slot 0 any, slot 1 spells-only. The derived
+  // list only exists when the master setting is on, so its presence is the gate.
+  actor.system.config.actionDice = '1d20,1d16'
+  actor.system.attributes.actionDice.list = [
+    { slot: 0, die: 'd20', modifier: 0, use: 'any' },
+    { slot: 1, die: 'd16', modifier: 0, use: 'spell' }
+  ]
+
+  // A weapon attack must not be offered the spells-only die.
+  const forAttack = actor.getActionDice({ includeUntrained: true, forAction: 'attack' })
+  expect(forAttack.map(d => d.formula)).toEqual(['1d20', '1d10']) // 1d16 dropped, untrained kept
+
+  // A skill/ability check is likewise barred from the spells-only die.
+  expect(actor.getActionDice({ forAction: 'check' }).map(d => d.formula)).toEqual(['1d20'])
+
+  // A spell check MAY use it — its `use` matches.
+  expect(actor.getActionDice({ forAction: 'spell' }).map(d => d.formula)).toEqual(['1d20', '1d16'])
+
+  // Without forAction, the preset list is unfiltered (byte-identical default).
+  expect(actor.getActionDice().map(d => d.formula)).toEqual(['1d20', '1d16'])
+
+  // With no derived list (master off), forAction is a no-op.
+  delete actor.system.attributes.actionDice.list
+  expect(actor.getActionDice({ forAction: 'attack' }).map(d => d.formula)).toEqual(['1d20', '1d16'])
+})
+
 test('getAttackBonusMode returns valid modes', () => {
   expect(actor.getAttackBonusMode()).toEqual('flat')
 
@@ -2001,4 +2028,47 @@ test('rollSkillCheck blocks lost wizard casting mode skill items', async () => {
 
   global.itemTypesMock.mockReset()
   game.settings.get = originalGet
+})
+
+// --- Multiple action dice (Phase 0/1) ----------------------------------
+// Pure-helper tests for the derived action-dice list and its master-switch
+// gate. Kept at the static-helper level (mirroring computeSpeedValue) because
+// the mock Actor base has no prepareDerivedData — see the note above. The
+// load-bearing guarantee is "off ⇒ no derived list", proven directly here.
+
+test('deriveActionDiceList returns null when the feature is off', () => {
+  expect(DCCActor.deriveActionDiceList({
+    enabled: false,
+    authoring: '1d20,1d14',
+    className: 'warrior'
+  })).toBeNull()
+})
+
+test('deriveActionDiceList parses every die when on (warrior: both any)', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20,1d14',
+    className: 'warrior'
+  })
+  expect(list).toHaveLength(2)
+  expect(list.map(s => s.die)).toEqual(['d20', 'd14'])
+  expect(list.map(s => s.use)).toEqual(['any', 'any'])
+})
+
+test('deriveActionDiceList infers the wizard second die as spells-only', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20,1d16',
+    className: 'wizard'
+  })
+  expect(list.map(s => s.use)).toEqual(['any', 'spell'])
+})
+
+test('deriveActionDiceList stores a per-die rider as the slot modifier', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: '1d20+4, 1d20, 1d16',
+    className: 'warrior'
+  })
+  expect(list.map(s => s.modifier)).toEqual([4, 0, 0])
 })
