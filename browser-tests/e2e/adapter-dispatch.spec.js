@@ -2206,6 +2206,69 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(damageLine, 'adapter', { weapon: 'P1-Longsword' })
     })
 
+    test('warrior modifier dialog exposes an editable "+0" attack bonus that flows into the total (issue #791)', async ({ page }) => {
+      // A warrior's to-hit is a deed die with no flat component, so the
+      // modifier dialog used to offer only die rows — there was nowhere to
+      // type a separate situational bonus (the Discord report). The dialog
+      // now always exposes a flat, editable "Bonus" row defaulting to +0.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Warrior Bonus',
+          type: 'Player',
+          system: {
+            details: { sheetClass: 'Warrior', attackBonus: '+d4' },
+            class: { className: 'Warrior' },
+            config: { attackBonusMode: 'autoPerAttack' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-DeedSword',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '@ab', damage: '1d8+@ab', melee: true, equipped: true }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() =>
+        game.actors.getName('P1 Warrior Bonus').items.getName('P1-DeedSword').id
+      )
+
+      // Fire the attack; it blocks on the modifier dialog.
+      await page.evaluate((id) => {
+        window.__attackBonusPromise = game.actors
+          .getName('P1 Warrior Bonus')
+          .rollWeaponAttack(id, { showModifierDialog: true })
+      }, weaponId)
+
+      const dialog = page.locator('.dcc-roll-modifier')
+      await dialog.locator('button.roll').waitFor({ state: 'visible', timeout: 5000 })
+
+      // The new situational bonus row: labelled "Bonus", editable, default +0.
+      const bonusLabel = dialog.locator('label.term-label', { hasText: 'Bonus' })
+      await expect(bonusLabel).toHaveCount(1)
+      const forId = await bonusLabel.getAttribute('for')
+      const bonusInput = dialog.locator(`#${forId}`)
+      await expect(bonusInput).toHaveValue('+0')
+
+      // Add a large, unmistakable bonus, then roll.
+      await bonusInput.fill('+50')
+      await dialog.locator('button.roll').click()
+
+      // The attack card's "hits AC" total must include the +50. A warrior's
+      // d20 + deed d4 maxes at 24, so a total >= 51 proves the bonus applied.
+      const hitsAc = await page.evaluate(async () => {
+        const deadline = Date.now() + 4000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse().find(m =>
+            m.getFlag('dcc', 'isToHit') && m.speaker?.alias === 'P1 Warrior Bonus'
+          )
+          if (msg) return msg.system?.hitsAc ?? null
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+      expect(hitsAc).toBeGreaterThanOrEqual(51)
+    })
+
     test('floored damage: libDamageResult.total rides the min-1 floor and matches the displayed total (PR #720 clamp closure)', async ({ page }) => {
       // PR #720 design call (closed 2026-05-31, resolved-upstream): the
       // backlog premise was that Foundry clamped the displayed total to 1

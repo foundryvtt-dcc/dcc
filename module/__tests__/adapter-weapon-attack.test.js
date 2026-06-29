@@ -278,6 +278,50 @@ test('adapter path fires when options.showModifierDialog is set (session 13 / A6
   expect(createRollOptions.damageTerms[0].formula).toBe('1d8')
 })
 
+test('adapter path appends a situational "+0" bonus term when the dialog is shown (issue #791)', async () => {
+  // The modifier dialog must always expose a flat, editable bonus row so
+  // warriors/dwarves — whose to-hit is a deed die with no flat component —
+  // have somewhere to type a separate attack bonus (e.g. +2).
+  logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  try {
+    await actor.rollToHit(weapon, { showModifierDialog: true })
+  } finally {
+    restore()
+  }
+
+  const terms = dccRollCreateRollMock.mock.calls.at(-1)[0]
+  const bonusTerm = terms.find(t => t.type === 'Modifier' && t.formula === '+0')
+  expect(bonusTerm).toBeDefined()
+  expect(bonusTerm.label).toBe(globalThis.game.i18n.localize('DCC.Bonus'))
+})
+
+test('adapter path does NOT append the situational bonus term when no dialog is shown (issue #791)', async () => {
+  // Gate defensive: normal (non-dialog) attacks must be byte-identical, so
+  // the "+0" bonus term is never added when showModifierDialog is unset.
+  logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  const terms = dccRollCreateRollMock.mock.calls.at(-1)[0]
+  const bonusTerm = terms.find(t => t.type === 'Modifier' && t.formula === '+0')
+  expect(bonusTerm).toBeUndefined()
+})
+
 test('adapter path skips damageTerms when dialog shown but weapon has no damage', async () => {
   // Gate defensive: `rollOptions.damageTerms` should NOT be set if the
   // weapon lacks a damage formula — mirrors legacy branch at

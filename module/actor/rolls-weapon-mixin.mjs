@@ -481,6 +481,23 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       }
     }
 
+    // Situational attack bonus (issue #791): when the modifier dialog is
+    // shown, always offer a flat, editable "+0" bonus term so any attacker
+    // has a clear place to add a one-off bonus (e.g. +2). This matters most
+    // for warriors/dwarves, whose to-hit is a deed die with no flat
+    // component — without this their dialog only exposes die rows and there
+    // is nowhere to type a separate attack bonus. Gated on the dialog being
+    // shown so normal (non-dialog) attacks are byte-identical; the entered
+    // value flows through the Foundry roll total, which is authoritative for
+    // the "hits AC" result shown on the chat card.
+    if (options.showModifierDialog) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.Bonus'),
+        formula: '+0'
+      })
+    }
+
     const termsLengthBefore = terms.length
     const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
     if (!proceed) return
