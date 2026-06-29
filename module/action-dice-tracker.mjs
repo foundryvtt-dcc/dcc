@@ -81,18 +81,31 @@ export function registerActionDiceSocketHandler () {
 }
 
 /**
- * Defensive boolean read of a DCC world setting — absent/unregistered ⇒ false,
- * the safe incumbent path (settings may not be registered in early init or a
- * stripped test harness).
+ * Defensive boolean read of a DCC world setting against a given settings
+ * source — absent/unregistered/throwing ⇒ false, the safe incumbent path
+ * (settings may not be registered in early init or a stripped test harness).
+ * The settings source is a parameter so callers that already inject Foundry
+ * globals for testability (e.g. the sheet's `prepareActionDiceContext`) share
+ * this one defensive implementation rather than re-rolling the try/catch.
+ * @param {{get?: Function}} settings - a `game.settings`-like object
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function settingEnabled (settings, key) {
+  try {
+    return settings?.get('dcc', key) === true
+  } catch (_e) {
+    return false
+  }
+}
+
+/**
+ * Defensive boolean read of a DCC world setting against the live `game.settings`.
  * @param {string} key
  * @returns {boolean}
  */
 function settingOn (key) {
-  try {
-    return game.settings.get('dcc', key) === true
-  } catch (_e) {
-    return false
-  }
+  return settingEnabled(game?.settings, key)
 }
 
 /** The master switch. */

@@ -26,6 +26,7 @@ import {
   spendPlannedActionDie,
   formatActionDiceChatLine,
   noEligibleActionDieWarning,
+  settingEnabled,
   writeActionDiceHandler,
   WRITE_ACTION_DICE
 } from '../action-dice-tracker.mjs'
@@ -91,6 +92,16 @@ describe('gating', () => {
   test('a throwing settings.get is treated as off', () => {
     globalThis.game.settings.get = () => { throw new Error('not registered') }
     expect(multipleActionDiceEnabled()).toBe(false)
+  })
+
+  test('settingEnabled is the shared defensive read for any settings source', () => {
+    // Centralized helper (shared with the sheet context + actor prepare) so the
+    // try/catch-defaulting-off semantics live in exactly one place.
+    const src = { get: (m, k) => k === 'on' }
+    expect(settingEnabled(src, 'on')).toBe(true)
+    expect(settingEnabled(src, 'off')).toBe(false)
+    expect(settingEnabled(undefined, 'on')).toBe(false)
+    expect(settingEnabled({ get: () => { throw new Error('boom') } }, 'on')).toBe(false)
   })
 })
 

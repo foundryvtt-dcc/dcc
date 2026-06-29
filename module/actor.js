@@ -11,6 +11,7 @@ import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
 import { parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -273,7 +274,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     // truth (it retains every die; attributes.actionDice.value keeps only
     // the first). See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md §5, §11.
     const actionDiceList = DCCActor.deriveActionDiceList({
-      enabled: DCCActor.multipleActionDiceEnabled(),
+      enabled: multipleActionDiceEnabled(),
       authoring: config.actionDice || this.system.attributes.actionDice.value || '',
       className: this.classId
     })
@@ -286,21 +287,6 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     // to re-read actor values that may have been modified by effects
     for (const item of this.items) {
       item.prepareData()
-    }
-  }
-
-  /**
-   * Whether the multiple-action-dice master setting is on. Reads defensively
-   * so actor preparation never throws if settings are not yet registered
-   * (e.g. very early in init, or in a stripped test harness) — absent ⇒ off,
-   * which is the safe incumbent path.
-   * @returns {boolean}
-   */
-  static multipleActionDiceEnabled () {
-    try {
-      return game.settings.get('dcc', 'multipleActionDice') === true
-    } catch (_e) {
-      return false
     }
   }
 

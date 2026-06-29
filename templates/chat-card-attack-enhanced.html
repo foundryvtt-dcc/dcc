@@ -29,6 +29,10 @@
 
   <div class="dice-section{{#if compact}} compact-dice-section centered{{/if}}">{{{diceHTML}}}</div>
 
+  {{#if actionDiceChatLine}}
+    <div class="pt-8 action-dice-line centered"><em>{{actionDiceChatLine}}</em></div>
+  {{/if}}
+
   {{#if deedDieRollResult}}
     <div class="pt-8 deed-result{{#if deedRollSuccess}} critical{{/if}}">
       <strong>{{localize "DCC.DeedDie"}}:</strong> {{deedDieRollResult}}

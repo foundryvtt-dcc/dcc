@@ -2072,17 +2072,3 @@ test('deriveActionDiceList stores a per-die rider as the slot modifier', () => {
   })
   expect(list.map(s => s.modifier)).toEqual([4, 0, 0])
 })
-
-test('multipleActionDiceEnabled reflects the setting and defaults off when unregistered', () => {
-  const originalGet = game.settings.get
-  game.settings.get = vi.fn((module, key) => {
-    if (module === 'dcc' && key === 'multipleActionDice') return true
-    return originalGet(module, key)
-  })
-  expect(DCCActor.multipleActionDiceEnabled()).toBe(true)
-
-  game.settings.get = vi.fn(() => { throw new Error('not registered') })
-  expect(DCCActor.multipleActionDiceEnabled()).toBe(false)
-
-  game.settings.get = originalGet
-})

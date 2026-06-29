@@ -21,6 +21,7 @@
 
 import EntityImages from '../entity-images.js'
 import { actionDieLabel } from '../handlebars-helpers.mjs'
+import { settingEnabled } from '../action-dice-tracker.mjs'
 
 /**
  * Enrich the actor's notes HTML for sheet display.
@@ -105,12 +106,7 @@ export function prepareActionDiceContext (actor, {
   settings = globalThis.game?.settings,
   i18n = globalThis.game?.i18n
 } = {}) {
-  let enabled = false
-  try {
-    enabled = settings?.get('dcc', 'multipleActionDice') === true
-  } catch (_e) {
-    enabled = false
-  }
+  const enabled = settingEnabled(settings, 'multipleActionDice')
   const list = actor?.system?.attributes?.actionDice?.list
   const slots = Array.isArray(list) ? list : []
   const localize = (key) => i18n?.localize ? i18n.localize(key) : key
