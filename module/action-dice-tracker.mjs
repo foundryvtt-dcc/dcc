@@ -70,8 +70,13 @@ export async function writeActionDiceHandler ({ combatantUuid, state }, userId) 
   if (!combatantUuid || !state || typeof state.round !== 'number' || !Array.isArray(state.spent)) return
   const combatant = await fromUuid(combatantUuid)
   if (!combatant) return
+  // Fail closed: `userId` is a client claim (see socket.mjs), so an
+  // unresolvable user or an actor-less combatant must be REJECTED, not allowed
+  // through. Only a writer that resolves to a real user owning the combatant's
+  // actor may set the per-round state.
   const user = game.users?.get(userId)
-  if (user && combatant.actor && !combatant.actor.testUserPermission(user, 'OWNER')) return
+  if (!user) return
+  if (!combatant.actor || !combatant.actor.testUserPermission(user, 'OWNER')) return
   await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
 }
 

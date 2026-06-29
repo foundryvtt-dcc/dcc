@@ -311,6 +311,32 @@ describe('writeActionDiceHandler (GM-side socket handler)', () => {
     expect(setFlag).not.toHaveBeenCalled()
     delete globalThis.fromUuid
   })
+
+  // Fail-closed authorization: `userId` is a client claim, so a forged/omitted
+  // id that doesn't resolve to a real user must be rejected (not allowed
+  // through). Guards the bypass where `game.users.get` returns undefined.
+  test('rejects a write when the requesting user cannot be resolved', async () => {
+    const setFlag = vi.fn(async () => {})
+    const combatant = setupCombatant(setFlag, true)
+    globalThis.fromUuid = vi.fn(async () => combatant)
+    globalThis.game.users = { get: vi.fn(() => undefined) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true] } }, 'ghost')
+    expect(setFlag).not.toHaveBeenCalled()
+    delete globalThis.fromUuid
+  })
+
+  // An actor-less combatant has no ownership to check, so it must be rejected
+  // rather than written through.
+  test('rejects a write for an actor-less combatant', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => ({ actor: null, setFlag }))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true] } }, 'p1')
+    expect(setFlag).not.toHaveBeenCalled()
+    delete globalThis.fromUuid
+  })
 })
 
 // --- Phase 3: roll-path auto-spend --------------------------------------
