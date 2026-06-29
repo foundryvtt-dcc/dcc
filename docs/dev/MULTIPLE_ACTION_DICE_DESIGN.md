@@ -49,8 +49,11 @@ Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
 
 - **Phase 0 — master setting.** `multipleActionDice` (world, default OFF,
   `requiresReload`) registered in `module/settings.js` with i18n in all seven
-  lang files. `DCCActor.multipleActionDiceEnabled()` reads it defensively
-  (absent/unregistered ⇒ off).
+  lang files. The defensive read (absent/unregistered/throwing ⇒ off) is a
+  single shared helper — `settingEnabled(settings, key)` in
+  `module/action-dice-tracker.mjs`, surfaced as `multipleActionDiceEnabled()`
+  for the live `game.settings` and reused by `DCCActor.prepareDerivedData` and
+  the sheet's `prepareActionDiceContext` (which injects its own `settings`).
 - **Phase 1 (data).** `DCCActor.prepareDerivedData` derives
   `system.attributes.actionDice.list` via the pure static
   `DCCActor.deriveActionDiceList({ enabled, authoring, className })` — returns
@@ -111,8 +114,11 @@ actor has multiple dice.
   die for an **extra** slot (index > 0) via `options._actionDieFormula`, read in
   `rollToHit` — so the **first** action of a round, and the entire off-path,
   stay byte-identical. The lib's `attackInput.actionDie` is realigned to the
-  override so crit/fumble classification matches the rolled die. The chat card
-  (`templates/chat-card-attack-result.html`) renders the "Action N of M" line.
+  override so crit/fumble classification matches the rolled die. Both attack-card
+  templates render the "Action N of M" line — the plain card
+  (`templates/chat-card-attack-result.html`) and the enhanced card
+  (`templates/chat-card-attack-enhanced.html`, carried through
+  `buildEnhancedCardData`).
 - **i18n.** `DCC.ActionDiceChatLine` / `DCC.ActionDiceChatLineOverBudget` added
   and translated in all seven lang files.
 - Covered by new `module/__tests__/action-dice-tracker.test.js` cases (plan /
