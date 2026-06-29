@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .grid-align-center {
   display: grid;
   align-items: center;
@@ -683,6 +684,16 @@ a.inline-roll {
 
 .emote-note {
   font-size: 0.9em;
+}
+
+/* ----------------------------------------- */
+/*  Multiple action dice — "Action N of M"   */
+/* ----------------------------------------- */
+.dcc-action-dice-line {
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 4px;
+  opacity: 0.8;
 }
 
 /* ----------------------------------------- */
