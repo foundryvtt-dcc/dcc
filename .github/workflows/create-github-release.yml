@@ -17,7 +17,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - name: Sync package.json + package-lock.json to version.txt
         # version.txt is the only file the maintainer hand-edits. The release
         # action below rewrites system.json and commits everything with
