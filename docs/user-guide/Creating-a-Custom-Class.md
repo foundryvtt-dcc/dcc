@@ -15,14 +15,17 @@ When you click the **Level** label on a character sheet, the system does *not*
 read stats from any item on the actor. Instead it:
 
 1. Reads the character's **Class Name** (`system.class.className`).
-2. Looks through every registered *level‑data compendium pack* for an item
-   **named** `<class-name>-<level>` (see the naming rules below).
+2. Looks for a `level`‑type item **named** `<class-name>-<level>` (see the
+   naming rules below) — first in every registered *level‑data compendium
+   pack*, then, if none is found, among the `level` items sitting loose in
+   your world.
 3. Parses that item's **Level Data** text field into a list of
    `path = value` changes.
 4. Applies those changes to the character and rolls new hit points.
 
 So a custom class is really just **a set of `level`‑type items, one per level,
-sitting in a compendium the system has been told to scan.**
+named by convention** — either bundled in a compendium a module registers, or
+simply created in your world's Items sidebar.
 
 There are two mistakes that stop this from working, and they're the ones AI
 assistants almost always make:
@@ -120,19 +123,28 @@ For the full catalog of actor paths you can target, see
 appended to the shared Level Data before it's applied — handy for classes whose
 progression differs by alignment. Leave them blank if you don't need them.
 
-## Step 3 — Register the compendium
+## Step 3 — Make the items findable
 
-**Correct naming is not enough on its own — the pack must be registered.** The
-level dialog only searches compendiums whose ids have been registered with the
-system; it never scans every compendium in the world, and it never reads loose
-items sitting in an item folder. Think of it as two separate switches:
+The level dialog resolves your `level` items in this order:
 
-- **Registration** decides *which compendiums* are searched.
-- **Naming** decides *which item inside a searched pack* matches.
+1. **Registered level‑data compendiums** (searched first).
+2. **Loose `level` items in your world's Items sidebar** (the fallback).
 
-You need both. The items must live in a compendium pack, and that pack's id must
-be registered via the `dcc.registerLevelDataPack` hook. A content module
-registers its pack from an `init` hook:
+You only need *one* of these. Pick based on how you're distributing the class.
+
+### The simple way: world items (no registration)
+
+If you're building a class just for your own game, **you don't need to register
+anything.** Create the `level` items directly in your world's **Items** sidebar,
+named by convention (`blood-witch-1`, `blood-witch-2`, …), and the dialog finds
+them automatically — the same way a crit or fumble table you drop into the
+sidebar just works. This is the recommended path for one‑off homebrew.
+
+### The packaged way: a registered compendium
+
+If you're shipping the class inside a **module**, put the `level` items in a
+compendium pack and register that pack's id via the `dcc.registerLevelDataPack`
+hook from an `init` hook:
 
 ```js
 Hooks.once('init', () => {
@@ -141,19 +153,9 @@ Hooks.once('init', () => {
 ```
 
 Replace `my-module.blood-witch-levels` with your pack's full id
-(`<module-name>.<pack-name>` as declared in your module manifest).
-
-**No module? Register a world compendium instead.** If you built the level
-items in a *world* compendium (its id is `world.<pack-name>`), you can register
-it without shipping a module by firing the same hook from a script — for
-example a one‑line script macro you run once per session:
-
-```js
-Hooks.callAll('dcc.registerLevelDataPack', 'world.blood-witch-levels')
-```
-
-The dialog reads the registered‑packs list live, so registering any time before
-you open the Level dialog is enough.
+(`<module-name>.<pack-name>` as declared in your module manifest). Registered
+packs are searched **before** world items, so an official pack always wins over a
+stray same‑named world item.
 
 If you also want the class's progression picked up by the class‑progression
 loader (for features that read it outside the level dialog), register the class
@@ -184,8 +186,11 @@ If the level dialog says the level data wasn't found, or nothing changes:
   `blood-witch-1`, not `Blood-Witch-1`.
 - **Class Name.** The sheet's Class Name must match the item‑name prefix and
   must not still be `Generic` / `Zero-Level`.
-- **Pack registered?** Confirm your `dcc.registerLevelDataPack` hook ran. In
-  the browser console, `CONFIG.DCC.levelDataPacks.packs` should list your pack.
+- **Where the items live.** World items must be `level`‑type items in the
+  **Items** sidebar (items inside a compendium are only searched if that
+  compendium was registered). If you went the packaged route, confirm your
+  `dcc.registerLevelDataPack` hook ran — in the browser console,
+  `CONFIG.DCC.levelDataPacks.packs` should list your pack.
 - **Stats in Level Data, not on the item.** Double‑check every change is a
   `path = value` line inside the Level Data field, not a field you tried to set
   on the item itself.
