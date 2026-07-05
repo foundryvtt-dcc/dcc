@@ -13,3 +13,5 @@ Just click on the "Level" label next to the level of your PC:
 Once you accept this change, it will be logged to the Chat, and the Hit Points will be rolled.
 
 If you would like a different Hit Point formula, you can roll that in the chat yourself, and adjust your character as desired.
+
+Building your own class? See [Creating a Custom Class](Creating-a-Custom-Class.md) for how to author the level data that this dialog reads.

@@ -172,6 +172,18 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     }
+
+    // Fall back to an unregistered world-level item named by convention,
+    // mirroring the world-table fallback used for crit/fumble tables in
+    // utilities.js. Registered packs win (checked above) so installing an
+    // official level-data pack module never changes existing behavior;
+    // this lets homebrew classes work by simply dropping `level` items
+    // named `{class}-{level}` into the world without registering a pack.
+    const worldLevelItem = game.items?.find(item => item.type === 'level' && item.name === itemName)
+    if (worldLevelItem) {
+      return worldLevelItem
+    }
+
     return {}
   }
 
