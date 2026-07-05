@@ -7,4 +7,8 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
-npm install --no-audit --no-fund
+# Use `npm ci` for a deterministic install from package-lock.json: it never
+# rewrites the lockfile (unlike `npm install`, which can reconcile it and leave
+# stray churn in the working tree). Requires the lockfile to be in sync, which
+# is the desired failure mode in an ephemeral session.
+npm ci --no-audit --no-fund
