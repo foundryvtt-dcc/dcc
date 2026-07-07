@@ -524,6 +524,74 @@ test.describe('DCC Extension API', () => {
     expect(result.mercurialAfter).toBe(true)
   })
 
+  // Issue #773 follow-up (Locotomo: "manifestation rolls still don't work,
+  // neither wizard nor cleric"). rollManifestation() must roll a die sized to
+  // the manifestation table's *result ranges*, not the table's stray `formula`.
+  // Core-book side-effect tables can ship a `formula` (e.g. 1d100) that rolls
+  // far past the manifestation rows (1..N); rolling that lands outside the
+  // table, `table.draw` matches nothing, and the user is back to the original
+  // "always rolls d100, no manifestation" bug. This drives the real world-table
+  // path end-to-end and asserts the roll landed on a real row (value in range,
+  // description stowed). It runs for both a wizard- and a cleric-mode spell
+  // because both resolve manifestation the same way.
+  for (const castingMode of ['wizard', 'cleric']) {
+    test(`rollManifestation rolls inside an oversized-formula table (${castingMode} spell) — issue #773`, async ({ page }) => {
+      const observed = await page.evaluate(async (castingMode) => {
+        // Table name must match `${spell.name} Manifestation` so the world
+        // fallback lookup (game.tables.getName) resolves it.
+        const spellName = `P_Manifest ${castingMode}`
+        let actor
+        const waitForValue = async (item, path, predicate) => {
+          const read = () => path.split('.').reduce((o, k) => o?.[k], item.system)
+          for (let i = 0; i < 40; i++) {
+            if (predicate(read())) return
+            await new Promise((resolve) => setTimeout(resolve, 25))
+          }
+        }
+        try {
+          // A manifestation table whose formula (1d100) can roll past its rows
+          // (1..3). Pre-fix, the die was taken from `formula` and never matched.
+          await RollTable.create({
+            name: `${spellName} Manifestation`,
+            formula: '1d100',
+            replacement: true,
+            results: [
+              { type: CONST.TABLE_RESULT_TYPES.TEXT, description: 'the caster crackles with arcane light', range: [1, 1] },
+              { type: CONST.TABLE_RESULT_TYPES.TEXT, description: 'a chill wind swirls about the caster', range: [2, 2] },
+              { type: CONST.TABLE_RESULT_TYPES.TEXT, description: 'the air smells of ozone', range: [3, 3] }
+            ]
+          })
+
+          actor = await Actor.create({ type: 'Player', name: `P_ManifestActor ${castingMode}` })
+          const [spell] = await actor.createEmbeddedDocuments('Item', [{
+            type: 'spell',
+            name: spellName,
+            system: { level: 1, config: { castingMode } }
+          }])
+
+          // Roll (no lookup) — the die must be derived from the table ranges.
+          await spell.rollManifestation()
+          await waitForValue(spell, 'manifestation.value', (v) => v !== '' && v != null)
+
+          return {
+            value: Number(spell.system.manifestation.value),
+            description: spell.system.manifestation.description || ''
+          }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+          const t = game.tables.getName(`${spellName} Manifestation`)
+          if (t) await t.delete().catch(() => {})
+        }
+      }, castingMode)
+
+      // The roll landed on a real table row (1..3), never a bare d100 result.
+      expect(observed.value).toBeGreaterThanOrEqual(1)
+      expect(observed.value).toBeLessThanOrEqual(3)
+      // A manifestation description was drawn from the table and stowed.
+      expect(observed.description).toMatch(/caster|wind|ozone/i)
+    })
+  }
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were
