@@ -509,6 +509,7 @@
   "DCC.NoFolder": "-",
   "DCC.None": "无",
   "DCC.NoModifiableTerms": "找不到投骰公式的可调整术语",
+  "DCC.NoManifestationTableWarning": "{spell} 没有显现表——此法术没有可供投骰的显现。",
   "DCC.NoSpellResultsTableWarning": "此法术未定义法术结果表",
   "DCC.Notes": "注释",
   "DCC.NotesTabHint": "此角色的自由格式注释",

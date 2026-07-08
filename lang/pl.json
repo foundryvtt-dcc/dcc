@@ -509,6 +509,7 @@
   "DCC.NoFolder": "-",
   "DCC.None": "Żaden",
   "DCC.NoModifiableTerms": "Nie znaleziono modyfikowalnych składników w formule rzutu",
+  "DCC.NoManifestationTableWarning": "{spell} nie ma tabeli manifestacji — to zaklęcie nie ma manifestacji do rzucenia.",
   "DCC.NoSpellResultsTableWarning": "Tabela Wyników Czaru nie zdefiniowana dla tego czaru",
   "DCC.Notes": "Notatki",
   "DCC.NotesTabHint": "Swobodne notatki o tej postaci",

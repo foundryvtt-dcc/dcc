@@ -509,6 +509,7 @@
   "DCC.NoFolder": "-",
   "DCC.None": "Ninguno",
   "DCC.NoModifiableTerms": "No se encontraron términos modificables en la fórmula de tirada",
+  "DCC.NoManifestationTableWarning": "{spell} no tiene tabla de manifestación: este hechizo no tiene manifestación que tirar.",
   "DCC.NoSpellResultsTableWarning": "Tabla de resultados de hechizos no definida para este hechizo",
   "DCC.Notes": "Notas",
   "DCC.NotesTabHint": "Notas libres sobre este personaje",
