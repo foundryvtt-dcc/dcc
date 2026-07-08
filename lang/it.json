@@ -509,6 +509,7 @@
   "DCC.NoFolder": "-",
   "DCC.None": "N/A",
   "DCC.NoModifiableTerms": "Non ci sono termini modificabili nella formula di tiro",
+  "DCC.NoManifestationTableWarning": "{spell} non ha una tabella di manifestazione — questo incantesimo non ha una manifestazione da tirare.",
   "DCC.NoSpellResultsTableWarning": "Tabella dei risultati non definita per questo Incantesimo",
   "DCC.Notes": "Note",
   "DCC.NotesTabHint": "Note su questo personaggio",

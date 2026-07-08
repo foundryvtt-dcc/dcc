@@ -148,9 +148,28 @@ describe('SpellItemMixin extraction', () => {
       })
     })
 
+    // Issue #773 follow-up (Invisibility): many DCC spells have no manifestation
+    // at all, so no `<name> Manifestation` table ships. Rolling one must warn and
+    // stow nothing — never fall through to a meaningless 1d100 that stores a bogus
+    // value (e.g. 79) with an empty description.
+    test('rollManifestation with no table warns and stows nothing (does not roll 1d100)', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      // No pack, no world table → no manifestation table for this spell.
+      const createRoll = vi.fn()
+      global.game.dcc = { DCCRoll: { createRoll } }
+
+      await item.rollManifestation()
+
+      expect(global.ui.notifications.warn).toHaveBeenCalledWith('DCC.NoManifestationTableWarning')
+      expect(createRoll).not.toHaveBeenCalled()
+      expect(item.update).not.toHaveBeenCalled()
+    })
+
     // Issue #773: manifestation must roll the table's own die (1d4 here), never a
     // hardcoded 1d100 — a d100 lands outside the small table's range and never
-    // matches a result.
+    // matches a result. This table exposes no result ranges, so the die falls
+    // back to the table's own `formula`.
     test('rollManifestation rolls the manifestation table die, not 1d100', async () => {
       const item = makeSpell()
       item.actor = actor
@@ -180,6 +199,55 @@ describe('SpellItemMixin extraction', () => {
       expect(table.draw).toHaveBeenCalledOnce()
       expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
         'system.manifestation.value': 3,
+        'system.manifestation.description': '<p>Caster glows faintly</p>'
+      }))
+    })
+
+    // Issue #773 follow-up (Locotomo, "still doesn't work"): a manifestation
+    // table whose `formula` (1d100) can roll far past its actual rows (1..4)
+    // must still be rolled on a die sized to its ranges (1d4), otherwise the
+    // roll lands outside the table, `table.draw` matches nothing, and the user
+    // is back to the original "always rolls d100, no manifestation" symptom.
+    // The die must be derived from the result ranges, NOT trusted from `formula`.
+    test('rollManifestation sizes the die to the table ranges, ignoring an oversized formula', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const drawnRoll = new FakeRoll('1d4', { value: 2 })
+      const table = {
+        // Stray core-book formula that can roll past the manifestation rows.
+        formula: '1d100',
+        // Rows only cover 1..4 — this is what draws must land within.
+        results: {
+          contents: [
+            { range: [1, 1], description: 'a' },
+            { range: [2, 2], description: 'caster glows faintly' },
+            { range: [3, 3], description: 'c' },
+            { range: [4, 4], description: 'd' }
+          ]
+        },
+        draw: vi.fn(async () => ({
+          roll: drawnRoll,
+          results: [{ description: 'caster glows faintly' }]
+        }))
+      }
+      const entry = { _id: 'tbl1', name: 'Probe Spell Manifestation' }
+      global.game.packs = {
+        get: vi.fn(() => ({
+          index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+          getDocument: vi.fn(async () => table)
+        }))
+      }
+      const createRoll = vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 2 }))
+      global.game.dcc = { DCCRoll: { createRoll } }
+
+      await item.rollManifestation()
+
+      // Rolled on 1d4 (derived from ranges), NOT the table's stray 1d100.
+      expect(createRoll.mock.calls[0][0][0].formula).toBe('1d4')
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 2,
         'system.manifestation.description': '<p>Caster glows faintly</p>'
       }))
     })

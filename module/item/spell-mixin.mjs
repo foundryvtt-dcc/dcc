@@ -7,20 +7,26 @@ import { ensurePlus } from '../utilities.js'
  * Determine the die formula to roll for a manifestation table.
  *
  * Manifestation tables are small dice (1d3/1d4/1d5/1d6/1d8/1d10), one per spell.
- * Prefer the table's own `formula`; if a table ships without one (a few core-book
- * tables do), derive `1dN` from its highest result range so the roll still lands
- * inside the table. With no table at all, fall back to 1d100 so a bare roll still
- * produces something. See issue #773.
+ * `table.draw` matches `roll.total` against the table's result *ranges*, so the
+ * die has to stay inside those ranges — size it to the highest range and every
+ * roll lands on a real row. We deliberately derive `1dN` from the ranges rather
+ * than trusting `table.formula`: several core-book side-effect tables ship a
+ * stray `formula` (e.g. `1d100`) that can roll well past the manifestation rows,
+ * and returning it verbatim reproduces the original "always rolls d100, no
+ * manifestation" bug even after the roll was pointed at the right table. Fall
+ * back to the table's own `formula` only when it exposes no usable ranges, and
+ * to `1d100` when there's no table at all. See issue #773.
  *
  * @param {RollTable|null} table - the resolved manifestation table, if any
  * @returns {string} a die formula such as `1d4`
  */
 function manifestationDieFormula (table) {
   if (!table) { return '1d100' }
-  if (table.formula && table.formula.trim()) { return table.formula }
   const max = (table.results?.contents ?? table.results ?? [])
     .reduce((hi, r) => Math.max(hi, r.range?.[1] ?? 0), 0)
-  return max > 0 ? `1d${max}` : '1d100'
+  if (max > 0) { return `1d${max}` }
+  if (table.formula && table.formula.trim()) { return table.formula }
+  return '1d100'
 }
 
 /**
@@ -238,12 +244,22 @@ export const SpellItemMixin = (Base) => class extends Base {
       const entry = pack.index.find((entity) => entity.name === manifestationTableName)
       if (entry) {
         table = await pack.getDocument(entry._id)
-      } else {
-        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
       }
+    } else {
+      // The compendium itself is missing — tell the user to install/activate it.
+      console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
     }
     if (!table) {
       table = game.tables.getName(manifestationTableName)
+    }
+
+    // Many DCC spells (e.g. Invisibility) have no manifestation at all, so no
+    // `<name> Manifestation` table ships for them. When rolling (not looking up a
+    // value) with no table, don't roll a meaningless 1d100 and stow a bogus value
+    // with an empty description — tell the user this spell has no manifestation
+    // and stop. See issue #773 follow-up.
+    if (!table && !lookup) {
+      return ui.notifications.warn(game.i18n.format('DCC.NoManifestationTableWarning', { spell: this.name }))
     }
 
     let roll

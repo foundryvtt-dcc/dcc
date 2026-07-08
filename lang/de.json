@@ -509,6 +509,7 @@
   "DCC.NoFolder": "-",
   "DCC.None": "Keine",
   "DCC.NoModifiableTerms": "Keine modifizierbaren Terme in Würfelformel gefunden",
+  "DCC.NoManifestationTableWarning": "{spell} hat keine Manifestationstabelle – dieser Zauber hat keine auswürfelbare Manifestation.",
   "DCC.NoSpellResultsTableWarning": "Zauberergebnistabelle für diesen Zauber nicht definiert",
   "DCC.Notes": "Notizen",
   "DCC.NotesTabHint": "Freie Notizen über diesen Charakter",

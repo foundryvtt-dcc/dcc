@@ -495,6 +495,7 @@
   "DCC.No": "Non",
   "DCC.NoFolder": "-",
   "DCC.NoModifiableTerms": "Aucun terme modifiable trouvé dans la formule de jet",
+  "DCC.NoManifestationTableWarning": "{spell} n'a pas de table de manifestation — ce sort n'a aucune manifestation à lancer.",
   "DCC.NoSpellResultsTableWarning": "Table de Résultats de Sort non définie pour ce sort",
   "DCC.None": "Aucun",
   "DCC.Notes": "Notes",
