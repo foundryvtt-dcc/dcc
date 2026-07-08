@@ -508,6 +508,7 @@
   "DCC.No": "No",
   "DCC.NoFolder": "-",
   "DCC.None": "None",
+  "DCC.NoManifestationTableWarning": "{spell} has no manifestation table — this spell has no manifestation to roll.",
   "DCC.NoModifiableTerms": "No modifiable terms found in roll formula",
   "DCC.NoSpellResultsTableWarning": "Spell Results Table not defined for this spell",
   "DCC.Notes": "Notes",

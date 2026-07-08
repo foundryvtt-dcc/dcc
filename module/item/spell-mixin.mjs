@@ -244,12 +244,22 @@ export const SpellItemMixin = (Base) => class extends Base {
       const entry = pack.index.find((entity) => entity.name === manifestationTableName)
       if (entry) {
         table = await pack.getDocument(entry._id)
-      } else {
-        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
       }
+    } else {
+      // The compendium itself is missing — tell the user to install/activate it.
+      console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
     }
     if (!table) {
       table = game.tables.getName(manifestationTableName)
+    }
+
+    // Many DCC spells (e.g. Invisibility) have no manifestation at all, so no
+    // `<name> Manifestation` table ships for them. When rolling (not looking up a
+    // value) with no table, don't roll a meaningless 1d100 and stow a bogus value
+    // with an empty description — tell the user this spell has no manifestation
+    // and stop. See issue #773 follow-up.
+    if (!table && !lookup) {
+      return ui.notifications.warn(game.i18n.format('DCC.NoManifestationTableWarning', { spell: this.name }))
     }
 
     let roll

@@ -592,6 +592,46 @@ test.describe('DCC Extension API', () => {
     })
   }
 
+  // Issue #773 follow-up (Invisibility): ~50 core spells have no manifestation at
+  // all, so no `<name> Manifestation` table ships. Rolling one must NOT fall
+  // through to a bare 1d100 (which stored a bogus value like 79 with an empty
+  // description). It must warn and stow nothing.
+  test('rollManifestation with no manifestation table warns and stows nothing — issue #773', async ({ page }) => {
+    const observed = await page.evaluate(async () => {
+      let actor
+      try {
+        // A spell name with no matching `<name> Manifestation` table anywhere.
+        const spellName = 'P_NoManifest Spell'
+        // Guard: make sure no world table exists under that name.
+        const stray = game.tables.getName(`${spellName} Manifestation`)
+        if (stray) await stray.delete().catch(() => {})
+
+        actor = await Actor.create({ type: 'Player', name: 'P_NoManifestActor' })
+        const [spell] = await actor.createEmbeddedDocuments('Item', [{
+          type: 'spell',
+          name: spellName,
+          system: { level: 1, config: { castingMode: 'wizard' } }
+        }])
+
+        // Roll (no lookup) with no table available.
+        await spell.rollManifestation()
+        // Give any (unexpected) async update a chance to land.
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        return {
+          value: spell.system.manifestation.value,
+          description: spell.system.manifestation.description || ''
+        }
+      } finally {
+        if (actor) await actor.delete().catch(() => {})
+      }
+    })
+
+    // Nothing was stowed — no bogus 1d100 value, no description.
+    expect(observed.value === '' || observed.value === 0 || observed.value == null).toBe(true)
+    expect(observed.description).toBe('')
+  })
+
   test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
     // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
     // handlers that used to live at the top of `module/dcc.js` were

@@ -148,6 +148,24 @@ describe('SpellItemMixin extraction', () => {
       })
     })
 
+    // Issue #773 follow-up (Invisibility): many DCC spells have no manifestation
+    // at all, so no `<name> Manifestation` table ships. Rolling one must warn and
+    // stow nothing — never fall through to a meaningless 1d100 that stores a bogus
+    // value (e.g. 79) with an empty description.
+    test('rollManifestation with no table warns and stows nothing (does not roll 1d100)', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      // No pack, no world table → no manifestation table for this spell.
+      const createRoll = vi.fn()
+      global.game.dcc = { DCCRoll: { createRoll } }
+
+      await item.rollManifestation()
+
+      expect(global.ui.notifications.warn).toHaveBeenCalledWith('DCC.NoManifestationTableWarning')
+      expect(createRoll).not.toHaveBeenCalled()
+      expect(item.update).not.toHaveBeenCalled()
+    })
+
     // Issue #773: manifestation must roll the table's own die (1d4 here), never a
     // hardcoded 1d100 — a d100 lands outside the small table's range and never
     // matches a result. This table exposes no result ranges, so the die falls
