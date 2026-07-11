@@ -246,6 +246,7 @@ export const emoteAttackRoll = function (message, html) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isToHit')) return
 
   let deedRollHTML = ''
+  let deedTablePrompt = ''
   if (message.system.deedDieRollResult) {
     const critical = message.system.deedSucceed ? ' critical' : ''
     let iconClass = 'fa-dice-d4'
@@ -271,8 +272,10 @@ export const emoteAttackRoll = function (message, html) {
     }
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
 
-    // Re-add the Mighty Deed table prompt, since the emote replaces the card content
-    deedRollHTML += buildMightyDeedPrompt(message)
+    // Re-add the Mighty Deed table prompt, since the emote replaces the card content.
+    // Kept separate from the inline deed-roll text so this block-level markup lands
+    // *after* the "…for X points of damage!" sentence instead of splitting it apart.
+    deedTablePrompt = buildMightyDeedPrompt(message)
   }
 
   let crit = ''
@@ -329,6 +332,7 @@ export const emoteAttackRoll = function (message, html) {
     rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
     damageRollHTML: damageInlineRoll,
+    deedTablePrompt,
     crit,
     fumble,
     twoWeaponNote
