@@ -221,6 +221,17 @@ test.describe('Mighty Deeds E2E Tests', () => {
     expect(await select.inputValue(), 'nothing preselected — placeholder is empty').toBe('')
     await expect(card.locator('.deed-table-result'), 'no lookup shown until a table is picked').toHaveCount(0)
 
+    // The attack sentence must stay intact: the block-level deed table picker
+    // renders *after* the "…for X points of damage!" sentence, not spliced into
+    // the middle of it (bug: the deed/damage emote text was cut apart because the
+    // picker landed between "deed roll of N" and "for X points of damage!").
+    const emoteOrder = await card.evaluate((el) => {
+      const html = (el.querySelector('.message-content') ?? el).innerHTML
+      return { damageIdx: html.indexOf('points of damage'), promptIdx: html.indexOf('deed-table-prompt') }
+    })
+    expect(emoteOrder.damageIdx, 'damage sentence present in emote').toBeGreaterThan(-1)
+    expect(emoteOrder.promptIdx, 'deed picker renders after the damage sentence, not inside it').toBeGreaterThan(emoteOrder.damageIdx)
+
     // Pick the test table → the looked-up result renders inline on the SAME card,
     // and no new chat message is posted.
     const messagesBefore = await page.evaluate(() => game.messages.size)
