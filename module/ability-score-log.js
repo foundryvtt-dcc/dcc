@@ -92,6 +92,12 @@ export function requiresNote (type) {
 /**
  * Compute the hit point adjustment for a Stamina modifier threshold crossing
  * ΔHP = (newMod − oldMod) × max(1, level)
+ *
+ * Deliberately base-score arithmetic: both endpoints are BASE Stamina values
+ * (the log dialog only ever edits the base), so a transient Active Effect
+ * `otherMod` (#801) does not shift either endpoint. HP adjustments are
+ * persistent, so they track permanent base-mod crossings — a temporary +2
+ * Stamina effect should neither grant nor mask a persistent HP change.
  * @param {Object} actor      The actor being edited
  * @param {number} oldValue   Stamina value before the change
  * @param {number} newValue   Stamina value after the change

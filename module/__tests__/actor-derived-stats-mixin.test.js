@@ -74,6 +74,37 @@ describe('DerivedStatsMixin extraction', () => {
     expect(inst.system.abilities.lck.maxMod).toBe(1)
   })
 
+  test('computeAbilityModifiers: maxMod stays 0 in the 9-12 band even when otherMod shifts mod (#801 review)', () => {
+    // The table is 0 (falsy) for max 9-12; a `||` fallback would leak the
+    // effective-derived mod (+1 here) into maxMod. It must stay 0.
+    const inst = new Mixed()
+    inst.system = {
+      abilities: {
+        str: { value: 12, otherMod: 1, max: 12 }, // effective 13 -> mod +1
+        lck: { value: 12, otherMod: 1 } // max absent -> falls back to BASE-derived mod
+      }
+    }
+    inst.computeAbilityModifiers()
+    expect(inst.system.abilities.str.mod).toBe(1)
+    expect(inst.system.abilities.str.maxMod).toBe(0) // table[12], not the effective mod
+    expect(inst.system.abilities.lck.mod).toBe(1)
+    expect(inst.system.abilities.lck.maxMod).toBe(0) // base-derived (12 -> 0), not effective
+  })
+
+  test('computeAbilityModifiers clamps out-of-range effective scores to the table edges (#801 review)', () => {
+    const inst = new Mixed()
+    inst.system = {
+      abilities: {
+        sta: { value: 0, otherMod: -1, max: 10 }, // effective -1 -> clamp to 0 -> -4 (not 0)
+        str: { value: 18, otherMod: 5, max: 18 } // effective 23 -> beyond this table (top 18) -> +3
+      }
+    }
+    inst.computeAbilityModifiers()
+    expect(inst.system.abilities.sta.mod).toBe(-4)
+    expect(inst.system.abilities.sta.effectiveValue).toBe(-1) // display keeps the raw arithmetic
+    expect(inst.system.abilities.str.mod).toBe(3)
+  })
+
   test('computeSavingThrows sums ability mod + class/other bonuses and honors override', () => {
     const inst = new Mixed()
     inst.system = {

@@ -37,13 +37,27 @@ export const DerivedStatsMixin = (Base) => class extends Base {
    * not move.
    */
   computeAbilityModifiers () {
+    const table = CONFIG.DCC.abilityModifiers
+    // A score outside the table (otherMod can push effective below 0 or past
+    // the top) keeps the nearest table entry's modifier rather than snapping
+    // to 0 — a burned-to-0 score with a -1 penalty is still -4, not +0.
+    const lookupMod = (score) => {
+      if (table[score] !== undefined) return table[score]
+      const keys = Object.keys(table).map(Number)
+      return table[Math.max(Math.min(score, Math.max(...keys)), Math.min(...keys))] ?? 0
+    }
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
       const ability = abilities[abilityId]
-      const effectiveValue = (parseInt(ability.value) || 0) + (parseInt(ability.otherMod) || 0)
+      const baseValue = parseInt(ability.value) || 0
+      const effectiveValue = baseValue + (parseInt(ability.otherMod) || 0)
       ability.effectiveValue = effectiveValue
-      ability.mod = CONFIG.DCC.abilityModifiers[effectiveValue] || 0
-      ability.maxMod = CONFIG.DCC.abilityModifiers[ability.max] || ability.mod
+      ability.mod = lookupMod(effectiveValue)
+      // `??`, not `||`: the table is 0 across the 9-12 band, and a falsy
+      // fallback there would leak the effective-derived mod into maxMod.
+      // When max is absent entirely, fall back to the BASE-derived mod so a
+      // transient otherMod never moves the frozen lucky-roll aliases.
+      ability.maxMod = table[ability.max] ?? lookupMod(baseValue)
     }
   }
 

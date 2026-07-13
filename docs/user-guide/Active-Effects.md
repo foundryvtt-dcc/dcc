@@ -236,6 +236,7 @@ Target the `otherMod` modifier field, **not** the `value` or `max` base fields (
 Notes:
 - The derived ability modifier (`.mod`) updates automatically from the effective score (base `value` + `otherMod`), so a +1 that crosses a modifier threshold (e.g. 15 → 16) raises the modifier too.
 - `otherMod` does not shift the frozen `maxMod` used for lucky-roll math (`@maxLck` and friends) — that stays on the raw `max` score.
+- Spellburn and luck spending always consume the *base* score: a temporary `otherMod` bonus doesn't add burnable points (and a penalty doesn't remove them), and the thief/halfling Luck Die spend cap follows the base Luck score.
 - For *permanent* changes — ability damage, spellburn, curses that should consume the base score — edit the score directly on the character sheet instead of using an effect.
 
 ### Combat Attributes

@@ -1224,10 +1224,11 @@ class ActorMock {
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
       const config = global.CONFIG?.DCC?.abilityModifiers || DCC.abilityModifiers
-      const effectiveValue = (parseInt(abilities[abilityId].value) || 0) + (parseInt(abilities[abilityId].otherMod) || 0)
+      const baseValue = parseInt(abilities[abilityId].value) || 0
+      const effectiveValue = baseValue + (parseInt(abilities[abilityId].otherMod) || 0)
       abilities[abilityId].effectiveValue = effectiveValue
       abilities[abilityId].mod = config[effectiveValue] || 0
-      abilities[abilityId].maxMod = config[abilities[abilityId].max] || abilities[abilityId].mod
+      abilities[abilityId].maxMod = config[abilities[abilityId].max] ?? (config[baseValue] || 0)
     }
   }
 
