@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.abilities.lck.value",
+      "key": "system.abilities.lck.otherMod",
       "value": "-1",
       "type": "add",
       "priority": null

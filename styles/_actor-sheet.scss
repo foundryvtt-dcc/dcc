@@ -83,6 +83,19 @@
         width: 47px;
       }
 
+      // Effective score badge (#801): shown bottom-left when an otherMod
+      // Active Effect shifts the score away from the editable base value
+      .ability-effective-value {
+        position: absolute;
+        bottom: 1px;
+        left: 2px;
+        font-size: 11px;
+        font-weight: bold;
+        line-height: 1;
+        color: var(--system-primary-color);
+        cursor: help;
+      }
+
       .ability-effects {
         position: absolute;
         top: 2px;

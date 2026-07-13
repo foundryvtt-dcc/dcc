@@ -1220,10 +1220,13 @@ class ActorMock {
 
   prepareBaseData () {
     // Calculate ability modifiers using CONFIG.DCC.abilityModifiers like the real actor
+    // (effective score = value + otherMod, #801)
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
       const config = global.CONFIG?.DCC?.abilityModifiers || DCC.abilityModifiers
-      abilities[abilityId].mod = config[abilities[abilityId].value] || 0
+      const effectiveValue = (parseInt(abilities[abilityId].value) || 0) + (parseInt(abilities[abilityId].otherMod) || 0)
+      abilities[abilityId].effectiveValue = effectiveValue
+      abilities[abilityId].mod = config[effectiveValue] || 0
       abilities[abilityId].maxMod = config[abilities[abilityId].max] || abilities[abilityId].mod
     }
   }

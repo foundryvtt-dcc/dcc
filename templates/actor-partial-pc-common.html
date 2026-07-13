@@ -230,6 +230,14 @@
                  name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10"
                  {{#if @root.abilityScoreLogEnabled}}readonly style="cursor: pointer" data-action="editAbilityScore"
                  data-tooltip="{{localize 'DCC.AbilityLogTitle'}}"{{/if}}>
+          {{!-- Effective score badge (#801): shown when an otherMod Active
+                Effect shifts the score; the input keeps the editable base --}}
+          {{#if (ne ability.effectiveValue ability.value)}}
+          <span class="ability-effective-value"
+                data-tooltip="{{localize 'DCC.AbilityEffectiveValueTooltip' effective=ability.effectiveValue base=ability.value}}">
+            {{ability.effectiveValue}}
+          </span>
+          {{/if}}
           {{#if effects.length}}
           <div class="ability-effects">
             {{#each effects}}

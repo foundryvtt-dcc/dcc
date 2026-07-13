@@ -8,6 +8,7 @@ import { DerivedStatsMixin } from '../actor/derived-stats-mixin.mjs'
 // DCCActor instances and passes unchanged, proving transparent composition).
 
 const MEMBERS = [
+  'computeAbilityModifiers',
   'computeMeleeAndMissileAttackAndDamage',
   'computeSavingThrows',
   'computeSpellCheck',
@@ -17,17 +18,60 @@ const MEMBERS = [
 class Base {}
 const Mixed = DerivedStatsMixin(Base)
 
+// Real DCC RAW modifier table thresholds used by the otherMod tests below
+const ABILITY_MODIFIERS = {
+  0: -4, 1: -4, 2: -3, 3: -3, 4: -2, 5: -2, 6: -1, 7: -1, 8: -1, 9: 0, 10: 0, 11: 0, 12: 0, 13: 1, 14: 1, 15: 1, 16: 2, 17: 2, 18: 3
+}
+
 describe('DerivedStatsMixin extraction', () => {
   beforeEach(() => {
     globalThis.Hooks = { callAll: vi.fn() }
+    globalThis.CONFIG = { DCC: { abilityModifiers: ABILITY_MODIFIERS } }
   })
 
-  test('is a mixin factory carrying all four compute helpers', () => {
+  test('is a mixin factory carrying all compute helpers', () => {
     expect(typeof DerivedStatsMixin).toBe('function')
     expect(Object.getPrototypeOf(Mixed)).toBe(Base)
     for (const name of MEMBERS) {
       expect(Object.getOwnPropertyDescriptor(Mixed.prototype, name), `missing: ${name}`).toBeDefined()
     }
+  })
+
+  test('computeAbilityModifiers derives mod from value + otherMod (#801)', () => {
+    const inst = new Mixed()
+    inst.system = {
+      abilities: {
+        str: { value: 12, otherMod: 1, max: 12 }, // 12+1=13 crosses into +1
+        agl: { value: 13, otherMod: 2, max: 13 }, // 13+2=15 stays at +1
+        sta: { value: 15, otherMod: 1, max: 15 }, // 15+1=16 bumps to +2
+        per: { value: 9, otherMod: -1, max: 9 }, // 9-1=8 drops to -1
+        int: { value: 10, otherMod: 0, max: 10 }, // no shift
+        lck: { value: 11, max: 18 } // otherMod absent entirely
+      }
+    }
+    inst.computeAbilityModifiers()
+    const a = inst.system.abilities
+    expect(a.str.mod).toBe(1)
+    expect(a.str.effectiveValue).toBe(13)
+    expect(a.agl.mod).toBe(1)
+    expect(a.sta.mod).toBe(2)
+    expect(a.per.mod).toBe(-1)
+    expect(a.per.effectiveValue).toBe(8)
+    expect(a.int.mod).toBe(0)
+    expect(a.lck.mod).toBe(0)
+    expect(a.lck.effectiveValue).toBe(11)
+  })
+
+  test('computeAbilityModifiers keeps maxMod on the raw max, unshifted by otherMod', () => {
+    const inst = new Mixed()
+    inst.system = {
+      abilities: {
+        lck: { value: 15, otherMod: 1, max: 15 } // effective 16 -> mod +2, but maxMod stays +1
+      }
+    }
+    inst.computeAbilityModifiers()
+    expect(inst.system.abilities.lck.mod).toBe(2)
+    expect(inst.system.abilities.lck.maxMod).toBe(1)
   })
 
   test('computeSavingThrows sums ability mod + class/other bonuses and honors override', () => {

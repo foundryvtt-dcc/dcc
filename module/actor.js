@@ -53,11 +53,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     // Ability modifiers
-    const abilities = this.system.abilities
-    for (const abilityId in abilities) {
-      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
-      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
-    }
+    this.computeAbilityModifiers()
 
     // Get configuration data
     const config = this._getConfig()
@@ -160,12 +156,8 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     if (!this.overrides) this.overrides = {}
 
     // Recalculate ability modifiers after Active Effects have been applied
-    // This ensures effects that modify ability values (e.g. +2 to str.value) are reflected in the modifiers
-    const abilities = this.system.abilities
-    for (const abilityId in abilities) {
-      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
-      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
-    }
+    // This ensures effects that modify ability values (e.g. +2 to str.otherMod) are reflected in the modifiers
+    this.computeAbilityModifiers()
 
     // Get configuration data
     const config = this._getConfig()

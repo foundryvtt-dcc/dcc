@@ -99,6 +99,10 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     context.abilityId = this.abilityId
     context.currentValue = parseInt(ability.value) || 0
     context.maxValue = parseInt(ability.max) || 0
+    // Derived-only Active Effect modifier (#801) — display-only here; edits
+    // in this dialog always target the base value, never the effect layer
+    context.otherMod = parseInt(ability.otherMod) || 0
+    context.effectiveValue = parseInt(ability.effectiveValue ?? ability.value) || 0
     context.reasons = this.#reasonsForAbility().map(key => ({
       key,
       label: game.i18n.localize(CONFIG.DCC.abilityLogTypes[key]),

@@ -65,12 +65,15 @@ Each change consists of:
 > `otherMod`/`otherBonus` field avoids all of this. When in doubt, look
 > for a `*Mod` / `*Bonus` field on the stat and use that.
 >
-> **Ability scores (`system.abilities.*.value`/`.max`) and Hit Points have
-> no modifier field, so there is currently no safe way to target them with
-> an Active Effect.** For ability damage, spellburn, curses, or HP changes,
-> edit the value directly on the sheet instead. See
-> [Troubleshooting](#troubleshooting) if a character's scores have already
-> started drifting.
+> Ability scores have their own modifier field:
+> **`system.abilities.<ability>.otherMod`** (e.g.
+> `system.abilities.str.otherMod`). An effect there shifts the *effective*
+> score — and therefore the derived modifier — while the base score you
+> type on the sheet stays fully hand-editable. Never target
+> `system.abilities.*.value` or `.max` directly. **Hit Points still have no
+> modifier field**, so for HP changes edit the value directly on the sheet.
+> See [Troubleshooting](#troubleshooting) if a character's scores drifted
+> on a system version before 0.70.17.
 
 ## Using @-Variable References
 
@@ -134,9 +137,19 @@ If the referenced path doesn't exist or isn't a number, it resolves to `0`. A wa
    - Enable **Transfer to Actor** (should be enabled by default for items)
 4. The effect will automatically apply when the item is equipped and remove when unequipped
 
-Note that a "+1 Strength while equipped" style item should **not** be built with a hand-authored Active Effect — ability scores have no modifier field to target (see the warning above; on system versions before 0.70.17 an effect on `system.abilities.str.value` permanently corrupted the score). Adjust the ability score directly instead while the item is worn.
+### Example 4: "+1 Strength while equipped" (Magic Item Ability Bonus)
 
-### Example 4: "Charmed house: Armor Class" (Birth Augur AC Bonus)
+1. Open the item and go to its **Effects** tab
+2. Click **Create Effect**
+3. In the effect editor:
+   - Name: "Strength +1"
+   - Add change: Key: `system.abilities.str.otherMod`, Mode: Add, Value: 1
+   - Enable **Transfer to Actor** (should be enabled by default for items)
+4. While the item is equipped, the character's *effective* Strength — and Strength modifier — go up by 1. The base Strength score on the sheet stays hand-editable the whole time (spellburn, ability damage, and other base-score edits work normally), and unequipping the item removes the bonus cleanly.
+
+Target the `otherMod` key, not `system.abilities.str.value` — on system versions before 0.70.17 an effect on the `value` field permanently corrupted the score, and on later versions it locks the score against hand-edits while active.
+
+### Example 5: "Charmed house: Armor Class" (Birth Augur AC Bonus)
 
 Birth augurs that modify a specific roll use the lucky roll modifier *frozen at character creation* — per the core rulebook (p. 19), this modifier does not change when Luck changes later. The DCC system stores this value at `system.details.birthAugurLuckMod`, which is populated automatically by the character parser.
 
@@ -155,7 +168,9 @@ The same pattern works for any birth augur that modifies a specific roll — jus
 
 ## Effect Icons on Ability Scores
 
-When an effect modifies an ability score, a small icon appears in the upper-right corner of that ability's box on the character sheet. Hovering over the icon shows the effect name and value, making it easy to see at a glance which abilities are being modified. While one of these icons is showing, manual edits to that ability score are ignored on save (the effect controls the field) — disable the effect first if you need to change the base score.
+When an effect modifies an ability score, a small icon appears in the upper-right corner of that ability's box on the character sheet. Hovering over the icon shows the effect name and value, making it easy to see at a glance which abilities are being modified.
+
+When the effect targets the `otherMod` field (the recommended key), the effective score is also shown in the corner of the ability box — the main number remains the editable base score, and you can keep editing it while the effect is active. If instead an effect targets the `value` field directly (not recommended), manual edits to that score are ignored on save (the effect controls the field) — disable the effect first if you need to change the base score.
 
 ## Dragging and Copying Effects
 
@@ -209,7 +224,19 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 
 ### Ability Scores
 
-**Do not target ability scores with Active Effects.** The ability score fields (`system.abilities.str.value`, `system.abilities.lck.value`, etc., and their `.max` counterparts) are editable base values with no accompanying modifier field. On system versions before 0.70.17, an effect pointed at them compounded on every sheet save, permanently corrupting the score (see [Troubleshooting](#troubleshooting)); on current versions the score simply can't be hand-edited while such an effect is active. For ability damage, spellburn, curses, and similar changes, edit the score directly on the character sheet.
+Target the `otherMod` modifier field, **not** the `value` or `max` base fields (see the warning near the top of this page). An `otherMod` effect shifts the effective score and the derived ability modifier; the base score stays hand-editable while the effect is active.
+
+- `system.abilities.str.otherMod` - Strength
+- `system.abilities.agl.otherMod` - Agility
+- `system.abilities.sta.otherMod` - Stamina
+- `system.abilities.per.otherMod` - Personality
+- `system.abilities.int.otherMod` - Intelligence
+- `system.abilities.lck.otherMod` - Luck
+
+Notes:
+- The derived ability modifier (`.mod`) updates automatically from the effective score (base `value` + `otherMod`), so a +1 that crosses a modifier threshold (e.g. 15 → 16) raises the modifier too.
+- `otherMod` does not shift the frozen `maxMod` used for lucky-roll math (`@maxLck` and friends) — that stays on the raw `max` score.
+- For *permanent* changes — ability damage, spellburn, curses that should consume the base score — edit the score directly on the character sheet instead of using an effect.
 
 ### Combat Attributes
 - `system.attributes.ac.otherMod` - AC Modifier (requires auto-calculate AC, which is on by default for PCs; also works for NPCs)
@@ -345,7 +372,9 @@ These effects are applied normally and displayed on the NPC sheet:
 - **Initiative** (`system.attributes.init.otherMod`)
 - **Saving Throws** (`system.saves.frt.otherBonus`, `system.saves.ref.otherBonus`, `system.saves.wil.otherBonus`)
 
-As with PCs, do not target the editable base fields (`ac.value`, `init.value`, `hp.value`, `hp.max`, `speed.value`, or ability scores) — edit those directly on the NPC's stat block instead.
+Ability score `otherMod` effects (`system.abilities.<ability>.otherMod`) also work on NPCs — NPCs share the same ability schema as PCs.
+
+As with PCs, do not target the editable base fields (`ac.value`, `init.value`, `hp.value`, `hp.max`, `speed.value`, or ability score `value`/`max`) — edit those directly on the NPC's stat block instead.
 
 ## Troubleshooting
 
@@ -364,7 +393,7 @@ The fields affected are the ones you can type into on the sheet: ability scores 
 1. Delete (or disable) the offending effect.
 2. Manually re-enter the correct base value on the sheet. If you're unsure what it was, check earlier values in the chat log, or work backwards: each sheet save applied the effect one extra time.
 3. Re-create the effect against the stat's modifier field instead — the `otherMod` / `otherBonus` / `adjustment` keys listed under [Common Attribute Keys](#common-attribute-keys).
-4. If the stat has no modifier field (ability scores, Hit Points), don't use an Active Effect for it — apply the change directly to the sheet and note its source in the effect's description or the Notes tab so you remember to remove it later.
+4. If the stat has no modifier field (Hit Points), don't use an Active Effect for it — apply the change directly to the sheet and note its source in the effect's description or the Notes tab so you remember to remove it later. (Ability scores gained a modifier field — `system.abilities.<ability>.otherMod` — so recreate ability effects against that key.)
 
 ### An effect isn't applying at all
 

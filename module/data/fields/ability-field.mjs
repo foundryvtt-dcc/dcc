@@ -20,6 +20,11 @@ export class AbilityField extends SchemaField {
       // (a ceiling of 0 is nonsensical).
       value: new NumberField({ initial: 10, integer: true, min: 0 }),
       max: new NumberField({ initial: 10, integer: true, min: 1 }),
+      // Derived-only modifier for Active Effects to target (#801). Shifts the
+      // effective score (and thus the derived mod) without touching the
+      // hand-editable base `value`; the sheet never submits this field, so
+      // effect-driven values can't bake into the base score (#714/#802).
+      otherMod: new NumberField({ initial: 0, integer: true }),
       // Tracking fields for ability score changes
       // spent: voluntary loss (spellburn, luck spend) - typically recovers
       spent: new NumberField({ initial: 0, integer: true, min: 0 }),

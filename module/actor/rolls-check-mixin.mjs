@@ -205,7 +205,10 @@ export const RollsCheckMixin = (Base) => class extends Base {
    */
   async _rollAbilityCheckWithDialog (abilityId, options, abilityLabel, character) {
     const ability = this.system.abilities[abilityId]
-    const abilityMod = CONFIG.DCC.abilityModifiers[ability.value] || 0
+    // Use the prepared mod (derived from value + otherMod, #801) rather than
+    // re-deriving from the raw base value, which would drop effect-driven
+    // otherMod contributions from the dialog's ability-modifier term.
+    const abilityMod = parseInt(ability.mod ?? CONFIG.DCC.abilityModifiers[ability.value]) || 0
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
     // Multiple action dice (Phase 3) — default the dialog's action die to the

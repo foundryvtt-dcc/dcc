@@ -1,4 +1,4 @@
-/* global Hooks */
+/* global CONFIG, Hooks */
 
 import { ensurePlus } from '../utilities.js'
 
@@ -26,6 +26,27 @@ import { ensurePlus } from '../utilities.js'
  * @returns {typeof Base} a subclass carrying the derived-stat computation surface.
  */
 export const DerivedStatsMixin = (Base) => class extends Base {
+  /** Compute ability modifiers from the effective score (base value plus the
+   * derived-only `otherMod` Active Effect target, #801). Called from both
+   * prepare passes: pre-effects so items can read mods during their own
+   * preparation, and again post-effects so `otherMod`/`value` changes from
+   * Active Effects reach the modifier.
+   *
+   * `maxMod` stays on the raw `max` — it feeds the maxLck-style roll-data
+   * aliases frozen at character creation, which a transient effect should
+   * not move.
+   */
+  computeAbilityModifiers () {
+    const abilities = this.system.abilities
+    for (const abilityId in abilities) {
+      const ability = abilities[abilityId]
+      const effectiveValue = (parseInt(ability.value) || 0) + (parseInt(ability.otherMod) || 0)
+      ability.effectiveValue = effectiveValue
+      ability.mod = CONFIG.DCC.abilityModifiers[effectiveValue] || 0
+      ability.maxMod = CONFIG.DCC.abilityModifiers[ability.max] || ability.mod
+    }
+  }
+
   /** Compute Melee/Missile Base Attack and Damage Modifiers
    */
   computeMeleeAndMissileAttackAndDamage () {

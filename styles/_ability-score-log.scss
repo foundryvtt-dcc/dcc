@@ -21,6 +21,15 @@
       margin-bottom: 8px;
     }
 
+    // Active Effect otherMod display (#801) — read-only context row
+    .effective-row {
+      color: var(--system-secondary-color);
+      display: flex;
+      font-size: 13px;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+
     .new-value-row {
       align-items: center;
       display: flex;

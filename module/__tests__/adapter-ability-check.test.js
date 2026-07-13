@@ -43,6 +43,18 @@ test('actor → character accessor shape', () => {
   expect(character.classInfo.level).toBe(1)
 })
 
+test('actor → character passes the effective score (value + otherMod) as current (#801)', () => {
+  // noinspection JSCheckFunctionSignatures
+  const boosted = new DCCActor()
+  boosted.system.abilities.str.otherMod = 2
+  boosted.prepareBaseData() // recompute effectiveValue with the otherMod applied
+
+  const character = actorToCharacter(boosted)
+  expect(character.state.abilities.str.current).toBe(8) // 6 + 2
+  // max falls back to the raw base value, unshifted by otherMod
+  expect(character.state.abilities.str.max).toBe(6)
+})
+
 test('adapter path invokes lib and renders ChatMessage', async () => {
   rollToMessageMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')

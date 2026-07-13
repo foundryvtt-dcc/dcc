@@ -4,6 +4,13 @@
     <span><label>{{localize "DCC.Max"}}:</label> {{maxValue}}</span>
   </div>
 
+  {{#if otherMod}}
+  <div class="effective-row" data-tooltip="{{localize 'DCC.AbilityEffectiveValueHint'}}">
+    <span><label>{{localize "DCC.AbilityEffectModifier"}}:</label> {{numberFormat otherMod decimals=0 sign=true}}</span>
+    <span><label>{{localize "DCC.AbilityEffectiveValue"}}:</label> {{effectiveValue}}</span>
+  </div>
+  {{/if}}
+
   <div class="new-value-row">
     <label for="ability-config-new-value">{{localize "DCC.AbilityLogNewValue"}}:</label>
     <input type="number" name="newValue" id="ability-config-new-value" value="{{currentValue}}" min="0" step="1">
