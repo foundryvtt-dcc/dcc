@@ -816,4 +816,71 @@ describe('removeActiveEffectOverrides', () => {
 
     expect(result).toBe(updateData)
   })
+
+  // The actor sheet's submit data is expanded (DocumentSheetV2 _processFormData returns
+  // expandObject(formData.object)) while DCC's effects mixin tracks overrides as flat
+  // dotted keys. Deleting a flat key from a nested object no-ops, so effect-modified
+  // values were written back as the new base on every sheet save — the "curse keeps
+  // re-applying itself" bug. Overrides must be stripped from expanded data too.
+  it('removes flat override keys from expanded updateData (sheet submit path)', () => {
+    const document = { overrides: { 'system.abilities.lck.value': 11 } }
+    const updateData = {
+      system: {
+        abilities: { lck: { value: 11 } },
+        attributes: { hp: { value: 7 } }
+      }
+    }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result.system.abilities.lck).toEqual({})
+    expect(result.system.attributes.hp.value).toEqual(7)
+  })
+
+  // Core Foundry's own Actor#applyActiveEffects stores overrides nested
+  // (mergeObject(this.overrides, expandObject(overrides))) — strip those too.
+  it('removes core-style nested override keys from flat updateData', () => {
+    const document = { overrides: { system: { abilities: { lck: { value: 11 } } } } }
+    const updateData = {
+      'system.abilities.lck.value': 11,
+      'system.attributes.hp.value': 7
+    }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.attributes.hp.value': 7 })
+  })
+
+  it('removes core-style nested override keys from expanded updateData', () => {
+    const document = { overrides: { system: { abilities: { lck: { value: 11 } } } } }
+    const updateData = {
+      system: {
+        abilities: { lck: { value: 11 } },
+        attributes: { hp: { value: 7 } }
+      }
+    }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result.system.abilities.lck).toEqual({})
+    expect(result.system.attributes.hp.value).toEqual(7)
+  })
+
+  it('handles mixed nested core overrides and flat DCC-tracked overrides', () => {
+    const document = {
+      overrides: {
+        system: { abilities: { str: { value: 12 } } },
+        'system.saves.frt.value': 1
+      }
+    }
+    const updateData = {
+      'system.abilities.str.value': 12,
+      'system.saves.frt.value': 1,
+      'system.saves.frt.otherBonus': 2
+    }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.saves.frt.otherBonus': 2 })
+  })
 })

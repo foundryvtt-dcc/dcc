@@ -329,6 +329,61 @@ test.describe('DCC Active Effects', () => {
       expect(result.sourceAfter).toBe(result.source)
     })
 
+    test('sheet edits do not bake an ability-score effect into the base value', async ({ page }) => {
+      // Regression: a -1 Luck effect on system.abilities.lck.value applied once
+      // (12 -> 11), but then re-applied permanently on EVERY sheet save — editing
+      // current HP, the name, notes, or the portrait dropped Luck again each time.
+      // Cause: the sheet's submit data is expanded (nested) while the overrides
+      // map uses flat dotted keys, so the #714 override-stripping loop never
+      // matched and the displayed (effect-modified) value was persisted as the
+      // new base. The strip must remove overridden keys from expanded data too.
+      const actorName = 'V14 Curse Bake Probe'
+      await page.evaluate(async (name) => {
+        const actor = await Actor.create({
+          name,
+          type: 'Player',
+          system: { abilities: { lck: { value: 12, max: 12 } } }
+        })
+        await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Curse of Palimdybus',
+          img: 'icons/svg/aura.svg',
+          disabled: false,
+          changes: [{ key: 'system.abilities.lck.value', value: '1', type: 'subtract' }]
+        }])
+      }, actorName)
+
+      await openActorSheet(page, actorName)
+
+      // Displayed Luck reflects one application of the curse.
+      const lckInput = page.locator('input[name="system.abilities.lck.value"]')
+      expect(parseInt(await lckInput.inputValue())).toBe(11)
+
+      // Trigger two sheet saves via unrelated edits (current HP, then the name).
+      const hpInput = page.locator('input[name="system.attributes.hp.value"]').first()
+      await hpInput.fill('3')
+      await hpInput.press('Enter')
+      await page.waitForTimeout(500)
+      const nameInput = page.locator('.dcc.actor.sheet input[name="name"]').first()
+      await nameInput.fill(actorName + ' Renamed')
+      await nameInput.press('Enter')
+      await page.waitForTimeout(500)
+
+      // The persisted base is still 12, the displayed value still 11 — the
+      // effect applied exactly once and the unrelated edits went through.
+      const result = await page.evaluate((name) => {
+        const actor = game.actors.find(a => a.name.startsWith(name))
+        return {
+          sourceLck: actor._source.system.abilities.lck.value,
+          derivedLck: actor.system.abilities.lck.value,
+          hp: actor._source.system.attributes.hp.value
+        }
+      }, actorName)
+      expect(result.sourceLck).toBe(12)
+      expect(result.derivedLck).toBe(11)
+      expect(result.hp).toBe(3)
+      expect(parseInt(await lckInput.inputValue())).toBe(11)
+    })
+
     test('thief sheet surfaces the skill effect as a label modifier, base input pristine (#714)', async ({ page }) => {
       const actorName = 'V14 Thief Skill Indicator'
       await page.evaluate(async (name) => {

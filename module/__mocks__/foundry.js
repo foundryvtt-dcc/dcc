@@ -1691,6 +1691,42 @@ global.foundry.utils.expandObject = function (obj, _d = 0) {
   return expanded
 }
 
+// Foundry's implementation of flattenObject
+global.foundry.utils.flattenObject = function (obj, _d = 0) {
+  const flat = {}
+  if (_d > 100) throw new Error('Maximum depth exceeded')
+  for (const [k, v] of Object.entries(obj)) {
+    if (v instanceof Object && !Array.isArray(v)) {
+      if (Object.keys(v).length === 0) {
+        flat[k] = v
+      } else {
+        const inner = global.foundry.utils.flattenObject(v, _d + 1)
+        for (const [ik, iv] of Object.entries(inner)) {
+          flat[`${k}.${ik}`] = iv
+        }
+      }
+    } else {
+      flat[k] = v
+    }
+  }
+  return flat
+}
+
+// Foundry's implementation of deleteProperty
+global.foundry.utils.deleteProperty = function (object, key) {
+  if (!object || !key) return false
+  let target = object
+  if (key.includes('.')) {
+    const parts = key.split('.')
+    key = parts.pop()
+    target = global.foundry.utils.getProperty(object, parts.join('.'))
+    if (typeof target !== 'object' || target === null) return false
+  }
+  if (!(key in target)) return false
+  delete target[key]
+  return true
+}
+
 // Foundry's implementation of deepClone
 global.foundry.utils.deepClone = function (original) {
   return JSON.parse(JSON.stringify(original))
