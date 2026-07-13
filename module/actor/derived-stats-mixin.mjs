@@ -1,4 +1,4 @@
-/* global Hooks */
+/* global CONFIG, Hooks */
 
 import { ensurePlus } from '../utilities.js'
 
@@ -26,6 +26,44 @@ import { ensurePlus } from '../utilities.js'
  * @returns {typeof Base} a subclass carrying the derived-stat computation surface.
  */
 export const DerivedStatsMixin = (Base) => class extends Base {
+  /** Compute ability modifiers from the effective score (base value plus the
+   * `otherMod` Active Effect target, #801). Called from both prepare
+   * passes: pre-effects so items can read mods during their own
+   * preparation, and again post-effects so `otherMod`/`value` changes from
+   * Active Effects reach the modifier.
+   *
+   * `maxMod` derives from the raw `max`, never the effective score — it
+   * feeds the `@maxStr`/`@maxLck` roll-data aliases, which only permanent
+   * changes (creation, logged max adjustments) should move, not a
+   * transient effect.
+   */
+  computeAbilityModifiers () {
+    const table = CONFIG.DCC.abilityModifiers
+    // A score outside the table (otherMod can push effective below 0 or past
+    // the top) keeps the nearest table entry's modifier rather than snapping
+    // to 0 — a burned-to-0 score with a -1 penalty is still -4, not +0.
+    const lookupMod = (score) => {
+      if (table[score] !== undefined) return table[score]
+      const keys = Object.keys(table).map(Number)
+      return table[Math.max(Math.min(score, Math.max(...keys)), Math.min(...keys))] ?? 0
+    }
+    const abilities = this.system.abilities
+    for (const abilityId in abilities) {
+      const ability = abilities[abilityId]
+      const baseValue = parseInt(ability.value) || 0
+      const effectiveValue = baseValue + (parseInt(ability.otherMod) || 0)
+      ability.effectiveValue = effectiveValue
+      ability.mod = lookupMod(effectiveValue)
+      // maxMod derives from the raw max (clamped like mod), never from the
+      // effective score — a transient otherMod must not move the frozen
+      // lucky-roll aliases (@maxLck and friends). The table is 0 across the
+      // 9-12 band, so this must not fall back on falsy lookups; only an
+      // absent max falls back, to the BASE-derived mod.
+      const maxScore = parseInt(ability.max)
+      ability.maxMod = Number.isNaN(maxScore) ? lookupMod(baseValue) : lookupMod(maxScore)
+    }
+  }
+
   /** Compute Melee/Missile Base Attack and Damage Modifiers
    */
   computeMeleeAndMissileAttackAndDamage () {

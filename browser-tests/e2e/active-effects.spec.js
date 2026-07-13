@@ -384,6 +384,73 @@ test.describe('DCC Active Effects', () => {
       expect(parseInt(await lckInput.inputValue())).toBe(11)
     })
 
+    test('ability otherMod effect shifts the effective score while the base stays editable (#801)', async ({ page }) => {
+      // The supported home for "+1 Strength while equipped": an effect on the
+      // effect-layer system.abilities.str.otherMod. The base input keeps the
+      // hand-editable base score, the effective score (base + otherMod) shows
+      // as a badge in the ability box, and the derived modifier follows the
+      // effective score (12 + 1 = 13 crosses the +1 threshold).
+      const actorName = 'V14 Ability OtherMod Probe'
+      await page.evaluate(async (name) => {
+        const actor = await Actor.create({
+          name,
+          type: 'Player',
+          system: { abilities: { str: { value: 12, max: 12 } } }
+        })
+        await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Gauntlets of Ogre Power',
+          img: 'icons/svg/aura.svg',
+          disabled: false,
+          changes: [{ key: 'system.abilities.str.otherMod', value: '1', type: 'add' }]
+        }])
+      }, actorName)
+
+      await openActorSheet(page, actorName)
+
+      // Base input shows the unmodified base, badge shows the effective score,
+      // derived modifier reflects the threshold crossing, effect icon present.
+      const strInput = page.locator('input[name="system.abilities.str.value"]')
+      expect(parseInt(await strInput.inputValue())).toBe(12)
+      const badge = page.locator('#str .ability-effective-value')
+      await expect(badge).toHaveCount(1)
+      expect((await badge.textContent()).trim()).toBe('13')
+      expect(parseInt(await page.locator('input[name="system.abilities.str.mod"]').inputValue())).toBe(1)
+      await expect(page.locator('#str .ability-effect-icon')).toHaveCount(1)
+
+      // The base stays hand-editable while the effect is active — the exact
+      // limitation the otherMod field removes (contrast with .value targeting).
+      await strInput.fill('11')
+      await strInput.press('Enter')
+      await page.waitForTimeout(500)
+
+      const result = await page.evaluate((name) => {
+        const actor = game.actors.find(a => a.name.startsWith(name))
+        return {
+          source: actor._source.system.abilities.str.value,
+          otherMod: actor.system.abilities.str.otherMod,
+          effective: actor.system.abilities.str.effectiveValue,
+          mod: actor.system.abilities.str.mod,
+          overrideKeys: Object.keys(actor.overrides || {})
+        }
+      }, actorName)
+      expect(result.source).toBe(11) // the manual edit persisted
+      expect(result.otherMod).toBe(1)
+      expect(result.effective).toBe(12)
+      expect(result.mod).toBe(0) // 11 + 1 = 12 → modifier +0
+      // Tracked on otherMod, never on the editable value
+      expect(result.overrideKeys).toContain('system.abilities.str.otherMod')
+      expect(result.overrideKeys).not.toContain('system.abilities.str.value')
+
+      // Disabling the effect reverts cleanly: badge gone, base untouched.
+      await page.evaluate(async (name) => {
+        const actor = game.actors.find(a => a.name.startsWith(name))
+        await actor.effects.contents[0].update({ disabled: true })
+      }, actorName)
+      await page.waitForTimeout(1000)
+      await expect(page.locator('#str .ability-effective-value')).toHaveCount(0)
+      expect(parseInt(await strInput.inputValue())).toBe(11)
+    })
+
     test('thief sheet surfaces the skill effect as a label modifier, base input pristine (#714)', async ({ page }) => {
       const actorName = 'V14 Thief Skill Indicator'
       await page.evaluate(async (name) => {

@@ -70,6 +70,16 @@ describe('prepareAbilityEffects', () => {
     expect(result.agl).toEqual([])
   })
 
+  test('buckets otherMod changes by ability id (#801)', () => {
+    const a = actor({
+      effects: [effect('str-item', [{ key: 'system.abilities.str.otherMod', value: '1', type: 'add' }])]
+    })
+    const result = prepareAbilityEffects(a)
+    expect(result.str).toHaveLength(1)
+    expect(result.str[0].value).toBe('1')
+    expect(result.agl).toEqual([])
+  })
+
   test('ignores non-ability keys and unknown ability ids', () => {
     const a = actor({
       effects: [

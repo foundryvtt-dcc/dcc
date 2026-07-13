@@ -92,8 +92,8 @@ export function prepareAbilityEffects (actor) {
     if (!effect.changes) continue
 
     for (const change of effect.changes) {
-      // Match patterns like system.abilities.str.value or system.abilities.str.mod
-      const match = change.key.match(/^system\.abilities\.(\w+)\.(value|mod|max)$/)
+      // Match patterns like system.abilities.str.otherMod or system.abilities.str.value
+      const match = change.key.match(/^system\.abilities\.(\w+)\.(otherMod|value|mod|max)$/)
       if (match) {
         const abilityId = match[1]
         if (abilityEffects[abilityId]) {

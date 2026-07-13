@@ -205,7 +205,10 @@ export const RollsCheckMixin = (Base) => class extends Base {
    */
   async _rollAbilityCheckWithDialog (abilityId, options, abilityLabel, character) {
     const ability = this.system.abilities[abilityId]
-    const abilityMod = CONFIG.DCC.abilityModifiers[ability.value] || 0
+    // Use the prepared mod (derived from value + otherMod, #801) rather than
+    // re-deriving from the raw base value, which would drop effect-driven
+    // otherMod contributions from the dialog's ability-modifier term.
+    const abilityMod = parseInt(ability.mod ?? CONFIG.DCC.abilityModifiers[ability.value]) || 0
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
     // Multiple action dice (Phase 3) — default the dialog's action die to the
@@ -328,9 +331,12 @@ export const RollsCheckMixin = (Base) => class extends Base {
    *
    * Roll-under is Luck-only in practice — the only triggers (`#rollAbilityCheck`,
    * the `luck-roll-under` template class, the roll-under macro) all gate
-   * on `lck`. The lib's `getLuck` reads the same `system.abilities.lck.value`
-   * the legacy roll-under threshold used, so the success boundary is
-   * unchanged.
+   * on `lck`. The lib's `getLuck` reads the character's `current` Luck,
+   * which `actorToCharacter` populates from the EFFECTIVE score (base
+   * value + Active Effect `otherMod`, #801) — so a transient Luck effect
+   * intentionally shifts the roll-under success boundary, while luck
+   * *spending* (luck die, spellburn-style burns) still consumes the raw
+   * base score.
    * @private
    */
   async _rollLuckCheckViaAdapter (abilityId, options) {

@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.abilities.agl.value",
+      "key": "system.abilities.agl.otherMod",
       "value": "1",
       "type": "add",
       "priority": null

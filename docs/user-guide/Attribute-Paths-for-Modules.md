@@ -62,11 +62,15 @@ DCC uses six abilities: `str`, `agl`, `sta`, `per`, `int`, `lck`.
 
 | Value | Path Pattern | Example |
 |-------|-------------|---------|
-| Score | `system.abilities.<ability>.value` | `system.abilities.str.value` |
+| Score (base) | `system.abilities.<ability>.value` | `system.abilities.str.value` |
 | Maximum | `system.abilities.<ability>.max` | `system.abilities.str.max` |
 | Modifier | `system.abilities.<ability>.mod` | `system.abilities.str.mod` |
+| Effect modifier | `system.abilities.<ability>.otherMod` | `system.abilities.str.otherMod` |
+| Effective score | `system.abilities.<ability>.effectiveValue` | `system.abilities.str.effectiveValue` |
 
 Replace `<ability>` with: `str` (Strength), `agl` (Agility), `sta` (Stamina), `per` (Personality), `int` (Intelligence), `lck` (Luck).
+
+`otherMod` is the Active Effect target for ability bonuses/penalties: it shifts the derived-only `effectiveValue` (base `value` + `otherMod`) that the modifier is computed from, leaving the base score hand-editable. `mod` and `effectiveValue` are computed — read them, don't write them.
 
 ## Saving Throws
 

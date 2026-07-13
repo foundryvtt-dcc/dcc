@@ -5,7 +5,7 @@
   "system": {},
   "changes": [
     {
-      "key": "system.abilities.per.value",
+      "key": "system.abilities.per.otherMod",
       "value": "-1",
       "type": "add",
       "priority": null

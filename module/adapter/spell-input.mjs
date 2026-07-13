@@ -94,6 +94,11 @@ function deriveAbility (actor, options) {
   const ability = actor.system.abilities?.[abilityId] || {}
   return {
     abilityId,
+    // abilityScore is informational pass-through — nothing in the lib's
+    // resolution path reads it (spellburn caps come from the adapter's
+    // dialog descriptor in rolls-spell-mixin, built from the base score).
+    // abilityModifier is what feeds the check math: the prepared mod,
+    // which follows the effective score (value + otherMod, #801).
     abilityScore: Number(ability.value) || 10,
     abilityModifier: Number(ability.mod) || 0
   }

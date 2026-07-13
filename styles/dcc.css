@@ -1345,6 +1345,13 @@ a.inline-roll {
   gap: 18px;
   margin-bottom: 8px;
 }
+.dcc.ability-score-config .ability-score-config-content .effective-row {
+  color: var(--system-secondary-color);
+  display: flex;
+  font-size: 13px;
+  gap: 18px;
+  margin-bottom: 8px;
+}
 .dcc.ability-score-config .ability-score-config-content .new-value-row {
   align-items: center;
   display: flex;
@@ -2421,6 +2428,16 @@ a.inline-roll {
   font-size: 30px;
   height: 46px;
   width: 47px;
+}
+.dcc .character .ability-scores .ability-score .ability-effective-value {
+  position: absolute;
+  bottom: 1px;
+  left: 2px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--system-primary-color);
+  cursor: help;
 }
 .dcc .character .ability-scores .ability-score .ability-effects {
   position: absolute;

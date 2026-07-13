@@ -43,6 +43,18 @@ test('actor → character accessor shape', () => {
   expect(character.classInfo.level).toBe(1)
 })
 
+test('actor → character passes the effective score (value + otherMod) as current (#801)', () => {
+  // noinspection JSCheckFunctionSignatures
+  const boosted = new DCCActor()
+  boosted.system.abilities.str.otherMod = 2
+  boosted.prepareBaseData() // recompute effectiveValue with the otherMod applied
+
+  const character = actorToCharacter(boosted)
+  expect(character.state.abilities.str.current).toBe(8) // 6 + 2
+  // max falls back to the raw base value, unshifted by otherMod
+  expect(character.state.abilities.str.max).toBe(6)
+})
+
 test('adapter path invokes lib and renders ChatMessage', async () => {
   rollToMessageMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
@@ -183,6 +195,63 @@ test('adapter path opens RollModifierDialog when showModifierDialog is true', as
   expect(dialogMod).toBeDefined()
   expect(dialogMod.kind).toBe('add')
   expect(dialogMod.value).toBe(3)
+})
+
+test('dialog path uses the effective-derived mod, not a raw-value re-derivation (#801)', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // Base 12 -> mod +0, but effective 13 (12 + otherMod 1) -> mod +1. A
+  // re-derivation from ability.value would offer '+0' in the dialog and
+  // silently drop the effect bonus the non-dialog roll includes.
+  // noinspection JSCheckFunctionSignatures
+  const boosted = new DCCActor()
+  boosted.system.abilities.str.value = 12
+  boosted.system.abilities.str.otherMod = 1
+  boosted.prepareBaseData()
+
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20+1',
+    total: 12,
+    dice: [{ results: [11], total: 11, options: {} }],
+    options: { dcc: {} },
+    terms: [
+      { class: 'Die', formula: '1d20', number: 1, faces: 20 },
+      { class: 'OperatorTerm', operator: '+' },
+      { class: 'NumericTerm', number: 1 }
+    ],
+    _evaluated: true
+  }))
+
+  await boosted.rollAbilityCheck('str', { showModifierDialog: true })
+
+  const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
+  const modifierTerm = termsArg.find(t => t.type === 'Modifier')
+  expect(modifierTerm.formula).toBe('+1')
+})
+
+test('rollUnder thresholds follow the effective Luck score when otherMod shifts it (#801)', async () => {
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+
+  // Base lck 18 with a -2 otherMod penalty -> effective 16: the lib
+  // classifies roll-under against `current` (the effective score), so
+  // the success boundary must be 16, not the raw 18.
+  // noinspection JSCheckFunctionSignatures
+  const cursed = new DCCActor()
+  cursed.system.abilities.lck.otherMod = -2
+  cursed.prepareBaseData()
+
+  await cursed.rollAbilityCheck('lck', { rollUnder: true })
+
+  const foundryRoll = rollToMessageMock.mock.contexts[0]
+  expect(foundryRoll.terms[0].options.dcc).toEqual({
+    rollUnder: true,
+    lowerThreshold: 16,
+    upperThreshold: 17
+  })
+
+  chatMessageCreateSpy.mockRestore()
 })
 
 test('adapter path returns undefined when the ability-check dialog is cancelled', async () => {

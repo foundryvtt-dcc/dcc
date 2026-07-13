@@ -65,7 +65,11 @@ export function actorToCharacter (actor) {
     const a = abilities[id]
     if (a) {
       libAbilities[id] = {
-        current: Number(a.value) || 0,
+        // The lib derives ability modifiers (and roll-under targets) from
+        // `current`, so feed it the effective score — base value plus the
+        // derived-only Active Effect `otherMod` (#801). Falls back to the
+        // raw value when prepare hasn't run (bare test contexts).
+        current: Number(a.effectiveValue ?? a.value) || 0,
         max: Number(a.max ?? a.value) || 0
       }
     }
