@@ -13,6 +13,7 @@ import { prepareItems } from './actor-sheet/items.mjs'
 import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks, prepareActionDiceContext } from './actor-sheet/presentation.mjs'
 import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
 import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
+import { removeActiveEffectOverrides } from './utilities.js'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -1006,12 +1007,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @override */
   async _processSubmitData (event, form, formData) {
     // Remove fields overridden by active effects to prevent persisting computed values (#714)
-    const overrides = this.document.overrides
-    if (overrides) {
-      for (const key of Object.keys(overrides)) {
-        delete formData[key]
-      }
-    }
+    removeActiveEffectOverrides(this.document, formData)
 
     // Process the actor data normally
     const result = await super._processSubmitData(event, form, formData)

@@ -1,4 +1,4 @@
-/* global game, CONFIG */
+/* global foundry, game, CONFIG */
 
 import { critTableDocCache, critTableLinkCache } from './adapter/table-cache.mjs'
 
@@ -13,8 +13,16 @@ import { critTableDocCache, critTableLinkCache } from './adapter/table-cache.mjs
 export function removeActiveEffectOverrides (document, updateData) {
   const overrides = document.overrides
   if (overrides) {
-    for (const key of Object.keys(overrides)) {
-      delete updateData[key]
+    // Core stores effect overrides as a nested object (overrides.system.abilities.lck.value),
+    // while DCC's derived-stat tracking adds flat dotted keys on top of it — flatten so both
+    // forms are matched. updateData may itself be flat (FormDataExtended.object) or expanded
+    // (DocumentSheetV2 submit data), so remove each key in whichever form it appears.
+    for (const key of Object.keys(foundry.utils.flattenObject(overrides))) {
+      if (key in updateData) {
+        delete updateData[key]
+      } else {
+        foundry.utils.deleteProperty(updateData, key)
+      }
     }
   }
   return updateData

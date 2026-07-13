@@ -54,12 +54,23 @@ Each change consists of:
 > overwriting the number you typed in.
 >
 > If you instead point an `Add` effect at an editable base field (like a
-> thief skill's `value`), the effect overlays the value you can edit on the
-> sheet. Every time that sheet is saved, the already-modified number is
-> written back as the new base and the effect adds on top of it again,
-> making the value climb on its own. Targeting the `otherMod`/`otherBonus`
-> field avoids this entirely. When in doubt, look for a `*Mod` / `*Bonus`
-> field on the stat and use that.
+> thief skill's `value`, or an ability score's `value`), the effect overlays
+> the value you can edit on the sheet. While the effect is active, any manual
+> edit to that field is discarded when the sheet saves — the system cannot
+> tell your edit apart from the effect's contribution. Worse, on system
+> versions before 0.70.15 every sheet save (which happens whenever you change
+> *anything*, including the character's name, notes, portrait, or current HP)
+> wrote the already-modified number back as the new base, making the value
+> climb (or fall) permanently on its own. Targeting the
+> `otherMod`/`otherBonus` field avoids all of this. When in doubt, look
+> for a `*Mod` / `*Bonus` field on the stat and use that.
+>
+> **Ability scores (`system.abilities.*.value`/`.max`) and Hit Points have
+> no modifier field, so there is currently no safe way to target them with
+> an Active Effect.** For ability damage, spellburn, curses, or HP changes,
+> edit the value directly on the sheet instead. See
+> [Troubleshooting](#troubleshooting) if a character's scores have already
+> started drifting.
 
 ## Using @-Variable References
 
@@ -72,9 +83,11 @@ Instead of entering a static number as the Effect Value, you can reference anoth
 - `@system.abilities.str.mod` - The character's Strength modifier
 - `@system.abilities.per.value` - The character's Personality score
 
+Note that `@`-references only *read* the referenced attribute, so it is safe to reference any path — including `.value` fields like the Personality score above. The restriction against `.value` fields applies to the **Attribute Key** the effect targets (see the warning above), not to the paths an effect value reads from.
+
 If the referenced path doesn't exist or isn't a number, it resolves to `0`. A warning will be logged to the browser console (F12) to help diagnose typos in attribute paths.
 
-**Important timing note**: `@`-variable references are resolved *before* derived values are recalculated. This means if you have one effect that changes an ability score (e.g., +2 to `system.abilities.lck.value`) and another effect that references the modifier for that same ability (`@system.abilities.lck.mod`), the reference will use the *base* modifier, not the modified one. In practice this only matters if you have two effects interacting with the same ability score. If your character's Luck score isn't being changed by another active effect, the modifier will be correct.
+**Important timing note**: `@`-variable references are resolved *before* other effects are applied. If another effect modifies the attribute you reference, the reference will see the *unmodified* value. In practice this only matters when two effects interact with the same attribute.
 
 ### @-Variable Use Case Ideas
 
@@ -111,15 +124,17 @@ If the referenced path doesn't exist or isn't a number, it resolves to `0`. A wa
    - Add change: Key: `system.details.attackHitBonus.melee.adjustment`, Mode: Add, Value: `@system.abilities.lck.mod`
 4. The value `@system.abilities.lck.mod` will automatically resolve to the character's current Luck modifier each time effects are applied. If the Luck score changes, the bonus updates automatically.
 
-### Example 3: "+1 Str while equipped" (Magic Item Effect)
+### Example 3: "Ring of Protection +1" (Magic Item Effect)
 
 1. Open the item and go to its **Effects** tab
 2. Click **Create Effect**
 3. In the effect editor:
-   - Name: "Strength Enhancement"
-   - Add change: Key: `system.abilities.str.value`, Mode: Add, Value: 1
+   - Name: "Ring of Protection +1"
+   - Add change: Key: `system.attributes.ac.otherMod`, Mode: Add, Value: 1
    - Enable **Transfer to Actor** (should be enabled by default for items)
 4. The effect will automatically apply when the item is equipped and remove when unequipped
+
+Note that a "+1 Strength while equipped" style item should **not** be built with a hand-authored Active Effect — ability scores have no modifier field to target (see the warning above; on system versions before 0.70.15 an effect on `system.abilities.str.value` permanently corrupted the score). Adjust the ability score directly instead while the item is worn.
 
 ### Example 4: "Charmed house: Armor Class" (Birth Augur AC Bonus)
 
@@ -140,7 +155,7 @@ The same pattern works for any birth augur that modifies a specific roll — jus
 
 ## Effect Icons on Ability Scores
 
-When an effect modifies an ability score, a small icon appears in the upper-right corner of that ability's box on the character sheet. Hovering over the icon shows the effect name and value, making it easy to see at a glance which abilities are being modified.
+When an effect modifies an ability score, a small icon appears in the upper-right corner of that ability's box on the character sheet. Hovering over the icon shows the effect name and value, making it easy to see at a glance which abilities are being modified. While one of these icons is showing, manual edits to that ability score are ignored on save (the effect controls the field) — disable the effect first if you need to change the base score.
 
 ## Dragging and Copying Effects
 
@@ -193,23 +208,15 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 ## Common Attribute Keys
 
 ### Ability Scores
-- `system.abilities.str.value` - Current Strength
-- `system.abilities.str.max` - Maximum Strength
-- `system.abilities.agl.value` - Current Agility
-- `system.abilities.sta.value` - Current Stamina
-- `system.abilities.per.value` - Current Personality
-- `system.abilities.int.value` - Current Intelligence
-- `system.abilities.lck.value` - Current Luck
+
+**Do not target ability scores with Active Effects.** The ability score fields (`system.abilities.str.value`, `system.abilities.lck.value`, etc., and their `.max` counterparts) are editable base values with no accompanying modifier field. On system versions before 0.70.15, an effect pointed at them compounded on every sheet save, permanently corrupting the score (see [Troubleshooting](#troubleshooting)); on current versions the score simply can't be hand-edited while such an effect is active. For ability damage, spellburn, curses, and similar changes, edit the score directly on the character sheet.
 
 ### Combat Attributes
-- `system.attributes.ac.value` - Armor Class (use this if auto-calculate AC is OFF)
-- `system.attributes.ac.otherMod` - AC Other Modifier (use this if auto-calculate AC is ON)
-- `system.attributes.hp.value` - Current HP
-- `system.attributes.hp.max` - Maximum HP
-- `system.attributes.hp.temp` - Temporary HP
-- `system.attributes.speed.value` - Movement Speed
-- `system.attributes.init.value` - Initiative Bonus
-- `system.attributes.init.otherMod` - Initiative Other Modifier
+- `system.attributes.ac.otherMod` - AC Modifier (requires auto-calculate AC, which is on by default for PCs; also works for NPCs)
+- `system.attributes.speed.otherMod` - Movement Speed Modifier (PCs)
+- `system.attributes.init.otherMod` - Initiative Modifier
+
+Hit Points (`system.attributes.hp.*`) have no modifier field — apply damage, healing, and maximum-HP changes directly on the sheet rather than through an Active Effect. Likewise, if you have turned auto-calculate AC off on a PC, adjust the AC number directly instead of using an effect.
 
 ### Attack & Damage Modifiers
 - `system.details.attackHitBonus.melee.adjustment` - Melee Attack Bonus
@@ -230,7 +237,7 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 - `system.attributes.fumble.die` - Fumble Die
 
 ### Thief Skills
-Target the `otherMod` modifier field, **not** the `value` base (see the warning below).
+Target the `otherMod` modifier field, **not** the `value` base (see the warning near the top of this page).
 - `system.skills.sneakSilently.otherMod` - Sneak Silently
 - `system.skills.hideInShadows.otherMod` - Hide In Shadows
 - `system.skills.pickPockets.otherMod` - Pick Pockets
@@ -283,6 +290,11 @@ The **Dice Chain** effect mode is a DCC-specific feature that adjusts dice expre
 | Fumble Die | `system.attributes.fumble.die` |
 | Luck Die | `system.class.luckDie` |
 
+> `system.attributes.actionDice.value` is the one exception to the "never
+> target a `.value` field" rule: the character sheet edits action dice
+> through a separate configuration field, so a Dice Chain effect on this key
+> is never written back into the base value.
+
 **Example: -1d to Action Die (Penalty)**
 1. Create a new effect
 2. Add a change:
@@ -329,18 +341,36 @@ This is because NPCs don't have calculated melee/missile totals like PCs do - ea
 
 These effects are applied normally and displayed on the NPC sheet:
 
-- **Armor Class** (`system.attributes.ac.value` or `system.attributes.ac.otherMod`)
-- **Initiative** (`system.attributes.init.value` or `system.attributes.init.otherMod`)
+- **Armor Class** (`system.attributes.ac.otherMod`)
+- **Initiative** (`system.attributes.init.otherMod`)
 - **Saving Throws** (`system.saves.frt.otherBonus`, `system.saves.ref.otherBonus`, `system.saves.wil.otherBonus`)
-- **Hit Points** (`system.attributes.hp.value`, `system.attributes.hp.max`)
-- **Speed** (`system.attributes.speed.value`)
+
+As with PCs, do not target the editable base fields (`ac.value`, `init.value`, `hp.value`, `hp.max`, `speed.value`, or ability scores) — edit those directly on the NPC's stat block instead.
 
 ## Troubleshooting
 
-If an effect isn't working:
+### An effect keeps re-applying itself (a value climbs or falls on every edit)
+
+**Symptoms**: You create an effect that adds to or subtracts from a stat — for example, a curse that subtracts 1 from `system.abilities.lck.value`. It applies correctly at first (Luck 12 → 11), but then the score drops *again* every time you change anything at all on the sheet: editing current HP, renaming the character, changing the portrait, typing in the Notes tab, leveling up. Before long the character is at 8 and falling.
+
+**Cause**: The effect targets an *editable base field* rather than a dedicated modifier field. Whenever the sheet is saved (which happens on nearly any edit), the displayed — already modified — number is written back as the new base value, and the effect then applies again on top of it. Each save permanently bakes another application of the effect into the character.
+
+> **Note**: System version 0.70.15 fixes the compounding itself — sheet saves no longer write effect-modified values back into the base. The guidance on this page still stands, though: while an effect targets an editable field, any manual edit you make to that field is discarded on save (the system can't tell your edit apart from the effect's contribution), so modifier fields remain the right target. Characters that drifted on earlier versions still need the manual repair below.
+
+The fields affected are the ones you can type into on the sheet: ability scores (`system.abilities.*.value` and `.max`), Hit Points (`system.attributes.hp.*`), `system.attributes.ac.value`, `system.attributes.init.value`, `system.attributes.speed.value`, and thief/other skill `value` fields.
+
+**To fix a character that has already drifted**:
+
+1. Delete (or disable) the offending effect.
+2. Manually re-enter the correct base value on the sheet. If you're unsure what it was, check earlier values in the chat log, or work backwards: each sheet save applied the effect one extra time.
+3. Re-create the effect against the stat's modifier field instead — the `otherMod` / `otherBonus` / `adjustment` keys listed under [Common Attribute Keys](#common-attribute-keys).
+4. If the stat has no modifier field (ability scores, Hit Points), don't use an Active Effect for it — apply the change directly to the sheet and note its source in the effect's description or the Notes tab so you remember to remove it later.
+
+### An effect isn't applying at all
 
 1. Check the attribute key is spelled correctly (case-sensitive)
 2. Ensure the effect is not disabled
 3. For item effects, verify the item is equipped
-4. Check the console for any error messages
+4. Check the console (F12) for any error messages
 5. Verify the value is appropriate for the mode (numbers for Add/Multiply)
+6. If the key is an `otherMod`-style field, confirm the related auto-calculation is enabled — for example, `system.attributes.ac.otherMod` on a PC only applies while auto-calculate AC is on
