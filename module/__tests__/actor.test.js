@@ -1504,6 +1504,31 @@ test('rollLuckDie with negative luck modifier', async () => {
   })
 })
 
+test('rollLuckDie spend pool uses the raw base Luck, not the otherMod-shifted effective score (#801)', async () => {
+  dccRollCreateRollMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // A +2 Luck effect must not add burnable points: the LuckDie term's
+  // spendable pool and the post-burn write both operate on base 3.
+  actor.system.abilities.lck.value = 3
+  actor.system.abilities.lck.otherMod = 2
+  actor.prepareBaseData()
+
+  try {
+    await actor.rollLuckDie()
+  } finally {
+    actor.system.abilities.lck.otherMod = 0
+    actor.prepareBaseData()
+  }
+
+  const terms = dccRollCreateRollMock.mock.calls[0][0]
+  expect(terms[0].type).toBe('LuckDie')
+  expect(terms[0].lck).toBe(3) // base, not effective 5
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.lck.value': 2
+  })
+})
+
 test('rollSpellCheck routes naked check via adapter (replaces calls-processSpellCheck assertion)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()

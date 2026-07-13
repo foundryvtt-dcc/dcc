@@ -94,10 +94,11 @@ function deriveAbility (actor, options) {
   const ability = actor.system.abilities?.[abilityId] || {}
   return {
     abilityId,
-    // Deliberate asymmetry (#801): the score stays on the raw BASE value
-    // (the lib carries it as spellburn context — burning consumes the base,
-    // never a transient otherMod bonus), while the modifier is the prepared
-    // effective-derived mod that actually feeds the spell check roll.
+    // abilityScore is informational pass-through — nothing in the lib's
+    // resolution path reads it (spellburn caps come from the adapter's
+    // dialog descriptor in rolls-spell-mixin, built from the base score).
+    // abilityModifier is what feeds the check math: the prepared mod,
+    // which follows the effective score (value + otherMod, #801).
     abilityScore: Number(ability.value) || 10,
     abilityModifier: Number(ability.mod) || 0
   }

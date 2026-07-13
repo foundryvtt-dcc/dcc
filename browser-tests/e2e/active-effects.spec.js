@@ -386,7 +386,7 @@ test.describe('DCC Active Effects', () => {
 
     test('ability otherMod effect shifts the effective score while the base stays editable (#801)', async ({ page }) => {
       // The supported home for "+1 Strength while equipped": an effect on the
-      // derived-only system.abilities.str.otherMod. The base input keeps the
+      // effect-layer system.abilities.str.otherMod. The base input keeps the
       // hand-editable base score, the effective score (base + otherMod) shows
       // as a badge in the ability box, and the derived modifier follows the
       // effective score (12 + 1 = 13 crosses the +1 threshold).

@@ -23,7 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
 import { clearAllTableCaches, disapprovalTableCache, mercurialMagicTableCache } from '../adapter/table-cache.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
@@ -962,6 +962,24 @@ test('buildSpellCheckArgs threads options.spellburn into input.spellburn', () =>
   })
 
   expect(args.input.spellburn).toEqual({ str: 2, agl: 0, sta: 1 })
+})
+
+test('generic cast input carries the effective-derived abilityModifier (#801)', () => {
+  // int 12 + otherMod 1 -> effective 13 -> mod +1. The modifier feeds the
+  // check math, so it must be the prepared effective-derived mod, not a
+  // base re-derivation (+0). abilityScore is informational pass-through in
+  // the lib and stays on the raw base.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.spellCheckAbility = 'int'
+  actor.system.abilities.int.value = 12
+  actor.system.abilities.int.otherMod = 1
+  actor.prepareBaseData()
+
+  const input = buildSpellCastInput(actor, makeGenericSpellItem(), {})
+
+  expect(input.abilityScore).toBe(12) // raw base, not effective 13
+  expect(input.abilityModifier).toBe(1) // effective-derived, not base 0
 })
 
 test('buildSpellCheckArgs drops an all-zero spellburn commitment', () => {

@@ -1222,13 +1222,21 @@ class ActorMock {
     // Calculate ability modifiers using CONFIG.DCC.abilityModifiers like the real actor
     // (effective score = value + otherMod, #801)
     const abilities = this.system.abilities
+    const config = global.CONFIG?.DCC?.abilityModifiers || DCC.abilityModifiers
+    // Mirror the real computeAbilityModifiers (derived-stats-mixin.mjs):
+    // clamp out-of-table scores to the table edges, maxMod from raw max.
+    const lookupMod = (score) => {
+      if (config[score] !== undefined) return config[score]
+      const keys = Object.keys(config).map(Number)
+      return config[Math.max(Math.min(score, Math.max(...keys)), Math.min(...keys))] ?? 0
+    }
     for (const abilityId in abilities) {
-      const config = global.CONFIG?.DCC?.abilityModifiers || DCC.abilityModifiers
       const baseValue = parseInt(abilities[abilityId].value) || 0
       const effectiveValue = baseValue + (parseInt(abilities[abilityId].otherMod) || 0)
       abilities[abilityId].effectiveValue = effectiveValue
-      abilities[abilityId].mod = config[effectiveValue] || 0
-      abilities[abilityId].maxMod = config[abilities[abilityId].max] ?? (config[baseValue] || 0)
+      abilities[abilityId].mod = lookupMod(effectiveValue)
+      const maxScore = parseInt(abilities[abilityId].max)
+      abilities[abilityId].maxMod = Number.isNaN(maxScore) ? lookupMod(baseValue) : lookupMod(maxScore)
     }
   }
 

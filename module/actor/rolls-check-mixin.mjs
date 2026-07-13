@@ -331,9 +331,12 @@ export const RollsCheckMixin = (Base) => class extends Base {
    *
    * Roll-under is Luck-only in practice — the only triggers (`#rollAbilityCheck`,
    * the `luck-roll-under` template class, the roll-under macro) all gate
-   * on `lck`. The lib's `getLuck` reads the same `system.abilities.lck.value`
-   * the legacy roll-under threshold used, so the success boundary is
-   * unchanged.
+   * on `lck`. The lib's `getLuck` reads the character's `current` Luck,
+   * which `actorToCharacter` populates from the EFFECTIVE score (base
+   * value + Active Effect `otherMod`, #801) — so a transient Luck effect
+   * intentionally shifts the roll-under success boundary, while luck
+   * *spending* (luck die, spellburn-style burns) still consumes the raw
+   * base score.
    * @private
    */
   async _rollLuckCheckViaAdapter (abilityId, options) {

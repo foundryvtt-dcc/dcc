@@ -97,7 +97,7 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
     expect(data.abilities.str.max).toBe(10)
     expect(data.abilities.str.spent).toBe(0)
     expect(data.abilities.str.damage).toBe(0)
-    // Derived-only Active Effect target (#801)
+    // Effect-layer Active Effect target (#801)
     expect(data.abilities.str.otherMod).toBe(0)
     // HP defaults
     expect(data.attributes.hp.value).toBe(10)
