@@ -58,7 +58,7 @@ Each change consists of:
 > the value you can edit on the sheet. While the effect is active, any manual
 > edit to that field is discarded when the sheet saves — the system cannot
 > tell your edit apart from the effect's contribution. Worse, on system
-> versions before 0.70.15 every sheet save (which happens whenever you change
+> versions before 0.70.17 every sheet save (which happens whenever you change
 > *anything*, including the character's name, notes, portrait, or current HP)
 > wrote the already-modified number back as the new base, making the value
 > climb (or fall) permanently on its own. Targeting the
@@ -134,7 +134,7 @@ If the referenced path doesn't exist or isn't a number, it resolves to `0`. A wa
    - Enable **Transfer to Actor** (should be enabled by default for items)
 4. The effect will automatically apply when the item is equipped and remove when unequipped
 
-Note that a "+1 Strength while equipped" style item should **not** be built with a hand-authored Active Effect — ability scores have no modifier field to target (see the warning above; on system versions before 0.70.15 an effect on `system.abilities.str.value` permanently corrupted the score). Adjust the ability score directly instead while the item is worn.
+Note that a "+1 Strength while equipped" style item should **not** be built with a hand-authored Active Effect — ability scores have no modifier field to target (see the warning above; on system versions before 0.70.17 an effect on `system.abilities.str.value` permanently corrupted the score). Adjust the ability score directly instead while the item is worn.
 
 ### Example 4: "Charmed house: Armor Class" (Birth Augur AC Bonus)
 
@@ -209,7 +209,7 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 
 ### Ability Scores
 
-**Do not target ability scores with Active Effects.** The ability score fields (`system.abilities.str.value`, `system.abilities.lck.value`, etc., and their `.max` counterparts) are editable base values with no accompanying modifier field. On system versions before 0.70.15, an effect pointed at them compounded on every sheet save, permanently corrupting the score (see [Troubleshooting](#troubleshooting)); on current versions the score simply can't be hand-edited while such an effect is active. For ability damage, spellburn, curses, and similar changes, edit the score directly on the character sheet.
+**Do not target ability scores with Active Effects.** The ability score fields (`system.abilities.str.value`, `system.abilities.lck.value`, etc., and their `.max` counterparts) are editable base values with no accompanying modifier field. On system versions before 0.70.17, an effect pointed at them compounded on every sheet save, permanently corrupting the score (see [Troubleshooting](#troubleshooting)); on current versions the score simply can't be hand-edited while such an effect is active. For ability damage, spellburn, curses, and similar changes, edit the score directly on the character sheet.
 
 ### Combat Attributes
 - `system.attributes.ac.otherMod` - AC Modifier (requires auto-calculate AC, which is on by default for PCs; also works for NPCs)
@@ -355,7 +355,7 @@ As with PCs, do not target the editable base fields (`ac.value`, `init.value`, `
 
 **Cause**: The effect targets an *editable base field* rather than a dedicated modifier field. Whenever the sheet is saved (which happens on nearly any edit), the displayed — already modified — number is written back as the new base value, and the effect then applies again on top of it. Each save permanently bakes another application of the effect into the character.
 
-> **Note**: System version 0.70.15 fixes the compounding itself — sheet saves no longer write effect-modified values back into the base. The guidance on this page still stands, though: while an effect targets an editable field, any manual edit you make to that field is discarded on save (the system can't tell your edit apart from the effect's contribution), so modifier fields remain the right target. Characters that drifted on earlier versions still need the manual repair below.
+> **Note**: System version 0.70.17 fixes the compounding itself — sheet saves no longer write effect-modified values back into the base. The guidance on this page still stands, though: while an effect targets an editable field, any manual edit you make to that field is discarded on save (the system can't tell your edit apart from the effect's contribution), so modifier fields remain the right target. Characters that drifted on earlier versions still need the manual repair below.
 
 The fields affected are the ones you can type into on the sheet: ability scores (`system.abilities.*.value` and `.max`), Hit Points (`system.attributes.hp.*`), `system.attributes.ac.value`, `system.attributes.init.value`, `system.attributes.speed.value`, and thief/other skill `value` fields.
 
