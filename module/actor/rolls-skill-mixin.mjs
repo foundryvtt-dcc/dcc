@@ -183,7 +183,14 @@ export const RollsSkillMixin = (Base) => class extends Base {
       skill.level !== undefined
     )
     if (!hasDie && skill && (!skillItem || skillItemIsRollable)) {
-      die = this.getActionDice()[0].formula || '1d20'
+      // Prefer `attributes.actionDice.value` — the single die shown on the
+      // sheet and the documented Dice Chain Active-Effect target — so an
+      // "Action Die +1d" effect reaches thief skills and other action-die
+      // skills, matching the ability-check / spell-check / init paths.
+      // `getActionDice()[0]` (the raw `config.actionDice` authoring string)
+      // stays as the fallback for actors with a blank sheet die.
+      die = this.system.attributes.actionDice.value ||
+        this.getActionDice()[0].formula || '1d20'
       hasDie = true
     }
 
