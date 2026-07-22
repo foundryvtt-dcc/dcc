@@ -10,7 +10,10 @@
 #
 # Note: PRs opened with the default GITHUB_TOKEN do not trigger the
 # "Run Tests" workflow, so the unit tests are run here before the PR is
-# created instead.
+# created instead. If "Run Tests" is ever made a required status check
+# on main, these PRs will sit at "Expected — waiting for status" and
+# need an admin merge (or switch the `token` input of the
+# create-pull-request step to a PAT/GitHub App token so CI triggers).
 name: NPM Audit Fix
 
 on:

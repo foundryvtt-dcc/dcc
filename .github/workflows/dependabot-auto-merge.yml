@@ -2,8 +2,11 @@
 #
 # Uses GitHub's native auto-merge, so the PR only lands after the
 # branch-protection required checks (Run Tests) are green. Requires the
-# repository setting "Allow auto-merge" to be enabled; if it is not,
-# the workflow falls back to leaving the PR for manual review.
+# repository setting "Allow auto-merge" to be enabled and "Run Tests"
+# to be a required status check on main — without a required check the
+# PR merges immediately, before tests finish. If auto-merge is
+# unavailable the step logs a notice and leaves the PR for manual
+# review instead of failing.
 name: Dependabot Auto-Merge
 
 on: pull_request
@@ -18,7 +21,9 @@ jobs:
     if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'foundryvtt-dcc/dcc'
     steps:
       - name: Enable auto-merge (squash)
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: |
+          gh pr merge --auto --squash "$PR_URL" || \
+            echo "::notice::Auto-merge unavailable (repo setting disabled or no required checks); leaving PR for manual review"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
