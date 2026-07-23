@@ -705,6 +705,20 @@ test('creature type detection', async () => {
   expect(humanoidNPC[0]['attributes.critical.die']).toBe('d6')
 })
 
+/* Test action die fallback when the Act stat is missing or carries no die */
+test('missing or die-less Act falls back to 1d20 for config and sheet die', async () => {
+  // No Act stat at all.
+  const noAct = await parseNPCs('Sluggish Blob: Init +0; Atk pseudopod +1 melee (1d4); AC 10; HD 1d8; hp 4; MV 5\'; SV Fort +0, Ref +0, Will +0; AL N.')
+  expect(noAct[0]['config.actionDice']).toBe('1d20')
+  expect(noAct[0]['attributes.actionDice.value']).toBe('1d20')
+
+  // An Act stat with no die-shaped token keeps the config text but the
+  // sheet die falls back to 1d20.
+  const oddAct = await parseNPCs('Odd Actor: Init +0; Atk claw +1 melee (1d4); AC 10; HD 1d8; hp 4; MV 5\'; Act special; SV Fort +0, Ref +0, Will +0; AL N.')
+  expect(oddAct[0]['config.actionDice']).toBe('special')
+  expect(oddAct[0]['attributes.actionDice.value']).toBe('1d20')
+})
+
 /* Test error handling with malformed input */
 test('malformed input handling', async () => {
   // Should not throw errors even with malformed input
