@@ -1,7 +1,7 @@
 /* global game, ui, CONFIG */
 
 import EntityImages from './entity-images.js'
-import { getFirstDie, getFirstMod } from './utilities.js'
+import { getFirstDie, getFirstMod, getSingleActionDie } from './utilities.js'
 import DCC from './config.js'
 
 /**
@@ -163,6 +163,13 @@ function _parseJSONPCs (pcObject) {
     // Action Die
     if (pcObject.actionDice) {
       pc['config.actionDice'] = pcObject.actionDice.replaceAll('+', ',')
+      // Mirror the first die onto the sheet's single action die — the field
+      // the sheet displays and that checks/skill fallbacks read (same
+      // normalization as the NPC importer: '1d20,1d16' → 1d20).
+      const singleActionDie = getSingleActionDie(pc['config.actionDice'])
+      if (singleActionDie) {
+        pc['attributes.actionDice.value'] = singleActionDie
+      }
     }
     // Attack Bonus
     if (pcObject.attackBonus) {

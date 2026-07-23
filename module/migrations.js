@@ -1,5 +1,7 @@
 /* global foundry, game, ui */
 
+import { getSingleActionDie } from './utilities.js'
+
 /**
  * Core class keys used for migration lookups
  */
@@ -62,8 +64,16 @@ async function buildClassNameLookup () {
  * Version that triggers migration — set to the version that introduced
  * breaking changes. After migration completes we stamp the world at this
  * value to prevent repeated migrations.
+ *
+ * 0.70: re-sweep to seed `attributes.actionDice.value` from
+ * `config.actionDice` when the persisted value is blank or still the 1d20
+ * schema default while the config die differs (the skill/check paths and
+ * Dice Chain effects read the attributes value; older importers only wrote
+ * the config string, leaving the default behind). All branches are
+ * data-driven/idempotent, so the extra sweep for worlds stamped at 0.68 is
+ * a one-time pass.
  */
-export const NEEDS_MIGRATION_VERSION = 0.68
+export const NEEDS_MIGRATION_VERSION = 0.70
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -71,7 +81,7 @@ export const NEEDS_MIGRATION_VERSION = 0.68
  * The pre-V14 lines (0.65.x / 0.66.x) only RUN their migration when the
  * stored version is `<= 0.22` (their own `NEEDS_MIGRATION_VERSION` gate),
  * so those are the only worlds a pre-V14 release can actually carry forward
- * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.68)` band are
+ * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.70)` band are
  * skipped by the pre-V14 gate, so the old "open in a pre-V14 release first"
  * instruction never advanced them — they sat below the previous 0.66 floor
  * forever. They are migrated in place here instead, by the data-driven
@@ -459,6 +469,31 @@ export const migrateActorData = async function (actor) {
   const speedBaseUnsetOrDefault = rawSpeedBase === undefined || rawSpeedBase === null || rawSpeedBase === '' || speedBaseNum === 30
   if (speedBaseUnsetOrDefault && !isNaN(speedValueNum) && speedValueNum !== speedBaseNum) {
     updateData['system.attributes.speed.base'] = String(speedValueNum)
+  }
+
+  // Seed the sheet's single action die from the config authoring string. The
+  // sheet, ability checks, and the skill fallback read
+  // `attributes.actionDice.value` (also the documented Dice Chain effect
+  // target), but older importers and hand-edits only populated
+  // `config.actionDice`. Two repair cases, both reading raw _source so a
+  // schema-defaulted value doesn't mask a genuinely-unset one (#739 pattern):
+  //   1. A blank persisted value adopts the config die.
+  //   2. A persisted value still at the '1d20' schema default adopts a
+  //      DIFFERING config die — actors imported before the importers set the
+  //      value persisted the default at creation, so the default + a non-d20
+  //      config is drift, not a choice. Any other persisted value is a real
+  //      hand-edit and is never overwritten.
+  // The config die is normalized to a single die of the first listed faces
+  // like the importers ('1d20,1d16' → 1d20, '2d20' → 1d20). Idempotent: once
+  // adopted, the value no longer matches blank/default and is left alone.
+  const rawActionDieValue = actor._source?.system?.attributes?.actionDice?.value
+  const trimmedActionDieValue = rawActionDieValue == null ? '' : String(rawActionDieValue).trim()
+  const configActionDice = actor._source?.system?.config?.actionDice ?? actor.system?.config?.actionDice
+  const configActionDie = getSingleActionDie(configActionDice)
+  const actionDieBlank = trimmedActionDieValue === ''
+  const actionDieAtDefault = trimmedActionDieValue === '1d20'
+  if (configActionDie && (actionDieBlank || (actionDieAtDefault && configActionDie !== trimmedActionDieValue))) {
+    updateData['system.attributes.actionDice.value'] = configActionDie
   }
 
   // Migrate Owned Items
