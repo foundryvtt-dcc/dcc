@@ -63,11 +63,13 @@ async function buildClassNameLookup () {
  * breaking changes. After migration completes we stamp the world at this
  * value to prevent repeated migrations.
  *
- * 0.70: re-sweep to seed a blank `attributes.actionDice.value` from
- * `config.actionDice` (the skill/check paths and Dice Chain effects read
- * the attributes value; older importers only wrote the config string).
- * All branches are data-driven/idempotent, so the extra sweep for worlds
- * stamped at 0.68 is a one-time pass.
+ * 0.70: re-sweep to seed `attributes.actionDice.value` from
+ * `config.actionDice` when the persisted value is blank or still the 1d20
+ * schema default while the config die differs (the skill/check paths and
+ * Dice Chain effects read the attributes value; older importers only wrote
+ * the config string, leaving the default behind). All branches are
+ * data-driven/idempotent, so the extra sweep for worlds stamped at 0.68 is
+ * a one-time pass.
  */
 export const NEEDS_MIGRATION_VERSION = 0.70
 
@@ -467,23 +469,30 @@ export const migrateActorData = async function (actor) {
     updateData['system.attributes.speed.base'] = String(speedValueNum)
   }
 
-  // Seed the sheet's single action die from the config authoring string when
-  // the persisted value is blank. The sheet, ability checks, and the skill
-  // fallback read `attributes.actionDice.value` (also the documented Dice
-  // Chain effect target), but older importers and hand-edits only populated
-  // `config.actionDice`. Data-driven and idempotent: reads raw _source so a
-  // schema-defaulted value doesn't mask a genuinely-unset one (#739 pattern),
-  // and normalizes to a single die of the first listed faces like the
-  // importers ('1d20,1d16' → 1d20, '2d20' → 1d20).
+  // Seed the sheet's single action die from the config authoring string. The
+  // sheet, ability checks, and the skill fallback read
+  // `attributes.actionDice.value` (also the documented Dice Chain effect
+  // target), but older importers and hand-edits only populated
+  // `config.actionDice`. Two repair cases, both reading raw _source so a
+  // schema-defaulted value doesn't mask a genuinely-unset one (#739 pattern):
+  //   1. A blank persisted value adopts the config die.
+  //   2. A persisted value still at the '1d20' schema default adopts a
+  //      DIFFERING config die — actors imported before the importers set the
+  //      value persisted the default at creation, so the default + a non-d20
+  //      config is drift, not a choice. Any other persisted value is a real
+  //      hand-edit and is never overwritten.
+  // The config die is normalized to a single die of the first listed faces
+  // like the importers ('1d20,1d16' → 1d20, '2d20' → 1d20). Idempotent: once
+  // adopted, the value no longer matches blank/default and is left alone.
   const rawActionDieValue = actor._source?.system?.attributes?.actionDice?.value
-  const actionDieBlank = rawActionDieValue === undefined || rawActionDieValue === null ||
-    String(rawActionDieValue).trim() === ''
-  if (actionDieBlank) {
-    const configActionDice = actor._source?.system?.config?.actionDice ?? actor.system?.config?.actionDice
-    const firstActionDie = String(configActionDice || '').match(/d(\d+)/)
-    if (firstActionDie) {
-      updateData['system.attributes.actionDice.value'] = `1d${firstActionDie[1]}`
-    }
+  const trimmedActionDieValue = rawActionDieValue == null ? '' : String(rawActionDieValue).trim()
+  const configActionDice = actor._source?.system?.config?.actionDice ?? actor.system?.config?.actionDice
+  const firstActionDie = String(configActionDice || '').match(/d(\d+)/)
+  const configActionDie = firstActionDie ? `1d${firstActionDie[1]}` : null
+  const actionDieBlank = trimmedActionDieValue === ''
+  const actionDieAtDefault = trimmedActionDieValue === '1d20'
+  if (configActionDie && (actionDieBlank || (actionDieAtDefault && configActionDie !== trimmedActionDieValue))) {
+    updateData['system.attributes.actionDice.value'] = configActionDie
   }
 
   // Migrate Owned Items

@@ -367,11 +367,38 @@ describe('migrateActorData — action die seed from config.actionDice', () => {
     })
   })
 
-  test('a persisted value is preserved even when config differs', async () => {
+  test('a value still at the 1d20 default adopts a differing config die (import drift)', async () => {
+    // Actors imported before the importers set the value persisted the
+    // schema default at creation — default + non-d20 config is drift.
     const actor = cleanActor()
     actor._source = {
       system: {
         attributes: { actionDice: { value: '1d20' } },
+        config: { actionDice: '1d16' }
+      }
+    }
+    expect(await migrateActorData(actor)).toEqual({
+      'system.attributes.actionDice.value': '1d16'
+    })
+  })
+
+  test('a value at the default with a matching config die is a no-op', async () => {
+    const actor = cleanActor()
+    actor._source = {
+      system: {
+        attributes: { actionDice: { value: '1d20' } },
+        config: { actionDice: '1d20,1d16' } // first die 1d20 — no drift
+      }
+    }
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('a non-default persisted value is preserved even when config differs', async () => {
+    // A hand-edited sheet die is a real choice — never overwritten.
+    const actor = cleanActor()
+    actor._source = {
+      system: {
+        attributes: { actionDice: { value: '1d24' } },
         config: { actionDice: '1d16' }
       }
     }
