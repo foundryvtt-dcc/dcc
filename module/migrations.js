@@ -1,5 +1,7 @@
 /* global foundry, game, ui */
 
+import { getSingleActionDie } from './utilities.js'
+
 /**
  * Core class keys used for migration lookups
  */
@@ -487,8 +489,7 @@ export const migrateActorData = async function (actor) {
   const rawActionDieValue = actor._source?.system?.attributes?.actionDice?.value
   const trimmedActionDieValue = rawActionDieValue == null ? '' : String(rawActionDieValue).trim()
   const configActionDice = actor._source?.system?.config?.actionDice ?? actor.system?.config?.actionDice
-  const firstActionDie = String(configActionDice || '').match(/d(\d+)/)
-  const configActionDie = firstActionDie ? `1d${firstActionDie[1]}` : null
+  const configActionDie = getSingleActionDie(configActionDice)
   const actionDieBlank = trimmedActionDieValue === ''
   const actionDieAtDefault = trimmedActionDieValue === '1d20'
   if (configActionDie && (actionDieBlank || (actionDieAtDefault && configActionDie !== trimmedActionDieValue))) {

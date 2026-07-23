@@ -66,6 +66,20 @@ export function getFirstDie (value) {
 }
 
 /**
+ * Normalize an action-dice expression to a single die of its first term.
+ * 'Act 2d20' means two d20 *actions*, so the per-roll die is always one die
+ * of the first listed faces: '2d20' → '1d20', '1d20,1d16' → '1d20',
+ * '1d24' → '1d24'. Used to mirror the config authoring string onto
+ * `attributes.actionDice.value` (importers and migration).
+ * @param {string} value - action dice expression (comma or plus separated)
+ * @return {string} - single-die formula or an empty string if no die found
+ */
+export function getSingleActionDie (value) {
+  const match = String(value || '').match(/d(\d+)/)
+  return match ? `1d${match[1]}` : ''
+}
+
+/**
  * Get the first modifier in a string expression
  * @param {string} value - value to extract first modifier from
  * @return {string} - first modifier expression or an empty string if none
