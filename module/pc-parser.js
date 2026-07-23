@@ -163,6 +163,14 @@ function _parseJSONPCs (pcObject) {
     // Action Die
     if (pcObject.actionDice) {
       pc['config.actionDice'] = pcObject.actionDice.replaceAll('+', ',')
+      // Mirror the first die onto the sheet's single action die — the field
+      // the sheet displays and that checks/skill fallbacks read (same
+      // normalization as the NPC importer: a single die of the first listed
+      // faces, so '1d20,1d16' → 1d20).
+      const firstActionDie = pc['config.actionDice'].match(/d(\d+)/)
+      if (firstActionDie) {
+        pc['attributes.actionDice.value'] = `1d${firstActionDie[1]}`
+      }
     }
     // Attack Bonus
     if (pcObject.attackBonus) {

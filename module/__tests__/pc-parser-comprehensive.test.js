@@ -152,6 +152,7 @@ describe('PC Parser Comprehensive Tests', () => {
         expect(result[0]['attributes.critical.table']).toBe('II')
         expect(result[0]['class.spellCheck']).toBe('+8')
         expect(result[0]['config.actionDice']).toBe('1d20,1d16')
+        expect(result[0]['attributes.actionDice.value']).toBe('1d20')
         expect(result[0]['details.attackBonus']).toBe('d6+2')
       })
 
