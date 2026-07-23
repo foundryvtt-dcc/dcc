@@ -62,8 +62,14 @@ async function buildClassNameLookup () {
  * Version that triggers migration — set to the version that introduced
  * breaking changes. After migration completes we stamp the world at this
  * value to prevent repeated migrations.
+ *
+ * 0.70: re-sweep to seed a blank `attributes.actionDice.value` from
+ * `config.actionDice` (the skill/check paths and Dice Chain effects read
+ * the attributes value; older importers only wrote the config string).
+ * All branches are data-driven/idempotent, so the extra sweep for worlds
+ * stamped at 0.68 is a one-time pass.
  */
-export const NEEDS_MIGRATION_VERSION = 0.68
+export const NEEDS_MIGRATION_VERSION = 0.70
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -71,7 +77,7 @@ export const NEEDS_MIGRATION_VERSION = 0.68
  * The pre-V14 lines (0.65.x / 0.66.x) only RUN their migration when the
  * stored version is `<= 0.22` (their own `NEEDS_MIGRATION_VERSION` gate),
  * so those are the only worlds a pre-V14 release can actually carry forward
- * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.68)` band are
+ * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.70)` band are
  * skipped by the pre-V14 gate, so the old "open in a pre-V14 release first"
  * instruction never advanced them — they sat below the previous 0.66 floor
  * forever. They are migrated in place here instead, by the data-driven
@@ -459,6 +465,25 @@ export const migrateActorData = async function (actor) {
   const speedBaseUnsetOrDefault = rawSpeedBase === undefined || rawSpeedBase === null || rawSpeedBase === '' || speedBaseNum === 30
   if (speedBaseUnsetOrDefault && !isNaN(speedValueNum) && speedValueNum !== speedBaseNum) {
     updateData['system.attributes.speed.base'] = String(speedValueNum)
+  }
+
+  // Seed the sheet's single action die from the config authoring string when
+  // the persisted value is blank. The sheet, ability checks, and the skill
+  // fallback read `attributes.actionDice.value` (also the documented Dice
+  // Chain effect target), but older importers and hand-edits only populated
+  // `config.actionDice`. Data-driven and idempotent: reads raw _source so a
+  // schema-defaulted value doesn't mask a genuinely-unset one (#739 pattern),
+  // and normalizes to a single die of the first listed faces like the
+  // importers ('1d20,1d16' → 1d20, '2d20' → 1d20).
+  const rawActionDieValue = actor._source?.system?.attributes?.actionDice?.value
+  const actionDieBlank = rawActionDieValue === undefined || rawActionDieValue === null ||
+    String(rawActionDieValue).trim() === ''
+  if (actionDieBlank) {
+    const configActionDice = actor._source?.system?.config?.actionDice ?? actor.system?.config?.actionDice
+    const firstActionDie = String(configActionDice || '').match(/d(\d+)/)
+    if (firstActionDie) {
+      updateData['system.attributes.actionDice.value'] = `1d${firstActionDie[1]}`
+    }
   }
 
   // Migrate Owned Items

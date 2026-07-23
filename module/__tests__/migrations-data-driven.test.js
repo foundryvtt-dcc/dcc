@@ -69,7 +69,7 @@ beforeEach(() => {
   // overrides this per-test.
   globalThis.game = {
     i18n: { localize: vi.fn((k) => k) },
-    settings: { get: vi.fn(() => 0.68) }
+    settings: { get: vi.fn(() => 0.70) }
   }
   globalThis.foundry = stubFoundry()
 })
@@ -333,6 +333,62 @@ describe('migrateActorData — #739 speed.base seed', () => {
   test('does not seed when the displayed value matches the base default', async () => {
     const actor = cleanActor()
     actor._source = { system: { attributes: { speed: { base: '30', value: '30' } } } }
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+})
+
+describe('migrateActorData — action die seed from config.actionDice', () => {
+  test('seeds a blank persisted value from the config string', async () => {
+    const actor = cleanActor()
+    actor._source = {
+      system: {
+        attributes: { actionDice: { value: '' } },
+        config: { actionDice: '1d16' }
+      }
+    }
+    expect(await migrateActorData(actor)).toEqual({
+      'system.attributes.actionDice.value': '1d16'
+    })
+  })
+
+  test('seeds an unset value and normalizes a multi-die config to the first die', async () => {
+    const actor = cleanActor()
+    actor._source = { system: { config: { actionDice: '1d20,1d16' } } }
+    expect(await migrateActorData(actor)).toEqual({
+      'system.attributes.actionDice.value': '1d20'
+    })
+  })
+
+  test('normalizes an NPC multi-action config (2d20 = two d20 actions)', async () => {
+    const actor = cleanActor()
+    actor._source = { system: { config: { actionDice: '2d20' } } }
+    expect(await migrateActorData(actor)).toEqual({
+      'system.attributes.actionDice.value': '1d20'
+    })
+  })
+
+  test('a persisted value is preserved even when config differs', async () => {
+    const actor = cleanActor()
+    actor._source = {
+      system: {
+        attributes: { actionDice: { value: '1d20' } },
+        config: { actionDice: '1d16' }
+      }
+    }
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('does not seed when the config is empty or carries no die', async () => {
+    const actor = cleanActor()
+    actor._source = {
+      system: {
+        attributes: { actionDice: { value: '' } },
+        config: { actionDice: '' }
+      }
+    }
+    expect(await migrateActorData(actor)).toEqual({})
+
+    actor._source.system.config.actionDice = 'special'
     expect(await migrateActorData(actor)).toEqual({})
   })
 })
