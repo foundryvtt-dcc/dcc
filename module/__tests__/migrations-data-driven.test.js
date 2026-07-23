@@ -69,7 +69,7 @@ beforeEach(() => {
   // overrides this per-test.
   globalThis.game = {
     i18n: { localize: vi.fn((k) => k) },
-    settings: { get: vi.fn(() => 0.70) }
+    settings: { get: vi.fn(() => 0.71) }
   }
   globalThis.foundry = stubFoundry()
 })

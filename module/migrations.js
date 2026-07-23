@@ -69,11 +69,15 @@ async function buildClassNameLookup () {
  * `config.actionDice` when the persisted value is blank or still the 1d20
  * schema default while the config die differs (the skill/check paths and
  * Dice Chain effects read the attributes value; older importers only wrote
- * the config string, leaving the default behind). All branches are
- * data-driven/idempotent, so the extra sweep for worlds stamped at 0.68 is
- * a one-time pass.
+ * the config string, leaving the default behind).
+ *
+ * 0.71: re-sweep because the scene sweep was a silent no-op before —
+ * `migrateSceneData` keyed on the pre-v11 `actorData` field, so unlinked
+ * scene tokens never received any actor migration (including 0.70's
+ * action-die seed). All branches are data-driven/idempotent, so each
+ * ceiling bump costs one extra pass.
  */
-export const NEEDS_MIGRATION_VERSION = 0.70
+export const NEEDS_MIGRATION_VERSION = 0.71
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -81,7 +85,7 @@ export const NEEDS_MIGRATION_VERSION = 0.70
  * The pre-V14 lines (0.65.x / 0.66.x) only RUN their migration when the
  * stored version is `<= 0.22` (their own `NEEDS_MIGRATION_VERSION` gate),
  * so those are the only worlds a pre-V14 release can actually carry forward
- * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.70)` band are
+ * (it stamps them up to 0.66). Worlds stamped in the `(0.22, 0.71)` band are
  * skipped by the pre-V14 gate, so the old "open in a pre-V14 release first"
  * instruction never advanced them — they sat below the previous 0.66 floor
  * forever. They are migrated in place here instead, by the data-driven
@@ -204,13 +208,13 @@ export const migrateWorld = async function () {
     }
   }
 
-  // Migrate Actor Override Tokens
+  // Migrate unlinked-token synthetic actors (the scene sweep updates the
+  // token deltas itself rather than returning scene updateData).
   for (const s of game.scenes) {
     try {
-      const updateData = await migrateSceneData(s)
-      if (!foundry.utils.isEmpty(updateData)) {
+      const migratedTokens = await migrateSceneData(s)
+      if (migratedTokens > 0) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Scene', name: s.name }))
-        await s.update(updateData, { enforceTypes: false })
       }
     } catch (err) {
       console.error(err)
@@ -329,7 +333,9 @@ const migrateCompendium = async function (pack) {
           updateData = await migrateActorData(doc)
           break
         case 'Scene':
-          updateData = await migrateSceneData(doc)
+          // The scene sweep updates unlinked-token deltas directly and
+          // returns a count, not updateData — nothing to doc.update() here.
+          await migrateSceneData(doc)
           break
       }
 
@@ -570,39 +576,32 @@ export const migrateItemData = function (item) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
- * Return an Object of updateData to be applied
- * @param {Object} scene  The Scene data to Update
- * @return {Promise<Object>}       The updateData to apply
+ * Migrate a Scene's unlinked tokens.
+ *
+ * v11 removed `TokenDocument#actorData` in favor of the ActorDelta
+ * `delta` document, so the previous implementation — which keyed the
+ * unlinked-token branch on `t.actorData` — never matched a token and the
+ * whole sweep silently no-opped on every scene. Instead of rebuilding a
+ * `tokens` update array from raw deltas, migrate each unlinked token's
+ * *synthetic actor* directly: `token.actor` materializes base + delta
+ * (so `migrateActorData`'s `_source` reads see the real persisted
+ * state), and `Actor#update` on a synthetic actor writes back into the
+ * token's delta. Linked tokens are covered by the world-actor sweep;
+ * tokens whose base actor is missing have no synthetic actor and are
+ * skipped.
+ *
+ * @param {Scene} scene  The Scene whose tokens to migrate
+ * @return {Promise<number>}  The number of token actors that were updated
  */
 const migrateSceneData = async function (scene) {
-  const tokens = []
+  let migrated = 0
   for (const token of scene.tokens) {
-    const t = token.toObject()
-    const update = {}
-    if (Object.keys(update).length) foundry.utils.mergeObject(t, update)
-    if (!t.actorId || t.actorLink) {
-      t.actorData = {}
-    } else if (!game.actors.has(t.actorId)) {
-      t.actorId = null
-      t.actorData = {}
-    } else if (!t.actorLink && t.actorData) {
-      const actorData = foundry.utils.deepClone(t.actorData)
-      actorData.type = token.actor?.type
-      const actorUpdate = await migrateActorData(actorData);
-      ['items', 'effects'].forEach(embeddedName => {
-        if (!actorUpdate[embeddedName]?.length) return
-        const updates = new Map(actorUpdate[embeddedName].map(u => [u._id, u]))
-        t.actorData[embeddedName].forEach(original => {
-          const embeddedUpdate = updates.get(original._id)
-          if (embeddedUpdate) foundry.utils.mergeObject(original, embeddedUpdate)
-        })
-        delete actorUpdate[embeddedName]
-      })
-
-      foundry.utils.mergeObject(t.actorData, actorUpdate)
+    if (token.actorLink || !token.actor) continue
+    const updateData = await migrateActorData(token.actor)
+    if (!foundry.utils.isEmpty(updateData)) {
+      await token.actor.update(updateData, { enforceTypes: false })
+      migrated++
     }
-    tokens.push(t)
   }
-  return { tokens }
+  return migrated
 }

@@ -96,4 +96,51 @@ describe('migrateWorld orchestration', () => {
     expect(result.migrationComplete).toBe(false)
     expect(warn.mock.calls[0][0]).toContain('"count":2')
   })
+
+  // Scene sweep (v11+ token model): unlinked tokens migrate via their
+  // synthetic actors (`token.actor` → ActorDelta write-back); linked
+  // tokens are the world actor's job and broken tokens have no synthetic
+  // actor at all. The old `t.actorData`-keyed branch never matched a v11+
+  // token, so this path had zero effective coverage.
+  const sceneToken = ({ actorLink = false, actor } = {}) => ({ actorLink, actor })
+  const tokenActor = (update) => ({
+    system: { details: {}, class: {} }, // missing alignment → non-empty updateData
+    effects: [],
+    update: update ?? vi.fn(async () => {})
+  })
+
+  test('unlinked scene tokens migrate through their synthetic actors', async () => {
+    const unlinked = tokenActor()
+    const linked = tokenActor()
+    globalThis.game.scenes = [{
+      name: 'S1',
+      tokens: [
+        sceneToken({ actor: unlinked }),
+        sceneToken({ actorLink: true, actor: linked }),
+        sceneToken({ actor: null }) // broken base-actor reference
+      ]
+    }]
+
+    const result = await migrateWorld()
+
+    expect(unlinked.update).toHaveBeenCalledWith(
+      expect.objectContaining({ 'system.details.alignment': 'l' }),
+      { enforceTypes: false }
+    )
+    expect(linked.update).not.toHaveBeenCalled()
+    expect(result).toEqual({ migrationComplete: true })
+  })
+
+  test('a failing token-actor update counts the scene as a failure and still stamps', async () => {
+    globalThis.game.scenes = [{
+      name: 'S-bad',
+      tokens: [sceneToken({ actor: tokenActor(vi.fn(async () => { throw new Error('delta rejected') })) })]
+    }]
+
+    const result = await migrateWorld()
+
+    expect(result).toEqual({ migrationComplete: false })
+    expect(settingsSet).toHaveBeenCalledWith('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
+    expect(warn.mock.calls[0][0]).toContain('"count":1')
+  })
 })
