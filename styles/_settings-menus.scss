@@ -23,4 +23,10 @@
   fieldset {
     padding: 8px 12px;
   }
+
+  /* Core gives form-group labels line-height: var(--input-height), which
+     looks fine on one line but leaves large gaps when a label wraps. */
+  .form-group > label {
+    line-height: 1.4;
+  }
 }

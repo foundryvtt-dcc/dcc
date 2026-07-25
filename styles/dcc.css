@@ -3221,5 +3221,12 @@ a.inline-roll {
 .dcc-settings-menu fieldset {
   padding: 8px 12px;
 }
+.dcc-settings-menu {
+  /* Core gives form-group labels line-height: var(--input-height), which
+     looks fine on one line but leaves large gaps when a label wraps. */
+}
+.dcc-settings-menu .form-group > label {
+  line-height: 1.4;
+}
 
 /*# sourceMappingURL=dcc.css.map */

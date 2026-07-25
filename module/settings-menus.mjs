@@ -35,7 +35,7 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ['dcc-settings-menu'],
     tag: 'form',
     position: {
-      width: 560,
+      width: 660,
       height: 'auto'
     },
     window: {
