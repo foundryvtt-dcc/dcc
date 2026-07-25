@@ -29,4 +29,11 @@
   .form-group > label {
     line-height: 1.4;
   }
+
+  /* Core splits form-group rows 50/50 between label and fields. A checkbox
+     only needs a sliver of that, and unbreakable labels like
+     "Damage/Crits/Fumbles" wrap in half a row — give those labels the space. */
+  .form-group:has(input[type='checkbox']) > label {
+    flex: 3;
+  }
 }
