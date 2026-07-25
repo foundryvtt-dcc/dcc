@@ -298,9 +298,11 @@ export async function loadSystemTemplates () {
 }
 
 /**
- * Register the Fleeting Luck setting early so it's available for
- * `getSceneControlButtons`, which fires before the `ready` hook where other
- * settings are registered.
+ * Register the Fleeting Luck settings early so the enable toggle is available
+ * for `getSceneControlButtons`, which fires before the `ready` hook where
+ * other settings are registered. The automate setting registers here too so
+ * the pair sits together in the settings window (registration order is
+ * display order).
  */
 export function registerEarlySettings () {
   game.settings.register('dcc', 'enableFleetingLuck', {
@@ -310,6 +312,16 @@ export function registerEarlySettings () {
     scope: 'world',
     type: Boolean,
     default: false,
+    config: true
+  })
+
+  game.settings.register('dcc', 'automateFleetingLuck', {
+    name: 'DCC.SettingAutomateFleetingLuck',
+    hint: 'DCC.SettingAutomateFleetingLuckHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: true,
     config: true
   })
 }
