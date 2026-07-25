@@ -1,0 +1,8 @@
+{{#each groups as |group|}}
+<fieldset>
+    <legend>{{group.legend}}</legend>
+    {{#each group.entries as |entry|}}
+    {{formGroup entry.field value=entry.value disabled=entry.disabled rootId=@root.rootId localize=true}}
+    {{/each}}
+</fieldset>
+{{/each}}

@@ -1,5 +1,7 @@
 /* global CONFIG, game, Hooks */
 
+import { DCCEnhancedCombatSettings, DCCTableSettings, DCCActionDiceSettings } from './settings-menus.mjs'
+
 export const pubConstants = {
   name: 'dcc',
   dccLogoPath: 'systems/dcc/styles/images/dcc-rpg-logo-red.webp',
@@ -9,6 +11,39 @@ export const pubConstants = {
 }
 
 export const registerSystemSettings = async function () {
+  /**
+   * Settings submenus. Menus always render above loose settings in the
+   * configuration window, mirroring how core groups its own settings.
+   * The settings they present are registered below with `config: false`
+   * so they only appear inside their submenu.
+   */
+  game.settings.registerMenu('dcc', 'enhancedCombatMenu', {
+    name: 'DCC.SettingsMenuEnhancedCombat',
+    label: 'DCC.SettingsMenuEnhancedCombat',
+    hint: 'DCC.SettingsMenuEnhancedCombatHint',
+    icon: 'fa-solid fa-swords',
+    type: DCCEnhancedCombatSettings,
+    restricted: false
+  })
+
+  game.settings.registerMenu('dcc', 'tableSettingsMenu', {
+    name: 'DCC.SettingsMenuTables',
+    label: 'DCC.SettingsMenuTables',
+    hint: 'DCC.SettingsMenuTablesHint',
+    icon: 'fa-solid fa-table-list',
+    type: DCCTableSettings,
+    restricted: true
+  })
+
+  game.settings.registerMenu('dcc', 'actionDiceMenu', {
+    name: 'DCC.SettingsMenuActionDice',
+    label: 'DCC.SettingsMenuActionDice',
+    hint: 'DCC.SettingsMenuActionDiceHint',
+    icon: 'fa-solid fa-dice',
+    type: DCCActionDiceSettings,
+    restricted: true
+  })
+
   /**
    * Track the last system version to which the world was migrated
    */
@@ -51,13 +86,11 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingManualCompendiumConfiguration',
     hint: 'DCC.SettingManualCompendiumConfigurationHint',
     scope: 'world',
-    config: true,
+    config: false,
     requiresReload: true,
     type: Boolean,
     default: false
   })
-
-  const manualConfig = game.settings.get('dcc', 'manualCompendiumConfiguration')
 
   /**
    * Gather a list of available compendium packs with RollTables
@@ -92,7 +125,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingCriticalHitsCompendium',
     hint: 'DCC.SettingCriticalHitsCompendiumHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -108,7 +141,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingSpellSideEffectsCompendium',
     hint: 'DCC.SettingSpellSideEffectsCompendiumHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -124,7 +157,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingFumbleTable',
     hint: 'DCC.SettingFumbleTableHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: rollTables,
@@ -140,7 +173,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingDisapprovalTablesCompendium',
     hint: 'DCC.SettingDisapprovalTablesCompendiumHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -176,7 +209,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -190,7 +223,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: true,
-    config: true
+    config: false
   })
 
   game.settings.register('dcc', 'autoResetActionDice', {
@@ -199,7 +232,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: true,
-    config: true
+    config: false
   })
 
   game.settings.register('dcc', 'hideSingleActionDiePips', {
@@ -208,7 +241,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: true,
-    config: true
+    config: false
   })
 
   /**
@@ -218,7 +251,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingMightyDeedsTablesCompendium',
     hint: 'DCC.SettingMightyDeedsTablesCompendiumHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -234,7 +267,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingTurnUnholyTable',
     hint: 'DCC.SettingTurnUnholyTableHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: rollTables,
@@ -250,7 +283,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingLayOnHandsTable',
     hint: 'DCC.SettingLayOnHandsTableHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: rollTables,
@@ -266,7 +299,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingDivineAidTable',
     hint: 'DCC.SettingDivineAidTableHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: rollTables,
@@ -282,7 +315,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingMercurialMagicTable',
     hint: 'DCC.SettingMercurialMagicTableHint',
     scope: 'world',
-    config: manualConfig,
+    config: false,
     default: '',
     type: String,
     choices: rollTables,
@@ -330,7 +363,7 @@ export const registerSystemSettings = async function () {
     scope: 'client',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -345,7 +378,7 @@ export const registerSystemSettings = async function () {
     type: String,
     choices: { full: 'DCC.AttackCardFormatFull', compact: 'DCC.AttackCardFormatCompact' },
     default: 'full',
-    config: true
+    config: false
   })
 
   /**
@@ -358,7 +391,7 @@ export const registerSystemSettings = async function () {
     scope: 'client',
     type: Boolean,
     default: true,
-    config: true
+    config: false
   })
 
   /**
@@ -377,7 +410,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: true,
-    config: true
+    config: false
   })
 
   /**
@@ -453,7 +486,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -467,7 +500,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -481,7 +514,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -495,7 +528,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -509,7 +542,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -524,7 +557,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -537,7 +570,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
@@ -550,7 +583,7 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: false,
-    config: true
+    config: false
   })
 
   /**
