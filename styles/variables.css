@@ -76,7 +76,10 @@ body.theme-dark {
   --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
   --system-backstab-button-image: url('./images/backstab-grey.svg');
   --system-border-color: #525252;
-  --system-checkbox-background-color: var(--system-input-background);
+  /* Must stay clearly visible against the near-black dialog/sheet background
+     (#0b0a13) — the unchecked box is a solid square in this color, and the
+     input background (#323138) is indistinguishable from it at 18px. */
+  --system-checkbox-background-color: #6f6e77;
   --system-checkbox-checked-color: var(--system-primary-color);
   --system-checkbox-checkmark-color: transparent;
   --system-checkbox-disabled-color: #000;
