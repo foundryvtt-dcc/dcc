@@ -1,0 +1,26 @@
+/* ----------------------------------------- */
+/*  Settings Submenus                        */
+/* ----------------------------------------- */
+
+/* The settings submenu dialogs (module/settings-menus.mjs) intentionally use
+   core's standard-form styling rather than the DCC sheet theme; this partial
+   only adds breathing room between the fieldset groups. */
+.dcc-settings-menu {
+  /* Cap the window height so long menus (Tables & Compendia) scroll while the
+     save button in the footer stays visible. */
+  .window-content {
+    max-height: min(80vh, 720px);
+  }
+
+  .dcc-settings-menu-groups {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  fieldset {
+    padding: 8px 12px;
+  }
+}

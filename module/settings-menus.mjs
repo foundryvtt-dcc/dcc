@@ -25,9 +25,14 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static TOGGLES = {}
 
-  /** @inheritDoc */
+  /**
+   * @inheritDoc
+   * Note: deliberately NOT tagged with the `dcc` class — these dialogs should
+   * match core's own settings submenus, and the sheet styling scoped under
+   * `.dcc` (label fonts, checkbox theming) breaks them in dark mode.
+   */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'dcc-settings-menu'],
+    classes: ['dcc-settings-menu'],
     tag: 'form',
     position: {
       width: 560,
