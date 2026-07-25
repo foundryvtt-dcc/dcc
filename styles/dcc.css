@@ -408,46 +408,31 @@
   outline: 2px solid var(--system-input-focus-outline-color);
   outline-offset: 2px;
 }
-.dcc input[type=checkbox]:checked:focus-visible::after, .dcc input[type=radio]:checked:focus-visible::after {
-  outline: 2px solid var(--system-input-focus-outline-color);
-  outline-offset: 2px;
+.dcc input {
+  /* Checkbox glyphs use the classic solid Font Awesome face, like core
+     V14. The previous duotone approach broke with Font Awesome 7: the
+     duotone `square` glyph's primary layer no longer draws the box, so
+     unchecked boxes rendered as nothing. */
 }
-.dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
+.dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
   width: var(--system-checkbox-size);
   height: var(--system-checkbox-size);
   font-size: var(--system-checkbox-size);
   line-height: var(--system-checkbox-size);
   border-radius: 3px;
-  outline: none;
-}
-.dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
-  font-family: var(--font-awesome-duotone);
+  font-family: var(--font-awesome, "Font Awesome 7 Pro");
   font-weight: var(--system-checkbox-font-weight);
   background: none;
   color: var(--system-checkbox-background-color);
   outline: 1px solid transparent;
   transition: outline-color 0.5s;
-  --fa-primary-color: var(--system-checkbox-checked-color);
-  --fa-secondary-color: var(--system-checkbox-background-color);
-}
-.dcc input[type=checkbox]:checked, .dcc input[type=radio]:checked {
-  position: relative;
-}
-.dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before, .dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
-  font-family: var(--font-awesome-duotone);
-}
-.dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
-  color: var(--system-checkbox-checked-color);
 }
 .dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before {
-  color: var(--system-checkbox-checkmark-color);
-  position: absolute;
-  left: 0;
-  outline: none;
+  color: var(--system-checkbox-checked-color);
 }
 .dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
-  --checkbox-background-color: var(--system-checkbox-disabled-color);
-  --checkbox-checked-color: var(--system-checkbox-disabled-color);
+  --system-checkbox-background-color: var(--system-checkbox-disabled-color);
+  --system-checkbox-checked-color: var(--system-checkbox-disabled-color);
   cursor: inherit;
 }
 .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
@@ -457,9 +442,6 @@
   content: "\f0c8";
 }
 .dcc input[type=checkbox]:checked::before {
-  content: "";
-}
-.dcc input[type=checkbox]:checked::after {
   content: "\f14a";
 }
 .dcc input:focus {

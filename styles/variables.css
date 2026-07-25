@@ -11,11 +11,12 @@
   --system-background: url('/ui/parchment.jpg');
   --system-backstab-button-image: url('./images/backstab.png');
   --system-border-color: #333230;
-  --system-checkbox-font-weight: 400;
+  /* 900 selects the solid Font Awesome face — the box glyphs are drawn as
+     filled squares (\f0c8 unchecked, \f14a checked). */
+  --system-checkbox-font-weight: 900;
   --system-checkbox-background-color: #8d8c85;
   --system-checkbox-checked-color: var(--system-primary-color);
-  --system-checkbox-checkmark-color: var(--system-border-color);
-  --system-checkbox-disabled-color: #000;
+  --system-checkbox-disabled-color: #55544e;
   --system-checkbox-size: 18px;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
   --system-data-font: 'Book Antiqua', Palatino, serif;
@@ -81,8 +82,7 @@ body.theme-dark {
      input background (#323138) is indistinguishable from it at 18px. */
   --system-checkbox-background-color: #6f6e77;
   --system-checkbox-checked-color: var(--system-primary-color);
-  --system-checkbox-checkmark-color: transparent;
-  --system-checkbox-disabled-color: #000;
+  --system-checkbox-disabled-color: #46454d;
   --system-d20-icon: url('../../../icons/svg/d20-grey.svg');
   --system-frame-background: url('images/denim-light.jpg');
   --system-frame-border: 4px solid var(--system-border-color);
