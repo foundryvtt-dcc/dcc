@@ -215,21 +215,6 @@ class FleetingLuck {
           }
         }
       })
-
-      Hooks.on('getUserContextOptions', (html, options) => {
-        options.push({
-          name: game.i18n.localize('DCC.FleetingLuckGive'),
-          icon: '<i class="fas fa-balance-scale-left"></i>',
-          condition: li => {
-            const userId = li[0].dataset.userId
-            const user = game.users.get(userId)
-            return game.user.isGM && FleetingLuck.isTrackedForUser(user)
-          },
-          callback: li => {
-            FleetingLuck.give(li[0].dataset.userId, 1)
-          }
-        })
-      })
     }
 
     // All users refresh fleeting luck after user updates
@@ -237,6 +222,27 @@ class FleetingLuck {
       if (change.avatar || change.flags?.dcc) {
         FleetingLuck.refresh()
       }
+    })
+  }
+
+  /**
+   * Add the Award Fleeting Luck option to the Players list context menu.
+   * The v14 Players application collects `getUserContextOptions` exactly once,
+   * at its first render (before the `ready` hook), so this must be registered
+   * at import time — not from `FleetingLuck.init`. Visibility is evaluated
+   * per menu open, which keeps the GM / setting gates dynamic.
+   * @param {Application} app       The Players application
+   * @param {object[]} options      The array of context menu entries
+   */
+  static addUserContextOptions (app, options) {
+    options.push({
+      label: 'DCC.FleetingLuckGive',
+      icon: 'fas fa-scale-unbalanced',
+      visible: li => {
+        const user = game.users.get(li.dataset.userId)
+        return FleetingLuck.enabled && game.user.isGM && !!user && FleetingLuck.isTrackedForUser(user)
+      },
+      onClick: (event, li) => FleetingLuck.give(li.dataset.userId, 1)
     })
   }
 

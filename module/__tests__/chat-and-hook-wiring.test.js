@@ -3,7 +3,7 @@
  * `module/dcc.js`. Each handler is invoked in isolation against a stubbed
  * `foundry` / `game` / `Hooks` / `ui` plus `vi.mock`ed sibling modules
  * (`chat`, `parser`, `entity-images`, `spell-result`, `table-result`,
- * `item-piles-support`, `macros`). No live Foundry boot.
+ * `item-piles-support`, `macros`, `fleeting-luck`). No live Foundry boot.
  *
  * Mirrors the pattern in `settings-table-hooks.test.js` /
  * `table-loading.test.js`.
@@ -56,6 +56,10 @@ vi.mock('../macros.mjs', () => ({
   createDCCMacro: vi.fn()
 }))
 
+vi.mock('../fleeting-luck.js', () => ({
+  default: { addUserContextOptions: vi.fn() }
+}))
+
 const chat = await import('../chat.js')
 const parserModule = await import('../parser.js')
 const parser = parserModule.default
@@ -67,6 +71,8 @@ const TableResultModule = await import('../table-result.js')
 const TableResult = TableResultModule.default
 const { setupItemPilesForDCC } = await import('../item-piles-support.js')
 const { createDCCMacro } = await import('../macros.mjs')
+const FleetingLuckModule = await import('../fleeting-luck.js')
+const FleetingLuck = FleetingLuckModule.default
 
 const {
   CHAT_AND_HOOK_WIRING_HOOKS,
@@ -74,6 +80,7 @@ const {
   onRenderChatMessageHTML,
   onGetChatMessageContextOptions,
   onGetCompendiumContextOptions,
+  onGetUserContextOptions,
   onRenderActorDirectory,
   onPreCreateActor,
   onPreCreateItem,
@@ -286,6 +293,15 @@ describe('onRenderChatMessageHTML', () => {
 
     expect(chat.lookupCriticalRoll).toHaveBeenCalledWith(message, html)
     expect(chat.lookupFumbleRoll).toHaveBeenCalledWith(message, html, {})
+  })
+})
+
+describe('onGetUserContextOptions', () => {
+  test('delegates to FleetingLuck.addUserContextOptions', () => {
+    const app = { id: 'players' }
+    const options = [{ label: 'core-entry' }]
+    onGetUserContextOptions(app, options)
+    expect(FleetingLuck.addUserContextOptions).toHaveBeenCalledWith(app, options)
   })
 })
 
@@ -687,6 +703,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTML)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getChatMessageContextOptions.handler).toBe(onGetChatMessageContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getCompendiumContextOptions.handler).toBe(onGetCompendiumContextOptions)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.getUserContextOptions.handler).toBe(onGetUserContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.renderActorDirectory.handler).toBe(onRenderActorDirectory)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preCreateActor.handler).toBe(onPreCreateActor)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preCreateItem.handler).toBe(onPreCreateItem)
@@ -697,7 +714,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the seventeen documented hook names', () => {
+  test('covers exactly the eighteen documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
       'combatRound',
@@ -706,6 +723,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
       'getChatMessageContextOptions',
       'getCompendiumContextOptions',
       'getProseMirrorMenuDropDowns',
+      'getUserContextOptions',
       'hotbarDrop',
       'item-piles-ready',
       'preCreateActor',
@@ -745,6 +763,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTML])
     expect(onCalls.getChatMessageContextOptions).toEqual([onGetChatMessageContextOptions])
     expect(onCalls.getCompendiumContextOptions).toEqual([onGetCompendiumContextOptions])
+    expect(onCalls.getUserContextOptions).toEqual([onGetUserContextOptions])
     expect(onCalls.renderActorDirectory).toEqual([onRenderActorDirectory])
     expect(onCalls.preCreateActor).toEqual([onPreCreateActor])
     expect(onCalls.preCreateItem).toEqual([onPreCreateItem])
@@ -765,12 +784,12 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly seventeen Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly eighteen Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Sixteen dispatch-table listeners (incl. the three action-dice combat
+    // Seventeen dispatch-table listeners (incl. the three action-dice combat
     // hooks) + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(17)
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(18)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })
