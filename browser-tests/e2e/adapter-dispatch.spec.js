@@ -3101,8 +3101,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // Guard against regressions that reintroduce the dispatcher
       // scaffold.
       const surface = await page.evaluate(() => {
-        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
-          CONFIG.Actor.documentClass?.prototype
+        const player = game.actors.contents.find(a => a.type === 'Player')
+        const proto = player ? Object.getPrototypeOf(player) : CONFIG.Actor.documentClass.prototype
         return {
           hasRollToHit: typeof proto.rollToHit === 'function',
           hasLegacy: typeof proto._rollToHitLegacy === 'function',
@@ -3123,8 +3123,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // is single-path through the adapter. Guard against regressions that
       // reintroduce a legacy body, verified against the live class.
       const surface = await page.evaluate(() => {
-        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
-          CONFIG.Actor.documentClass?.prototype
+        const player = game.actors.contents.find(a => a.type === 'Player')
+        const proto = player ? Object.getPrototypeOf(player) : CONFIG.Actor.documentClass.prototype
         return {
           // Deleted bodies.
           hasAbilityLegacy: typeof proto._rollAbilityCheckLegacy === 'function',
@@ -3946,8 +3946,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // path and deleted the legacy bodies. Guard against regressions
       // that reintroduce the dispatcher scaffold.
       const surface = await page.evaluate(() => {
-        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
-          CONFIG.Actor.documentClass?.prototype
+        const player = game.actors.contents.find(a => a.type === 'Player')
+        const proto = player ? Object.getPrototypeOf(player) : CONFIG.Actor.documentClass.prototype
         return {
           hasCrit: typeof proto._rollCritical === 'function',
           hasFumble: typeof proto._rollFumble === 'function',
@@ -3976,8 +3976,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // former `_rollDamageViaAdapter`; the gate / legacy / via-adapter
       // alias are all deleted. Guard against regressions.
       const surface = await page.evaluate(() => {
-        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
-          CONFIG.Actor.documentClass?.prototype
+        const player = game.actors.contents.find(a => a.type === 'Player')
+        const proto = player ? Object.getPrototypeOf(player) : CONFIG.Actor.documentClass.prototype
         return {
           hasDamage: typeof proto._rollDamage === 'function',
           hasBuildLibDamage: typeof proto._buildLibDamageResult === 'function',

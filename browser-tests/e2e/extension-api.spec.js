@@ -316,10 +316,13 @@ test.describe('DCC Extension API', () => {
       let actor
       try {
         actor = await Actor.create({ type: 'Player', name: 'P_ContainerProbe' })
-        const [backpack, loot] = await actor.createEmbeddedDocuments('Item', [
+        // Return order is not guaranteed — resolve by type.
+        const containerItems = await actor.createEmbeddedDocuments('Item', [
           { type: 'container', name: 'Probe Backpack', system: { weight: 1, quantity: 1, capacity: { weight: 50, items: 10 } } },
           { type: 'equipment', name: 'Probe Loot', system: { weight: 3, quantity: 2 } }
         ])
+        const backpack = containerItems.find(i => i.type === 'container')
+        const loot = containerItems.find(i => i.type === 'equipment')
         // Loose item, not yet in the container.
         observed.isContainer = backpack.isContainer
         observed.lootIsContainer = loot.isContainer

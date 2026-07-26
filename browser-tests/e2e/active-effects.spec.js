@@ -980,10 +980,13 @@ test.describe('DCC Active Effects', () => {
             { name: 'Off Boon', changes: [{ key: 'system.abilities.per.value', value: '9', type: 'add' }], disabled: true }
           ])
           // Equipped item with a transferring LCK effect; unequipped item with an AGL effect.
-          const [ring, stowed] = await actor.createEmbeddedDocuments('Item', [
+          // Return order is not guaranteed — resolve by name.
+          const charmItems = await actor.createEmbeddedDocuments('Item', [
             { type: 'equipment', name: 'Lucky Ring', system: { equipped: true } },
             { type: 'equipment', name: 'Stowed Charm', system: { equipped: false } }
           ])
+          const ring = charmItems.find(i => i.name === 'Lucky Ring')
+          const stowed = charmItems.find(i => i.name === 'Stowed Charm')
           await ring.createEmbeddedDocuments('ActiveEffect', [
             { name: 'Ring LCK', transfer: true, changes: [{ key: 'system.abilities.lck.value', value: '3', type: 'add' }], disabled: false }
           ])
