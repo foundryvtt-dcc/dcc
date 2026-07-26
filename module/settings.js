@@ -10,6 +10,91 @@ export const pubConstants = {
   title: 'DCC'
 }
 
+/**
+ * Settings that must exist before the `ready` hook. Called from the `init`
+ * hook (module/init-hook.mjs) because their values are read before `ready`:
+ *
+ * - `enableFleetingLuck` gates `getSceneControlButtons`, which fires first.
+ * - The multiple-action-dice settings gate `DCCActor#prepareDerivedData`,
+ *   which runs for existing world actors during `setup` — registering them
+ *   at `ready` meant the action-dice list was never derived on world load
+ *   and sheet chips/pips only appeared after an actor update re-prepared
+ *   the actor.
+ *
+ * Registration order is display order in the settings window, but all of
+ * these either render inside a submenu (`config: false`) or pair with a
+ * neighbor registered here, so registering early does not scatter the list.
+ */
+export const registerEarlySystemSettings = function () {
+  game.settings.register('dcc', 'enableFleetingLuck', {
+    name: 'DCC.SettingEnableFleetingLuck',
+    hint: 'DCC.SettingEnableFleetingLuckHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  game.settings.register('dcc', 'automateFleetingLuck', {
+    name: 'DCC.SettingAutomateFleetingLuck',
+    hint: 'DCC.SettingAutomateFleetingLuckHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
+   * Multiple action dice — the master switch for the per-round action-die
+   * budget feature (sheet chips, combat-tracker pips, auto-spend). Default
+   * OFF: when off the system runs today's single-action-die code paths
+   * verbatim. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+   */
+  game.settings.register('dcc', 'multipleActionDice', {
+    name: 'DCC.SettingMultipleActionDice',
+    hint: 'DCC.SettingMultipleActionDiceHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: false
+  })
+
+  /**
+   * Multiple action dice — sub-options. These only have effect when the master
+   * `multipleActionDice` setting above is on; each gate ANDs the master with its
+   * own switch (see module/action-dice-tracker.mjs). Phase 2 of the feature.
+   */
+  game.settings.register('dcc', 'trackActionDiceInCombat', {
+    name: 'DCC.SettingTrackActionDiceInCombat',
+    hint: 'DCC.SettingTrackActionDiceInCombatHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: false
+  })
+
+  game.settings.register('dcc', 'autoResetActionDice', {
+    name: 'DCC.SettingAutoResetActionDice',
+    hint: 'DCC.SettingAutoResetActionDiceHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: false
+  })
+
+  game.settings.register('dcc', 'hideSingleActionDiePips', {
+    name: 'DCC.SettingHideSingleActionDiePips',
+    hint: 'DCC.SettingHideSingleActionDiePipsHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: false
+  })
+}
+
 export const registerSystemSettings = async function () {
   /**
    * Settings submenus. Menus always render above loose settings in the
@@ -196,53 +281,9 @@ export const registerSystemSettings = async function () {
     config: true
   })
 
-  /**
-   * Multiple action dice — the master switch for the per-round action-die
-   * budget feature (sheet chips, combat-tracker pips, auto-spend). Default
-   * OFF: when off the system runs today's single-action-die code paths
-   * verbatim. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
-   */
-  game.settings.register('dcc', 'multipleActionDice', {
-    name: 'DCC.SettingMultipleActionDice',
-    hint: 'DCC.SettingMultipleActionDiceHint',
-    requiresReload: true,
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: false
-  })
-
-  /**
-   * Multiple action dice — sub-options. These only have effect when the master
-   * `multipleActionDice` setting above is on; each gate ANDs the master with its
-   * own switch (see module/action-dice-tracker.mjs). Phase 2 of the feature.
-   */
-  game.settings.register('dcc', 'trackActionDiceInCombat', {
-    name: 'DCC.SettingTrackActionDiceInCombat',
-    hint: 'DCC.SettingTrackActionDiceInCombatHint',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: false
-  })
-
-  game.settings.register('dcc', 'autoResetActionDice', {
-    name: 'DCC.SettingAutoResetActionDice',
-    hint: 'DCC.SettingAutoResetActionDiceHint',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: false
-  })
-
-  game.settings.register('dcc', 'hideSingleActionDiePips', {
-    name: 'DCC.SettingHideSingleActionDiePips',
-    hint: 'DCC.SettingHideSingleActionDiePipsHint',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: false
-  })
+  // Note: the multiple-action-dice settings are registered in
+  // registerEarlySystemSettings — actor data preparation reads them
+  // before `ready`.
 
   /**
    * Compendium to look in for Mighty Deed tables
@@ -449,10 +490,9 @@ export const registerSystemSettings = async function () {
     config: true
   })
 
-  // Note: enableFleetingLuck and automateFleetingLuck are registered in the
-  // init hook (module/init-hook.mjs registerEarlySettings) so the enable
-  // toggle is available for getSceneControlButtons, which fires before
-  // ready, and so the pair renders together in the settings window.
+  // Note: the Fleeting Luck settings are registered in
+  // registerEarlySystemSettings — getSceneControlButtons reads the enable
+  // toggle before `ready`.
 
   /**
    * Track ability score changes in a per-actor log with reasons and recovery
