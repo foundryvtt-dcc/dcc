@@ -105,13 +105,23 @@ beforeEach(() => {
 })
 
 describe('buildSettingField', () => {
-  test('builds a BooleanField for Boolean settings with name, label, and hint', () => {
+  test('builds a BooleanField for Boolean settings', () => {
     const field = DCCSettingsMenu.buildSettingField(registeredSettings.get('dcc.boolSetting'))
     expect(field).toBeInstanceOf(BooleanField)
     expect(field.initial).toBe(false)
-    expect(field.name).toBe('boolSetting')
-    expect(field.label).toBe('#TEST.Bool')
-    expect(field.hint).toBe('#TEST.BoolHint')
+  })
+
+  test('passes a DataField setting type through without mutating it', () => {
+    const sharedField = new StringField({ required: true })
+    game.settings.register('dcc', 'dataFieldSetting', {
+      name: 'TEST.DataField',
+      scope: 'world',
+      type: sharedField
+    })
+    const field = DCCSettingsMenu.buildSettingField(registeredSettings.get('dcc.dataFieldSetting'))
+    expect(field).toBe(sharedField)
+    expect(field.name).toBeUndefined()
+    expect(field.label).toBeUndefined()
   })
 
   test('builds a StringField with choices for String settings', () => {
@@ -145,7 +155,23 @@ describe('_prepareContext', () => {
     expect(context.groups[0].legend).toBe('#TEST.Legend')
     expect(context.groups[0].entries.map(e => e.value)).toEqual([true, 'b'])
     expect(context.groups[0].entries.map(e => e.disabled)).toEqual([false, false])
+    // name/label/hint travel in the entry (raw i18n keys; the template's
+    // formGroup localize=true localizes) rather than mutating the field.
+    expect(context.groups[0].entries.map(e => e.name)).toEqual(['boolSetting', 'choiceSetting'])
+    expect(context.groups[0].entries[0].label).toBe('TEST.Bool')
+    expect(context.groups[0].entries[0].hint).toBe('TEST.BoolHint')
     expect(context.buttons[0].type).toBe('submit')
+  })
+
+  test('skips unregistered settings instead of breaking the render', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    class MissingKeyMenu extends DCCSettingsMenu {
+      static GROUPS = [{ legend: 'TEST.Legend', settings: ['boolSetting', 'notRegistered'] }]
+    }
+    const context = await new MissingKeyMenu()._prepareContext({})
+    expect(context.groups[0].entries.map(e => e.name)).toEqual(['boolSetting'])
+    expect(warn).toHaveBeenCalledOnce()
+    warn.mockRestore()
   })
 
   test('disables world-scoped settings for users without SETTINGS_MODIFY', async () => {
