@@ -1,4 +1,4 @@
-/* global CONFIG, document, game, foundry, ResizeObserver */
+/* global CONFIG, game, foundry */
 
 import AbilityScoreConfig from './ability-score-config.js'
 import { AbilityScoreLogDialog, abilityScoreLogEnabled } from './ability-score-log.js'
@@ -14,6 +14,7 @@ import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks, 
 import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
 import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
 import { removeActiveEffectOverrides } from './utilities.js'
+import { setupResponsiveTabs } from './responsive-tabs.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -247,115 +248,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Set up responsive tabs with overflow dropdown
+   * Set up responsive tabs with overflow dropdown (shared implementation in
+   * module/responsive-tabs.mjs). Tears down the previous render's observer
+   * before wiring the new element.
    * @private
    */
   #setupResponsiveTabs () {
-    const nav = this.element.querySelector('.sheet-tabs.responsive-tabs')
-    if (!nav) return
-
-    const tabsContainer = nav.querySelector('.tabs-container')
-    const overflowContainer = nav.querySelector('.tabs-overflow')
-    const overflowButton = nav.querySelector('.tabs-overflow-button')
-    const overflowMenu = nav.querySelector('.tabs-overflow-menu')
-
-    if (!tabsContainer || !overflowContainer || !overflowMenu) return
-
-    // Store original tab elements for reference
-    const allTabs = Array.from(tabsContainer.querySelectorAll('a[data-tab]'))
-
-    /**
-     * Calculate which tabs fit and update the overflow menu
-     */
-    const updateOverflowTabs = () => {
-      // Reset all tabs to visible
-      allTabs.forEach(tab => tab.classList.remove('tab-hidden'))
-      overflowMenu.innerHTML = ''
-
-      // Get available width (container width minus overflow button width)
-      const containerWidth = tabsContainer.offsetWidth
-      const overflowButtonWidth = 40 // Approximate width for the overflow button
-
-      let usedWidth = 0
-      const overflowTabs = []
-
-      // Determine which tabs fit
-      for (const tab of allTabs) {
-        // Temporarily show tab to measure
-        tab.classList.remove('tab-hidden')
-        const tabWidth = tab.offsetWidth
-
-        if (usedWidth + tabWidth + overflowButtonWidth > containerWidth && overflowTabs.length === 0 && usedWidth > 0) {
-          // This tab and all following go to overflow
-          tab.classList.add('tab-hidden')
-          overflowTabs.push(tab)
-        } else if (overflowTabs.length > 0) {
-          // Already in overflow mode
-          tab.classList.add('tab-hidden')
-          overflowTabs.push(tab)
-        } else {
-          usedWidth += tabWidth
-        }
-      }
-
-      // Update overflow container visibility
-      if (overflowTabs.length > 0) {
-        overflowContainer.classList.add('has-overflow')
-
-        // Populate overflow menu
-        for (const tab of overflowTabs) {
-          const menuItem = document.createElement('a')
-          menuItem.dataset.action = 'tab'
-          menuItem.dataset.group = tab.dataset.group
-          menuItem.dataset.tab = tab.dataset.tab
-          menuItem.dataset.tooltip = tab.dataset.tooltip
-          menuItem.className = tab.className.replace('tab-hidden', '').trim()
-          menuItem.textContent = tab.textContent
-
-          // Handle click to switch tab
-          menuItem.addEventListener('click', (event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            // Trigger the original tab
-            tab.click()
-            // Close menu
-            overflowMenu.classList.remove('open')
-          })
-
-          overflowMenu.appendChild(menuItem)
-        }
-      } else {
-        overflowContainer.classList.remove('has-overflow')
-      }
-    }
-
-    // Toggle overflow menu on button click
-    overflowButton?.addEventListener('click', (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-      overflowMenu.classList.toggle('open')
-    })
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!overflowContainer.contains(event.target)) {
-        overflowMenu.classList.remove('open')
-      }
-    })
-
-    // Set up ResizeObserver to handle window resize
-    const resizeObserver = new ResizeObserver(() => {
-      updateOverflowTabs()
-    })
-    resizeObserver.observe(tabsContainer)
-
-    // Initial calculation
-    updateOverflowTabs()
-
-    // Store cleanup function for when sheet is closed
-    this._responsiveTabsCleanup = () => {
-      resizeObserver.disconnect()
-    }
+    this._responsiveTabsCleanup?.()
+    this._responsiveTabsCleanup = setupResponsiveTabs(this.element)
   }
 
   /** @inheritDoc */
