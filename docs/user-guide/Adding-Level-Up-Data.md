@@ -1,13 +1,15 @@
-# Creating a Custom Class
+# Adding Level Up Data
 
-The DCC system can level characters of your own homebrew classes, the same
-way it levels the built‑in classes. This page explains how the level‑up
-machinery actually works and how to author the **Level** items that drive it.
+The DCC system does not have a way to create a fully custom class, but its
+level‑up dialog can apply your own **Level Up Data** to characters of any
+class name, the same way it levels the built‑in classes. This page explains
+how the level‑up machinery actually works and how to author the **Level**
+items that drive it.
 
 > If you only want the seven core classes, you don't need any of this —
 > install the DCC Core Book module and it ships the level data for you. See
-> [Level Up](Level-Up.md). This page is for **module authors and GMs building
-> their own classes.**
+> [Level Up](Level-Up.md). This page is for **module authors and GMs
+> authoring their own level data.**
 
 ## How leveling works
 
