@@ -234,6 +234,20 @@
     &[type='checkbox']:checked::before,
     &[type='radio']:checked::before {
       color: var(--system-checkbox-checked-color);
+      /* Core absolutely positions the checked ::before under its own
+         ::after overlay; we draw everything with ::before, so keep it
+         in flow. */
+      position: static;
+    }
+
+    /* Core paints the checked/indeterminate state through an ::after
+       duotone overlay in its accent color (amber in dark theme) — suppress
+       it so the system checkbox colors above are what renders. */
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after,
+    &[type='checkbox']:indeterminate::after,
+    &[type='radio']:indeterminate::after {
+      content: none;
     }
 
     &[type='checkbox']:disabled,

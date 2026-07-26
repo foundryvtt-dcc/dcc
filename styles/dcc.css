@@ -429,6 +429,18 @@
 }
 .dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before {
   color: var(--system-checkbox-checked-color);
+  /* Core absolutely positions the checked ::before under its own
+     ::after overlay; we draw everything with ::before, so keep it
+     in flow. */
+  position: static;
+}
+.dcc input {
+  /* Core paints the checked/indeterminate state through an ::after
+     duotone overlay in its accent color (amber in dark theme) — suppress
+     it so the system checkbox colors above are what renders. */
+}
+.dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after, .dcc input[type=checkbox]:indeterminate::after, .dcc input[type=radio]:indeterminate::after {
+  content: none;
 }
 .dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
   --system-checkbox-background-color: var(--system-checkbox-disabled-color);
