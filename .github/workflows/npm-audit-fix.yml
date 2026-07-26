@@ -1,0 +1,84 @@
+# Daily npm security audit with automatic fix PRs.
+#
+# Dependabot security updates cover direct dependencies it can bump, but
+# transitive vulnerabilities (or advisories Dependabot skips) can slip
+# through. This workflow runs `npm audit fix` in both npm roots and, if
+# that produces changes that still pass the unit tests, opens (or
+# updates) a PR on the fixed branch `automated/npm-audit-fix`. If the
+# tree is clean — e.g. Dependabot already fixed everything — no PR is
+# created and any existing one is left to close on its own.
+#
+# Note: PRs opened with the default GITHUB_TOKEN do not trigger the
+# "Run Tests" workflow, so the unit tests are run here before the PR is
+# created instead. If "Run Tests" is ever made a required status check
+# on main, these PRs will sit at "Expected — waiting for status" and
+# need an admin merge (or switch the `token` input of the
+# create-pull-request step to a PAT/GitHub App token so CI triggers).
+name: NPM Audit Fix
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  audit-fix:
+    runs-on: ubuntu-latest
+    if: github.repository == 'foundryvtt-dcc/dcc'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+
+      - name: Audit and fix root dependencies
+        run: |
+          npm ci
+          npm audit || true
+          npm audit fix || true
+
+      - name: Audit and fix Playwright E2E dependencies
+        working-directory: browser-tests/e2e
+        run: |
+          npm ci
+          npm audit || true
+          npm audit fix || true
+
+      - name: Check for lockfile changes
+        id: changes
+        run: |
+          if git diff --quiet -- package.json package-lock.json browser-tests/e2e/package.json browser-tests/e2e/package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat
+          fi
+
+      - name: Run unit tests against fixed dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm test
+
+      - name: Create or update fix PR
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automated/npm-audit-fix
+          delete-branch: true
+          commit-message: 'fix(deps): apply npm audit fixes for security vulnerabilities'
+          title: 'fix(deps): apply npm audit fixes for security vulnerabilities'
+          body: |
+            Automated `npm audit fix` for vulnerabilities not covered by an
+            open Dependabot PR, applied in `/` and `/browser-tests/e2e`.
+
+            The unit test suite (`npm test`) passed against the updated
+            dependencies before this PR was opened. See the workflow run for
+            the audit report and diff summary.
+
+            _Opened automatically by the NPM Audit Fix workflow._

@@ -16,6 +16,7 @@ test('super snake', async () => {
     'attributes.hp.max': 21,
     'attributes.speed.value': '20’',
     'config.actionDice': '1d20',
+    'attributes.actionDice.value': '1d20',
     'saves.frt.value': '+8',
     'saves.ref.value': '+4',
     'saves.wil.value': '+4',
@@ -355,6 +356,8 @@ test('chimeric', async () => {
     'attributes.speed.value': '30’',
     'attributes.speed.other': 'fly 30’',
     'config.actionDice': '3d20',
+    // "Act 3d20" = three d20 actions — the per-roll sheet die is a single d20.
+    'attributes.actionDice.value': '1d20',
     'saves.frt.value': '+4',
     'saves.ref.value': '+2',
     'saves.wil.value': '+2',
@@ -568,6 +571,7 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
       'attributes.hitDice.value': '12d10',
       'attributes.speed.value': '40’',
       'config.actionDice': '1d24',
+      'attributes.actionDice.value': '1d24',
       'details.alignment': 'n',
       'details.critRange': 20,
       'saves.frt.value': '+12',
@@ -699,6 +703,20 @@ test('creature type detection', async () => {
   const humanoidNPC = await parseNPCs('Goblin Scout: Init +2; Atk shortsword +1 melee (1d6); AC 13; HD 1d8; hp 4; MV 30\'; Act 1d20; SV Fort +1, Ref +2, Will +0; AL C.')
   expect(humanoidNPC[0]['attributes.critical.table']).toBe('III')
   expect(humanoidNPC[0]['attributes.critical.die']).toBe('d6')
+})
+
+/* Test action die fallback when the Act stat is missing or carries no die */
+test('missing or die-less Act falls back to 1d20 for config and sheet die', async () => {
+  // No Act stat at all.
+  const noAct = await parseNPCs('Sluggish Blob: Init +0; Atk pseudopod +1 melee (1d4); AC 10; HD 1d8; hp 4; MV 5\'; SV Fort +0, Ref +0, Will +0; AL N.')
+  expect(noAct[0]['config.actionDice']).toBe('1d20')
+  expect(noAct[0]['attributes.actionDice.value']).toBe('1d20')
+
+  // An Act stat with no die-shaped token keeps the config text but the
+  // sheet die falls back to 1d20.
+  const oddAct = await parseNPCs('Odd Actor: Init +0; Atk claw +1 melee (1d4); AC 10; HD 1d8; hp 4; MV 5\'; Act special; SV Fort +0, Ref +0, Will +0; AL N.')
+  expect(oddAct[0]['config.actionDice']).toBe('special')
+  expect(oddAct[0]['attributes.actionDice.value']).toBe('1d20')
 })
 
 /* Test error handling with malformed input */

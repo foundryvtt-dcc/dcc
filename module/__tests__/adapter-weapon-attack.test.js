@@ -531,6 +531,44 @@ test('buildAttackInput translates weapon + actor to the lib AttackInput shape', 
   expect(input.abilityModifier).toBe(0)
 })
 
+test('buildAttackInput falls back to the sheet action die when the weapon die is blank', () => {
+  // Owned weapons normally re-derive `system.actionDie` from the actor in
+  // DCCItem.prepareBaseData; a blank die (e.g. a synthetic weapon object
+  // from a module) must fall back to the sheet/AE-affected
+  // `attributes.actionDice.value`, not the raw config preset (#813).
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const original = actor.system.attributes.actionDice.value
+  actor.system.attributes.actionDice.value = '1d24' // "Action Die +1d" applied
+  const weapon = makeSimpleWeapon({ actionDie: '' })
+
+  const input = buildAttackInput(actor, weapon)
+  expect(input.actionDie).toBe('d24')
+
+  actor.system.attributes.actionDice.value = original
+})
+
+test('rollToHit uses the sheet action die for a weapon with a blank die', async () => {
+  dccRollCreateRollMock.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const original = actor.system.attributes.actionDice.value
+  actor.system.attributes.actionDice.value = '1d24'
+  const weapon = makeSimpleWeapon({ actionDie: '' })
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+    actor.system.attributes.actionDice.value = original
+  }
+
+  const terms = dccRollCreateRollMock.mock.calls[0][0]
+  const dieTerm = terms.find(t => t.type === 'Die')
+  expect(dieTerm.formula).toBe('1d24')
+})
+
 test('buildAttackInput marks missile weapons correctly', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()

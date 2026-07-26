@@ -608,6 +608,87 @@ test.describe('DCC Active Effects', () => {
       const actionDie = await page.locator('input[name="system.attributes.actionDice.value"]').inputValue()
       expect(actionDie).toBe('1d16')
     })
+
+    test('action die chain effect drives skill rolls that inherit the action die', async ({ page }) => {
+      // Reported bug: an "Action Die +1d" effect bumped the sheet die to
+      // 1d24, but clicking a thief skill (e.g. Pick Lock) still rolled
+      // 1d20 — the skill fallback read the raw `config.actionDice`
+      // authoring string, which dice-chain effects never touch. The
+      // fallback must roll the effect-modified attributes.actionDice.value.
+      const result = await page.evaluate(async () => {
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Dice Chain Skill', type: 'Player' })
+          await actor.createEmbeddedDocuments('ActiveEffect', [{
+            name: 'Action Die Upgrade',
+            img: 'icons/svg/aura.svg',
+            changes: [{
+              key: 'system.attributes.actionDice.value',
+              value: '1',
+              type: 'add'
+            }],
+            disabled: false
+          }])
+          const roll = await actor.rollSkillCheck('pickLock')
+          return {
+            sheetDie: actor.system.attributes.actionDice.value,
+            formula: roll?.formula
+          }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      // The sheet die is bumped AND the skill roll actually uses it.
+      expect(result.sheetDie).toBe('1d24')
+      expect(result.formula).toContain('1d24')
+    })
+
+    test('action die chain effect drives weapon attack rolls', async ({ page }) => {
+      // Owned weapons re-derive `system.actionDie` from the actor's
+      // `attributes.actionDice.value` during the post-effect item re-prep
+      // (DCCItem.prepareBaseData), so an "Action Die +1d" effect must reach
+      // the prepared weapon die AND the attack roll built from it.
+      const result = await page.evaluate(async () => {
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Dice Chain Attack', type: 'Player' })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'V14-Chain-Sword',
+            type: 'weapon',
+            system: {
+              actionDie: '1d20',
+              toHit: '+2',
+              damage: '1d8',
+              melee: true,
+              equipped: true,
+              trained: true
+            }
+          }])
+          await actor.createEmbeddedDocuments('ActiveEffect', [{
+            name: 'Action Die Upgrade',
+            img: 'icons/svg/aura.svg',
+            changes: [{
+              key: 'system.attributes.actionDice.value',
+              value: '1',
+              type: 'add'
+            }],
+            disabled: false
+          }])
+          const weapon = actor.items.getName('V14-Chain-Sword')
+          const preparedDie = weapon.system.actionDie
+          await actor.rollWeaponAttack(weapon.id)
+          const message = game.messages.contents[game.messages.contents.length - 1]
+          return { preparedDie, content: message?.content ?? '' }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      // The effect reached the prepared weapon die and the rolled formula.
+      expect(result.preparedDie).toBe('1d24')
+      expect(result.content).toContain('1d24')
+    })
   })
 
   // ── Equipped Item Effects ────────────────────────────────────────────
