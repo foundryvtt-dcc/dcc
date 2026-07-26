@@ -328,6 +328,18 @@ describe('prepareItems — weights', () => {
     expect(ctx['equipment.weights'].equipmentWithContainers).toBe(7)
   })
 
+  test('equipmentWithContainers sums loose equipment and container weight', async () => {
+    const box = item('container', { capacity: {} }, { _id: 'b2' })
+    Object.assign(box, {
+      contents: [], contentsWeight: 0, contentsItemCount: 0, totalWeight: 7, availableWeightCapacity: 0, availableItemCapacity: 0
+    })
+    const actor = makeActor({ items: [box, item('equipment', { weight: 3, quantity: 1 })] })
+    const ctx = await prepareItems(actor, makeDeps())
+    expect(ctx['equipment.weights'].equipment).toBe(3)
+    expect(ctx['equipment.weights'].containers).toBe(7)
+    expect(ctx['equipment.weights'].equipmentWithContainers).toBe(10)
+  })
+
   test('coin treasure uses coinsPerPound and actor currency adds to treasure weight', async () => {
     // coinsPerPound = 10. Unresolved coin treasure stays (so it counts toward weight).
     const coins = item('treasure', { isCoins: true, value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 50 } })

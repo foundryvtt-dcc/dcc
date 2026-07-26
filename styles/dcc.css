@@ -1574,7 +1574,7 @@ a.inline-roll {
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
-  /* Row control cells: keep up to three icons (cast/edit/delete) on one line */
+  /* Row control cells: keep the edit/delete icons on one line */
 }
 .dcc .item-list .item > div:last-child {
   display: flex;

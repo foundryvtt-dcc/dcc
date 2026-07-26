@@ -197,7 +197,6 @@
   "DCC.ConfigureSheet": "Konfiguracja",
   "DCC.ConfigureSheetHint": "Konfiguruj opcje DCC dla tej postaci",
   "DCC.Container": "Pojemnik",
-  "DCC.Containers": "Pojemniki",
   "DCC.ContainerCannotContainSelf": "Pojemnik nie może zawierać samego siebie.",
   "DCC.ContainerCapacityItems": "Pojemność przedmiotów",
   "DCC.ContainerCapacityLabel": "Pojemność",

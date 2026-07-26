@@ -261,18 +261,21 @@ test.describe('DCC Sheet UI', () => {
       const weaponsSubtab = sheet.locator('.equipment-subtabs [data-tab="weapons"]')
       const goodsSubtab = sheet.locator('.equipment-subtabs [data-tab="goods"]')
 
-      // Weapons & Armor is the initial subtab: weapon rows visible, containers hidden
+      // Weapons & Armor is the initial subtab: weapon and armor lists
+      // visible, containers hidden
       await expect(weaponsSubtab).toHaveClass(/active/)
       await expect(sheet.locator('.weapon-list').first()).toBeVisible()
+      await expect(sheet.locator('.armor-list')).toBeVisible()
       await expect(sheet.locator('.container-list')).toBeHidden()
 
-      // Switching to Goods shows containers/treasure and hides the weapon lists
+      // Switching to Goods shows containers/treasure and hides the weapons page
       await goodsSubtab.click()
       await page.waitForTimeout(300)
       await expect(goodsSubtab).toHaveClass(/active/)
       await expect(sheet.locator('.container-list')).toBeVisible()
       await expect(sheet.locator('.item-list-currency')).toBeVisible()
       await expect(sheet.locator('.weapon-list').first()).toBeHidden()
+      await expect(sheet.locator('.armor-list')).toBeHidden()
 
       // Containers are not a separate section — the container row renders
       // inside the Equipment list, and no Containers box exists
@@ -290,6 +293,44 @@ test.describe('DCC Sheet UI', () => {
       // The chosen subtab survives the re-render triggered by the item update
       await expect(goodsSubtab).toHaveClass(/active/)
       await expect(sheet.locator('.container-list')).toBeVisible()
+
+      // The container toggle collapses and re-expands the contents row
+      const contents = sheet.locator('.container-contents')
+      await expect(contents).toBeVisible()
+      await sheet.locator('.container-row [data-action="containerToggle"]').click()
+      await expect(contents).toBeHidden()
+      await sheet.locator('.container-row [data-action="containerToggle"]').click()
+      await expect(contents).toBeVisible()
+    })
+
+    test('NPC equipment tab renders all sections flat without subtabs', async ({ page }) => {
+      // The NPC sheet composes the same extracted partials as the PC sheet
+      // but renders them on a single page with no subtab nav — a regression
+      // in the shared partials or subtab CSS scoping must not blank it.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 NPC Equipment', type: 'NPC' })
+        const [pack] = await actor.createEmbeddedDocuments('Item', [
+          { type: 'container', name: 'V14 NPC Sack', system: { capacity: { weight: 20, items: 5 } } }
+        ])
+        await actor.createEmbeddedDocuments('Item', [
+          { type: 'armor', name: 'V14 NPC Hide', system: { acBonus: '+2' } },
+          { type: 'equipment', name: 'V14 NPC Rations', system: { weight: 1, quantity: 2 } },
+          { type: 'equipment', name: 'V14 NPC Stowed', system: { weight: 1, quantity: 1, container: pack.id } },
+          { type: 'treasure', name: 'V14 NPC Loot', system: {} }
+        ])
+      })
+
+      await openActorSheet(page, 'V14 NPC Equipment')
+      await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
+      await page.waitForTimeout(500)
+
+      const sheet = page.locator('.dcc.actor.sheet')
+      // No subtab nav on the NPC sheet
+      await expect(sheet.locator('.equipment-subtabs')).toHaveCount(0)
+      // All sections render simultaneously on the single page
+      await expect(sheet.locator('.armor-list')).toBeVisible()
+      await expect(sheet.locator('.container-list .container-row')).toBeVisible()
+      await expect(sheet.locator('.item-list-currency')).toBeVisible()
     })
   })
 

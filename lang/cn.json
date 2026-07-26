@@ -197,7 +197,6 @@
   "DCC.ConfigureSheet": "设置",
   "DCC.ConfigureSheetHint": "为此角色设置 DCC 特定选项",
   "DCC.Container": "容器",
-  "DCC.Containers": "容器",
   "DCC.ContainerCannotContainSelf": "容器不能容纳自身。",
   "DCC.ContainerCapacityItems": "物品容量",
   "DCC.ContainerCapacityLabel": "容量",

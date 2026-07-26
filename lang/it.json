@@ -197,7 +197,6 @@
   "DCC.ConfigureSheet": "Configura",
   "DCC.ConfigureSheetHint": "Configura impostazioni specifiche di DCC per questo personaggio",
   "DCC.Container": "Contenitore",
-  "DCC.Containers": "Contenitori",
   "DCC.ContainerCannotContainSelf": "Un contenitore non può contenere se stesso.",
   "DCC.ContainerCapacityItems": "Capacità oggetti",
   "DCC.ContainerCapacityLabel": "Capacità",

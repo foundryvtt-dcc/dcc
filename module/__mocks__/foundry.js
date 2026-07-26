@@ -25,6 +25,28 @@ global.FormApplication = FormApplicationMock
  * - Action system for declarative event handling
  * - Form handling with validation
  */
+// Shared tab helpers used by both ApplicationV2Mock and DocumentSheetV2Mock,
+// mirroring real v14 ApplicationV2 semantics (the E2E suite is the source of
+// truth if core's tab behavior changes).
+// mockGetTabsConfig: null (not a fallback object) for unknown groups.
+function mockGetTabsConfig (group) {
+  return this.constructor.TABS[group] ?? null
+}
+
+// mockPrepareTabs: mirrors ApplicationV2._prepareTabs
+function mockPrepareTabs (group) {
+  const { tabs, labelPrefix, initial = null } = this._getTabsConfig(group) ?? { tabs: [] }
+  this.tabGroups[group] ??= initial
+  return tabs.reduce((prepared, { id, cssClass, ...tabConfig }) => {
+    const active = this.tabGroups[group] === id
+    if (active) cssClass = [cssClass, 'active'].filter(c => c).join(' ')
+    const tab = { group, id, active, cssClass, ...tabConfig }
+    if (labelPrefix) tab.label ??= `${labelPrefix}.${id}`
+    prepared[id] = tab
+    return prepared
+  }, {})
+}
+
 class ApplicationV2Mock {
   constructor (options = {}) {
     this.options = {
@@ -92,7 +114,7 @@ class ApplicationV2Mock {
   // Tab configuration - defines multi-panel interfaces
   static TABS = {}
 
-  // Active tab per group - updated by changeTab
+  // Active tab per group - updated by changeTab in real Foundry (not mocked; tests set it directly)
   tabGroups = {}
 
   // Core render method - displays the application
@@ -148,24 +170,14 @@ class ApplicationV2Mock {
     return this.options.window.controls || []
   }
 
-  // Tab configuration retrieval - returns tab setup for a group
-  // Mirrors real v14 behavior: null (not a fallback object) for unknown groups
+  // Tab configuration retrieval - mirrors real v14 behavior (shared impl above)
   _getTabsConfig (group) {
-    return this.constructor.TABS[group] ?? null
+    return mockGetTabsConfig.call(this, group)
   }
 
-  // Tab context preparation - mirrors ApplicationV2._prepareTabs
+  // Tab context preparation - mirrors ApplicationV2._prepareTabs (shared impl above)
   _prepareTabs (group) {
-    const { tabs, labelPrefix, initial = null } = this._getTabsConfig(group) ?? { tabs: [] }
-    this.tabGroups[group] ??= initial
-    return tabs.reduce((prepared, { id, cssClass, ...tabConfig }) => {
-      const active = this.tabGroups[group] === id
-      if (active) cssClass = [cssClass, 'active'].filter(c => c).join(' ')
-      const tab = { group, id, active, cssClass, ...tabConfig }
-      if (labelPrefix) tab.label ??= `${labelPrefix}.${id}`
-      prepared[id] = tab
-      return prepared
-    }, {})
+    return mockPrepareTabs.call(this, group)
   }
 
   // Position management
@@ -530,26 +542,17 @@ class DocumentSheetV2Mock {
   // Tab configuration - defines multi-panel interfaces
   static TABS = {}
 
-  // Active tab per group - updated by changeTab
+  // Active tab per group - updated by changeTab in real Foundry (not mocked; tests set it directly)
   tabGroups = {}
 
-  // Tab configuration retrieval - mirrors real v14 behavior: null for unknown groups
+  // Tab configuration retrieval - mirrors real v14 behavior (shared impl above)
   _getTabsConfig (group) {
-    return this.constructor.TABS[group] ?? null
+    return mockGetTabsConfig.call(this, group)
   }
 
-  // Tab context preparation - mirrors ApplicationV2._prepareTabs
+  // Tab context preparation - mirrors ApplicationV2._prepareTabs (shared impl above)
   _prepareTabs (group) {
-    const { tabs, labelPrefix, initial = null } = this._getTabsConfig(group) ?? { tabs: [] }
-    this.tabGroups[group] ??= initial
-    return tabs.reduce((prepared, { id, cssClass, ...tabConfig }) => {
-      const active = this.tabGroups[group] === id
-      if (active) cssClass = [cssClass, 'active'].filter(c => c).join(' ')
-      const tab = { group, id, active, cssClass, ...tabConfig }
-      if (labelPrefix) tab.label ??= `${labelPrefix}.${id}`
-      prepared[id] = tab
-      return prepared
-    }, {})
+    return mockPrepareTabs.call(this, group)
   }
 
   // Document getter - returns the document this sheet manages

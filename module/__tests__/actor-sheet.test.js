@@ -534,3 +534,20 @@ test('quantity actions ignore a missing item', async () => {
   await DCCActorSheet.DEFAULT_OPTIONS.actions.increaseQty.call(sheet, {}, target)
   await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
 })
+
+test('a new tab group registered via CLASS_TABS is seeded instead of dropped', () => {
+  class CustomTabsSheet extends DCCActorSheet {
+    static CLASS_TABS = {
+      custom: { tabs: [{ id: 'lore', group: 'custom', label: 'X.Lore' }] }
+    }
+  }
+  const actor = createActorWithItems('actor-tabs-5', [])
+  const sheet = new CustomTabsSheet({
+    document: actor,
+    dragDrop: [{ dragSelector: '[data-drag="true"]', dropSelector: '.dcc.actor' }]
+  })
+
+  const config = sheet._getTabsConfig('custom')
+  expect(config).not.toBeNull()
+  expect(config.tabs.map(t => t.id)).toEqual(['lore'])
+})
