@@ -2536,13 +2536,23 @@ a.inline-roll {
   margin-right: 8px;
   border: 0;
 }
+.dcc .character .combat-basics .action-dice-row {
+  grid-column: 1/3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.dcc .character .combat-basics .action-dice-row label {
+  flex: none;
+}
 .dcc .character .combat-basics .action-dice-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 3px;
   align-items: center;
-  margin-right: 8px;
   min-width: 0;
+  overflow: hidden;
 }
 .dcc .character .combat-basics .action-dice-chips .action-die-chip {
   align-items: center;
