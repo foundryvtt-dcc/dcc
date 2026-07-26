@@ -251,6 +251,62 @@ test.describe('DCC Sheet UI', () => {
       await expect(page.locator('input[name="system.abilities.str.value"]')).toBeVisible()
     })
 
+    test('thrown weapons render a shadow row that rolls a missile-side attack (issue #595)', async ({ page }) => {
+      // A versatile dagger (melee + thrown) and a plain sword. The dagger gets
+      // exactly one editable row plus a read-only shadow row; the sword and
+      // the Ranged list are untouched.
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'V14 Thrown Probe',
+          type: 'Player',
+          items: [
+            { type: 'weapon', name: 'V14 Probe Dagger', system: { melee: true, thrown: true, range: '10/20/30', damage: '1d4', toHit: '+1', equipped: true, quantity: 1 } },
+            { type: 'weapon', name: 'V14 Probe Sword', system: { melee: true, equipped: true } }
+          ]
+        })
+        await game.settings.set('dcc', 'showRollModifierByDefault', false)
+      })
+
+      await openActorSheet(page, 'V14 Thrown Probe')
+      await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
+      await page.waitForTimeout(500)
+      const sheet = page.locator('.dcc.actor.sheet')
+
+      // Exactly one shadow row (the dagger's), directly in the melee list,
+      // showing the auto-generated "(thrown)" name and the range bands.
+      const shadowRow = sheet.locator('.weapon-shadow-row')
+      await expect(shadowRow).toHaveCount(1)
+      await expect(shadowRow.locator('.shadow-name')).toContainText('V14 Probe Dagger (thrown)')
+      await expect(shadowRow.locator('.shadow-value').nth(2)).toHaveText('10/20/30')
+
+      // The shadow row is display-only: no name input, no edit/delete controls
+      await expect(shadowRow.locator('input')).toHaveCount(0)
+      await expect(shadowRow.locator('[data-action="itemEdit"], [data-action="itemDelete"]')).toHaveCount(0)
+
+      // No duplicate item: still exactly two weapon documents on the actor
+      const weaponCount = await page.evaluate(() =>
+        game.actors.getName('V14 Thrown Probe').items.filter(i => i.type === 'weapon').length)
+      expect(weaponCount).toBe(2)
+
+      // Weapon rows expose the quantity control (companion change in #595)
+      const daggerRow = sheet.locator('.weapon[data-item-slot]').filter({ has: page.locator('input[value="V14 Probe Dagger"]') })
+      await daggerRow.locator('[data-action="increaseQty"]').click()
+      await expect.poll(async () => {
+        return page.evaluate(() => game.actors.getName('V14 Thrown Probe').items.getName('V14 Probe Dagger').system.quantity)
+      }, { timeout: 5000 }).toBe(2)
+
+      // Clicking the shadow row's attack button rolls the thrown (missile)
+      // attack — the chat card carries the "(thrown)" weapon name. Poll the
+      // messages collection: ChatMessage.create is fire-and-forget.
+      await shadowRow.locator('.weapon-button').click()
+      await expect.poll(async () => {
+        return page.evaluate(() => {
+          const msgs = game.messages.contents.slice(-5)
+          return msgs.some(m => (m.flavor || '').includes('V14 Probe Dagger (thrown)'))
+        })
+      }, { timeout: 10000 }).toBe(true)
+    })
+
     test('equipment tab splits into weapons and goods subtabs (issue #816)', async ({ page }) => {
       // Actor with content on both subtabs, including an item stowed in a
       // container so the quantity arrows (issue #818) can be exercised.
