@@ -324,6 +324,8 @@ describe('prepareItems — weights', () => {
     const ctx = await prepareItems(actor, makeDeps())
     expect(ctx['equipment.weights'].containers).toBe(7)
     expect(ctx['equipment.weights'].total).toBe(7)
+    // Combined weight shown on the Equipment section (containers render inside it)
+    expect(ctx['equipment.weights'].equipmentWithContainers).toBe(7)
   })
 
   test('coin treasure uses coinsPerPound and actor currency adds to treasure weight', async () => {

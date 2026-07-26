@@ -87,10 +87,12 @@ Handle lifecycle events:
 - Filter contained items out of their normal categories (a sword in a backpack should not appear in the weapons list)
 - Nest contained items under their parent container in the UI
 
-#### 3b. Container section in equipment tab
+#### 3b. Container rows in the equipment list
 
-Display containers as collapsible sections:
-- Container name, weight, capacity usage
+Display containers as collapsible rows **inside the Equipment list** (they
+were originally a separate "Containers" section; folded into Equipment per
+feedback on issue #818, PR #823):
+- Container name, capacity usage (in the Quantity column), notes
 - Contained items listed underneath (indented)
 - Expand/collapse toggle
 - Drop target for dragging items into the container

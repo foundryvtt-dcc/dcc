@@ -274,6 +274,11 @@ test.describe('DCC Sheet UI', () => {
       await expect(sheet.locator('.item-list-currency')).toBeVisible()
       await expect(sheet.locator('.weapon-list').first()).toBeHidden()
 
+      // Containers are not a separate section — the container row renders
+      // inside the Equipment list, and no Containers box exists
+      await expect(sheet.locator('.item-list.container-list .container-row')).toBeVisible()
+      await expect(sheet.locator('#equipment .box-title').filter({ hasText: 'Containers' })).toHaveCount(0)
+
       // Items inside a container have working quantity arrows (issue #818)
       const containedRow = sheet.locator(`.container-content-item[data-item-id="${torchId}"]`)
       await expect(containedRow.locator('[data-action="increaseQty"]')).toBeVisible()

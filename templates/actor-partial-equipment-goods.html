@@ -27,38 +27,26 @@
   </li>
 {{/inline}}
 
-{{!-- Equipment --}}
+{{!-- Equipment (including containers, which nest their contents) --}}
 <div class="box-title">
-  {{localize "DCC.Equipment"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.equipment}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.equipment}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.equipment decimals=2 sign=false}}</span>{{/if}}
+  {{localize "DCC.Equipment"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.equipment}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.equipmentWithContainers}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.equipmentWithContainers decimals=2 sign=false}}</span>{{/if}}
 </div>
-<ol class="item-list box-border">
-  {{> ItemHeader type="equipment"}}
-  {{#each equipment.equipment as |equipment id|}}
-    {{> ItemRow item=equipment id=id}}
-  {{/each}}
-</ol>
-{{!-- Mounts --}}
-<div class="box-title">{{localize "DCC.Mounts"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.mounts}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.mounts}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.mounts decimals=2 sign=false}}</span>{{/if}}</div>
-<ol class="item-list box-border">
-  {{> ItemHeader type="mount"}}
-  {{#each equipment.mounts as |mount id|}}
-    {{> ItemRow item=mount id=id}}
-  {{/each}}
-</ol>
-
-{{!-- Containers --}}
-<div class="box-title">{{localize "DCC.Containers"}}{{#if equipment.weights.containers}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.containers decimals=2 sign=false}}</span>{{/if}}</div>
 <ol class="item-list box-border container-list">
   <li class="grid-col-span-5 item-list-header">
     <div></div>
     <div>{{localize "DCC.Name"}}</div>
-    <div>{{localize "DCC.ContainerCapacityLabel"}}</div>
     <div>{{localize "DCC.Notes"}}</div>
+    <div>{{localize "DCC.Quantity"}}</div>
     <div>
-      <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="container" data-action="itemCreate"><i class="fas fa-plus"></i>
+      <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="equipment" data-action="itemCreate"><i class="fas fa-plus"></i>
         {{localize "DCC.Add"}}</a>
+      <a class="item-control" title="{{localize 'DCC.AddContainer'}}" data-tooltip="{{localize 'DCC.AddContainer'}}" data-type="container" data-action="itemCreate"><i class="fas fa-plus"></i>
+        <i class="fa-solid fa-box-open"></i></a>
     </div>
   </li>
+  {{#each equipment.equipment as |equipment id|}}
+    {{> ItemRow item=equipment id=id}}
+  {{/each}}
   {{#each equipment.containers as |container id|}}
     <li class="grid-col-span-5 item item-draggable container-row" data-item-id="{{container._id}}" data-container-id="{{container._id}}">
       <div class="container-toggle-wrapper">
@@ -66,8 +54,8 @@
         <img class="item-draggable icon-filter" src="{{container.img}}" title="{{container.name}}" alt="{{container.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
       </div>
       <div>{{container.name}}</div>
-      <div class="container-capacity" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat container.totalWeight decimals=2 sign=false}}">{{#if container.capacitySummary}}{{container.capacitySummary}}{{else}}{{numberFormat container.totalWeight decimals=2 sign=false}} {{localize "DCC.WeightUnit"}}{{/if}}</div>
       <div>{{{container.system.description.summary}}}</div>
+      <div class="container-capacity" data-tooltip="{{localize 'DCC.ContainerCapacityLabel'}} — {{localize 'DCC.TotalWeight'}}: {{numberFormat container.totalWeight decimals=2 sign=false}}">{{#if container.capacitySummary}}{{container.capacitySummary}}{{else}}{{numberFormat container.totalWeight decimals=2 sign=false}} {{localize "DCC.WeightUnit"}}{{/if}}</div>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
         <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
@@ -91,6 +79,14 @@
         {{/each}}
       </ol>
     </li>
+  {{/each}}
+</ol>
+{{!-- Mounts --}}
+<div class="box-title">{{localize "DCC.Mounts"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.mounts}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.mounts}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.mounts decimals=2 sign=false}}</span>{{/if}}</div>
+<ol class="item-list box-border">
+  {{> ItemHeader type="mount"}}
+  {{#each equipment.mounts as |mount id|}}
+    {{> ItemRow item=mount id=id}}
   {{/each}}
 </ol>
 
