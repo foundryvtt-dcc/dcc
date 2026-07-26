@@ -440,8 +440,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #decreaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document.items?.get(itemId)
-    let qty = item.system?.quantity || 0
-    qty -= 1
+    if (!item) return
+    const qty = Math.max(0, (item.system?.quantity || 0) - 1)
     item.update({ 'system.quantity': qty })
   }
 
@@ -455,8 +455,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #increaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document?.items?.get(itemId)
-    let qty = item.system?.quantity || 0
-    qty += 1
+    if (!item) return
+    const qty = (item.system?.quantity || 0) + 1
     item.update({ 'system.quantity': qty })
   }
 

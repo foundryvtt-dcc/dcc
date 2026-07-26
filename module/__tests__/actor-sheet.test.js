@@ -484,3 +484,53 @@ test('_prepareTabs marks the initial equipment subtab active', () => {
   expect(tabsAfter.goods.active).toBe(true)
   expect(tabsAfter.weapons.active).toBe(false)
 })
+
+/* -------------------------------------------- */
+/*  Quantity increment/decrement                */
+/* -------------------------------------------- */
+
+test('decreaseQty floors quantity at zero', async () => {
+  const item = new DCCItem({
+    _id: 'item-qty-0',
+    name: 'Empty Quiver Arrows',
+    type: 'ammunition',
+    system: { quantity: 0 }
+  })
+  const actor = createActorWithItems('actor-qty-1', [item])
+  const sheet = createActorSheet(actor)
+  item.update = vi.fn()
+
+  const target = { dataset: { itemId: 'item-qty-0' } }
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 0 })
+})
+
+test('increaseQty and decreaseQty adjust quantity by one', async () => {
+  const item = new DCCItem({
+    _id: 'item-qty-2',
+    name: 'Arrows',
+    type: 'ammunition',
+    system: { quantity: 2 }
+  })
+  const actor = createActorWithItems('actor-qty-2', [item])
+  const sheet = createActorSheet(actor)
+  item.update = vi.fn()
+
+  const target = { dataset: { itemId: 'item-qty-2' } }
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.increaseQty.call(sheet, {}, target)
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 3 })
+
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 1 })
+})
+
+test('quantity actions ignore a missing item', async () => {
+  const actor = createActorWithItems('actor-qty-3', [])
+  const sheet = createActorSheet(actor)
+  const target = { dataset: { itemId: 'no-such-item' } }
+
+  // Must not throw dereferencing a missing item
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.increaseQty.call(sheet, {}, target)
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+})
