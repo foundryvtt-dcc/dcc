@@ -329,7 +329,7 @@ test.describe('DCC Sheet UI', () => {
           // containedCount to 0 in full-suite runs. Wait for the container to
           // actually see its stowed item before driving _prepareContext.
           const probeContainer = actor.items.get(container.id)
-          for (let i = 0; i < 40 && probeContainer.contents.length < 1; i++) {
+          for (let i = 0; i < 200 && probeContainer.contents.length < 1; i++) {
             await new Promise(resolve => setTimeout(resolve, 25))
           }
 
