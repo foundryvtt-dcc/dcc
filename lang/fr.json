@@ -86,6 +86,7 @@
   "DCC.ActorTypeNPC": "Ligne Carac PNJ",
   "DCC.ActorTypePlayer": "Bloc(s) Carac PJ",
   "DCC.Add": "Plus",
+  "DCC.AddContainer": "Ajouter un contenant",
   "DCC.AddClassLevelToInitiative": "Ajouter le niveau de classe à l'initiative",
   "DCC.AddClassLevelToInitiativeConfig": "Ajouter le Niveau de Classe à l'Initiative",
   "DCC.AddClassLevelToInitiativeConfigHint": "Ajouter le Niveau de Classe à l'Initiative (ex. pour les Guerriers)",

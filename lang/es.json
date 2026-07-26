@@ -99,6 +99,7 @@
   "DCC.ActorTypeNPC": "Líneas de estadística de PNJ",
   "DCC.ActorTypePlayer": "Bloques de estadística de jugador",
   "DCC.Add": "Agregar",
+  "DCC.AddContainer": "Añadir contenedor",
   "DCC.AddClassLevelToInitiative": "Agregar nivel de clase a la iniciativa",
   "DCC.AddClassLevelToInitiativeConfig": "Agregar nivel de clase a la iniciativa",
   "DCC.AddClassLevelToInitiativeConfigHint": "Agregar nivel de clase a la iniciativa (ej. para guerreros)",
