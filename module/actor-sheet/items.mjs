@@ -79,8 +79,12 @@ export async function prepareItems (actor, {
   // Iterate through items, allocating to categories
   const removeEmptyItems = actor.system.config.removeEmptyItems
   for (const i of inventory) {
-    // Remove physical items with zero quantity
-    if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
+    // Remove physical items with zero quantity. Weapons are exempt: their
+    // rows expose the quantity arrows (#595), and two clicks on the minus
+    // icon silently destroying a configured weapon (crit/damage/initiative
+    // overrides and all) is too destructive — the trash control with its
+    // confirm dialog is the removal path for weapons.
+    if (removeEmptyItems && i.type !== 'weapon' && i.system.quantity !== undefined && i.system.quantity <= 0) {
       await actor.deleteEmbeddedDocuments('Item', [i._id])
       continue
     }
@@ -123,6 +127,17 @@ export async function prepareItems (actor, {
     } else if (i.type === 'weapon') {
       if (i.system.melee) {
         weapons.melee.push(i)
+        if (i.system.thrown) {
+          // Shadow-row display values (#595): derive the missile-side numbers
+          // from a temporary clone so they always match what a thrown roll
+          // (which dispatches on the same clone shape) will use.
+          const thrownView = i.clone({ 'system.melee': false }, { keepId: true })
+          i.thrownRow = {
+            toHit: thrownView.system.toHit,
+            damage: thrownView.system.damage,
+            range: i.system.range
+          }
+        }
       } else {
         weapons.ranged.push(i)
       }

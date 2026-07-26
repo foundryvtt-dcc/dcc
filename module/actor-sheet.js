@@ -901,7 +901,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const options = DCCActorSheet.fillRollOptions(event)
     Object.assign(options, {
-      backstab: target.classList.contains('backstab-button')
+      backstab: target.classList.contains('backstab-button'),
+      thrown: target.dataset.thrown === 'true'
     })
     await this.options.document.rollWeaponAttack(itemId, options)
   }

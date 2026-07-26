@@ -243,12 +243,20 @@
           <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
         </div>
 
-        <div class="grid-tpl-max-auto-tight  grid-col-gap-8  grid-align-center {{#if system.melee}}disabled{{/if}}">
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center {{#unless system.melee}}disabled{{/unless}}">
+          <label for="system.thrown" title="{{localize 'DCC.WeaponPropertiesThrownTooltip'}}">
+            {{localize "DCC.WeaponPropertiesThrown"}}</label>
+          <input type="checkbox" id="system.thrown" name="system.thrown" data-dtype="Boolean"
+                 title="{{localize 'DCC.WeaponPropertiesThrownTooltip'}}"
+                 {{checked system.thrown}} {{#unless system.melee}}disabled{{/unless}}/>
+        </div>
+
+        <div class="grid-tpl-max-auto-tight  grid-col-gap-8  grid-align-center {{#unless rangeEditable}}disabled{{/unless}}">
           <label for="system.range" title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}">
             {{localize "DCC.WeaponPropertiesRange"}}</label>
           <input id="system.range" name="system.range" value="{{system.range}}" size="10"
                  title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}"
-                 placeholder="" data-dtype="String" {{#if system.melee}}readonly{{/if}}/>
+                 placeholder="" data-dtype="String" {{#unless rangeEditable}}readonly{{/unless}}/>
         </div>
       </div>
     </div>

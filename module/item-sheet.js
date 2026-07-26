@@ -254,6 +254,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (data.document.type === 'weapon') {
       this.position.height = 730
+      // Range is editable for missile weapons and thrown melee weapons (#595)
+      data.rangeEditable = !data.document.system.melee || data.document.system.thrown
     }
 
     // Lookup the localizable string for the item's type

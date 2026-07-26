@@ -5,7 +5,7 @@
 .dcc .weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 48px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 52px 48px;
   grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
@@ -91,6 +91,21 @@
         opacity: 0.35;
       }
 
+      // Thrown shadow-row button: dim the d20 so the throw glyph reads (#595)
+      &.has-thrown-overlay::before {
+        opacity: 0.35;
+      }
+
+      .thrown-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
       .two-weapon-overlay {
         position: absolute;
         top: 50%;
@@ -112,6 +127,45 @@
         &.two-weapon-secondary {
           color: var(--system-two-weapon-secondary-color);
         }
+      }
+    }
+  }
+
+  .weapon-quantity {
+    align-items: center;
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    white-space: nowrap;
+
+    i {
+      cursor: pointer;
+    }
+  }
+
+  // Auto-generated thrown attack row under a versatile melee weapon (#595).
+  // Read-only companion to the item row above it — visually receded so it
+  // never reads as a second inventory entry.
+  .weapon-shadow-row {
+    margin-top: -3px;
+
+    .shadow-name,
+    .shadow-value {
+      font-style: italic;
+      opacity: 0.7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .shadow-name {
+      justify-self: start;
+      padding-left: 8px;
+      width: 100%;
+
+      &::before {
+        content: '↳ ';
+        font-style: normal;
       }
     }
   }

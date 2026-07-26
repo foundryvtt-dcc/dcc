@@ -72,6 +72,7 @@ export class WeaponData extends PhysicalItemData {
       range: new StringField({ initial: '' }),
       shortRangeStrength: new BooleanField({ initial: false }),
       subdual: new BooleanField({ initial: false }),
+      thrown: new BooleanField({ initial: false }),
       toHit: new StringField({ initial: '+0' }),
       trained: new BooleanField({ initial: true }),
       twoHanded: new BooleanField({ initial: false }),

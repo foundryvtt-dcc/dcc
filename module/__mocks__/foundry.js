@@ -1057,6 +1057,24 @@ MockItem.prototype._onCreate = async function () {}
 MockItem.prototype._preDelete = async function () {}
 MockItem.prototype.deleteDialog = async function () { return this }
 
+// Minimal Document#clone: copy data, apply (possibly dotted-key) changes,
+// preserve the actor reference; keepId keeps _id/id like real Foundry.
+MockItem.prototype.clone = function (changes = {}, context = {}) {
+  const data = {
+    _id: context.keepId ? this._id : `${this._id}-clone`,
+    name: this.name,
+    type: this.type,
+    system: JSON.parse(JSON.stringify(this.system || {}))
+  }
+  if (context.keepId && this.id !== undefined) data.id = this.id
+  const expanded = global.foundry.utils.expandObject(changes)
+  if (expanded.name !== undefined) data.name = expanded.name
+  if (expanded.system) Object.assign(data.system, expanded.system)
+  const item = new MockItem(data)
+  item.actor = this.actor
+  return item
+}
+
 // Enhanced MockItem with drag data support
 MockItem.prototype.toDragData = function () {
   return {
@@ -1403,6 +1421,7 @@ class Localization {
       'DCC.SpellCheckCritNoTable': 'Crit! Natural 20.',
       'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.',
       'DCC.SkillCheckUnknownSkillWarning': 'Cannot roll a skill check for unknown skill: {skill}',
+      'DCC.WeaponThrownName': '{weapon} (thrown)',
       'DCC.AbilityLogRecoveryLuckRegen': 'Regenerates {level} point(s) per night, up to natural maximum',
       'DCC.AbilityLogRecoveryRest': "Heals 1 point per night's rest, 2 per day of bed rest"
     }

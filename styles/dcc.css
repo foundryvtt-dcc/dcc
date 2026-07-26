@@ -981,7 +981,7 @@ a.inline-roll {
 .dcc .weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 48px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 52px 48px;
   grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
@@ -1056,6 +1056,18 @@ a.inline-roll {
 .dcc .weapon-list .weapon .weapon-button.has-two-weapon::before {
   opacity: 0.35;
 }
+.dcc .weapon-list .weapon .weapon-button.has-thrown-overlay::before {
+  opacity: 0.35;
+}
+.dcc .weapon-list .weapon .weapon-button .thrown-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 1;
+}
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay {
   position: absolute;
   top: 50%;
@@ -1072,6 +1084,36 @@ a.inline-roll {
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-secondary {
   color: var(--system-two-weapon-secondary-color);
+}
+.dcc .weapon-list .weapon-quantity {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  white-space: nowrap;
+}
+.dcc .weapon-list .weapon-quantity i {
+  cursor: pointer;
+}
+.dcc .weapon-list .weapon-shadow-row {
+  margin-top: -3px;
+}
+.dcc .weapon-list .weapon-shadow-row .shadow-name,
+.dcc .weapon-list .weapon-shadow-row .shadow-value {
+  font-style: italic;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dcc .weapon-list .weapon-shadow-row .shadow-name {
+  justify-self: start;
+  padding-left: 8px;
+  width: 100%;
+}
+.dcc .weapon-list .weapon-shadow-row .shadow-name::before {
+  content: "↳ ";
+  font-style: normal;
 }
 
 /* ----------------------------------------- */
