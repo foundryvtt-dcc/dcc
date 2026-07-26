@@ -54,6 +54,11 @@ vi.mock('../built-in-class-level-names.mjs', () => ({ registerBuiltInClassLevelN
 vi.mock('../built-in-sheet-parts.mjs', () => ({ registerBuiltInSheetParts: vi.fn() }))
 vi.mock('../built-in-variant.mjs', () => ({ registerBuiltInVariant: vi.fn() }))
 vi.mock('../handlebars-helpers.mjs', () => ({ registerDCCHandlebarsHelpers: vi.fn() }))
+vi.mock('../settings.js', () => ({
+  pubConstants: { name: 'dcc' },
+  registerEarlySystemSettings: vi.fn(),
+  registerSystemSettings: vi.fn()
+}))
 vi.mock('../macros.mjs', () => ({ getMacroActor: vi.fn(), getMacroOptions: vi.fn(), rollDCCWeaponMacro: vi.fn() }))
 vi.mock('../spell-check-processor.mjs', () => ({ processSpellCheck: vi.fn() }))
 vi.mock('../table-loading.mjs', () => ({ getSkillTable: vi.fn() }))
@@ -279,29 +284,10 @@ describe('TEMPLATE_PATHS', () => {
 })
 
 describe('registerEarlySettings', () => {
-  test('registers the enableFleetingLuck world setting with a reload requirement', () => {
+  test('delegates to registerEarlySystemSettings from settings.js', async () => {
+    const { registerEarlySystemSettings } = await import('../settings.js')
     registerEarlySettings()
-    expect(globalThis.game.settings.register).toHaveBeenCalledWith('dcc', 'enableFleetingLuck', expect.objectContaining({
-      scope: 'world',
-      type: Boolean,
-      default: false,
-      requiresReload: true,
-      config: true
-    }))
-  })
-
-  test('registers automateFleetingLuck immediately after the enable toggle so the pair renders together', () => {
-    registerEarlySettings()
-    const keys = globalThis.game.settings.register.mock.calls.map(([, key]) => key)
-    const enableIndex = keys.indexOf('enableFleetingLuck')
-    expect(keys[enableIndex + 1]).toBe('automateFleetingLuck')
-    expect(globalThis.game.settings.register).toHaveBeenCalledWith('dcc', 'automateFleetingLuck', expect.objectContaining({
-      scope: 'world',
-      type: Boolean,
-      default: true,
-      requiresReload: true,
-      config: true
-    }))
+    expect(registerEarlySystemSettings).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -317,7 +303,8 @@ describe('onInit', () => {
     expect(globalThis.game.dcc).toBeDefined()
     expect(extensionApi.registerActorSheet).toHaveBeenCalledTimes(11)
     expect(globalThis.foundry.applications.handlebars.loadTemplates).toHaveBeenCalledTimes(1)
-    expect(globalThis.game.settings.register).toHaveBeenCalledWith('dcc', 'enableFleetingLuck', expect.any(Object))
+    const { registerEarlySystemSettings } = await import('../settings.js')
+    expect(registerEarlySystemSettings).toHaveBeenCalledTimes(1)
   })
 })
 

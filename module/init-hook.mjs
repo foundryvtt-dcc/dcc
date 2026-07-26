@@ -42,6 +42,7 @@ import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
+import { registerEarlySystemSettings } from './settings.js'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable } from './table-loading.mjs'
@@ -298,32 +299,14 @@ export async function loadSystemTemplates () {
 }
 
 /**
- * Register the Fleeting Luck settings early so the enable toggle is available
- * for `getSceneControlButtons`, which fires before the `ready` hook where
- * other settings are registered. The automate setting registers here too so
- * the pair sits together in the settings window (registration order is
- * display order).
+ * Register the settings whose values are read before the `ready` hook where
+ * the rest of the system settings register: the Fleeting Luck toggle (read
+ * by `getSceneControlButtons`) and the multiple-action-dice settings (read
+ * by `DCCActor#prepareDerivedData` during `setup`). The registrations live
+ * in module/settings.js `registerEarlySystemSettings`.
  */
 export function registerEarlySettings () {
-  game.settings.register('dcc', 'enableFleetingLuck', {
-    name: 'DCC.SettingEnableFleetingLuck',
-    hint: 'DCC.SettingEnableFleetingLuckHint',
-    requiresReload: true,
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
-
-  game.settings.register('dcc', 'automateFleetingLuck', {
-    name: 'DCC.SettingAutomateFleetingLuck',
-    hint: 'DCC.SettingAutomateFleetingLuckHint',
-    requiresReload: true,
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: true
-  })
+  registerEarlySystemSettings()
 }
 
 /**

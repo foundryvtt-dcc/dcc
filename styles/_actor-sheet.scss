@@ -220,25 +220,43 @@
     }
 
     // Action-dice chip row (multiple-action-dice feature). Replaces the
-    // single action-die text box when the master setting is on and the
-    // actor has 2+ dice. See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+    // single action-die label + text box when the master setting is on and
+    // the actor has 2+ dice. The parent .character-grid fixes this box's
+    // height, so the grid row cannot grow: the label and chips share one
+    // flex row spanning both grid columns (~175px), and overflowing chips
+    // clip on the single line (each chip carries its die in its tooltip)
+    // instead of wrapping over the neighboring rows.
+    // See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+    .action-dice-row {
+      grid-column: 1 / 3;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+
+      label {
+        flex: none;
+      }
+    }
+
     .action-dice-chips {
       display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
+      flex-wrap: nowrap;
+      gap: 3px;
       align-items: center;
-      margin-right: 8px;
+      min-width: 0;
+      overflow: hidden;
 
       .action-die-chip {
         align-items: center;
         background: var(--system-input-background);
-        border: var(--system-frame-border);
-        border-radius: 10px;
+        border: 1px solid var(--system-border-color);
+        border-radius: 8px;
         display: inline-flex;
-        font-size: 13px;
+        font-size: 12px;
         gap: 2px;
         line-height: 1;
-        padding: 2px 8px;
+        padding: 2px 6px;
         white-space: nowrap;
 
         &.restricted {

@@ -73,7 +73,12 @@ const {
   DCCTableSettings,
   DCCActionDiceSettings
 } = await import('../settings-menus.mjs')
-const { registerSystemSettings } = await import('../settings.js')
+const { registerEarlySystemSettings, registerSystemSettings } = await import('../settings.js')
+
+const registerAllSettings = async () => {
+  registerEarlySystemSettings()
+  await registerSystemSettings()
+}
 
 const submitHandler = DCCSettingsMenu.DEFAULT_OPTIONS.form.handler
 
@@ -237,7 +242,7 @@ describe('menu registration', () => {
   })
 
   test('every setting shown in a submenu is registered with config: false', async () => {
-    await registerSystemSettings()
+    await registerAllSettings()
     for (const menuClass of menuClasses) {
       for (const group of menuClass.GROUPS) {
         for (const key of group.settings) {
@@ -250,10 +255,29 @@ describe('menu registration', () => {
   })
 
   test('settings outside the submenus stay in the main settings list', async () => {
-    await registerSystemSettings()
+    await registerAllSettings()
     for (const key of ['activeVariant', 'mightyDeedsEnabled', 'promptForItemDeletion', 'coinWeight']) {
       expect(registeredSettings.get(`dcc.${key}`).config).toBe(true)
     }
+  })
+
+  test('settings read before ready register early: fleeting luck pair and action dice', () => {
+    registerEarlySystemSettings()
+    const keys = [...registeredSettings.keys()]
+    for (const key of ['dcc.enableFleetingLuck', 'dcc.automateFleetingLuck', 'dcc.multipleActionDice', 'dcc.trackActionDiceInCombat', 'dcc.autoResetActionDice', 'dcc.hideSingleActionDiePips']) {
+      expect(keys, `${key} must be registered before ready`).toContain(key)
+    }
+    // The Fleeting Luck pair renders adjacently in the main settings list.
+    expect(keys[keys.indexOf('dcc.enableFleetingLuck') + 1]).toBe('dcc.automateFleetingLuck')
+  })
+
+  test('early and ready-time registrations do not overlap', async () => {
+    registerEarlySystemSettings()
+    const earlyCount = game.settings.register.mock.calls.length
+    await registerSystemSettings()
+    const allKeys = game.settings.register.mock.calls.map(([namespace, key]) => `${namespace}.${key}`)
+    expect(new Set(allKeys).size).toBe(allKeys.length)
+    expect(allKeys.length).toBeGreaterThan(earlyCount)
   })
 
   test('TOGGLES only reference settings presented by the same menu', () => {

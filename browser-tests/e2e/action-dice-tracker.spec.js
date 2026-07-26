@@ -738,4 +738,60 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsAction2).toBe(true)
     expect(result.lastMentionsD16).toBe(true)
   })
+
+  test('derives the list for pre-existing actors on world load (early setting registration)', async ({ page }) => {
+    // Regression: the multiple-action-dice settings used to register at the
+    // `ready` hook, but existing world actors prepare during `setup` — so on
+    // world load the derived list was never built and sheets showed no chips
+    // until something re-prepared the actor. The settings now register at
+    // `init` (registerEarlySystemSettings); prove it by creating the actor,
+    // reloading the world, and reading the derived list WITHOUT updating the
+    // actor.
+    const setup = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+      const actor = await Actor.create({
+        name: 'MAD Reload Probe',
+        type: 'Player',
+        system: { config: { actionDice: '1d20,1d20' } }
+      })
+      return { actorId: actor.id, prevMaster }
+    })
+
+    await page.reload()
+    await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
+    // Settings register in the async ready hook; wait for a late-registered
+    // one so the world is fully booted before probing.
+    await page.waitForFunction(
+      () => game?.dcc?.KeyState !== undefined && game?.settings?.settings?.has('dcc.coinWeight'),
+      { timeout: 30000 }
+    )
+
+    const result = await page.evaluate(async ({ actorId, prevMaster }) => {
+      const actor = game.actors.get(actorId)
+      try {
+        // Read the derived list as-is from world-load preparation — no
+        // update/re-prepare in between.
+        const listLength = actor?.system?.attributes?.actionDice?.list?.length ?? 0
+
+        // The sheet shows one chip per die for a multi-die actor.
+        await actor.sheet.render(true)
+        let chipCount = 0
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline && chipCount === 0) {
+          chipCount = actor.sheet.element?.querySelectorAll('.action-dice-chips .action-die-chip').length ?? 0
+          if (chipCount === 0) await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        await actor.sheet.close()
+
+        return { listLength, chipCount }
+      } finally {
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    }, setup)
+
+    expect(result.listLength).toBe(2)
+    expect(result.chipCount).toBe(2)
+  })
 })
