@@ -9,7 +9,8 @@
 {{/if}}
 {{#if message.system.deedTables.length}}
   <div class="pt-8 deed-table-prompt" data-deed-roll="{{message.system.deedDieRollResult}}">
-    <select class="deed-table-select" data-tooltip="{{localize 'DCC.MightyDeedTableSelectHint'}}">
+    <select class="deed-table-select" name="deed-table" aria-label="{{localize 'DCC.MightyDeedChooseTable'}}"
+            data-tooltip="{{localize 'DCC.MightyDeedTableSelectHint'}}">
       <option value="" disabled selected>{{localize "DCC.MightyDeedChooseTable"}}</option>
       {{#each message.system.deedTables}}
         <option value="{{this.path}}">{{this.name}}</option>

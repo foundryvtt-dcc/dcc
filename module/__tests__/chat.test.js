@@ -136,6 +136,9 @@ describe('buildMightyDeedPrompt', () => {
     expect(html).not.toContain('<button')
     // Nothing pre-selected: a disabled placeholder leads the list
     expect(html).toContain('<option value="" disabled selected>')
+    // The select carries an accessible name and a form-field name (issue #820)
+    expect(html).toContain('name="deed-table"')
+    expect(html).toContain('aria-label=')
     // One <option> per configured table, carrying its lookup path
     expect(html).toContain('<option value="world.deeds-of-arms">Deeds of Arms</option>')
     expect(html).toContain('<option value="dcc.tables.Deeds II">Deeds II</option>')
