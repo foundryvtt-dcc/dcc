@@ -123,6 +123,17 @@ export async function prepareItems (actor, {
     } else if (i.type === 'weapon') {
       if (i.system.melee) {
         weapons.melee.push(i)
+        if (i.system.thrown) {
+          // Shadow-row display values (#595): derive the missile-side numbers
+          // from a temporary clone so they always match what a thrown roll
+          // (which dispatches on the same clone shape) will use.
+          const thrownView = i.clone({ 'system.melee': false }, { keepId: true })
+          i.thrownRow = {
+            toHit: thrownView.system.toHit,
+            damage: thrownView.system.damage,
+            range: i.system.range
+          }
+        }
       } else {
         weapons.ranged.push(i)
       }

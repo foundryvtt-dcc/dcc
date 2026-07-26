@@ -67,11 +67,24 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const messageMode = game.settings.get('core', 'messageMode')
 
     // First try and find the item by id
-    const weapon = this.items.find(i => i.id === weaponId)
+    let weapon = this.items.find(i => i.id === weaponId)
 
     // If weapon is not found, give up and show a warning
     if (!weapon) {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
+    }
+
+    // Thrown attack from a versatile melee weapon's shadow row (#595):
+    // dispatch on a temporary missile-side clone so the whole downstream
+    // path — missile attack/damage bonuses in `DCCItem.prepareBaseData`,
+    // `buildAttackInput`'s attackType, and the range-penalty hook — sees a
+    // ranged weapon. `keepId` keeps re-invokes (e.g. the out-of-range
+    // confirm dialog) resolving the real item.
+    if (options.thrown && weapon.system?.melee) {
+      weapon = weapon.clone({
+        name: game.i18n.format('DCC.WeaponThrownName', { weapon: weapon.name }),
+        'system.melee': false
+      }, { keepId: true })
     }
 
     // Warn if weapon is not equipped

@@ -1204,8 +1204,9 @@ test.describe('DCC Extension API', () => {
         hasFleetingLuck: text.includes('.dcc .fleeting-luck'),
         hasSpellDuel: text.includes('.dcc .spell-duel'),
         hasContainerItems: text.includes('.dcc .container-sheet'),
-        // Sanity-check size — pre-split build was ~65KB.
-        sizeReasonable: text.length > 50000 && text.length < 80000
+        // Sanity-check size — pre-split build was ~65KB; has grown with
+        // features since (~81KB after the #595 thrown shadow row).
+        sizeReasonable: text.length > 50000 && text.length < 100000
       }
     })
 

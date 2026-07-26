@@ -1571,6 +1571,84 @@ test('rollWeaponAttack creates attack roll', async () => {
   }
 })
 
+test('rollWeaponAttack with thrown option dispatches on a missile-side clone', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  const thrownClone = {
+    name: 'Dagger (thrown)',
+    system: {
+      toHit: '+1',
+      damage: '1d4',
+      actionDie: '1d20',
+      equipped: true,
+      melee: false,
+      thrown: true,
+      range: '10/20/30'
+    }
+  }
+  const weapon = {
+    name: 'Dagger',
+    system: {
+      toHit: '+2',
+      damage: '1d4+2',
+      actionDie: '1d20',
+      equipped: true,
+      melee: true,
+      thrown: true,
+      range: '10/20/30'
+    },
+    clone: vi.fn().mockReturnValue(thrownClone)
+  }
+  const originalFind = actor.items.find
+  actor.items.find = vi.fn().mockReturnValue(weapon)
+
+  try {
+    await actor.rollWeaponAttack('dagger', { thrown: true })
+
+    // Dispatch swapped to a clone with melee off and the "(thrown)" name
+    expect(weapon.clone).toHaveBeenCalledWith(
+      { name: 'Dagger (thrown)', 'system.melee': false },
+      { keepId: true }
+    )
+    // The attack roll used the clone's (missile-side) to-hit
+    expect(dccRollCreateRollMock).toHaveBeenCalled()
+    const terms = dccRollCreateRollMock.mock.calls[0][0]
+    const compound = terms.find(t => t.type === 'Compound')
+    expect(compound.formula).toBe('+1')
+  } finally {
+    actor.items.find = originalFind
+  }
+})
+
+test('rollWeaponAttack without thrown option leaves a thrown-capable weapon on the melee path', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  const weapon = {
+    name: 'Dagger',
+    system: {
+      toHit: '+2',
+      damage: '1d4+2',
+      actionDie: '1d20',
+      equipped: true,
+      melee: true,
+      thrown: true
+    },
+    clone: vi.fn()
+  }
+  const originalFind = actor.items.find
+  actor.items.find = vi.fn().mockReturnValue(weapon)
+
+  try {
+    await actor.rollWeaponAttack('dagger')
+    expect(weapon.clone).not.toHaveBeenCalled()
+    const terms = dccRollCreateRollMock.mock.calls[0][0]
+    const compound = terms.find(t => t.type === 'Compound')
+    expect(compound.formula).toBe('+2')
+  } finally {
+    actor.items.find = originalFind
+  }
+})
+
 test('rollWeaponAttack with invalid weapon id warns user', async () => {
   dccRollCreateRollMock.mockClear()
   uiNotificationsWarnMock.mockClear()

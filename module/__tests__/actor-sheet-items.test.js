@@ -63,6 +63,28 @@ describe('prepareItems — categorization', () => {
     expect(ctx['equipment.weapons'].ranged.map((w) => w.name)).toEqual(['Bow'])
   })
 
+  test('derives a thrownRow for melee weapons with the thrown flag (#595)', async () => {
+    const dagger = item('weapon', { melee: true, thrown: true, range: '10/20/30' }, { name: 'Dagger' })
+    dagger.clone = vi.fn(() => ({
+      system: { melee: false, toHit: '+1', damage: '1d4', range: '10/20/30' }
+    }))
+    const sword = item('weapon', { melee: true }, { name: 'Sword' })
+    const actor = makeActor({ items: [dagger, sword] })
+
+    const ctx = await prepareItems(actor, makeDeps())
+
+    // The shadow-row values come from a missile-side clone of the same item
+    expect(dagger.clone).toHaveBeenCalledWith({ 'system.melee': false }, { keepId: true })
+    expect(ctx['equipment.weapons'].melee[0].thrownRow).toEqual({
+      toHit: '+1',
+      damage: '1d4',
+      range: '10/20/30'
+    })
+    // No second item appears anywhere; non-thrown weapons get no thrownRow
+    expect(ctx['equipment.weapons'].ranged).toHaveLength(0)
+    expect(ctx['equipment.weapons'].melee[1].thrownRow).toBeUndefined()
+  })
+
   test('buckets ammunition, armor, equipment, and mounts', async () => {
     const actor = makeActor({
       items: [item('ammunition'), item('armor'), item('equipment'), item('mount')]
