@@ -365,6 +365,7 @@
   "DCC.FumbleTableUnavailable": "大失败表不可用",
   "DCC.Funds": "资金",
   "DCC.Generic": "泛用",
+  "DCC.Goods": "货物",
   "DCC.Halfling": "半身人",
   "DCC.HalflingAbilities": "半身人能力",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{半身人}",
@@ -985,6 +986,7 @@
     "SubmitLabel": "",
     "LogoAlt": "DCC RPG Logo"
   },
+  "DCC.WeaponsAndArmor": "武器与护甲",
   "DCC.Weight": "重量",
   "DCC.Wizard": "法师",
   "DCC.WizardAbilities": "法师能力",

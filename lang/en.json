@@ -365,6 +365,7 @@
   "DCC.FumbleTableUnavailable": "Fumble Table Unavailable",
   "DCC.Funds": "Funds",
   "DCC.Generic": "Generic",
+  "DCC.Goods": "Goods",
   "DCC.Halfling": "Halfling",
   "DCC.HalflingAbilities": "Halfling Abilities",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Halfling}",
@@ -985,6 +986,7 @@
     "SubmitLabel": "",
     "LogoAlt": "DCC RPG Logo"
   },
+  "DCC.WeaponsAndArmor": "Weapons & Armor",
   "DCC.Weight": "Weight",
   "DCC.WeightUnit": "lbs",
   "DCC.Wizard": "Wizard",

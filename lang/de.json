@@ -365,6 +365,7 @@
   "DCC.FumbleTableUnavailable": "Patzertabelle nicht verfügbar",
   "DCC.Funds": "Geld",
   "DCC.Generic": "Generisch",
+  "DCC.Goods": "Güter",
   "DCC.Halfling": "Halbling",
   "DCC.HalflingAbilities": "Halbling-Fähigkeiten",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Halbling}",
@@ -985,6 +986,7 @@
     "SubmitLabel": "",
     "LogoAlt": "DCC RPG Logo"
   },
+  "DCC.WeaponsAndArmor": "Waffen & Rüstung",
   "DCC.Weight": "Gewicht",
   "DCC.Wizard": "Zauberkundiger",
   "DCC.WizardAbilities": "Zauberkundigen-Fähigkeiten",

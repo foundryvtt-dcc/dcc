@@ -352,6 +352,7 @@
   "DCC.FumbleTableUnavailable": "Table de Maladresse Indisponible",
   "DCC.Funds": "Fonds",
   "DCC.Generic": "Générique",
+  "DCC.Goods": "Biens",
   "DCC.Halfling": "Halfelin",
   "DCC.HalflingAbilities": "Capacités de Halfelin",
   "DCC.HalflingClassLink": "@Compendium[dcc-core-book.dcc-core-journals.ncyQ7HTHggukmeBJ]{Halfelin}",
@@ -958,6 +959,7 @@
   "DCC.TwoWeaponSecondaryHint": "Cette arme est utilisée pour le combat à deux armes et se trouve dans la main secondaire.",
   "DCC.HalflingTwoWeaponFumbleNote": "L'échec critique ne s'applique que si les deux jets d'attaque étaient un 1 naturel.",
   "DCC.WeaponWarningUnequipped": "Ne peut pas attaquer avec une arme non équipée",
+  "DCC.WeaponsAndArmor": "Armes et Armures",
   "DCC.Weight": "Poids",
   "DCC.Welcome": {
     "CloseLabel": "Fermer",

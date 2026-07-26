@@ -365,6 +365,7 @@
   "DCC.FumbleTableUnavailable": "Tabella Fallimento Non Disponibile",
   "DCC.Funds": "Tesori",
   "DCC.Generic": "Generico",
+  "DCC.Goods": "Beni",
   "DCC.Halfling": "Halfling",
   "DCC.HalflingAbilities": "Abilità dell'Halfling",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Halfling}",
@@ -985,6 +986,7 @@
     "SubmitLabel": "Chiudi",
     "LogoAlt": "DCC RPG Logo"
   },
+  "DCC.WeaponsAndArmor": "Armi e Armature",
   "DCC.Weight": "Peso",
   "DCC.Wizard": "Mago",
   "DCC.WizardAbilities": "Abilità del Mago",

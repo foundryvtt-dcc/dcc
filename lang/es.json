@@ -365,6 +365,7 @@
   "DCC.FumbleTableUnavailable": "Tabla de Pifias no disponible",
   "DCC.Funds": "Fondos",
   "DCC.Generic": "Genérico",
+  "DCC.Goods": "Bienes",
   "DCC.Halfling": "Mediano",
   "DCC.HalflingAbilities": "Habilidades de Mediano",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Mediano}",
@@ -985,6 +986,7 @@
     "SubmitLabel": "",
     "LogoAlt": "Logo DCC RPG"
   },
+  "DCC.WeaponsAndArmor": "Armas y Armadura",
   "DCC.Weight": "Peso",
   "DCC.Wizard": "Mago",
   "DCC.WizardAbilities": "Habilidades de Mago",
