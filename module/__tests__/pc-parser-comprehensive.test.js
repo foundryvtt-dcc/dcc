@@ -430,6 +430,43 @@ describe('PC Parser Comprehensive Tests', () => {
       expect(equipment.map(e => e.name)).toContain('Fine pottery')
     })
 
+    it('should strip trailing prices from equipment names into item value (#817)', async () => {
+      const result = parsePCs(`{
+        "equipment": "Rope - 50' (25 cp)",
+        "equipment2": "Backpack (2 gp)",
+        "equipment3": "Rations (1 day) (5 cp)",
+        "tradeGood": "Waterskin (5 sp)"
+      }`)
+
+      const equipment = result[0].items.filter(item => item.type === 'equipment')
+      expect(equipment).toHaveLength(4)
+      expect(equipment[0].name).toBe("Rope - 50'")
+      expect(equipment[0].system.value.cp).toBe('25')
+      expect(equipment[1].name).toBe('Backpack')
+      expect(equipment[1].system.value.gp).toBe('2')
+      // Only the trailing price parenthetical is stripped, not other parentheticals
+      expect(equipment[2].name).toBe('Rations (1 day)')
+      expect(equipment[2].system.value.cp).toBe('5')
+      expect(equipment[3].name).toBe('Waterskin')
+      expect(equipment[3].system.value.sp).toBe('5')
+    })
+
+    it('should keep the raw equipment text (price included) in the notes', async () => {
+      const result = parsePCs('{"equipment": "Candle (1 cp)"}')
+      expect(result[0]['details.notes.value']).toContain('Candle (1 cp)')
+      const equipment = result[0].items.filter(item => item.type === 'equipment')
+      expect(equipment[0].name).toBe('Candle')
+    })
+
+    it('should not strip non-price parentheticals from equipment names', async () => {
+      const result = parsePCs('{"equipment": "Rope (50 ft)", "equipment2": "Sack (large)"}')
+      const equipment = result[0].items.filter(item => item.type === 'equipment')
+      expect(equipment[0].name).toBe('Rope (50 ft)')
+      expect(equipment[0].system).toBeUndefined()
+      expect(equipment[1].name).toBe('Sack (large)')
+      expect(equipment[1].system).toBeUndefined()
+    })
+
     it('should handle spell parsing with spell check', async () => {
       const text = `Neutral Wizard (2nd level)
       Strength: 10 (0)

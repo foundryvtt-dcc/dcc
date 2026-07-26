@@ -60,9 +60,10 @@ Languages: Common`)
         }
       },
       {
-        name: 'Crowbar (2 gp)',
+        name: 'Crowbar',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { gp: '2' } }
       },
       {
         name: 'Steel tongs',
@@ -165,9 +166,10 @@ test('beekeeper', () => {
         }
       },
       {
-        name: 'Sack (small) (8 cp)',
+        name: 'Sack (small)',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { cp: '8' } }
       },
       {
         name: 'Water skin',
@@ -243,9 +245,10 @@ Languages: Common`)
     'saves.wil.value': '2',
     items: [
       {
-        name: 'Crowbar (2 gp)',
+        name: 'Crowbar',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { gp: '2' } }
       },
       {
         name: 'Steel tongs',
@@ -350,9 +353,10 @@ Languages: Common `)
           }
         },
         {
-          name: 'Crowbar (2 gp)',
+          name: 'Crowbar',
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: 'systems/dcc/styles/images/item.webp',
+          system: { value: { gp: '2' } }
         },
         {
           name: 'Steel tongs',
@@ -411,9 +415,10 @@ Languages: Common `)
           }
         },
         {
-          name: 'Torch (1 cp)',
+          name: 'Torch',
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: 'systems/dcc/styles/images/item.webp',
+          system: { value: { cp: '1' } }
         },
         {
           name: 'Bundle of wood',
@@ -557,9 +562,10 @@ Spells: (Spell Check: d20+2)
         }
       },
       {
-        name: 'Waterskin (5 sp)',
+        name: 'Waterskin',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { sp: '5' } }
       },
       {
         name: 'Shoehorn',
@@ -769,9 +775,10 @@ Cast Spell From Scroll (d16)`
         }
       },
       {
-        name: 'Holy symbol (25 gp)',
+        name: 'Holy symbol',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { gp: '25' } }
       },
       {
         name: 'Fine dirt (1 lb.)',
@@ -1045,9 +1052,10 @@ Hide In Shadows: 11 (-4)`
         }
       },
       {
-        name: 'Iron spike (1 sp)',
+        name: 'Iron spike',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { sp: '1' } }
       },
       {
         name: 'Hex doll',
@@ -1181,9 +1189,10 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       },
       {
-        name: 'Chest - empty (2 gp)',
+        name: 'Chest - empty',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { gp: '2' } }
       },
       {
         name: 'Rag doll',
@@ -1336,9 +1345,10 @@ Spells: (Spell Check: d20+12)
         }
       },
       {
-        name: 'Sack (small) (8 cp)',
+        name: 'Sack (small)',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { cp: '8' } }
       },
       {
         name: 'Bundle of wood',
@@ -1688,9 +1698,10 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         }
       },
       {
-        name: 'Iron spike (1 sp)',
+        name: 'Iron spike',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { sp: '1' } }
       },
       {
         name: 'Steel vial',
@@ -1834,9 +1845,10 @@ Spells: (Spell Check: d20+5)
         }
       },
       {
-        name: 'Iron spike (1 sp)',
+        name: 'Iron spike',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { sp: '1' } }
       },
       {
         name: 'Spyglass',
@@ -2033,9 +2045,10 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       },
       {
-        name: 'Sack (large) (12 cp)',
+        name: 'Sack (large)',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { cp: '12' } }
       },
       {
         name: 'Quality cloak',
@@ -2148,9 +2161,10 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       },
       {
-        name: 'Sack (large) (12 cp)',
+        name: 'Sack (large)',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { cp: '12' } }
       },
       {
         name: 'Quality cloak',
@@ -2263,9 +2277,10 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       },
       {
-        name: 'Sack (large) (12 cp)',
+        name: 'Sack (large)',
         type: 'equipment',
-        img: 'systems/dcc/styles/images/item.webp'
+        img: 'systems/dcc/styles/images/item.webp',
+        system: { value: { cp: '12' } }
       },
       {
         name: 'Quality cloak',
@@ -2438,9 +2453,10 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           }
         },
         {
-          name: 'Iron spike (1 sp)',
+          name: 'Iron spike',
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: 'systems/dcc/styles/images/item.webp',
+          system: { value: { sp: '1' } }
         },
         {
           name: 'Spyglass',
@@ -2621,9 +2637,10 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           }
         },
         {
-          name: 'Iron spike (1 sp)',
+          name: 'Iron spike',
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: 'systems/dcc/styles/images/item.webp',
+          system: { value: { sp: '1' } }
         },
         {
           name: 'Steel vial',

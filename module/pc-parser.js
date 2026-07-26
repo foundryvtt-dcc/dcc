@@ -191,35 +191,19 @@ function _parseJSONPCs (pcObject) {
       notes = notes + game.i18n.localize('DCC.Equipment') + ':<br/>'
       if (pcObject.equipment) {
         notes = notes + '  ' + pcObject.equipment + '<br/>'
-        pc.items.push({
-          name: pcObject.equipment,
-          type: 'equipment',
-          img: EntityImages.imageForItem('equipment')
-        })
+        pc.items.push(_parseEquipmentItem(pcObject.equipment))
       }
       if (pcObject.equipment2) {
         notes = notes + '  ' + pcObject.equipment2 + '<br/>'
-        pc.items.push({
-          name: pcObject.equipment2,
-          type: 'equipment',
-          img: EntityImages.imageForItem('equipment')
-        })
+        pc.items.push(_parseEquipmentItem(pcObject.equipment2))
       }
       if (pcObject.equipment3) {
         notes = notes + '  ' + pcObject.equipment3 + '<br/>'
-        pc.items.push({
-          name: pcObject.equipment3,
-          type: 'equipment',
-          img: EntityImages.imageForItem('equipment')
-        })
+        pc.items.push(_parseEquipmentItem(pcObject.equipment3))
       }
       if (pcObject.tradeGood) {
         notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
-        pc.items.push({
-          name: pcObject.tradeGood,
-          type: 'equipment',
-          img: EntityImages.imageForItem('equipment')
-        })
+        pc.items.push(_parseEquipmentItem(pcObject.tradeGood))
       }
       notes = notes + '<br/>'
     }
@@ -564,6 +548,28 @@ function _parseWeapon (weaponString) {
   }
 
   return null
+}
+
+/**
+ * Create an equipment item from a Purple Sorcerer equipment string.
+ * Purple Sorcerer appends prices to equipment names (e.g. "Candle (1 cp)");
+ * strip the trailing price parenthetical from the name and store it in the
+ * item's currency value so the price survives import (#817).
+ * @param {string} equipmentString - The raw equipment or trade good text
+ * @return {Object} Equipment item data
+ */
+function _parseEquipmentItem (equipmentString) {
+  const item = {
+    name: equipmentString,
+    type: 'equipment',
+    img: EntityImages.imageForItem('equipment')
+  }
+  const priceMatch = equipmentString.match(/^(.*?)\s*\((\d+)\s*(pp|ep|gp|sp|cp)\)\s*$/i)
+  if (priceMatch) {
+    item.name = priceMatch[1]
+    item.system = { value: { [priceMatch[3].toLowerCase()]: priceMatch[2] } }
+  }
+  return item
 }
 
 function _parseArmor (armorString) {
