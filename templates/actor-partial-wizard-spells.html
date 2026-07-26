@@ -30,7 +30,7 @@
           <div>{{item.system.level}}</div>
           <div class="item-name" data-tooltip="{{item.descriptionHTML}}">{{item.name}}</div>
           <div class="item-notes">
-            {{item.system.mercurialEffect.summary}}
+            {{{item.mercurialSummaryHTML}}}
           </div>
           <div>
             {{#if (and item.system.lastResult (ne item.system.lastResult "0"))}}

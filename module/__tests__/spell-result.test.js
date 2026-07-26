@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 
 // spell-result.js coverage backfill (audit 2026-06-08: vi.mock-ed everywhere, so its
@@ -90,6 +90,70 @@ describe('manifestation override (Lay on Hands — #426)', () => {
     const item = { id: 'lay', system: { manifestation: { description: 'Item manifestation', displayInChat: true } } }
     await SpellResult.addChatMessage(null, rollTable, result, { item, manifestation })
     expect(lastContext.manifestation).toEqual(manifestation)
+  })
+})
+
+// Issue #339 — stored mercurial / manifestation descriptions are enriched
+// before rendering so inline rolls ("Roll again twice ... [[/roll 4d20]]")
+// and content links display properly in the chat card.
+describe('mercurial / manifestation enrichment', () => {
+  let lastContext, enrichSpy
+  beforeEach(() => {
+    lastContext = null
+    globalThis.foundry.applications.handlebars.renderTemplate = async (_tpl, ctx) => {
+      lastContext = ctx
+      return '<div class="card"></div>'
+    }
+    // Mark enriched output so the tests can tell it apart from raw text
+    enrichSpy = vi.fn(async (s) => `<enriched>${s}</enriched>`)
+    globalThis.foundry.applications.ux.TextEditor.enrichHTML = enrichSpy
+  })
+
+  afterEach(() => {
+    globalThis.foundry.applications.ux.TextEditor.enrichHTML = async (s) => s ?? ''
+  })
+
+  test('the mercurial description is enriched without mutating the item', async () => {
+    const stored = '<p>Roll again twice ... [[/roll 4d20]]</p>'
+    const item = {
+      id: 's1',
+      system: {
+        mercurialEffect: { value: 100, summary: 'Two effects', description: stored, displayInChat: true }
+      }
+    }
+    await SpellResult.addChatMessage(null, rollTable, result, { item })
+
+    expect(lastContext.mercurial.description).toBe(`<enriched>${stored}</enriched>`)
+    // The item's stored data is untouched — only the render copy is enriched
+    expect(item.system.mercurialEffect.description).toBe(stored)
+    expect(enrichSpy).toHaveBeenCalledWith(stored, expect.objectContaining({ relativeTo: item }))
+  })
+
+  test('the item-derived manifestation description is enriched too', async () => {
+    const item = {
+      id: 's2',
+      system: {
+        manifestation: { value: 3, description: '<p>@UUID[foo]{A glow}</p>', displayInChat: true }
+      }
+    }
+    await SpellResult.addChatMessage(null, rollTable, result, { item })
+
+    expect(lastContext.manifestation.description).toBe('<enriched><p>@UUID[foo]{A glow}</p></enriched>')
+    expect(item.system.manifestation.description).toBe('<p>@UUID[foo]{A glow}</p>')
+  })
+
+  test('suppressed effects (displayInChat false) are not enriched', async () => {
+    const item = {
+      id: 's3',
+      system: {
+        mercurialEffect: { value: 45, description: '<p>Hidden</p>', displayInChat: false }
+      }
+    }
+    await SpellResult.addChatMessage(null, rollTable, result, { item })
+
+    expect(lastContext.mercurial).toEqual({})
+    // Only the rollTable description enrichment call — never the effect
+    expect(enrichSpy).not.toHaveBeenCalledWith('<p>Hidden</p>', expect.anything())
   })
 })
 

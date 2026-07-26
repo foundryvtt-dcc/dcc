@@ -6,9 +6,12 @@ import DCCItem from '../item.js'
 vi.mock('../dice-chain.js', () => ({
   default: { bumpDie: vi.fn((die) => die) }
 }))
-vi.mock('../utilities.js', () => ({
+vi.mock('../utilities.js', async (importOriginal) => ({
   ensurePlus: vi.fn((value) => (String(value).startsWith('-') ? String(value) : `+${value}`)),
-  getFirstDie: vi.fn(() => null)
+  getFirstDie: vi.fn(() => null),
+  // Real implementation — the special (roll-again) expansion tests below
+  // exercise its flag/text detection through rollMercurialMagic (#339)
+  getMercurialSpecial: (await importOriginal()).getMercurialSpecial
 }))
 
 // Deterministic Roll stub: `new Roll('@value', { value })` resolves total to the
@@ -269,6 +272,259 @@ describe('SpellItemMixin extraction', () => {
         'system.mercurialEffect.summary': '',
         'system.mercurialEffect.description': ''
       })
+    })
+  })
+
+  // Issue #339 — special (roll-again) mercurial table entries expand into
+  // real sub-rolls instead of storing the literal instruction text.
+  describe('rollMercurialMagic — special (roll-again) expansion', () => {
+    let actor
+    beforeEach(() => {
+      global.Roll = FakeRoll
+      global.ChatMessage = { getSpeaker: vi.fn(() => ({})) }
+      global.game = {
+        settings: { get: vi.fn(() => null) },
+        i18n: { localize: vi.fn((k) => k), format: vi.fn((k) => k) },
+        packs: { get: vi.fn(() => null) },
+        tables: { getName: vi.fn(() => null), contents: [] }
+      }
+      global.CONFIG = { DCC: { abilities: { lck: 'DCC.AbilityLck' }, mercurialMagicTables: {}, mercurialMagicTable: 'Table 5-2: Mercurial Magic' } }
+      actor = {
+        name: 'Caster',
+        system: { abilities: { lck: { value: 13, mod: 1 }, str: {}, agl: {}, sta: {} }, details: {} }
+      }
+    })
+
+    const makeSpell = () => {
+      const item = new DCCItem({ type: 'spell', name: 'Probe Spell' }, {})
+      item.update = vi.fn()
+      return item
+    }
+
+    /**
+     * Build a world table whose draw() serves the given results in order,
+     * echoing back the roll it was handed.
+     */
+    const makeTable = (resultQueue) => {
+      let i = 0
+      return {
+        name: 'Table 5-2: Mercurial Magic',
+        draw: vi.fn(async ({ roll }) => {
+          const result = resultQueue[Math.min(i, resultQueue.length - 1)]
+          i++
+          if (!roll.evaluated) { await roll.evaluate() }
+          return { roll, results: [result] }
+        })
+      }
+    }
+
+    /** DCCRoll stub: totals served in sequence, keyed off the Die term. */
+    const makeCreateRoll = (totals) => {
+      let i = 0
+      return vi.fn(async (terms) => {
+        const total = totals[Math.min(i, totals.length - 1)]
+        i++
+        return new FakeRoll(terms[0].formula, { value: total })
+      })
+    }
+
+    test('a flagged rollAgain entry expands into two labeled sub-effects', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } },
+        { description: 'Turbulent magic. Winds whip around the caster.' },
+        { description: 'Cannibal magic. The spell consumes other magic.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      // Trigger roll 99, then sub-rolls 45 and 70
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99, 45, 70]) } }
+
+      await item.rollMercurialMagic()
+
+      // Trigger draw + two sub-draws on the same table
+      expect(table.draw).toHaveBeenCalledTimes(3)
+      // Sub-rolls used the default d100 die with the luck modifier term
+      const subTerms = global.game.dcc.DCCRoll.createRoll.mock.calls[1][0]
+      expect(subTerms[0].formula).toBe('1d100')
+      expect(subTerms[1].formula).toBe('+10')
+      expect(item.update).toHaveBeenCalledWith({
+        'system.mercurialEffect.value': 99,
+        'system.mercurialEffect.summary': 'Turbulent magic; Cannibal magic',
+        'system.mercurialEffect.description':
+          '<p><strong>(45)</strong> Turbulent magic. Winds whip around the caster.</p>' +
+          '<p><strong>(70)</strong> Cannibal magic. The spell consumes other magic.</p>'
+      })
+    })
+
+    test('the 4d20 variant rolls sub-rolls on the flagged formula', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Roll again twice, but with 4d20.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2, formula: '4d20' } } } },
+        { description: 'Blue aura. A shimmering aura.' },
+        { description: 'Blue aura. A shimmering aura.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([120, 40, 50]) } }
+
+      await item.rollMercurialMagic()
+
+      const calls = global.game.dcc.DCCRoll.createRoll.mock.calls
+      expect(calls[1][0][0].formula).toBe('4d20')
+      expect(calls[2][0][0].formula).toBe('4d20')
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.value': 120,
+        'system.mercurialEffect.summary': 'Blue aura; Blue aura'
+      }))
+    })
+
+    test('the un-flagged core text form expands via the legacy fallback', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Roll again twice.' },
+        { description: 'Turbulent magic. Winds.' },
+        { description: 'Cannibal magic. Consumes.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99, 45, 70]) } }
+
+      await item.rollMercurialMagic()
+
+      expect(table.draw).toHaveBeenCalledTimes(3)
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.summary': 'Turbulent magic; Cannibal magic'
+      }))
+    })
+
+    test('an ordinary entry stows the literal text unchanged', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Turbulent magic. Winds whip around the caster.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([45]) } }
+
+      await item.rollMercurialMagic()
+
+      expect(table.draw).toHaveBeenCalledTimes(1)
+      expect(item.update).toHaveBeenCalledWith({
+        'system.mercurialEffect.value': 45,
+        'system.mercurialEffect.summary': 'Turbulent magic',
+        'system.mercurialEffect.description': '<p>Turbulent magic. Winds whip around the caster.</p>'
+      })
+    })
+
+    test('a nested special expands recursively', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } },
+        // First sub-roll lands on the special again...
+        { description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } },
+        // ...expanding to two nested effects, then the second sub-roll
+        { description: 'Turbulent magic. Winds.' },
+        { description: 'Cannibal magic. Consumes.' },
+        { description: 'Breath of the fish. Underwater.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99, 99, 45, 70, 20]) } }
+
+      await item.rollMercurialMagic()
+
+      expect(table.draw).toHaveBeenCalledTimes(5)
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.summary': 'Turbulent magic; Cannibal magic; Breath of the fish',
+        'system.mercurialEffect.description':
+          '<p><strong>(45)</strong> Turbulent magic. Winds.</p>' +
+          '<p><strong>(70)</strong> Cannibal magic. Consumes.</p>' +
+          '<p><strong>(20)</strong> Breath of the fish. Underwater.</p>'
+      }))
+    })
+
+    test('a table that always rolls the special stops at the depth cap', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      // Every draw returns the special — without the cap this recurses forever
+      const specialResult = { description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } }
+      const table = makeTable([specialResult])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99]) } }
+
+      await item.rollMercurialMagic()
+
+      // Depth cap 5 with count 2: 2^5 = 32 leaf draws + 31 expansions above
+      // them = a bounded call count, and the leaves store the literal text
+      expect(table.draw.mock.calls.length).toBeLessThanOrEqual(63)
+      const updates = item.update.mock.calls[0][0]
+      expect(updates['system.mercurialEffect.summary']).toContain('Roll again twice')
+    })
+
+    test('a sub-roll landing outside the table keeps the other sub-effects', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      // Second sub-draw misses the table (empty results) — the first
+      // sub-effect and the labeled miss must both survive, not be wiped
+      // by a TypeError unwinding into the outer catch.
+      let drawCount = 0
+      const table = {
+        name: 'Table 5-2: Mercurial Magic',
+        draw: vi.fn(async ({ roll }) => {
+          drawCount++
+          if (!roll.evaluated) { await roll.evaluate() }
+          if (drawCount === 1) {
+            return { roll, results: [{ description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } }] }
+          }
+          if (drawCount === 2) {
+            return { roll, results: [{ description: 'Turbulent magic. Winds.' }] }
+          }
+          return { roll, results: [] }
+        })
+      }
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.i18n.format = vi.fn((k, data) => `${k}:${data.roll}`)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99, 45, -30]) } }
+
+      await item.rollMercurialMagic()
+
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.summary': 'Turbulent magic; DCC.MercurialMagicNoResult:-30',
+        'system.mercurialEffect.description':
+          '<p><strong>(45)</strong> Turbulent magic. Winds.</p>' +
+          '<p>DCC.MercurialMagicNoResult:-30</p>'
+      }))
+    })
+
+    test('lookup of a special value expands with real sub-rolls', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      const table = makeTable([
+        { description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } },
+        { description: 'Turbulent magic. Winds.' },
+        { description: 'Cannibal magic. Consumes.' }
+      ])
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([45, 70]) } }
+
+      await item.rollMercurialMagic(99)
+
+      // The trigger draw used the looked-up value; both sub-draws rolled
+      expect(table.draw).toHaveBeenCalledTimes(3)
+      expect(global.game.dcc.DCCRoll.createRoll).toHaveBeenCalledTimes(2)
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.value': 99,
+        'system.mercurialEffect.summary': 'Turbulent magic; Cannibal magic'
+      }))
     })
   })
 })

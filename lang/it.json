@@ -481,6 +481,7 @@
   "DCC.MercurialMagicButtonReroll": "Tira di nuovo",
   "DCC.MercurialMagicRerollExplain": "Scarti il risultato precedente di Magia Mercuriale e ripeti il tiro, o vedi cosa succede in base al numero inserito?",
   "DCC.MercurialMagicRerollPrompt": "Tira ancora o Guarda?",
+  "DCC.MercurialMagicNoResult": "Nessun effetto mercuriale trovato per un tiro di {roll}",
   "DCC.MercurialMagicRoll": "Tiri Magia Mercuriale",
   "DCC.MercurialTabHint": "Tira e configura l'effetto mercuriale per questo Incantesimo",
   "DCC.MightyDeedChooseTable": "Scegli Cimento",

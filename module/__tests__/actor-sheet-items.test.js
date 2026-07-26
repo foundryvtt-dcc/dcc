@@ -116,6 +116,21 @@ describe('prepareItems — categorization', () => {
     expect(ctx.spells['0'][0].descriptionHTML).toBeUndefined()
     expect(deps.TextEditor.enrichHTML).toHaveBeenCalledTimes(1)
   })
+
+  // Issue #339 — the mercurial summary shown in the spell list is enriched
+  // so inline rolls / content links render instead of appearing as raw text.
+  test('enriches the mercurial summary for the spell list', async () => {
+    const deps = makeDeps()
+    const actor = makeActor({
+      items: [
+        item('spell', { level: 1, mercurialEffect: { summary: 'Roll [[/roll 1d4]] sparks' } }, { name: 'Sparky' }),
+        item('spell', { level: 1, mercurialEffect: { summary: '' } }, { name: 'Plain' })
+      ]
+    })
+    const ctx = await prepareItems(actor, deps)
+    expect(ctx.spells['1'][0].mercurialSummaryHTML).toBe('<enriched>Roll [[/roll 1d4]] sparks</enriched>')
+    expect(ctx.spells['1'][1].mercurialSummaryHTML).toBeUndefined()
+  })
 })
 
 // --- skill display die -------------------------------------------------------

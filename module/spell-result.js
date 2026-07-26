@@ -64,6 +64,17 @@ class SpellResult {
       mercurial = item.system?.mercurialEffect?.displayInChat ? item.system?.mercurialEffect : {}
     }
 
+    // Enrich the stored effect descriptions so inline rolls (the core
+    // "Roll again twice ... [[/roll 4d20]]" mercurial entry) and content
+    // links render in the card instead of appearing as literal text
+    // (#339). Copies — the item's stored data is never mutated.
+    if (manifestation.description) {
+      manifestation = { ...manifestation, description: await TextEditor.enrichHTML(manifestation.description, { relativeTo: item }) }
+    }
+    if (mercurial.description) {
+      mercurial = { ...mercurial, description: await TextEditor.enrichHTML(mercurial.description, { relativeTo: item }) }
+    }
+
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
       description: await TextEditor.enrichHTML(rollTable.description),

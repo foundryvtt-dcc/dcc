@@ -199,6 +199,28 @@ export interface MercurialEffectData {
     data?: Record<string, unknown>;
 }
 /**
+ * Special (meta) table-entry actions that need handling beyond "store the
+ * text". Currently the only action is `rollAgain` — the DCC core Table 5-2
+ * entries 99 ("Roll again twice.") and 100+ ("Roll again twice, but ...
+ * roll 4d20 ...") — but the discriminator leaves room for future specials.
+ */
+export type MercurialSpecialAction = "rollAgain";
+/**
+ * Instruction attached to a mercurial table entry that, when drawn,
+ * triggers meta-handling instead of being a literal effect.
+ */
+export interface MercurialSpecial {
+    /** What kind of special handling this entry requires */
+    action: MercurialSpecialAction;
+    /** Number of additional rolls to make (e.g. 2 for "roll again twice") */
+    count: number;
+    /**
+     * Dice expression for the sub-rolls (default "1d100"). The luck
+     * modifier (×10) is still added on top of this expression's total.
+     */
+    formula?: string;
+}
+/**
  * A mercurial magic effect stored with a spell
  */
 export interface MercurialEffect {
@@ -212,6 +234,21 @@ export interface MercurialEffect {
     displayOnCast: boolean;
     /** Structured effect data (if parseable for automation) */
     effect?: MercurialEffectData;
+    /**
+     * The special instruction on the table entry this effect came from.
+     * Present alongside `subEffects` when the special was expanded by
+     * `rollMercurialMagic`; present WITHOUT `subEffects` when the entry
+     * was merely looked up (no roller available) or the recursion cap
+     * was hit — in that case the effect text is the literal instruction
+     * and the consumer may expand it itself.
+     */
+    special?: MercurialSpecial;
+    /**
+     * The individual effects a `rollAgain` special expanded into. Each
+     * sub-effect may itself carry `special`/`subEffects` when a sub-roll
+     * landed on another special entry.
+     */
+    subEffects?: MercurialEffect[];
 }
 /**
  * A single entry in a mercurial magic table
@@ -229,6 +266,8 @@ export interface MercurialTableEntry {
     displayOnCast: boolean;
     /** Structured effect (optional) */
     effect?: MercurialEffectData;
+    /** Special (meta) handling instruction (optional) */
+    special?: MercurialSpecial;
 }
 /**
  * A spell known by a specific character.

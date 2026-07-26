@@ -481,6 +481,7 @@
   "DCC.MercurialMagicButtonReroll": "Re-Roll",
   "DCC.MercurialMagicRerollExplain": "Discard previous Mercurial Magic result and re-roll or look up based on entered number?",
   "DCC.MercurialMagicRerollPrompt": "Re-roll or Lookup Mercurial Magic Roll?",
+  "DCC.MercurialMagicNoResult": "No mercurial effect found for a roll of {roll}",
   "DCC.MercurialMagicRoll": "Mercurial Magic Roll",
   "DCC.MercurialTabHint": "Roll and configure mercurial magic for this spell",
   "DCC.MightyDeedChooseTable": "Choose Deed",

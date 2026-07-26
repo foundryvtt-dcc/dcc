@@ -17,6 +17,7 @@ import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula } from '../action-dice-tracker.mjs'
+import { formatMercurialDescriptionHTML } from '../utilities.js'
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -1069,20 +1070,40 @@ export const RollsSpellMixin = (Base) => class extends Base {
     }
 
     // Foundry-side d100 so Dice So Nice + chat breakdown show a real
-    // roll. The lib's roller receives '1d100' and we hand back the
+    // roll. The lib's roller receives the expression and we hand back a
     // Foundry total; the luck modifier is applied inside the lib.
+    //
+    // The pre-evaluated total serves ONLY the first call — special
+    // (roll-again) entries make the lib call the roller again for each
+    // sub-roll (issue #339), and those must be fresh rolls, not the
+    // trigger total replayed. Sub-rolls use evaluateSync (the lib's
+    // roller contract is synchronous), which also lets the special's own
+    // formula (e.g. 4d20) differ from the initial d100.
     const d100Roll = new Roll('1d100')
     await d100Roll.evaluate()
     const luckMod = Number(this.system?.abilities?.lck?.mod) || 0
 
+    let firstRoll = true
     const effect = libRollMercurialMagic(luckMod, mercurialTable, {
-      roller: () => d100Roll.total
+      roller: (expression) => {
+        if (firstRoll && expression === '1d100') {
+          firstRoll = false
+          return d100Roll.total
+        }
+        const subRoll = new Roll(expression)
+        subRoll.evaluateSync()
+        return subRoll.total
+      }
     })
 
+    // Store the description as HTML paragraphs — the lib's expanded
+    // (roll-again) effects join sub-effects with '\n\n', which HTML
+    // collapses to a space; this also matches the <p>-wrapped format the
+    // item-sheet roll path stores (#339).
     await spellItem.update({
       'system.mercurialEffect.value': effect.rollValue,
       'system.mercurialEffect.summary': effect.summary || '',
-      'system.mercurialEffect.description': effect.description || '',
+      'system.mercurialEffect.description': formatMercurialDescriptionHTML(effect.description),
       'system.mercurialEffect.displayInChat': effect.displayOnCast !== false
     })
 

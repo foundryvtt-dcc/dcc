@@ -29,6 +29,62 @@ export function removeActiveEffectOverrides (document, updateData) {
 }
 
 /**
+ * Read the special (roll-again) instruction from a mercurial-magic
+ * TableResult. Flag-first: `flags.dcc.mercurial` with
+ * `{ action: 'rollAgain', count, formula? }` (issue #339). Falls back to
+ * a narrow text match covering the two core Table 5-2 entries ("Roll
+ * again twice." at 99, and the 4d20 variant at 100+) so tables that
+ * pre-date the flags still expand; the fallback can be dropped once
+ * dcc-core-book ships flagged entries. `count` is clamped to 1..10
+ * against malformed flag data.
+ *
+ * Shared by the item-sheet roll path (`item/spell-mixin.mjs`) and the
+ * adapter table loader (`adapter/spell-input.mjs`, which maps it onto
+ * the lib's `entry.special`).
+ *
+ * @param {Object} tableResult - a TableResult (or plain object in tests)
+ * @returns {{action: String, count: Number, formula: String}|null} the
+ *   expansion spec, or null for an ordinary (literal) entry
+ */
+export function getMercurialSpecial (tableResult) {
+  const flag = tableResult?.flags?.dcc?.mercurial
+  if (flag?.action === 'rollAgain') {
+    return {
+      action: 'rollAgain',
+      count: Math.max(1, Math.min(10, parseInt(flag.count, 10) || 2)),
+      formula: flag.formula || '1d100'
+    }
+  }
+
+  const text = (tableResult?.description || '').trim()
+  if (/^roll again twice/i.test(text)) {
+    return {
+      action: 'rollAgain',
+      count: 2,
+      formula: /4d20/.test(text) ? '4d20' : '1d100'
+    }
+  }
+
+  return null
+}
+
+/**
+ * Wrap a dcc-core-lib mercurial-effect description in HTML paragraphs.
+ * The lib joins expanded (roll-again) sub-effect descriptions with a
+ * plain `\n\n` (it is renderer-agnostic); browsers collapse that to a
+ * space, so each chunk gets its own `<p>` here. A single-effect
+ * description (no `\n\n`) comes back as one paragraph unchanged in
+ * content.
+ *
+ * @param {string} description - lib `MercurialEffect.description`
+ * @returns {string} HTML string, '' when the description is empty
+ */
+export function formatMercurialDescriptionHTML (description) {
+  if (!description) { return '' }
+  return description.split('\n\n').map((block) => `<p>${block}</p>`).join('')
+}
+
+/**
  * Ensure modifiers have a + on the front of them if they aren't negative
  * @param {string} value - value to ensure has a plus
  * @param {boolean} includeZero - if true, will return +0 if the value is 0

@@ -481,6 +481,7 @@
   "DCC.MercurialMagicButtonReroll": "Re-lanzar",
   "DCC.MercurialMagicRerollExplain": "Descartar el resultado anterior de Magia Mercurial y volver a tirar o buscar según el número ingresado?",
   "DCC.MercurialMagicRerollPrompt": "¿Volver a tirar o buscar la tirada de Magia Mercurial?",
+  "DCC.MercurialMagicNoResult": "No se encontró ningún efecto mercurial para una tirada de {roll}",
   "DCC.MercurialMagicRoll": "Tirada de Magia Mercurial",
   "DCC.MercurialTabHint": "Tirar y configurar magia mercurial para este hechizo",
   "DCC.MightyDeedChooseTable": "Elegir hazaña",
