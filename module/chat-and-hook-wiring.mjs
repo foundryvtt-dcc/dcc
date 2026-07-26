@@ -36,6 +36,7 @@ import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
 import { setupItemPilesForDCC } from './item-piles-support.js'
+import FleetingLuck from './fleeting-luck.js'
 import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
 import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice } from './action-dice-tracker.mjs'
@@ -186,6 +187,17 @@ export function onGetCompendiumContextOptions (directory, entries) {
     if (typeof originalVisible === 'function') return originalVisible(li)
     return originalVisible ?? true
   }
+}
+
+/**
+ * Award Fleeting Luck option on the Players list context menu — delegates to
+ * `FleetingLuck.addUserContextOptions`. The v14 Players application collects
+ * `getUserContextOptions` exactly once at its first render, which happens
+ * before the `ready` hook — so this must be wired here (import time), not
+ * from `FleetingLuck.init` (issue #826).
+ */
+export function onGetUserContextOptions (app, options) {
+  FleetingLuck.addUserContextOptions(app, options)
 }
 
 /**
@@ -413,6 +425,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },
   getCompendiumContextOptions: { handler: onGetCompendiumContextOptions, once: false },
+  getUserContextOptions: { handler: onGetUserContextOptions, once: false },
   renderActorDirectory: { handler: onRenderActorDirectory, once: false },
   preCreateActor: { handler: onPreCreateActor, once: false },
   preCreateItem: { handler: onPreCreateItem, once: false },

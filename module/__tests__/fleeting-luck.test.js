@@ -52,6 +52,61 @@ describe('updateFlagsForCrit / updateFlagsForFumble', () => {
   })
 })
 
+describe('addUserContextOptions (Players list context menu, issue #826)', () => {
+  // The v14 ContextMenu passes a plain HTMLElement to visible/onClick — no
+  // jQuery wrapper — so these stubs model `li` as a bare { dataset } object.
+  const makeLi = (userId) => ({ dataset: { userId } })
+  let entry
+  let users
+
+  beforeEach(() => {
+    users = {
+      p1: { id: 'p1', isGM: false },
+      gm: { id: 'gm', isGM: true }
+    }
+    globalThis.game = {
+      users: { get: (id) => users[id] },
+      user: { id: 'gm', isGM: true },
+      settings: { get: vi.fn(() => true) }
+    }
+    const options = []
+    FleetingLuck.addUserContextOptions({}, options)
+    entry = options[0]
+  })
+
+  test('pushes a single v14-shaped entry (label/visible/onClick, class-name icon)', () => {
+    expect(entry.label).toBe('DCC.FleetingLuckGive')
+    expect(entry.icon).not.toMatch(/</) // class name string, not an <i> HTML string
+    expect(typeof entry.visible).toBe('function')
+    expect(typeof entry.onClick).toBe('function')
+  })
+
+  test('visible for a GM right-clicking a player when fleeting luck is enabled', () => {
+    expect(entry.visible(makeLi('p1'))).toBe(true)
+  })
+
+  test('not visible when the fleeting luck setting is disabled', () => {
+    globalThis.game.settings.get = vi.fn(() => false)
+    expect(entry.visible(makeLi('p1'))).toBe(false)
+  })
+
+  test('not visible for non-GM users', () => {
+    globalThis.game.user = { id: 'p1', isGM: false }
+    expect(entry.visible(makeLi('p1'))).toBe(false)
+  })
+
+  test('not visible on GM entries (GMs are not tracked for fleeting luck)', () => {
+    expect(entry.visible(makeLi('gm'))).toBe(false)
+  })
+
+  test('onClick awards one fleeting luck to the clicked user', () => {
+    const give = vi.spyOn(FleetingLuck, 'give').mockResolvedValue(undefined)
+    entry.onClick(new Event('click'), makeLi('p1'))
+    expect(give).toHaveBeenCalledWith('p1', 1)
+    give.mockRestore()
+  })
+})
+
 describe('give / take / spend balance math', () => {
   let user
   const makeUser = (start) => {
