@@ -209,6 +209,12 @@ test.describe('DCC Sheet UI', () => {
       await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
 
+      // Issue #820: the currency inputs carry accessible names
+      for (const coin of ['pp', 'ep', 'gp', 'sp', 'cp']) {
+        await expect(page.locator(`.dcc.actor.sheet input[name="system.currency.${coin}"]`))
+          .toHaveAttribute('aria-label', /.+/)
+      }
+
       // Switch to Cleric tab
       await page.click('.dcc.actor.sheet nav [data-tab="cleric"]')
       await page.waitForTimeout(500)
