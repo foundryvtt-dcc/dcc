@@ -4,7 +4,7 @@
  * Policy (issue #774): the data-model floor is `MINIMUM_SUPPORTED_VERSION`
  * = 0.22 — the pre-V14 lines (0.65.x / 0.66.x) only run their own migration
  * for worlds stamped `<= 0.22`, so those are the only worlds a pre-V14
- * release can actually carry forward. Worlds in the `[0.22, 0.68)` band are
+ * release can actually carry forward. Worlds in the `[0.22, 0.71)` band are
  * migrated in place here, by the data-driven checks plus a small set of
  * version-gated fixups (e.g. the 0.50 attackHitBonus split). Worlds below
  * 0.22 are blocked and referred to a pre-V14 release first.
@@ -45,7 +45,7 @@ const antiPattern = /currentVersion\s*(?:<=?|>=?|===?|!==?)\s*0\.(?:0\d|1\d|2[01
 describe('classifyMigrationDecision', () => {
   test('exported floor + ceiling constants', () => {
     expect(MINIMUM_SUPPORTED_VERSION).toBe(0.22)
-    expect(NEEDS_MIGRATION_VERSION).toBe(0.68)
+    expect(NEEDS_MIGRATION_VERSION).toBe(0.71)
   })
 
   test('fresh world (default: 0) runs migrateWorld', () => {
@@ -79,8 +79,16 @@ describe('classifyMigrationDecision', () => {
     expect(classifyMigrationDecision(0.65)).toBe('run')
   })
 
-  test('already migrated (0.68) skips', () => {
-    expect(classifyMigrationDecision(0.68)).toBe('skip')
+  test('previous ceiling (0.68) re-runs for the 0.70 action-die seed', () => {
+    expect(classifyMigrationDecision(0.68)).toBe('run')
+  })
+
+  test('previous ceiling (0.70) re-runs for the 0.71 scene-token sweep', () => {
+    expect(classifyMigrationDecision(0.70)).toBe('run')
+  })
+
+  test('already migrated (0.71) skips', () => {
+    expect(classifyMigrationDecision(0.71)).toBe('skip')
   })
 
   test('above ceiling skips', () => {

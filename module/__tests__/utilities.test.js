@@ -7,6 +7,7 @@ import {
   removeActiveEffectOverrides,
   getFirstDie,
   getFirstMod,
+  getSingleActionDie,
   addDamageFlavorToRolls,
   getCritTableLink,
   getCritTableResult,
@@ -104,6 +105,30 @@ describe('Utilities', () => {
       expect(getFirstDie('d6')).toBe('') // No dice count
       expect(getFirstDie('1d')).toBe('') // No face count
       expect(getFirstDie('100d100')).toBe('00d10') // Note: regex captures first 2 digits
+    })
+  })
+
+  describe('getSingleActionDie', () => {
+    it('keeps a plain single die', () => {
+      expect(getSingleActionDie('1d20')).toBe('1d20')
+      expect(getSingleActionDie('1d24')).toBe('1d24')
+    })
+
+    it('takes the first die of a list', () => {
+      expect(getSingleActionDie('1d20,1d16')).toBe('1d20')
+      expect(getSingleActionDie('1d16+1d14')).toBe('1d16')
+    })
+
+    it('normalizes a multi-action count to one die (2d20 = two d20 actions)', () => {
+      expect(getSingleActionDie('2d20')).toBe('1d20')
+      expect(getSingleActionDie('3d20')).toBe('1d20')
+    })
+
+    it('returns empty string when no die is present', () => {
+      expect(getSingleActionDie('special')).toBe('')
+      expect(getSingleActionDie('')).toBe('')
+      expect(getSingleActionDie(null)).toBe('')
+      expect(getSingleActionDie(undefined)).toBe('')
     })
   })
 

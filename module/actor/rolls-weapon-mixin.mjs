@@ -428,7 +428,15 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // `_actionDieFormula` is the multiple-action-dice next-unspent override
     // (Phase 3), set by `_rollWeaponAttackDispatch` only for an extra die; it
     // is absent on the off-path so `die` resolves exactly as today.
-    let die = weapon.system?.actionDie || actorActionDice
+    //
+    // Owned weapons re-derive `system.actionDie` from the actor's
+    // `attributes.actionDice.value` in `DCCItem.prepareBaseData` (post-AE
+    // re-prep), so Dice Chain effects on the Action Die already reach the
+    // weapon die. The actor-side fallback below fires only for weapons with
+    // a blank die (e.g. synthetic weapon objects from modules); it prefers
+    // the same sheet/AE-affected value, with the `config.actionDice` preset
+    // as the last resort — mirroring the skill-check fallback (#813).
+    let die = weapon.system?.actionDie || this.system.attributes.actionDice.value || actorActionDice
     if (options._actionDieFormula) die = options._actionDieFormula
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
 

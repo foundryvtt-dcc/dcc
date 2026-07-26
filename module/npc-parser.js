@@ -2,6 +2,7 @@
 
 import EntityImages from './entity-images.js'
 import DCC from './config.js'
+import { getSingleActionDie } from './utilities.js'
 
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
@@ -70,6 +71,11 @@ async function parseNPC (npcString) {
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = Number(_firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp) || 0
   npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
   npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
+  // Mirror the first Act die onto the sheet's single action die — the field
+  // the NPC sheet displays and that checks/skill fallbacks (and Dice Chain
+  // Active Effects) read. Without this, imported NPCs kept the schema default
+  // 1d20 there while only `config.actionDice` carried the parsed die.
+  npc['attributes.actionDice.value'] = getSingleActionDie(npc['config.actionDice']) || '1d20'
   // Parse special abilities without truncating at semicolons within parentheses
   const spMatch = npcString.match(/.*SP ?(.+?)(?:;\s*(?:Act|SV|AL)|$)/)
   npc['attributes.special.value'] = spMatch ? spMatch[1].trim() : ''
