@@ -15,7 +15,7 @@ Paste into the Import Actors window and hit Import Actor(s).
 
 By default, the NPC sheet only shows the basic tabs. If your NPC needs to cast spells or has special abilities that require skill rolls, you can enable additional tabs through the Config menu:
 
-1. Click the title bar menu button and select **&lt;/&gt; Config**
+1. Click the title bar menu button (three vertical dots) and select **Config**
 
 ![NPC Config Menu](images/npc_config_menu.png)
 

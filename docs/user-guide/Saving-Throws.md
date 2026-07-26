@@ -2,7 +2,7 @@
 
 Saving throws are auto-calculated by default.
 
-You can disable this in the &lt;/&gt; Config menu for a character with this checkbox:
+You can disable this in the **Config** menu for a character (three vertical dots in the title bar) with this checkbox:
 
 ![Saving Throws Config Checkbox](images/saving_throws_config_checkbox.png)
 

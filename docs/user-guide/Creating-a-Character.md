@@ -45,7 +45,7 @@ Unchecking the **Melee** checkbox indicates **Ranged** weapon which will be sort
 
 Fields are provided to set the value of the weapon in Platinum, Electrum, Gold, Silver, and Copper pieces.
 
-The **'&lt;/&gt; Config**' option in the title bar menu of the sheet provides access to further customization, including disabling auto-calculations.
+The **Config** option in the title bar menu of the sheet (the three vertical dots) provides access to further customization, including disabling auto-calculations.
 
 For a Warrior you can also set some options in the class tab. **Critical Threat Range** will make you crit on 19s, or 18s, or whatever you set it to.
 
