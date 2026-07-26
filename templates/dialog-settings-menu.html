@@ -3,7 +3,7 @@
     <fieldset>
         <legend>{{group.legend}}</legend>
         {{#each group.entries as |entry|}}
-        {{formGroup entry.field value=entry.value disabled=entry.disabled rootId=@root.rootId localize=true}}
+        {{formGroup entry.field value=entry.value name=entry.name label=entry.label hint=entry.hint disabled=entry.disabled rootId=@root.rootId localize=true}}
         {{/each}}
     </fieldset>
     {{/each}}

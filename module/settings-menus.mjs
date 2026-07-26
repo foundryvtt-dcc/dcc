@@ -73,19 +73,21 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Build a DataField used to render a registered setting, mirroring how
    * core's SettingsConfig derives fields from setting registration data.
+   * DataField-typed settings are passed through untouched (they are shared
+   * registration state); the render name/label/hint travel in the context
+   * entry instead, via the template's formGroup options.
    * @param {object} setting - Registered setting data
    * @returns {foundry.data.fields.DataField}
    */
   static buildSettingField (setting) {
     const fields = foundry.data.fields
-    let field
-    if (setting.type instanceof fields.DataField) {
-      field = setting.type
-    } else if (setting.type === Boolean) {
-      field = new fields.BooleanField({ initial: setting.default ?? false })
-    } else if (setting.type === Number) {
+    if (setting.type instanceof fields.DataField) return setting.type
+    if (setting.type === Boolean) {
+      return new fields.BooleanField({ initial: setting.default ?? false })
+    }
+    if (setting.type === Number) {
       const { min, max, step } = setting.range ?? {}
-      field = new fields.NumberField({
+      return new fields.NumberField({
         required: true,
         choices: setting.choices,
         initial: setting.default,
@@ -93,13 +95,8 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
         max,
         step
       })
-    } else {
-      field = new fields.StringField({ required: true, choices: setting.choices })
     }
-    field.name = setting.key
-    field.label ||= game.i18n.localize(setting.name ?? '')
-    field.hint ||= game.i18n.localize(setting.hint ?? '')
-    return field
+    return new fields.StringField({ required: true, choices: setting.choices })
   }
 
   /** @inheritDoc */
@@ -108,13 +105,20 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
     context.rootId = this.id
     context.groups = this.constructor.GROUPS.map(group => ({
       legend: game.i18n.localize(group.legend),
-      entries: group.settings.map(key => {
+      entries: group.settings.flatMap(key => {
         const setting = game.settings.settings.get(`dcc.${key}`)
-        return {
+        if (!setting) {
+          console.warn(`DCC | ${this.constructor.name} skipped unregistered setting dcc.${key}`)
+          return []
+        }
+        return [{
           field: this.constructor.buildSettingField(setting),
+          name: key,
+          label: setting.name ?? '',
+          hint: setting.hint ?? '',
           value: game.settings.get('dcc', key),
           disabled: !this.constructor.canEditSetting(setting)
-        }
+        }]
       })
     }))
     context.buttons = [
@@ -157,7 +161,8 @@ class DCCSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const key of group.settings) {
         if (!(key in formData.object)) continue
         const setting = game.settings.settings.get(`dcc.${key}`)
-        if (!DCCSettingsMenu.canEditSetting(setting)) continue
+        if (!setting) continue
+        if (!this.constructor.canEditSetting(setting)) continue
         const value = formData.object[key]
         if (value === game.settings.get('dcc', key)) continue
         await game.settings.set('dcc', key, value)
