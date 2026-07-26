@@ -40,6 +40,7 @@ class RollMock {
   dice = [{ results: [10], options: {} }]
   toMessage = global.rollToMessageMock
   evaluate = global.rollEvaluateMock
+  evaluateSync = vi.fn(() => this)
   parse = global.rollParseMock
   render = global.rollRenderMock
   roll = global.rollEvaluateMock

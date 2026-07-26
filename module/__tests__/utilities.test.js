@@ -4,6 +4,7 @@ import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
   ensurePlus,
+  getMercurialSpecial,
   removeActiveEffectOverrides,
   getFirstDie,
   getFirstMod,
@@ -19,6 +20,58 @@ import {
 import { clearAllTableCaches, critTableDocCache, critTableLinkCache } from '../adapter/table-cache.mjs'
 
 describe('Utilities', () => {
+  // Issue #339 — special (roll-again) mercurial table entries
+  describe('getMercurialSpecial', () => {
+    it('reads a rollAgain flag from flags.dcc.mercurial', () => {
+      const result = {
+        description: 'Roll again twice.',
+        flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } }
+      }
+      expect(getMercurialSpecial(result)).toEqual({ action: 'rollAgain', count: 2, formula: '1d100' })
+    })
+
+    it('honors a custom formula on the flag', () => {
+      const result = {
+        description: 'anything',
+        flags: { dcc: { mercurial: { action: 'rollAgain', count: 2, formula: '4d20' } } }
+      }
+      expect(getMercurialSpecial(result)).toEqual({ action: 'rollAgain', count: 2, formula: '4d20' })
+    })
+
+    it('clamps malformed counts into 1..10', () => {
+      const make = (count) => ({ flags: { dcc: { mercurial: { action: 'rollAgain', count } } } })
+      expect(getMercurialSpecial(make(9999)).count).toBe(10)
+      expect(getMercurialSpecial(make(-3)).count).toBe(1)
+      expect(getMercurialSpecial(make('nonsense')).count).toBe(2)
+    })
+
+    it('ignores flags with an unknown action', () => {
+      const result = {
+        description: 'A plain effect.',
+        flags: { dcc: { mercurial: { action: 'somethingElse', count: 2 } } }
+      }
+      expect(getMercurialSpecial(result)).toBeNull()
+    })
+
+    it('falls back to text detection for the un-flagged core 99 entry', () => {
+      expect(getMercurialSpecial({ description: 'Roll again twice.' }))
+        .toEqual({ action: 'rollAgain', count: 2, formula: '1d100' })
+    })
+
+    it('falls back to text detection for the un-flagged core 100+ entry (4d20)', () => {
+      const text = 'Roll again twice, but instead of rolling d%, roll [[/roll 4d20]] modified by the wizard’s Luck adjustment (in increments of 10%).'
+      expect(getMercurialSpecial({ description: text }))
+        .toEqual({ action: 'rollAgain', count: 2, formula: '4d20' })
+    })
+
+    it('returns null for ordinary entries and empty input', () => {
+      expect(getMercurialSpecial({ description: 'Turbulent magic. Winds whip around.' })).toBeNull()
+      expect(getMercurialSpecial({ description: 'The caster must roll again twice next round.' })).toBeNull()
+      expect(getMercurialSpecial({})).toBeNull()
+      expect(getMercurialSpecial(null)).toBeNull()
+    })
+  })
+
   describe('ensurePlus', () => {
     it('adds plus to positive numbers', () => {
       expect(ensurePlus('5')).toBe('+5')

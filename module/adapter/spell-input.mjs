@@ -50,6 +50,7 @@ import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
+import { getMercurialSpecial } from '../utilities.js'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -394,18 +395,28 @@ function toLibSimpleTable (foundryTable) {
  * builds a complete effect. Summary is the first sentence of the
  * Foundry row description (mirrors `DCCItem.rollMercurialMagic:583`
  * which splits on `.` for the item's stored summary).
+ *
+ * Special (roll-again) entries — `flags.dcc.mercurial` or the legacy
+ * text form, resolved by `getMercurialSpecial` — map onto the lib's
+ * `entry.special`, so the lib's `rollMercurialMagic` expands them into
+ * sub-effects instead of returning the instruction text (issue #339).
  */
 function toLibMercurialTable (foundryTable) {
   const entries = foundryTableEntries(foundryTable, (entry, min, max) => {
     const text = entry.description || entry.text || entry.name || ''
     const summary = text.split('.')[0] || text
-    return {
+    const libEntry = {
       min,
       max,
       summary,
       description: text,
       displayOnCast: true
     }
+    const special = getMercurialSpecial(entry)
+    if (special) {
+      libEntry.special = special
+    }
+    return libEntry
   })
   if (!entries) return null
   return {

@@ -1,7 +1,7 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
 import { logSpellburn } from '../ability-score-log.js'
-import { ensurePlus } from '../utilities.js'
+import { ensurePlus, getMercurialSpecial } from '../utilities.js'
 
 /**
  * Determine the die formula to roll for a manifestation table.
@@ -28,6 +28,15 @@ function manifestationDieFormula (table) {
   if (table.formula && table.formula.trim()) { return table.formula }
   return '1d100'
 }
+
+/**
+ * Recursion cap when expanding special (roll-again) mercurial entries —
+ * a sub-roll can land on another special entry (99 again, or 100+); past
+ * this depth the literal instruction text is stored instead so a
+ * pathological table cannot loop forever. Mirrors the lib's
+ * MAX_MERCURIAL_SPECIAL_DEPTH (dcc-core-lib spells/mercurial).
+ */
+const MAX_MERCURIAL_SPECIAL_DEPTH = 5
 
 /**
  * Spell-behavior mixin for {@link DCCItem}.
@@ -367,7 +376,7 @@ export const SpellItemMixin = (Base) => class extends Base {
     // Variants like XCC's blaster / gnome register their own tables
     // and get class-keyed lookups; canonical DCC casters keep using
     // the world-setting default.
-    let mercurialMagicResult = null
+    let table = null
     const classKey = actor.system?.details?.sheetClass || undefined
     const registry = CONFIG.DCC.mercurialMagicTables || {}
     const mercurialMagicTableName = (classKey && registry[classKey]) ||
@@ -382,21 +391,22 @@ export const SpellItemMixin = (Base) => class extends Base {
       if (pack) {
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
-          const table = await pack.getDocument(entry._id)
-          mercurialMagicResult = await table.draw({ roll })
+          table = await pack.getDocument(entry._id)
         }
       }
     }
 
     // Fall back to searching world tables by name
-    if (!mercurialMagicResult) {
+    if (!table) {
       const worldTableName = mercurialMagicTableName
         ? mercurialMagicTableName.split('.').pop()
         : 'Table 5-2: Mercurial Magic'
-      const table = game.tables.getName(worldTableName)
-      if (table) {
-        mercurialMagicResult = await table.draw({ roll })
-      }
+      table = game.tables.getName(worldTableName)
+    }
+
+    let mercurialMagicResult = null
+    if (table) {
+      mercurialMagicResult = await table.draw({ roll })
     }
 
     // Grab the result from the table if present
@@ -422,16 +432,84 @@ export const SpellItemMixin = (Base) => class extends Base {
 
     if (mercurialMagicResult) {
       try {
-        const result = mercurialMagicResult.results[0].description
-        const split = result.split('.')
-        updates['system.mercurialEffect.summary'] = split[0]
-        updates['system.mercurialEffect.description'] = `<p>${result}</p>`
+        const effect = await this._extractMercurialEffect(mercurialMagicResult, table, ability, 0)
+        updates['system.mercurialEffect.summary'] = effect.summary
+        updates['system.mercurialEffect.description'] = effect.blocks.join('')
       } catch (err) {
         console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
       }
     }
 
     this.update(updates)
+  }
+
+  /**
+   * Turn a drawn mercurial-magic table result into displayable data,
+   * expanding special (roll-again) entries — issue #339.
+   *
+   * An ordinary entry returns its literal text (summary = first
+   * sentence, one `<p>` block). A special entry (see
+   * {@link getMercurialSpecial}) instead makes `count` sub-rolls of
+   * `formula + luck×10`, draws each on the same table (every sub-draw
+   * posts its own chat card via `table.draw`), and combines them:
+   * joined summaries, one block per sub-effect labeled with its roll
+   * total. A sub-roll landing on another special entry recurses, capped
+   * at MAX_MERCURIAL_SPECIAL_DEPTH — past the cap the literal
+   * instruction text is kept.
+   *
+   * @param {Object} drawResult - result of `table.draw` ({roll, results})
+   * @param {Object} table - the resolved mercurial-magic RollTable
+   * @param {Object} ability - the actor's luck ability (for `mod`)
+   * @param {Number} depth - current expansion depth
+   * @returns {Promise<{summary: String, blocks: Array<String>, leaf: Boolean}>}
+   * @private
+   */
+  async _extractMercurialEffect (drawResult, table, ability, depth) {
+    const tableResult = drawResult.results[0]
+    const text = tableResult.description
+    const special = getMercurialSpecial(tableResult)
+
+    if (!special || depth >= MAX_MERCURIAL_SPECIAL_DEPTH) {
+      return {
+        summary: text.split('.')[0],
+        blocks: [`<p>${text}</p>`],
+        leaf: true
+      }
+    }
+
+    const summaries = []
+    const blocks = []
+    for (let i = 0; i < special.count; i++) {
+      const terms = [
+        {
+          type: 'Die',
+          formula: special.formula
+        },
+        {
+          type: 'Modifier',
+          label: game.i18n.localize('DCC.AbilityLck'),
+          formula: ensurePlus((ability.mod * 10).toString())
+        }
+      ]
+      // Sub-rolls never re-prompt with the modifier dialog
+      const subRoll = await game.dcc.DCCRoll.createRoll(terms, {}, {})
+      const subDraw = await table.draw({ roll: subRoll })
+      const sub = await this._extractMercurialEffect(subDraw, table, ability, depth + 1)
+      summaries.push(sub.summary)
+      if (sub.leaf) {
+        // Label the effect with the sub-roll that produced it
+        blocks.push(sub.blocks[0].replace('<p>', `<p><strong>(${subDraw.roll.total})</strong> `))
+      } else {
+        // A nested expansion's blocks already carry their own labels
+        blocks.push(...sub.blocks)
+      }
+    }
+
+    return {
+      summary: summaries.join('; '),
+      blocks,
+      leaf: false
+    }
   }
 }
 

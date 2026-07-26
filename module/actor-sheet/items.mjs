@@ -145,6 +145,14 @@ export async function prepareItems (actor, {
           secrets: actor.isOwner
         })
       }
+      // Enrich the mercurial summary shown in the spell list so inline
+      // rolls and content links render (#339)
+      if (i.system.mercurialEffect?.summary) {
+        i.mercurialSummaryHTML = await TextEditor.enrichHTML(i.system.mercurialEffect.summary, {
+          relativeTo: i,
+          secrets: actor.isOwner
+        })
+      }
       if (spells[i.system.level]) {
         spells[i.system.level].push(i)
       } else {

@@ -1261,6 +1261,49 @@ test('loadMercurialMagicTable: classKey selects the class-specific world table',
   game.tables = originalGameTables
 })
 
+// Issue #339 — special (roll-again) entries map onto the lib's
+// `entry.special` so `rollMercurialMagic` expands them into sub-effects
+// instead of returning the literal instruction text.
+test('loadMercurialMagicTable: rollAgain flags and legacy text map to entry.special', async () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  const originalGameTables = game.tables
+
+  CONFIG.DCC.mercurialMagicTables = {}
+  CONFIG.DCC.mercurialMagicTable = 'Special Mercurial'
+
+  const specialTable = {
+    id: 'special-merc',
+    name: 'Special Mercurial',
+    results: [
+      { range: [-20, 98], description: 'Blue aura. A shimmering aura.' },
+      {
+        range: [99, 99],
+        description: 'Roll again twice.',
+        flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } }
+      },
+      {
+        // Un-flagged 4d20 variant — exercises the legacy text fallback
+        range: [100, 500],
+        description: 'Roll again twice, but instead of rolling d%, roll [[/roll 4d20]] modified by Luck.'
+      }
+    ]
+  }
+  game.tables = {
+    getName: (name) => (name === 'Special Mercurial' ? specialTable : null),
+    find: () => null
+  }
+
+  const lib = await loadMercurialMagicTable('wizard')
+  expect(lib?.entries?.[0]?.special).toBeUndefined()
+  expect(lib?.entries?.[1]?.special).toEqual({ action: 'rollAgain', count: 2, formula: '1d100' })
+  expect(lib?.entries?.[2]?.special).toEqual({ action: 'rollAgain', count: 2, formula: '4d20' })
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+  game.tables = originalGameTables
+})
+
 test('adapter wizard first-cast threads profile.type through to loadMercurialMagicTable', async () => {
   rollToMessageMock.mockClear()
 
