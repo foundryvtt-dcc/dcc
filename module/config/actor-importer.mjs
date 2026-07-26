@@ -80,6 +80,8 @@ export const actorImporterNameMap = {
   'Trowel (as dagger)': ['Dagger'],
   'Knife (as dagger)': ['Dagger'],
   'Stick (as club)': ['Club'],
+  'Rations (1 day)': ['Rations, per day'],
+  'Water skin': ['Waterskin'],
   'Patron Bond/Invoke Patron': ['Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron'],
   'Demon Summoning': ['Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name'],
   Blessing: ['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object']

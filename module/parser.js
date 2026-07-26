@@ -144,7 +144,8 @@ async function createActors (type, folderId, actorData) {
     }
   }
 
-  // Cache available items if importing players
+  // Cache available items if importing players, keyed by normalized name so
+  // Purple Sorcerer names like "Rope - 50'" match pack names like "Rope, 50’" (#817)
   // @TODO Implement a configuration mechanism for providing additional packs
   const itemMap = {}
   if (type === 'Player') {
@@ -153,7 +154,11 @@ async function createActors (type, folderId, actorData) {
       if (!pack) continue
 
       for (const entry of pack.index) {
-        itemMap[entry.name] = entry
+        const key = _normalizeItemName(entry.name)
+        if (!itemMap[key]) {
+          itemMap[key] = []
+        }
+        itemMap[key].push(entry)
       }
     }
   }
@@ -217,15 +222,18 @@ async function createActors (type, folderId, actorData) {
         const newItems = []
 
         for (const name of names) {
-          // Check for an item of this type in the cache
-          const mapEntry = itemMap[name]
-          if (mapEntry && mapEntry.type === originalItem.type) {
+          // Check for a type-compatible item of this name in the cache
+          const candidates = itemMap[_normalizeItemName(name)] ?? []
+          const mapEntry = candidates.find(entry => _itemTypesCompatible(entry.type, originalItem.type))
+          if (mapEntry) {
             // Lookup the item document
             const compendiumItem = await fromUuid(mapEntry.uuid)
             const newItem = compendiumItem.toObject()
 
-            // Keep the original item name if we're remapping to a single item
-            if (names.length === 1) {
+            // Keep the original item name if we're remapping to a single weapon
+            // or armor item (e.g. "Hammer (as club)"); generic equipment takes
+            // the compendium name so imported gear matches compendium gear
+            if (names.length === 1 && (originalItem.type === 'weapon' || originalItem.type === 'armor')) {
               newItem.name = originalItem.name
             }
 
@@ -313,6 +321,37 @@ function onRenderActorDirectory (app, html) {
 }
 
 /**
+ * Normalize an item name for compendium matching: lower-case, straighten curly
+ * apostrophes, and collapse commas, hyphens, parentheses, and asterisks to
+ * spaces, so Purple Sorcerer names like "Rope - 50'" or "Sack (large)" match
+ * pack names like "Rope, 50’" and "Sack, large" (#817)
+ * @param {string} name - The item name to normalize
+ * @return {string} The normalized name
+ */
+function _normalizeItemName (name) {
+  return name
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[-,()*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Check whether a compendium index entry can satisfy an imported item's type.
+ * The stat-block importer creates all goods as generic 'equipment' items, so
+ * let those match 'container' and 'ammunition' pack entries too — otherwise
+ * backpacks and sacks can never remap to their container items (#817)
+ * @param {string} entryType - The compendium index entry's item type
+ * @param {string} itemType - The imported item's type
+ * @return {boolean} Whether the types are compatible
+ */
+function _itemTypesCompatible (entryType, itemType) {
+  return entryType === itemType ||
+    (itemType === 'equipment' && (entryType === 'container' || entryType === 'ammunition'))
+}
+
+/**
  * Try to match a birth augur string and apply the corresponding active effect
  * Also extracts and sets the birthAugurLuckMod on the actor
  * @param {Actor} actor - The actor to apply the effect to
@@ -349,6 +388,6 @@ async function _applyBirthAugurEffect (actor, birthAugurText) {
 
 export default { onRenderActorDirectory, createActors }
 
-// Exposed for unit testing — the birth-augur effect application is otherwise
-// only reachable through the heavyweight createActors import pipeline.
-export { _applyBirthAugurEffect }
+// Exposed for unit testing — these are otherwise only reachable through the
+// heavyweight createActors import pipeline.
+export { _applyBirthAugurEffect, _normalizeItemName, _itemTypesCompatible }
