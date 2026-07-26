@@ -27,8 +27,6 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 
 ## Spells
 * [Creating a Spell](Creating-a-Spell.md)
-* [Creating Spell Tables](Creating-Spell-Tables.md)
-* [Spells - Putting it All Together](Spells---Putting-it-All-Together.md)
 
 ## Sheet Options
 * [Action Dice](Action-Dice.md)

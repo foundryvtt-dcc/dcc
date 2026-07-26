@@ -173,8 +173,7 @@ thing the GM sees and the front door to the whole module:
   - Drag spells from the DCC core book compendium and customize per NPC
     (much faster, recommended for standard spells)
   - Or build new spells from scratch following
-    [Creating a Spell](../user-guide/Creating-a-Spell.md) and
-    [Creating Spell Tables](../user-guide/Creating-Spell-Tables.md)
+    [Creating a Spell](../user-guide/Creating-a-Spell.md)
 - Attach spells to the relevant NPCs by dragging them onto the NPC sheet.
 
 ### Link Items / Actors / Spells to Journals
