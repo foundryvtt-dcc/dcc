@@ -481,6 +481,7 @@
   "DCC.MercurialMagicButtonReroll": "Przerzuć",
   "DCC.MercurialMagicRerollExplain": "Odrzucić poprzedni wynik Merkurialnej Magii i przerzucić lub sprawdzić na podstawie wprowadzonej liczby?",
   "DCC.MercurialMagicRerollPrompt": "Przerzucić czy Sprawdzić Rzut Merkurialnej Magii?",
+  "DCC.MercurialMagicNoResult": "Nie znaleziono efektu merkurialnego dla rzutu {roll}",
   "DCC.MercurialMagicRoll": "Rzut Merkurialnej Magii",
   "DCC.MercurialTabHint": "Rzuć i skonfiguruj merkurialną magię dla tego czaru",
   "DCC.MightyDeedChooseTable": "Wybierz Czyn",

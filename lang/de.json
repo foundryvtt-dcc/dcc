@@ -481,6 +481,7 @@
   "DCC.MercurialMagicButtonReroll": "Neu würfeln",
   "DCC.MercurialMagicRerollExplain": "Bestehenden Launenhaften Effekt nachschlagen oder verwerfen und erneut auswürfeln?",
   "DCC.MercurialMagicRerollPrompt": "Launenhaften Effekt nachschlagen oder erneut auswürfeln?",
+  "DCC.MercurialMagicNoResult": "Kein launenhafter Effekt für einen Wurf von {roll} gefunden",
   "DCC.MercurialMagicRoll": "Launenhafter Effekt",
   "DCC.MercurialTabHint": "Würfle und konfiguriere launenhafte Magie für diesen Zauber",
   "DCC.MightyDeedChooseTable": "Großtat wählen",

@@ -1098,6 +1098,90 @@ test('adapter wizard first-cast pre-rolls mercurial magic when the item has none
   findSpy.mockRestore()
 })
 
+// Issue #339 — a first-cast pre-roll that lands on a flagged rollAgain
+// entry must expand it with FRESH sub-rolls. This drives the roller
+// closure in `_rollMercurialIfNeeded` end-to-end: the pre-evaluated
+// Foundry d100 serves only the trigger roll, and each sub-roll is a new
+// evaluateSync'd Roll on the special's own formula. Under the old
+// fixed-total roller, every sub-roll would replay the trigger total (99),
+// recurse to the depth cap, and store "Roll again twice" literals —
+// which this test would catch.
+test('adapter wizard first-cast expands a flagged rollAgain entry with fresh sub-rolls', async () => {
+  rollToMessageMock.mockClear()
+
+  const OriginalRoll = globalThis.Roll
+  const originalTable = CONFIG.DCC.mercurialMagicTable
+  const originalTables = game.tables
+
+  // Deterministic totals keyed by formula: the trigger d100 rolls 99
+  // (the flagged entry), the 4d20 sub-rolls serve 45 then 55.
+  const subTotals = [45, 55]
+  class SeqRoll extends OriginalRoll {
+    constructor (formula) {
+      super(formula)
+      if (formula === '1d100') {
+        this.total = 99
+      } else if (formula === '4d20') {
+        this.total = subTotals.shift() ?? 45
+      }
+    }
+  }
+  globalThis.Roll = SeqRoll
+
+  CONFIG.DCC.mercurialMagicTable = 'Roll Again Mercurial'
+  const specialTable = {
+    id: 'roll-again-merc',
+    name: 'Roll Again Mercurial',
+    results: [
+      { range: [-20, 98], description: 'Blue aura. A shimmering aura.' },
+      {
+        range: [99, 200],
+        description: 'Roll again twice, but with 4d20.',
+        flags: { dcc: { mercurial: { action: 'rollAgain', count: 2, formula: '4d20' } } }
+      }
+    ]
+  }
+  game.tables = {
+    getName: (name) => (name === 'Roll Again Mercurial' ? specialTable : null),
+    find: () => null
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  const remainingSubTotals = subTotals.length
+  const mercUpdate = spellItem.update.mock.calls
+    .map(([data]) => data)
+    .find((data) => data && 'system.mercurialEffect.summary' in data)
+
+  // Restore shared globals BEFORE asserting so a failure here cannot
+  // poison the tests that follow.
+  globalThis.Roll = OriginalRoll
+  CONFIG.DCC.mercurialMagicTable = originalTable
+  game.tables = originalTables
+  findSpy.mockRestore()
+
+  // Both 4d20 sub-rolls were consumed — fresh Rolls, not the replayed trigger
+  expect(remainingSubTotals).toBe(0)
+
+  expect(mercUpdate).toBeDefined()
+  // The mock actor's Luck 18 gives mod +3, so every roll carries +30:
+  // trigger 99 → 129 (flagged entry), subs 45/55 → 75/85 (Blue aura).
+  expect(mercUpdate['system.mercurialEffect.value']).toBe(129)
+  expect(mercUpdate['system.mercurialEffect.summary']).toBe('Blue aura; Blue aura')
+  expect(mercUpdate['system.mercurialEffect.description']).toBe(
+    '<p>(75) Blue aura. A shimmering aura.</p><p>(85) Blue aura. A shimmering aura.</p>'
+  )
+})
+
 test('adapter wizard cast on a spell item that already has mercurial does not re-roll', async () => {
   rollToMessageMock.mockClear()
 

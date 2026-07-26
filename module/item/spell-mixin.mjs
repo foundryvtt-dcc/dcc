@@ -466,6 +466,24 @@ export const SpellItemMixin = (Base) => class extends Base {
    */
   async _extractMercurialEffect (drawResult, table, ability, depth) {
     const tableResult = drawResult.results[0]
+
+    // `table.draw` can resolve with no results when the roll lands
+    // outside every entry's range (narrow homebrew tables, or a special
+    // formula that outruns the table's coverage). Keep this node as a
+    // labeled miss instead of throwing — an exception here would discard
+    // every already-drawn sub-effect in the expansion tree while their
+    // chat cards remain posted.
+    if (!tableResult) {
+      const text = game.i18n.format('DCC.MercurialMagicNoResult', { roll: drawResult.roll?.total })
+      return {
+        summary: text,
+        blocks: [`<p>${text}</p>`],
+        // Not marked as a leaf: the message already carries the roll
+        // value, so the caller must not prepend its "(roll)" label too
+        leaf: false
+      }
+    }
+
     const text = tableResult.description
     const special = getMercurialSpecial(tableResult)
 

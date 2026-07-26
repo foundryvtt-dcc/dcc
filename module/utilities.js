@@ -69,6 +69,22 @@ export function getMercurialSpecial (tableResult) {
 }
 
 /**
+ * Wrap a dcc-core-lib mercurial-effect description in HTML paragraphs.
+ * The lib joins expanded (roll-again) sub-effect descriptions with a
+ * plain `\n\n` (it is renderer-agnostic); browsers collapse that to a
+ * space, so each chunk gets its own `<p>` here. A single-effect
+ * description (no `\n\n`) comes back as one paragraph unchanged in
+ * content.
+ *
+ * @param {string} description - lib `MercurialEffect.description`
+ * @returns {string} HTML string, '' when the description is empty
+ */
+export function formatMercurialDescriptionHTML (description) {
+  if (!description) { return '' }
+  return description.split('\n\n').map((block) => `<p>${block}</p>`).join('')
+}
+
+/**
  * Ensure modifiers have a + on the front of them if they aren't negative
  * @param {string} value - value to ensure has a plus
  * @param {boolean} includeZero - if true, will return +0 if the value is 0

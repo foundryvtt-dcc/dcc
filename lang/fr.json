@@ -468,6 +468,7 @@
   "DCC.MercurialMagicButtonReroll": "Relancer",
   "DCC.MercurialMagicRerollExplain": "Laisser tomber le résultat de magie mercuriel et relancer ou choisir sur base du nombre entré?",
   "DCC.MercurialMagicRerollPrompt": "Relancer ou choisir le résultat du jet de magie mercurielle?",
+  "DCC.MercurialMagicNoResult": "Aucun effet mercuriel trouvé pour un jet de {roll}",
   "DCC.MercurialMagicRoll": "Jet de magie mercurielle",
   "DCC.MercurialTabHint": "Lancer et configurer la magie mercurielle pour ce sort",
   "DCC.MightyDeedChooseTable": "Choisir le haut fait",

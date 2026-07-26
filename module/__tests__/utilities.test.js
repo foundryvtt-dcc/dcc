@@ -4,6 +4,7 @@ import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
   ensurePlus,
+  formatMercurialDescriptionHTML,
   getMercurialSpecial,
   removeActiveEffectOverrides,
   getFirstDie,
@@ -69,6 +70,23 @@ describe('Utilities', () => {
       expect(getMercurialSpecial({ description: 'The caster must roll again twice next round.' })).toBeNull()
       expect(getMercurialSpecial({})).toBeNull()
       expect(getMercurialSpecial(null)).toBeNull()
+    })
+  })
+
+  describe('formatMercurialDescriptionHTML', () => {
+    it('wraps a single-effect description in one paragraph', () => {
+      expect(formatMercurialDescriptionHTML('Blue aura. A shimmering aura.'))
+        .toBe('<p>Blue aura. A shimmering aura.</p>')
+    })
+
+    it('splits an expanded multi-effect description into paragraphs', () => {
+      expect(formatMercurialDescriptionHTML('(45) Turbulent magic.\n\n(70) Cannibal magic.'))
+        .toBe('<p>(45) Turbulent magic.</p><p>(70) Cannibal magic.</p>')
+    })
+
+    it('returns an empty string for empty input', () => {
+      expect(formatMercurialDescriptionHTML('')).toBe('')
+      expect(formatMercurialDescriptionHTML(undefined)).toBe('')
     })
   })
 

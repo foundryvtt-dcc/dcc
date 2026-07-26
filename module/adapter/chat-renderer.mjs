@@ -17,6 +17,8 @@
  * `_getInitiativeRollViaAdapter`'s Path-A rationale in `actor.js`).
  */
 
+import { formatMercurialDescriptionHTML } from '../utilities.js'
+
 /**
  * Build the shared `dcc.libResult` flag payload from a lib result.
  *
@@ -745,7 +747,9 @@ export async function renderMercurialEffect ({ actor, spellItem, effect }) {
     .filter(Boolean)
     .join(' — ')
 
-  const content = description ? `<p>${description}</p>` : undefined
+  // Expanded (roll-again) effects join sub-effect descriptions with
+  // '\n\n' — each needs its own paragraph or they run together (#339)
+  const content = description ? formatMercurialDescriptionHTML(description) : undefined
 
   const toMessageData = {
     speaker: ChatMessage.getSpeaker({ actor }),

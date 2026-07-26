@@ -468,6 +468,42 @@ describe('SpellItemMixin extraction', () => {
       expect(updates['system.mercurialEffect.summary']).toContain('Roll again twice')
     })
 
+    test('a sub-roll landing outside the table keeps the other sub-effects', async () => {
+      const item = makeSpell()
+      item.actor = actor
+
+      // Second sub-draw misses the table (empty results) — the first
+      // sub-effect and the labeled miss must both survive, not be wiped
+      // by a TypeError unwinding into the outer catch.
+      let drawCount = 0
+      const table = {
+        name: 'Table 5-2: Mercurial Magic',
+        draw: vi.fn(async ({ roll }) => {
+          drawCount++
+          if (!roll.evaluated) { await roll.evaluate() }
+          if (drawCount === 1) {
+            return { roll, results: [{ description: 'Roll again twice.', flags: { dcc: { mercurial: { action: 'rollAgain', count: 2 } } } }] }
+          }
+          if (drawCount === 2) {
+            return { roll, results: [{ description: 'Turbulent magic. Winds.' }] }
+          }
+          return { roll, results: [] }
+        })
+      }
+      global.game.tables.getName = vi.fn(() => table)
+      global.game.i18n.format = vi.fn((k, data) => `${k}:${data.roll}`)
+      global.game.dcc = { DCCRoll: { createRoll: makeCreateRoll([99, 45, -30]) } }
+
+      await item.rollMercurialMagic()
+
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.mercurialEffect.summary': 'Turbulent magic; DCC.MercurialMagicNoResult:-30',
+        'system.mercurialEffect.description':
+          '<p><strong>(45)</strong> Turbulent magic. Winds.</p>' +
+          '<p>DCC.MercurialMagicNoResult:-30</p>'
+      }))
+    })
+
     test('lookup of a special value expands with real sub-rolls', async () => {
       const item = makeSpell()
       item.actor = actor

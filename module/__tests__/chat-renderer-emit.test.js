@@ -172,6 +172,24 @@ describe('renderMercurialEffect', () => {
     expect(createdMessageData().content).toBe('<p>A lasting boon</p>')
   })
 
+  // Issue #339 — the lib joins expanded (roll-again) sub-effect
+  // descriptions with '\n\n'; each must render as its own paragraph or
+  // the effects run together in the chat card.
+  test('renders an expanded multi-effect description as separate paragraphs', async () => {
+    await renderMercurialEffect({
+      actor,
+      spellItem,
+      effect: {
+        rollValue: 99,
+        summary: 'Turbulent magic; Cannibal magic',
+        description: '(45) Turbulent magic. Winds.\n\n(70) Cannibal magic. Consumes.'
+      }
+    })
+    expect(createdMessageData().content).toBe(
+      '<p>(45) Turbulent magic. Winds.</p><p>(70) Cannibal magic. Consumes.</p>'
+    )
+  })
+
   test('omits content entirely when the description is empty', async () => {
     await renderMercurialEffect({
       actor,
