@@ -265,6 +265,16 @@ describe('prepareItems — actor mutations', () => {
     expect(ctx['equipment.equipment']).toHaveLength(1)
   })
 
+  test('never auto-deletes weapons at zero quantity, even with removeEmptyItems on (#595)', async () => {
+    const actor = makeActor({
+      config: { removeEmptyItems: true },
+      items: [item('weapon', { melee: true, quantity: 0 }, { _id: 'w0', name: 'Empty Quiver Dagger' })]
+    })
+    const ctx = await prepareItems(actor, makeDeps())
+    expect(actor.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(ctx['equipment.weapons'].melee.map((w) => w.name)).toEqual(['Empty Quiver Dagger'])
+  })
+
   test('keeps zero-quantity items when removeEmptyItems is off', async () => {
     const actor = makeActor({
       config: { removeEmptyItems: false },

@@ -1620,6 +1620,34 @@ test('rollWeaponAttack with thrown option dispatches on a missile-side clone', a
   }
 })
 
+test('rollWeaponAttack with thrown option on an already-ranged weapon skips the clone', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  const weapon = {
+    name: 'Sling',
+    system: {
+      toHit: '+1',
+      damage: '1d4',
+      actionDie: '1d20',
+      equipped: true,
+      melee: false
+    },
+    clone: vi.fn()
+  }
+  const originalFind = actor.items.find
+  actor.items.find = vi.fn().mockReturnValue(weapon)
+
+  try {
+    await actor.rollWeaponAttack('sling', { thrown: true })
+    expect(weapon.clone).not.toHaveBeenCalled()
+    const terms = dccRollCreateRollMock.mock.calls[0][0]
+    const compound = terms.find(t => t.type === 'Compound')
+    expect(compound.formula).toBe('+1')
+  } finally {
+    actor.items.find = originalFind
+  }
+})
+
 test('rollWeaponAttack without thrown option leaves a thrown-capable weapon on the melee path', async () => {
   dccRollCreateRollMock.mockClear()
 
