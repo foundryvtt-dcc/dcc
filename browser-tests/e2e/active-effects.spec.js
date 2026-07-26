@@ -677,7 +677,13 @@ test.describe('DCC Active Effects', () => {
           }])
           const weapon = actor.items.getName('V14-Chain-Sword')
           const preparedDie = weapon.system.actionDie
+          const before = game.messages.size
           await actor.rollWeaponAttack(weapon.id)
+          // The attack card's ChatMessage.create is fire-and-forget — wait for
+          // the new message to land instead of racing it.
+          for (let i = 0; i < 40 && game.messages.size === before; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
           const message = game.messages.contents[game.messages.contents.length - 1]
           return { preparedDie, content: message?.content ?? '' }
         } finally {

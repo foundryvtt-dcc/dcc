@@ -1961,6 +1961,19 @@ a.inline-roll {
   font-family: var(--system-icon-font), serif;
   padding-right: 8px;
 }
+.dcc.sheet {
+  /* Equipment subtabs (Weapons & Armor / Goods) */
+}
+.dcc.sheet .tab.equipment-subtabbed.active {
+  display: flex;
+  flex-direction: column;
+}
+.dcc.sheet nav.equipment-subtabs {
+  font-family: var(--system-heading-font), serif;
+  flex: 0 0 auto;
+  justify-content: space-evenly;
+  margin-bottom: 8px;
+}
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
 }
@@ -2034,8 +2047,12 @@ a.inline-roll {
 .dcc.sheet a[data-tab=warrior]::before {
   content: "\f6eb";
 }
-.dcc.sheet a[data-tab=weapon]::before {
+.dcc.sheet a[data-tab=weapon]::before,
+.dcc.sheet a[data-tab=weapons]::before {
   content: "\f71d";
+}
+.dcc.sheet a[data-tab=goods]::before {
+  content: "\f290";
 }
 .dcc.sheet a[data-tab=wizard]::before {
   content: "\f6e8";
@@ -3153,11 +3170,18 @@ a.inline-roll {
 }
 .dcc .container-list .container-contents-list .container-content-item {
   display: grid;
-  grid-template-columns: 18px 1fr 30px 58px;
+  grid-template-columns: 18px 1fr 56px 58px;
   align-items: center;
   gap: 4px;
   padding: 1px 0;
   font-size: 11px;
+}
+.dcc .container-list .container-contents-list .container-content-qty {
+  text-align: center;
+  white-space: nowrap;
+}
+.dcc .container-list .container-contents-list .container-content-qty i[data-action] {
+  cursor: pointer;
 }
 .dcc .container-list .container-contents-list .container-empty {
   font-style: italic;

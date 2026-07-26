@@ -161,7 +161,7 @@ static async #activateItem (event, target) {
 
 Add `data-action="activateItem"` to clickable elements in the item row templates.
 
-**`templates/actor-partial-npc-equipment.html`** — update the `ItemRow` partial:
+**`templates/actor-partial-equipment-goods.html`** — update the `ItemRow` partial (shared by the PC goods subtab and the NPC equipment tab):
 
 The item name `<div>` becomes a clickable element:
 ```handlebars

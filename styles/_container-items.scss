@@ -48,11 +48,20 @@
 
     .container-content-item {
       display: grid;
-      grid-template-columns: 18px 1fr 30px 58px;
+      grid-template-columns: 18px 1fr 56px 58px;
       align-items: center;
       gap: 4px;
       padding: 1px 0;
       font-size: 11px;
+    }
+
+    .container-content-qty {
+      text-align: center;
+      white-space: nowrap;
+
+      i[data-action] {
+        cursor: pointer;
+      }
     }
 
     .container-empty {

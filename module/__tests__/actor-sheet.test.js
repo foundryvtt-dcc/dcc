@@ -433,3 +433,54 @@ test('item transfer respects result from parent _onDrop', async () => {
   // Cleanup
   Object.getPrototypeOf(Object.getPrototypeOf(sheet))._onDrop.mockRestore()
 })
+
+/* -------------------------------------------- */
+/*  Tab configuration (equipment subtabs)       */
+/* -------------------------------------------- */
+
+test('equipment tab group defines weapons and goods subtabs', () => {
+  const actor = createActorWithItems('actor-tabs-1', [])
+  const sheet = createActorSheet(actor)
+
+  const config = sheet._getTabsConfig('equipment')
+  expect(config.tabs.map(t => t.id)).toEqual(['weapons', 'goods'])
+  expect(config.initial).toBe('weapons')
+  expect(config.tabs.every(t => t.group === 'equipment')).toBe(true)
+})
+
+test('optional skills and spells tabs only join the sheet group', () => {
+  const actor = createActorWithItems('actor-tabs-2', [])
+  actor.system.config.showSkills = true
+  actor.system.config.showSpells = true
+  const sheet = createActorSheet(actor)
+
+  const sheetConfig = sheet._getTabsConfig('sheet')
+  expect(sheetConfig.tabs.map(t => t.id)).toContain('skills')
+  expect(sheetConfig.tabs.map(t => t.id)).toContain('wizardSpells')
+
+  const equipmentConfig = sheet._getTabsConfig('equipment')
+  expect(equipmentConfig.tabs.map(t => t.id)).toEqual(['weapons', 'goods'])
+})
+
+test('_getTabsConfig returns null for a group the sheet does not define', () => {
+  const actor = createActorWithItems('actor-tabs-3', [])
+  const sheet = createActorSheet(actor)
+
+  expect(sheet._getTabsConfig('nonexistent')).toBeNull()
+})
+
+test('_prepareTabs marks the initial equipment subtab active', () => {
+  const actor = createActorWithItems('actor-tabs-4', [])
+  const sheet = createActorSheet(actor)
+
+  const tabs = sheet._prepareTabs('equipment')
+  expect(tabs.weapons.active).toBe(true)
+  expect(tabs.weapons.cssClass).toContain('active')
+  expect(tabs.goods.active).toBe(false)
+
+  // Switching the group state flips the active subtab on the next prepare
+  sheet.tabGroups.equipment = 'goods'
+  const tabsAfter = sheet._prepareTabs('equipment')
+  expect(tabsAfter.goods.active).toBe(true)
+  expect(tabsAfter.weapons.active).toBe(false)
+})

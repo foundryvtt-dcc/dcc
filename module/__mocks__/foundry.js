@@ -92,6 +92,9 @@ class ApplicationV2Mock {
   // Tab configuration - defines multi-panel interfaces
   static TABS = {}
 
+  // Active tab per group - updated by changeTab
+  tabGroups = {}
+
   // Core render method - displays the application
   async render (options = {}) {
     // In real Foundry: manages render states, calls lifecycle methods
@@ -146,8 +149,23 @@ class ApplicationV2Mock {
   }
 
   // Tab configuration retrieval - returns tab setup for a group
+  // Mirrors real v14 behavior: null (not a fallback object) for unknown groups
   _getTabsConfig (group) {
-    return this.constructor.TABS[group] || { tabs: [], initial: null }
+    return this.constructor.TABS[group] ?? null
+  }
+
+  // Tab context preparation - mirrors ApplicationV2._prepareTabs
+  _prepareTabs (group) {
+    const { tabs, labelPrefix, initial = null } = this._getTabsConfig(group) ?? { tabs: [] }
+    this.tabGroups[group] ??= initial
+    return tabs.reduce((prepared, { id, cssClass, ...tabConfig }) => {
+      const active = this.tabGroups[group] === id
+      if (active) cssClass = [cssClass, 'active'].filter(c => c).join(' ')
+      const tab = { group, id, active, cssClass, ...tabConfig }
+      if (labelPrefix) tab.label ??= `${labelPrefix}.${id}`
+      prepared[id] = tab
+      return prepared
+    }, {})
   }
 
   // Position management
@@ -507,6 +525,31 @@ class DocumentSheetV2Mock {
     }
     this.element = null // Would be the DOM element in real Foundry
     this.id = `${this.constructor.name}-${this.document?.uuid || 'mock'}`
+  }
+
+  // Tab configuration - defines multi-panel interfaces
+  static TABS = {}
+
+  // Active tab per group - updated by changeTab
+  tabGroups = {}
+
+  // Tab configuration retrieval - mirrors real v14 behavior: null for unknown groups
+  _getTabsConfig (group) {
+    return this.constructor.TABS[group] ?? null
+  }
+
+  // Tab context preparation - mirrors ApplicationV2._prepareTabs
+  _prepareTabs (group) {
+    const { tabs, labelPrefix, initial = null } = this._getTabsConfig(group) ?? { tabs: [] }
+    this.tabGroups[group] ??= initial
+    return tabs.reduce((prepared, { id, cssClass, ...tabConfig }) => {
+      const active = this.tabGroups[group] === id
+      if (active) cssClass = [cssClass, 'active'].filter(c => c).join(' ')
+      const tab = { group, id, active, cssClass, ...tabConfig }
+      if (labelPrefix) tab.label ??= `${labelPrefix}.${id}`
+      prepared[id] = tab
+      return prepared
+    }, {})
   }
 
   // Document getter - returns the document this sheet manages

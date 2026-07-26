@@ -172,10 +172,11 @@ test.describe('DCC Sheet UI', () => {
 
         await openActorSheet(page, `V14 ${name} Tabs`)
 
-        // Get all tab IDs from the sheet navigation
+        // Get all tab IDs from the main sheet navigation (the equipment tab
+        // has its own subtab nav, which is not part of this contract)
         const tabIds = await page.evaluate(() => {
           const sheet = document.querySelector('.dcc.actor.sheet')
-          const tabs = sheet.querySelectorAll('nav [data-tab]')
+          const tabs = sheet.querySelectorAll('nav.sheet-tabs [data-tab]')
           return Array.from(tabs).map(t => t.dataset.tab)
         })
 
@@ -232,6 +233,58 @@ test.describe('DCC Sheet UI', () => {
       await page.click('.dcc.actor.sheet nav [data-tab="character"]')
       await page.waitForTimeout(500)
       await expect(page.locator('input[name="system.abilities.str.value"]')).toBeVisible()
+    })
+
+    test('equipment tab splits into weapons and goods subtabs (issue #816)', async ({ page }) => {
+      // Actor with content on both subtabs, including an item stowed in a
+      // container so the quantity arrows (issue #818) can be exercised.
+      const { torchId } = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'V14 Subtab Probe',
+          type: 'Player',
+          items: [{ type: 'weapon', name: 'V14 Subtab Sword', system: { melee: true } }]
+        })
+        const [container] = await actor.createEmbeddedDocuments('Item', [
+          { type: 'container', name: 'V14 Subtab Pack', system: { capacity: { weight: 50, items: 10 } } }
+        ])
+        const [torch] = await actor.createEmbeddedDocuments('Item', [
+          { type: 'equipment', name: 'V14 Subtab Torch', system: { weight: 1, quantity: 1, container: container.id } }
+        ])
+        return { torchId: torch.id }
+      })
+
+      await openActorSheet(page, 'V14 Subtab Probe')
+      await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
+      await page.waitForTimeout(500)
+
+      const sheet = page.locator('.dcc.actor.sheet')
+      const weaponsSubtab = sheet.locator('.equipment-subtabs [data-tab="weapons"]')
+      const goodsSubtab = sheet.locator('.equipment-subtabs [data-tab="goods"]')
+
+      // Weapons & Armor is the initial subtab: weapon rows visible, containers hidden
+      await expect(weaponsSubtab).toHaveClass(/active/)
+      await expect(sheet.locator('.weapon-list').first()).toBeVisible()
+      await expect(sheet.locator('.container-list')).toBeHidden()
+
+      // Switching to Goods shows containers/treasure and hides the weapon lists
+      await goodsSubtab.click()
+      await page.waitForTimeout(300)
+      await expect(goodsSubtab).toHaveClass(/active/)
+      await expect(sheet.locator('.container-list')).toBeVisible()
+      await expect(sheet.locator('.item-list-currency')).toBeVisible()
+      await expect(sheet.locator('.weapon-list').first()).toBeHidden()
+
+      // Items inside a container have working quantity arrows (issue #818)
+      const containedRow = sheet.locator(`.container-content-item[data-item-id="${torchId}"]`)
+      await expect(containedRow.locator('[data-action="increaseQty"]')).toBeVisible()
+      await containedRow.locator('[data-action="increaseQty"]').click()
+      await expect.poll(async () => {
+        return page.evaluate((id) => game.actors.getName('V14 Subtab Probe').items.get(id).system.quantity, torchId)
+      }, { timeout: 5000 }).toBe(2)
+
+      // The chosen subtab survives the re-render triggered by the item update
+      await expect(goodsSubtab).toHaveClass(/active/)
+      await expect(sheet.locator('.container-list')).toBeVisible()
     })
   })
 

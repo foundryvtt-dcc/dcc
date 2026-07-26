@@ -1,0 +1,27 @@
+{{!-- Ammunition Section --}}
+<div class="box-title">{{localize "DCC.Ammunition"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.ammunition}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.ammunition}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.ammunition decimals=2 sign=false}}</span>{{/if}}</div>
+<ol class="item-list box-border">
+  <li class="grid-col-span-5 item-list-header">
+    <div></div>
+    <div>{{localize "DCC.Name"}}</div>
+    <div>{{localize "DCC.Notes"}}</div>
+    <div>{{localize "DCC.Quantity"}}</div>
+    <div>
+      <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="ammunition" data-action="itemCreate"><i class="fas fa-plus"></i>
+        {{localize "DCC.Add"}}</a>
+    </div>
+  </li>
+  {{#each equipment.ammunition as |ammunition id|}}
+    <li class="grid-col-span-5 item item-draggable" data-item-id="{{ammunition._id}}">
+      <img class="item-draggable icon-filter" src="{{ammunition.img}}" title="{{ammunition.name}}" alt="{{ammunition.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
+      <div>{{ammunition.name}}</div>
+      <div>{{{ammunition.system.description.summary}}}</div>
+      <div><i class="fa-thin fa-up" data-action="increaseQty"></i> {{ammunition.system.quantity}} <i class="fa-thin fa-down" data-action="decreaseQty"></i></div>
+      <div>
+        <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
+        <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
+      </div>
+    </li>
+  {{/each}}
+</ol>
+{{!-- End Ammunition Section --}}

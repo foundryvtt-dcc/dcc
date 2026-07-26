@@ -146,6 +146,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' }
         ],
       initial: 'character'
+    },
+    equipment: { // subtabs within the equipment tab (rendered by the PC equipment template only)
+      tabs:
+        [
+          { id: 'weapons', group: 'equipment', label: 'DCC.WeaponsAndArmor' },
+          { id: 'goods', group: 'equipment', label: 'DCC.Goods' }
+        ],
+      initial: 'weapons'
     }
   }
 
@@ -216,6 +224,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       notesHTML: await prepareNotes(actor),
       parts: {},
       system: this.options.document.system,
+      // With more than one tab group defined, ApplicationV2 no longer
+      // auto-populates context.tabs — provide both groups explicitly
+      tabs: this._prepareTabs('sheet'),
+      equipmentTabs: this._prepareTabs('equipment'),
       ...preparedItems
     })
 
@@ -290,6 +302,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @inheritdoc */
   _getTabsConfig (group) {
     const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
+    if (!tabs) return null
 
     // Allow subclasses to define additional tabs (they also need to define CLASS_PARTS)
     if (this.constructor.CLASS_TABS && this.constructor.CLASS_TABS[group]?.tabs) {
@@ -299,15 +312,17 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     // Add in optional tabs
-    if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
-      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
-    }
-    if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
-      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
+    if (group === 'sheet') {
+      if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
+        tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
+      }
+      if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
+        tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
+      }
     }
 
     // Add end tabs (e.g. notes)
-    if (this.constructor.END_TABS && this.constructor.END_TABS[group].tabs) {
+    if (this.constructor.END_TABS && this.constructor.END_TABS[group]?.tabs) {
       for (const tab of this.constructor.END_TABS[group].tabs) {
         tabs.tabs.push(tab)
       }
