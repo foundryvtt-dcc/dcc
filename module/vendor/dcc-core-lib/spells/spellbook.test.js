@@ -79,6 +79,53 @@ describe("Spellbook Queries", () => {
             expect(entry?.mercurialEffect).toBeDefined();
             expect(entry?.mercurialEffect?.rollValue).toBe(75);
         });
+        it("should deep-copy a nested (roll-again) mercurial effect", () => {
+            const nested = {
+                rollValue: 99,
+                summary: "Turbulent magic; Cannibal magic",
+                description: "(45) Turbulent magic.\n\n(70) Cannibal magic.",
+                displayOnCast: true,
+                special: { action: "rollAgain", count: 2 },
+                subEffects: [
+                    {
+                        rollValue: 45,
+                        summary: "Turbulent magic",
+                        description: "Turbulent magic.",
+                        displayOnCast: true,
+                        effect: { type: "modifier", modifier: 1, data: { winds: true } },
+                    },
+                    {
+                        rollValue: 70,
+                        summary: "Cannibal magic",
+                        description: "Cannibal magic.",
+                        displayOnCast: false,
+                    },
+                ],
+            };
+            const spellbook = {
+                spells: [
+                    { spellId: "magic-missile", lost: false, mercurialEffect: nested },
+                ],
+            };
+            const entry = findSpellEntry(spellbook, "magic-missile");
+            const copy = entry?.mercurialEffect;
+            expect(copy?.subEffects).toHaveLength(2);
+            // Every nested container is a fresh object, not a shared reference
+            expect(copy?.subEffects).not.toBe(nested.subEffects);
+            expect(copy?.subEffects?.[0]).not.toBe(nested.subEffects?.[0]);
+            expect(copy?.subEffects?.[0]?.effect).not.toBe(nested.subEffects?.[0]?.effect);
+            expect(copy?.subEffects?.[0]?.effect?.data).not.toBe(nested.subEffects?.[0]?.effect?.data);
+            expect(copy?.special).not.toBe(nested.special);
+            // Mutating the copy leaves the original untouched
+            if (copy?.subEffects?.[0]?.effect) {
+                copy.subEffects[0].effect.modifier = 99;
+            }
+            if (copy?.special) {
+                copy.special.count = 99;
+            }
+            expect(nested.subEffects?.[0]?.effect?.modifier).toBe(1);
+            expect(nested.special?.count).toBe(2);
+        });
     });
     describe("knowsSpell", () => {
         it("should return true for known spell", () => {
