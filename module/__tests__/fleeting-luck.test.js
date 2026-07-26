@@ -99,6 +99,10 @@ describe('addUserContextOptions (Players list context menu, issue #826)', () => 
     expect(entry.visible(makeLi('gm'))).toBe(false)
   })
 
+  test('not visible (and no throw) for a stale/unknown user id', () => {
+    expect(entry.visible(makeLi('deleted-user'))).toBe(false)
+  })
+
   test('onClick awards one fleeting luck to the clicked user', () => {
     const give = vi.spyOn(FleetingLuck, 'give').mockResolvedValue(undefined)
     entry.onClick(new Event('click'), makeLi('p1'))

@@ -237,14 +237,12 @@ class FleetingLuck {
   static addUserContextOptions (app, options) {
     options.push({
       label: 'DCC.FleetingLuckGive',
-      icon: 'fas fa-balance-scale-left',
+      icon: 'fas fa-scale-unbalanced',
       visible: li => {
         const user = game.users.get(li.dataset.userId)
-        return FleetingLuck.enabled && game.user.isGM && FleetingLuck.isTrackedForUser(user)
+        return FleetingLuck.enabled && game.user.isGM && !!user && FleetingLuck.isTrackedForUser(user)
       },
-      onClick: (event, li) => {
-        FleetingLuck.give(li.dataset.userId, 1)
-      }
+      onClick: (event, li) => FleetingLuck.give(li.dataset.userId, 1)
     })
   }
 
