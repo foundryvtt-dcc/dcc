@@ -323,6 +323,16 @@ The **Dice Chain** effect mode is a DCC-specific feature that adjusts dice expre
 > through a separate configuration field, so a Dice Chain effect on this key
 > is never written back into the base value.
 
+A Dice Chain effect on the Action Die applies to every roll that uses the
+actor's action die: weapon attacks (each weapon's die is re-derived from
+the actor's action die unless the weapon sets its own override), ability
+checks, initiative, spell checks without an override die, and skill checks
+that don't define their own die — including all the standard thief skills
+(Pick Lock, Sneak Silently, etc., but not Cast Spell From Scroll, which
+has its own d10 die). There is no per-skill die key for those skills; to
+boost a single skill's total instead, target its `otherMod` field (see the
+Thief Skills attribute keys above).
+
 **Example: -1d to Action Die (Penalty)**
 1. Create a new effect
 2. Add a change:

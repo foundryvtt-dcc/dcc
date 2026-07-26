@@ -117,7 +117,9 @@ export function buildAttackInput (actor, weapon, actorActionDiceFormula) {
   const deed = parseDeedAttackBonus(toHitText)
   const attackBonus = deed ? deed.attackBonus : parseToHitBonus(toHitText)
   const actorActionDice = actorActionDiceFormula ?? (actor.getActionDice({ includeUntrained: true })[0]?.formula || '1d20')
-  const actionDie = normalizeLibDie(weapon.system?.actionDie || actorActionDice)
+  // Same fallback order as `rollToHit`: the weapon's derived die, then the
+  // sheet/AE-affected single action die, then the config preset (#813).
+  const actionDie = normalizeLibDie(weapon.system?.actionDie || actor.system?.attributes?.actionDice?.value || actorActionDice)
   const threatRange = parseInt(weapon.system?.critRange || actor.system.details?.critRange || 20) || 20
   const input = {
     attackType,

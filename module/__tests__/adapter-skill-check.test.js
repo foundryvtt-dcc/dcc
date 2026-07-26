@@ -278,6 +278,43 @@ test('NPC skill item with useDie:false + a value modifier inherits the actor act
   global.itemTypesMock.mockReset()
 })
 
+test('dice-chain-modified action die reaches skills without their own die', async () => {
+  // A Dice Chain Active Effect targets `system.attributes.actionDice.value`
+  // (the documented key — docs/user-guide/Active-Effects.md). Skills that
+  // inherit the actor's action die (thief skills, actionDieSkill here) must
+  // roll the effect-modified value, not the raw `config.actionDice`
+  // authoring string the effect never touches.
+  rollToMessageMock.mockClear()
+
+  const originalValue = actor.system.attributes.actionDice.value
+  actor.system.attributes.actionDice.value = '1d24' // "Action Die +1d" applied
+
+  await actor.rollSkillCheck('actionDieSkill')
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].die).toBe('d24')
+
+  actor.system.attributes.actionDice.value = originalValue
+})
+
+test('skill fallback die uses config action dice when the sheet die is blank', async () => {
+  // Fallback chain: a blank `attributes.actionDice.value` drops through to
+  // `getActionDice()[0]` (parsed from `config.actionDice`).
+  rollToMessageMock.mockClear()
+
+  const originalValue = actor.system.attributes.actionDice.value
+  actor.system.attributes.actionDice.value = ''
+
+  await actor.rollSkillCheck('actionDieSkill')
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].die).toBe('d20')
+
+  actor.system.attributes.actionDice.value = originalValue
+})
+
 test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
   rollToMessageMock.mockClear()
   global.dccRollCreateRollMock.mockClear()
