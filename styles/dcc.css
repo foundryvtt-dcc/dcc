@@ -627,7 +627,7 @@
 .dcc .armor-list {
   column-gap: 5px;
   display: grid;
-  grid-template-columns: min-content 30px minmax(30px, 1fr) 45px 53px 74px 82px 39px;
+  grid-template-columns: min-content 30px minmax(30px, 1fr) 45px 53px 74px 82px 48px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
 }
@@ -981,7 +981,7 @@ a.inline-roll {
 .dcc .weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 39px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 48px;
   grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
@@ -997,7 +997,7 @@ a.inline-roll {
 .dcc .weapon-list.npc-weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
+  grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 48px;
 }
 .dcc .weapon-list .weapon-list-header {
   display: grid;
@@ -1527,6 +1527,22 @@ a.inline-roll {
   margin-bottom: 2px;
 }
 
+/* Keep "+ Add" (and other control links) on a single line */
+.dcc a.item-control {
+  white-space: nowrap;
+}
+
+/* Item image cell that can also hold a roll/cast button (mirrors the
+   weapon row's attack-button placement next to the item image) */
+.dcc .item-image-wrapper {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+.dcc .item-image-wrapper .item-control {
+  font-size: 14px;
+}
+
 .dcc .conversions {
   margin-top: 3px;
 }
@@ -1554,10 +1570,18 @@ a.inline-roll {
   display: grid;
   font-family: var(--system-data-font), serif;
   font-size: 12px;
-  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 48px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
+  /* Row control cells: keep up to three icons (cast/edit/delete) on one line */
+}
+.dcc .item-list .item > div:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  white-space: nowrap;
 }
 
 .dcc .item-list-spells {
@@ -1574,7 +1598,7 @@ a.inline-roll {
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 48px;
 }
 .dcc .item-list-currency .treasure-notes {
   grid-column: span 5;

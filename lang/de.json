@@ -99,7 +99,6 @@
   "DCC.ActorTypeNPC": "NSC-Statblock(s)",
   "DCC.ActorTypePlayer": "Spieler-Statblock(s)",
   "DCC.Add": "Neu",
-  "DCC.AddContainer": "Behälter hinzufügen",
   "DCC.AddClassLevelToInitiative": "Stufe zur Initiative addieren",
   "DCC.AddClassLevelToInitiativeConfig": "Klassenstufe zur Initiative addieren",
   "DCC.AddClassLevelToInitiativeConfigHint": "Klassenstufe zur Initiative addieren (z.B. für Krieger)",

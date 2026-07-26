@@ -99,7 +99,6 @@
   "DCC.ActorTypeNPC": "NPC Statline(s)",
   "DCC.ActorTypePlayer": "Player Statblock(s)",
   "DCC.Add": "Add",
-  "DCC.AddContainer": "Add Container",
   "DCC.AddClassLevelToInitiative": "Add Class Level to Initiative",
   "DCC.AddClassLevelToInitiativeConfig": "Add Class Level to Initiative",
   "DCC.AddClassLevelToInitiativeConfigHint": "Add Class Level to Initiative (e.g. for Warriors)",

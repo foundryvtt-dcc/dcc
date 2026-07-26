@@ -30,6 +30,23 @@
   }
 }
 
+/* Keep "+ Add" (and other control links) on a single line */
+.dcc a.item-control {
+  white-space: nowrap;
+}
+
+/* Item image cell that can also hold a roll/cast button (mirrors the
+   weapon row's attack-button placement next to the item image) */
+.dcc .item-image-wrapper {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+
+  .item-control {
+    font-size: 14px;
+  }
+}
+
 .dcc .conversions {
   margin-top: 3px;
 }
@@ -57,10 +74,19 @@
   display: grid;
   font-family: var(--system-data-font), serif;
   font-size: 12px;
-  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 48px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
+
+  /* Row control cells: keep up to three icons (cast/edit/delete) on one line */
+  .item > div:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    white-space: nowrap;
+  }
 }
 
 .dcc .item-list-spells {
@@ -78,7 +104,7 @@
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 48px;
 
   .treasure-notes {
     grid-column: span 5;

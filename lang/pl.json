@@ -99,7 +99,6 @@
   "DCC.ActorTypeNPC": "Linia(e) Statystyk BN",
   "DCC.ActorTypePlayer": "Blok(i) Statystyk Gracza",
   "DCC.Add": "Dodaj",
-  "DCC.AddContainer": "Dodaj pojemnik",
   "DCC.AddClassLevelToInitiative": "Dodaj Poziom Klasy do Inicjatywy",
   "DCC.AddClassLevelToInitiativeConfig": "Dodaj Poziom Klasy do Inicjatywy",
   "DCC.AddClassLevelToInitiativeConfigHint": "Dodaj Poziom Klasy do Inicjatywy (np. dla Wojowników)",

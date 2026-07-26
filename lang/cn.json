@@ -99,7 +99,6 @@
   "DCC.ActorTypeNPC": "NPC 数据条",
   "DCC.ActorTypePlayer": "PC 数据块",
   "DCC.Add": "添加",
-  "DCC.AddContainer": "添加容器",
   "DCC.AddClassLevelToInitiative": "对先攻添加职业等级",
   "DCC.AddClassLevelToInitiativeConfig": "对先攻添加职业等级",
   "DCC.AddClassLevelToInitiativeConfigHint": "对先攻添加职业等级（譬如战士）",

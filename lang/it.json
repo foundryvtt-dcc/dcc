@@ -99,7 +99,6 @@
   "DCC.ActorTypeNPC": "NPC Statline(s)",
   "DCC.ActorTypePlayer": "Statistiche del Personaggio",
   "DCC.Add": "",
-  "DCC.AddContainer": "Aggiungi contenitore",
   "DCC.AddClassLevelToInitiative": "Aggiungi Livello di Classe all'Iniziativa",
   "DCC.AddClassLevelToInitiativeConfig": "Aggiungi Livello di Classe all'Iniziativa",
   "DCC.AddClassLevelToInitiativeConfigHint": "Aggiunge Livello di Classe all'Iniziativa (es.: per Guerrieri)",

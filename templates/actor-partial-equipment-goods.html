@@ -13,14 +13,16 @@
 {{/inline}}
 {{#* inline "ItemRow"}}
   <li class="grid-col-span-5 item item-draggable" data-item-id="{{item._id}}">
-    <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
+    <div class="item-image-wrapper">
+      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
+      {{#if item.system.spell.name}}
+        <a class="item-control rollable" title="{{localize 'DCC.CastSpell'}}: {{item.system.spell.name}}{{#if item.system.charges.max}} ({{item.system.charges.value}}/{{item.system.charges.max}}){{/if}}" data-action="castEquipmentSpell"><i class="fas fa-wand-sparkles"></i></a>
+      {{/if}}
+    </div>
     <div>{{item.name}}</div>
     <div>{{{item.system.description.summary}}}</div>
     <div><i class="fa-thin fa-up" data-action="increaseQty"></i> {{item.system.quantity}} <i class="fa-thin fa-down" data-action="decreaseQty"></i></div>
     <div>
-      {{#if item.system.spell.name}}
-        <a class="item-control rollable" title="{{localize 'DCC.CastSpell'}}: {{item.system.spell.name}}{{#if item.system.charges.max}} ({{item.system.charges.value}}/{{item.system.charges.max}}){{/if}}" data-action="castEquipmentSpell"><i class="fas fa-wand-sparkles"></i></a>
-      {{/if}}
       <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
       <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
     </div>
@@ -40,8 +42,6 @@
     <div>
       <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="equipment" data-action="itemCreate"><i class="fas fa-plus"></i>
         {{localize "DCC.Add"}}</a>
-      <a class="item-control" title="{{localize 'DCC.AddContainer'}}" data-tooltip="{{localize 'DCC.AddContainer'}}" data-type="container" data-action="itemCreate"><i class="fas fa-plus"></i>
-        <i class="fa-solid fa-box-open"></i></a>
     </div>
   </li>
   {{#each equipment.equipment as |equipment id|}}
