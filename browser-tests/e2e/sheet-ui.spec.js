@@ -309,7 +309,11 @@ test.describe('DCC Sheet UI', () => {
         let actor
         try {
           actor = await Actor.create({ name: 'V14 Inventory Probe', type: 'Player' })
-          const [, , , , , , container] = await actor.createEmbeddedDocuments('Item', [
+          // createEmbeddedDocuments does NOT guarantee the returned array
+          // matches input order — positional destructuring here intermittently
+          // grabbed a non-container item, linking Probe Stowed to the wrong
+          // document and flaking containedCount to 0. Resolve by type instead.
+          const created = await actor.createEmbeddedDocuments('Item', [
             { type: 'weapon', name: 'Probe Sword', system: { melee: true, weight: 3, quantity: 1 } },
             { type: 'weapon', name: 'Probe Bow', system: { melee: false, weight: 2, quantity: 1 } },
             { type: 'armor', name: 'Probe Mail', system: { weight: 10, quantity: 1 } },
@@ -318,18 +322,16 @@ test.describe('DCC Sheet UI', () => {
             { type: 'skill', name: 'Probe Skill', system: { config: { useDie: true }, die: '1d16' } },
             { type: 'container', name: 'Probe Pack', system: { capacity: { weight: 20, items: 5 } } }
           ])
+          const container = created.find(i => i.type === 'container')
           await actor.createEmbeddedDocuments('Item', [
             { type: 'equipment', name: 'Probe Stowed', system: { weight: 4, quantity: 1, container: container.id } }
           ])
 
-          // The contained-item linkage can lag a tick behind the awaited
-          // createEmbeddedDocuments under the shared-session page, so the
-          // container's `contents` getter (parent.items.filter by container id)
-          // occasionally reports empty if read immediately — which flaked
-          // containedCount to 0 in full-suite runs. Wait for the container to
-          // actually see its stowed item before driving _prepareContext.
+          // The contained-item linkage can still lag a tick behind the awaited
+          // createEmbeddedDocuments under the shared-session page; wait for the
+          // container to see its stowed item before driving _prepareContext.
           const probeContainer = actor.items.get(container.id)
-          for (let i = 0; i < 200 && probeContainer.contents.length < 1; i++) {
+          for (let i = 0; i < 40 && probeContainer.contents.length < 1; i++) {
             await new Promise(resolve => setTimeout(resolve, 25))
           }
 
@@ -452,10 +454,13 @@ test.describe('DCC Sheet UI', () => {
         let actor
         try {
           actor = await Actor.create({ name: 'V14 Drag Probe', type: 'Player' })
-          const [weapon, spell] = await actor.createEmbeddedDocuments('Item', [
+          // Return order is not guaranteed — resolve by type.
+          const dragItems = await actor.createEmbeddedDocuments('Item', [
             { type: 'weapon', name: 'Drag Sword', system: { melee: true } },
             { type: 'spell', name: 'Drag Bolt', system: { level: 1 } }
           ])
+          const weapon = dragItems.find(i => i.type === 'weapon')
+          const spell = dragItems.find(i => i.type === 'spell')
           const sheet = actor.sheet
 
           // Synthesize a dragstart event whose setData call we capture. _onDragStart
@@ -512,10 +517,13 @@ test.describe('DCC Sheet UI', () => {
         let actor
         try {
           actor = await Actor.create({ name: 'V14 Drop Probe', type: 'Player' })
-          const [container, stowable] = await actor.createEmbeddedDocuments('Item', [
+          // Return order is not guaranteed — resolve by type.
+          const dropItems = await actor.createEmbeddedDocuments('Item', [
             { type: 'container', name: 'V14 Drop Pack', system: { capacity: { weight: 50, items: 10 } } },
             { type: 'equipment', name: 'V14 Drop Torch', system: { weight: 1, quantity: 1 } }
           ])
+          const container = dropItems.find(i => i.type === 'container')
+          const stowable = dropItems.find(i => i.type === 'equipment')
           const sheet = actor.sheet
 
           // _handleContainerDrop resolves the dropped item via fromUuid, whose
