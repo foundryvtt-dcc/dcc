@@ -433,3 +433,121 @@ test('item transfer respects result from parent _onDrop', async () => {
   // Cleanup
   Object.getPrototypeOf(Object.getPrototypeOf(sheet))._onDrop.mockRestore()
 })
+
+/* -------------------------------------------- */
+/*  Tab configuration (equipment subtabs)       */
+/* -------------------------------------------- */
+
+test('equipment tab group defines weapons and goods subtabs', () => {
+  const actor = createActorWithItems('actor-tabs-1', [])
+  const sheet = createActorSheet(actor)
+
+  const config = sheet._getTabsConfig('equipment')
+  expect(config.tabs.map(t => t.id)).toEqual(['weapons', 'goods'])
+  expect(config.initial).toBe('weapons')
+  expect(config.tabs.every(t => t.group === 'equipment')).toBe(true)
+})
+
+test('optional skills and spells tabs only join the sheet group', () => {
+  const actor = createActorWithItems('actor-tabs-2', [])
+  actor.system.config.showSkills = true
+  actor.system.config.showSpells = true
+  const sheet = createActorSheet(actor)
+
+  const sheetConfig = sheet._getTabsConfig('sheet')
+  expect(sheetConfig.tabs.map(t => t.id)).toContain('skills')
+  expect(sheetConfig.tabs.map(t => t.id)).toContain('wizardSpells')
+
+  const equipmentConfig = sheet._getTabsConfig('equipment')
+  expect(equipmentConfig.tabs.map(t => t.id)).toEqual(['weapons', 'goods'])
+})
+
+test('_getTabsConfig returns null for a group the sheet does not define', () => {
+  const actor = createActorWithItems('actor-tabs-3', [])
+  const sheet = createActorSheet(actor)
+
+  expect(sheet._getTabsConfig('nonexistent')).toBeNull()
+})
+
+test('_prepareTabs marks the initial equipment subtab active', () => {
+  const actor = createActorWithItems('actor-tabs-4', [])
+  const sheet = createActorSheet(actor)
+
+  const tabs = sheet._prepareTabs('equipment')
+  expect(tabs.weapons.active).toBe(true)
+  expect(tabs.weapons.cssClass).toContain('active')
+  expect(tabs.goods.active).toBe(false)
+
+  // Switching the group state flips the active subtab on the next prepare
+  sheet.tabGroups.equipment = 'goods'
+  const tabsAfter = sheet._prepareTabs('equipment')
+  expect(tabsAfter.goods.active).toBe(true)
+  expect(tabsAfter.weapons.active).toBe(false)
+})
+
+/* -------------------------------------------- */
+/*  Quantity increment/decrement                */
+/* -------------------------------------------- */
+
+test('decreaseQty floors quantity at zero', async () => {
+  const item = new DCCItem({
+    _id: 'item-qty-0',
+    name: 'Empty Quiver Arrows',
+    type: 'ammunition',
+    system: { quantity: 0 }
+  })
+  const actor = createActorWithItems('actor-qty-1', [item])
+  const sheet = createActorSheet(actor)
+  item.update = vi.fn()
+
+  const target = { dataset: { itemId: 'item-qty-0' } }
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 0 })
+})
+
+test('increaseQty and decreaseQty adjust quantity by one', async () => {
+  const item = new DCCItem({
+    _id: 'item-qty-2',
+    name: 'Arrows',
+    type: 'ammunition',
+    system: { quantity: 2 }
+  })
+  const actor = createActorWithItems('actor-qty-2', [item])
+  const sheet = createActorSheet(actor)
+  item.update = vi.fn()
+
+  const target = { dataset: { itemId: 'item-qty-2' } }
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.increaseQty.call(sheet, {}, target)
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 3 })
+
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+  expect(item.update).toHaveBeenCalledWith({ 'system.quantity': 1 })
+})
+
+test('quantity actions ignore a missing item', async () => {
+  const actor = createActorWithItems('actor-qty-3', [])
+  const sheet = createActorSheet(actor)
+  const target = { dataset: { itemId: 'no-such-item' } }
+
+  // Must not throw dereferencing a missing item
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.increaseQty.call(sheet, {}, target)
+  await DCCActorSheet.DEFAULT_OPTIONS.actions.decreaseQty.call(sheet, {}, target)
+})
+
+test('a new tab group registered via CLASS_TABS is seeded instead of dropped', () => {
+  class CustomTabsSheet extends DCCActorSheet {
+    static CLASS_TABS = {
+      custom: { tabs: [{ id: 'lore', group: 'custom', label: 'X.Lore' }] }
+    }
+  }
+  const actor = createActorWithItems('actor-tabs-5', [])
+  const sheet = new CustomTabsSheet({
+    document: actor,
+    dragDrop: [{ dragSelector: '[data-drag="true"]', dropSelector: '.dcc.actor' }]
+  })
+
+  const config = sheet._getTabsConfig('custom')
+  expect(config).not.toBeNull()
+  expect(config.tabs.map(t => t.id)).toEqual(['lore'])
+})

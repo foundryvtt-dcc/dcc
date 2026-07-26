@@ -1,108 +1,124 @@
 {{!-- Equipment Tab --}}
-<section class="tab equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}" id="equipment">
-  {{!-- Melee Weapons --}}
-  {{#* inline "weaponRow"}}
-    <li class="grid-col-span-8 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
-      <input type="checkbox"
-             name="items.{{id}}.system.equipped"
-             data-dtype="Boolean" {{checked weapon.system.equipped}}/>
-      <img class="icon-filter" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
-           width="22" height="22" data-drag="true" data-drag-action="item">
-      <div class="attack-buttons">
-        <div class="rollable weapon-button icon-filter {{#if weapon.system.twoWeaponPrimary}}has-two-weapon{{else if weapon.system.twoWeaponSecondary}}has-two-weapon{{/if}}"
-             data-action="rollWeaponAttack"
-             data-drag="true"
-             data-drag-action="weapon"
-             {{#if weapon.system.twoWeaponPrimary}}data-tooltip="{{localize 'DCC.Roll'}} {{localize 'DCC.TwoWeaponFighting'}} - {{localize 'DCC.2w-primary'}}"
-             {{else if weapon.system.twoWeaponSecondary}}data-tooltip="{{localize 'DCC.Roll'}} {{localize 'DCC.TwoWeaponFighting'}} - {{localize 'DCC.2w-off-hand'}}"{{else}}
-             data-tooltip="{{localize 'DCC.Roll'}}"{{/if}}>
-          {{#if weapon.system.twoWeaponPrimary}}
-            <i class="fas fa-2 two-weapon-overlay two-weapon-primary"></i>
-          {{else if weapon.system.twoWeaponSecondary}}
-            <i class="fas fa-2 two-weapon-overlay two-weapon-secondary"></i>
-          {{else}}
-            &nbsp;
+<section class="tab equipment-subtabbed equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}" id="equipment">
+  {{!-- Equipment Subtab Navigation --}}
+  <nav class="tabs equipment-subtabs" data-group="equipment">
+    {{#each equipmentTabs as |tab|}}
+      <a class="{{tab.cssClass}}" data-action="tab" data-group="{{tab.group}}" data-tab="{{tab.id}}">{{localize tab.label}}</a>
+    {{/each}}
+  </nav>
+
+  {{!-- Weapons & Armor Subtab --}}
+  <section class="tab equipment-subtab {{equipmentTabs.weapons.cssClass}}" data-tab="weapons" data-group="equipment">
+    {{!-- Melee Weapons --}}
+    {{#* inline "weaponRow"}}
+      <li class="grid-col-span-8 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
+        <input type="checkbox"
+               name="items.{{id}}.system.equipped"
+               data-dtype="Boolean" {{checked weapon.system.equipped}}/>
+        <img class="icon-filter" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
+             width="22" height="22" data-drag="true" data-drag-action="item">
+        <div class="attack-buttons">
+          <div class="rollable weapon-button icon-filter {{#if weapon.system.twoWeaponPrimary}}has-two-weapon{{else if weapon.system.twoWeaponSecondary}}has-two-weapon{{/if}}"
+               data-action="rollWeaponAttack"
+               data-drag="true"
+               data-drag-action="weapon"
+               {{#if weapon.system.twoWeaponPrimary}}data-tooltip="{{localize 'DCC.Roll'}} {{localize 'DCC.TwoWeaponFighting'}} - {{localize 'DCC.2w-primary'}}"
+               {{else if weapon.system.twoWeaponSecondary}}data-tooltip="{{localize 'DCC.Roll'}} {{localize 'DCC.TwoWeaponFighting'}} - {{localize 'DCC.2w-off-hand'}}"{{else}}
+               data-tooltip="{{localize 'DCC.Roll'}}"{{/if}}>
+            {{#if weapon.system.twoWeaponPrimary}}
+              <i class="fas fa-2 two-weapon-overlay two-weapon-primary"></i>
+            {{else if weapon.system.twoWeaponSecondary}}
+              <i class="fas fa-2 two-weapon-overlay two-weapon-secondary"></i>
+            {{else}}
+              &nbsp;
+            {{/if}}
+          </div>
+          {{#if canBackstab}}
+            <div class="rollable backstab-button icon-filter" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon">&nbsp;</div>
           {{/if}}
         </div>
-        {{#if canBackstab}}
-          <div class="rollable backstab-button icon-filter" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon">&nbsp;</div>
+        <input class="weapon-name" type="text"
+               name="items.{{id}}.name"
+               value="{{weapon.name}}"/>
+        <input class="disabled" type="text"
+               name="items.{{id}}.system.toHit"
+               value="{{weapon.system.toHit}}"
+               readonly
+        />
+        <input class="weapon-damage disabled" type="text"
+               name="items.{{id}}.system.damage"
+               value="{{weapon.system.damage}}"
+               readonly
+        />
+        {{#if melee}}
+          <input class="weapon-notes" type="text"
+                 name="items.{{id}}.system.description.summary"
+                 value="{{{weapon.system.description.summary}}}"/>
+        {{else}}
+          <input class="weapon-notes" type="text"
+                 name="items.{{id}}.system.range"
+                 value="{{weapon.system.range}}"/>
         {{/if}}
-      </div>
-      <input class="weapon-name" type="text"
-             name="items.{{id}}.name"
-             value="{{weapon.name}}"/>
-      <input class="disabled" type="text"
-             name="items.{{id}}.system.toHit"
-             value="{{weapon.system.toHit}}"
-             readonly
-      />
-      <input class="weapon-damage disabled" type="text"
-             name="items.{{id}}.system.damage"
-             value="{{weapon.system.damage}}"
-             readonly
-      />
-      {{#if melee}}
-        <input class="weapon-notes" type="text"
-               name="items.{{id}}.system.description.summary"
-               value="{{{weapon.system.description.summary}}}"/>
-      {{else}}
-        <input class="weapon-notes" type="text"
-               name="items.{{id}}.system.range"
-               value="{{weapon.system.range}}"/>
-      {{/if}}
-      <div>
-        <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
-        <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
-      </div>
-    </li>
-  {{/inline}}
-  <div class="box-title">{{localize "DCC.MeleeWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.melee}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.melee decimals=2 sign=false}}</span>{{/if}}</div>
-  <ol class="weapon-list box-border">
-    <li class="grid-col-span-8 weapon-list-header">
-      <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-      <div></div>
-      <div title="{{localize 'DCC.Roll'}}"></div>
-      <div>{{localize "DCC.Name"}}</div>
-      <div>{{localize "DCC.ToHit"}}</div>
-      <div>{{localize "DCC.Damage"}}</div>
-      <div>{{localize "DCC.Notes"}}</div>
-      <div>
-        <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate"
-           data-melee="true">
-          <i class="fas fa-plus"></i>
-          {{localize "DCC.Add"}}
-        </a>
-      </div>
-    </li>
-    {{#each equipment.weapons.melee as |weapon index|}}
-      {{> weaponRow weapon=weapon id=weapon._id melee=true index=index canBackstab=../system.config.showBackstab}}
-    {{/each}}
-  </ol>
+        <div>
+          <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
+          <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
+        </div>
+      </li>
+    {{/inline}}
+    <div class="box-title">{{localize "DCC.MeleeWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.melee}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.melee decimals=2 sign=false}}</span>{{/if}}</div>
+    <ol class="weapon-list box-border">
+      <li class="grid-col-span-8 weapon-list-header">
+        <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+        <div></div>
+        <div title="{{localize 'DCC.Roll'}}"></div>
+        <div>{{localize "DCC.Name"}}</div>
+        <div>{{localize "DCC.ToHit"}}</div>
+        <div>{{localize "DCC.Damage"}}</div>
+        <div>{{localize "DCC.Notes"}}</div>
+        <div>
+          <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate"
+             data-melee="true">
+            <i class="fas fa-plus"></i>
+            {{localize "DCC.Add"}}
+          </a>
+        </div>
+      </li>
+      {{#each equipment.weapons.melee as |weapon index|}}
+        {{> weaponRow weapon=weapon id=weapon._id melee=true index=index canBackstab=../system.config.showBackstab}}
+      {{/each}}
+    </ol>
 
-  {{!-- Ranged Weapons --}}
-  <div class="box-title">{{localize "DCC.RangedWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.ranged}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.ranged decimals=2 sign=false}}</span>{{/if}}</div>
-  <ol class="weapon-list box-border">
-    <li class="grid-col-span-8 weapon-list-header">
-      <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-      <div></div>
-      <div title="{{localize 'DCC.Roll'}}"></div>
-      <div>{{localize "DCC.Name"}}</div>
-      <div>{{localize "DCC.ToHit"}}</div>
-      <div>{{localize "DCC.Damage"}}</div>
-      <div>{{localize "DCC.Range"}}</div>
-      <div>
-        <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate"
-           data-melee="false">
-          <i class="fas fa-plus"></i>
-          {{localize "DCC.Add"}}
-        </a>
-      </div>
-    </li>
-    {{#each equipment.weapons.ranged as |weapon index|}}
-      {{> weaponRow weapon=weapon id=weapon._id melee=false index=index canBackstab=../system.config.showBackstab}}
-    {{/each}}
-  </ol>
+    {{!-- Ranged Weapons --}}
+    <div class="box-title">{{localize "DCC.RangedWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.ranged}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.ranged decimals=2 sign=false}}</span>{{/if}}</div>
+    <ol class="weapon-list box-border">
+      <li class="grid-col-span-8 weapon-list-header">
+        <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+        <div></div>
+        <div title="{{localize 'DCC.Roll'}}"></div>
+        <div>{{localize "DCC.Name"}}</div>
+        <div>{{localize "DCC.ToHit"}}</div>
+        <div>{{localize "DCC.Damage"}}</div>
+        <div>{{localize "DCC.Range"}}</div>
+        <div>
+          <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate"
+             data-melee="false">
+            <i class="fas fa-plus"></i>
+            {{localize "DCC.Add"}}
+          </a>
+        </div>
+      </li>
+      {{#each equipment.weapons.ranged as |weapon index|}}
+        {{> weaponRow weapon=weapon id=weapon._id melee=false index=index canBackstab=../system.config.showBackstab}}
+      {{/each}}
+    </ol>
 
-  {{> systems/dcc/templates/actor-partial-npc-equipment.html }}
+    {{> systems/dcc/templates/actor-partial-equipment-ammunition.html }}
+    {{> systems/dcc/templates/actor-partial-equipment-armor.html }}
+  </section>
+
+  {{!-- Goods Subtab --}}
+  <section class="tab equipment-subtab {{equipmentTabs.goods.cssClass}}" data-tab="goods" data-group="equipment">
+    {{> systems/dcc/templates/actor-partial-equipment-goods.html }}
+  </section>
 </section>
 {{!-- End Equipment Tab --}}

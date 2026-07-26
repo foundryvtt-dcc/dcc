@@ -94,3 +94,6 @@ browser-tests/**/.env
 !docs/**/*.jpeg
 !docs/**/*.gif
 /.claude/worktrees/
+
+# Scratch area for doc-screenshot capture work — never commit
+/tmp-shots/

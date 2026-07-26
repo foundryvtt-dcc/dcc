@@ -197,7 +197,6 @@
   "DCC.ConfigureSheet": "Configurar",
   "DCC.ConfigureSheetHint": "Configurar opciones específicas de DCC para este personaje",
   "DCC.Container": "Contenedor",
-  "DCC.Containers": "Contenedores",
   "DCC.ContainerCannotContainSelf": "Un contenedor no puede contenerse a sí mismo.",
   "DCC.ContainerCapacityItems": "Capacidad de objetos",
   "DCC.ContainerCapacityLabel": "Capacidad",
@@ -365,6 +364,7 @@
   "DCC.FumbleTableUnavailable": "Tabla de Pifias no disponible",
   "DCC.Funds": "Fondos",
   "DCC.Generic": "Genérico",
+  "DCC.Goods": "Bienes",
   "DCC.Halfling": "Mediano",
   "DCC.HalflingAbilities": "Habilidades de Mediano",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Mediano}",
@@ -985,6 +985,7 @@
     "SubmitLabel": "",
     "LogoAlt": "Logo DCC RPG"
   },
+  "DCC.WeaponsAndArmor": "Armas y Armadura",
   "DCC.Weight": "Peso",
   "DCC.Wizard": "Mago",
   "DCC.WizardAbilities": "Habilidades de Mago",

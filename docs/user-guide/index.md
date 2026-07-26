@@ -22,13 +22,11 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Thief](Thief.md)
 * [Wizard](Wizard.md)
 * [Level Up](Level-Up.md)
-* [Creating a Custom Class](Creating-a-Custom-Class.md)
+* [Adding Level Up Data](Adding-Level-Up-Data.md)
 * [Party Sheet](Party-Sheet.md)
 
 ## Spells
 * [Creating a Spell](Creating-a-Spell.md)
-* [Creating Spell Tables](Creating-Spell-Tables.md)
-* [Spells - Putting it All Together](Spells---Putting-it-All-Together.md)
 
 ## Sheet Options
 * [Action Dice](Action-Dice.md)

@@ -102,6 +102,23 @@
     }
   }
 
+  /* Equipment subtabs (Weapons & Armor / Goods) */
+  .tab.equipment-subtabbed.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  nav.equipment-subtabs {
+    font-family: var(--system-heading-font), serif;
+    flex: 0 0 auto;
+    justify-content: space-evenly;
+    /* Counteract core nav.tabs line-height: 2.5 — match the main sheet nav */
+    line-height: 1.5;
+    max-height: 25px;
+    border-top: 0;
+    margin: 0 0 6px;
+  }
+
   a[data-tab] {
     padding: 4px 0 4px 0;
 
@@ -199,8 +216,13 @@
     content: '\f6eb';
   }
 
-  a[data-tab='weapon']::before {
+  a[data-tab='weapon']::before,
+  a[data-tab='weapons']::before {
     content: '\f71d';
+  }
+
+  a[data-tab='goods']::before {
+    content: '\f290';
   }
 
   a[data-tab='wizard']::before {

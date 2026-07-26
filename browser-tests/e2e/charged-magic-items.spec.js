@@ -211,6 +211,8 @@ test.describe('Charged Magic Items E2E Tests', () => {
     }, fixtures)
     await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
     await page.click('.dcc.actor.sheet a[data-action="tab"][data-tab="equipment"]')
+    // Equipment items live on the Goods subtab of the equipment tab
+    await page.click('.dcc.actor.sheet a[data-action="tab"][data-group="equipment"][data-tab="goods"]')
 
     // The wand row shows a cast button for the attached spell
     const castButton = page.locator('.dcc.actor.sheet [data-action="castEquipmentSpell"]')

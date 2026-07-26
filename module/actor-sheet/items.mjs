@@ -279,6 +279,9 @@ export async function prepareItems (actor, {
       armor: armorWeight,
       containers: containersWeight,
       equipment: equipmentWeight,
+      // Containers render inside the Equipment list, so its section weight
+      // covers both loose equipment and containers (with their contents)
+      equipmentWithContainers: equipmentWeight + containersWeight,
       ammunition: ammunitionWeight,
       mounts: mountsWeight,
       treasure: treasureWeight,

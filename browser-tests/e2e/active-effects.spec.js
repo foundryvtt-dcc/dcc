@@ -677,9 +677,18 @@ test.describe('DCC Active Effects', () => {
           }])
           const weapon = actor.items.getName('V14-Chain-Sword')
           const preparedDie = weapon.system.actionDie
+          const before = game.messages.size
           await actor.rollWeaponAttack(weapon.id)
+          // The attack card's ChatMessage.create is fire-and-forget — wait for
+          // the new message to land instead of racing it. Surface a timeout
+          // explicitly so a late/missing card fails as "card never arrived"
+          // rather than asserting against a stale message from a prior test.
+          for (let i = 0; i < 40 && game.messages.size === before; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          const timedOut = game.messages.size === before
           const message = game.messages.contents[game.messages.contents.length - 1]
-          return { preparedDie, content: message?.content ?? '' }
+          return { preparedDie, timedOut, content: message?.content ?? '' }
         } finally {
           if (actor) await actor.delete().catch(() => {})
         }
@@ -687,6 +696,7 @@ test.describe('DCC Active Effects', () => {
 
       // The effect reached the prepared weapon die and the rolled formula.
       expect(result.preparedDie).toBe('1d24')
+      expect(result.timedOut).toBe(false)
       expect(result.content).toContain('1d24')
     })
   })

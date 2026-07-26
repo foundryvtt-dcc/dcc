@@ -76,6 +76,16 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 ## Standalone settings
 
+**Enable Fleeting Luck** will enable Fleeting Luck for the system. If this is unchecked, Fleeting Luck will not be available.
+
+**Automate Fleeting Luck** will automatically add Fleeting Luck on criticals. If this is unchecked, it will not automatically apply Fleeting Luck.
+
+**Active Variant** selects the active ruleset variant. Variant modules (XCC, MCC, etc.) register themselves with the system; their styles and class lists apply when their variant is selected. Leave this on **Dungeon Crawl Classics** unless a variant module tells you otherwise.
+
+**Enable Mighty Deed Tables** offers a Mighty Deed table prompt on attack cards when a warrior's deed die succeeds (3 or higher). See [Mighty Deeds](Mighty-Deeds.md).
+
+**Prompt for Item Deletion** asks for confirmation before deleting equipment, spells, or custom skills from character sheets.
+
 **Show rolls as emotes** will change rolls made from character sheets in to compact emotes in the chat log.
 
 **Automate Cleric Disapproval** will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
@@ -84,10 +94,14 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Show the Modify Roll dialog by default** will show the Modify Roll dialog when you roll from the character sheet. If this is unchecked, you will need to cmd/ctrl click to show the Modify Roll dialog.
 
-**Enable Fleeting Luck** will enable Fleeting Luck for the system. If this is unchecked, Fleeting Luck will not be available.
+**Enable Ability Score Log** tracks ability score changes on Player sheets with a reason, recovery expectation, and a per-actor history log — useful for spellburn and stat drain. Click an ability score to record a change.
 
-**Automate Fleeting Luck** will automatically add Fleeting Luck on criticals. If this is unchecked, it will not automatically apply Fleeting Luck.
+**Disable icon filter in dark theme** turns off the sepia filter applied to item and sheet icons when using the dark theme (per player).
 
-**Show Welcome Dialog on Startup** will show the Welcome Dialog when you first open the game. If this is unchecked, it will not show the Welcome Dialog.
+**Chat Cards Use App Theme** makes chat cards follow the core application light/dark theme setting instead of the interface theme (per player).
 
 **Strict Critical Hit Rules** when enabled, makes critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24. This setting follows strict RAW interpretation of how critical hits work with the dice chain.
+
+**Coin Weight (coins per pound)** sets how many coins equal one pound of weight for encumbrance. Default is 10 (B/X style). Set to 0 to disable coin weight entirely.
+
+**Show Welcome Dialog on Startup** will show the Welcome Dialog when you first open the game. If this is unchecked, it will not show the Welcome Dialog.

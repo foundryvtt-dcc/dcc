@@ -197,7 +197,6 @@
   "DCC.ConfigureSheet": "Konfiguracja",
   "DCC.ConfigureSheetHint": "Konfiguruj opcje DCC dla tej postaci",
   "DCC.Container": "Pojemnik",
-  "DCC.Containers": "Pojemniki",
   "DCC.ContainerCannotContainSelf": "Pojemnik nie może zawierać samego siebie.",
   "DCC.ContainerCapacityItems": "Pojemność przedmiotów",
   "DCC.ContainerCapacityLabel": "Pojemność",
@@ -365,6 +364,7 @@
   "DCC.FumbleTableUnavailable": "Tabela Potknięć Niedostępna",
   "DCC.Funds": "Fundusze",
   "DCC.Generic": "Ogólny",
+  "DCC.Goods": "Dobytek",
   "DCC.Halfling": "Niziołek",
   "DCC.HalflingAbilities": "Zdolności Niziołka",
   "DCC.HalflingClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#halfling]{Niziołek}",
@@ -985,6 +985,7 @@
     "SubmitLabel": "",
     "LogoAlt": "Logo DCC RPG"
   },
+  "DCC.WeaponsAndArmor": "Broń i Pancerz",
   "DCC.Weight": "Waga",
   "DCC.Wizard": "Czarodziej",
   "DCC.WizardAbilities": "Zdolności Czarodzieja",
