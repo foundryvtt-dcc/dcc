@@ -1,0 +1,10 @@
+<div class="dcc-settings-menu-groups">
+    {{#each groups as |group|}}
+    <fieldset>
+        <legend>{{group.legend}}</legend>
+        {{#each group.entries as |entry|}}
+        {{formGroup entry.field value=entry.value name=entry.name label=entry.label hint=entry.hint disabled=entry.disabled rootId=@root.rootId localize=true}}
+        {{/each}}
+    </fieldset>
+    {{/each}}
+</div>

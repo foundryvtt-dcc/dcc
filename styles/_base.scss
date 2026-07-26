@@ -212,67 +212,50 @@
       outline-offset: 2px;
     }
 
-    &[type='checkbox']:checked:focus-visible::after,
-    &[type='radio']:checked:focus-visible::after {
-      outline: 2px solid var(--system-input-focus-outline-color);
-      outline-offset: 2px;
-    }
-
+    /* Checkbox glyphs use the classic solid Font Awesome face, like core
+       V14. The previous duotone approach broke with Font Awesome 7: the
+       duotone `square` glyph's primary layer no longer draws the box, so
+       unchecked boxes rendered as nothing. */
     &[type='checkbox']::before,
-    &[type='radio']::before,
-    &[type='checkbox']::after,
-    &[type='radio']::after {
+    &[type='radio']::before {
       width: var(--system-checkbox-size);
       height: var(--system-checkbox-size);
       font-size: var(--system-checkbox-size);
       line-height: var(--system-checkbox-size);
       border-radius: 3px;
-      outline: none;
-    }
-
-    &[type='checkbox']::before,
-    &[type='radio']::before {
-      font-family: var(--font-awesome-duotone);
+      font-family: var(--font-awesome, 'Font Awesome 7 Pro');
       font-weight: var(--system-checkbox-font-weight);
       background: none;
       color: var(--system-checkbox-background-color);
       outline: 1px solid transparent;
       transition: outline-color 0.5s;
-      --fa-primary-color: var(--system-checkbox-checked-color);
-      --fa-secondary-color: var(--system-checkbox-background-color);
-    }
-
-    &[type='checkbox']:checked,
-    &[type='radio']:checked {
-      position: relative;
-    }
-
-    &[type='checkbox']:checked::before,
-    &[type='radio']:checked::before,
-    &[type='checkbox']:checked::after,
-    &[type='radio']:checked::after {
-      font-family: var(--font-awesome-duotone);
-    }
-
-    &[type='checkbox']:checked::after,
-    &[type='radio']:checked::after {
-      color: var(--system-checkbox-checked-color);
     }
 
     &[type='checkbox']:checked::before,
     &[type='radio']:checked::before {
-      color: var(--system-checkbox-checkmark-color);
-      position: absolute;
-      left: 0;
-      outline: none;
+      color: var(--system-checkbox-checked-color);
+      /* Core absolutely positions the checked ::before under its own
+         ::after overlay; we draw everything with ::before, so keep it
+         in flow. */
+      position: static;
+    }
+
+    /* Core paints the checked/indeterminate state through an ::after
+       duotone overlay in its accent color (amber in dark theme) — suppress
+       it so the system checkbox colors above are what renders. */
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after,
+    &[type='checkbox']:indeterminate::after,
+    &[type='radio']:indeterminate::after {
+      content: none;
     }
 
     &[type='checkbox']:disabled,
     &[type='radio']:disabled,
     &[type='checkbox'][readonly],
     &[type='radio'][readonly] {
-      --checkbox-background-color: var(--system-checkbox-disabled-color);
-      --checkbox-checked-color: var(--system-checkbox-disabled-color);
+      --system-checkbox-background-color: var(--system-checkbox-disabled-color);
+      --system-checkbox-checked-color: var(--system-checkbox-disabled-color);
       cursor: inherit;
     }
 
@@ -286,10 +269,6 @@
     }
 
     &[type='checkbox']:checked::before {
-      content: '';
-    }
-
-    &[type='checkbox']:checked::after {
       content: '\f14a';
     }
 

@@ -1,0 +1,39 @@
+/* ----------------------------------------- */
+/*  Settings Submenus                        */
+/* ----------------------------------------- */
+
+/* The settings submenu dialogs (module/settings-menus.mjs) intentionally use
+   core's standard-form styling rather than the DCC sheet theme; this partial
+   only adds breathing room between the fieldset groups. */
+.dcc-settings-menu {
+  /* Cap the window height so long menus (Tables & Compendia) scroll while the
+     save button in the footer stays visible. */
+  .window-content {
+    max-height: min(80vh, 720px);
+  }
+
+  .dcc-settings-menu-groups {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  fieldset {
+    padding: 8px 12px;
+  }
+
+  /* Core gives form-group labels line-height: var(--input-height), which
+     looks fine on one line but leaves large gaps when a label wraps. */
+  .form-group > label {
+    line-height: 1.4;
+  }
+
+  /* Core splits form-group rows 50/50 between label and fields. A checkbox
+     only needs a sliver of that, and unbreakable labels like
+     "Damage/Crits/Fumbles" wrap in half a row — give those labels the space. */
+  .form-group:has(input[type='checkbox']) > label {
+    flex: 3;
+  }
+}

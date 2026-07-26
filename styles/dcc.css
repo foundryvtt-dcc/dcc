@@ -408,46 +408,43 @@
   outline: 2px solid var(--system-input-focus-outline-color);
   outline-offset: 2px;
 }
-.dcc input[type=checkbox]:checked:focus-visible::after, .dcc input[type=radio]:checked:focus-visible::after {
-  outline: 2px solid var(--system-input-focus-outline-color);
-  outline-offset: 2px;
+.dcc input {
+  /* Checkbox glyphs use the classic solid Font Awesome face, like core
+     V14. The previous duotone approach broke with Font Awesome 7: the
+     duotone `square` glyph's primary layer no longer draws the box, so
+     unchecked boxes rendered as nothing. */
 }
-.dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
+.dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
   width: var(--system-checkbox-size);
   height: var(--system-checkbox-size);
   font-size: var(--system-checkbox-size);
   line-height: var(--system-checkbox-size);
   border-radius: 3px;
-  outline: none;
-}
-.dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
-  font-family: var(--font-awesome-duotone);
+  font-family: var(--font-awesome, "Font Awesome 7 Pro");
   font-weight: var(--system-checkbox-font-weight);
   background: none;
   color: var(--system-checkbox-background-color);
   outline: 1px solid transparent;
   transition: outline-color 0.5s;
-  --fa-primary-color: var(--system-checkbox-checked-color);
-  --fa-secondary-color: var(--system-checkbox-background-color);
-}
-.dcc input[type=checkbox]:checked, .dcc input[type=radio]:checked {
-  position: relative;
-}
-.dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before, .dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
-  font-family: var(--font-awesome-duotone);
-}
-.dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
-  color: var(--system-checkbox-checked-color);
 }
 .dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before {
-  color: var(--system-checkbox-checkmark-color);
-  position: absolute;
-  left: 0;
-  outline: none;
+  color: var(--system-checkbox-checked-color);
+  /* Core absolutely positions the checked ::before under its own
+     ::after overlay; we draw everything with ::before, so keep it
+     in flow. */
+  position: static;
+}
+.dcc input {
+  /* Core paints the checked/indeterminate state through an ::after
+     duotone overlay in its accent color (amber in dark theme) — suppress
+     it so the system checkbox colors above are what renders. */
+}
+.dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after, .dcc input[type=checkbox]:indeterminate::after, .dcc input[type=radio]:indeterminate::after {
+  content: none;
 }
 .dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
-  --checkbox-background-color: var(--system-checkbox-disabled-color);
-  --checkbox-checked-color: var(--system-checkbox-disabled-color);
+  --system-checkbox-background-color: var(--system-checkbox-disabled-color);
+  --system-checkbox-checked-color: var(--system-checkbox-disabled-color);
   cursor: inherit;
 }
 .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
@@ -457,9 +454,6 @@
   content: "\f0c8";
 }
 .dcc input[type=checkbox]:checked::before {
-  content: "";
-}
-.dcc input[type=checkbox]:checked::after {
   content: "\f14a";
 }
 .dcc input:focus {
@@ -3196,6 +3190,45 @@ a.inline-roll {
   opacity: 0.6;
   padding: 8px;
   text-align: center;
+}
+
+/* ----------------------------------------- */
+/*  Settings Submenus                        */
+/* ----------------------------------------- */
+/* The settings submenu dialogs (module/settings-menus.mjs) intentionally use
+   core's standard-form styling rather than the DCC sheet theme; this partial
+   only adds breathing room between the fieldset groups. */
+.dcc-settings-menu {
+  /* Cap the window height so long menus (Tables & Compendia) scroll while the
+     save button in the footer stays visible. */
+}
+.dcc-settings-menu .window-content {
+  max-height: min(80vh, 720px);
+}
+.dcc-settings-menu .dcc-settings-menu-groups {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  overflow-y: auto;
+}
+.dcc-settings-menu fieldset {
+  padding: 8px 12px;
+}
+.dcc-settings-menu {
+  /* Core gives form-group labels line-height: var(--input-height), which
+     looks fine on one line but leaves large gaps when a label wraps. */
+}
+.dcc-settings-menu .form-group > label {
+  line-height: 1.4;
+}
+.dcc-settings-menu {
+  /* Core splits form-group rows 50/50 between label and fields. A checkbox
+     only needs a sliver of that, and unbreakable labels like
+     "Damage/Crits/Fumbles" wrap in half a row — give those labels the space. */
+}
+.dcc-settings-menu .form-group:has(input[type=checkbox]) > label {
+  flex: 3;
 }
 
 /*# sourceMappingURL=dcc.css.map */

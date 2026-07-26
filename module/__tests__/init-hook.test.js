@@ -289,6 +289,20 @@ describe('registerEarlySettings', () => {
       config: true
     }))
   })
+
+  test('registers automateFleetingLuck immediately after the enable toggle so the pair renders together', () => {
+    registerEarlySettings()
+    const keys = globalThis.game.settings.register.mock.calls.map(([, key]) => key)
+    const enableIndex = keys.indexOf('enableFleetingLuck')
+    expect(keys[enableIndex + 1]).toBe('automateFleetingLuck')
+    expect(globalThis.game.settings.register).toHaveBeenCalledWith('dcc', 'automateFleetingLuck', expect.objectContaining({
+      scope: 'world',
+      type: Boolean,
+      default: true,
+      requiresReload: true,
+      config: true
+    }))
+  })
 })
 
 describe('onInit', () => {
