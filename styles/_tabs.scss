@@ -112,7 +112,11 @@
     font-family: var(--system-heading-font), serif;
     flex: 0 0 auto;
     justify-content: space-evenly;
-    margin-bottom: 8px;
+    /* Counteract core nav.tabs line-height: 2.5 — match the main sheet nav */
+    line-height: 1.5;
+    max-height: 25px;
+    border-top: 0;
+    margin: 0 0 6px;
   }
 
   a[data-tab] {
