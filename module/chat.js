@@ -375,7 +375,7 @@ export const buildMightyDeedPrompt = function (message) {
   const options = placeholder + message.system.deedTables.map(t => `<option value="${t.path}">${t.name}</option>`).join('')
   return `
         <div class="deed-table-prompt" data-deed-roll="${message.system.deedDieRollResult}">
-          <select class="deed-table-select" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
+          <select class="deed-table-select" name="deed-table" aria-label="${game.i18n.localize('DCC.MightyDeedChooseTable')}" data-tooltip="${game.i18n.localize('DCC.MightyDeedTableSelectHint')}">${options}</select>
         </div>`
 }
 

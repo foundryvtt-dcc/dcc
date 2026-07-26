@@ -214,6 +214,16 @@ test.describe('DCC Sheet UI', () => {
       await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="cleric"]')).toHaveClass(/active/)
 
+      // Issue #820: no label on the sheet may reference a non-existent
+      // form field id (rollable skill-check labels carry no `for` at all)
+      const danglingFor = await page.evaluate(() => {
+        const sheet = document.querySelector('.dcc.actor.sheet')
+        return Array.from(sheet.querySelectorAll('label[for]'))
+          .map(label => label.getAttribute('for'))
+          .filter(id => !document.getElementById(id))
+      })
+      expect(danglingFor).toEqual([])
+
       // Switch to Spells tab
       await page.click('.dcc.actor.sheet nav [data-tab="clericSpells"]')
       await page.waitForTimeout(500)
