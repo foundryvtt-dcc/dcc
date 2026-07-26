@@ -4,6 +4,7 @@
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
+import { setupResponsiveTabs } from './responsive-tabs.mjs'
 // eslint-disable-next-line no-unused-vars
 const { ApplicationTabsConfiguration } = foundry.applications.types
 const { HandlebarsApplicationMixin } = foundry.applications.api
@@ -151,6 +152,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
+
+    // Responsive tab overflow: long tab sets (e.g. a GM's spell sheet with
+    // the judge-only tab) tuck into an ellipsis dropdown instead of wrapping
+    // over the sheet header.
+    this._responsiveTabsCleanup?.()
+    this._responsiveTabsCleanup = setupResponsiveTabs(this.element)
 
     // Bind change listeners for inline-editable container content fields
     // These update the contained item (not the container) so they must bypass submitOnChange
