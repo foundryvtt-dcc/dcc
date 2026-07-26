@@ -225,20 +225,24 @@
     .action-dice-chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 3px;
       align-items: center;
       margin-right: 8px;
+      min-width: 0;
 
+      // Chips must fit the ~20px Combat Basics grid rows: a thin border and
+      // tight padding keep a two-die row on one line instead of wrapping
+      // over the neighboring inputs.
       .action-die-chip {
         align-items: center;
         background: var(--system-input-background);
-        border: var(--system-frame-border);
-        border-radius: 10px;
+        border: 1px solid var(--system-border-color);
+        border-radius: 8px;
         display: inline-flex;
-        font-size: 13px;
+        font-size: 12px;
         gap: 2px;
         line-height: 1;
-        padding: 2px 8px;
+        padding: 2px 6px;
         white-space: nowrap;
 
         &.restricted {
