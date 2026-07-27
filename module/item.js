@@ -134,6 +134,10 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
               const actionDie = this.system.actionDie || '1d20'
               const dieFaces = parseInt(actionDie.match(/d(\d+)/)?.[1] || '20')
               this.system.critRange = dieFaces
+              // "Crit on max die roll" tracks the die actually rolled, so the
+              // multiple-action-dice override re-derives critRange from its
+              // replacement die (#834).
+              this.system.twoWeaponCritOnMaxDie = true
               twoWeaponCritSet = true
             } else {
               this.system.critRange = 51 // Secondary hand cannot crit

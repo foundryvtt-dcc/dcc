@@ -121,6 +121,9 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.critRange).toBe(16) // Can crit on modified die max (1d16 after penalty)
+      // #834: flagged so the multiple-action-dice die override re-derives
+      // critRange from the die actually rolled.
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
     })
 
     it('should prevent two-weapon secondary from critting', () => {
@@ -128,6 +131,7 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.critRange).toBe(51) // No crits possible
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBeUndefined() // fixed range, not max-die
     })
 
     it('should apply minor penalty to two-weapon primary with medium agility', () => {

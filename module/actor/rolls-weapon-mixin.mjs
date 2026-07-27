@@ -465,6 +465,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let die = weapon.system?.actionDie || this.system.attributes.actionDice.value || actorActionDice
     if (options._actionDieFormula) die = options._actionDieFormula
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
+    // The agility 16–17 two-weapon primary crits on the max face of the die
+    // actually rolled; the weapon's critRange was derived from its own
+    // (first-die) penalized size, so re-derive it for an override die (#834).
+    if (options._actionDieFormula && weapon.system?.twoWeaponCritOnMaxDie) {
+      const overrideFaces = parseInt(options._actionDieFormula.match(/d(\d+)/)?.[1] || '')
+      if (overrideFaces) critRange = overrideFaces
+    }
 
     if (!Roll.validate(toHit)) {
       return { rolled: false, formula: toHit }

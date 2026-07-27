@@ -328,6 +328,44 @@ describe('writeActionDiceHandler (GM-side socket handler)', () => {
     delete globalThis.fromUuid
   })
 
+  // The payload is a client claim: only whitelisted keys are persisted, and
+  // the two-weapon marker only in a well-formed (or explicit-null) shape.
+  test('strips unknown keys and malformed two-weapon markers from the payload', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [1, 0], evil: 'payload', twoWeaponPendingRole: 'bogus', twoWeaponPendingSlot: 'x' }
+    }, 'p1')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 3, spent: [true, false] })
+    delete globalThis.fromUuid
+  })
+
+  test('persists a well-formed two-weapon marker and an explicit null clear', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1 }
+    }, 'p1')
+    expect(setFlag).toHaveBeenLastCalledWith('dcc', 'actionDice', {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    })
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [true, false], twoWeaponPendingRole: null, twoWeaponPendingSlot: null, twoWeaponPendingAction: null }
+    }, 'p1')
+    expect(setFlag).toHaveBeenLastCalledWith('dcc', 'actionDice', {
+      round: 3, spent: [true, false], twoWeaponPendingRole: null, twoWeaponPendingSlot: null, twoWeaponPendingAction: null
+    })
+    delete globalThis.fromUuid
+  })
+
   // An actor-less combatant has no ownership to check, so it must be rejected
   // rather than written through.
   test('rejects a write for an actor-less combatant', async () => {

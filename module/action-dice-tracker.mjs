@@ -91,7 +91,20 @@ export async function writeActionDiceHandler ({ combatantUuid, state }, userId) 
   const user = game.users?.get(userId)
   if (!user) return
   if (!combatant.actor || !combatant.actor.testUserPermission(user, 'OWNER')) return
-  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
+  // Whitelist the persisted shape — the payload is a client claim, so only
+  // the known state keys are written (and the two-weapon marker only in a
+  // well-formed or explicit-null-clear form; see writeActionDiceState).
+  const sanitized = { round: state.round, spent: state.spent.map(Boolean) }
+  if (state.twoWeaponPendingRole === 'primary' || state.twoWeaponPendingRole === 'secondary') {
+    sanitized.twoWeaponPendingRole = state.twoWeaponPendingRole
+    sanitized.twoWeaponPendingSlot = Number.isInteger(state.twoWeaponPendingSlot) ? state.twoWeaponPendingSlot : 0
+    sanitized.twoWeaponPendingAction = Number.isInteger(state.twoWeaponPendingAction) ? state.twoWeaponPendingAction : 1
+  } else if (state.twoWeaponPendingRole === null) {
+    sanitized.twoWeaponPendingRole = null
+    sanitized.twoWeaponPendingSlot = null
+    sanitized.twoWeaponPendingAction = null
+  }
+  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, sanitized)
 }
 
 /** Register the GM-side action-dice write handler. Call once at ready. */
@@ -389,7 +402,7 @@ export function slotRollFormula (slot) {
  * @param {object} [opts]
  * @param {'primary'|'secondary'|null} [opts.twoWeaponRole] - the attacking
  *        weapon's two-weapon role, from {@link twoWeaponRoleForWeapon}.
- * @returns {{combatant:Combatant, round:number, choice:{slot:object,index:number}|null, count:number, spentCount:number, twoWeaponRole:string|null, twoWeaponCompanion:boolean}|null}
+ * @returns {{combatant:Combatant, round:number, choice:{slot:object,index:number}|null, count:number, spentCount:number, restrictedUnspentDice:string[], twoWeaponRole:string|null, twoWeaponCompanion:boolean, pairActionNumber?:number|null}|null}
  */
 export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
   if (!multipleActionDiceEnabled()) return null
@@ -405,8 +418,11 @@ export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
   // the SAME slot (so the die override matches the pair's base die) and flag
   // it so the spend step consumes the marker instead of another die.
   if (action === 'attack' && twoWeaponRole && state.twoWeaponPendingRole === twoWeaponRole) {
-    const pairIndex = Number.isInteger(state.twoWeaponPendingSlot) ? state.twoWeaponPendingSlot : 0
-    const slot = slots[pairIndex] ?? slots[0]
+    // Clamp a stored slot the list no longer has (it shrank mid-round) so the
+    // planned slot and index always agree.
+    const storedIndex = Number.isInteger(state.twoWeaponPendingSlot) ? state.twoWeaponPendingSlot : 0
+    const pairIndex = slots[storedIndex] ? storedIndex : 0
+    const slot = slots[pairIndex]
     return {
       combatant,
       round,
@@ -453,7 +469,7 @@ export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
  * survives unrelated spends (a spell between the two swings doesn't cost the
  * off-hand its free attack) and dies with the round (the reset drops it).
  * @param {object|null} plan - from {@link planActionDie}
- * @returns {Promise<{actionNumber:number,count:number,overBudget:boolean,die:string}|null>}
+ * @returns {Promise<{actionNumber:number,count:number,overBudget:boolean,noEligibleDie:boolean,twoWeapon?:boolean,die:string}|null>}
  */
 export async function spendPlannedActionDie (plan) {
   if (!plan) return null
