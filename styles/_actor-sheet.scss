@@ -7,8 +7,20 @@
     column-gap: 8px;
     display: grid;
     grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
-    height: 100%;
+    // Row sizing (issue #834): the name and combat-basics rows are capped at
+    // max-content — `auto` maxes would soak up any spare tab height (grid
+    // "stretch auto tracks"), and the combat-basics box would then spread
+    // its field rows apart to fill the stretch. Capped, the box hugs its
+    // content — growing only when the action-dice chips wrap to an extra
+    // line — and spare height settles at the bottom row instead.
+    grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
+    // min-height (not height): with a definite height the row maximums can
+    // never exceed the tab, so a combat-basics row whose action-dice chips
+    // wrap (a 10th-level warrior's three dice) would overflow onto the rows
+    // below instead of growing. Content-sized, the row grows, everything
+    // shifts down, and the tab scrolls.
+    height: auto;
+    min-height: 100%;
   }
 
   .ability-scores {
@@ -184,6 +196,12 @@
 
   .combat-basics {
     align-items: center;
+    // Content-sized, not stretched (issue #834): stretching to the grid row
+    // (whose height the AC/HP column also raises) padded the field rows and
+    // the space under the last row. min-height keeps the everyday two-die
+    // box at its usual height; a wrapped chip row grows it exactly one line.
+    align-self: start;
+    min-height: 114px;
     border: var(--system-frame-border);
     border-top: 0;
     column-gap: 5px;
@@ -191,7 +209,10 @@
     font-size: 13px;
     grid-column-end: span 3;
     grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-    grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+    // auto (not 1fr) maxes: under the content-sized box, equal fr rows would
+    // all inflate to the tallest row (the wrapped chip cell). auto rows hug
+    // their own content; the min-height slack still spreads evenly.
+    grid-template-rows: 19px repeat(4, minmax(20px, auto));
     margin: 0 0 8px 0;
     padding-bottom: 4px;
 
@@ -221,11 +242,13 @@
 
     // Action-dice chip row (multiple-action-dice feature). Replaces the
     // single action-die label + text box when the master setting is on and
-    // the actor has 2+ dice. The parent .character-grid fixes this box's
-    // height, so the grid row cannot grow: the label and chips share one
-    // flex row spanning both grid columns (~175px), and overflowing chips
-    // clip on the single line (each chip carries its die in its tooltip)
-    // instead of wrapping over the neighboring rows.
+    // the actor has 2+ dice. The label and chips share the same two grid
+    // columns as the box they replace (Crit Die keeps its cells alongside);
+    // when the dice don't fit one line — a 10th-level warrior's
+    // `1d20+4, 1d20, 1d14` — only the chips
+    // cell WRAPS, the row grows, and the character-grid (min-height, not
+    // height) lets the whole box push the rows below it down (issue #834).
+    // Chip visuals live at the shared `.dcc` scope below.
     // See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
     .action-dice-row {
       grid-column: 1 / 3;
@@ -236,37 +259,6 @@
 
       label {
         flex: none;
-      }
-    }
-
-    .action-dice-chips {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 3px;
-      align-items: center;
-      min-width: 0;
-      overflow: hidden;
-
-      .action-die-chip {
-        align-items: center;
-        background: var(--system-input-background);
-        border: 1px solid var(--system-border-color);
-        border-radius: 8px;
-        display: inline-flex;
-        font-size: 12px;
-        gap: 2px;
-        line-height: 1;
-        padding: 2px 6px;
-        white-space: nowrap;
-
-        &.restricted {
-          font-style: italic;
-        }
-
-        .action-die-mark {
-          font-size: 11px;
-          opacity: 0.8;
-        }
       }
     }
   }
@@ -477,10 +469,63 @@
   }
 }
 
+// Action-dice chips — shared by the PC and NPC sheets (the PC sheet wraps
+// them in `.action-dice-row`; the NPC sheet places label + chips as grid
+// cells directly). The chips WRAP within their cell — the surrounding grids
+// grow to hold the extra lines — and the in-combat state styling mirrors
+// the tracker pips.
+.dcc .action-dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+  // Breathing room against the neighboring field rows, which hug their
+  // content since the box became content-sized (issue #834).
+  padding: 3px 0;
+
+  .action-die-chip {
+    align-items: center;
+    background: var(--system-input-background);
+    border: 1px solid var(--system-border-color);
+    border-radius: 8px;
+    display: inline-flex;
+    font-size: 12px;
+    gap: 2px;
+    line-height: 1;
+    padding: 2px 6px;
+    white-space: nowrap;
+
+    &.restricted {
+      font-style: italic;
+    }
+
+    // Live combat state (issue #834 §2): a spent chip greys out, mirroring
+    // the tracker pips, and for the GM/owner the chip is clickable to
+    // toggle by hand. No extra glyph — a chip is exactly the same width in
+    // and out of combat, so the wrap never changes.
+    &.interactive {
+      cursor: pointer;
+    }
+
+    &.spent {
+      opacity: 0.45;
+    }
+
+    .action-die-mark {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+  }
+}
+
 .dcc {
   .npc-grid {
     display: grid;
-    grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+    // The combat-basics row can exceed 81px when the action-dice chips
+    // wrap (issue #834) — max-content lets it grow (the 1fr Special row
+    // gives the space back) instead of spilling over the box border.
+    grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
     min-height: 100%;
 
     textarea {

@@ -26,6 +26,7 @@
 import { resetActionDice, isActionDiceStateCurrent, spendActionDie, nextActionDie, actionMatchesUse } from './vendor/dcc-core-lib/index.js'
 import { actionDieLabel } from './handlebars-helpers.mjs'
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
+import DiceChain from './dice-chain.js'
 
 const FLAG_SCOPE = 'dcc'
 const FLAG_KEY = 'actionDice'
@@ -104,7 +105,11 @@ export async function writeActionDiceHandler ({ combatantUuid, state }, userId) 
     sanitized.twoWeaponPendingSlot = null
     sanitized.twoWeaponPendingAction = null
   }
-  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, sanitized)
+  // Via writeActionDiceState, not setFlag directly: the requesting client
+  // decided whether a marker clear was needed from ITS replica, which may
+  // be stale — re-checking against the GM's own stored flag ensures a
+  // dropped marker is cleared with explicit nulls here too (setFlag merges).
+  await writeActionDiceState(combatant, sanitized)
 }
 
 /** Register the GM-side action-dice write handler. Call once at ready. */
@@ -301,7 +306,9 @@ export async function spendCombatantActionDie (combatant, index, round) {
  * @returns {Combatant|null}
  */
 export function getCombatantForActor (actor) {
-  const combat = game?.combat
+  // Via globalThis so a Foundry-free caller (the sheet presentation helpers
+  // under unit test) gets `null` instead of a ReferenceError.
+  const combat = globalThis.game?.combat
   if (!combat || !actor) return null
   for (const combatant of combat.combatants) {
     if (combatant.actor?.id === actor.id) return combatant
@@ -380,6 +387,104 @@ export function slotRollFormula (slot) {
   const mod = Number(slot.modifier) || 0
   if (!mod) return `1${slot.die}`
   return `1${slot.die}${mod > 0 ? '+' : ''}${mod}`
+}
+
+/**
+ * The penalized roll formula for a slot: the slot's own formula bumped down the
+ * dice chain by `penalty` (the two-weapon dice-chain penalty recorded on the
+ * weapon as `system.twoWeaponDicePenalty`). Zero penalty short-circuits so the
+ * common path never touches the dice chain (or `CONFIG`).
+ * @param {object} slot
+ * @param {number} penalty - negative steps down the chain, 0 for none
+ * @returns {string}
+ */
+function penalizedSlotFormula (slot, penalty) {
+  const formula = slotRollFormula(slot)
+  if (!penalty || !formula) return formula
+  return DiceChain.bumpDie(formula, penalty)
+}
+
+/** The die faces of a formula's primary die (`'1d16+2'` ⇒ 16), or `null`. */
+function formulaFaces (formula) {
+  const faces = parseInt(String(formula ?? '').match(/d(\d+)/)?.[1] || '')
+  return Number.isInteger(faces) ? faces : null
+}
+
+/**
+ * The roll-modifier dialog's action-die presets for a live plan — one per
+ * slot that is still unspent and eligible for `action`, labeled with its
+ * slot number, so the player can *choose* which action die the roll uses
+ * (issue #834 §3). Spent slots are not offered: {@link
+ * reconcilePlannedActionDie} refuses to land a spend on them, so a spent
+ * preset would roll that die while silently burning the planned slot. The
+ * formula is the slot's die with the weapon's two-weapon dice-chain penalty
+ * applied, i.e. the die that would actually be rolled — so a chosen preset
+ * round-trips through the reconcile back to its slot. Returns `null`
+ * off-path (no plan or fewer than two slots), which keeps the incumbent
+ * config-derived presets.
+ * @param {object|null} plan - from {@link planActionDie}
+ * @param {object} [opts]
+ * @param {number} [opts.twoWeaponPenalty] - `weapon.system.twoWeaponDicePenalty`
+ * @param {string} [opts.action]
+ * @returns {Array<{formula:string,label:string}>|null}
+ */
+export function actionDicePresetsFromPlan (plan, { twoWeaponPenalty = 0, action = 'attack' } = {}) {
+  if (!plan?.combatant) return null
+  const slots = getCombatantSlots(plan.combatant)
+  if (slots.length < 2) return null
+  const spent = effectiveSpent(currentRoundState(plan.combatant, plan.round), plan.round, slots.length)
+  const presets = []
+  slots.forEach((slot, i) => {
+    if (spent[i] || !actionMatchesUse(slot.use, action)) return
+    const formula = penalizedSlotFormula(slot, twoWeaponPenalty)
+    presets.push({
+      formula,
+      label: game.i18n.format('DCC.ActionDiePresetReady', { die: formula, n: i + 1 })
+    })
+  })
+  return presets
+}
+
+/**
+ * Re-point a plan at the slot whose die was *actually rolled* (issue #834 §3):
+ * the player can override the auto-picked action die in the roll-modifier
+ * dialog (via the slot presets above, or by editing the die), and the spend
+ * must follow their choice rather than silently burning the next-unspent slot.
+ * Matches the rolled die's faces against each unspent, `action`-eligible
+ * slot's penalized formula; when it maps to a different slot than planned, the
+ * plan's `choice` moves there. No match (an untrained 1d10, a hand-edited
+ * formula) or a match on the planned slot keeps the auto-pick — and the free
+ * half of a two-weapon pair is never re-pointed, it must ride its pair's slot.
+ *
+ * `defaultFaces` is the faces of the die the roll would have used with NO
+ * player intervention (the weapon's own — possibly untrained/override-bumped —
+ * die, or the planned extra-die formula). A roll landing on that die is not
+ * evidence of a choice, so it never re-points: without this guard an untrained
+ * weapon whose bumped die happens to equal another slot's size (d20→d14 on a
+ * `1d20,1d14` warrior) would silently burn the wrong slot.
+ * Pure: the returned plan is spent later by {@link spendPlannedActionDie}.
+ * @param {object|null} plan - from {@link planActionDie}
+ * @param {number|null} rolledFaces - faces of the action die actually rolled
+ * @param {object} [opts]
+ * @param {number} [opts.twoWeaponPenalty]
+ * @param {string} [opts.action]
+ * @param {number|null} [opts.defaultFaces] - faces of the roll's default die
+ * @returns {object|null} the plan, re-pointed if the rolled die says so
+ */
+export function reconcilePlannedActionDie (plan, rolledFaces, { twoWeaponPenalty = 0, action = 'attack', defaultFaces = null } = {}) {
+  if (!plan?.choice || plan.twoWeaponCompanion || !rolledFaces) return plan
+  if (defaultFaces !== null && rolledFaces === defaultFaces) return plan
+  const slots = getCombatantSlots(plan.combatant)
+  if (slots.length < 2) return plan
+  if (formulaFaces(penalizedSlotFormula(plan.choice.slot, twoWeaponPenalty)) === rolledFaces) return plan
+  const spent = effectiveSpent(currentRoundState(plan.combatant, plan.round), plan.round, slots.length)
+  const index = slots.findIndex((slot, i) =>
+    !spent[i] &&
+    actionMatchesUse(slot.use, action) &&
+    formulaFaces(penalizedSlotFormula(slot, twoWeaponPenalty)) === rolledFaces
+  )
+  if (index < 0) return plan
+  return { ...plan, choice: { slot: slots[index], index } }
 }
 
 /**
@@ -474,6 +579,21 @@ export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
 export async function spendPlannedActionDie (plan) {
   if (!plan) return null
   const { combatant, round, choice, count, spentCount, restrictedUnspentDice = [], twoWeaponRole = null, twoWeaponCompanion = false } = plan
+  // The plan was made before the roll resolved, and a roll-modifier dialog
+  // can sit open across a round boundary. Never stamp a stale-round state
+  // over a fresh reset — skip the write (the descriptor still reports the
+  // plan's own accounting; the new round's budget is untouched).
+  const liveRound = globalThis.game?.combat?.round
+  if (Number.isInteger(liveRound) && liveRound !== round) {
+    return {
+      actionNumber: spentCount + 1,
+      count,
+      overBudget: !choice,
+      noEligibleDie: !choice && restrictedUnspentDice.length > 0,
+      ...(twoWeaponCompanion && choice ? { twoWeapon: true } : {}),
+      die: choice ? slotRollFormula(choice.slot) : ''
+    }
+  }
   if (twoWeaponCompanion && choice) {
     // Free half of the pair: clear the pending marker, spend nothing. The
     // written state intentionally omits the two-weapon fields.
@@ -583,6 +703,64 @@ export async function onCombatTurnForActionDice (combat) {
 export async function onCombatRoundForActionDice (combat) {
   if (!trackInCombatEnabled()) return
   await resetActiveCombatantActionDice(combat)
+}
+
+/** Re-render an actor's sheet if it is open, so live chip state stays fresh. */
+function rerenderActorSheet (actor) {
+  const sheet = actor?.sheet
+  if (sheet?.rendered) sheet.render()
+}
+
+/**
+ * `updateCombatant` — a change to the per-round action-dice flag (a spend, a
+ * pip toggle, the round reset) must refresh the owning actor's open sheet,
+ * whose chips mirror the tracker pips (issue #834 §2).
+ * @param {Combatant} combatant
+ * @param {object} changes - the update delta
+ */
+export function onUpdateCombatantForActionDice (combatant, changes) {
+  if (!trackInCombatEnabled()) return
+  const dccFlags = changes?.flags?.dcc
+  if (!dccFlags || !Object.prototype.hasOwnProperty.call(dccFlags, FLAG_KEY)) return
+  rerenderActorSheet(combatant?.actor)
+}
+
+/**
+ * Combat lifecycle — round advances and combats starting/ending change what
+ * the sheet chips should show (live pips vs the static listing), so refresh
+ * every open sheet in the combat. `changed` is the update delta when invoked
+ * from `updateCombat` (only round/active changes matter — per-turn updates are
+ * covered by the flag write → `updateCombatant` path); absent for
+ * `deleteCombat`, where every sheet must flip back to the static listing.
+ * @param {Combat} combat
+ * @param {object} [changed] - the `updateCombat` delta, if any
+ */
+export function onCombatLifecycleForActionDice (combat, changed) {
+  if (!trackInCombatEnabled()) return
+  if (changed && !('round' in changed) && !('active' in changed)) return
+  for (const combatant of combat?.combatants ?? []) {
+    rerenderActorSheet(combatant?.actor)
+  }
+}
+
+/**
+ * `deleteCombat` — the delete hook's second argument is `options`, not an
+ * update delta, so refresh unconditionally: every open sheet in the ended
+ * combat flips back to the static listing.
+ * @param {Combat} combat
+ */
+export function onDeleteCombatForActionDice (combat) {
+  onCombatLifecycleForActionDice(combat)
+}
+
+/**
+ * `createCombatant` / `deleteCombatant` — the actor's sheet flips between the
+ * static listing and live pips when it enters or leaves combat.
+ * @param {Combatant} combatant
+ */
+export function onCombatantLifecycleForActionDice (combatant) {
+  if (!trackInCombatEnabled()) return
+  rerenderActorSheet(combatant?.actor)
 }
 
 /**

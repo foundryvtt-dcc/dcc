@@ -11,6 +11,7 @@ import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 import { prepareAbilityEffects, prepareAttackBonusEffects, prepareSaveEffects, prepareAttributeEffects } from './actor-sheet/effects.mjs'
 import { prepareItems } from './actor-sheet/items.mjs'
 import { prepareNotes, prepareCorruption, prepareImage, prepareCompendiumLinks, prepareActionDiceContext } from './actor-sheet/presentation.mjs'
+import { getCombatantForActor, toggleActionDiePip } from './action-dice-tracker.mjs'
 import { findDataset, buildDragStartData } from './actor-sheet/drag-drop.mjs'
 import { handleContainerDrop, dropActiveEffect } from './actor-sheet/drop.mjs'
 import { removeActiveEffectOverrides } from './utilities.js'
@@ -63,6 +64,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
       rollWeaponAttack: this.#rollWeaponAttack,
+      toggleActionDie: this.#toggleActionDie,
       containerRemoveItem: this.#containerRemoveItem,
       containerToggle: this.#containerToggle,
       effectCreate: this.#effectCreate,
@@ -771,6 +773,23 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollCritDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     this.options.document.rollCritical(options)
+  }
+
+  /**
+   * Toggle an action-die chip's spent state (issue #834 §2). Mirrors the
+   * combat-tracker pip toggle: only wired up (via `data-action`) when the
+   * actor is in the active combat with tracking on and the user may toggle.
+   * The flag write re-renders this sheet through the `updateCombatant` hook.
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #toggleActionDie (event, target) {
+    event.preventDefault()
+    const combatant = getCombatantForActor(this.options.document)
+    if (!combatant || !game.combat) return
+    await toggleActionDiePip(combatant, Number(target.dataset.slotIndex), game.combat.round)
   }
 
   /**

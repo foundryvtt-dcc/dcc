@@ -2446,8 +2446,9 @@ a.inline-roll {
   column-gap: 8px;
   display: grid;
   grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-  grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
-  height: 100%;
+  grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
+  height: auto;
+  min-height: 100%;
 }
 .dcc .character .ability-scores {
   display: grid;
@@ -2591,6 +2592,8 @@ a.inline-roll {
 }
 .dcc .character .combat-basics {
   align-items: center;
+  align-self: start;
+  min-height: 114px;
   border: var(--system-frame-border);
   border-top: 0;
   column-gap: 5px;
@@ -2598,7 +2601,7 @@ a.inline-roll {
   font-size: 13px;
   grid-column-end: span 3;
   grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-  grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+  grid-template-rows: 19px repeat(4, minmax(20px, auto));
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }
@@ -2632,33 +2635,6 @@ a.inline-roll {
 }
 .dcc .character .combat-basics .action-dice-row label {
   flex: none;
-}
-.dcc .character .combat-basics .action-dice-chips {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 3px;
-  align-items: center;
-  min-width: 0;
-  overflow: hidden;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip {
-  align-items: center;
-  background: var(--system-input-background);
-  border: 1px solid var(--system-border-color);
-  border-radius: 8px;
-  display: inline-flex;
-  font-size: 12px;
-  gap: 2px;
-  line-height: 1;
-  padding: 2px 6px;
-  white-space: nowrap;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip.restricted {
-  font-style: italic;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip .action-die-mark {
-  font-size: 11px;
-  opacity: 0.8;
 }
 .dcc .character .languages,
 .dcc .character .lucky-roll {
@@ -2837,9 +2813,43 @@ a.inline-roll {
   color: var(--system-frame-title-color);
 }
 
+.dcc .action-dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+  padding: 3px 0;
+}
+.dcc .action-dice-chips .action-die-chip {
+  align-items: center;
+  background: var(--system-input-background);
+  border: 1px solid var(--system-border-color);
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 2px;
+  line-height: 1;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.dcc .action-dice-chips .action-die-chip.restricted {
+  font-style: italic;
+}
+.dcc .action-dice-chips .action-die-chip.interactive {
+  cursor: pointer;
+}
+.dcc .action-dice-chips .action-die-chip.spent {
+  opacity: 0.45;
+}
+.dcc .action-dice-chips .action-die-chip .action-die-mark {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
 .dcc .npc-grid {
   display: grid;
-  grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+  grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
   min-height: 100%;
 }
 .dcc .npc-grid textarea {

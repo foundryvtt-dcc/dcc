@@ -87,6 +87,7 @@ const {
   onApplyActiveEffect,
   onPreUpdateActor,
   onUpdateCombat,
+  onUpdateCombatComposed,
   onItemPilesReady,
   onGetProseMirrorMenuDropDowns,
   registerChatAndHookWiring
@@ -98,7 +99,10 @@ const { onUpdateActorForDeath } = await import('../auto-dead-status.mjs')
 const {
   onCombatTurnForActionDice,
   onCombatRoundForActionDice,
-  onRenderCombatTrackerForActionDice
+  onRenderCombatTrackerForActionDice,
+  onUpdateCombatantForActionDice,
+  onDeleteCombatForActionDice,
+  onCombatantLifecycleForActionDice
 } = await import('../action-dice-tracker.mjs')
 
 let originalGame
@@ -709,17 +713,24 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preCreateItem.handler).toBe(onPreCreateItem)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.applyActiveEffect.handler).toBe(onApplyActiveEffect)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.preUpdateActor.handler).toBe(onPreUpdateActor)
-    expect(CHAT_AND_HOOK_WIRING_HOOKS.updateCombat.handler).toBe(onUpdateCombat)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.updateCombat.handler).toBe(onUpdateCombatComposed)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.deleteCombat.handler).toBe(onDeleteCombatForActionDice)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.updateCombatant.handler).toBe(onUpdateCombatantForActionDice)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.createCombatant.handler).toBe(onCombatantLifecycleForActionDice)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.deleteCombatant.handler).toBe(onCombatantLifecycleForActionDice)
     expect(CHAT_AND_HOOK_WIRING_HOOKS['item-piles-ready'].handler).toBe(onItemPilesReady)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the eighteen documented hook names', () => {
+  test('covers exactly the twenty-two documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
       'combatRound',
       'combatTurn',
+      'createCombatant',
       'dcc.modifyAttackRollTerms',
+      'deleteCombat',
+      'deleteCombatant',
       'getChatMessageContextOptions',
       'getCompendiumContextOptions',
       'getProseMirrorMenuDropDowns',
@@ -733,7 +744,8 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
       'renderChatMessageHTML',
       'renderCombatTracker',
       'updateActor',
-      'updateCombat'
+      'updateCombat',
+      'updateCombatant'
     ])
   })
 
@@ -770,7 +782,11 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.applyActiveEffect).toEqual([onApplyActiveEffect])
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
     expect(onCalls.updateActor).toEqual([onUpdateActorForDeath])
-    expect(onCalls.updateCombat).toEqual([onUpdateCombat])
+    expect(onCalls.updateCombat).toEqual([onUpdateCombatComposed])
+    expect(onCalls.deleteCombat).toEqual([onDeleteCombatForActionDice])
+    expect(onCalls.updateCombatant).toEqual([onUpdateCombatantForActionDice])
+    expect(onCalls.createCombatant).toEqual([onCombatantLifecycleForActionDice])
+    expect(onCalls.deleteCombatant).toEqual([onCombatantLifecycleForActionDice])
     expect(onCalls.combatTurn).toEqual([onCombatTurnForActionDice])
     expect(onCalls.combatRound).toEqual([onCombatRoundForActionDice])
     expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerForActionDice])
@@ -784,12 +800,12 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly eighteen Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly twenty-two Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Seventeen dispatch-table listeners (incl. the three action-dice combat
+    // Twenty-one dispatch-table listeners (incl. the seven action-dice combat
     // hooks) + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(18)
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(22)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

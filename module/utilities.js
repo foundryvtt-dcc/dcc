@@ -125,14 +125,23 @@ export function getFirstDie (value) {
  * Normalize an action-dice expression to a single die of its first term.
  * 'Act 2d20' means two d20 *actions*, so the per-roll die is always one die
  * of the first listed faces: '2d20' → '1d20', '1d20,1d16' → '1d20',
- * '1d24' → '1d24'. Used to mirror the config authoring string onto
- * `attributes.actionDice.value` (importers and migration).
+ * '1d24' → '1d24'. A flat rider on that first die is part of the roll and
+ * is kept ('1d20+4' → '1d20+4'), but additional dice are separate actions
+ * and are dropped ('1d20+1d16' → '1d20'). Used to mirror the config
+ * authoring string onto `attributes.actionDice.value` (importers and
+ * migration) and to derive per-roll weapon/spell dies.
  * @param {string} value - action dice expression (comma or plus separated)
  * @return {string} - single-die formula or an empty string if no die found
  */
 export function getSingleActionDie (value) {
-  const match = String(value || '').match(/d(\d+)/)
-  return match ? `1d${match[1]}` : ''
+  const first = String(value || '').split(',')[0]
+  const match = first.match(/d(\d+)/)
+  if (!match) return ''
+  // Rider: flat +N/-N terms directly after the die — but never the count of
+  // a following die term ('+1d16' is another action, not a +1 rider).
+  const after = first.slice(first.indexOf(match[0]) + match[0].length)
+  const rider = after.match(/^(?:[+-]\d+(?!\d*d\d))+/)?.[0] ?? ''
+  return `1d${match[1]}${rider}`
 }
 
 /**

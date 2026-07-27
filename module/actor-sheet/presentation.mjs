@@ -21,7 +21,7 @@
 
 import EntityImages from '../entity-images.js'
 import { actionDieLabel } from '../handlebars-helpers.mjs'
-import { settingEnabled } from '../action-dice-tracker.mjs'
+import { settingEnabled, getCombatantForActor, readActionDiceState, effectiveSpent } from '../action-dice-tracker.mjs'
 
 /**
  * Enrich the actor's notes HTML for sheet display.
@@ -96,15 +96,27 @@ export function prepareCompendiumLinks (config = globalThis.CONFIG?.DCC) {
  * Handlebars. Chips appear only when the feature is on AND the actor has
  * 2+ dice — a single-die actor sees today's box unchanged either way
  * (§3: the per-die UI activates only for actors with multiple dice).
+ * During an active combat with tracking on, the chips mirror the combat
+ * tracker's pips (issue #834 §2): a spent chip greys out (the `spent` CSS
+ * class), and — for the GM or the actor's owner — click-to-toggle via the
+ * sheet's `toggleActionDie` action. Out of combat they stay a static listing
+ * of the dice, with a tooltip pointing at where the live tracking happens.
  * @param {Actor} actor - the sheet's `options.document`.
  * @param {object} [deps] - injectable globals (default to the live ones).
  * @param {object} [deps.settings] - `game.settings` (for the master switch).
  * @param {object} [deps.i18n] - `game.i18n` (for chip tooltips).
- * @returns {{multipleActionDice: boolean, actionDiceChips: Array, showActionDiceChips: boolean}}
+ * @param {object} [deps.user] - `game.user` (owner/GM gate for toggling).
+ * @param {Function} [deps.lookupCombatant] - actor → combatant in the active
+ *        combat (defaults to the tracker's {@link getCombatantForActor}).
+ * @param {object} [deps.combat] - the active combat (for the current round).
+ * @returns {{multipleActionDice: boolean, actionDiceChips: Array, showActionDiceChips: boolean, actionDiceTracking: boolean, actionDiceInteractive: boolean}}
  */
 export function prepareActionDiceContext (actor, {
   settings = globalThis.game?.settings,
-  i18n = globalThis.game?.i18n
+  i18n = globalThis.game?.i18n,
+  user = globalThis.game?.user,
+  lookupCombatant = getCombatantForActor,
+  combat = globalThis.game?.combat
 } = {}) {
   const enabled = settingEnabled(settings, 'multipleActionDice')
   const list = actor?.system?.attributes?.actionDice?.list
@@ -117,18 +129,47 @@ export function prepareActionDiceContext (actor, {
   const format = i18n?.format
     ? (key, data) => i18n.format(key, data)
     : (key) => key
-  const actionDiceChips = slots.map((slot) => ({
-    label: actionDieLabel(slot),
-    use: slot.use || 'any',
-    restricted: !!slot.use && slot.use !== 'any',
-    tooltip: format('DCC.ActionDiceChipHint', {
-      slot: (slot.slot ?? 0) + 1,
-      use: useLabel(slot.use)
-    })
-  }))
+
+  // Live combat state: with tracking on and the actor in the active combat,
+  // the chips show (and can toggle) the per-round spent state.
+  const tracking = enabled && settingEnabled(settings, 'trackActionDiceInCombat')
+  const combatant = (tracking && slots.length > 1) ? lookupCombatant(actor) : null
+  const round = combat?.round ?? 0
+  const spent = combatant ? effectiveSpent(readActionDiceState(combatant), round, slots.length) : null
+  const interactive = !!combatant && !!(user?.isGM || actor?.isOwner)
+
+  const actionDiceChips = slots.map((slot, index) => {
+    const isSpent = spent ? !!spent[index] : false
+    const cssClass = [
+      'action-die-chip',
+      slot.use && slot.use !== 'any' ? 'restricted' : '',
+      combatant ? (isSpent ? 'spent' : 'ready') : '',
+      interactive ? 'interactive' : ''
+    ].filter(Boolean).join(' ')
+    return {
+      index,
+      label: actionDieLabel(slot),
+      use: slot.use || 'any',
+      restricted: !!slot.use && slot.use !== 'any',
+      spent: isSpent,
+      cssClass,
+      tooltip: combatant
+        ? format(interactive ? 'DCC.ActionDiceChipToggleHint' : 'DCC.ActionDiceChipStateHint', {
+          slot: (slot.slot ?? 0) + 1,
+          use: useLabel(slot.use),
+          state: localize(isSpent ? 'DCC.ActionDieStateSpent' : 'DCC.ActionDieStateReady')
+        })
+        : format('DCC.ActionDiceChipHint', {
+          slot: (slot.slot ?? 0) + 1,
+          use: useLabel(slot.use)
+        })
+    }
+  })
   return {
     multipleActionDice: enabled,
     actionDiceChips,
-    showActionDiceChips: enabled && actionDiceChips.length > 1
+    showActionDiceChips: enabled && actionDiceChips.length > 1,
+    actionDiceTracking: !!combatant,
+    actionDiceInteractive: interactive
   }
 }
