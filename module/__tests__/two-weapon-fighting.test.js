@@ -97,6 +97,18 @@ describe('Two-Weapon Fighting', () => {
       weapon.prepareBaseData()
       expect(weapon.system.actionDie).toMatch(/d14.*\[2w-off-hand]/) // -2 penalty for agility 14
     })
+
+    // #834: the raw penalty is kept as derived data so the multiple-action-dice
+    // extra-die override can re-apply it to the chosen slot's base die.
+    it('should record the raw dice penalty for both hands', () => {
+      const primary = createWeapon(actor, { twoWeaponPrimary: true })
+      primary.prepareBaseData()
+      expect(primary.system.twoWeaponDicePenalty).toBe(-1)
+
+      const secondary = createWeapon(actor, { twoWeaponSecondary: true })
+      secondary.prepareBaseData()
+      expect(secondary.system.twoWeaponDicePenalty).toBe(-2)
+    })
   })
 
   describe('Critical Hit Ranges - Medium Agility (16-17)', () => {
@@ -109,6 +121,9 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.critRange).toBe(16) // Can crit on modified die max (1d16 after penalty)
+      // #834: flagged so the multiple-action-dice die override re-derives
+      // critRange from the die actually rolled.
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
     })
 
     it('should prevent two-weapon secondary from critting', () => {
@@ -116,6 +131,7 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.critRange).toBe(51) // No crits possible
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBeUndefined() // fixed range, not max-die
     })
 
     it('should apply minor penalty to two-weapon primary with medium agility', () => {

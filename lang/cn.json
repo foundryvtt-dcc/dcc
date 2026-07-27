@@ -86,6 +86,7 @@
   "DCC.ActionDiceChatLine": "动作 {n}/{m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "动作 {n}/{m} — 超出限额",
   "DCC.ActionDiceChatLineNoEligibleDie": "动作 {n}/{m} — 没有可用的动作骰",
+  "DCC.ActionDiceChatLineTwoWeapon": "动作 {n}/{m} · {die} — 双持武器，同一动作",
   "DCC.ActionDiceNoEligibleWarning": "没有可用于{action}的动作骰（{dice} 仅限其他用途）",
   "DCC.ActionSave": "豁免",
   "DCC.ActionDie": "动作骰",

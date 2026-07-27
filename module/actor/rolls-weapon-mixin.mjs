@@ -17,7 +17,8 @@ import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, par
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
-import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning } from '../action-dice-tracker.mjs'
+import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon } from '../action-dice-tracker.mjs'
+import DiceChain from '../dice-chain.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -100,10 +101,22 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // A stale `_actionDieFormula` from a reused options object is cleared
     // first; only an extra die (slot index > 0) overrides the weapon's die,
     // so the first action of the round stays byte-identical to today.
+    //
+    // Two-weapon fighting (#834): the weapon's role makes a primary+off-hand
+    // pair consume ONE die (the companion half plans as a free spend). And
+    // because the extra-die override replaces `weapon.system.actionDie` —
+    // where the two-weapon dice-chain penalty lives — the penalty is
+    // re-applied to the chosen slot's die so a pair fought on the second
+    // action die still swings at its penalized size.
     delete options._actionDieFormula
-    const actionDicePlan = planActionDie(this, 'attack')
+    const actionDicePlan = planActionDie(this, 'attack', { twoWeaponRole: twoWeaponRoleForWeapon(weapon) })
     if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
-      options._actionDieFormula = slotRollFormula(actionDicePlan.choice.slot)
+      let formula = slotRollFormula(actionDicePlan.choice.slot)
+      const twoWeaponPenalty = parseInt(weapon.system?.twoWeaponDicePenalty) || 0
+      if (twoWeaponPenalty !== 0) {
+        formula = DiceChain.bumpDie(formula, twoWeaponPenalty)
+      }
+      options._actionDieFormula = formula
     }
     // Soft spells-only filter (Phase 4 / D1a): if the only action dice left are
     // restricted to other uses (a wizard's spells-only die can't make a weapon
@@ -452,6 +465,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let die = weapon.system?.actionDie || this.system.attributes.actionDice.value || actorActionDice
     if (options._actionDieFormula) die = options._actionDieFormula
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
+    // The agility 16–17 two-weapon primary crits on the max face of the die
+    // actually rolled; the weapon's critRange was derived from its own
+    // (first-die) penalized size, so re-derive it for an override die (#834).
+    if (options._actionDieFormula && weapon.system?.twoWeaponCritOnMaxDie) {
+      const overrideFaces = parseInt(options._actionDieFormula.match(/d(\d+)/)?.[1] || '')
+      if (overrideFaces) critRange = overrideFaces
+    }
 
     if (!Roll.validate(toHit)) {
       return { rolled: false, formula: toHit }

@@ -26,6 +26,8 @@ import {
   spendPlannedActionDie,
   formatActionDiceChatLine,
   noEligibleActionDieWarning,
+  twoWeaponRoleForWeapon,
+  companionTwoWeaponRole,
   settingEnabled,
   writeActionDiceHandler,
   WRITE_ACTION_DICE
@@ -326,6 +328,44 @@ describe('writeActionDiceHandler (GM-side socket handler)', () => {
     delete globalThis.fromUuid
   })
 
+  // The payload is a client claim: only whitelisted keys are persisted, and
+  // the two-weapon marker only in a well-formed (or explicit-null) shape.
+  test('strips unknown keys and malformed two-weapon markers from the payload', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [1, 0], evil: 'payload', twoWeaponPendingRole: 'bogus', twoWeaponPendingSlot: 'x' }
+    }, 'p1')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 3, spent: [true, false] })
+    delete globalThis.fromUuid
+  })
+
+  test('persists a well-formed two-weapon marker and an explicit null clear', async () => {
+    const setFlag = vi.fn(async () => {})
+    globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1 }
+    }, 'p1')
+    expect(setFlag).toHaveBeenLastCalledWith('dcc', 'actionDice', {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    })
+
+    await writeActionDiceHandler({
+      combatantUuid: 'c',
+      state: { round: 3, spent: [true, false], twoWeaponPendingRole: null, twoWeaponPendingSlot: null, twoWeaponPendingAction: null }
+    }, 'p1')
+    expect(setFlag).toHaveBeenLastCalledWith('dcc', 'actionDice', {
+      round: 3, spent: [true, false], twoWeaponPendingRole: null, twoWeaponPendingSlot: null, twoWeaponPendingAction: null
+    })
+    delete globalThis.fromUuid
+  })
+
   // An actor-less combatant has no ownership to check, so it must be rejected
   // rather than written through.
   test('rejects a write for an actor-less combatant', async () => {
@@ -510,6 +550,185 @@ describe('spendPlannedActionDie', () => {
   })
 })
 
+// Two-weapon fighting (#834): a primary + off-hand pair is ONE action, so the
+// pair consumes one die. The first half spends and marks the companion role
+// pending on the state; the matching companion attack is free and consumes the
+// marker. Unrelated spends and manual toggles must not eat the marker.
+describe('two-weapon fighting pairing', () => {
+  beforeEach(() => set('multipleActionDice', true))
+
+  test('twoWeaponRoleForWeapon maps the weapon flags (primary wins a misconfigured both)', () => {
+    expect(twoWeaponRoleForWeapon({ system: { twoWeaponPrimary: true } })).toBe('primary')
+    expect(twoWeaponRoleForWeapon({ system: { twoWeaponSecondary: true } })).toBe('secondary')
+    expect(twoWeaponRoleForWeapon({ system: { twoWeaponPrimary: true, twoWeaponSecondary: true } })).toBe('primary')
+    expect(twoWeaponRoleForWeapon({ system: {} })).toBeNull()
+    expect(twoWeaponRoleForWeapon(undefined)).toBeNull()
+  })
+
+  test('companionTwoWeaponRole is the other hand', () => {
+    expect(companionTwoWeaponRole('primary')).toBe('secondary')
+    expect(companionTwoWeaponRole('secondary')).toBe('primary')
+    expect(companionTwoWeaponRole(null)).toBeNull()
+  })
+
+  test('the first half spends a die and marks the companion pending', async () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'primary' })
+    expect(plan.twoWeaponCompanion).toBe(false)
+    expect(plan.choice.index).toBe(0)
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, false],
+      twoWeaponPendingRole: 'secondary',
+      twoWeaponPendingSlot: 0,
+      twoWeaponPendingAction: 1
+    })
+    // The first half's chat descriptor is a normal spend.
+    expect(descriptor).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, die: '1d20' })
+  })
+
+  test('the companion half is free: same slot, marker consumed, nothing else spent', async () => {
+    const c = makeCombatant(slots(2), {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'secondary' })
+    expect(plan.twoWeaponCompanion).toBe(true)
+    expect(plan.choice.index).toBe(0) // the pair's slot, not the next unspent
+    const descriptor = await spendPlannedActionDie(plan)
+    // Marker cleared with explicit nulls (setFlag merges — omitted keys would
+    // survive), spends untouched.
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, false],
+      twoWeaponPendingRole: null,
+      twoWeaponPendingSlot: null,
+      twoWeaponPendingAction: null
+    })
+    expect(descriptor).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, twoWeapon: true, die: '1d20' })
+  })
+
+  test('off-hand-first also forms a pair (pending role is primary)', async () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'secondary' })
+    await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+      spent: [true, false],
+      twoWeaponPendingRole: 'primary'
+    }))
+  })
+
+  test('an unrelated spend between the two swings preserves the marker', async () => {
+    const c = makeCombatant(slots(2), {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'check')
+    expect(plan.choice.index).toBe(1)
+    await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, true],
+      twoWeaponPendingRole: 'secondary',
+      twoWeaponPendingSlot: 0,
+      twoWeaponPendingAction: 1
+    })
+  })
+
+  test('the companion keeps the pair\'s action number across an interleaved spend', async () => {
+    // Pair opened on slot 0 (action 1), then a check spent slot 1 (action 2).
+    const c = makeCombatant(slots(2), {
+      round: 3, spent: [true, true], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'secondary' })
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(descriptor).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, twoWeapon: true, die: '1d20' })
+  })
+
+  test('the same hand twice opens a second pair on the next die', async () => {
+    const c = makeCombatant(slots(2), {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3)
+    // Primary again: the pending marker is for the OTHER hand, so this is a
+    // new action — spend slot 1 and re-mark the off-hand as pending there.
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'primary' })
+    expect(plan.twoWeaponCompanion).toBe(false)
+    expect(plan.choice.index).toBe(1)
+    await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, true],
+      twoWeaponPendingRole: 'secondary',
+      twoWeaponPendingSlot: 1,
+      twoWeaponPendingAction: 2
+    })
+  })
+
+  test('after a completed pair the next attack spends the second die normally', async () => {
+    const c = makeCombatant(slots(2), { round: 3, spent: [true, false] }, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'primary' })
+    expect(plan.twoWeaponCompanion).toBe(false)
+    expect(plan.choice.index).toBe(1)
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(descriptor).toEqual({ actionNumber: 2, count: 2, overBudget: false, noEligibleDie: false, die: '1d16' })
+  })
+
+  test('a stale (previous-round) marker does not grant a free attack', () => {
+    const c = makeCombatant(slots(2), {
+      round: 2, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3) // new round — stored state is stale
+    const plan = planActionDie({ id: 'hero' }, 'attack', { twoWeaponRole: 'secondary' })
+    expect(plan.twoWeaponCompanion).toBe(false)
+    expect(plan.choice.index).toBe(0)
+  })
+
+  test('the round auto-reset clears an old marker with explicit nulls (setFlag merges)', async () => {
+    allOn()
+    const c = combatantWith(slots(2), {
+      round: 6, spent: [true, true], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    })
+    await resetActiveCombatantActionDice({ round: 7, combatant: c })
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 7,
+      spent: [false, false],
+      twoWeaponPendingRole: null,
+      twoWeaponPendingSlot: null,
+      twoWeaponPendingAction: null
+    })
+  })
+
+  test('a manual pip toggle preserves the pending marker', async () => {
+    const c = combatantWith(slots(2), {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    })
+    await toggleActionDiePip(c, 1, 3)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, true],
+      twoWeaponPendingRole: 'secondary',
+      twoWeaponPendingSlot: 0,
+      twoWeaponPendingAction: 1
+    })
+  })
+
+  test('a non-attack action never plans as a companion even with a matching marker', () => {
+    const c = makeCombatant(slots(2), {
+      round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1
+    }, 'hero')
+    setCombat(c, 3)
+    const plan = planActionDie({ id: 'hero' }, 'check', { twoWeaponRole: 'secondary' })
+    expect(plan.twoWeaponCompanion).toBe(false)
+    expect(plan.twoWeaponRole).toBeNull() // roles only apply to attacks
+  })
+})
+
 describe('formatActionDiceChatLine', () => {
   beforeEach(() => {
     globalThis.game.i18n.format = (k, d) => `${k}|${JSON.stringify(d)}`
@@ -532,6 +751,11 @@ describe('formatActionDiceChatLine', () => {
   test('no-eligible-die line uses its own key, not over-budget', () => {
     expect(formatActionDiceChatLine({ actionNumber: 2, count: 2, overBudget: true, noEligibleDie: true, die: '' }))
       .toBe('DCC.ActionDiceChatLineNoEligibleDie|{"n":2,"m":2}')
+  })
+
+  test('the free two-weapon companion uses the two-weapon key', () => {
+    expect(formatActionDiceChatLine({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, twoWeapon: true, die: '1d20' }))
+      .toBe('DCC.ActionDiceChatLineTwoWeapon|{"n":1,"m":2,"die":"1d20"}')
   })
 })
 

@@ -46,6 +46,20 @@ export const WRITE_ACTION_DICE = 'dcc.writeActionDice'
  * @returns {Promise<void>}
  */
 async function writeActionDiceState (combatant, state) {
+  // `setFlag` MERGES objects, so dropping the two-weapon pending-pair keys
+  // from `state` does not remove them from the stored flag — a consumed (or
+  // round-expired) marker must be cleared with explicit nulls. Only added
+  // when a stored marker is actually being dropped, so every other write
+  // stays byte-identical to today.
+  const existing = readActionDiceState(combatant)
+  if (existing?.twoWeaponPendingRole && !state?.twoWeaponPendingRole) {
+    state = {
+      ...state,
+      twoWeaponPendingRole: null,
+      twoWeaponPendingSlot: null,
+      twoWeaponPendingAction: null
+    }
+  }
   if (game.user?.isGM || combatant?.isOwner) {
     try {
       await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
@@ -77,7 +91,20 @@ export async function writeActionDiceHandler ({ combatantUuid, state }, userId) 
   const user = game.users?.get(userId)
   if (!user) return
   if (!combatant.actor || !combatant.actor.testUserPermission(user, 'OWNER')) return
-  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, state)
+  // Whitelist the persisted shape — the payload is a client claim, so only
+  // the known state keys are written (and the two-weapon marker only in a
+  // well-formed or explicit-null-clear form; see writeActionDiceState).
+  const sanitized = { round: state.round, spent: state.spent.map(Boolean) }
+  if (state.twoWeaponPendingRole === 'primary' || state.twoWeaponPendingRole === 'secondary') {
+    sanitized.twoWeaponPendingRole = state.twoWeaponPendingRole
+    sanitized.twoWeaponPendingSlot = Number.isInteger(state.twoWeaponPendingSlot) ? state.twoWeaponPendingSlot : 0
+    sanitized.twoWeaponPendingAction = Number.isInteger(state.twoWeaponPendingAction) ? state.twoWeaponPendingAction : 1
+  } else if (state.twoWeaponPendingRole === null) {
+    sanitized.twoWeaponPendingRole = null
+    sanitized.twoWeaponPendingSlot = null
+    sanitized.twoWeaponPendingAction = null
+  }
+  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, sanitized)
 }
 
 /** Register the GM-side action-dice write handler. Call once at ready. */
@@ -221,7 +248,9 @@ export async function resetActiveCombatantActionDice (combat) {
   if (slots.length < 1) return
   const state = readActionDiceState(combatant)
   if (state && isActionDiceStateCurrent(state, combat.round)) return
-  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, resetActionDice(slots, combat.round))
+  // Via writeActionDiceState so a pending two-weapon marker from the old
+  // round is explicitly cleared (setFlag merges — see writeActionDiceState).
+  await writeActionDiceState(combatant, resetActionDice(slots, combat.round))
 }
 
 /**
@@ -237,14 +266,11 @@ export async function resetActiveCombatantActionDice (combat) {
 export async function toggleActionDiePip (combatant, index, round) {
   const slots = getCombatantSlots(combatant)
   if (index < 0 || index >= slots.length) return
-  const stored = readActionDiceState(combatant)
-  const base = (stored && isActionDiceStateCurrent(stored, round))
-    ? stored
-    : resetActionDice(slots, round)
+  const base = currentRoundState(combatant, round)
   // spendActionDie sets spent=true; to toggle, rebuild the array directly.
   const spent = effectiveSpent(base, round, slots.length)
   spent[index] = !spent[index]
-  await writeActionDiceState(combatant, { round, spent })
+  await writeActionDiceState(combatant, { round, spent, ...carryTwoWeaponPending(base) })
 }
 
 /**
@@ -260,11 +286,8 @@ export async function toggleActionDiePip (combatant, index, round) {
 export async function spendCombatantActionDie (combatant, index, round) {
   const slots = getCombatantSlots(combatant)
   if (index < 0 || index >= slots.length) return
-  const stored = readActionDiceState(combatant)
-  const base = (stored && isActionDiceStateCurrent(stored, round))
-    ? stored
-    : resetActionDice(slots, round)
-  await writeActionDiceState(combatant, spendActionDie(base, index))
+  const base = currentRoundState(combatant, round)
+  await writeActionDiceState(combatant, { ...spendActionDie(base, index), ...carryTwoWeaponPending(base) })
 }
 
 // --- Phase 3: roll-path auto-spend --------------------------------------
@@ -284,6 +307,62 @@ export function getCombatantForActor (actor) {
     if (combatant.actor?.id === actor.id) return combatant
   }
   return null
+}
+
+/**
+ * The two-weapon-fighting role of a weapon, from the flags the item sheet
+ * sets: `'primary'`, `'secondary'`, or `null` for a normal weapon. Primary
+ * wins if both flags are (mis)configured on one item.
+ * @param {Item|{system:object}} weapon
+ * @returns {'primary'|'secondary'|null}
+ */
+export function twoWeaponRoleForWeapon (weapon) {
+  if (weapon?.system?.twoWeaponPrimary) return 'primary'
+  if (weapon?.system?.twoWeaponSecondary) return 'secondary'
+  return null
+}
+
+/**
+ * The other half of a two-weapon pair. `null` in ⇒ `null` out.
+ * @param {'primary'|'secondary'|null} role
+ * @returns {'primary'|'secondary'|null}
+ */
+export function companionTwoWeaponRole (role) {
+  if (role === 'primary') return 'secondary'
+  if (role === 'secondary') return 'primary'
+  return null
+}
+
+/**
+ * The combatant's stored state when it belongs to `round`, otherwise a fresh
+ * all-unspent reset — the shared "what is the live per-round state right now"
+ * read used by every spend/toggle path.
+ * @param {Combatant} combatant
+ * @param {number} round
+ * @returns {import('./vendor/dcc-core-lib/types/combat.js').ActionDiceState}
+ */
+function currentRoundState (combatant, round) {
+  const stored = readActionDiceState(combatant)
+  return (stored && isActionDiceStateCurrent(stored, round))
+    ? stored
+    : resetActionDice(getCombatantSlots(combatant), round)
+}
+
+/**
+ * The two-weapon pending-pair fields of a state, for spreading into a rewrite
+ * that must not eat an outstanding free off-hand attack (an unrelated spend or
+ * a manual pip toggle). `{}` when no pair is pending, so states without a
+ * marker stay byte-identical to today.
+ * @param {object} state
+ * @returns {object}
+ */
+function carryTwoWeaponPending (state) {
+  if (!state?.twoWeaponPendingRole) return {}
+  return {
+    twoWeaponPendingRole: state.twoWeaponPendingRole,
+    twoWeaponPendingSlot: state.twoWeaponPendingSlot,
+    twoWeaponPendingAction: state.twoWeaponPendingAction
+  }
 }
 
 /**
@@ -312,23 +391,51 @@ export function slotRollFormula (slot) {
  * plus the counts the "Action N of M" chat line needs. Pure read — it computes
  * the would-be-reset state for a stale round but never writes; the write happens
  * in {@link spendPlannedActionDie} after the roll resolves.
+ *
+ * Two-weapon fighting (#834): a primary + off-hand pair is ONE action, so the
+ * pair consumes one die. Pass the weapon's `twoWeaponRole`; the first half
+ * spends a die and records the companion role as pending on the state, and the
+ * matching companion attack in the same round is planned as a free
+ * `twoWeaponCompanion` — same slot, nothing further spent.
  * @param {Actor} actor
  * @param {string} action
- * @returns {{combatant:Combatant, round:number, choice:{slot:object,index:number}|null, count:number, spentCount:number}|null}
+ * @param {object} [opts]
+ * @param {'primary'|'secondary'|null} [opts.twoWeaponRole] - the attacking
+ *        weapon's two-weapon role, from {@link twoWeaponRoleForWeapon}.
+ * @returns {{combatant:Combatant, round:number, choice:{slot:object,index:number}|null, count:number, spentCount:number, restrictedUnspentDice:string[], twoWeaponRole:string|null, twoWeaponCompanion:boolean, pairActionNumber?:number|null}|null}
  */
-export function planActionDie (actor, action) {
+export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
   if (!multipleActionDiceEnabled()) return null
   const combatant = getCombatantForActor(actor)
   if (!combatant) return null
   const slots = getCombatantSlots(combatant)
   if (slots.length < 1) return null
   const round = game.combat.round
-  const stored = readActionDiceState(combatant)
-  const state = (stored && isActionDiceStateCurrent(stored, round))
-    ? stored
-    : resetActionDice(slots, round)
+  const state = currentRoundState(combatant, round)
+  const spentCountSoFar = (state.spent || []).filter(Boolean).length
+  // The free half of a two-weapon pair: an earlier attack this round with the
+  // companion weapon already spent a die and marked this role pending. Plan
+  // the SAME slot (so the die override matches the pair's base die) and flag
+  // it so the spend step consumes the marker instead of another die.
+  if (action === 'attack' && twoWeaponRole && state.twoWeaponPendingRole === twoWeaponRole) {
+    // Clamp a stored slot the list no longer has (it shrank mid-round) so the
+    // planned slot and index always agree.
+    const storedIndex = Number.isInteger(state.twoWeaponPendingSlot) ? state.twoWeaponPendingSlot : 0
+    const pairIndex = slots[storedIndex] ? storedIndex : 0
+    const slot = slots[pairIndex]
+    return {
+      combatant,
+      round,
+      choice: { slot, index: pairIndex },
+      count: slots.length,
+      spentCount: spentCountSoFar,
+      restrictedUnspentDice: [],
+      twoWeaponRole,
+      twoWeaponCompanion: true,
+      pairActionNumber: Number.isInteger(state.twoWeaponPendingAction) ? state.twoWeaponPendingAction : null
+    }
+  }
   const choice = nextActionDie(slots, state, action)
-  const spentCount = (state.spent || []).filter(Boolean).length
   // The dice that are still unspent but cannot take `action` because their
   // `use` tag restricts them (a wizard's spells-only die for a weapon attack —
   // Sim 3 / D1). When `choice` is null and this is non-empty, the actor is not
@@ -337,7 +444,16 @@ export function planActionDie (actor, action) {
   const restrictedUnspentDice = slots
     .filter((slot, i) => !((state.spent || [])[i] ?? false) && !actionMatchesUse(slot.use, action))
     .map(slot => slotRollFormula(slot))
-  return { combatant, round, choice, count: slots.length, spentCount, restrictedUnspentDice }
+  return {
+    combatant,
+    round,
+    choice,
+    count: slots.length,
+    spentCount: spentCountSoFar,
+    restrictedUnspentDice,
+    twoWeaponRole: action === 'attack' ? twoWeaponRole : null,
+    twoWeaponCompanion: false
+  }
 }
 
 /**
@@ -345,14 +461,48 @@ export function planActionDie (actor, action) {
  * the "Action N of M" chat line. When over budget (`choice` is `null`) nothing
  * is written and the descriptor flags it. Returns `null` when there is no plan
  * (off-path), so the caller renders no line.
+ *
+ * Two-weapon fighting (#834): the first half of a pair also records the
+ * companion role + slot as pending on the persisted state; the companion half
+ * spends nothing — it only consumes that marker — and its descriptor carries
+ * `twoWeapon: true` so the chat line reads "same action". A pending marker
+ * survives unrelated spends (a spell between the two swings doesn't cost the
+ * off-hand its free attack) and dies with the round (the reset drops it).
  * @param {object|null} plan - from {@link planActionDie}
- * @returns {Promise<{actionNumber:number,count:number,overBudget:boolean,die:string}|null>}
+ * @returns {Promise<{actionNumber:number,count:number,overBudget:boolean,noEligibleDie:boolean,twoWeapon?:boolean,die:string}|null>}
  */
 export async function spendPlannedActionDie (plan) {
   if (!plan) return null
-  const { combatant, round, choice, count, spentCount, restrictedUnspentDice = [] } = plan
+  const { combatant, round, choice, count, spentCount, restrictedUnspentDice = [], twoWeaponRole = null, twoWeaponCompanion = false } = plan
+  if (twoWeaponCompanion && choice) {
+    // Free half of the pair: clear the pending marker, spend nothing. The
+    // written state intentionally omits the two-weapon fields.
+    const base = currentRoundState(combatant, round)
+    await writeActionDiceState(combatant, { round, spent: effectiveSpent(base, round, count) })
+    return {
+      // The pair is one action: this half shares the action number recorded
+      // when its companion's spend set the marker (falling back to the spent
+      // count if a judge hand-edited the flag in between).
+      actionNumber: plan.pairActionNumber ?? Math.max(spentCount, 1),
+      count,
+      overBudget: false,
+      noEligibleDie: false,
+      twoWeapon: true,
+      die: slotRollFormula(choice.slot)
+    }
+  }
   if (choice) {
-    await spendCombatantActionDie(combatant, choice.index, round)
+    const base = currentRoundState(combatant, round)
+    // An unrelated spend must not eat a pending off-hand attack; the first
+    // half of a pair replaces any marker with its own (the companion attack
+    // this round is covered by the die spent here).
+    const state = { ...spendActionDie(base, choice.index), ...carryTwoWeaponPending(base) }
+    if (twoWeaponRole) {
+      state.twoWeaponPendingRole = companionTwoWeaponRole(twoWeaponRole)
+      state.twoWeaponPendingSlot = choice.index
+      state.twoWeaponPendingAction = spentCount + 1
+    }
+    await writeActionDiceState(combatant, state)
   }
   return {
     actionNumber: spentCount + 1,
@@ -374,12 +524,15 @@ export async function spendPlannedActionDie (plan) {
  */
 export function formatActionDiceChatLine (descriptor) {
   if (!descriptor) return ''
-  const { actionNumber, count, overBudget, noEligibleDie, die } = descriptor
+  const { actionNumber, count, overBudget, noEligibleDie, twoWeapon, die } = descriptor
   if (overBudget) {
     if (noEligibleDie) {
       return game.i18n.format('DCC.ActionDiceChatLineNoEligibleDie', { n: actionNumber, m: count })
     }
     return game.i18n.format('DCC.ActionDiceChatLineOverBudget', { n: actionNumber, m: count })
+  }
+  if (twoWeapon) {
+    return game.i18n.format('DCC.ActionDiceChatLineTwoWeapon', { n: actionNumber, m: count, die })
   }
   return game.i18n.format('DCC.ActionDiceChatLine', { n: actionNumber, m: count, die })
 }
