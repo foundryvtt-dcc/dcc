@@ -16,10 +16,10 @@ All of these are world settings (**Configure Settings → System Settings**):
 
 | Setting | What it does |
 |---------|--------------|
-| **Multiple Action Dice** | Master switch. Turns on the per-die chips on actor sheets and everything below. |
-| **Track Action Dice in Combat** | Shows spent/ready pips on the combat tracker (and live state on the sheet chips) for actors in the active combat. |
-| **Auto-Reset Action Dice** | Resets each combatant's dice to ready at the start of their turn in a new round. |
-| **Hide Single Action Die Pips** | Declutter: no pips for actors with only one action die. |
+| **Multiple Action Dice (experimental)** | Master switch. Turns on the per-die chips on actor sheets and everything below. |
+| **Track action dice in combat tracker** | Shows spent/ready pips on the combat tracker (and live state on the sheet chips) for actors in the active combat. |
+| **Auto-reset action dice each round** | Resets each combatant's dice to ready at the start of their turn in a new round. |
+| **Hide pips for single-action-die actors** | Declutter: no pips for actors with only one action die. |
 
 ## How a round plays out
 
@@ -50,16 +50,18 @@ menu).
   **click a chip to toggle it** between spent and ready — for off-turn
   reactions, judge overrides, or fixing a mis-spend.
 
-## Choosing which die a roll uses
+## Choosing which die an attack uses
 
-Normally the system just uses your next ready die. To pick a different one,
-**Ctrl/Cmd-click** the attack to open the roll dialog: during combat the
-action-die presets there list each of your dice with its slot number and
-ready/spent state. Pick one and the spend follows the die you actually rolled —
-for example, save your `1d20` for a spell and swing with the `1d16` first.
+Normally the system just uses your next ready die. For a **weapon attack** you
+can pick a different one: **Ctrl/Cmd-click** the attack to open the roll
+dialog — during combat the action-die presets there list each of your dice
+with its slot number and ready/spent state. Pick one and the spend follows the
+die you actually rolled — for example, save your `1d20` for a spell and swing
+with the `1d16` first.
 
 If you roll a die that doesn't match any ready die (the untrained `1d10`, or a
 hand-edited formula), the system falls back to spending the next ready die.
+Spell, skill, and ability checks always spend the next ready eligible die.
 
 ## Two-weapon fighting
 
