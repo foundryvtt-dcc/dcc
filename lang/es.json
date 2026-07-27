@@ -86,6 +86,7 @@
   "DCC.ActionDiceChatLine": "Acción {n} de {m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "Acción {n} de {m} — sin dados disponibles",
   "DCC.ActionDiceChatLineNoEligibleDie": "Acción {n} de {m} — sin dado de acción válido",
+  "DCC.ActionDiceChatLineTwoWeapon": "Acción {n} de {m} · {die} — lucha con dos armas, misma acción",
   "DCC.ActionDiceNoEligibleWarning": "No hay dado de acción disponible para {action} ({dice} restringido a otros usos)",
   "DCC.ActionSave": "Guardar",
   "DCC.ActionDie": "D.Acción",

@@ -86,6 +86,7 @@
   "DCC.ActionDiceChatLine": "Aktion {n} von {m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "Aktion {n} von {m} — über dem Limit",
   "DCC.ActionDiceChatLineNoEligibleDie": "Aktion {n} von {m} — kein passender Aktionswürfel",
+  "DCC.ActionDiceChatLineTwoWeapon": "Aktion {n} von {m} · {die} — beidhändiger Kampf, gleiche Aktion",
   "DCC.ActionDiceNoEligibleWarning": "Kein Aktionswürfel für {action} verfügbar ({dice} auf andere Zwecke beschränkt)",
   "DCC.ActionSave": "Speichern",
   "DCC.ActionDie": "Aktionswürfel",

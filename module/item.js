@@ -104,7 +104,11 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
           dicePenalty = this.system.twoWeaponPrimary ? 0 : -1
         }
 
-        // Apply the dice penalty
+        // Apply the dice penalty. The raw penalty is kept (derived, not
+        // persisted) so the multiple-action-dice override — which replaces
+        // this weapon die with an extra slot's die — can re-apply it to the
+        // chosen base die (#834).
+        this.system.twoWeaponDicePenalty = dicePenalty
         if (dicePenalty !== 0) {
           const tag = this.system.twoWeaponPrimary ? game.i18n.localize('DCC.2w-primary') : game.i18n.localize('DCC.2w-off-hand')
           this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[${tag}]`

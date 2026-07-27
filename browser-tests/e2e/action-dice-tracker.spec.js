@@ -739,6 +739,148 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsD16).toBe(true)
   })
 
+  // Two-weapon fighting (#834): a primary + off-hand pair is ONE action, so
+  // the pair consumes one action die. Drives the real `rollWeaponAttack`
+  // dispatcher end-to-end with two flagged weapons on a 2-die actor:
+  //  - primary attack spends slot 0 and marks the off-hand pending,
+  //  - the off-hand attack is free (marker consumed, budget untouched) and its
+  //    chat line reads "same action",
+  //  - a third attack opens a new pair on slot 1 AND re-applies the two-weapon
+  //    dice-chain penalty to the override die (agility 17 ⇒ -1 both hands, so
+  //    the second action swings 1d14, not the raw 1d16 slot die).
+  test('a two-weapon pair spends one action die; the next pair uses the penalized second die', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      const prevAutomate = game.settings.get('dcc', 'automateDamageFumblesCrits')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+      await game.settings.set('dcc', 'automateDamageFumblesCrits', false)
+
+      let actor, combat
+      const createdMessageIds = []
+      try {
+        // Agility 17: both hands fight at a -1 die penalty (agi 16–17 row).
+        actor = await Actor.create({
+          name: 'TWF Pair Probe',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 17 } },
+            config: { actionDice: '1d20,1d16' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [
+          {
+            name: 'TWF Main Sword',
+            type: 'weapon',
+            system: { damage: '1d6', toHit: '+0', melee: true, trained: true, equipped: true, twoWeaponPrimary: true }
+          },
+          {
+            name: 'TWF Off Dagger',
+            type: 'weapon',
+            system: { damage: '1d4', toHit: '+0', melee: true, trained: true, equipped: true, twoWeaponSecondary: true }
+          }
+        ])
+        // Look the weapons up by name — createEmbeddedDocuments' return order
+        // is not guaranteed to match the input order.
+        const primary = actor.items.getName('TWF Main Sword')
+        const secondary = actor.items.getName('TWF Off Dagger')
+        const roles = {
+          primary: [primary.system.twoWeaponPrimary, primary.system.twoWeaponSecondary],
+          secondary: [secondary.system.twoWeaponPrimary, secondary.system.twoWeaponSecondary]
+        }
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate() // planActionDie reads game.combat (the active one)
+        const combatant = combat.combatants.contents[0]
+
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+        // The attack card's ChatMessage.create is fire-and-forget; poll for the
+        // n-th to-hit card of this probe before reading it.
+        const nthAttackMessage = async (n) => {
+          const deadline = Date.now() + 5000
+          while (Date.now() < deadline) {
+            const cards = game.messages.contents.filter(m =>
+              m.speaker?.actor === actor.id && m.getFlag('dcc', 'isToHit'))
+            if (cards.length >= n) return cards[n - 1]
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          return null
+        }
+
+        // Attack 1 — primary: spends slot 0, marks the off-hand pending.
+        await actor.rollWeaponAttack(primary.id)
+        const msg1 = await nthAttackMessage(1)
+        const flag1 = combatant.getFlag('dcc', 'actionDice')
+
+        // Attack 2 — off-hand: the free half of the pair.
+        await actor.rollWeaponAttack(secondary.id)
+        const msg2 = await nthAttackMessage(2)
+        const flag2 = combatant.getFlag('dcc', 'actionDice')
+
+        // Attack 3 — primary again: a NEW pair on the second die.
+        await actor.rollWeaponAttack(primary.id)
+        const msg3 = await nthAttackMessage(3)
+        const flag3 = combatant.getFlag('dcc', 'actionDice')
+
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+        return {
+          roles,
+          flag1,
+          flag2,
+          flag3,
+          line1: msg1?.system?.actionDiceChatLine ?? '',
+          line2: msg2?.system?.actionDiceChatLine ?? '',
+          line3: msg3?.system?.actionDiceChatLine ?? '',
+          die1: msg1?.rolls?.[0]?.formula ?? '',
+          die2: msg2?.rolls?.[0]?.formula ?? '',
+          die3: msg3?.rolls?.[0]?.formula ?? ''
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', prevAutomate)
+      }
+    })
+
+    // The created items carry the intended flags.
+    expect(result.roles.primary).toEqual([true, false])
+    expect(result.roles.secondary).toEqual([false, true])
+
+    // Attack 1 (primary) spends slot 0 and leaves the off-hand pending.
+    expect(result.flag1.spent).toEqual([true, false])
+    expect(result.flag1.twoWeaponPendingRole).toBe('secondary')
+    expect(result.flag1.twoWeaponPendingSlot).toBe(0)
+    expect(result.line1).toContain('1 of 2')
+    // Both hands swing the penalized d16 (base d20, agility 17 ⇒ -1).
+    expect(result.die1).toContain('d16')
+
+    // Attack 2 (off-hand) is FREE: budget untouched, marker consumed, and the
+    // chat line reads the two-weapon "same action" wording for action 1.
+    expect(result.flag2.spent).toEqual([true, false])
+    // Cleared via explicit null (setFlag merges; the key survives as null).
+    expect(result.flag2.twoWeaponPendingRole).toBeFalsy()
+    expect(result.line2).toContain('same action')
+    expect(result.line2).toContain('1 of 2')
+    expect(result.die2).toContain('d16')
+
+    // Attack 3 (primary again) opens a new pair on slot 1 — and the override
+    // die is the SLOT die with the two-weapon penalty re-applied: 1d14, not
+    // the raw 1d16 (the regression from #834 §3).
+    expect(result.flag3.spent).toEqual([true, true])
+    expect(result.flag3.twoWeaponPendingRole).toBe('secondary')
+    expect(result.flag3.twoWeaponPendingSlot).toBe(1)
+    expect(result.line3).toContain('2 of 2')
+    expect(result.die3).toContain('d14')
+  })
+
   test('derives the list for pre-existing actors on world load (early setting registration)', async ({ page }) => {
     // Regression: the multiple-action-dice settings used to register at the
     // `ready` hook, but existing world actors prepare during `setup` — so on

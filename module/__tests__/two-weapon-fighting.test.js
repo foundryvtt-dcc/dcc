@@ -97,6 +97,18 @@ describe('Two-Weapon Fighting', () => {
       weapon.prepareBaseData()
       expect(weapon.system.actionDie).toMatch(/d14.*\[2w-off-hand]/) // -2 penalty for agility 14
     })
+
+    // #834: the raw penalty is kept as derived data so the multiple-action-dice
+    // extra-die override can re-apply it to the chosen slot's base die.
+    it('should record the raw dice penalty for both hands', () => {
+      const primary = createWeapon(actor, { twoWeaponPrimary: true })
+      primary.prepareBaseData()
+      expect(primary.system.twoWeaponDicePenalty).toBe(-1)
+
+      const secondary = createWeapon(actor, { twoWeaponSecondary: true })
+      secondary.prepareBaseData()
+      expect(secondary.system.twoWeaponDicePenalty).toBe(-2)
+    })
   })
 
   describe('Critical Hit Ranges - Medium Agility (16-17)', () => {

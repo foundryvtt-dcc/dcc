@@ -317,6 +317,25 @@ unbuilt case is the homebrew extra-slot-rider suppression (won't-fix above).
 Keep every new branch behind the master gate — `planActionDie` already returns
 `null` off-path, so a missing plan is the byte-identical incumbent.
 
+**Two-weapon fighting pairing (#834).** A primary + off-hand pair is ONE action
+(RAW), so the pair consumes one die. The weapon path passes the weapon's role
+(`twoWeaponRoleForWeapon(weapon)` → `'primary'`/`'secondary'`/`null`) into
+`planActionDie(actor, 'attack', { twoWeaponRole })`. The first half spends the
+next die normally and records
+`twoWeaponPendingRole/-Slot/-Action` on the combatant's per-round state; the
+matching companion attack in the same round plans as a free
+`twoWeaponCompanion` — same slot (so the extra-die override uses the pair's
+base die), nothing spent, marker consumed, chat line
+`DCC.ActionDiceChatLineTwoWeapon` ("same action"). Unrelated spends and manual
+pip toggles carry the marker (`carryTwoWeaponPending`); the round reset drops
+it — and because `setFlag` **merges**, `writeActionDiceState` clears a dropped
+marker with explicit nulls. Same-hand-twice opens a second pair on the next
+die. The extra-die override in `_rollWeaponAttackDispatch` re-applies the
+weapon's two-weapon dice-chain penalty (`item.system.twoWeaponDicePenalty`,
+derived in `DCCItem.prepareBaseData`) to the chosen slot's die, so a pair
+fought on the second action die still swings penalized (e.g. slot `1d16` at
+agility 17 ⇒ `1d14`).
+
 ## TL;DR — recommendation
 
 Treat the action die not as a string the player reads off their sheet, but as a

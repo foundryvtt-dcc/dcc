@@ -86,6 +86,7 @@
   "DCC.ActionDiceChatLine": "Akcja {n} z {m} · {die}",
   "DCC.ActionDiceChatLineOverBudget": "Akcja {n} z {m} — przekroczono limit",
   "DCC.ActionDiceChatLineNoEligibleDie": "Akcja {n} z {m} — brak odpowiedniej kości akcji",
+  "DCC.ActionDiceChatLineTwoWeapon": "Akcja {n} z {m} · {die} — walka dwiema broniami, ta sama akcja",
   "DCC.ActionDiceNoEligibleWarning": "Brak dostępnej kości akcji dla {action} ({dice} ograniczone do innych zastosowań)",
   "DCC.ActionSave": "Zapisz",
   "DCC.ActionDie": "Kostka Akcji",
