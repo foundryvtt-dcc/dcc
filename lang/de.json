@@ -86,7 +86,6 @@
   "DCC.ActionDieStateReady": "bereit",
   "DCC.ActionDieStateSpent": "verbraucht",
   "DCC.ActionDiePresetReady": "{die} — Aktionswürfel {n} (bereit)",
-  "DCC.ActionDiePresetSpent": "{die} — Aktionswürfel {n} (verbraucht)",
   "DCC.ActionDieUseAny": "beliebige Aktion",
   "DCC.ActionDieUseSpell": "nur Zauber",
   "DCC.ActionDieUseAttack": "nur Angriffe",

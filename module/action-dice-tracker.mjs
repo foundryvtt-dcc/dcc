@@ -105,7 +105,11 @@ export async function writeActionDiceHandler ({ combatantUuid, state }, userId) 
     sanitized.twoWeaponPendingSlot = null
     sanitized.twoWeaponPendingAction = null
   }
-  await combatant.setFlag(FLAG_SCOPE, FLAG_KEY, sanitized)
+  // Via writeActionDiceState, not setFlag directly: the requesting client
+  // decided whether a marker clear was needed from ITS replica, which may
+  // be stale — re-checking against the GM's own stored flag ensures a
+  // dropped marker is cleared with explicit nulls here too (setFlag merges).
+  await writeActionDiceState(combatant, sanitized)
 }
 
 /** Register the GM-side action-dice write handler. Call once at ready. */
@@ -407,14 +411,17 @@ function formulaFaces (formula) {
 }
 
 /**
- * The roll-modifier dialog's action-die presets for a live plan — one per slot
- * still eligible for `action`, labeled with its slot number and ready/spent
- * state so the player can *choose* which action die the roll uses (issue #834
- * §3). The formula is the slot's die with the weapon's two-weapon dice-chain
- * penalty applied, i.e. the die that would actually be rolled — so a chosen
- * preset round-trips through {@link reconcilePlannedActionDie} back to its
- * slot. Returns `null` off-path (no plan or fewer than two slots), which keeps
- * the incumbent config-derived presets.
+ * The roll-modifier dialog's action-die presets for a live plan — one per
+ * slot that is still unspent and eligible for `action`, labeled with its
+ * slot number, so the player can *choose* which action die the roll uses
+ * (issue #834 §3). Spent slots are not offered: {@link
+ * reconcilePlannedActionDie} refuses to land a spend on them, so a spent
+ * preset would roll that die while silently burning the planned slot. The
+ * formula is the slot's die with the weapon's two-weapon dice-chain penalty
+ * applied, i.e. the die that would actually be rolled — so a chosen preset
+ * round-trips through the reconcile back to its slot. Returns `null`
+ * off-path (no plan or fewer than two slots), which keeps the incumbent
+ * config-derived presets.
  * @param {object|null} plan - from {@link planActionDie}
  * @param {object} [opts]
  * @param {number} [opts.twoWeaponPenalty] - `weapon.system.twoWeaponDicePenalty`
@@ -428,11 +435,11 @@ export function actionDicePresetsFromPlan (plan, { twoWeaponPenalty = 0, action 
   const spent = effectiveSpent(currentRoundState(plan.combatant, plan.round), plan.round, slots.length)
   const presets = []
   slots.forEach((slot, i) => {
-    if (!actionMatchesUse(slot.use, action)) return
+    if (spent[i] || !actionMatchesUse(slot.use, action)) return
     const formula = penalizedSlotFormula(slot, twoWeaponPenalty)
     presets.push({
       formula,
-      label: game.i18n.format(spent[i] ? 'DCC.ActionDiePresetSpent' : 'DCC.ActionDiePresetReady', { die: formula, n: i + 1 })
+      label: game.i18n.format('DCC.ActionDiePresetReady', { die: formula, n: i + 1 })
     })
   })
   return presets
@@ -448,16 +455,25 @@ export function actionDicePresetsFromPlan (plan, { twoWeaponPenalty = 0, action 
  * plan's `choice` moves there. No match (an untrained 1d10, a hand-edited
  * formula) or a match on the planned slot keeps the auto-pick — and the free
  * half of a two-weapon pair is never re-pointed, it must ride its pair's slot.
+ *
+ * `defaultFaces` is the faces of the die the roll would have used with NO
+ * player intervention (the weapon's own — possibly untrained/override-bumped —
+ * die, or the planned extra-die formula). A roll landing on that die is not
+ * evidence of a choice, so it never re-points: without this guard an untrained
+ * weapon whose bumped die happens to equal another slot's size (d20→d14 on a
+ * `1d20,1d14` warrior) would silently burn the wrong slot.
  * Pure: the returned plan is spent later by {@link spendPlannedActionDie}.
  * @param {object|null} plan - from {@link planActionDie}
  * @param {number|null} rolledFaces - faces of the action die actually rolled
  * @param {object} [opts]
  * @param {number} [opts.twoWeaponPenalty]
  * @param {string} [opts.action]
+ * @param {number|null} [opts.defaultFaces] - faces of the roll's default die
  * @returns {object|null} the plan, re-pointed if the rolled die says so
  */
-export function reconcilePlannedActionDie (plan, rolledFaces, { twoWeaponPenalty = 0, action = 'attack' } = {}) {
+export function reconcilePlannedActionDie (plan, rolledFaces, { twoWeaponPenalty = 0, action = 'attack', defaultFaces = null } = {}) {
   if (!plan?.choice || plan.twoWeaponCompanion || !rolledFaces) return plan
+  if (defaultFaces !== null && rolledFaces === defaultFaces) return plan
   const slots = getCombatantSlots(plan.combatant)
   if (slots.length < 2) return plan
   if (formulaFaces(penalizedSlotFormula(plan.choice.slot, twoWeaponPenalty)) === rolledFaces) return plan
@@ -563,6 +579,21 @@ export function planActionDie (actor, action, { twoWeaponRole = null } = {}) {
 export async function spendPlannedActionDie (plan) {
   if (!plan) return null
   const { combatant, round, choice, count, spentCount, restrictedUnspentDice = [], twoWeaponRole = null, twoWeaponCompanion = false } = plan
+  // The plan was made before the roll resolved, and a roll-modifier dialog
+  // can sit open across a round boundary. Never stamp a stale-round state
+  // over a fresh reset — skip the write (the descriptor still reports the
+  // plan's own accounting; the new round's budget is untouched).
+  const liveRound = globalThis.game?.combat?.round
+  if (Number.isInteger(liveRound) && liveRound !== round) {
+    return {
+      actionNumber: spentCount + 1,
+      count,
+      overBudget: !choice,
+      noEligibleDie: !choice && restrictedUnspentDice.length > 0,
+      ...(twoWeaponCompanion && choice ? { twoWeapon: true } : {}),
+      die: choice ? slotRollFormula(choice.slot) : ''
+    }
+  }
   if (twoWeaponCompanion && choice) {
     // Free half of the pair: clear the pending marker, spend nothing. The
     // written state intentionally omits the two-weapon fields.

@@ -345,6 +345,33 @@ describe('writeActionDiceHandler (GM-side socket handler)', () => {
     delete globalThis.fromUuid
   })
 
+  // #834 review: the requesting client decides whether a marker clear is
+  // needed from ITS replica, which may be stale — the handler must re-check
+  // the GM's own stored flag so a dropped marker still gets explicit nulls
+  // (setFlag merges) instead of surviving as a free off-hand attack.
+  test('clears a GM-side stored marker even when the payload omits it', async () => {
+    const setFlag = vi.fn(async () => {})
+    const combatant = {
+      actor: { testUserPermission: vi.fn(() => true) },
+      setFlag,
+      getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice'
+        ? { round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1 }
+        : undefined)
+    }
+    globalThis.fromUuid = vi.fn(async () => combatant)
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true, true] } }, 'p1')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, true],
+      twoWeaponPendingRole: null,
+      twoWeaponPendingSlot: null,
+      twoWeaponPendingAction: null
+    })
+    delete globalThis.fromUuid
+  })
+
   test('persists a well-formed two-weapon marker and an explicit null clear', async () => {
     const setFlag = vi.fn(async () => {})
     globalThis.fromUuid = vi.fn(async () => setupCombatant(setFlag, true))
@@ -798,18 +825,21 @@ describe('actionDicePresetsFromPlan', () => {
     expect(actionDicePresetsFromPlan({ combatant: c, round: 1 })).toBeNull()
   })
 
-  test('one preset per slot, labeled with slot number and ready/spent state', () => {
+  test('one preset per UNSPENT slot, labeled with its slot number', () => {
+    // Slot 0 is spent: it is not offered — the reconcile refuses to land a
+    // spend on a spent slot, so a spent preset would roll that die while
+    // silently burning the planned slot (#834 review).
     const c = makeCombatant(slots(2), { round: 3, spent: [true, false] }, 'hero')
     const presets = actionDicePresetsFromPlan({ combatant: c, round: 3 })
     expect(presets).toEqual([
-      { formula: '1d20', label: 'DCC.ActionDiePresetSpent|{"die":"1d20","n":1}' },
       { formula: '1d16', label: 'DCC.ActionDiePresetReady|{"die":"1d16","n":2}' }
     ])
   })
 
-  test('a stale round reads all-ready', () => {
+  test('a stale round reads all-ready (every slot offered)', () => {
     const c = makeCombatant(slots(2), { round: 1, spent: [true, true] }, 'hero')
     const presets = actionDicePresetsFromPlan({ combatant: c, round: 2 })
+    expect(presets).toHaveLength(2)
     expect(presets.every(p => p.label.startsWith('DCC.ActionDiePresetReady'))).toBe(true)
   })
 
@@ -893,5 +923,49 @@ describe('reconcilePlannedActionDie', () => {
     expect(reconcilePlannedActionDie(null, 16)).toBeNull()
     const overBudget = { combatant: makeCombatant(slots(2), null, 'hero'), round: 1, choice: null }
     expect(reconcilePlannedActionDie(overBudget, 16)).toBe(overBudget)
+  })
+
+  // #834 review (High): a roll on the roll's DEFAULT die is not evidence of
+  // a player choice, even when its faces coincide with another slot — e.g.
+  // an untrained weapon's bumped d14 on a `1d20,1d14` warrior must spend
+  // slot 0, not re-point to the d14 slot.
+  test('a roll matching the default die never re-points', () => {
+    const c = makeCombatant(
+      [{ slot: 0, die: 'd20', modifier: 0, use: 'any' }, { slot: 1, die: 'd14', modifier: 0, use: 'any' }],
+      null, 'hero')
+    const plan = planFor(c)
+    expect(reconcilePlannedActionDie(plan, 14, { defaultFaces: 14 })).toBe(plan)
+    // A deviation from the default still re-points as before.
+    expect(reconcilePlannedActionDie(plan, 14, { defaultFaces: 20 }).choice.index).toBe(1)
+  })
+})
+
+describe('spendPlannedActionDie round guard (#834 review)', () => {
+  beforeEach(() => { allOn() })
+
+  test('a plan from a bygone round is not written over the live state', async () => {
+    const c = makeCombatant(slots(2), { round: 6, spent: [false, false] }, 'hero')
+    setCombat(c, 6) // the combat has moved on to round 6...
+    const plan = {
+      combatant: c,
+      round: 5, // ...but the plan was made in round 5 (dialog left open)
+      choice: { slot: c.actor.system.attributes.actionDice.list[0], index: 0 },
+      count: 2,
+      spentCount: 0,
+      restrictedUnspentDice: [],
+      twoWeaponRole: null,
+      twoWeaponCompanion: false
+    }
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).not.toHaveBeenCalled()
+    expect(descriptor).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, die: '1d20' })
+  })
+
+  test('a current-round plan still writes normally', async () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    setCombat(c, 5)
+    const plan = planActionDie(c.actor, 'attack')
+    await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 5, spent: [true, false] })
   })
 })

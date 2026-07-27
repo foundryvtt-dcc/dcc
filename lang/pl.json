@@ -86,7 +86,6 @@
   "DCC.ActionDieStateReady": "gotowa",
   "DCC.ActionDieStateSpent": "zużyta",
   "DCC.ActionDiePresetReady": "{die} — kość akcji {n} (gotowa)",
-  "DCC.ActionDiePresetSpent": "{die} — kość akcji {n} (zużyta)",
   "DCC.ActionDieUseAny": "dowolna akcja",
   "DCC.ActionDieUseSpell": "tylko zaklęcia",
   "DCC.ActionDieUseAttack": "tylko ataki",

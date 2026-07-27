@@ -27,10 +27,15 @@ vi.mock('../utilities.js', () => ({
     return match ? match[0] : null
   }),
   // Mirrors the real implementation: single die of the first listed faces
-  // ('2d20' → '1d20'), '' when no die is present.
+  // with its flat rider kept ('2d20' → '1d20', '1d20+4' → '1d20+4'), ''
+  // when no die is present.
   getSingleActionDie: vi.fn((value) => {
-    const match = String(value || '').match(/d(\d+)/)
-    return match ? `1d${match[1]}` : ''
+    const first = String(value || '').split(',')[0]
+    const match = first.match(/d(\d+)/)
+    if (!match) return ''
+    const after = first.slice(first.indexOf(match[0]) + match[0].length)
+    const rider = after.match(/^(?:[+-]\d+(?!\d*d\d))+/)?.[0] ?? ''
+    return `1d${match[1]}${rider}`
   })
 }))
 

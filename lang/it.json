@@ -86,7 +86,6 @@
   "DCC.ActionDieStateReady": "pronto",
   "DCC.ActionDieStateSpent": "speso",
   "DCC.ActionDiePresetReady": "{die} — dado azione {n} (pronto)",
-  "DCC.ActionDiePresetSpent": "{die} — dado azione {n} (speso)",
   "DCC.ActionDieUseAny": "qualsiasi azione",
   "DCC.ActionDieUseSpell": "solo incantesimi",
   "DCC.ActionDieUseAttack": "solo attacchi",

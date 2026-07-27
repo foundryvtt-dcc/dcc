@@ -142,7 +142,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // The player may have overridden the auto-picked action die in the roll
     // dialog (issue #834 §3) — re-point the plan at the slot whose die was
     // actually rolled before spending, so the spend follows their choice.
-    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, attackRollResult.roll?.dice?.[0]?.faces, { twoWeaponPenalty })
+    // The roll's default die (the planned override, else the weapon's own —
+    // possibly untrained/override-bumped — die) is passed so a roll that
+    // simply used the default is never mistaken for a choice.
+    const defaultActionDieFaces = parseInt(String(options._actionDieFormula || weapon.system?.actionDie || '').match(/d(\d+)/)?.[1] || '') || null
+    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, attackRollResult.roll?.dice?.[0]?.faces, { twoWeaponPenalty, defaultFaces: defaultActionDieFaces })
 
     // Spend the planned die (the tracker pip flips on the flag update) and
     // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.

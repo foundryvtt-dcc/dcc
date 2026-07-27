@@ -73,7 +73,6 @@
   "DCC.ActionDieStateReady": "prêt",
   "DCC.ActionDieStateSpent": "dépensé",
   "DCC.ActionDiePresetReady": "{die} — dé d'action {n} (prêt)",
-  "DCC.ActionDiePresetSpent": "{die} — dé d'action {n} (dépensé)",
   "DCC.ActionDieUseAny": "n'importe quelle action",
   "DCC.ActionDieUseSpell": "sorts uniquement",
   "DCC.ActionDieUseAttack": "attaques uniquement",

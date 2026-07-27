@@ -86,7 +86,6 @@
   "DCC.ActionDieStateReady": "listo",
   "DCC.ActionDieStateSpent": "gastado",
   "DCC.ActionDiePresetReady": "{die} — dado de acción {n} (listo)",
-  "DCC.ActionDiePresetSpent": "{die} — dado de acción {n} (gastado)",
   "DCC.ActionDieUseAny": "cualquier acción",
   "DCC.ActionDieUseSpell": "solo conjuros",
   "DCC.ActionDieUseAttack": "solo ataques",

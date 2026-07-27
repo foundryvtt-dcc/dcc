@@ -16,7 +16,11 @@
  *     prototype-token actor-link
  *   - `applyActiveEffect` — DiceChain bump for string-valued dice expressions
  *   - `preUpdateActor` — sync prototype-token texture when the actor image changes
- *   - `updateCombat` — Active Effect duration expiry on round advance
+ *   - `updateCombat` — Active Effect duration expiry on round advance, composed
+ *     with the sheet-chip refresh on round/active changes (issue #834)
+ *   - `deleteCombat` / `updateCombatant` / `createCombatant` / `deleteCombatant`
+ *     — refresh open actor sheets whose action-dice chips mirror the tracker
+ *     pips (multiple-action-dice feature, gated)
  *   - `combatTurn` / `combatRound` — auto-reset action-die pips at the start of
  *     a combatant's turn (multiple-action-dice feature, gated)
  *   - `renderCombatTracker` — inject per-combatant action-die pips (gated)

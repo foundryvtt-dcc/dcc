@@ -86,7 +86,6 @@
   "DCC.ActionDieStateReady": "可用",
   "DCC.ActionDieStateSpent": "已用",
   "DCC.ActionDiePresetReady": "{die} — 动作骰 {n}（可用）",
-  "DCC.ActionDiePresetSpent": "{die} — 动作骰 {n}（已用）",
   "DCC.ActionDieUseAny": "任意动作",
   "DCC.ActionDieUseSpell": "仅限法术",
   "DCC.ActionDieUseAttack": "仅限攻击",
