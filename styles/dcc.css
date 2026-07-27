@@ -2592,6 +2592,8 @@ a.inline-roll {
 }
 .dcc .character .combat-basics {
   align-items: center;
+  align-self: start;
+  min-height: 114px;
   border: var(--system-frame-border);
   border-top: 0;
   column-gap: 5px;
@@ -2599,7 +2601,7 @@ a.inline-roll {
   font-size: 13px;
   grid-column-end: span 3;
   grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-  grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+  grid-template-rows: 19px repeat(4, minmax(20px, auto));
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }

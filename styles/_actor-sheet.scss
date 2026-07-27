@@ -196,6 +196,12 @@
 
   .combat-basics {
     align-items: center;
+    // Content-sized, not stretched (issue #834): stretching to the grid row
+    // (whose height the AC/HP column also raises) padded the field rows and
+    // the space under the last row. min-height keeps the everyday two-die
+    // box at its usual height; a wrapped chip row grows it exactly one line.
+    align-self: start;
+    min-height: 114px;
     border: var(--system-frame-border);
     border-top: 0;
     column-gap: 5px;
@@ -203,7 +209,10 @@
     font-size: 13px;
     grid-column-end: span 3;
     grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-    grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+    // auto (not 1fr) maxes: under the content-sized box, equal fr rows would
+    // all inflate to the tallest row (the wrapped chip cell). auto rows hug
+    // their own content; the min-height slack still spreads evenly.
+    grid-template-rows: 19px repeat(4, minmax(20px, auto));
     margin: 0 0 8px 0;
     padding-bottom: 4px;
 
