@@ -2,7 +2,10 @@
 
 Higher-level characters (and many monsters) act more than once per round, using
 a list of action dice like `1d20,1d16` — see [Action Dice](Action-Dice.md) for
-how to enter the list itself. The **multiple action dice** feature adds
+how to enter the list itself. NPCs work too: the stat-block form `2d20` (as in
+`Act 2d20`) counts as two separate d20 actions, whether it was imported, typed
+into the NPC sheet's Action Dice box, or set in the `</>` Config menu. The
+**multiple action dice** feature adds
 optional, per-round *tracking* of those dice: the system spends a die for each
 attack, spell, or check you roll during combat, shows which dice are left, and
 resets the budget each round.

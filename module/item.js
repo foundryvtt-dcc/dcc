@@ -1,7 +1,7 @@
 /* global Item, foundry, game, ui, Roll, Dialog */
 
 import DiceChain from './dice-chain.js'
-import { ensurePlus, getFirstDie } from './utilities.js'
+import { ensurePlus, getFirstDie, getSingleActionDie } from './utilities.js'
 import { ContainerItemMixin } from './item/container-mixin.mjs'
 import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 import { SpellItemMixin } from './item/spell-mixin.mjs'
@@ -43,8 +43,11 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
 
     // NPC Weapon Items
     if (this.type === 'weapon' && this.isNPC) {
-      // Action Die Calculation
-      this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
+      // Action Die Calculation. Via getSingleActionDie: an NPC's stat-block
+      // value can be the full expression ('Act 2d20' ⇒ '2d20', two separate
+      // d20 ACTIONS) — the per-roll die is one die of the first listed
+      // faces, never a summed 2d20 (issue #834).
+      this.system.actionDie = getSingleActionDie(this.actor?.system?.attributes?.actionDice?.value) || ''
       if (this.system.config.actionDieOverride) {
         this.system.actionDie = this.system.config.actionDieOverride
       }
@@ -71,8 +74,9 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
         this.system.initiativeBonus = this.system.config.initiativeBonusOverride
       }
 
-      // Action Die Calculation
-      this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
+      // Action Die Calculation (normalized to a single first-faces die —
+      // a multi-die value is a list of ACTIONS, not a summed roll)
+      this.system.actionDie = getSingleActionDie(this.actor?.system?.attributes?.actionDice?.value) || ''
       if (!this.system.trained) {
         this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[${game.i18n.localize('DCC.untrained')}]`
       }
@@ -250,7 +254,7 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
     if (this.type === 'spell') {
       // Spells can use the owner's action die for the spell check
       if (this.system.config.inheritActionDie) {
-        this.system.spellCheck.die = this.actor?.system?.attributes?.actionDice?.value || '1d20'
+        this.system.spellCheck.die = getSingleActionDie(this.actor?.system?.attributes?.actionDice?.value) || '1d20'
         if (this.actor?.system?.class?.spellCheckOverrideDie) {
           this.system.spellCheck.die = this.actor?.system?.class?.spellCheckOverrideDie
         }

@@ -34,7 +34,13 @@
 > roll the spend is reconciled to the die actually rolled
 > (`reconcilePlannedActionDie`) instead of blindly burning the next-unspent
 > slot. (3) The chip row wraps for the worst core-book case (10th-level
-> warrior, `1d20+4, 1d20, 1d16`) instead of clipping. User guide:
+> warrior, `1d20+4, 1d20, 1d16`) instead of clipping. (4) NPCs: pack/legacy
+> NPCs carry the stat-block form in `attributes.actionDice.value` ('Act
+> 2d20' ⇒ `'2d20'`) while `config.actionDice` sits at its `'1d20'` schema
+> default — `DCCActor.selectActionDiceAuthoring` treats that as drift and
+> derives from the value (read-side, so locked compendia are covered), and
+> `DCCItem` derives a weapon's per-roll die via `getSingleActionDie` so a
+> `'2d20'` value swings ONE d20, never a summed 2d20. User guide:
 > `docs/user-guide/Multiple-Action-Dice.md`.
 
 ## 0. Implementation status & handoff (read this first)

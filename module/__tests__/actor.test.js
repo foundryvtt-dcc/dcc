@@ -2203,3 +2203,35 @@ test('deriveActionDiceList stores a per-die rider as the slot modifier', () => {
   })
   expect(list.map(s => s.modifier)).toEqual([4, 0, 0])
 })
+
+// Issue #834: NPC chips/pips. Pack and legacy NPCs carry the full stat-block
+// expression in `attributes.actionDice.value` ('Act 2d20' ⇒ '2d20') while
+// `config.actionDice` sits at its '1d20' schema default — the authoring
+// selection must treat that as drift and read the value.
+test('selectActionDiceAuthoring prefers a richer value over a schema-default config', () => {
+  expect(DCCActor.selectActionDiceAuthoring({ config: '1d20', value: '2d20' })).toBe('2d20')
+  expect(DCCActor.selectActionDiceAuthoring({ config: '1d20', value: '1d20,1d14' })).toBe('1d20,1d14')
+  expect(DCCActor.selectActionDiceAuthoring({ config: '', value: '2d20' })).toBe('2d20')
+  expect(DCCActor.selectActionDiceAuthoring({ config: undefined, value: '2d20' })).toBe('2d20')
+})
+
+test('selectActionDiceAuthoring keeps a deliberate config as the source of truth', () => {
+  // Imported NPC: config holds the full expression, value the single die.
+  expect(DCCActor.selectActionDiceAuthoring({ config: '2d20', value: '1d20' })).toBe('2d20')
+  // Everything matching the default is just a plain one-die actor.
+  expect(DCCActor.selectActionDiceAuthoring({ config: '1d20', value: '1d20' })).toBe('1d20')
+  expect(DCCActor.selectActionDiceAuthoring({ config: '1d20', value: '' })).toBe('1d20')
+  // A non-default config always wins, even against a differing value.
+  expect(DCCActor.selectActionDiceAuthoring({ config: '1d16', value: '2d20' })).toBe('1d16')
+})
+
+test('deriveActionDiceList expands NPC stat-block counts into slots (2d20)', () => {
+  const list = DCCActor.deriveActionDiceList({
+    enabled: true,
+    authoring: DCCActor.selectActionDiceAuthoring({ config: '1d20', value: '2d20' }),
+    className: null
+  })
+  expect(list).toHaveLength(2)
+  expect(list.map(s => s.die)).toEqual(['d20', 'd20'])
+  expect(list.map(s => s.use)).toEqual(['any', 'any'])
+})
