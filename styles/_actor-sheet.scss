@@ -522,7 +522,10 @@
 .dcc {
   .npc-grid {
     display: grid;
-    grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+    // The combat-basics row can exceed 81px when the action-dice chips
+    // wrap (issue #834) — max-content lets it grow (the 1fr Special row
+    // gives the space back) instead of spilling over the box border.
+    grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
     min-height: 100%;
 
     textarea {
@@ -615,12 +618,6 @@
 
       label {
         font-size: 12px;
-      }
-
-      // Multi-die NPCs (issue #834): the chip row needs more than the one
-      // 75px cell next to its label — let it run to the end of the row.
-      .action-dice-chips {
-        grid-column: 2 / -1;
       }
     }
 

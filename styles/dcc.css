@@ -2849,7 +2849,7 @@ a.inline-roll {
 
 .dcc .npc-grid {
   display: grid;
-  grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+  grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
   min-height: 100%;
 }
 .dcc .npc-grid textarea {
@@ -2923,9 +2923,6 @@ a.inline-roll {
 }
 .dcc .npc-grid .combat-basics label {
   font-size: 12px;
-}
-.dcc .npc-grid .combat-basics .action-dice-chips {
-  grid-column: 2/-1;
 }
 .dcc .npc-grid .name-and-level {
   column-gap: 12px;
