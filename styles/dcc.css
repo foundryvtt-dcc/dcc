@@ -2819,6 +2819,7 @@ a.inline-roll {
   gap: 3px;
   align-items: center;
   min-width: 0;
+  padding: 3px 0;
 }
 .dcc .action-dice-chips .action-die-chip {
   align-items: center;

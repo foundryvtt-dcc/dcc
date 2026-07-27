@@ -480,6 +480,9 @@
   gap: 3px;
   align-items: center;
   min-width: 0;
+  // Breathing room against the neighboring field rows, which hug their
+  // content since the box became content-sized (issue #834).
+  padding: 3px 0;
 
   .action-die-chip {
     align-items: center;
