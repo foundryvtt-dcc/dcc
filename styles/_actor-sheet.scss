@@ -7,13 +7,18 @@
     column-gap: 8px;
     display: grid;
     grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
+    // Row sizing (issue #834): the name and combat-basics rows are capped at
+    // max-content — `auto` maxes would soak up any spare tab height (grid
+    // "stretch auto tracks"), and the combat-basics box would then spread
+    // its field rows apart to fill the stretch. Capped, the box hugs its
+    // content — growing only when the action-dice chips wrap to an extra
+    // line — and spare height settles at the bottom row instead.
+    grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
     // min-height (not height): with a definite height the row maximums can
     // never exceed the tab, so a combat-basics row whose action-dice chips
-    // wrap (a 10th-level warrior's three dice, issue #834) would overflow
-    // onto the rows below instead of growing. Content-sized, the row grows,
-    // everything shifts down, and the tab scrolls; when nothing wraps the
-    // grid still fills the tab exactly as before.
+    // wrap (a 10th-level warrior's three dice) would overflow onto the rows
+    // below instead of growing. Content-sized, the row grows, everything
+    // shifts down, and the tab scrolls.
     height: auto;
     min-height: 100%;
   }

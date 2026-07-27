@@ -2446,7 +2446,7 @@ a.inline-roll {
   column-gap: 8px;
   display: grid;
   grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-  grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
+  grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
   height: auto;
   min-height: 100%;
 }
