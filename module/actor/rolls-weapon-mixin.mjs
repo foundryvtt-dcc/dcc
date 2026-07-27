@@ -17,7 +17,7 @@ import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, par
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
-import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon } from '../action-dice-tracker.mjs'
+import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import DiceChain from '../dice-chain.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -109,14 +109,23 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // re-applied to the chosen slot's die so a pair fought on the second
     // action die still swings at its penalized size.
     delete options._actionDieFormula
-    const actionDicePlan = planActionDie(this, 'attack', { twoWeaponRole: twoWeaponRoleForWeapon(weapon) })
+    delete options._actionDicePresets
+    const twoWeaponPenalty = parseInt(weapon.system?.twoWeaponDicePenalty) || 0
+    let actionDicePlan = planActionDie(this, 'attack', { twoWeaponRole: twoWeaponRoleForWeapon(weapon) })
     if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
       let formula = slotRollFormula(actionDicePlan.choice.slot)
-      const twoWeaponPenalty = parseInt(weapon.system?.twoWeaponDicePenalty) || 0
       if (twoWeaponPenalty !== 0) {
         formula = DiceChain.bumpDie(formula, twoWeaponPenalty)
       }
       options._actionDieFormula = formula
+    }
+    // Slot-aware presets for the roll-modifier dialog (issue #834 §3): each
+    // eligible slot, labeled with its ready/spent state, so the player can
+    // choose which action die this attack uses. The free half of a two-weapon
+    // pair rides its pair's already-spent slot, so it gets no choice.
+    if (actionDicePlan && !actionDicePlan.twoWeaponCompanion) {
+      const slotPresets = actionDicePresetsFromPlan(actionDicePlan, { twoWeaponPenalty })
+      if (slotPresets) options._actionDicePresets = slotPresets
     }
     // Soft spells-only filter (Phase 4 / D1a): if the only action dice left are
     // restricted to other uses (a wizard's spells-only die can't make a weapon
@@ -129,6 +138,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
     if (!attackRollResult) return // <-- if the attack roll is cancelled, return
+
+    // The player may have overridden the auto-picked action die in the roll
+    // dialog (issue #834 §3) — re-point the plan at the slot whose die was
+    // actually rolled before spending, so the spend follows their choice.
+    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, attackRollResult.roll?.dice?.[0]?.faces, { twoWeaponPenalty })
 
     // Spend the planned die (the tracker pip flips on the flag update) and
     // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.
@@ -449,8 +463,18 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // never offers it for an attack. Slot 0 is always unrestricted, so the
     // `[0].formula` default die is unaffected; off-path (master off / no derived
     // list) the filter is a no-op and the presets are byte-identical.
-    const actionDicePresets = this.getActionDice({ includeUntrained: true, forAction: 'attack' })
+    let actionDicePresets = this.getActionDice({ includeUntrained: true, forAction: 'attack' })
     const actorActionDice = actionDicePresets[0].formula
+    // Slot-aware presets from the live multiple-action-dice plan (issue #834
+    // §3) replace the config-derived list: same dice, but labeled with slot
+    // number + ready/spent state and carrying the two-weapon penalty, so the
+    // dialog is a real action-die *chooser*. The untrained override stays.
+    if (options._actionDicePresets?.length) {
+      actionDicePresets = [
+        ...options._actionDicePresets,
+        { label: game.i18n.localize('DCC.Untrained'), formula: '1d10' }
+      ]
+    }
     // `_actionDieFormula` is the multiple-action-dice next-unspent override
     // (Phase 3), set by `_rollWeaponAttackDispatch` only for an extra die; it
     // is absent on the off-path so `die` resolves exactly as today.

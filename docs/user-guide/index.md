@@ -30,6 +30,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 
 ## Sheet Options
 * [Action Dice](Action-Dice.md)
+* [Multiple Action Dice (Tracking)](Multiple-Action-Dice.md)
 * [Critical Hits](Critical-Hits.md)
 
 ## Imports

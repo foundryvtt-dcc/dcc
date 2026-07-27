@@ -73,11 +73,11 @@
       <div class="combat-basics grid-align-center h-100-19">
         {{!-- Action Dice --}}
         {{#if showActionDiceChips}}
-        <label title="{{localize 'DCC.ActionDiceEdit'}}">{{localize "DCC.ActionDice"}}</label>
-        <div class="action-dice-chips" title="{{localize 'DCC.ActionDiceEdit'}}">
+        <label title="{{#if actionDiceTracking}}{{localize 'DCC.ActionDiceRowTrackingHint'}}{{else}}{{localize 'DCC.ActionDiceRowStaticHint'}}{{/if}}">{{localize "DCC.ActionDice"}}</label>
+        <div class="action-dice-chips" title="{{#if actionDiceTracking}}{{localize 'DCC.ActionDiceRowTrackingHint'}}{{else}}{{localize 'DCC.ActionDiceRowStaticHint'}}{{/if}}">
           {{#each actionDiceChips}}
-          <span class="action-die-chip{{#if this.restricted}} restricted{{/if}}" title="{{this.tooltip}}">
-            {{this.label}}{{#if this.restricted}}<span class="action-die-mark">&#8859;</span>{{/if}}
+          <span class="{{this.cssClass}}" title="{{this.tooltip}}"{{#if ../actionDiceInteractive}} data-action="toggleActionDie" data-slot-index="{{this.index}}"{{/if}}>
+            {{#if this.stateGlyph}}<span class="action-die-state">{{this.stateGlyph}}</span>{{/if}}{{this.label}}{{#if this.restricted}}<span class="action-die-mark">&#8859;</span>{{/if}}
           </span>
           {{/each}}
         </div>

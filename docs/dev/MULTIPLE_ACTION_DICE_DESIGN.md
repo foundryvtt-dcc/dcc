@@ -22,6 +22,20 @@
 > homebrew extra-slot-rider sliver resolved as a deliberate won't-fix.
 > **Feature complete.** Every documented item is landed or resolved; what's left
 > is live playtesting behind the master setting.
+>
+> **#834 UX follow-ups (2026-07-27):** (1) the sheet chips are now *live*
+> during combat — they carry ready/spent state (●/○, mirroring the tracker
+> pips) and click-to-toggle for the GM/owner (`prepareActionDiceContext` +
+> the sheet's `toggleActionDie` action; `updateCombatant`/combat-lifecycle
+> hooks re-render open sheets); out of combat they stay a static listing.
+> (2) The player can *choose* which die an attack uses: the roll-modifier
+> dialog's action-die presets are slot-aware (slot number + ready/spent,
+> two-weapon penalty applied — `actionDicePresetsFromPlan`), and after the
+> roll the spend is reconciled to the die actually rolled
+> (`reconcilePlannedActionDie`) instead of blindly burning the next-unspent
+> slot. (3) The chip row wraps for the worst core-book case (10th-level
+> warrior, `1d20+4, 1d20, 1d16`) instead of clipping. User guide:
+> `docs/user-guide/Multiple-Action-Dice.md`.
 
 ## 0. Implementation status & handoff (read this first)
 

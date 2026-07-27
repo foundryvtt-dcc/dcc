@@ -39,7 +39,7 @@ import { setupItemPilesForDCC } from './item-piles-support.js'
 import FleetingLuck from './fleeting-luck.js'
 import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
-import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice } from './action-dice-tracker.mjs'
+import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice, onUpdateCombatantForActionDice, onCombatLifecycleForActionDice, onDeleteCombatForActionDice, onCombatantLifecycleForActionDice } from './action-dice-tracker.mjs'
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
@@ -299,6 +299,16 @@ export async function onPreUpdateActor (actor, changes, options, userId) {
  * startRound + rounds; time-based via Foundry's `effect.isExpired`), and
  * surfaces a notification with the expired effect names.
  */
+/**
+ * `updateCombat` runs two independent concerns: the sheet-chip refresh on
+ * round/active changes (all clients — the chips mirror the tracker pips,
+ * issue #834 §2) and the GM-only Active Effect expiry below.
+ */
+export async function onUpdateCombatComposed (combat, changed, options, userId) {
+  onCombatLifecycleForActionDice(combat, changed)
+  return onUpdateCombat(combat, changed, options, userId)
+}
+
 export async function onUpdateCombat (combat, changed, options, userId) {
   // Only process on the GM's client to avoid duplicates
   if (!game.user.isGM) return
@@ -432,7 +442,11 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
   preUpdateActor: { handler: onPreUpdateActor, once: false },
   updateActor: { handler: onUpdateActorForDeath, once: false },
-  updateCombat: { handler: onUpdateCombat, once: false },
+  updateCombat: { handler: onUpdateCombatComposed, once: false },
+  deleteCombat: { handler: onDeleteCombatForActionDice, once: false },
+  updateCombatant: { handler: onUpdateCombatantForActionDice, once: false },
+  createCombatant: { handler: onCombatantLifecycleForActionDice, once: false },
+  deleteCombatant: { handler: onCombatantLifecycleForActionDice, once: false },
   combatTurn: { handler: onCombatTurnForActionDice, once: false },
   combatRound: { handler: onCombatRoundForActionDice, once: false },
   renderCombatTracker: { handler: onRenderCombatTrackerForActionDice, once: false },

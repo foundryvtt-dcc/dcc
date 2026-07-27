@@ -881,6 +881,180 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.die3).toContain('d14')
   })
 
+  // Issue #834 §2: during combat the sheet chips mirror the tracker pips —
+  // live ready/spent state with ●/○ glyphs, click-to-toggle for the owner/GM —
+  // and fall back to the static listing when the combat ends.
+  test('sheet chips show live spent state in combat and toggle on click', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const keys = ['multipleActionDice', 'trackActionDiceInCombat', 'autoResetActionDice']
+      const prev = Object.fromEntries(keys.map(k => [k, game.settings.get('dcc', k)]))
+      for (const k of keys) await game.settings.set('dcc', k, true)
+
+      let actor, combat
+      try {
+        actor = await Actor.create({
+          name: 'Chip State Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16' } }
+        })
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+        const combatant = combat.combatants.contents[0]
+        await combatant.setFlag('dcc', 'actionDice', { round: 1, spent: [true, false] })
+
+        await actor.sheet.render(true)
+        const chipSnapshot = async (predicate) => {
+          const deadline = Date.now() + 5000
+          while (Date.now() < deadline) {
+            const chips = [...(actor.sheet.element?.querySelectorAll('.action-dice-chips .action-die-chip') ?? [])]
+            if (chips.length === 2 && (!predicate || predicate(chips))) {
+              return chips.map(el => ({
+                className: el.className,
+                glyph: el.querySelector('.action-die-state')?.textContent ?? '',
+                action: el.dataset.action ?? ''
+              }))
+            }
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          return null
+        }
+
+        // Live state: slot 0 spent (○), slot 1 ready (●), both clickable.
+        const live = await chipSnapshot(chips => chips[0].className.includes('spent'))
+
+        // Click the ready chip — the flag flips and the sheet re-renders.
+        actor.sheet.element.querySelectorAll('.action-dice-chips .action-die-chip')[1].click()
+        const afterClick = await chipSnapshot(chips => chips[1].className.includes('spent'))
+        const flagAfterClick = combatant.getFlag('dcc', 'actionDice')
+
+        // Combat over: back to the static listing (no glyphs, not clickable).
+        await combat.delete()
+        combat = null
+        const staticChips = await chipSnapshot(chips => !chips[0].className.includes('spent'))
+
+        await actor.sheet.close()
+        return { live, afterClick, flagAfterClick, staticChips }
+      } finally {
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        for (const k of keys) await game.settings.set('dcc', k, prev[k])
+      }
+    })
+
+    // In combat: spent chip ○, ready chip ●, both carry the toggle action.
+    expect(result.live).not.toBeNull()
+    expect(result.live[0].className).toContain('spent')
+    expect(result.live[0].glyph).toBe('○')
+    expect(result.live[1].className).toContain('ready')
+    expect(result.live[1].glyph).toBe('●')
+    expect(result.live.every(c => c.action === 'toggleActionDie')).toBe(true)
+
+    // The click marked slot 1 spent — in the flag and in the re-rendered DOM.
+    expect(result.flagAfterClick.spent).toEqual([true, true])
+    expect(result.afterClick[1].className).toContain('spent')
+
+    // After the combat ends the chips are static again.
+    expect(result.staticChips).not.toBeNull()
+    expect(result.staticChips[0].glyph).toBe('')
+    expect(result.staticChips[0].action).toBe('')
+  })
+
+  // Issue #834 §3: the roll-modifier dialog is a real action-die chooser —
+  // slot-aware presets, and the spend follows the die the player picked
+  // (reconciled post-roll) instead of burning the next-unspent slot.
+  test('a dialog-chosen action die spends its own slot, not the auto-pick', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const keys = ['multipleActionDice', 'trackActionDiceInCombat']
+      const prev = Object.fromEntries(keys.map(k => [k, game.settings.get('dcc', k)]))
+      for (const k of keys) await game.settings.set('dcc', k, true)
+      const prevAutomate = game.settings.get('dcc', 'automateDamageFumblesCrits')
+      await game.settings.set('dcc', 'automateDamageFumblesCrits', false)
+
+      let actor, combat
+      const createdMessageIds = []
+      try {
+        actor = await Actor.create({
+          name: 'Die Chooser Probe',
+          type: 'Player',
+          system: { config: { actionDice: '1d20,1d16' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'Chooser Sword',
+          type: 'weapon',
+          system: { damage: '1d6', toHit: '+0', melee: true, trained: true, equipped: true }
+        }])
+        const weapon = actor.items.getName('Chooser Sword')
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+        const combatant = combat.combatants.contents[0]
+
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+
+        // Kick off the attack with the modifier dialog and drive it like a
+        // player: wait for it, note the slot presets, choose the 1d16, roll.
+        const attackPromise = actor.rollWeaponAttack(weapon.id, { showModifierDialog: true })
+        const deadline = Date.now() + 5000
+        let dieButtons = []
+        while (Date.now() < deadline) {
+          dieButtons = [...document.querySelectorAll('.roll-modifier button[data-action="applyPreset"]')]
+          if (dieButtons.length) break
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        const presetLabels = dieButtons.map(b => b.textContent.trim())
+        const d16Preset = dieButtons.find(b => b.dataset.formula === '1d16')
+        d16Preset?.click()
+        document.querySelector('.roll-modifier button[type="submit"]')?.click()
+        await attackPromise
+
+        // The chat card is fire-and-forget; poll for it.
+        let msg = null
+        const msgDeadline = Date.now() + 5000
+        while (Date.now() < msgDeadline && !msg) {
+          msg = game.messages.contents.find(m =>
+            m.speaker?.actor === actor.id && m.getFlag('dcc', 'isToHit')) ?? null
+          if (!msg) await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        const flag = combatant.getFlag('dcc', 'actionDice')
+
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+        return {
+          presetLabels,
+          hadD16Preset: !!d16Preset,
+          rolledFormula: msg?.rolls?.[0]?.formula ?? '',
+          chatLine: msg?.system?.actionDiceChatLine ?? '',
+          flag
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        for (const k of keys) await game.settings.set('dcc', k, prev[k])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', prevAutomate)
+      }
+    })
+
+    // The dialog offered slot-aware presets (plus the untrained fallback).
+    expect(result.hadD16Preset).toBe(true)
+    expect(result.presetLabels.some(l => l.includes('1d20') && l.includes('ready'))).toBe(true)
+    expect(result.presetLabels.some(l => l.includes('1d16') && l.includes('ready'))).toBe(true)
+
+    // The 1d16 was rolled, and the spend followed it to slot 1 — slot 0 (the
+    // auto-pick) is still ready for the "save my d20 for the spell" play.
+    expect(result.rolledFormula).toContain('d16')
+    expect(result.flag.spent).toEqual([false, true])
+    expect(result.chatLine).toContain('1d16')
+  })
+
   test('derives the list for pre-existing actors on world load (early setting registration)', async ({ page }) => {
     // Regression: the multiple-action-dice settings used to register at the
     // `ready` hook, but existing world actors prepare during `setup` — so on

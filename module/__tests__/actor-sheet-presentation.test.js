@@ -152,3 +152,96 @@ describe('prepareActionDiceContext', () => {
     expect(ctx.showActionDiceChips).toBe(false)
   })
 })
+
+describe('prepareActionDiceContext — live combat state (issue #834 §2)', () => {
+  // Master + tracking both on; the settings double answers any dcc key.
+  const bothOn = { get: vi.fn(() => true) }
+  const i18n = {
+    localize: (key) => key,
+    format: (key, data) => `${key}|${JSON.stringify(data)}`
+  }
+  const actorWithList = (list, isOwner = false) => ({
+    isOwner,
+    system: { attributes: { actionDice: { list } } }
+  })
+  const twoSlots = [
+    { slot: 0, die: 'd20', modifier: 0, use: 'any' },
+    { slot: 1, die: 'd16', modifier: 0, use: 'any' }
+  ]
+  const combatantWithState = (state) => ({
+    getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice' ? state : undefined)
+  })
+
+  test('in combat, chips carry live spent state, glyphs and toggle affordances (GM)', () => {
+    const ctx = prepareActionDiceContext(actorWithList(twoSlots), {
+      settings: bothOn,
+      i18n,
+      user: { isGM: true },
+      lookupCombatant: () => combatantWithState({ round: 3, spent: [true, false] }),
+      combat: { round: 3 }
+    })
+    expect(ctx.actionDiceTracking).toBe(true)
+    expect(ctx.actionDiceInteractive).toBe(true)
+    expect(ctx.actionDiceChips.map(c => c.spent)).toEqual([true, false])
+    expect(ctx.actionDiceChips.map(c => c.stateGlyph)).toEqual(['○', '●'])
+    expect(ctx.actionDiceChips[0].cssClass).toBe('action-die-chip spent interactive')
+    expect(ctx.actionDiceChips[1].cssClass).toBe('action-die-chip ready interactive')
+    expect(ctx.actionDiceChips[0].tooltip)
+      .toBe('DCC.ActionDiceChipToggleHint|{"slot":1,"use":"DCC.ActionDieUseAny","state":"DCC.ActionDieStateSpent"}')
+  })
+
+  test('a stale (previous-round) state reads all-ready', () => {
+    const ctx = prepareActionDiceContext(actorWithList(twoSlots), {
+      settings: bothOn,
+      i18n,
+      user: { isGM: true },
+      lookupCombatant: () => combatantWithState({ round: 2, spent: [true, true] }),
+      combat: { round: 3 }
+    })
+    expect(ctx.actionDiceChips.map(c => c.spent)).toEqual([false, false])
+  })
+
+  test('a non-owner spectator sees state but no toggle affordance', () => {
+    const ctx = prepareActionDiceContext(actorWithList(twoSlots, false), {
+      settings: bothOn,
+      i18n,
+      user: { isGM: false },
+      lookupCombatant: () => combatantWithState(null),
+      combat: { round: 1 }
+    })
+    expect(ctx.actionDiceTracking).toBe(true)
+    expect(ctx.actionDiceInteractive).toBe(false)
+    expect(ctx.actionDiceChips[0].cssClass).toBe('action-die-chip ready')
+    expect(ctx.actionDiceChips[0].tooltip.startsWith('DCC.ActionDiceChipStateHint|')).toBe(true)
+  })
+
+  test('out of combat the chips stay a static listing', () => {
+    const ctx = prepareActionDiceContext(actorWithList(twoSlots, true), {
+      settings: bothOn,
+      i18n,
+      user: { isGM: true },
+      lookupCombatant: () => null,
+      combat: null
+    })
+    expect(ctx.actionDiceTracking).toBe(false)
+    expect(ctx.actionDiceInteractive).toBe(false)
+    expect(ctx.actionDiceChips[0].cssClass).toBe('action-die-chip')
+    expect(ctx.actionDiceChips[0].stateGlyph).toBe('')
+    expect(ctx.actionDiceChips[0].tooltip.startsWith('DCC.ActionDiceChipHint|')).toBe(true)
+  })
+
+  test('restricted chips keep their marker class alongside live state', () => {
+    const list = [
+      { slot: 0, die: 'd20', modifier: 0, use: 'any' },
+      { slot: 1, die: 'd16', modifier: 0, use: 'spell' }
+    ]
+    const ctx = prepareActionDiceContext(actorWithList(list), {
+      settings: bothOn,
+      i18n,
+      user: { isGM: true },
+      lookupCombatant: () => combatantWithState(null),
+      combat: { round: 1 }
+    })
+    expect(ctx.actionDiceChips[1].cssClass).toBe('action-die-chip restricted ready interactive')
+  })
+})
