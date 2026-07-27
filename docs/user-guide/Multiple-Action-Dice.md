@@ -16,7 +16,7 @@ All of these are world settings (**Configure Settings → System Settings**):
 
 | Setting | What it does |
 |---------|--------------|
-| **Multiple Action Dice (experimental)** | Master switch. Turns on the per-die chips on actor sheets and everything below. |
+| **Multiple Action Dice** | Master switch. Turns on the per-die chips on actor sheets and everything below. |
 | **Track action dice in combat tracker** | Shows spent/ready pips on the combat tracker (and live state on the sheet chips) for actors in the active combat. |
 | **Auto-reset action dice each round** | Resets each combatant's dice to ready at the start of their turn in a new round. |
 | **Hide pips for single-action-die actors** | Declutter: no pips for actors with only one action die. |
