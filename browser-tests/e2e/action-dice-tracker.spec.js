@@ -912,7 +912,6 @@ test.describe('Action-dice combat tracker pips', () => {
             if (chips.length === 2 && (!predicate || predicate(chips))) {
               return chips.map(el => ({
                 className: el.className,
-                glyph: el.querySelector('.action-die-state')?.textContent ?? '',
                 action: el.dataset.action ?? ''
               }))
             }
@@ -943,21 +942,21 @@ test.describe('Action-dice combat tracker pips', () => {
       }
     })
 
-    // In combat: spent chip ○, ready chip ●, both carry the toggle action.
+    // In combat: the spent chip greys out (the `spent` class), the other is
+    // ready, and both carry the toggle action.
     expect(result.live).not.toBeNull()
     expect(result.live[0].className).toContain('spent')
-    expect(result.live[0].glyph).toBe('○')
     expect(result.live[1].className).toContain('ready')
-    expect(result.live[1].glyph).toBe('●')
     expect(result.live.every(c => c.action === 'toggleActionDie')).toBe(true)
 
     // The click marked slot 1 spent — in the flag and in the re-rendered DOM.
     expect(result.flagAfterClick.spent).toEqual([true, true])
     expect(result.afterClick[1].className).toContain('spent')
 
-    // After the combat ends the chips are static again.
+    // After the combat ends the chips are static again — no spent/ready
+    // state, not clickable.
     expect(result.staticChips).not.toBeNull()
-    expect(result.staticChips[0].glyph).toBe('')
+    expect(result.staticChips[0].className).not.toContain('ready')
     expect(result.staticChips[0].action).toBe('')
   })
 

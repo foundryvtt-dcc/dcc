@@ -97,8 +97,8 @@ export function prepareCompendiumLinks (config = globalThis.CONFIG?.DCC) {
  * 2+ dice — a single-die actor sees today's box unchanged either way
  * (§3: the per-die UI activates only for actors with multiple dice).
  * During an active combat with tracking on, the chips mirror the combat
- * tracker's pips (issue #834 §2): each carries live spent/ready state (a ●/○
- * glyph) and — for the GM or the actor's owner — click-to-toggle via the
+ * tracker's pips (issue #834 §2): a spent chip greys out (the `spent` CSS
+ * class), and — for the GM or the actor's owner — click-to-toggle via the
  * sheet's `toggleActionDie` action. Out of combat they stay a static listing
  * of the dice, with a tooltip pointing at where the live tracking happens.
  * @param {Actor} actor - the sheet's `options.document`.
@@ -152,7 +152,6 @@ export function prepareActionDiceContext (actor, {
       use: slot.use || 'any',
       restricted: !!slot.use && slot.use !== 'any',
       spent: isSpent,
-      stateGlyph: combatant ? (isSpent ? '○' : '●') : '',
       cssClass,
       tooltip: combatant
         ? format(interactive ? 'DCC.ActionDiceChipToggleHint' : 'DCC.ActionDiceChipStateHint', {

@@ -245,7 +245,7 @@
     // the actor has 2+ dice. The label and chips share the same two grid
     // columns as the box they replace (Crit Die keeps its cells alongside);
     // when the dice don't fit one line — a 10th-level warrior's
-    // `1d20+4, 1d20, 1d14` plus the in-combat ●/○ glyphs — only the chips
+    // `1d20+4, 1d20, 1d14` — only the chips
     // cell WRAPS, the row grows, and the character-grid (min-height, not
     // height) lets the whole box push the rows below it down (issue #834).
     // Chip visuals live at the shared `.dcc` scope below.
@@ -494,42 +494,22 @@
     gap: 2px;
     line-height: 1;
     padding: 2px 6px;
-    position: relative;
     white-space: nowrap;
 
     &.restricted {
       font-style: italic;
     }
 
-    // Live combat state (issue #834 §2): the chips mirror the tracker
-    // pips — a ●/○ glyph shows ready/spent, and for the GM/owner the
-    // chip is clickable to toggle by hand.
+    // Live combat state (issue #834 §2): a spent chip greys out, mirroring
+    // the tracker pips, and for the GM/owner the chip is clickable to
+    // toggle by hand. No extra glyph — a chip is exactly the same width in
+    // and out of combat, so the wrap never changes.
     &.interactive {
       cursor: pointer;
     }
 
-    &.ready .action-die-state {
-      color: var(--color-level-success, #282);
-    }
-
     &.spent {
-      opacity: 0.6;
-
-      .action-die-state {
-        color: var(--color-text-dark-inactive, #7a7971);
-      }
-    }
-
-    // Corner badge, absolutely positioned so a chip is exactly the same
-    // width in and out of combat — the glyph must never change how the
-    // row wraps (issue #834).
-    .action-die-state {
-      font-size: 8px;
-      line-height: 1;
-      position: absolute;
-      right: -2px;
-      top: -4px;
-      text-shadow: 0 0 2px var(--system-input-background);
+      opacity: 0.45;
     }
 
     .action-die-mark {

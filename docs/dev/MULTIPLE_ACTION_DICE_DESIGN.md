@@ -24,8 +24,8 @@
 > is live playtesting behind the master setting.
 >
 > **#834 UX follow-ups (2026-07-27):** (1) the sheet chips are now *live*
-> during combat — they carry ready/spent state (●/○, mirroring the tracker
-> pips) and click-to-toggle for the GM/owner (`prepareActionDiceContext` +
+> during combat — a spent chip greys out (mirroring the tracker pips) and
+> the GM/owner can click-to-toggle (`prepareActionDiceContext` +
 > the sheet's `toggleActionDie` action; `updateCombatant`/combat-lifecycle
 > hooks re-render open sheets); out of combat they stay a static listing.
 > (2) The player can *choose* which die an attack uses: the roll-modifier

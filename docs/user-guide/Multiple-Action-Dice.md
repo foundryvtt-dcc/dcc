@@ -45,10 +45,10 @@ menu).
 
 - **Out of combat** the chips are a simple listing of your dice — hover for
   each die's number and use-restriction.
-- **During combat** (with tracking on) each chip gains a ● / ○ glyph matching
-  the combat-tracker pips, and the GM or the actor's owner can **click a chip
-  to toggle it** between spent and ready — for off-turn reactions, judge
-  overrides, or fixing a mis-spend.
+- **During combat** (with tracking on) a spent die's chip **greys out**,
+  matching the combat-tracker pips, and the GM or the actor's owner can
+  **click a chip to toggle it** between spent and ready — for off-turn
+  reactions, judge overrides, or fixing a mis-spend.
 
 ## Choosing which die a roll uses
 

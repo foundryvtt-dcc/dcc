@@ -183,7 +183,6 @@ describe('prepareActionDiceContext — live combat state (issue #834 §2)', () =
     expect(ctx.actionDiceTracking).toBe(true)
     expect(ctx.actionDiceInteractive).toBe(true)
     expect(ctx.actionDiceChips.map(c => c.spent)).toEqual([true, false])
-    expect(ctx.actionDiceChips.map(c => c.stateGlyph)).toEqual(['○', '●'])
     expect(ctx.actionDiceChips[0].cssClass).toBe('action-die-chip spent interactive')
     expect(ctx.actionDiceChips[1].cssClass).toBe('action-die-chip ready interactive')
     expect(ctx.actionDiceChips[0].tooltip)
@@ -226,7 +225,6 @@ describe('prepareActionDiceContext — live combat state (issue #834 §2)', () =
     expect(ctx.actionDiceTracking).toBe(false)
     expect(ctx.actionDiceInteractive).toBe(false)
     expect(ctx.actionDiceChips[0].cssClass).toBe('action-die-chip')
-    expect(ctx.actionDiceChips[0].stateGlyph).toBe('')
     expect(ctx.actionDiceChips[0].tooltip.startsWith('DCC.ActionDiceChipHint|')).toBe(true)
   })
 
