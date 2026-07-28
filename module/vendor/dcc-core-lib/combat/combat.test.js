@@ -91,6 +91,38 @@ describe("Attack System", () => {
             expect(result.isCriticalThreat).toBe(true);
             expect(result.isFumble).toBe(false);
         });
+        it("rescales a d20-relative threat range to a smaller action die by default", () => {
+            // Warrior 19-20 on a d16 action die → top 2 faces (15-16).
+            const roller = createMockRoller(15);
+            const input = {
+                attackType: "melee",
+                attackBonus: 3,
+                actionDie: "d16",
+                threatRange: 19,
+                abilityModifier: 2,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isCriticalThreat).toBe(true);
+        });
+        it("honors a natural threat range on the rolled die (threatRangeIsNatural)", () => {
+            // Halfling two-weapon pair fought on an extra 1d14 action die
+            // reduced to d12, critting only on the max face: a natural 11
+            // must NOT crit (default rescaling would turn 12 into 4+).
+            const roller = createMockRoller(11);
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d12",
+                threatRange: 12,
+                threatRangeIsNatural: true,
+                abilityModifier: 0,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isCriticalThreat).toBe(false);
+            const maxFace = makeAttackRoll(input, createMockRoller(12));
+            expect(maxFace.isCriticalThreat).toBe(true);
+            expect(maxFace.critSource).toBe("natural-max");
+        });
         it("should detect fumble on natural 1", () => {
             const roller = createMockRoller(1);
             const input = {

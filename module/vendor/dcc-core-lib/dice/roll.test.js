@@ -287,6 +287,28 @@ describe("roll", () => {
         it("returns false for unevaluated rolls", () => {
             expect(meetsThreatRange({ die: "d20" }, 20)).toBe(false);
         });
+        describe("isNatural mode", () => {
+            it("compares against the natural roll without rescaling", () => {
+                // Halfling two-weapon: crits on a natural 16 on the reduced d16.
+                expect(meetsThreatRange({ natural: 16, die: "d16" }, 16, true)).toBe(true);
+                expect(meetsThreatRange({ natural: 15, die: "d16" }, 16, true)).toBe(false);
+                // Default mode would rescale 16 → 12 on d16 — the regression this guards.
+                expect(meetsThreatRange({ natural: 12, die: "d16" }, 16, true)).toBe(false);
+            });
+            it("never crits when the threshold is unreachable on the die", () => {
+                // Halfling pair fought on a 1d14 extra action die reduced to d12:
+                // a die-relative max-face threshold of 12 crits only on 12 …
+                expect(meetsThreatRange({ natural: 12, die: "d12" }, 12, true)).toBe(true);
+                expect(meetsThreatRange({ natural: 11, die: "d12" }, 12, true)).toBe(false);
+                // … and a strict natural-16 threshold can never fire on a d12
+                // (default mode would rescale 16 → 8 and crit on 8+).
+                expect(meetsThreatRange({ natural: 11, die: "d12" }, 16, true)).toBe(false);
+            });
+            it("still rescales when the flag is false or omitted", () => {
+                expect(meetsThreatRange({ natural: 12, die: "d16" }, 16)).toBe(true);
+                expect(meetsThreatRange({ natural: 12, die: "d16" }, 16, false)).toBe(true);
+            });
+        });
     });
     describe("isAutoHit", () => {
         it("returns true for natural max on die", () => {
