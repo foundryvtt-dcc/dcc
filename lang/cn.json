@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "当模组启动时显示欢迎台词"
   },
   "DCC.SheetConfig": "角色卡设置",
+  "DCC.SidebarTab": "DCC工具",
   "DCC.ShieldBash": "盾牌撞击",
   "DCC.ShieldBashHint": "用于盾牌撞击攻击的骰子规模；在装备页设置盾牌撞击武器，并用此作为动作骰。",
   "DCC.ShowBackstabConfig": "显示背刺",

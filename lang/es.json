@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "Mostrar diálogo de bienvenida al iniciar el módulo"
   },
   "DCC.SheetConfig": "Configuración de Hoja",
+  "DCC.SidebarTab": "Herramientas DCC",
   "DCC.ShieldBash": "Golpe de Escudo",
   "DCC.ShieldBashHint": "Tamaño del dado para usar en ataques de golpe de escudo; configura un arma de golpe de escudo en la pestaña de equipo y usa este dado para reemplazar la acción.",
   "DCC.ShowBackstabConfig": "Mostrar Ataque Sorpresa",

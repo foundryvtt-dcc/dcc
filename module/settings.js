@@ -14,7 +14,8 @@ export const pubConstants = {
  * Settings that must exist before the `ready` hook. Called from the `init`
  * hook (module/init-hook.mjs) because their values are read before `ready`:
  *
- * - `enableFleetingLuck` gates `getSceneControlButtons`, which fires first.
+ * - `enableFleetingLuck` gates the Fleeting Luck tool in the DCC sidebar
+ *   tab, which first renders during `Game#initializeUI`, before `ready`.
  * - The multiple-action-dice settings gate `DCCActor#prepareDerivedData`,
  *   which runs for existing world actors during `setup` — registering them
  *   at `ready` meant the action-dice list was never derived on world load
@@ -491,7 +492,7 @@ export const registerSystemSettings = async function () {
   })
 
   // Note: the Fleeting Luck settings are registered in
-  // registerEarlySystemSettings — getSceneControlButtons reads the enable
+  // registerEarlySystemSettings — the DCC sidebar tab reads the enable
   // toggle before `ready`.
 
   /**

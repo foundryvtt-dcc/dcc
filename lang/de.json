@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "Den Willkommensdialog beim Modulstart anzeigen"
   },
   "DCC.SheetConfig": "Konfiguration Charakterbogen",
+  "DCC.SidebarTab": "DCC-Werkzeuge",
   "DCC.ShieldBash": "Schildstoß",
   "DCC.ShieldBashHint": "Würfelgröße für Schildstoß-Angriffe; richte eine Schildstoß-Waffe im Ausrüstungsreiter ein und verwende dies als Aktionswürfel-Überschreibung.",
   "DCC.ShowBackstabConfig": "Hinterhältige Angriffe",

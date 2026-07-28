@@ -3,9 +3,9 @@
 ## Overview
 Enable Fleeting Luck through System Settings -> Enable Fleeting Luck. It is a checkbox near the bottom. Fleeting Luck works on a per-**player** basis, not per-actor. So if a player has multiple actors, they will still only have one "stack" of Fleeting Luck. The player avatar in the dialog is based on the user's avatar, clicking it will open the User Configuration dialog to allow quickly setting it.
 
-Fleeting luck is implemented in the DCC system through an icon on the Token Controls bar. Click the scales icon to open the Fleeting Luck dialog.
+Fleeting Luck lives in the **DCC Tools** sidebar tab — click the DCC logo near the bottom of the right-hand sidebar tab bar, then click the **Fleeting Luck** button to open the Fleeting Luck dialog.
 
-![](images/fleeting-luck-icon.png)
+![](images/dcc-tools-tab.png)
 
 Fleeting Luck is automated by default and will clear all players' Fleeting Luck on a roll of a 1, or grant a point to that player on a roll of 20. GM users are ignored for automation purposes.
 ## Player View

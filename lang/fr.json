@@ -753,6 +753,7 @@
   },
   "DCC.SettingsLabel": "Paramètres",
   "DCC.SheetConfig": "Configuration de la feuille",
+  "DCC.SidebarTab": "Outils DCC",
   "DCC.SheetHint": "Cliquez pour choisir une feuille, qui définit votre classe de personnage",
   "DCC.ShieldBash": "Coup de bouclier",
   "DCC.ShieldBashHint": "Taille de dé à utiliser pour les attaques de coup de bouclier ; configurez une arme de coup de bouclier dans l'onglet équipement et utilisez ceci comme remplacement du dé d'action.",

@@ -6,7 +6,6 @@
  * invokes their `register*()` entry-points. The hook bodies themselves live
  * in their own modules:
  *   - `init` hook             → `module/init-hook.mjs`
- *   - `getSceneControlButtons` → `module/scene-control-hooks.mjs`
  *   - `ready` hook            → `module/ready-hook.mjs`
  *   - settings-table hooks    → `module/settings-table-hooks.mjs`
  *   - table-loading hooks     → `module/table-loading.mjs`
@@ -16,7 +15,6 @@
 
 // Import Modules
 import { registerInitHook } from './init-hook.mjs'
-import { registerSceneControlHooks } from './scene-control-hooks.mjs'
 import { registerReadyHook } from './ready-hook.mjs'
 import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { registerTableLoadingHooks } from './table-loading.mjs'
@@ -29,18 +27,10 @@ import { registerChatAndHookWiring } from './chat-and-hook-wiring.mjs'
 // The `init` hook body lives in `module/init-hook.mjs`; `registerInitHook()`
 // wires it onto `Hooks.once('init', …)`. See that module for the bootstrap
 // steps (document/data-model config, built-in registries, the `game.dcc`
-// namespace, sheet registration, template + helper registration, and the
-// early Fleeting Luck setting).
+// namespace, sheet registration, the DCC sidebar tab with its Fleeting Luck
+// (setting-gated) and Spell Duel tools, template + helper registration, and
+// the early Fleeting Luck setting).
 registerInitHook()
-
-/* --------------------------------------------- */
-/*  Initialize Scene Control Buttons             */
-/* --------------------------------------------- */
-// The `getSceneControlButtons` handler lives in
-// `module/scene-control-hooks.mjs`; `registerSceneControlHooks()` wires it
-// onto `Hooks.on(…)`. Adds the token-layer Fleeting Luck (setting-gated) and
-// Spell Duel scene-control buttons.
-registerSceneControlHooks()
 
 /* -------------------------------------------- */
 /*  Post initialization hook                    */

@@ -1,0 +1,6 @@
+<h4 class="divider">{{localize 'DCC.SidebarTab'}}</h4>
+{{#each tools}}
+<button type="button" data-action="clickTool" data-tool="{{@key}}">
+    <i class="{{this.icon}}" inert></i> {{localize this.label}}
+</button>
+{{/each}}

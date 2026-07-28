@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "Show the welcome dialog on module startup"
   },
   "DCC.SheetConfig": "Sheet Configuration",
+  "DCC.SidebarTab": "DCC Tools",
   "DCC.ShieldBash": "Shield Bash",
   "DCC.ShieldBashHint": "Die size to use for shield bash attacks; set up a shield bash weapon in the equipment tab and use this as the action die override.",
   "DCC.ShowBackstabConfig": "Show Backstab",
