@@ -2504,9 +2504,13 @@ a.inline-roll {
   justify-self: center;
 }
 .dcc .death-clock-tracker .death-clock-row .value {
+  align-items: center;
+  display: flex;
   font-size: 1.5rem;
+  gap: 4px;
   grid-column: 4;
   justify-self: center;
+  white-space: nowrap;
 }
 .dcc .death-clock-tracker .death-clock-row .value i {
   color: var(--color-level-error, #b22);
