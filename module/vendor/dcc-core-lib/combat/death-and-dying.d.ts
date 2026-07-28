@@ -130,6 +130,12 @@ export declare function canBeSaved(level: number, roundsElapsed: number): boolea
 /**
  * Advance the bleeding out timer by one round
  *
+ * The rules give a level-1 character the round they dropped *or the next
+ * round* to be healed — the drop round itself is not one of the bleeding
+ * rounds. So `roundsRemaining` counts the healable rounds left after the
+ * current one: it reaches 0 on the character's final-chance round, and the
+ * character only dies when a further round begins with 0 remaining.
+ *
  * @param state - Current bleeding out state
  * @returns Updated state, or undefined if character is now permanently dead
  */

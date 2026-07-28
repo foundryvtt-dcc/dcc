@@ -16,9 +16,19 @@ export const defineStatusIcons = function () {
       img: 'systems/dcc/styles/images/game-icons-net/drop-weapon.svg'
     },
     {
+      id: 'dying',
+      name: 'DCC.StatusDying',
+      img: 'icons/svg/blood.svg'
+    },
+    {
       id: 'grip-disrupted',
       name: 'DCC.StatusGripDisrupted',
       img: 'systems/dcc/styles/images/game-icons-net/catch.svg'
+    },
+    {
+      id: 'groggy',
+      name: 'DCC.StatusGroggy',
+      img: 'icons/svg/daze.svg'
     },
     {
       id: 'kneecapped',

@@ -14,6 +14,11 @@ test.describe('Auto-apply dead status', () => {
     const result = await page.evaluate(async () => {
       const prev = game.settings.get('dcc', 'autoApplyDeadStatus')
       await game.settings.set('dcc', 'autoApplyDeadStatus', true)
+      // Pin the PC death clock off: this spec asserts the NPC-only feature in
+      // isolation, and a level-0 PC at 0 HP would otherwise be instant-killed
+      // by the death clock if the world happens to have it enabled.
+      const prevClock = game.settings.get('dcc', 'enableDeathClock')
+      await game.settings.set('dcc', 'enableDeathClock', false)
 
       const npc = await Actor.create({ name: 'DCC Dead Probe NPC', type: 'NPC', system: { attributes: { hp: { value: 5, max: 5 } } } })
       const pc = await Actor.create({ name: 'DCC Dead Probe PC', type: 'Player', system: { attributes: { hp: { value: 5, max: 5 } } } })
@@ -34,6 +39,7 @@ test.describe('Auto-apply dead status', () => {
       const pcDead = await deadAfter(pc)
 
       await game.settings.set('dcc', 'autoApplyDeadStatus', prev)
+      await game.settings.set('dcc', 'enableDeathClock', prevClock)
       await npc.delete()
       await pc.delete()
 

@@ -975,6 +975,30 @@ a.inline-roll {
   padding: 0 4px;
 }
 
+.dcc-death-clock-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.dcc-death-clock-actions button {
+  width: auto;
+}
+
+.dcc-ability-loss-chart {
+  width: auto;
+  margin: 8px auto;
+  border-collapse: collapse;
+}
+.dcc-ability-loss-chart td {
+  padding: 2px 12px;
+  border: 1px solid var(--color-border-light-2, #999);
+  text-align: center;
+}
+.dcc-ability-loss-chart tr.rolled {
+  font-weight: bold;
+  background: rgba(255, 100, 0, 0.15);
+}
+
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
@@ -3071,6 +3095,18 @@ a.inline-roll {
 }
 .dcc-action-dice-pips .dcc-action-die-pip.restricted.spent {
   opacity: 0.55;
+}
+
+.dcc-death-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--color-level-error, #b22);
+  user-select: none;
 }
 
 /* Effects styling */

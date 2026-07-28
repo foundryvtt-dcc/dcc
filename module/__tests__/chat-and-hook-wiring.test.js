@@ -88,6 +88,9 @@ const {
   onPreUpdateActor,
   onUpdateCombat,
   onUpdateCombatComposed,
+  onUpdateActorComposed,
+  onRenderCombatTrackerComposed,
+  onRenderChatMessageHTMLComposed,
   onItemPilesReady,
   onGetProseMirrorMenuDropDowns,
   registerChatAndHookWiring
@@ -95,11 +98,9 @@ const {
 
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
 const { onModifyAttackRollTerms } = await import('../weapon-range.mjs')
-const { onUpdateActorForDeath } = await import('../auto-dead-status.mjs')
 const {
   onCombatTurnForActionDice,
   onCombatRoundForActionDice,
-  onRenderCombatTrackerForActionDice,
   onUpdateCombatantForActionDice,
   onDeleteCombatForActionDice,
   onCombatantLifecycleForActionDice
@@ -704,7 +705,7 @@ describe('onGetProseMirrorMenuDropDowns', () => {
 describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
   test('routes each hook name to its matching handler', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.hotbarDrop.handler).toBe(onHotbarDrop)
-    expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTML)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTMLComposed)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getChatMessageContextOptions.handler).toBe(onGetChatMessageContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getCompendiumContextOptions.handler).toBe(onGetCompendiumContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getUserContextOptions.handler).toBe(onGetUserContextOptions)
@@ -772,7 +773,7 @@ describe('registerChatAndHookWiring', () => {
       (onCalls[hookName] ??= []).push(handler)
     }
     expect(onCalls.hotbarDrop).toEqual([onHotbarDrop])
-    expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTML])
+    expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTMLComposed])
     expect(onCalls.getChatMessageContextOptions).toEqual([onGetChatMessageContextOptions])
     expect(onCalls.getCompendiumContextOptions).toEqual([onGetCompendiumContextOptions])
     expect(onCalls.getUserContextOptions).toEqual([onGetUserContextOptions])
@@ -781,7 +782,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.preCreateItem).toEqual([onPreCreateItem])
     expect(onCalls.applyActiveEffect).toEqual([onApplyActiveEffect])
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
-    expect(onCalls.updateActor).toEqual([onUpdateActorForDeath])
+    expect(onCalls.updateActor).toEqual([onUpdateActorComposed])
     expect(onCalls.updateCombat).toEqual([onUpdateCombatComposed])
     expect(onCalls.deleteCombat).toEqual([onDeleteCombatForActionDice])
     expect(onCalls.updateCombatant).toEqual([onUpdateCombatantForActionDice])
@@ -789,7 +790,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.deleteCombatant).toEqual([onCombatantLifecycleForActionDice])
     expect(onCalls.combatTurn).toEqual([onCombatTurnForActionDice])
     expect(onCalls.combatRound).toEqual([onCombatRoundForActionDice])
-    expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerForActionDice])
+    expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerComposed])
     expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
     expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTerms])
   })

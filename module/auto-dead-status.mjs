@@ -12,6 +12,7 @@
  * so dcc-qol drives it while that module is active.
  */
 
+import { markActorDefeated } from './defeated.mjs'
 import { qolHandlingCombat } from './integrations.mjs'
 import { isActiveGM } from './socket.mjs'
 
@@ -33,12 +34,9 @@ export async function onUpdateActorForDeath (actor, changes) {
     const newHp = changes?.system?.attributes?.hp?.value
     if (newHp === undefined || newHp > 0) return
 
-    // Already dead? Check the live effects (the source of truth) as well as the
-    // derived status set, which can lag right after an effect is applied.
-    const hasDeadEffect = [...(actor.effects ?? [])].some(e => e.statuses?.has?.('dead'))
-    if (actor.statuses?.has('dead') || hasDeadEffect) return
-
-    await actor.toggleStatusEffect('dead', { active: true })
+    // Matches the combat tracker's skull button: dead status as a token
+    // overlay + combatant.defeated bookkeeping. Idempotent when already dead.
+    await markActorDefeated(actor)
   } catch (err) {
     console.error('DCC | auto-apply dead status failed', err)
   }
