@@ -339,6 +339,7 @@
   "DCC.StatusDisarmed": "被缴械",
   "DCC.StatusDying": "濒死",
   "DCC.StatusGripDisrupted": "握持不稳",
+  "DCC.StatusGroggy": "眩晕",
   "DCC.StatusKneecapped": "膝盖受创",
   "DCC.StatusOffBalance": "失去平衡",
   "DCC.StatusStumbling": "踉跄",

@@ -256,7 +256,10 @@ test.describe('Death clock', () => {
         observed.recovered = await pollFor(() => !isDead(lucky))
         observed.hpAfter = await pollFor(() => lucky.system.attributes.hp.value)
         observed.groggy = !!(await pollFor(() =>
-          lucky.effects.contents.find(e => e.name.toLowerCase().includes('groggy'))))
+          lucky.effects.contents.find(e => e.statuses?.has?.('groggy'))))
+        // The groggy condition is registered so a judge can toggle it from
+        // the token HUD.
+        observed.groggyRegistered = CONFIG.statusEffects.some(s => s.id === 'groggy')
         // The permanent -1 waits for the prompted 1d3 roll on the success card.
         observed.noLossYet = abilitySum(lucky) === sumBefore
         observed.lossPromptOnCard = !!(await pollFor(() =>
@@ -289,6 +292,7 @@ test.describe('Death clock', () => {
     expect(result.recovered).toBe(true)
     expect(result.hpAfter).toBe(1)
     expect(result.groggy).toBe(true)
+    expect(result.groggyRegistered).toBe(true)
     expect(result.noLossYet).toBe(true)
     expect(result.lossPromptOnCard).toBe(true)
     expect(result.abilityLost).toBe(true)

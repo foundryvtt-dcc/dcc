@@ -339,6 +339,7 @@
   "DCC.StatusDisarmed": "Disarmed",
   "DCC.StatusDying": "Dying",
   "DCC.StatusGripDisrupted": "Grip Disrupted",
+  "DCC.StatusGroggy": "Groggy",
   "DCC.StatusKneecapped": "Kneecapped",
   "DCC.StatusOffBalance": "Off Balance",
   "DCC.StatusStumbling": "Stumbling",

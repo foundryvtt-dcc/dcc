@@ -352,6 +352,7 @@ describe('rollTheBody', () => {
     expect(actor.update).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
     expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('ActiveEffect', [expect.objectContaining({
       name: 'DCC.DeathClockGroggy',
+      statuses: ['groggy'],
       duration: { seconds: 3600 }
     })])
     // The permanent -1 is NOT applied yet — the success card prompts for it.

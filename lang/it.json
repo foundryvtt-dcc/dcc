@@ -339,6 +339,7 @@
   "DCC.StatusDisarmed": "Disarmato",
   "DCC.StatusDying": "Morente",
   "DCC.StatusGripDisrupted": "Presa interrotta",
+  "DCC.StatusGroggy": "Stordito",
   "DCC.StatusKneecapped": "Ginocchio colpito",
   "DCC.StatusOffBalance": "Sbilanciato",
   "DCC.StatusStumbling": "Barcollante",

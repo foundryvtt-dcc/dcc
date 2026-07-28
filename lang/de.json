@@ -339,6 +339,7 @@
   "DCC.StatusDisarmed": "Entwaffnet",
   "DCC.StatusDying": "Sterbend",
   "DCC.StatusGripDisrupted": "Griff gestört",
+  "DCC.StatusGroggy": "Benommen",
   "DCC.StatusKneecapped": "Kniekehle getroffen",
   "DCC.StatusOffBalance": "Aus dem Gleichgewicht",
   "DCC.StatusStumbling": "Stolpernd",

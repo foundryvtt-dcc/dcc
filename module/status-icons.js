@@ -26,6 +26,11 @@ export const defineStatusIcons = function () {
       img: 'systems/dcc/styles/images/game-icons-net/catch.svg'
     },
     {
+      id: 'groggy',
+      name: 'DCC.StatusGroggy',
+      img: 'icons/svg/daze.svg'
+    },
+    {
       id: 'kneecapped',
       name: 'DCC.StatusKneecapped',
       img: 'systems/dcc/styles/images/game-icons-net/knee-cap.svg'

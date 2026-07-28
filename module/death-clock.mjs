@@ -277,6 +277,7 @@ export async function rollTheBody (actor) {
   await actor.createEmbeddedDocuments('ActiveEffect', [{
     name: game.i18n.localize('DCC.DeathClockGroggy'),
     img: 'icons/svg/daze.svg',
+    statuses: ['groggy'],
     duration: { seconds: 3600 }
   }])
 

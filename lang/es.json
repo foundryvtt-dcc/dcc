@@ -339,6 +339,7 @@
   "DCC.StatusDisarmed": "Desarmado",
   "DCC.StatusDying": "Moribundo",
   "DCC.StatusGripDisrupted": "Agarre interrumpido",
+  "DCC.StatusGroggy": "Aturdido",
   "DCC.StatusKneecapped": "Rodillazo",
   "DCC.StatusOffBalance": "Desequilibrado",
   "DCC.StatusStumbling": "Tropezando",
