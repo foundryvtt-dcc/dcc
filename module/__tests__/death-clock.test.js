@@ -9,7 +9,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
-vi.mock('../ability-score-log.js', () => ({ logAbilityChange: vi.fn() }))
+vi.mock('../ability-score-log.js', () => ({
+  logAbilityChange: vi.fn(),
+  staminaHpDelta: vi.fn(() => ({ hpChange: 0 }))
+}))
 vi.mock('../adapter/chat-renderer.mjs', () => ({ renderAbilityCheckRollUnder: vi.fn() }))
 
 const { logAbilityChange } = await import('../ability-score-log.js')
@@ -145,7 +148,7 @@ describe('onUpdateActorForDeathClock', () => {
       ability: 'sta',
       change: -1,
       maxChange: -1,
-      type: 'otherPermanent'
+      type: 'bleedOut'
     }), { announce: false })
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockSaved',
       expect.objectContaining({ scar: expect.any(String) }))
@@ -368,7 +371,7 @@ describe('rollAbilityLoss', () => {
       ability: 'agl',
       change: -1,
       maxChange: -1,
-      type: 'otherPermanent'
+      type: 'rollTheBody'
     }), { announce: false })
     expect(actor.unsetFlag).toHaveBeenCalledWith('dcc', 'pendingAbilityLoss')
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockAbilityLoss',

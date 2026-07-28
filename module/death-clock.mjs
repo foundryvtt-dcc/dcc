@@ -31,7 +31,7 @@
 
 import { advanceBleedOutRound, getBleedOutRounds, stabilizeCharacter } from './vendor/dcc-core-lib/combat/death-and-dying.js'
 import { rollLuckCheckSimple } from './vendor/dcc-core-lib/checks/luck-check.js'
-import { logAbilityChange } from './ability-score-log.js'
+import { logAbilityChange, staminaHpDelta } from './ability-score-log.js'
 import { renderAbilityCheckRollUnder } from './adapter/chat-renderer.mjs'
 import { isActorDefeated, markActorDefeated, markActorRecovered } from './defeated.mjs'
 import { isActiveGM } from './socket.mjs'
@@ -78,6 +78,28 @@ export function getDyingEffect (actor) {
 export function getDeathClockRemaining (actor, effect = getDyingEffect(actor)) {
   const state = effect?.getFlag?.('dcc', CLOCK_FLAG)
   return state?.roundsRemaining ?? getBleedOutRounds(actor?.system?.details?.level?.value ?? 0)
+}
+
+/**
+ * Build the ability-score-log entry for a permanent -1 from the death &
+ * dying rules, using the log's dedicated `bleedOut` / `rollTheBody` entry
+ * types. A Stamina loss that crosses an ability-modifier threshold also
+ * carries the max-HP delta (level × modifier change), same as a manual
+ * Stamina edit in the log dialog.
+ *
+ * @param {Actor} actor
+ * @param {string} ability - 'str' | 'agl' | 'sta'
+ * @param {string} type - 'bleedOut' | 'rollTheBody'
+ * @returns {object} entryData for {@link logAbilityChange}
+ */
+function permanentLossEntry (actor, ability, type) {
+  const entry = { ability, change: -1, maxChange: -1, type }
+  if (ability === 'sta') {
+    const current = parseInt(actor.system?.abilities?.sta?.value) || 0
+    const { hpChange } = staminaHpDelta(actor, current, current - 1)
+    if (hpChange) entry.hpChange = hpChange
+  }
+  return entry
 }
 
 /**
@@ -141,13 +163,7 @@ export async function onUpdateActorForDeathClock (actor, changes) {
         // loss with its reason.
         const saved = stabilizeCharacter({ roundsRemaining: remaining }, newHp)
         if (saved.saved && saved.staminaLoss) {
-          await logAbilityChange(actor, {
-            ability: 'sta',
-            change: -1,
-            maxChange: -1,
-            type: 'otherPermanent',
-            source: game.i18n.localize('DCC.DeathClockTraumaSource')
-          }, { announce: false })
+          await logAbilityChange(actor, permanentLossEntry(actor, 'sta', 'bleedOut'), { announce: false })
           await postDeathClockCard('DCC.DeathClockSaved', actor, { scar: saved.scar })
         } else {
           await postDeathClockCard('DCC.DeathClockStopped', actor)
@@ -291,13 +307,7 @@ export async function rollAbilityLoss (actor) {
   const rolledIndex = (abilityDie.total - 1) % 3
   const penaltyAbility = abilities[rolledIndex] ?? 'sta'
 
-  await logAbilityChange(actor, {
-    ability: penaltyAbility,
-    change: -1,
-    maxChange: -1,
-    type: 'otherPermanent',
-    source: game.i18n.localize('DCC.DeathClockRecoverySource')
-  }, { announce: false })
+  await logAbilityChange(actor, permanentLossEntry(actor, penaltyAbility, 'rollTheBody'), { announce: false })
   await actor.unsetFlag('dcc', PENDING_ABILITY_LOSS_FLAG)
 
   // Build the card ourselves: the rendered die, the 1-3 chart with the
