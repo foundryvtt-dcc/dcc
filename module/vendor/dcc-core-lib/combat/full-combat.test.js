@@ -264,6 +264,9 @@ describe("Full Combat Scenario", () => {
                 expect(getBleedOutRounds(10)).toBe(10);
             });
             it("should track bleeding out state over combat rounds", () => {
+                // The save window is the drop round plus (level) full rounds: a
+                // 3rd-level character dropped in round 1 can be healed in rounds
+                // 1-4 and dies at the start of round 5.
                 const level = 3;
                 const state = createBleedingOutState(level, 1);
                 expect(state.roundsRemaining).toBe(3);
@@ -276,9 +279,29 @@ describe("Full Combat Scenario", () => {
                 const state3 = state2 ? advanceBleedOutRound(state2) : undefined;
                 expect(state3).toBeDefined();
                 expect(state3?.roundsRemaining).toBe(1);
-                // Round 4 - character dies
+                // Round 4 - final chance to heal
                 const state4 = state3 ? advanceBleedOutRound(state3) : undefined;
-                expect(state4).toBeUndefined();
+                expect(state4).toBeDefined();
+                expect(state4?.roundsRemaining).toBe(0);
+                // Round 5 - character dies
+                const state5 = state4 ? advanceBleedOutRound(state4) : undefined;
+                expect(state5).toBeUndefined();
+            });
+            it("gives a 1st-level character the drop round or the next round (rules text)", () => {
+                // "Such a character has 1 round in which they can be healed... If
+                // they are healed on the round they're reduced to 0 hit points or
+                // the next round, they are healed... If they are not healed before
+                // the second round, they may be permanently killed."
+                const state = createBleedingOutState(1, 1);
+                expect(state.roundsRemaining).toBe(1);
+                // The next round: still alive, still saveable.
+                const nextRound = advanceBleedOutRound(state);
+                expect(nextRound).toBeDefined();
+                expect(nextRound?.roundsRemaining).toBe(0);
+                expect(nextRound && stabilizeCharacter(nextRound, 3).saved).toBe(true);
+                // The second round: permanently killed.
+                const secondRound = nextRound ? advanceBleedOutRound(nextRound) : undefined;
+                expect(secondRound).toBeUndefined();
             });
         });
         describe("Applying Damage to Characters", () => {
@@ -318,11 +341,17 @@ describe("Full Combat Scenario", () => {
                 expect(result.staminaLoss).toBe(true);
                 expect(result.scar).toBeDefined();
             });
-            it("should fail to save if no rounds remaining", () => {
+            it("should fail to save once the final-chance round has passed", () => {
                 const initialState = createBleedingOutState(1, 1);
-                const advancedState = advanceBleedOutRound(initialState); // Now at 0 rounds
-                // This should fail because advancedState is undefined (character dead)
-                expect(advancedState).toBeUndefined();
+                // The next round is the final chance (roundsRemaining 0, saveable)...
+                const finalChance = advanceBleedOutRound(initialState);
+                expect(finalChance).toBeDefined();
+                expect(finalChance?.roundsRemaining).toBe(0);
+                // ...and one more round advance is death.
+                const dead = finalChance ? advanceBleedOutRound(finalChance) : undefined;
+                expect(dead).toBeUndefined();
+                // A state past death cannot be stabilized.
+                expect(stabilizeCharacter({ ...initialState, roundsRemaining: -1 }, 5).saved).toBe(false);
             });
             it("should apply permanent Stamina loss when saved", () => {
                 const warrior = createTestCharacter("Grognard", 3, 0, { sta: 14 });
@@ -446,10 +475,11 @@ describe("Full Combat Scenario", () => {
         });
         it("should check if character can be saved", () => {
             expect(canBeSaved(0, 0)).toBe(false); // 0-level can't be saved via healing
-            expect(canBeSaved(1, 0)).toBe(true); // 1st level in round 0
-            expect(canBeSaved(1, 1)).toBe(false); // 1st level after 1 round
-            expect(canBeSaved(3, 2)).toBe(true); // 3rd level after 2 rounds
-            expect(canBeSaved(3, 3)).toBe(false); // 3rd level after 3 rounds
+            expect(canBeSaved(1, 0)).toBe(true); // 1st level on the drop round
+            expect(canBeSaved(1, 1)).toBe(true); // 1st level on the next round (rules text)
+            expect(canBeSaved(1, 2)).toBe(false); // 1st level on the second round after
+            expect(canBeSaved(3, 3)).toBe(true); // 3rd level on the 3rd round after dropping
+            expect(canBeSaved(3, 4)).toBe(false); // 3rd level once that round has passed
         });
     });
     describe("Morale in Combat", () => {
