@@ -230,9 +230,11 @@ export function onRenderCombatTrackerForDeathClock (app, html) {
       icon.inert = true
       badge.append(icon, String(remaining))
 
-      const nameEl = li.querySelector('.token-name')
-      if (nameEl) nameEl.appendChild(badge)
-      else li.appendChild(badge)
+      // Sit at the right end of the action-dice pip row when there is one
+      // (the composed renderCombatTracker handler renders pips first);
+      // otherwise fall back to the name block.
+      const host = li.querySelector('.dcc-action-dice-pips') ?? li.querySelector('.token-name') ?? li
+      host.appendChild(badge)
     }
   } catch (err) {
     console.error('DCC | death clock tracker badge failed', err)

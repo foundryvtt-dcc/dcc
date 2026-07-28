@@ -171,11 +171,16 @@ describe('onUpdateCombatForDeathClock', () => {
 })
 
 describe('onRenderCombatTrackerForDeathClock', () => {
-  test('appends a remaining-rounds badge to dying combatant rows', () => {
+  test('appends a remaining-rounds badge at the end of the action-dice pip row', () => {
     const dying = makeDyingEffect(2)
     const actor = makeActor({ effects: [dying] })
+    const pipRow = { appendChild: vi.fn() }
     const nameEl = { appendChild: vi.fn() }
-    const li = { dataset: { combatantId: 'c1' }, querySelector: vi.fn(() => nameEl), appendChild: vi.fn() }
+    const li = {
+      dataset: { combatantId: 'c1' },
+      querySelector: vi.fn(selector => selector === '.dcc-action-dice-pips' ? pipRow : nameEl),
+      appendChild: vi.fn()
+    }
     const root = { querySelectorAll: vi.fn(() => [li]) }
     const app = { viewed: { combatants: { get: vi.fn(() => ({ actor })) } } }
 
@@ -196,7 +201,32 @@ describe('onRenderCombatTrackerForDeathClock', () => {
     const badge = madeEls.find(e => e.tag === 'span')
     expect(badge.classList.add).toHaveBeenCalledWith('dcc-death-clock')
     expect(badge.append).toHaveBeenCalledWith(expect.objectContaining({ tag: 'i' }), '2')
-    expect(nameEl.appendChild).toHaveBeenCalledWith(badge)
+    expect(pipRow.appendChild).toHaveBeenCalledWith(badge)
+    expect(nameEl.appendChild).not.toHaveBeenCalled()
+  })
+
+  test('falls back to the name block when there is no pip row', () => {
+    const dying = makeDyingEffect(2)
+    const actor = makeActor({ effects: [dying] })
+    const nameEl = { appendChild: vi.fn() }
+    const li = {
+      dataset: { combatantId: 'c1' },
+      querySelector: vi.fn(selector => selector === '.token-name' ? nameEl : null),
+      appendChild: vi.fn()
+    }
+    const root = { querySelectorAll: vi.fn(() => [li]) }
+    const app = { viewed: { combatants: { get: vi.fn(() => ({ actor })) } } }
+
+    globalThis.document = {
+      createElement: vi.fn(tag => ({ tag, classList: { add: vi.fn() }, dataset: {}, append: vi.fn(), inert: false, className: '' }))
+    }
+    try {
+      onRenderCombatTrackerForDeathClock(app, root)
+    } finally {
+      delete globalThis.document
+    }
+
+    expect(nameEl.appendChild).toHaveBeenCalledTimes(1)
   })
 })
 
