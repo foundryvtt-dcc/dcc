@@ -275,6 +275,7 @@
   "DCC.DeathClockStopped": "{name} już się nie wykrwawia.",
   "DCC.DeathClockTraumaSource": "Uratowany przed wykrwawieniem",
   "DCC.DeathClockTooltip": "Wykrwawianie: pozostało {rounds} rund(y)",
+  "DCC.DeathClockTooltipLastChance": "Wykrwawianie: ostatnia szansa — uleczcie postać w tej rundzie albo umrze!",
   "DCC.DeleteItem": "Usunąć ten przedmiot z arkusza?",
   "DCC.DeleteItemExplain": "To usunie przedmiot i nie może być cofnięte",
   "DCC.Description": "Opis",

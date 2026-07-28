@@ -334,7 +334,11 @@ export function onRenderCombatTrackerForDeathClock (app, html) {
       const remaining = getDeathClockRemaining(actor, effect)
       const badge = document.createElement('span')
       badge.classList.add('dcc-death-clock')
-      badge.dataset.tooltip = game.i18n.format('DCC.DeathClockTooltip', { rounds: remaining })
+      // 0 remaining is the final-chance round (lib contract since the
+      // bleed-out window fix), not death — say so instead of "0 rounds".
+      badge.dataset.tooltip = remaining === 0
+        ? game.i18n.localize('DCC.DeathClockTooltipLastChance')
+        : game.i18n.format('DCC.DeathClockTooltip', { rounds: remaining })
       const icon = document.createElement('i')
       icon.className = 'fas fa-heart-pulse'
       icon.inert = true

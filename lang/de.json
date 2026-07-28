@@ -275,6 +275,7 @@
   "DCC.DeathClockStopped": "{name} verblutet nicht mehr.",
   "DCC.DeathClockTraumaSource": "Vor dem Verbluten gerettet",
   "DCC.DeathClockTooltip": "Verblutet: noch {rounds} Runde(n)",
+  "DCC.DeathClockTooltipLastChance": "Verblutet: letzte Chance — heilt den Charakter in dieser Runde, sonst stirbt er!",
   "DCC.DeleteItem": "Gegenstand vom Charakterbogen löschen?",
   "DCC.DeleteItemExplain": "Entfernt den Gegenstand und lässt sich nicht rückgängig machen.",
   "DCC.Description": "Beschreibung",

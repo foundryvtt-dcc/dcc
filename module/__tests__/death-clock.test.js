@@ -140,6 +140,15 @@ describe('onUpdateActorForDeathClock', () => {
       expect.objectContaining({ scar: expect.any(String) }))
   })
 
+  test('healing on the final-chance round (0 remaining) still saves, with trauma', async () => {
+    const dying = makeDyingEffect(0)
+    const actor = makeActor({ effects: [dying] })
+    await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 2 } } } })
+    expect(dying.delete).toHaveBeenCalledTimes(1)
+    expect(logAbilityChange).toHaveBeenCalledWith(actor, expect.objectContaining({ ability: 'sta', change: -1 }), { announce: false })
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockSaved', expect.anything())
+  })
+
   test('healing a dead PC above 0 revives them (un-dead + revival card)', async () => {
     const actor = makeActor({ statuses: new Set(['dead']) })
     await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 2 } } } })
@@ -178,8 +187,19 @@ describe('tickDeathClock', () => {
     expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
   })
 
-  test('at zero: removes the effect, applies dead status, announces the death', async () => {
+  test('1 remaining ticks down to the final-chance round (0), still alive', async () => {
+    // Rules text: a level-1 PC can be healed on the drop round or the next
+    // round — the 1 → 0 tick is that next round, not death.
     const dying = makeDyingEffect(1)
+    const actor = makeActor({ effects: [dying] })
+    await tickDeathClock(actor)
+    expect(dying.setFlag).toHaveBeenCalledWith('dcc', 'deathClock', { roundsRemaining: 0 })
+    expect(dying.delete).not.toHaveBeenCalled()
+    expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
+  })
+
+  test('a tick past the final-chance round removes the effect, applies dead status, announces the death', async () => {
+    const dying = makeDyingEffect(0)
     const actor = makeActor({ effects: [dying] })
     await tickDeathClock(actor)
     expect(dying.delete).toHaveBeenCalledTimes(1)

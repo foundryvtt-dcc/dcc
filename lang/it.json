@@ -275,6 +275,7 @@
   "DCC.DeathClockStopped": "{name} non sta più morendo dissanguato.",
   "DCC.DeathClockTraumaSource": "Salvato dal dissanguamento",
   "DCC.DeathClockTooltip": "Dissanguamento: {rounds} round rimanenti",
+  "DCC.DeathClockTooltipLastChance": "Dissanguamento: ultima possibilità — curatelo in questo round o morirà!",
   "DCC.DeleteItem": "Conferma eliminazione",
   "DCC.DeleteItemExplain": "L'operazione eliminerà l'oggetto e non può essere annullata.",
   "DCC.Description": "Descrizione",

@@ -274,6 +274,7 @@
   "DCC.DeathClockStarted": "{name} is down and bleeding out! {rounds} round(s) to save them.",
   "DCC.DeathClockStopped": "{name} is no longer bleeding out.",
   "DCC.DeathClockTooltip": "Bleeding out: {rounds} round(s) remaining",
+  "DCC.DeathClockTooltipLastChance": "Bleeding out: final chance — heal them this round or they die!",
   "DCC.DeathClockTraumaSource": "Saved from bleeding out",
   "DCC.DeleteItem": "Delete this item from the sheet?",
   "DCC.DeleteItemExplain": "This will remove the item and cannot be undone",

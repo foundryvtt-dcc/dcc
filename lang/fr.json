@@ -261,6 +261,7 @@
   "DCC.DeathClockStopped": "{name} ne se vide plus de son sang.",
   "DCC.DeathClockTraumaSource": "Sauvé de l'hémorragie",
   "DCC.DeathClockTooltip": "Hémorragie : {rounds} round(s) restant(s)",
+  "DCC.DeathClockTooltipLastChance": "Hémorragie : dernière chance — soignez-le ce round ou il meurt !",
   "DCC.DeleteItem": "Supprimer cette entrée de la feuille?",
   "DCC.DeleteItemExplain": "Ceci supprimera l'entrée de la feuille définitivement",
   "DCC.Description": "Description",

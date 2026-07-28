@@ -275,6 +275,7 @@
   "DCC.DeathClockStopped": "{name}不再流血濒死。",
   "DCC.DeathClockTraumaSource": "从濒死流血中获救",
   "DCC.DeathClockTooltip": "濒死流血：剩余{rounds}轮",
+  "DCC.DeathClockTooltipLastChance": "濒死流血：最后机会——本轮内治疗，否则死亡！",
   "DCC.DeleteItem": "从此卡中删除此物品？",
   "DCC.DeleteItemExplain": "这会删除该物品，且无法撤销",
   "DCC.Description": "描述",

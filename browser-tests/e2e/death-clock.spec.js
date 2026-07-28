@@ -157,7 +157,14 @@ test.describe('Death clock', () => {
         await pollFor(() => getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining === 1)
         observed.roundsAfterOne = getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining
 
-        // Round 2 → 3: the clock expires — dead status, clock gone, chat card.
+        // Round 2 → 3: the final-chance round — 0 remaining but still alive
+        // (the bleed-out window is the drop round plus level full rounds).
+        await combat.nextRound()
+        await pollFor(() => getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining === 0)
+        observed.roundsAfterTwo = getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining
+        observed.aliveOnFinalChanceRound = !pc.effects.contents.some(e => e.statuses?.has?.('dead'))
+
+        // Round 3 → 4: the clock expires — dead status, clock gone, chat card.
         await combat.nextRound()
         observed.dead = !!(await pollFor(() => pc.effects?.contents?.some(e => e.statuses?.has?.('dead'))))
         observed.clockGone = await pollFor(() => !getDying())
@@ -187,6 +194,8 @@ test.describe('Death clock', () => {
     expect(result.roundsAtStart).toBe(2)
     expect(result.badgeText).toContain('2')
     expect(result.roundsAfterOne).toBe(1)
+    expect(result.roundsAfterTwo).toBe(0)
+    expect(result.aliveOnFinalChanceRound).toBe(true)
     expect(result.dead).toBe(true)
     expect(result.clockGone).toBe(true)
     expect(result.deadIsOverlay).toBe(true)
