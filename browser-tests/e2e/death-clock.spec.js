@@ -154,6 +154,11 @@ test.describe('Death clock', () => {
         await combat.nextRound()
         observed.dead = !!(await pollFor(() => pc.effects?.contents?.some(e => e.statuses?.has?.('dead'))))
         observed.clockGone = await pollFor(() => !getDying())
+        // Matches the tracker skull button: the dead effect is an overlay
+        // and the combatant is flagged defeated.
+        const deadEffect = pc.effects.contents.find(e => e.statuses?.has?.('dead'))
+        observed.deadIsOverlay = deadEffect?.getFlag('core', 'overlay') === true
+        observed.combatantDefeated = !!(await pollFor(() => combat.combatants.contents[0]?.defeated))
         observed.deathCardPosted = !!(await pollFor(() =>
           game.messages.contents.slice(-5).find(m => m.content.includes(pc.name) && m.content.includes('died'))))
       } finally {
@@ -169,6 +174,8 @@ test.describe('Death clock', () => {
     expect(result.roundsAfterOne).toBe(1)
     expect(result.dead).toBe(true)
     expect(result.clockGone).toBe(true)
+    expect(result.deadIsOverlay).toBe(true)
+    expect(result.combatantDefeated).toBe(true)
     expect(result.deathCardPosted).toBe(true)
   })
 

@@ -29,6 +29,7 @@
  */
 
 import { advanceBleedOutRound, getBleedOutRounds } from './vendor/dcc-core-lib/combat/death-and-dying.js'
+import { markActorDefeated } from './defeated.mjs'
 import { isActiveGM } from './socket.mjs'
 
 /** The status id carried by the Dying Active Effect. */
@@ -87,17 +88,6 @@ async function postDeathClockCard (key, actor, data = {}) {
 }
 
 /**
- * Apply the dead status to an actor unless it is already dead.
- *
- * @param {Actor} actor
- */
-async function applyDeadStatus (actor) {
-  const hasDeadEffect = [...(actor.effects ?? [])].some(e => e.statuses?.has?.('dead'))
-  if (actor.statuses?.has('dead') || hasDeadEffect) return
-  await actor.toggleStatusEffect('dead', { active: true })
-}
-
-/**
  * `updateActor` handler. Starts the death clock when a Player's HP drops to
  * 0 or below (0-level: dead immediately), and clears it when healing brings
  * HP back above 0.
@@ -136,7 +126,7 @@ export async function onUpdateActorForDeathClock (actor, changes) {
 
     // 0-level characters die immediately.
     if (rounds <= 0) {
-      await applyDeadStatus(actor)
+      await markActorDefeated(actor)
       await postDeathClockCard('DCC.DeathClockInstantDeath', actor)
       return
     }
@@ -166,7 +156,7 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
   const next = advanceBleedOutRound({ roundsRemaining: getDeathClockRemaining(actor, effect) })
   if (next === undefined) {
     await effect.delete()
-    await applyDeadStatus(actor)
+    await markActorDefeated(actor)
     await postDeathClockCard('DCC.DeathClockExpired', actor)
   } else {
     await effect.setFlag('dcc', CLOCK_FLAG, next)

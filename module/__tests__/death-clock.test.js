@@ -85,7 +85,7 @@ describe('onUpdateActorForDeathClock', () => {
     const actor = makeActor({ level: 0 })
     await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 0 } } } })
     expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
-    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true })
+    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true, overlay: true })
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockInstantDeath', expect.anything())
   })
 
@@ -139,7 +139,7 @@ describe('tickDeathClock', () => {
     const actor = makeActor({ effects: [dying] })
     await tickDeathClock(actor)
     expect(dying.delete).toHaveBeenCalledTimes(1)
-    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true })
+    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true, overlay: true })
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockExpired', expect.anything())
   })
 

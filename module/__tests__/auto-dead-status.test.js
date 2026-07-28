@@ -11,6 +11,7 @@ const { isActiveGM } = await import('../socket.mjs')
 const { onUpdateActorForDeath } = await import('../auto-dead-status.mjs')
 
 let originalGame
+let originalConfig
 
 function makeNpc ({ statuses = [], effects = [], type = 'NPC' } = {}) {
   return {
@@ -27,21 +28,24 @@ beforeEach(() => {
   vi.clearAllMocks()
   isActiveGM.mockReturnValue(true)
   originalGame = globalThis.game
+  originalConfig = globalThis.CONFIG
   globalThis.game = {
     modules: { get: vi.fn(() => undefined) }, // dcc-qol inactive
     settings: { get: vi.fn(() => true) } // autoApplyDeadStatus on
   }
+  globalThis.CONFIG = { specialStatusEffects: { DEFEATED: 'dead' } }
 })
 
 afterEach(() => {
   globalThis.game = originalGame
+  globalThis.CONFIG = originalConfig
 })
 
 describe('onUpdateActorForDeath', () => {
   test('applies dead to an NPC dropped to 0 HP', async () => {
     const npc = makeNpc()
     await onUpdateActorForDeath(npc, hpChange(0))
-    expect(npc.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true })
+    expect(npc.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: true, overlay: true })
   })
 
   test('applies dead when HP goes negative', async () => {
