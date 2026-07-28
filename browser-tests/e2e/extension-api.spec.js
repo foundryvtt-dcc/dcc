@@ -1150,6 +1150,21 @@ test.describe('DCC Extension API', () => {
       }
       observed.spellDuelDelegated = spellDuelDelegated
 
+      // Tab switching: activating the DCC tab shows its body; switching to
+      // another tab hides it again (regression: an unlayered unconditional
+      // `display: flex` on the tab beat core's layered
+      // `.tab[data-tab]:not(.active) { display: none }` and left the DCC
+      // tools visible underneath every other sidebar tab).
+      const previousTab = ui.sidebar.tabGroups.primary
+      try {
+        ui.sidebar.changeTab('dcc', 'primary')
+        observed.dccTabDisplayWhenActive = getComputedStyle(tabBody).display
+        ui.sidebar.changeTab('settings', 'primary')
+        observed.dccTabDisplayWhenInactive = getComputedStyle(tabBody).display
+      } finally {
+        ui.sidebar.changeTab(previousTab, 'primary')
+      }
+
       // Module contribution: a `dcc.getSidebarTools` listener adds a tool
       // (the XCC Mojo pattern) and it lands on the next render.
       const hookId = Hooks.on('dcc.getSidebarTools', tools => {
@@ -1176,6 +1191,9 @@ test.describe('DCC Extension API', () => {
     // Spell Duel tool is always present + wired.
     expect(result.renderedTools).toContain('spellDuel')
     expect(result.spellDuelDelegated).toBe(true)
+    // The tab body shows only while the DCC tab is the active sidebar tab.
+    expect(result.dccTabDisplayWhenActive).toBe('flex')
+    expect(result.dccTabDisplayWhenInactive).toBe('none')
     // Fleeting Luck tool tracks its world setting.
     if (result.fleetingLuckEnabled) {
       expect(result.renderedTools).toContain('fleetingLuck')

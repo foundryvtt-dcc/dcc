@@ -3364,19 +3364,27 @@ a.inline-roll {
 
 /* The tab body: a centered column of tool-launcher buttons. The root
    template part's children are hoisted directly into the tab element
-   (`section.tab.sidebar-tab.dcc-sidebar`), so style that element. */
-.sidebar-tab.dcc-sidebar {
+   (`section.tab.sidebar-tab.dcc-sidebar`), so style that element.
+
+   Core's `.tab[data-tab]:not(.active) { display: none }` lives in a CSS
+   @layer, and this system stylesheet is unlayered — an unconditional
+   `display: flex` here would always win and keep the tab visible under
+   every other sidebar tab. Only apply the flex layout while the tab is
+   active (or popped out, where the content lands in `.window-content`). */
+.sidebar-tab.dcc-sidebar.active,
+.dcc-sidebar.sidebar-popout .window-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 16px 8px 8px;
 }
-.sidebar-tab.dcc-sidebar h4.divider {
+
+.dcc-sidebar h4.divider {
   align-self: stretch;
   font-family: Duvall, sans-serif;
 }
-.sidebar-tab.dcc-sidebar button {
+.dcc-sidebar button {
   flex: none;
 }
 
