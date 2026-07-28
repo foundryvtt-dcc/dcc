@@ -192,7 +192,13 @@ export async function onUpdateActorForDeathClock (actor, changes) {
         const saved = stabilizeCharacter({ roundsRemaining: remaining }, newHp)
         if (saved.saved && saved.staminaLoss) {
           await applyPermanentLoss(actor, 'sta', 'bleedOut')
-          await postDeathClockCard('DCC.DeathClockSaved', actor, { scar: saved.scar })
+          // Localize the scar via the lib's stable index (DCC.Scar1-10
+          // mirror SCAR_DESCRIPTIONS); fall back to the lib's English
+          // string if the index is ever missing.
+          const scar = Number.isInteger(saved.scarIndex)
+            ? game.i18n.localize(`DCC.Scar${saved.scarIndex + 1}`)
+            : saved.scar
+          await postDeathClockCard('DCC.DeathClockSaved', actor, { scar })
         } else {
           await postDeathClockCard('DCC.DeathClockStopped', actor)
         }
