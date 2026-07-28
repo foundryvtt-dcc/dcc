@@ -165,11 +165,13 @@ export function stabilizeCharacter(bleedingState, healingAmount) {
     // Character is saved!
     // They start at 0 HP and gain the healing amount
     const newHP = healingAmount;
+    const scarIndex = rollScarIndex();
     return {
         saved: true,
         newHP,
         staminaLoss: true, // Always lose 1 Stamina when saved from bleeding out
-        scar: generateScar(),
+        scar: getScarDescription(scarIndex),
+        scarIndex,
     };
 }
 /**
@@ -403,23 +405,35 @@ export function applyMagicalHealing(character, amount) {
 // Helper Functions
 // =============================================================================
 /**
- * Generate a random scar description
+ * The scar table for characters saved from bleeding out. Order is part of
+ * the public contract: `StabilizeResult.scarIndex` indexes this array, and
+ * localizing consumers key their translations off it.
  */
-function generateScar() {
-    const scars = [
-        "Jagged scar across the face",
-        "Deep wound on the chest",
-        "Missing finger",
-        "Burn scar on the arm",
-        "Twisted scar on the back",
-        "Maimed ear",
-        "Scarred throat",
-        "Puckered scar on the abdomen",
-        "Mangled hand",
-        "Gnarled scar on the leg",
-    ];
-    const index = Math.floor(Math.random() * scars.length);
-    return scars[index] ?? "Terrible scar";
+export const SCAR_DESCRIPTIONS = [
+    "Jagged scar across the face",
+    "Deep wound on the chest",
+    "Missing finger",
+    "Burn scar on the arm",
+    "Twisted scar on the back",
+    "Maimed ear",
+    "Scarred throat",
+    "Puckered scar on the abdomen",
+    "Mangled hand",
+    "Gnarled scar on the leg",
+];
+/**
+ * Roll a random index into {@link SCAR_DESCRIPTIONS}
+ */
+function rollScarIndex() {
+    return Math.floor(Math.random() * SCAR_DESCRIPTIONS.length);
+}
+/**
+ * Look up the English description for a scar index
+ *
+ * @param index - Index into {@link SCAR_DESCRIPTIONS}
+ */
+export function getScarDescription(index) {
+    return SCAR_DESCRIPTIONS[index] ?? "Terrible scar";
 }
 /**
  * Check if a character is at death's door (1 HP or less)

@@ -154,8 +154,10 @@ describe('onUpdateActorForDeathClock', () => {
       maxChange: -1,
       type: 'bleedOut'
     }), { announce: false })
+    // The scar is localized via the lib's stable index (mock localize
+    // returns the key, so the card data carries DCC.Scar1-10).
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockSaved',
-      expect.objectContaining({ scar: expect.any(String) }))
+      expect.objectContaining({ scar: expect.stringMatching(/^DCC\.Scar([1-9]|10)$/) }))
   })
 
   test('a Stamina HP cascade to 0 during the save is clamped back to 1, without restarting the clock', async () => {

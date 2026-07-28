@@ -55,6 +55,12 @@ export interface StabilizeResult {
     staminaLoss: boolean;
     /** The permanent scar gained */
     scar?: string | undefined;
+    /**
+     * Stable index of the scar in {@link SCAR_DESCRIPTIONS} (0-based).
+     * Consumers with localization use this to translate the scar rather
+     * than displaying the English `scar` string.
+     */
+    scarIndex?: number | undefined;
     /** Reason for failure (if not saved) */
     failureReason?: string | undefined;
 }
@@ -225,6 +231,18 @@ export declare function applyHealingResult(character: Character, healing: Healin
  * @returns Updated character
  */
 export declare function applyMagicalHealing(character: Character, amount: number): Character;
+/**
+ * The scar table for characters saved from bleeding out. Order is part of
+ * the public contract: `StabilizeResult.scarIndex` indexes this array, and
+ * localizing consumers key their translations off it.
+ */
+export declare const SCAR_DESCRIPTIONS: readonly string[];
+/**
+ * Look up the English description for a scar index
+ *
+ * @param index - Index into {@link SCAR_DESCRIPTIONS}
+ */
+export declare function getScarDescription(index: number): string;
 /**
  * Check if a character is at death's door (1 HP or less)
  *

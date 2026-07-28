@@ -31,7 +31,7 @@ makeMoraleCheck, calculateMoraleModifier, checkGroupMoraleTrigger, checkCreature
 // Death and dying functions
 export { 
 // Functions
-getBleedOutRounds, getVitalStatus, applyDamage, canBeSaved, advanceBleedOutRound, createBleedingOutState, stabilizeCharacter, applyBleedOutTrauma, attemptBodyRecovery, applyBodyRecovery, getHealingFromRest, applyNaturalHealing, applyHealingResult, applyMagicalHealing, isAtDeathsDoor, canReceiveHealing, } from "./death-and-dying.js";
+getBleedOutRounds, getVitalStatus, applyDamage, canBeSaved, advanceBleedOutRound, createBleedingOutState, stabilizeCharacter, applyBleedOutTrauma, attemptBodyRecovery, applyBodyRecovery, getHealingFromRest, applyNaturalHealing, applyHealingResult, applyMagicalHealing, isAtDeathsDoor, canReceiveHealing, getScarDescription, SCAR_DESCRIPTIONS, } from "./death-and-dying.js";
 // Miscellaneous combat rules
 export { 
 // Constants
