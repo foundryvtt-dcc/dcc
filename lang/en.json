@@ -263,7 +263,7 @@
   "DCC.DeedRoll": "Roll Deed Die",
   "DCC.Deity": "Deity",
   "DCC.DeityHint": "Name of your cleric's deity",
-  "DCC.DeathClockAbilityLoss": "{name} sustains a permanent injury from their brush with death: -1 {ability}. (1d3: {roll})",
+  "DCC.DeathClockAbilityLoss": "{name} sustains a permanent injury from their brush with death: -1 {ability}.",
   "DCC.DeathClockBodyLost": "{name} is truly dead. (Luck check {roll} vs. {target}: failure)",
   "DCC.DeathClockBodyRecovered": "{name} was only knocked out! They come to with 1 hit point and are groggy for the next hour (-4 to all rolls). (Luck check {roll} vs. {target}: success)",
   "DCC.DeathClockExpired": "{name} has bled out and died.",

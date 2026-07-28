@@ -375,7 +375,7 @@ describe('rollAbilityLoss', () => {
     }), { announce: false })
     expect(actor.unsetFlag).toHaveBeenCalledWith('dcc', 'pendingAbilityLoss')
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockAbilityLoss',
-      expect.objectContaining({ roll: 2 }))
+      expect.objectContaining({ ability: 'DCC.AbilityAgl' }))
     // The card carries the rendered die and the 1-3 chart with the rolled
     // row highlighted.
     const { content } = globalThis.ChatMessage.create.mock.calls[0][0]

@@ -321,8 +321,7 @@ export async function rollAbilityLoss (actor) {
   ).join('')
   const resultText = game.i18n.format('DCC.DeathClockAbilityLoss', {
     name: actor.name,
-    ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility),
-    roll: abilityDie.total
+    ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility)
   })
   await ChatMessage.create({
     content: `${rollHtml}<table class="dcc-ability-loss-chart"><tbody>${chartRows}</tbody></table><p>${resultText}</p>`,
