@@ -10,8 +10,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
 vi.mock('../ability-score-log.js', () => ({ logAbilityChange: vi.fn() }))
+vi.mock('../adapter/chat-renderer.mjs', () => ({ renderAbilityCheckRollUnder: vi.fn() }))
 
 const { logAbilityChange } = await import('../ability-score-log.js')
+const { renderAbilityCheckRollUnder } = await import('../adapter/chat-renderer.mjs')
 const {
   getDeathClockRemaining,
   getDyingEffect,
@@ -187,7 +189,7 @@ describe('tickDeathClock', () => {
     expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
   })
 
-  test('1 remaining ticks down to the final-chance round (0), still alive', async () => {
+  test('1 remaining ticks down to the final-chance round (0), still alive, with a chat warning', async () => {
     // Rules text: a level-1 PC can be healed on the drop round or the next
     // round — the 1 → 0 tick is that next round, not death.
     const dying = makeDyingEffect(1)
@@ -196,6 +198,14 @@ describe('tickDeathClock', () => {
     expect(dying.setFlag).toHaveBeenCalledWith('dcc', 'deathClock', { roundsRemaining: 0 })
     expect(dying.delete).not.toHaveBeenCalled()
     expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockLastChance', expect.anything())
+  })
+
+  test('ticks with rounds to spare post no last-chance warning', async () => {
+    const dying = makeDyingEffect(3)
+    const actor = makeActor({ effects: [dying] })
+    await tickDeathClock(actor)
+    expect(globalThis.game.i18n.format).not.toHaveBeenCalledWith('DCC.DeathClockLastChance', expect.anything())
   })
 
   test('a tick past the final-chance round removes the effect, applies dead status, announces the death', async () => {
@@ -306,6 +316,12 @@ describe('rollTheBody', () => {
     const actor = makeActor({ luck: 5, statuses: new Set(['dead']) })
     RollMock.queue = [15, 1]
     await rollTheBody(actor)
+    // A real roll-under Luck check card was rendered for the attempt.
+    expect(renderAbilityCheckRollUnder).toHaveBeenCalledWith(expect.objectContaining({
+      actor,
+      abilityId: 'lck',
+      result: expect.objectContaining({ roll: 15, target: 5, success: false })
+    }))
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockBodyLost',
       expect.objectContaining({ roll: 15, target: 5 }))
     // No recovery: status untouched, HP untouched.
@@ -317,6 +333,9 @@ describe('rollTheBody', () => {
     const actor = makeActor({ luck: 15, statuses: new Set(['dead']) })
     RollMock.queue = [10, 2] // d20 10 <= 15; d3 2 → Agility
     await rollTheBody(actor)
+    expect(renderAbilityCheckRollUnder).toHaveBeenCalledWith(expect.objectContaining({
+      result: expect.objectContaining({ roll: 10, target: 15, success: true })
+    }))
     expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: false })
     expect(actor.update).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
     expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('ActiveEffect', [expect.objectContaining({

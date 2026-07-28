@@ -254,6 +254,7 @@
   "DCC.DeathClockGroggy": "Groggy (-4 à tous les jets)",
   "DCC.DeathClockExpired": "{name} s'est vidé de son sang et est mort.",
   "DCC.DeathClockInstantDeath": "{name} meurt sur le coup.",
+  "DCC.DeathClockLastChance": "{name} est en train de partir — c'est le dernier round pour le soigner !",
   "DCC.DeathClockSaved": "{name} survit à son face-à-face avec la mort — la blessure coûte définitivement 1 point d'Endurance et laisse une terrible cicatrice : {scar}",
   "DCC.DeathClockStarted": "{name} est à terre et se vide de son sang ! {rounds} round(s) pour le sauver.",
   "DCC.DeathClockRecoverySource": "Retourner le corps",

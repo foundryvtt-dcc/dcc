@@ -268,6 +268,7 @@
   "DCC.DeathClockExpired": "{name} has bled out and died.",
   "DCC.DeathClockGroggy": "Groggy (-4 to all rolls)",
   "DCC.DeathClockInstantDeath": "{name} dies instantly.",
+  "DCC.DeathClockLastChance": "{name} is slipping away — this is the last round to heal them!",
   "DCC.DeathClockRecoverySource": "Roll the body",
   "DCC.DeathClockRevived": "{name} has been revived!",
   "DCC.DeathClockSaved": "{name} survives their brush with death — the wound permanently costs 1 point of Stamina and leaves a terrible scar: {scar}",

@@ -268,6 +268,7 @@
   "DCC.DeathClockGroggy": "Oszołomiony (-4 do wszystkich rzutów)",
   "DCC.DeathClockExpired": "{name} wykrwawił się i zmarł.",
   "DCC.DeathClockInstantDeath": "{name} umiera natychmiast.",
+  "DCC.DeathClockLastChance": "{name} gaśnie — to ostatnia runda, by uleczyć postać!",
   "DCC.DeathClockSaved": "{name} przeżywa otarcie się o śmierć — rana trwale kosztuje 1 punkt Wytrzymałości i pozostawia straszliwą bliznę: {scar}",
   "DCC.DeathClockStarted": "{name} pada i się wykrwawia! {rounds} rund(y) na ratunek.",
   "DCC.DeathClockRecoverySource": "Odwrócenie ciała",

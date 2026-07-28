@@ -30,7 +30,9 @@
  */
 
 import { advanceBleedOutRound, attemptBodyRecovery, getBleedOutRounds, stabilizeCharacter } from './vendor/dcc-core-lib/combat/death-and-dying.js'
+import { rollLuckCheckSimple } from './vendor/dcc-core-lib/checks/luck-check.js'
 import { logAbilityChange } from './ability-score-log.js'
+import { renderAbilityCheckRollUnder } from './adapter/chat-renderer.mjs'
 import { isActorDefeated, markActorDefeated, markActorRecovered } from './defeated.mjs'
 import { isActiveGM } from './socket.mjs'
 
@@ -194,6 +196,10 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
     await postDeathClockCard('DCC.DeathClockExpired', actor, {}, { rollTheBody: true })
   } else {
     await effect.setFlag('dcc', CLOCK_FLAG, next)
+    // Entering the final-chance round: warn the table in chat.
+    if (next.roundsRemaining === 0) {
+      await postDeathClockCard('DCC.DeathClockLastChance', actor)
+    }
   }
 }
 
@@ -216,18 +222,34 @@ export async function rollTheBody (actor) {
 
   const luck = parseInt(actor.system?.abilities?.lck?.value) || 0
 
-  // Pre-roll the lib's dice with Foundry Rolls so they surface in chat
-  // (and Dice So Nice); the queue feeds attemptBodyRecovery's sync roller.
+  // The recovery check is a real roll-under Luck check: the same die,
+  // lib classification, and chat card as clicking Luck on the sheet.
+  // Deliberately not routed through actor.rollAbilityCheck — a dead
+  // character spends no action dice, and the dispatcher doesn't return
+  // the success flag this adjudication needs.
   const luckDie = new Roll('1d20')
   await luckDie.evaluate()
+  const natural = luckDie.dice?.[0]?.total ?? luckDie.total
+  const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities.lck)
+  const check = rollLuckCheckSimple(luck, () => natural, abilityLabel)
+  await renderAbilityCheckRollUnder({
+    actor,
+    abilityId: 'lck',
+    abilityLabel,
+    result: check,
+    foundryRoll: luckDie
+  })
+
+  // Feed the SAME natural into the lib's body-recovery adjudication (plus
+  // the d3 it rolls on success for the penalized ability).
   const abilityDie = new Roll('1d3')
   await abilityDie.evaluate()
-  const queue = [luckDie.total, abilityDie.total]
+  const queue = [natural, abilityDie.total]
   const recovery = attemptBodyRecovery(luck, () => queue.shift())
 
   if (!recovery.success) {
     await postDeathClockCard('DCC.DeathClockBodyLost', actor,
-      { roll: recovery.luckRoll, target: luck }, { rolls: [luckDie] })
+      { roll: recovery.luckRoll, target: luck })
     return
   }
 
@@ -254,7 +276,7 @@ export async function rollTheBody (actor) {
     ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility),
     roll: recovery.luckRoll,
     target: luck
-  }, { rolls: [luckDie, abilityDie] })
+  }, { rolls: [abilityDie] })
 }
 
 /**

@@ -158,11 +158,14 @@ test.describe('Death clock', () => {
         observed.roundsAfterOne = getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining
 
         // Round 2 → 3: the final-chance round — 0 remaining but still alive
-        // (the bleed-out window is the drop round plus level full rounds).
+        // (the bleed-out window is the drop round plus level full rounds),
+        // with a last-chance warning in chat.
         await combat.nextRound()
         await pollFor(() => getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining === 0)
         observed.roundsAfterTwo = getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining
         observed.aliveOnFinalChanceRound = !pc.effects.contents.some(e => e.statuses?.has?.('dead'))
+        observed.lastChanceCardPosted = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(pc.name) && m.content.includes('last round'))))
 
         // Round 3 → 4: the clock expires — dead status, clock gone, chat card.
         await combat.nextRound()
@@ -196,6 +199,7 @@ test.describe('Death clock', () => {
     expect(result.roundsAfterOne).toBe(1)
     expect(result.roundsAfterTwo).toBe(0)
     expect(result.aliveOnFinalChanceRound).toBe(true)
+    expect(result.lastChanceCardPosted).toBe(true)
     expect(result.dead).toBe(true)
     expect(result.clockGone).toBe(true)
     expect(result.deadIsOverlay).toBe(true)
@@ -246,6 +250,9 @@ test.describe('Death clock', () => {
         const abilitySum = (a) => ['str', 'agl', 'sta'].reduce((n, k) => n + a.system.abilities[k].value, 0)
         const sumBefore = abilitySum(lucky)
         await mod.rollTheBody(lucky)
+        // The attempt posts the system's native roll-under Luck check card.
+        observed.luckCheckCardPosted = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.getFlag('dcc', 'RollType') === 'AbilityCheckRollUnder')))
         observed.recovered = await pollFor(() => !isDead(lucky))
         observed.hpAfter = await pollFor(() => lucky.system.attributes.hp.value)
         observed.groggy = !!(await pollFor(() =>
@@ -267,6 +274,7 @@ test.describe('Death clock', () => {
     })
 
     expect(result.buttonOnCard).toBe(true)
+    expect(result.luckCheckCardPosted).toBe(true)
     expect(result.recovered).toBe(true)
     expect(result.hpAfter).toBe(1)
     expect(result.groggy).toBe(true)

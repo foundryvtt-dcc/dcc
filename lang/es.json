@@ -268,6 +268,7 @@
   "DCC.DeathClockGroggy": "Aturdido (-4 a todas las tiradas)",
   "DCC.DeathClockExpired": "{name} se ha desangrado y ha muerto.",
   "DCC.DeathClockInstantDeath": "{name} muere instantáneamente.",
+  "DCC.DeathClockLastChance": "{name} se apaga — ¡esta es la última ronda para curarlo!",
   "DCC.DeathClockSaved": "{name} sobrevive a su roce con la muerte — la herida le cuesta permanentemente 1 punto de Resistencia y deja una cicatriz terrible: {scar}",
   "DCC.DeathClockStarted": "¡{name} está en el suelo desangrándose! {rounds} ronda(s) para salvarlo.",
   "DCC.DeathClockRecoverySource": "Voltear el cuerpo",

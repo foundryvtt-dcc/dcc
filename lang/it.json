@@ -268,6 +268,7 @@
   "DCC.DeathClockGroggy": "Stordito (-4 a tutti i tiri)",
   "DCC.DeathClockExpired": "{name} è morto dissanguato.",
   "DCC.DeathClockInstantDeath": "{name} muore all'istante.",
+  "DCC.DeathClockLastChance": "{name} sta scivolando via — questo è l'ultimo round per curarlo!",
   "DCC.DeathClockSaved": "{name} sopravvive al suo incontro con la morte — la ferita costa permanentemente 1 punto di Fibra e lascia una terribile cicatrice: {scar}",
   "DCC.DeathClockStarted": "{name} è a terra e sta morendo dissanguato! {rounds} round per salvarlo.",
   "DCC.DeathClockRecoverySource": "Girare il corpo",

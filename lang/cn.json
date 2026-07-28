@@ -268,6 +268,7 @@
   "DCC.DeathClockGroggy": "眩晕（所有检定-4）",
   "DCC.DeathClockExpired": "{name}流血过多而死。",
   "DCC.DeathClockInstantDeath": "{name}当场死亡。",
+  "DCC.DeathClockLastChance": "{name}正在逝去——这是治疗的最后一轮！",
   "DCC.DeathClockSaved": "{name}从鬼门关捡回一条命——伤势使其永久损失1点耐力，并留下可怕的伤疤：{scar}",
   "DCC.DeathClockStarted": "{name}倒地并正在流血濒死！剩余{rounds}轮可以施救。",
   "DCC.DeathClockRecoverySource": "翻动尸体",
