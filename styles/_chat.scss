@@ -398,3 +398,15 @@ a.inline-roll {
   }
 }
 
+
+// Death-clock chat card actions (Roll the Body / Roll Ability Loss buttons,
+// issue #843) — injected by module/death-clock.mjs postDeathClockCard.
+.dcc-death-clock-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+
+  button {
+    width: auto;
+  }
+}

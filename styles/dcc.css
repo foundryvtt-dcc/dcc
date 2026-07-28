@@ -975,6 +975,15 @@ a.inline-roll {
   padding: 0 4px;
 }
 
+.dcc-death-clock-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.dcc-death-clock-actions button {
+  width: auto;
+}
+
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
