@@ -1352,7 +1352,10 @@ global.CONFIG = {
   },
   Item: {
     documentClass: MockItem
-  }
+  },
+  // Singleton UI application classes, instantiated into `ui.*` by
+  // Game#initializeUI; systems add custom sidebar tabs here
+  ui: {}
 }
 
 // Enhanced CONST to include more Foundry constants
@@ -1660,6 +1663,28 @@ global.foundry = {
       ActorSheetV2: global.ActorSheetV2,
       // DocumentSheetV2 - export the mock for import statements
       DocumentSheetV2: global.DocumentSheetV2
+    },
+    sidebar: {
+      // AbstractSidebarTab - base class for right-hand sidebar tabs
+      AbstractSidebarTab: class AbstractSidebarTabMock extends global.ApplicationV2 {
+        static tabName
+
+        get tabName () { return this.constructor.tabName }
+
+        async _prepareContext (options) {
+          const context = await super._prepareContext(options)
+          context.user = global.game?.user
+          return context
+        }
+      },
+      // Sidebar - the main sidebar application; systems register custom tabs
+      // by adding descriptors to its static TABS record
+      Sidebar: class SidebarMock {
+        static TABS = {
+          chat: { documentName: 'ChatMessage' },
+          settings: { tooltip: 'SIDEBAR.TabSettings', icon: 'fa-solid fa-gears' }
+        }
+      }
     },
     apps: {
       // DialogV2 - modal dialog application for user interaction

@@ -1109,65 +1109,81 @@ test.describe('DCC Extension API', () => {
     expect(result.bodyHasDarkFilterClass).toBe(!!result.disableDarkThemeIconFilter)
   })
 
-  test('DCC scene-control buttons (Spell Duel always, Fleeting Luck when enabled) survive scene-control-hooks.mjs extraction', async ({ page }) => {
-    // Phase 7 session 54: the `getSceneControlButtons` handler was relocated
-    // from `module/dcc.js` into `module/scene-control-hooks.mjs`, wired via
-    // `registerSceneControlHooks()`. This probe drives the registered hook
-    // end-to-end by broadcasting `getSceneControlButtons` with a stub
-    // `controls` object and asserting the DCC token-layer tools land: Spell
-    // Duel is always added; Fleeting Luck is added iff the
-    // `dcc.enableFleetingLuck` world setting is on. Their onChange callbacks
-    // are also exercised to confirm they delegate to the live singletons.
+  test('DCC sidebar tab hosts the Spell Duel (always) and Fleeting Luck (when enabled) tools — issue #833', async ({ page }) => {
+    // Issue #833: the Fleeting Luck / Spell Duel launchers moved off the
+    // left-hand token scene controls into a dedicated right-hand sidebar tab
+    // (`module/sidebar-tab.mjs`, registered from the init hook). This probe
+    // asserts the tab is registered and rendered, that its tool buttons land
+    // in the DOM (Spell Duel always; Fleeting Luck iff the
+    // `dcc.enableFleetingLuck` world setting is on), that clicking a tool
+    // delegates to the live game.dcc singleton, and that modules can
+    // contribute their own tools via the `dcc.getSidebarTools` hook.
     const result = await page.evaluate(async () => {
       const observed = {}
 
-      const fleetingLuckEnabled = game.settings.get('dcc', 'enableFleetingLuck')
-      observed.fleetingLuckEnabled = fleetingLuckEnabled
+      observed.fleetingLuckEnabled = game.settings.get('dcc', 'enableFleetingLuck')
 
-      // Drive the registered hook with a stub controls object shaped like
-      // Foundry's scene-control payload.
-      const controls = { tokens: { tools: {} } }
-      Hooks.callAll('getSceneControlButtons', controls)
+      // Registration: the tab class is on CONFIG.ui, its descriptor is on
+      // Sidebar.TABS, and the singleton instantiated during initializeUI.
+      observed.tabRegistered = !!CONFIG.ui.dcc
+      observed.tabDescriptor = foundry.applications.sidebar.Sidebar.TABS.dcc ?? null
+      observed.tabName = ui.dcc?.tabName
 
-      observed.spellDuelTool = controls.tokens.tools.spellDuel
-        ? { name: controls.tokens.tools.spellDuel.name, title: controls.tokens.tools.spellDuel.title, hasOnChange: typeof controls.tokens.tools.spellDuel.onChange === 'function' }
-        : null
-      observed.fleetingLuckTool = controls.tokens.tools.fleetingLuck
-        ? { name: controls.tokens.tools.fleetingLuck.name, title: controls.tokens.tools.fleetingLuck.title }
-        : null
+      // Rendered DOM: the tab-strip button and the tab body's tool buttons.
+      observed.tabButtonInStrip = !!document.querySelector('#sidebar-tabs [data-tab="dcc"].dcc-sidebar-icon')
+      const tabBody = document.querySelector('#sidebar-content .tab[data-tab="dcc"]')
+      observed.tabBodyRendered = !!tabBody
+      observed.renderedTools = [...(tabBody?.querySelectorAll('button[data-action="clickTool"]') ?? [])]
+        .map(b => b.dataset.tool)
 
-      // The onChange callbacks delegate to the live game.dcc singletons —
-      // stub their show() methods to confirm wiring without opening UI.
-      const flShow = game.dcc.FleetingLuck.show
+      // Clicking the Spell Duel tool delegates to the live singleton — stub
+      // its show() to confirm wiring without opening UI.
       const sdShow = game.dcc.SpellDuel.show
       let spellDuelDelegated = false
-      let fleetingLuckDelegated = false
       try {
         game.dcc.SpellDuel.show = () => { spellDuelDelegated = true }
-        game.dcc.FleetingLuck.show = () => { fleetingLuckDelegated = true }
-        controls.tokens.tools.spellDuel?.onChange?.({}, true)
-        controls.tokens.tools.fleetingLuck?.onChange?.({}, true)
+        tabBody?.querySelector('button[data-tool="spellDuel"]')?.click()
+        // The action dispatch is synchronous, but yield a tick to be safe.
+        await new Promise(resolve => setTimeout(resolve, 0))
       } finally {
-        game.dcc.FleetingLuck.show = flShow
         game.dcc.SpellDuel.show = sdShow
       }
       observed.spellDuelDelegated = spellDuelDelegated
-      observed.fleetingLuckDelegated = fleetingLuckDelegated
+
+      // Module contribution: a `dcc.getSidebarTools` listener adds a tool
+      // (the XCC Mojo pattern) and it lands on the next render.
+      const hookId = Hooks.on('dcc.getSidebarTools', tools => {
+        tools.e2eProbeTool = { label: 'DCC.SpellDuel', icon: 'fas fa-flask', onClick: () => {} }
+      })
+      try {
+        await ui.dcc.render({ force: true })
+        observed.contributedToolRendered = !!document.querySelector(
+          '#sidebar-content .tab[data-tab="dcc"] button[data-tool="e2eProbeTool"]')
+      } finally {
+        Hooks.off('dcc.getSidebarTools', hookId)
+        await ui.dcc.render({ force: true })
+      }
 
       return observed
     })
 
-    // Spell Duel button is always present + wired.
-    expect(result.spellDuelTool).toEqual({ name: 'spellDuel', title: 'DCC.SpellDuel', hasOnChange: true })
+    // Tab registered + rendered with the DCC logo icon.
+    expect(result.tabRegistered).toBe(true)
+    expect(result.tabDescriptor).toEqual({ tooltip: 'DCC.SidebarTab', icon: 'dcc-sidebar-icon' })
+    expect(result.tabName).toBe('dcc')
+    expect(result.tabButtonInStrip).toBe(true)
+    expect(result.tabBodyRendered).toBe(true)
+    // Spell Duel tool is always present + wired.
+    expect(result.renderedTools).toContain('spellDuel')
     expect(result.spellDuelDelegated).toBe(true)
-    // Fleeting Luck button tracks its world setting.
+    // Fleeting Luck tool tracks its world setting.
     if (result.fleetingLuckEnabled) {
-      expect(result.fleetingLuckTool).toEqual({ name: 'fleetingLuck', title: 'DCC.FleetingLuck' })
-      expect(result.fleetingLuckDelegated).toBe(true)
+      expect(result.renderedTools).toContain('fleetingLuck')
     } else {
-      expect(result.fleetingLuckTool).toBeNull()
-      expect(result.fleetingLuckDelegated).toBe(false)
+      expect(result.renderedTools).not.toContain('fleetingLuck')
     }
+    // Modules can contribute tools via the dcc.getSidebarTools hook.
+    expect(result.contributedToolRendered).toBe(true)
   })
 
   test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {

@@ -59,6 +59,7 @@ vi.mock('../settings.js', () => ({
   registerEarlySystemSettings: vi.fn(),
   registerSystemSettings: vi.fn()
 }))
+vi.mock('../sidebar-tab.mjs', () => ({ registerDCCSidebarTab: vi.fn() }))
 vi.mock('../macros.mjs', () => ({ getMacroActor: vi.fn(), getMacroOptions: vi.fn(), rollDCCWeaponMacro: vi.fn() }))
 vi.mock('../spell-check-processor.mjs', () => ({ processSpellCheck: vi.fn() }))
 vi.mock('../table-loading.mjs', () => ({ getSkillTable: vi.fn() }))
@@ -305,6 +306,9 @@ describe('onInit', () => {
     expect(globalThis.foundry.applications.handlebars.loadTemplates).toHaveBeenCalledTimes(1)
     const { registerEarlySystemSettings } = await import('../settings.js')
     expect(registerEarlySystemSettings).toHaveBeenCalledTimes(1)
+    // The DCC sidebar tab registered (issue #833)
+    const { registerDCCSidebarTab } = await import('../sidebar-tab.mjs')
+    expect(registerDCCSidebarTab).toHaveBeenCalledTimes(1)
   })
 })
 

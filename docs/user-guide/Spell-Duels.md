@@ -6,9 +6,9 @@ The DCC system includes a Spell Duel Tracker to help manage wizard duels and cou
 
 ## Accessing the Spell Duel Tracker
 
-Click the wizard hat icon on the Token Controls bar to open the Spell Duel Tracker dialog.
+Open the **DCC Tools** sidebar tab — click the DCC logo near the bottom of the right-hand sidebar tab bar — then click the **Spell Duel** button to open the Spell Duel Tracker dialog.
 
-![](images/spell-duel-icon.png)
+![](images/dcc-tools-tab.png)
 
 ## Adding Participants
 
