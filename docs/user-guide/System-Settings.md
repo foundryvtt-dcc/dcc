@@ -50,7 +50,7 @@ The remaining settings add automated combat rules to the system. They are **all 
 
 Healing a bleeding-out character above 0 HP before the clock runs out saves them — at the cost the rules demand: a **permanent loss of 1 Stamina** (recorded in the ability score log when that feature is on) and a terrible scar, announced in chat. (Healing a dead PC above 0 HP also revives them cleanly, as a judge's manual override with no penalty.)
 
-The death announcement carries a **Roll the Body** button (judge only) implementing the "recovering the body" rule: if an ally reaches the body within an hour — the judge's call — click it to make the dead character's roll-under Luck check. On a success they were merely knocked out: they wake with 1 hit point, are Groggy for the next hour (−4 to all rolls, applied as a one-hour condition), and take a **permanent −1 to Strength, Agility, or Stamina** (rolled randomly, also logged). On a failure, they are truly dead.
+The death announcement carries a **Roll the Body** button (judge only) implementing the "recovering the body" rule: if an ally reaches the body within an hour — the judge's call — click it to make the dead character's roll-under Luck check (posted as a normal Luck check card). On a success they were merely knocked out: they wake with 1 hit point, are Groggy for the next hour (−4 to all rolls, applied as a one-hour condition), and the success message prompts the judge to **roll the 1d3** for the permanent injury — a **permanent −1 to Strength, Agility, or Stamina** — which is then announced and applied (and logged). On a failure, they are truly dead.
 
 ## Tables & Compendia
 

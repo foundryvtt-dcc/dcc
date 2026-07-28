@@ -29,7 +29,7 @@
  * out-of-combat tick.
  */
 
-import { advanceBleedOutRound, attemptBodyRecovery, getBleedOutRounds, stabilizeCharacter } from './vendor/dcc-core-lib/combat/death-and-dying.js'
+import { advanceBleedOutRound, getBleedOutRounds, stabilizeCharacter } from './vendor/dcc-core-lib/combat/death-and-dying.js'
 import { rollLuckCheckSimple } from './vendor/dcc-core-lib/checks/luck-check.js'
 import { logAbilityChange } from './ability-score-log.js'
 import { renderAbilityCheckRollUnder } from './adapter/chat-renderer.mjs'
@@ -41,6 +41,9 @@ export const DYING_STATUS_ID = 'dying'
 
 /** Flag scope key: `flags.dcc.deathClock` = `{ roundsRemaining }`. */
 const CLOCK_FLAG = 'deathClock'
+
+/** Actor flag set between a Roll the Body success and its 1d3 ability roll. */
+const PENDING_ABILITY_LOSS_FLAG = 'pendingAbilityLoss'
 
 /**
  * Whether the death clock feature is enabled in this world.
@@ -84,14 +87,19 @@ export function getDeathClockRemaining (actor, effect = getDyingEffect(actor)) {
  * @param {Actor} actor
  * @param {object} [data] - extra format data (e.g. `{ rounds }`)
  * @param {object} [options]
- * @param {boolean} [options.rollTheBody] - include the Roll the Body button
+ * @param {string} [options.button] - action name of a card button to include
+ *   (`rollTheBody` or `rollAbilityLoss`)
  * @param {Roll[]} [options.rolls] - dice to attach to the message
  */
-async function postDeathClockCard (key, actor, data = {}, { rollTheBody = false, rolls = [] } = {}) {
+async function postDeathClockCard (key, actor, data = {}, { button = null, rolls = [] } = {}) {
+  const buttonLabels = {
+    rollTheBody: 'DCC.RollTheBody',
+    rollAbilityLoss: 'DCC.RollAbilityLoss'
+  }
   let content = game.i18n.format(key, { name: actor.name, ...data })
-  if (rollTheBody) {
-    content += `<div class="dcc-death-clock-actions"><button type="button" data-action="rollTheBody" data-actor-uuid="${actor.uuid}">` +
-      `${game.i18n.localize('DCC.RollTheBody')}</button></div>`
+  if (button) {
+    content += `<div class="dcc-death-clock-actions"><button type="button" data-action="${button}" data-actor-uuid="${actor.uuid}">` +
+      `${game.i18n.localize(buttonLabels[button])}</button></div>`
   }
   await ChatMessage.create({
     content,
@@ -163,7 +171,7 @@ export async function onUpdateActorForDeathClock (actor, changes) {
     // 0-level characters die immediately (body recovery is still possible).
     if (rounds <= 0) {
       await markActorDefeated(actor)
-      await postDeathClockCard('DCC.DeathClockInstantDeath', actor, {}, { rollTheBody: true })
+      await postDeathClockCard('DCC.DeathClockInstantDeath', actor, {}, { button: 'rollTheBody' })
       return
     }
 
@@ -193,7 +201,7 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
   if (next === undefined) {
     await effect.delete()
     await markActorDefeated(actor)
-    await postDeathClockCard('DCC.DeathClockExpired', actor, {}, { rollTheBody: true })
+    await postDeathClockCard('DCC.DeathClockExpired', actor, {}, { button: 'rollTheBody' })
   } else {
     await effect.setFlag('dcc', CLOCK_FLAG, next)
     // Entering the final-chance round: warn the table in chat.
@@ -207,10 +215,10 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
  * Roll the Body (DCC "Recovering the body"): a dead character whose body is
  * reached within an hour makes a roll-under Luck check. On a success they
  * were merely knocked out — they awaken at 1 HP, groggy for the next hour
- * (-4 to all rolls), with a permanent -1 to a random physical ability
- * (Strength / Agility / Stamina). On a failure they are truly dead. The
- * one-hour window is the judge's call — the button just adjudicates the
- * check. Rules math from dcc-core-lib `attemptBodyRecovery`.
+ * (-4 to all rolls); the success card then prompts the judge to roll the
+ * 1d3 for the permanent -1 to a random physical ability (see
+ * {@link rollAbilityLoss}). On a failure they are truly dead. The one-hour
+ * window is the judge's call — the button just adjudicates the check.
  *
  * @param {Actor} actor - the dead actor
  */
@@ -240,30 +248,48 @@ export async function rollTheBody (actor) {
     foundryRoll: luckDie
   })
 
-  // Feed the SAME natural into the lib's body-recovery adjudication (plus
-  // the d3 it rolls on success for the penalized ability).
-  const abilityDie = new Roll('1d3')
-  await abilityDie.evaluate()
-  const queue = [natural, abilityDie.total]
-  const recovery = attemptBodyRecovery(luck, () => queue.shift())
-
-  if (!recovery.success) {
+  if (!check.success) {
     await postDeathClockCard('DCC.DeathClockBodyLost', actor,
-      { roll: recovery.luckRoll, target: luck })
+      { roll: check.roll, target: luck })
     return
   }
 
   // Recover before setting HP so the heal branch doesn't also fire a
   // revival card for an already-recovered actor.
   await markActorRecovered(actor)
-  await actor.update({ 'system.attributes.hp.value': recovery.newHP })
+  await actor.update({ 'system.attributes.hp.value': 1 })
   await actor.createEmbeddedDocuments('ActiveEffect', [{
     name: game.i18n.localize('DCC.DeathClockGroggy'),
     img: 'icons/svg/daze.svg',
     duration: { seconds: 3600 }
   }])
 
-  const penaltyAbility = recovery.permanentPenalty?.ability ?? 'sta'
+  // The permanent -1 is rolled separately from the success card's prompt;
+  // the pending flag keeps the button single-use.
+  await actor.setFlag('dcc', PENDING_ABILITY_LOSS_FLAG, true)
+  await postDeathClockCard('DCC.DeathClockBodyRecovered', actor,
+    { roll: check.roll, target: luck }, { button: 'rollAbilityLoss' })
+}
+
+/**
+ * Roll the 1d3 for the permanent -1 a body-recovered character sustains
+ * (1 Strength, 2 Agility, 3 Stamina — the lib's d3 mapping), apply it via
+ * the ability score log, and announce the result. Prompted by the Roll the
+ * Body success card; single-use via the pending flag.
+ *
+ * @param {Actor} actor - the just-recovered actor
+ */
+export async function rollAbilityLoss (actor) {
+  if (!actor.getFlag('dcc', PENDING_ABILITY_LOSS_FLAG)) {
+    ui.notifications.warn(game.i18n.format('DCC.RollAbilityLossNotPending', { name: actor.name }))
+    return
+  }
+
+  const abilityDie = new Roll('1d3')
+  await abilityDie.evaluate()
+  const abilities = ['str', 'agl', 'sta']
+  const penaltyAbility = abilities[(abilityDie.total - 1) % 3] ?? 'sta'
+
   await logAbilityChange(actor, {
     ability: penaltyAbility,
     change: -1,
@@ -271,35 +297,38 @@ export async function rollTheBody (actor) {
     type: 'otherPermanent',
     source: game.i18n.localize('DCC.DeathClockRecoverySource')
   }, { announce: false })
+  await actor.unsetFlag('dcc', PENDING_ABILITY_LOSS_FLAG)
 
-  await postDeathClockCard('DCC.DeathClockBodyRecovered', actor, {
+  await postDeathClockCard('DCC.DeathClockAbilityLoss', actor, {
     ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility),
-    roll: recovery.luckRoll,
-    target: luck
+    roll: abilityDie.total
   }, { rolls: [abilityDie] })
 }
 
 /**
- * `renderChatMessageHTML` handler. Wires the Roll the Body button on death
- * announcements — judge-only adjudication, so the button is disabled for
- * everyone else.
+ * `renderChatMessageHTML` handler. Wires the Roll the Body / Roll Ability
+ * Loss buttons on death-clock cards — judge-only adjudication, so the
+ * buttons are disabled for everyone else.
  *
  * @param {ChatMessage} message
  * @param {HTMLElement} html - the rendered message HTML
  */
 export function onRenderChatMessageHTMLForDeathClock (message, html) {
   try {
-    const root = html?.querySelector ? html : html?.[0]
-    const button = root?.querySelector?.('button[data-action="rollTheBody"]')
-    if (!button) return
-    if (!game.user.isGM) {
-      button.disabled = true
-      return
+    const handlers = { rollTheBody, rollAbilityLoss }
+    const root = html?.querySelectorAll ? html : html?.[0]
+    for (const action of Object.keys(handlers)) {
+      for (const button of root?.querySelectorAll?.(`button[data-action="${action}"]`) ?? []) {
+        if (!game.user.isGM) {
+          button.disabled = true
+          continue
+        }
+        button.addEventListener('click', async () => {
+          const actor = await fromUuid(button.dataset.actorUuid)
+          if (actor) await handlers[action](actor)
+        })
+      }
     }
-    button.addEventListener('click', async () => {
-      const actor = await fromUuid(button.dataset.actorUuid)
-      if (actor) await rollTheBody(actor)
-    })
   } catch (err) {
     console.error('DCC | death clock chat button wiring failed', err)
   }

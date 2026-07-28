@@ -257,7 +257,14 @@ test.describe('Death clock', () => {
         observed.hpAfter = await pollFor(() => lucky.system.attributes.hp.value)
         observed.groggy = !!(await pollFor(() =>
           lucky.effects.contents.find(e => e.name.toLowerCase().includes('groggy'))))
+        // The permanent -1 waits for the prompted 1d3 roll on the success card.
+        observed.noLossYet = abilitySum(lucky) === sumBefore
+        observed.lossPromptOnCard = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes('data-action="rollAbilityLoss"'))))
+        await mod.rollAbilityLoss(lucky)
         observed.abilityLost = await pollFor(() => abilitySum(lucky) === sumBefore - 1)
+        observed.lossCardPosted = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(lucky.name) && m.content.includes('permanent injury'))))
 
         await unlucky.update({ 'system.attributes.hp.value': 0 })
         await pollFor(() => isDead(unlucky))
@@ -278,7 +285,10 @@ test.describe('Death clock', () => {
     expect(result.recovered).toBe(true)
     expect(result.hpAfter).toBe(1)
     expect(result.groggy).toBe(true)
+    expect(result.noLossYet).toBe(true)
+    expect(result.lossPromptOnCard).toBe(true)
     expect(result.abilityLost).toBe(true)
+    expect(result.lossCardPosted).toBe(true)
     expect(result.trulyDeadCard).toBe(true)
     expect(result.stillDead).toBe(true)
   })

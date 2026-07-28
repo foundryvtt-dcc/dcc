@@ -21,6 +21,7 @@ const {
   onRenderCombatTrackerForDeathClock,
   onUpdateActorForDeathClock,
   onUpdateCombatForDeathClock,
+  rollAbilityLoss,
   rollTheBody,
   tickDeathClock
 } = await import('../death-clock.mjs')
@@ -45,21 +46,28 @@ function makeDyingEffect (roundsRemaining) {
 }
 
 /** Build a Player actor stub. */
-function makeActor ({ level = 2, luck = 10, effects = [], statuses = new Set(), type = 'Player' } = {}) {
-  return {
+function makeActor ({ level = 2, luck = 10, effects = [], statuses = new Set(), type = 'Player', flags = {} } = {}) {
+  const actor = {
     type,
     name: 'Test PC',
     uuid: 'Actor.test',
     system: { details: { level: { value: level } }, abilities: { lck: { value: luck } } },
     effects,
     statuses,
+    flags,
     toggleStatusEffect: vi.fn().mockResolvedValue(undefined),
     createEmbeddedDocuments: vi.fn().mockResolvedValue([]),
     update: vi.fn().mockResolvedValue(undefined)
   }
+  actor.getFlag = vi.fn((scope, key) => actor.flags[`${scope}.${key}`])
+  actor.setFlag = vi.fn(async (scope, key, value) => { actor.flags[`${scope}.${key}`] = value })
+  actor.unsetFlag = vi.fn(async (scope, key) => { delete actor.flags[`${scope}.${key}`] })
+  return actor
 }
 
 beforeEach(() => {
+  logAbilityChange.mockClear()
+  renderAbilityCheckRollUnder.mockClear()
   original = { game: globalThis.game, ChatMessage: globalThis.ChatMessage, error: console.error }
   const user = { isGM: true }
   globalThis.game = {
@@ -329,9 +337,9 @@ describe('rollTheBody', () => {
     expect(actor.update).not.toHaveBeenCalled()
   })
 
-  test('a successful Luck check revives at 1 HP with groggy + a random permanent -1', async () => {
+  test('a successful Luck check revives at 1 HP with groggy and prompts the 1d3 roll', async () => {
     const actor = makeActor({ luck: 15, statuses: new Set(['dead']) })
-    RollMock.queue = [10, 2] // d20 10 <= 15; d3 2 → Agility
+    RollMock.queue = [10] // d20 10 <= 15
     await rollTheBody(actor)
     expect(renderAbilityCheckRollUnder).toHaveBeenCalledWith(expect.objectContaining({
       result: expect.objectContaining({ roll: 10, target: 15, success: true })
@@ -342,20 +350,55 @@ describe('rollTheBody', () => {
       name: 'DCC.DeathClockGroggy',
       duration: { seconds: 3600 }
     })])
+    // The permanent -1 is NOT applied yet — the success card prompts for it.
+    expect(logAbilityChange).not.toHaveBeenCalled()
+    expect(actor.setFlag).toHaveBeenCalledWith('dcc', 'pendingAbilityLoss', true)
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockBodyRecovered',
+      expect.objectContaining({ roll: 10, target: 15 }))
+  })
+})
+
+describe('rollAbilityLoss', () => {
+  test('rolls the d3, applies the permanent -1, announces, and clears the pending flag', async () => {
+    const actor = makeActor({ flags: { 'dcc.pendingAbilityLoss': true } })
+    RollMock.queue = [2] // d3 2 → Agility
+    await rollAbilityLoss(actor)
     expect(logAbilityChange).toHaveBeenCalledWith(actor, expect.objectContaining({
       ability: 'agl',
       change: -1,
       maxChange: -1,
       type: 'otherPermanent'
     }), { announce: false })
-    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockBodyRecovered',
-      expect.objectContaining({ roll: 10, target: 15 }))
+    expect(actor.unsetFlag).toHaveBeenCalledWith('dcc', 'pendingAbilityLoss')
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockAbilityLoss',
+      expect.objectContaining({ roll: 2 }))
+  })
+
+  test('maps the full d3 range onto Strength / Agility / Stamina', async () => {
+    for (const [die, ability] of [[1, 'str'], [2, 'agl'], [3, 'sta']]) {
+      logAbilityChange.mockClear()
+      const actor = makeActor({ flags: { 'dcc.pendingAbilityLoss': true } })
+      RollMock.queue = [die]
+      await rollAbilityLoss(actor)
+      expect(logAbilityChange).toHaveBeenCalledWith(actor, expect.objectContaining({ ability }), { announce: false })
+    }
+  })
+
+  test('warns and does nothing without a pending loss (single-use button)', async () => {
+    const actor = makeActor()
+    await rollAbilityLoss(actor)
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledTimes(1)
+    expect(logAbilityChange).not.toHaveBeenCalled()
+    expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
   })
 })
 
 describe('onRenderChatMessageHTMLForDeathClock', () => {
   function makeCard (button) {
-    return { querySelector: vi.fn(sel => sel === 'button[data-action="rollTheBody"]' ? button : null) }
+    return {
+      querySelectorAll: vi.fn(sel =>
+        (button && sel === 'button[data-action="rollTheBody"]') ? [button] : [])
+    }
   }
 
   test('binds a click listener for the GM', () => {
