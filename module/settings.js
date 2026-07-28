@@ -16,6 +16,8 @@ export const pubConstants = {
  *
  * - `enableFleetingLuck` gates the Fleeting Luck tool in the DCC sidebar
  *   tab, which first renders during `Game#initializeUI`, before `ready`.
+ * - `enableDeathClock` gates the Death Clock tool in the same tab (and the
+ *   death-clock automation itself).
  * - The multiple-action-dice settings gate `DCCActor#prepareDerivedData`,
  *   which runs for existing world actors during `setup` — registering them
  *   at `ready` meant the action-dice list was never derived on world load
@@ -45,6 +47,24 @@ export const registerEarlySystemSettings = function () {
     type: Boolean,
     default: true,
     config: true
+  })
+
+  /**
+   * Death Clock (issue #843): auto-start the DCC death & dying countdown
+   * when a Player drops to 0 HP — (level) rounds to be healed, dead status
+   * on expiry, 0-level PCs dead immediately. Off by default. Registered
+   * early because the DCC sidebar tab reads it when the Death Clock tool
+   * gates itself during `Game#initializeUI`, before `ready`; reload
+   * required so the sidebar tool list stays in sync with the setting.
+   */
+  game.settings.register('dcc', 'enableDeathClock', {
+    name: 'DCC.SettingEnableDeathClock',
+    hint: 'DCC.SettingEnableDeathClockHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: false
   })
 
   /**
@@ -610,20 +630,6 @@ export const registerSystemSettings = async function () {
   game.settings.register('dcc', 'autoApplyDeadStatus', {
     name: 'DCC.SettingAutoApplyDeadStatus',
     hint: 'DCC.SettingAutoApplyDeadStatusHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: false
-  })
-
-  /**
-   * Death Clock (issue #843): auto-start the DCC death & dying countdown
-   * when a Player drops to 0 HP — (level) rounds to be healed, dead status
-   * on expiry, 0-level PCs dead immediately. Off by default.
-   */
-  game.settings.register('dcc', 'enableDeathClock', {
-    name: 'DCC.SettingEnableDeathClock',
-    hint: 'DCC.SettingEnableDeathClockHint',
     scope: 'world',
     type: Boolean,
     default: false,

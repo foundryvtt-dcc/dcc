@@ -29,7 +29,12 @@ const { AbstractSidebarTab, Sidebar } = foundry.applications.sidebar
  * @property {string} label    i18n key for the button label
  * @property {string} icon     Font Awesome icon classes for the button
  * @property {Function} onClick  Invoked when the button is clicked
+ * @property {string} [help]   URL of the tool's user-guide page, rendered
+ *   as a help link beside the button
  */
+
+/** Base URL of the published user guide. */
+export const USER_GUIDE_URL = 'https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/en/latest/'
 
 /**
  * Assemble the tools shown in the DCC sidebar tab.
@@ -44,7 +49,8 @@ export function getSidebarTools () {
       tools.fleetingLuck = {
         label: 'DCC.FleetingLuck',
         icon: 'fas fa-balance-scale-left',
-        onClick: () => game.dcc.FleetingLuck.show()
+        onClick: () => game.dcc.FleetingLuck.show(),
+        help: `${USER_GUIDE_URL}Fleeting-Luck/`
       }
     }
   } catch (e) {
@@ -54,7 +60,8 @@ export function getSidebarTools () {
   tools.spellDuel = {
     label: 'DCC.SpellDuel',
     icon: 'fas fa-hat-wizard',
-    onClick: () => game.dcc.SpellDuel.show()
+    onClick: () => game.dcc.SpellDuel.show(),
+    help: `${USER_GUIDE_URL}Spell-Duels/`
   }
 
   // Let modules (e.g. XCC's Mojo tracker) contribute their own tools

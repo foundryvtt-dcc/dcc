@@ -60,6 +60,10 @@ vi.mock('../settings.js', () => ({
   registerSystemSettings: vi.fn()
 }))
 vi.mock('../sidebar-tab.mjs', () => ({ registerDCCSidebarTab: vi.fn() }))
+vi.mock('../death-clock-tracker.mjs', () => ({
+  DeathClockTracker: { name: 'DeathClockTracker' },
+  registerDeathClockTracker: vi.fn()
+}))
 vi.mock('../macros.mjs', () => ({ getMacroActor: vi.fn(), getMacroOptions: vi.fn(), rollDCCWeaponMacro: vi.fn() }))
 vi.mock('../spell-check-processor.mjs', () => ({ processSpellCheck: vi.fn() }))
 vi.mock('../table-loading.mjs', () => ({ getSkillTable: vi.fn() }))
@@ -309,6 +313,9 @@ describe('onInit', () => {
     // The DCC sidebar tab registered (issue #833)
     const { registerDCCSidebarTab } = await import('../sidebar-tab.mjs')
     expect(registerDCCSidebarTab).toHaveBeenCalledTimes(1)
+    // The Death Clock tracker registered (issue #843 phase 2)
+    const { registerDeathClockTracker } = await import('../death-clock-tracker.mjs')
+    expect(registerDeathClockTracker).toHaveBeenCalledTimes(1)
   })
 })
 

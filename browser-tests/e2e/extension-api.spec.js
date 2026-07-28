@@ -1135,6 +1135,8 @@ test.describe('DCC Extension API', () => {
       observed.tabBodyRendered = !!tabBody
       observed.renderedTools = [...(tabBody?.querySelectorAll('button[data-action="clickTool"]') ?? [])]
         .map(b => b.dataset.tool)
+      // Each tool with a help URL renders a user-guide link beside it.
+      observed.helpLinkCount = tabBody?.querySelectorAll('a.tool-help[href*="readthedocs"]').length ?? 0
 
       // Clicking the Spell Duel tool delegates to the live singleton — stub
       // its show() to confirm wiring without opening UI.
@@ -1188,9 +1190,10 @@ test.describe('DCC Extension API', () => {
     expect(result.tabName).toBe('dcc')
     expect(result.tabButtonInStrip).toBe(true)
     expect(result.tabBodyRendered).toBe(true)
-    // Spell Duel tool is always present + wired.
+    // Spell Duel tool is always present + wired, with a user-guide link.
     expect(result.renderedTools).toContain('spellDuel')
     expect(result.spellDuelDelegated).toBe(true)
+    expect(result.helpLinkCount).toBeGreaterThanOrEqual(1)
     // The tab body shows only while the DCC tab is the active sidebar tab.
     expect(result.dccTabDisplayWhenActive).toBe('flex')
     expect(result.dccTabDisplayWhenInactive).toBe('none')

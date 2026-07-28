@@ -39,7 +39,23 @@
     font-family: Duvall, sans-serif;
   }
 
-  button {
-    flex: none;
+  .dcc-sidebar-tool {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+
+    button {
+      flex: none;
+    }
+
+    .tool-help {
+      color: var(--color-text-dark-secondary, #666);
+      font-size: 14px;
+      line-height: 1;
+
+      &:hover {
+        color: var(--color-text-hyperlink, #ff6400);
+      }
+    }
   }
 }

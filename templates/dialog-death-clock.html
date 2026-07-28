@@ -1,0 +1,36 @@
+<section class="{{cssClass}}">
+  <div class="death-clock-tracker">
+    {{#if isGM}}
+      <div class="death-clock-header">
+        <button class="tick-round" data-action="tickRound" type="button" title="{{localize 'DCC.DeathClockTickRoundTitle'}}">
+          <i class="fas fa-forward-step"></i> {{localize 'DCC.DeathClockTickRound'}}
+        </button>
+      </div>
+    {{/if}}
+    {{#if dying.length}}
+      <div class="death-clock-rows">
+        {{#each dying}}
+          <div class="death-clock-row{{#if lastChance}} last-chance{{/if}}" data-actor-id="{{id}}">
+            <div class="avatar" data-action="openSheet">
+              <img src="{{img}}" title="{{name}}" alt="{{name}}"/>
+            </div>
+            <label class="name">{{name}}</label>
+            {{#if ../isGM}}
+              <i class="minus fas fa-minus" data-action="adjustClock" data-delta="-1" title="{{localize 'DCC.DeathClockRemoveRound'}}"></i>
+            {{/if}}
+            <label class="value" title="{{#if lastChance}}{{localize 'DCC.DeathClockTooltipLastChance'}}{{else}}{{localize 'DCC.DeathClockTooltip' rounds=remaining}}{{/if}}">
+              <i class="fas fa-heart-pulse"></i> {{remaining}}
+            </label>
+            {{#if ../isGM}}
+              <i class="plus fas fa-plus" data-action="adjustClock" data-delta="1" title="{{localize 'DCC.DeathClockAddRound'}}"></i>
+              <i class="stabilize fas fa-kit-medical" data-action="stabilize" title="{{localize 'DCC.DeathClockStabilize'}}"></i>
+              <i class="resolve-death fas fa-skull" data-action="resolveDeath" title="{{localize 'DCC.DeathClockResolveDeath'}}"></i>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <p class="death-clock-empty">{{localize 'DCC.DeathClockEmpty'}}</p>
+    {{/if}}
+  </div>
+</section>

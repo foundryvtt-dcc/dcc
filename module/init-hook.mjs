@@ -45,6 +45,7 @@ import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { registerEarlySystemSettings } from './settings.js'
 import { registerDCCSidebarTab } from './sidebar-tab.mjs'
+import { DeathClockTracker, registerDeathClockTracker } from './death-clock-tracker.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable } from './table-loading.mjs'
@@ -224,6 +225,7 @@ export function assembleGameDccNamespace () {
   game.dcc = {
     DCCActor,
     DCCRoll,
+    DeathClockTracker,
     DiceChain,
     FleetingLuck,
     SpellDuel,
@@ -328,6 +330,7 @@ export async function onInit () {
   assembleGameDccNamespace()
   registerSheets()
   registerDCCSidebarTab()
+  registerDeathClockTracker()
   await loadSystemTemplates()
   registerEarlySettings()
 }

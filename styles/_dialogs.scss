@@ -351,3 +351,96 @@
   }
 }
 
+
+// Death Clock tracker (issue #843 phase 2) — module/death-clock-tracker.mjs
+.dcc .death-clock-tracker {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(40px, auto) repeat(auto-fill, minmax(60px, auto));
+
+  .death-clock-header {
+    align-items: center;
+    display: grid;
+
+    .tick-round {
+      justify-self: center;
+      width: auto;
+    }
+  }
+
+  .death-clock-rows {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .death-clock-row {
+    align-items: center;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 60px 10fr 1fr 3fr 1fr 2fr 2fr;
+
+    .avatar {
+      cursor: pointer;
+      grid-column: 1;
+
+      img {
+        border: 0;
+        height: 50px;
+        width: 50px;
+      }
+    }
+
+    .name {
+      font-size: 1.5rem;
+      grid-column: 2;
+    }
+
+    .minus {
+      grid-column: 3;
+      justify-self: center;
+    }
+
+    .value {
+      align-items: center;
+      display: flex;
+      font-size: 1.5rem;
+      gap: 4px;
+      grid-column: 4;
+      justify-self: center;
+      white-space: nowrap;
+
+      i {
+        color: var(--color-level-error, #b22);
+      }
+    }
+
+    .plus {
+      grid-column: 5;
+      justify-self: center;
+    }
+
+    .stabilize {
+      grid-column: 6;
+      justify-self: center;
+    }
+
+    .resolve-death {
+      grid-column: 7;
+      justify-self: center;
+    }
+
+    i[data-action] {
+      cursor: pointer;
+    }
+
+    &.last-chance .value {
+      color: var(--color-level-error, #b22);
+      font-weight: bold;
+    }
+  }
+
+  .death-clock-empty {
+    padding: 8px;
+    text-align: center;
+  }
+}
