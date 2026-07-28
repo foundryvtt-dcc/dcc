@@ -240,9 +240,7 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
   if (!effect) return
   const next = advanceBleedOutRound({ roundsRemaining: getDeathClockRemaining(actor, effect) })
   if (next === undefined) {
-    await effect.delete()
-    await markActorDefeated(actor)
-    await postDeathClockCard('DCC.DeathClockExpired', actor, {}, { button: 'rollTheBody' })
+    await expireDeathClock(actor, effect)
   } else {
     await effect.setFlag('dcc', CLOCK_FLAG, next)
     // Entering the final-chance round: warn the table in chat.
@@ -250,6 +248,47 @@ export async function tickDeathClock (actor, effect = getDyingEffect(actor)) {
       await postDeathClockCard('DCC.DeathClockLastChance', actor)
     }
   }
+}
+
+/**
+ * Adjust an actor's death clock by a number of rounds (judge tool control),
+ * clamped at 0 (the final-chance round).
+ *
+ * @param {Actor} actor
+ * @param {number} delta - rounds to add (positive) or remove (negative)
+ */
+export async function adjustDeathClock (actor, delta) {
+  const effect = getDyingEffect(actor)
+  if (!effect) return
+  const next = Math.max(0, getDeathClockRemaining(actor, effect) + delta)
+  await effect.setFlag('dcc', CLOCK_FLAG, { roundsRemaining: next })
+}
+
+/**
+ * Stop an actor's death clock without penalty (judge override — the
+ * rules-priced save is the normal heal-above-0 path).
+ *
+ * @param {Actor} actor
+ */
+export async function stabilizeDeathClock (actor) {
+  const effect = getDyingEffect(actor)
+  if (!effect) return
+  await effect.delete()
+  await postDeathClockCard('DCC.DeathClockStopped', actor)
+}
+
+/**
+ * Resolve an actor's death clock as death: remove the clock, apply the
+ * dead status like the tracker skull button, and announce with the Roll
+ * the Body prompt. Shared by clock expiry and the tracker's judge control.
+ *
+ * @param {Actor} actor
+ * @param {ActiveEffect} [effect] - the Dying effect, if already located
+ */
+export async function expireDeathClock (actor, effect = getDyingEffect(actor)) {
+  if (effect) await effect.delete()
+  await markActorDefeated(actor)
+  await postDeathClockCard('DCC.DeathClockExpired', actor, {}, { button: 'rollTheBody' })
 }
 
 /**

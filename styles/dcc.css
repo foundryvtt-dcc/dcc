@@ -2463,6 +2463,78 @@ a.inline-roll {
   color: var(--color-text-dark-primary);
 }
 
+.dcc .death-clock-tracker {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(40px, auto) repeat(auto-fill, minmax(60px, auto));
+}
+.dcc .death-clock-tracker .death-clock-header {
+  align-items: center;
+  display: grid;
+}
+.dcc .death-clock-tracker .death-clock-header .tick-round {
+  justify-self: center;
+  width: auto;
+}
+.dcc .death-clock-tracker .death-clock-rows {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.dcc .death-clock-tracker .death-clock-row {
+  align-items: center;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 60px 10fr 1fr 3fr 1fr 2fr 2fr;
+}
+.dcc .death-clock-tracker .death-clock-row .avatar {
+  cursor: pointer;
+  grid-column: 1;
+}
+.dcc .death-clock-tracker .death-clock-row .avatar img {
+  border: 0;
+  height: 50px;
+  width: 50px;
+}
+.dcc .death-clock-tracker .death-clock-row .name {
+  font-size: 1.5rem;
+  grid-column: 2;
+}
+.dcc .death-clock-tracker .death-clock-row .minus {
+  grid-column: 3;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .value {
+  font-size: 1.5rem;
+  grid-column: 4;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .value i {
+  color: var(--color-level-error, #b22);
+}
+.dcc .death-clock-tracker .death-clock-row .plus {
+  grid-column: 5;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .stabilize {
+  grid-column: 6;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .resolve-death {
+  grid-column: 7;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row i[data-action] {
+  cursor: pointer;
+}
+.dcc .death-clock-tracker .death-clock-row.last-chance .value {
+  color: var(--color-level-error, #b22);
+  font-weight: bold;
+}
+.dcc .death-clock-tracker .death-clock-empty {
+  padding: 8px;
+  text-align: center;
+}
+
 /* ----------------------------------------- */
 /*  Actor Sheet
   /* ----------------------------------------- */
@@ -3420,8 +3492,21 @@ a.inline-roll {
   align-self: stretch;
   font-family: Duvall, sans-serif;
 }
-.dcc-sidebar button {
+.dcc-sidebar .dcc-sidebar-tool {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+.dcc-sidebar .dcc-sidebar-tool button {
   flex: none;
+}
+.dcc-sidebar .dcc-sidebar-tool .tool-help {
+  color: var(--color-text-dark-secondary, #666);
+  font-size: 14px;
+  line-height: 1;
+}
+.dcc-sidebar .dcc-sidebar-tool .tool-help:hover {
+  color: var(--color-text-hyperlink, #ff6400);
 }
 
 /*# sourceMappingURL=dcc.css.map */

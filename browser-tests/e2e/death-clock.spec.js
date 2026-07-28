@@ -303,6 +303,93 @@ test.describe('Death clock', () => {
     expect(result.stillDead).toBe(true)
   })
 
+  test('the Death Clock tracker tool lists, ticks, and resolves clocks', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const pollFor = async (fn, timeout = 2000) => {
+        const deadline = Date.now() + timeout
+        let value = await fn()
+        while (Date.now() < deadline && !value) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+          value = await fn()
+        }
+        return value
+      }
+      const prev = game.settings.get('dcc', 'enableDeathClock')
+      await game.settings.set('dcc', 'enableDeathClock', true)
+
+      const makePC = (name) => Actor.create({
+        name,
+        type: 'Player',
+        system: { attributes: { hp: { value: 5, max: 5 } }, details: { level: { value: 3 } } }
+      })
+      const pcA = await makePC('P_Tracker PC A')
+      const pcB = await makePC('P_Tracker PC B')
+      const observed = {}
+      try {
+        const mod = await import('../../../../../../../../systems/dcc/module/death-clock.mjs')
+        const getDying = (a) => a.effects?.contents?.find(e => e.statuses?.has?.('dying'))
+        const remaining = (a) => getDying(a)?.getFlag('dcc', 'deathClock')?.roundsRemaining
+
+        // The sidebar tool registry offers the tracker (with help links).
+        const sidebarMod = await import('../../../../../../../../systems/dcc/module/sidebar-tab.mjs')
+        const tools = sidebarMod.getSidebarTools()
+        observed.toolRegistered = !!tools.deathClock
+        observed.toolHasHelp = !!tools.deathClock?.help?.includes('Death-Clock')
+        observed.coreToolsHaveHelp = !!tools.spellDuel?.help
+
+        await pcA.update({ 'system.attributes.hp.value': 0 })
+        await pcB.update({ 'system.attributes.hp.value': 0 })
+        await pollFor(() => getDying(pcA) && getDying(pcB))
+
+        // Open the tracker: both dying PCs listed with their countdowns.
+        await game.dcc.DeathClockTracker.show()
+        const dialogEl = await pollFor(() => game.dcc.DeathClockTracker.dialog?.element)
+        observed.rowCount = (await pollFor(() =>
+          dialogEl.querySelectorAll('.death-clock-row').length === 2 ? 2 : null)) ?? dialogEl.querySelectorAll('.death-clock-row').length
+
+        // Advance Round button ticks every clock.
+        dialogEl.querySelector('[data-action="tickRound"]').click()
+        observed.tickedA = await pollFor(() => remaining(pcA) === 2)
+        observed.tickedB = await pollFor(() => remaining(pcB) === 2)
+
+        // Adjust +1, then stabilize A (clock cleared, no trauma) and
+        // resolve B as dead.
+        await mod.adjustDeathClock(pcA, 1)
+        observed.adjusted = await pollFor(() => remaining(pcA) === 3)
+        const staBefore = pcA.system.abilities.sta.value
+        await mod.stabilizeDeathClock(pcA)
+        observed.stabilized = await pollFor(() => !getDying(pcA))
+        observed.noTrauma = pcA.system.abilities.sta.value === staBefore
+        observed.stoppedCard = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(pcA.name) && m.content.includes('no longer bleeding out'))))
+
+        await mod.expireDeathClock(pcB)
+        observed.resolvedDead = await pollFor(() => pcB.effects.contents.some(e => e.statuses?.has?.('dead')))
+        observed.deathCardWithButton = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(pcB.uuid) && m.content.includes('rollTheBody'))))
+      } finally {
+        if (game.dcc.DeathClockTracker.dialog) await game.dcc.DeathClockTracker.show()
+        await game.settings.set('dcc', 'enableDeathClock', prev)
+        await pcA.delete()
+        await pcB.delete()
+      }
+      return observed
+    })
+
+    expect(result.toolRegistered).toBe(true)
+    expect(result.toolHasHelp).toBe(true)
+    expect(result.coreToolsHaveHelp).toBe(true)
+    expect(result.rowCount).toBe(2)
+    expect(result.tickedA).toBe(true)
+    expect(result.tickedB).toBe(true)
+    expect(result.adjusted).toBe(true)
+    expect(result.stabilized).toBe(true)
+    expect(result.noTrauma).toBe(true)
+    expect(result.stoppedCard).toBe(true)
+    expect(result.resolvedDead).toBe(true)
+    expect(result.deathCardWithButton).toBe(true)
+  })
+
   test('the clock does not run while the setting is off', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const prev = game.settings.get('dcc', 'enableDeathClock')
