@@ -11,12 +11,18 @@
  * - `updateActor`: when a Player's HP drops to 0 or below, auto-start the
  *   clock — a "Dying" Active Effect carrying the countdown in
  *   `flags.dcc.deathClock` (the lib's bleed-out state shape). 0-level PCs
- *   get the dead status immediately. Healing above 0 clears the clock, and
- *   revives a dead PC (dead overlay + combatant.defeated removed).
- * - `updateCombat`: on round advance, tick each dying combatant's clock;
- *   at zero the PC gets the dead status and a chat announcement.
+ *   get the dead status immediately. Healing above 0 while dying saves the
+ *   character with the bleed-out trauma (permanent -1 Stamina + scar), and
+ *   healing a dead PC revives them (dead overlay + combatant.defeated
+ *   removed).
+ * - `updateCombat`: on round advance, tick each dying combatant's clock —
+ *   0 remaining is the final-chance round (chat warning); one more round
+ *   and the PC gets the dead status and a chat announcement.
  * - `renderCombatTracker`: a rounds-remaining badge on dying combatants'
  *   rows (same injection pattern as the action-dice pips).
+ * - `renderChatMessageHTML`: judge-only card buttons — Roll the Body (the
+ *   recovering-the-body Luck check; success revives at 1 HP + groggy) and
+ *   the follow-up Roll Ability Loss d3 (permanent -1 Str/Agl/Sta).
  *
  * The countdown deliberately lives in an effect flag rather than
  * `duration.rounds`: the system's generic round-based effect expiry
