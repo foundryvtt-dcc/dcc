@@ -178,7 +178,31 @@ describe('Two-Weapon Fighting', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(16) // 16 for halflings with agility ≤17
+      expect(weapon.system.critRange).toBe(16) // Max face of the penalized d16
+      // The natural 16 is the max face of the penalized die, so the
+      // multiple-action-dice override re-derives it for the die actually
+      // rolled (a 1d14 extra die fought at 1d12 crits on 12, not 16).
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+    })
+
+    it('should give the halfling off-hand the same max-die crit as the primary', () => {
+      const weapon = createWeapon(actor, { twoWeaponSecondary: true })
+
+      weapon.prepareBaseData()
+      expect(weapon.system.critRange).toBe(16)
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+    })
+
+    it('should derive the halfling crit from the penalized die, not a fixed 16', () => {
+      // A smaller base action die (e.g. a second action die authored as the
+      // actor's die) penalizes to d12 — the crit lands on ITS max face.
+      actor.system.attributes.actionDice.value = '1d14'
+      const weapon = createWeapon(actor, { twoWeaponPrimary: true })
+
+      weapon.prepareBaseData()
+      expect(weapon.system.actionDie).toMatch(/d12.*\[2w-primary]/)
+      expect(weapon.system.critRange).toBe(12)
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
     })
 
     it('should use minimum effective agility of 16 for halflings', () => {

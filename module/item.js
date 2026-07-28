@@ -121,9 +121,17 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
         // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)
         let twoWeaponCritSet = false
         if (isHalfling && effectiveAgility <= 17) {
-          // Halflings score crit and automatic hit on natural 16 when fighting two-weapon
-          // BUT if agility is 18+, they use normal two-weapon fighting rules instead
-          this.system.critRange = 16
+          // Halflings score crit and automatic hit on natural 16 when fighting
+          // two-weapon — BUT if agility is 18+, they use normal two-weapon
+          // fighting rules instead. The natural 16 is the max face of the
+          // halfling's penalized d16, so derive it from the die actually in
+          // play: with a smaller extra action die (a 6th-level halfling's
+          // 1d14, fought at 1d12) the crit lands on that die's max face, and
+          // the multiple-action-dice override re-derives it via
+          // twoWeaponCritOnMaxDie (#834), same as the Agl 16-17 primary.
+          const actionDie = this.system.actionDie || '1d20'
+          this.system.critRange = parseInt(actionDie.match(/d(\d+)/)?.[1] || '20')
+          this.system.twoWeaponCritOnMaxDie = true
           twoWeaponCritSet = true
         } else {
           // Non-halflings have restricted critical hit ability when fighting two-handed

@@ -128,6 +128,11 @@ export function buildAttackInput (actor, weapon, actorActionDiceFormula) {
     threatRange,
     abilityModifier: 0
   }
+  // Crit-on-max-die two-weapon rules (halfling, Agl 16-17 primary) express
+  // critRange as a natural roll on the die actually rolled — tell the lib
+  // not to rescale it as a d20-relative "top N faces" range, which would
+  // turn a natural-16 threshold on a d12 into "crit on 8+".
+  if (weapon.system?.twoWeaponCritOnMaxDie) input.threatRangeIsNatural = true
   if (deed) input.deedDie = deed.deedDie
   return input
 }

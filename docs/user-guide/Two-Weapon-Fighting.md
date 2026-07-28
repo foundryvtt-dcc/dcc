@@ -38,4 +38,6 @@ Halflings are natural two-weapon fighters. When you select the Halfling sheet ty
 - Primary weapon: d16
 - Off-hand weapon: d16
 
+While fighting two-weapon with agility 17 or lower, a halfling scores a critical hit (and an automatic hit) on the maximum face of the die actually rolled — a natural 16 on the usual d16 attacks. When a pair is fought on a smaller extra action die (for example, a 6th-level halfling's second die of 1d14, swung at 1d12), the crit lands on that die's maximum face instead (a natural 12).
+
 See the [Halfling](Halfling.md) guide for more details on setting up a Halfling character.
