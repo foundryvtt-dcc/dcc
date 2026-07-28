@@ -463,6 +463,38 @@ test('halfling two-weapon pair fought on a d12 extra die crits only on the max f
   }
 })
 
+test('multiple-action-dice override re-derives the max-die crit threshold', async () => {
+  // Drives the ACTUAL override path (rolls-weapon-mixin ~499): the weapon
+  // carries its first-pair post-prepare state (d16, critRange 16,
+  // twoWeaponCritOnMaxDie) and `options._actionDieFormula` swaps in the
+  // extra-die pair's 1d12 — rollToHit must re-derive critRange from the
+  // die actually rolled, so a natural 11 misses the crit and 12 lands it.
+  const restore = withAutomate(true)
+  const makePairWeapon = () => makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d16[2w-primary]',
+    critRange: 16,
+    twoWeaponCritOnMaxDie: true
+  })
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+
+  let restoreRoll = withActionDieRoll(11, '1d12')
+  let result
+  try {
+    result = await actor.rollToHit(makePairWeapon(), { _actionDieFormula: '1d12' })
+    expect(result.naturalCrit).toBe(false)
+
+    restoreRoll()
+    restoreRoll = withActionDieRoll(12, '1d12')
+    result = await actor.rollToHit(makePairWeapon(), { _actionDieFormula: '1d12' })
+    expect(result.naturalCrit).toBe(true)
+  } finally {
+    restoreRoll()
+    restore()
+  }
+})
+
 test('adapter path fires when actor + weapon both carry a deed-die formula (session 10)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)

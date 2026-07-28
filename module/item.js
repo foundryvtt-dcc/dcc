@@ -172,6 +172,13 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
 
       if (this.system.config.actionDieOverride) {
         this.system.actionDie = this.system.config.actionDieOverride
+        // Crit-on-max-die thresholds are natural rolls on the die actually
+        // in play, so an override die moves the threshold to ITS max face —
+        // otherwise a smaller override (say 1d12) would keep an unreachable
+        // critRange 16 and never crit.
+        if (this.system.twoWeaponCritOnMaxDie) {
+          this.system.critRange = parseInt(this.system.actionDie.match(/d(\d+)/)?.[1] || '20')
+        }
       }
 
       // To-Hit Calculation

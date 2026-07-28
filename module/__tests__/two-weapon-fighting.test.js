@@ -193,6 +193,21 @@ describe('Two-Weapon Fighting', () => {
       expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
     })
 
+    it('should move the max-die crit to an actionDieOverride die', () => {
+      // config.actionDieOverride replaces the die AFTER the two-weapon
+      // derivation — a crit-on-max-die threshold must follow it, or a
+      // smaller override die keeps an unreachable natural-16 critRange.
+      const weapon = createWeapon(actor, {
+        twoWeaponPrimary: true,
+        config: { actionDieOverride: '1d12' }
+      })
+
+      weapon.prepareBaseData()
+      expect(weapon.system.actionDie).toBe('1d12')
+      expect(weapon.system.critRange).toBe(12)
+      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+    })
+
     it('should derive the halfling crit from the penalized die, not a fixed 16', () => {
       // A smaller base action die (e.g. a second action die authored as the
       // actor's die) penalizes to d12 — the crit lands on ITS max face.
