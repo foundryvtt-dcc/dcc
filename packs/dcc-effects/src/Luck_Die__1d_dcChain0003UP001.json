@@ -6,7 +6,8 @@
   "changes": [
     {
       "key": "system.class.luckDie",
-      "value": "1", "type": "diceChain",
+      "value": "1",
+      "type": "diceChain",
       "priority": null
     }
   ],
@@ -25,7 +26,7 @@
   "transfer": true,
   "statuses": [],
   "flags": {},
-  "_id": "dcChain03UP001",
+  "_id": "dcChain0003UP001",
   "_stats": {
     "coreVersion": "14.352",
     "systemId": "dcc",
@@ -42,5 +43,5 @@
   "ownership": {
     "default": 0
   },
-  "_key": "!effects!dcChain03UP001"
+  "_key": "!effects!dcChain0003UP001"
 }
