@@ -1,0 +1,76 @@
+Game icon credits
+=================
+
+The icons in this directory are from game-icons.net (https://game-icons.net)
+and are used under the Creative Commons Attribution 3.0 Unported license
+(CC BY 3.0, https://creativecommons.org/licenses/by/3.0/). Some icons have
+been recolored or restyled from the originals.
+
+Icons by Lorc (https://lorcblog.blogspot.com):
+  backstab.svg
+  brain.svg
+  charm.svg
+  cloak-dagger.svg
+  disintegrate.svg
+  dodging.svg
+  domino-mask.svg
+  glowing-hands.svg
+  hidden.svg
+  knapsack.svg
+  lightning-branches.svg
+  lightning-tear.svg
+  poison-bottle.svg
+  psychic-waves.svg
+  scroll-unfurled.svg
+  snatch.svg
+  turtle-shell.svg
+  wolf-trap.svg
+
+Icons by Delapouite (https://delapouite.com):
+  body-balance.svg
+  bolt-spell-cast.svg
+  coins.svg
+  dice-eight-faces-eight.svg
+  dice-six-faces-five.svg
+  dice-six-faces-six.svg
+  dice-six-faces-three.svg
+  dice-target.svg
+  dice-twenty-faces-one.svg
+  dice-twenty-faces-twenty.svg
+  enrage.svg
+  hand-of-god.svg
+  horseshoe.svg
+  jumping-rope.svg
+  knee-cap.svg
+  lockpicks.svg
+  mighty-force.svg
+  scroll-quill.svg
+  secret-door.svg
+  seven-pointed-star.svg
+  shield-bash.svg
+  skills.svg
+  stairs-goal.svg
+  weight-lifting-up.svg
+
+Icons by Skoll (https://game-icons.net):
+  box-trap.svg
+  d10.svg
+  d12.svg
+  d4.svg
+  d4-black.svg (restyled variant of d4)
+  drop-weapon.svg
+  kevlar-vest.svg
+  knockout.svg
+  read.svg
+
+Icon by Catsu (https://game-icons.net):
+  broken-arrow.svg
+
+Icon by Caro Asercion (https://game-icons.net):
+  mountain-climbing.svg
+
+Icon by Cathelineau (https://game-icons.net):
+  swordman.svg
+
+Icon by DarkZaitzev (https://www.deviantart.com/darkzaitzev):
+  catch.svg

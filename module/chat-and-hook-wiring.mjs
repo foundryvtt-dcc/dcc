@@ -16,7 +16,11 @@
  *     prototype-token actor-link
  *   - `applyActiveEffect` — DiceChain bump for string-valued dice expressions
  *   - `preUpdateActor` — sync prototype-token texture when the actor image changes
- *   - `updateCombat` — Active Effect duration expiry on round advance
+ *   - `updateCombat` — Active Effect duration expiry on round advance, composed
+ *     with the sheet-chip refresh on round/active changes (issue #834)
+ *   - `deleteCombat` / `updateCombatant` / `createCombatant` / `deleteCombatant`
+ *     — refresh open actor sheets whose action-dice chips mirror the tracker
+ *     pips (multiple-action-dice feature, gated)
  *   - `combatTurn` / `combatRound` — auto-reset action-die pips at the start of
  *     a combatant's turn (multiple-action-dice feature, gated)
  *   - `renderCombatTracker` — inject per-combatant action-die pips (gated)
@@ -39,8 +43,9 @@ import { setupItemPilesForDCC } from './item-piles-support.js'
 import FleetingLuck from './fleeting-luck.js'
 import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
-import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice } from './action-dice-tracker.mjs'
+import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice, onUpdateCombatantForActionDice, onCombatLifecycleForActionDice, onDeleteCombatForActionDice, onCombatantLifecycleForActionDice } from './action-dice-tracker.mjs'
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
+import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
 /**
@@ -299,6 +304,48 @@ export async function onPreUpdateActor (actor, changes, options, userId) {
  * startRound + rounds; time-based via Foundry's `effect.isExpired`), and
  * surfaces a notification with the expired effect names.
  */
+/**
+ * `updateCombat` runs two independent concerns: the sheet-chip refresh on
+ * round/active changes (all clients — the chips mirror the tracker pips,
+ * issue #834 §2) and the GM-only Active Effect expiry below.
+ */
+export async function onUpdateCombatComposed (combat, changed, options, userId) {
+  onCombatLifecycleForActionDice(combat, changed)
+  // Death clock ticks before the generic effect expiry so a dying PC's
+  // round advance resolves (dead status + announcement) in one pass.
+  await onUpdateCombatForDeathClock(combat, changed)
+  return onUpdateCombat(combat, changed, options, userId)
+}
+
+/**
+ * `updateActor` runs two independent death concerns: the NPC auto-dead
+ * status (auto-dead-status.mjs) and the Player death clock
+ * (death-clock.mjs, issue #843).
+ */
+export async function onUpdateActorComposed (actor, changes, options, userId) {
+  await onUpdateActorForDeath(actor, changes, options, userId)
+  return onUpdateActorForDeathClock(actor, changes)
+}
+
+/**
+ * `renderCombatTracker` decorates combatant rows with the action-dice pips
+ * and the death-clock countdown badges.
+ */
+export function onRenderCombatTrackerComposed (app, html) {
+  onRenderCombatTrackerForActionDice(app, html)
+  onRenderCombatTrackerForDeathClock(app, html)
+}
+
+/**
+ * `renderChatMessageHTML` runs the roll-card pipeline (which bails early on
+ * non-roll messages) and the death-clock Roll the Body button wiring (which
+ * lives on plain announcement cards).
+ */
+export async function onRenderChatMessageHTMLComposed (message, html, data) {
+  onRenderChatMessageHTMLForDeathClock(message, html)
+  return onRenderChatMessageHTML(message, html, data)
+}
+
 export async function onUpdateCombat (combat, changed, options, userId) {
   // Only process on the GM's client to avoid duplicates
   if (!game.user.isGM) return
@@ -422,7 +469,7 @@ export function onGetProseMirrorMenuDropDowns (menu, items) {
 export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   'dcc.modifyAttackRollTerms': { handler: onModifyAttackRollTerms, once: false },
   hotbarDrop: { handler: onHotbarDrop, once: false },
-  renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
+  renderChatMessageHTML: { handler: onRenderChatMessageHTMLComposed, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },
   getCompendiumContextOptions: { handler: onGetCompendiumContextOptions, once: false },
   getUserContextOptions: { handler: onGetUserContextOptions, once: false },
@@ -431,11 +478,15 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   preCreateItem: { handler: onPreCreateItem, once: false },
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
   preUpdateActor: { handler: onPreUpdateActor, once: false },
-  updateActor: { handler: onUpdateActorForDeath, once: false },
-  updateCombat: { handler: onUpdateCombat, once: false },
+  updateActor: { handler: onUpdateActorComposed, once: false },
+  updateCombat: { handler: onUpdateCombatComposed, once: false },
+  deleteCombat: { handler: onDeleteCombatForActionDice, once: false },
+  updateCombatant: { handler: onUpdateCombatantForActionDice, once: false },
+  createCombatant: { handler: onCombatantLifecycleForActionDice, once: false },
+  deleteCombatant: { handler: onCombatantLifecycleForActionDice, once: false },
   combatTurn: { handler: onCombatTurnForActionDice, once: false },
   combatRound: { handler: onCombatRoundForActionDice, once: false },
-  renderCombatTracker: { handler: onRenderCombatTrackerForActionDice, once: false },
+  renderCombatTracker: { handler: onRenderCombatTrackerComposed, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }
 })

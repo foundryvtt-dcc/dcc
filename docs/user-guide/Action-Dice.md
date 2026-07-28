@@ -8,3 +8,7 @@ Config is where you will set Action Dice. You'll typically put a comma-separated
 To roll with a different Action Die (e.g. 1d16), Command or Ctrl Click the die icon or attribute label on your sheet and you will get a roll dialog:
 
 ![Action Dice Roll Dialog](images/action_dice_roll_dialog.png)
+
+To have the system *track* your action dice during combat — spending one per
+roll, showing spent/ready pips, and resetting each round — see
+[Multiple Action Dice (Tracking)](Multiple-Action-Dice.md).

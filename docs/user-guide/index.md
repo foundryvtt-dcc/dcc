@@ -30,6 +30,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 
 ## Sheet Options
 * [Action Dice](Action-Dice.md)
+* [Multiple Action Dice (Tracking)](Multiple-Action-Dice.md)
 * [Critical Hits](Critical-Hits.md)
 
 ## Imports
@@ -51,6 +52,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Using aliases for rolls](Using-aliases-for-rolls.md)
 * [Dragging rollable items to the macro bar](Dragging-rollable-items-to-the-macro-bar.md)
 * [Bundled Macros](Bundled-Macros.md)
+* [Death Clock](Death-Clock.md)
 * [Fleeting Luck](Fleeting-Luck.md)
 * [Infravision and Torches](Infravision-and-Torches.md)
 

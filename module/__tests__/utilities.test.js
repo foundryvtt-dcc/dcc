@@ -195,6 +195,17 @@ describe('Utilities', () => {
       expect(getSingleActionDie('3d20')).toBe('1d20')
     })
 
+    // #834 review: a flat rider on the first die is part of the roll and
+    // must survive normalization — but a following die is another action.
+    it('keeps a flat rider on the first die, drops additional dice', () => {
+      expect(getSingleActionDie('1d20+4')).toBe('1d20+4')
+      expect(getSingleActionDie('1d20-1')).toBe('1d20-1')
+      expect(getSingleActionDie('1d20+4,1d20')).toBe('1d20+4')
+      expect(getSingleActionDie('2d20+4')).toBe('1d20+4')
+      expect(getSingleActionDie('1d20+1d16')).toBe('1d20')
+      expect(getSingleActionDie('1d20+4+1d16')).toBe('1d20+4')
+    })
+
     it('returns empty string when no die is present', () => {
       expect(getSingleActionDie('special')).toBe('')
       expect(getSingleActionDie('')).toBe('')

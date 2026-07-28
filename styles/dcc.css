@@ -975,6 +975,30 @@ a.inline-roll {
   padding: 0 4px;
 }
 
+.dcc-death-clock-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.dcc-death-clock-actions button {
+  width: auto;
+}
+
+.dcc-ability-loss-chart {
+  width: auto;
+  margin: 8px auto;
+  border-collapse: collapse;
+}
+.dcc-ability-loss-chart td {
+  padding: 2px 12px;
+  border: 1px solid var(--color-border-light-2, #999);
+  text-align: center;
+}
+.dcc-ability-loss-chart tr.rolled {
+  font-weight: bold;
+  background: rgba(255, 100, 0, 0.15);
+}
+
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
@@ -2439,6 +2463,82 @@ a.inline-roll {
   color: var(--color-text-dark-primary);
 }
 
+.dcc .death-clock-tracker {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(40px, auto) repeat(auto-fill, minmax(60px, auto));
+}
+.dcc .death-clock-tracker .death-clock-header {
+  align-items: center;
+  display: grid;
+}
+.dcc .death-clock-tracker .death-clock-header .tick-round {
+  justify-self: center;
+  width: auto;
+}
+.dcc .death-clock-tracker .death-clock-rows {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.dcc .death-clock-tracker .death-clock-row {
+  align-items: center;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 60px 10fr 1fr 3fr 1fr 2fr 2fr;
+}
+.dcc .death-clock-tracker .death-clock-row .avatar {
+  cursor: pointer;
+  grid-column: 1;
+}
+.dcc .death-clock-tracker .death-clock-row .avatar img {
+  border: 0;
+  height: 50px;
+  width: 50px;
+}
+.dcc .death-clock-tracker .death-clock-row .name {
+  font-size: 1.5rem;
+  grid-column: 2;
+}
+.dcc .death-clock-tracker .death-clock-row .minus {
+  grid-column: 3;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .value {
+  align-items: center;
+  display: flex;
+  font-size: 1.5rem;
+  gap: 4px;
+  grid-column: 4;
+  justify-self: center;
+  white-space: nowrap;
+}
+.dcc .death-clock-tracker .death-clock-row .value i {
+  color: var(--color-level-error, #b22);
+}
+.dcc .death-clock-tracker .death-clock-row .plus {
+  grid-column: 5;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .stabilize {
+  grid-column: 6;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row .resolve-death {
+  grid-column: 7;
+  justify-self: center;
+}
+.dcc .death-clock-tracker .death-clock-row i[data-action] {
+  cursor: pointer;
+}
+.dcc .death-clock-tracker .death-clock-row.last-chance .value {
+  color: var(--color-level-error, #b22);
+  font-weight: bold;
+}
+.dcc .death-clock-tracker .death-clock-empty {
+  padding: 8px;
+  text-align: center;
+}
+
 /* ----------------------------------------- */
 /*  Actor Sheet
   /* ----------------------------------------- */
@@ -2446,8 +2546,9 @@ a.inline-roll {
   column-gap: 8px;
   display: grid;
   grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-  grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
-  height: 100%;
+  grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
+  height: auto;
+  min-height: 100%;
 }
 .dcc .character .ability-scores {
   display: grid;
@@ -2591,6 +2692,8 @@ a.inline-roll {
 }
 .dcc .character .combat-basics {
   align-items: center;
+  align-self: start;
+  min-height: 114px;
   border: var(--system-frame-border);
   border-top: 0;
   column-gap: 5px;
@@ -2598,7 +2701,7 @@ a.inline-roll {
   font-size: 13px;
   grid-column-end: span 3;
   grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-  grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+  grid-template-rows: 19px repeat(4, minmax(20px, auto));
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }
@@ -2632,33 +2735,6 @@ a.inline-roll {
 }
 .dcc .character .combat-basics .action-dice-row label {
   flex: none;
-}
-.dcc .character .combat-basics .action-dice-chips {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 3px;
-  align-items: center;
-  min-width: 0;
-  overflow: hidden;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip {
-  align-items: center;
-  background: var(--system-input-background);
-  border: 1px solid var(--system-border-color);
-  border-radius: 8px;
-  display: inline-flex;
-  font-size: 12px;
-  gap: 2px;
-  line-height: 1;
-  padding: 2px 6px;
-  white-space: nowrap;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip.restricted {
-  font-style: italic;
-}
-.dcc .character .combat-basics .action-dice-chips .action-die-chip .action-die-mark {
-  font-size: 11px;
-  opacity: 0.8;
 }
 .dcc .character .languages,
 .dcc .character .lucky-roll {
@@ -2837,9 +2913,43 @@ a.inline-roll {
   color: var(--system-frame-title-color);
 }
 
+.dcc .action-dice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+  padding: 3px 0;
+}
+.dcc .action-dice-chips .action-die-chip {
+  align-items: center;
+  background: var(--system-input-background);
+  border: 1px solid var(--system-border-color);
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 2px;
+  line-height: 1;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.dcc .action-dice-chips .action-die-chip.restricted {
+  font-style: italic;
+}
+.dcc .action-dice-chips .action-die-chip.interactive {
+  cursor: pointer;
+}
+.dcc .action-dice-chips .action-die-chip.spent {
+  opacity: 0.45;
+}
+.dcc .action-dice-chips .action-die-chip .action-die-mark {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
 .dcc .npc-grid {
   display: grid;
-  grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+  grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
   min-height: 100%;
 }
 .dcc .npc-grid textarea {
@@ -3061,6 +3171,18 @@ a.inline-roll {
 }
 .dcc-action-dice-pips .dcc-action-die-pip.restricted.spent {
   opacity: 0.55;
+}
+
+.dcc-death-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--color-level-error, #b22);
+  user-select: none;
 }
 
 /* Effects styling */
@@ -3334,6 +3456,61 @@ a.inline-roll {
 }
 .dcc-settings-menu .form-group:has(input[type=checkbox]) > label {
   flex: 3;
+}
+
+/* DCC right-hand sidebar tab (issue #833) */
+/* The Sidebar renders each tab-strip icon as classes on the tab button.
+   Ours is a "DCC" wordmark (Duvall Bold, red/orange gradient — rendered to
+   styles/images/dcc-sidebar-icon.png) rather than a Font Awesome glyph,
+   painted on a pseudo-element so the button keeps its normal hover/active
+   states. */
+#sidebar-tabs button.ui-control.dcc-sidebar-icon::before {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: auto;
+  background: url("images/dcc-sidebar-icon.png") no-repeat center;
+  background-size: contain;
+}
+
+/* The tab body: a centered column of tool-launcher buttons. The root
+   template part's children are hoisted directly into the tab element
+   (`section.tab.sidebar-tab.dcc-sidebar`), so style that element.
+
+   Core's `.tab[data-tab]:not(.active) { display: none }` lives in a CSS
+   @layer, and this system stylesheet is unlayered — an unconditional
+   `display: flex` here would always win and keep the tab visible under
+   every other sidebar tab. Only apply the flex layout while the tab is
+   active (or popped out, where the content lands in `.window-content`). */
+.sidebar-tab.dcc-sidebar.active,
+.dcc-sidebar.sidebar-popout .window-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px 8px;
+}
+
+.dcc-sidebar h4.divider {
+  align-self: stretch;
+  font-family: Duvall, sans-serif;
+}
+.dcc-sidebar .dcc-sidebar-tool {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+.dcc-sidebar .dcc-sidebar-tool button {
+  flex: none;
+}
+.dcc-sidebar .dcc-sidebar-tool .tool-help {
+  color: var(--color-text-dark-secondary, #666);
+  font-size: 14px;
+  line-height: 1;
+}
+.dcc-sidebar .dcc-sidebar-tool .tool-help:hover {
+  color: var(--color-text-hyperlink, #ff6400);
 }
 
 /*# sourceMappingURL=dcc.css.map */

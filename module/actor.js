@@ -267,7 +267,10 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     // the first). See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md §5, §11.
     const actionDiceList = DCCActor.deriveActionDiceList({
       enabled: multipleActionDiceEnabled(),
-      authoring: config.actionDice || this.system.attributes.actionDice.value || '',
+      authoring: DCCActor.selectActionDiceAuthoring({
+        config: config.actionDice,
+        value: this.system.attributes.actionDice.value
+      }),
       className: this.classId
     })
     if (actionDiceList) {
@@ -296,6 +299,31 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
   static deriveActionDiceList ({ enabled, authoring, className } = {}) {
     if (!enabled) return null
     return parseActionDice(authoring || '', { className })
+  }
+
+  /**
+   * Pick the action-dice authoring string from the two persisted fields.
+   *
+   * `config.actionDice` is the source of truth — except when it still sits
+   * at its `'1d20'` schema default (or is blank) while
+   * `attributes.actionDice.value` names a different expression. Pack and
+   * legacy NPCs were authored with the full stat-block form (`Act 2d20` ⇒
+   * `value: '2d20'`) long before `config` existed, so a schema-defaulted
+   * config alongside a richer value is drift, not a choice — the mirror
+   * image of the migration's config→value adoption rule (#739). Reading it
+   * here (not just in a migration) also covers locked compendium actors
+   * that migrations never touch (issue #834: NPC chips/pips).
+   * @param {object} params
+   * @param {string} [params.config] - `system.config.actionDice`
+   * @param {string} [params.value]  - `system.attributes.actionDice.value`
+   * @returns {string} the authoring expression to parse
+   */
+  static selectActionDiceAuthoring ({ config, value } = {}) {
+    const configStr = String(config ?? '').trim()
+    const valueStr = String(value ?? '').trim()
+    if (!configStr) return valueStr
+    if (configStr === '1d20' && valueStr && valueStr !== configStr) return valueStr
+    return configStr
   }
 
   /**

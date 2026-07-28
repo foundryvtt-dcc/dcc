@@ -398,3 +398,34 @@ a.inline-roll {
   }
 }
 
+
+// Death-clock chat card actions (Roll the Body / Roll Ability Loss buttons,
+// issue #843) — injected by module/death-clock.mjs postDeathClockCard.
+.dcc-death-clock-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+
+  button {
+    width: auto;
+  }
+}
+
+// The 1d3 → ability chart on the Roll Ability Loss card, rolled row
+// highlighted.
+.dcc-ability-loss-chart {
+  width: auto;
+  margin: 8px auto;
+  border-collapse: collapse;
+
+  td {
+    padding: 2px 12px;
+    border: 1px solid var(--color-border-light-2, #999);
+    text-align: center;
+  }
+
+  tr.rolled {
+    font-weight: bold;
+    background: rgb(255 100 0 / 15%);
+  }
+}

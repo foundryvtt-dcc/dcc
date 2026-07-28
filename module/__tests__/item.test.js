@@ -25,6 +25,17 @@ vi.mock('../utilities.js', () => ({
   getFirstDie: vi.fn((value) => {
     const match = value?.match(/\d*d\d+/)
     return match ? match[0] : null
+  }),
+  // Mirrors the real implementation: single die of the first listed faces
+  // with its flat rider kept ('2d20' → '1d20', '1d20+4' → '1d20+4'), ''
+  // when no die is present.
+  getSingleActionDie: vi.fn((value) => {
+    const first = String(value || '').split(',')[0]
+    const match = first.match(/d(\d+)/)
+    if (!match) return ''
+    const after = first.slice(first.indexOf(match[0]) + match[0].length)
+    const rider = after.match(/^(?:[+-]\d+(?!\d*d\d))+/)?.[0] ?? ''
+    return `1d${match[1]}${rider}`
   })
 }))
 
@@ -88,6 +99,16 @@ describe('DCCItem Tests', () => {
     test('should calculate action die correctly', () => {
       item.prepareBaseData()
       expect(item.system.actionDie).toBe('1d20')
+    })
+
+    // Issue #834: an NPC-style multi-action value ('Act 2d20' ⇒ '2d20')
+    // means two separate d20 ACTIONS — the weapon's per-roll die must be a
+    // single 1d20, never a summed 2d20.
+    test('a multi-action dice value yields a single per-roll die', () => {
+      item.actor.system.attributes.actionDice.value = '2d20'
+      item.prepareBaseData()
+      expect(item.system.actionDie).toBe('1d20')
+      item.actor.system.attributes.actionDice.value = '1d20'
     })
 
     test('should calculate attack bonus correctly for melee', () => {

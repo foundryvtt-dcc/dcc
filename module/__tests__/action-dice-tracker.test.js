@@ -28,6 +28,8 @@ import {
   noEligibleActionDieWarning,
   twoWeaponRoleForWeapon,
   companionTwoWeaponRole,
+  actionDicePresetsFromPlan,
+  reconcilePlannedActionDie,
   settingEnabled,
   writeActionDiceHandler,
   WRITE_ACTION_DICE
@@ -340,6 +342,33 @@ describe('writeActionDiceHandler (GM-side socket handler)', () => {
       state: { round: 3, spent: [1, 0], evil: 'payload', twoWeaponPendingRole: 'bogus', twoWeaponPendingSlot: 'x' }
     }, 'p1')
     expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 3, spent: [true, false] })
+    delete globalThis.fromUuid
+  })
+
+  // #834 review: the requesting client decides whether a marker clear is
+  // needed from ITS replica, which may be stale — the handler must re-check
+  // the GM's own stored flag so a dropped marker still gets explicit nulls
+  // (setFlag merges) instead of surviving as a free off-hand attack.
+  test('clears a GM-side stored marker even when the payload omits it', async () => {
+    const setFlag = vi.fn(async () => {})
+    const combatant = {
+      actor: { testUserPermission: vi.fn(() => true) },
+      setFlag,
+      getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice'
+        ? { round: 3, spent: [true, false], twoWeaponPendingRole: 'secondary', twoWeaponPendingSlot: 0, twoWeaponPendingAction: 1 }
+        : undefined)
+    }
+    globalThis.fromUuid = vi.fn(async () => combatant)
+    globalThis.game.users = { get: vi.fn(() => ({ id: 'p1' })) }
+
+    await writeActionDiceHandler({ combatantUuid: 'c', state: { round: 3, spent: [true, true] } }, 'p1')
+    expect(setFlag).toHaveBeenCalledWith('dcc', 'actionDice', {
+      round: 3,
+      spent: [true, true],
+      twoWeaponPendingRole: null,
+      twoWeaponPendingSlot: null,
+      twoWeaponPendingAction: null
+    })
     delete globalThis.fromUuid
   })
 
@@ -771,5 +800,172 @@ describe('noEligibleActionDieWarning', () => {
     const warning = noEligibleActionDieWarning({ choice: null, restrictedUnspentDice: ['1d16'] }, 'attack')
     // action label localizes via DCC.Attack (echoed by the localize stub)
     expect(warning).toBe('DCC.ActionDiceNoEligibleWarning|DCC.Attack|1d16')
+  })
+})
+
+// --- Issue #834 §3: choosing which action die a roll uses ----------------
+
+// The dialog presets and the post-roll reconcile both derive per-slot
+// formulas with the two-weapon penalty applied, so the penalty tests need
+// the dice chain on CONFIG.
+const withDiceChain = () => {
+  globalThis.CONFIG = { DCC: { DICE_CHAIN: [3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30] } }
+}
+
+describe('actionDicePresetsFromPlan', () => {
+  beforeEach(() => {
+    allOn()
+    globalThis.game.i18n.format = (k, d) => `${k}|${JSON.stringify(d)}`
+  })
+  afterEach(() => { delete globalThis.CONFIG })
+
+  test('null for a null plan or a single-die actor', () => {
+    expect(actionDicePresetsFromPlan(null)).toBeNull()
+    const c = makeCombatant(slots(1), null, 'hero')
+    expect(actionDicePresetsFromPlan({ combatant: c, round: 1 })).toBeNull()
+  })
+
+  test('one preset per UNSPENT slot, labeled with its slot number', () => {
+    // Slot 0 is spent: it is not offered — the reconcile refuses to land a
+    // spend on a spent slot, so a spent preset would roll that die while
+    // silently burning the planned slot (#834 review).
+    const c = makeCombatant(slots(2), { round: 3, spent: [true, false] }, 'hero')
+    const presets = actionDicePresetsFromPlan({ combatant: c, round: 3 })
+    expect(presets).toEqual([
+      { formula: '1d16', label: 'DCC.ActionDiePresetReady|{"die":"1d16","n":2}' }
+    ])
+  })
+
+  test('a stale round reads all-ready (every slot offered)', () => {
+    const c = makeCombatant(slots(2), { round: 1, spent: [true, true] }, 'hero')
+    const presets = actionDicePresetsFromPlan({ combatant: c, round: 2 })
+    expect(presets).toHaveLength(2)
+    expect(presets.every(p => p.label.startsWith('DCC.ActionDiePresetReady'))).toBe(true)
+  })
+
+  test('slots ineligible for the action are dropped (spells-only die, attack)', () => {
+    const c = makeCombatant(slots(2, { 1: 'spell' }), null, 'hero')
+    const presets = actionDicePresetsFromPlan({ combatant: c, round: 1 })
+    expect(presets.map(p => p.formula)).toEqual(['1d20'])
+  })
+
+  test('the two-weapon penalty lands on every preset formula', () => {
+    withDiceChain()
+    const c = makeCombatant(slots(2), null, 'hero')
+    const presets = actionDicePresetsFromPlan({ combatant: c, round: 1 }, { twoWeaponPenalty: -1 })
+    expect(presets.map(p => p.formula)).toEqual(['1d16', '1d14'])
+  })
+})
+
+describe('reconcilePlannedActionDie', () => {
+  beforeEach(() => { allOn() })
+  afterEach(() => { delete globalThis.CONFIG })
+
+  // A live plan for the combatant's next-unspent slot, as planActionDie
+  // would produce it (both slots unspent ⇒ slot 0).
+  const planFor = (c, round = 1, index = 0) => ({
+    combatant: c,
+    round,
+    choice: { slot: c.actor.system.attributes.actionDice.list[index], index },
+    count: c.actor.system.attributes.actionDice.list.length,
+    spentCount: 0,
+    restrictedUnspentDice: [],
+    twoWeaponRole: null,
+    twoWeaponCompanion: false
+  })
+
+  test('keeps the plan when the rolled die matches the planned slot', () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    const plan = planFor(c)
+    expect(reconcilePlannedActionDie(plan, 20)).toBe(plan)
+  })
+
+  test('re-points the spend at the unspent slot whose die was rolled', () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    const plan = planFor(c)
+    const reconciled = reconcilePlannedActionDie(plan, 16)
+    expect(reconciled.choice.index).toBe(1)
+    expect(reconciled.choice.slot.die).toBe('d16')
+  })
+
+  test('never re-points at a spent or ineligible slot', () => {
+    // slot 1 (d16) already spent ⇒ the auto-pick stands
+    const spent = makeCombatant(slots(2), { round: 1, spent: [false, true] }, 'hero')
+    expect(reconcilePlannedActionDie(planFor(spent), 16).choice.index).toBe(0)
+    // slot 1 restricted to spells ⇒ an attack cannot land on it
+    const restricted = makeCombatant(slots(2, { 1: 'spell' }), null, 'hero')
+    expect(reconcilePlannedActionDie(planFor(restricted), 16).choice.index).toBe(0)
+  })
+
+  test('an unmatched die (untrained 1d10, hand-edit) keeps the auto-pick', () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    const plan = planFor(c)
+    expect(reconcilePlannedActionDie(plan, 10)).toBe(plan)
+  })
+
+  test('the free two-weapon companion is never re-pointed', () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    const plan = { ...planFor(c), twoWeaponCompanion: true }
+    expect(reconcilePlannedActionDie(plan, 16)).toBe(plan)
+  })
+
+  test('matches against the penalized die when two-weapon fighting', () => {
+    withDiceChain()
+    // Slots d20/d16 at penalty -1 roll as 1d16/1d14: a rolled d14 is the
+    // second slot, and a rolled d16 is the (already planned) first.
+    const c = makeCombatant(slots(2), null, 'hero')
+    expect(reconcilePlannedActionDie(planFor(c), 14, { twoWeaponPenalty: -1 }).choice.index).toBe(1)
+    const plan = planFor(c)
+    expect(reconcilePlannedActionDie(plan, 16, { twoWeaponPenalty: -1 })).toBe(plan)
+  })
+
+  test('null/off-path plans pass through untouched', () => {
+    expect(reconcilePlannedActionDie(null, 16)).toBeNull()
+    const overBudget = { combatant: makeCombatant(slots(2), null, 'hero'), round: 1, choice: null }
+    expect(reconcilePlannedActionDie(overBudget, 16)).toBe(overBudget)
+  })
+
+  // #834 review (High): a roll on the roll's DEFAULT die is not evidence of
+  // a player choice, even when its faces coincide with another slot — e.g.
+  // an untrained weapon's bumped d14 on a `1d20,1d14` warrior must spend
+  // slot 0, not re-point to the d14 slot.
+  test('a roll matching the default die never re-points', () => {
+    const c = makeCombatant(
+      [{ slot: 0, die: 'd20', modifier: 0, use: 'any' }, { slot: 1, die: 'd14', modifier: 0, use: 'any' }],
+      null, 'hero')
+    const plan = planFor(c)
+    expect(reconcilePlannedActionDie(plan, 14, { defaultFaces: 14 })).toBe(plan)
+    // A deviation from the default still re-points as before.
+    expect(reconcilePlannedActionDie(plan, 14, { defaultFaces: 20 }).choice.index).toBe(1)
+  })
+})
+
+describe('spendPlannedActionDie round guard (#834 review)', () => {
+  beforeEach(() => { allOn() })
+
+  test('a plan from a bygone round is not written over the live state', async () => {
+    const c = makeCombatant(slots(2), { round: 6, spent: [false, false] }, 'hero')
+    setCombat(c, 6) // the combat has moved on to round 6...
+    const plan = {
+      combatant: c,
+      round: 5, // ...but the plan was made in round 5 (dialog left open)
+      choice: { slot: c.actor.system.attributes.actionDice.list[0], index: 0 },
+      count: 2,
+      spentCount: 0,
+      restrictedUnspentDice: [],
+      twoWeaponRole: null,
+      twoWeaponCompanion: false
+    }
+    const descriptor = await spendPlannedActionDie(plan)
+    expect(c.setFlag).not.toHaveBeenCalled()
+    expect(descriptor).toEqual({ actionNumber: 1, count: 2, overBudget: false, noEligibleDie: false, die: '1d20' })
+  })
+
+  test('a current-round plan still writes normally', async () => {
+    const c = makeCombatant(slots(2), null, 'hero')
+    setCombat(c, 5)
+    const plan = planActionDie(c.actor, 'attack')
+    await spendPlannedActionDie(plan)
+    expect(c.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', { round: 5, spent: [true, false] })
   })
 })

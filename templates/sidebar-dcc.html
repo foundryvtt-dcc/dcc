@@ -1,0 +1,14 @@
+<h4 class="divider">{{localize 'DCC.SidebarTab'}}</h4>
+{{#each tools}}
+<div class="dcc-sidebar-tool">
+    <button type="button" data-action="clickTool" data-tool="{{@key}}">
+        <i class="{{this.icon}}" inert></i> {{localize this.label}}
+    </button>
+    {{#if this.help}}
+    <a class="tool-help" href="{{this.help}}" target="_blank" rel="noopener"
+       data-tooltip aria-label="{{localize 'DCC.SidebarToolHelp'}}">
+        <i class="fas fa-circle-question" inert></i>
+    </a>
+    {{/if}}
+</div>
+{{/each}}

@@ -6,9 +6,10 @@
  * The Foundry `init` hook is the system's first bootstrap step: it wires
  * `CONFIG.*` document/data-model classes, the built-in class/sheet/variant
  * registries, the `game.dcc` extension namespace, the actor/item sheet
- * registrations, the Handlebars template + helper registration, and the
- * early Fleeting Luck setting (registered ahead of `ready` because
- * `getSceneControlButtons` reads it before `ready` fires).
+ * registrations, the DCC sidebar tab, the Handlebars template + helper
+ * registration, and the early Fleeting Luck setting (registered ahead of
+ * `ready` because the sidebar tab reads it when it first renders during
+ * `Game#initializeUI`, before `ready` fires).
  *
  * The body is split into named step functions so the unit tests can invoke
  * each concern as a plain function; `onInit()` runs them in order and
@@ -43,6 +44,8 @@ import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { registerEarlySystemSettings } from './settings.js'
+import { registerDCCSidebarTab } from './sidebar-tab.mjs'
+import { DeathClockTracker, registerDeathClockTracker } from './death-clock-tracker.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { getSkillTable } from './table-loading.mjs'
@@ -222,6 +225,7 @@ export function assembleGameDccNamespace () {
   game.dcc = {
     DCCActor,
     DCCRoll,
+    DeathClockTracker,
     DiceChain,
     FleetingLuck,
     SpellDuel,
@@ -304,9 +308,9 @@ export async function loadSystemTemplates () {
 /**
  * Register the settings whose values are read before the `ready` hook where
  * the rest of the system settings register: the Fleeting Luck toggle (read
- * by `getSceneControlButtons`) and the multiple-action-dice settings (read
- * by `DCCActor#prepareDerivedData` during `setup`). The registrations live
- * in module/settings.js `registerEarlySystemSettings`.
+ * by the DCC sidebar tab's first render) and the multiple-action-dice
+ * settings (read by `DCCActor#prepareDerivedData` during `setup`). The
+ * registrations live in module/settings.js `registerEarlySystemSettings`.
  */
 export function registerEarlySettings () {
   registerEarlySystemSettings()
@@ -325,6 +329,8 @@ export async function onInit () {
   registerDataModels()
   assembleGameDccNamespace()
   registerSheets()
+  registerDCCSidebarTab()
+  registerDeathClockTracker()
   await loadSystemTemplates()
   registerEarlySettings()
 }

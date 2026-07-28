@@ -1,0 +1,61 @@
+/* DCC right-hand sidebar tab (issue #833) */
+
+/* The Sidebar renders each tab-strip icon as classes on the tab button.
+   Ours is a "DCC" wordmark (Duvall Bold, red/orange gradient — rendered to
+   styles/images/dcc-sidebar-icon.png) rather than a Font Awesome glyph,
+   painted on a pseudo-element so the button keeps its normal hover/active
+   states. */
+#sidebar-tabs button.ui-control.dcc-sidebar-icon::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: auto;
+  background: url('images/dcc-sidebar-icon.png') no-repeat center;
+  background-size: contain;
+}
+
+/* The tab body: a centered column of tool-launcher buttons. The root
+   template part's children are hoisted directly into the tab element
+   (`section.tab.sidebar-tab.dcc-sidebar`), so style that element.
+
+   Core's `.tab[data-tab]:not(.active) { display: none }` lives in a CSS
+   @layer, and this system stylesheet is unlayered — an unconditional
+   `display: flex` here would always win and keep the tab visible under
+   every other sidebar tab. Only apply the flex layout while the tab is
+   active (or popped out, where the content lands in `.window-content`). */
+.sidebar-tab.dcc-sidebar.active,
+.dcc-sidebar.sidebar-popout .window-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px 8px;
+}
+
+.dcc-sidebar {
+  h4.divider {
+    align-self: stretch;
+    font-family: Duvall, sans-serif;
+  }
+
+  .dcc-sidebar-tool {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+
+    button {
+      flex: none;
+    }
+
+    .tool-help {
+      color: var(--color-text-dark-secondary, #666);
+      font-size: 14px;
+      line-height: 1;
+
+      &:hover {
+        color: var(--color-text-hyperlink, #ff6400);
+      }
+    }
+  }
+}
