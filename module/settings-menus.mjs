@@ -213,7 +213,8 @@ class DCCEnhancedCombatSettings extends DCCSettingsMenu {
         'playerLuckVsMonsterCrits',
         'monsterFumbles',
         'autoApplyDamage',
-        'autoApplyDeadStatus'
+        'autoApplyDeadStatus',
+        'enableDeathClock'
       ]
     }
   ]

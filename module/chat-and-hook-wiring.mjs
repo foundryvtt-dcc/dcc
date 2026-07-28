@@ -45,6 +45,7 @@ import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
 import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice, onUpdateCombatantForActionDice, onCombatLifecycleForActionDice, onDeleteCombatForActionDice, onCombatantLifecycleForActionDice } from './action-dice-tracker.mjs'
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
+import { onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
 /**
@@ -310,7 +311,29 @@ export async function onPreUpdateActor (actor, changes, options, userId) {
  */
 export async function onUpdateCombatComposed (combat, changed, options, userId) {
   onCombatLifecycleForActionDice(combat, changed)
+  // Death clock ticks before the generic effect expiry so a dying PC's
+  // round advance resolves (dead status + announcement) in one pass.
+  await onUpdateCombatForDeathClock(combat, changed)
   return onUpdateCombat(combat, changed, options, userId)
+}
+
+/**
+ * `updateActor` runs two independent death concerns: the NPC auto-dead
+ * status (auto-dead-status.mjs) and the Player death clock
+ * (death-clock.mjs, issue #843).
+ */
+export async function onUpdateActorComposed (actor, changes, options, userId) {
+  await onUpdateActorForDeath(actor, changes, options, userId)
+  return onUpdateActorForDeathClock(actor, changes)
+}
+
+/**
+ * `renderCombatTracker` decorates combatant rows with the action-dice pips
+ * and the death-clock countdown badges.
+ */
+export function onRenderCombatTrackerComposed (app, html) {
+  onRenderCombatTrackerForActionDice(app, html)
+  onRenderCombatTrackerForDeathClock(app, html)
 }
 
 export async function onUpdateCombat (combat, changed, options, userId) {
@@ -445,7 +468,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   preCreateItem: { handler: onPreCreateItem, once: false },
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
   preUpdateActor: { handler: onPreUpdateActor, once: false },
-  updateActor: { handler: onUpdateActorForDeath, once: false },
+  updateActor: { handler: onUpdateActorComposed, once: false },
   updateCombat: { handler: onUpdateCombatComposed, once: false },
   deleteCombat: { handler: onDeleteCombatForActionDice, once: false },
   updateCombatant: { handler: onUpdateCombatantForActionDice, once: false },
@@ -453,7 +476,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   deleteCombatant: { handler: onCombatantLifecycleForActionDice, once: false },
   combatTurn: { handler: onCombatTurnForActionDice, once: false },
   combatRound: { handler: onCombatRoundForActionDice, once: false },
-  renderCombatTracker: { handler: onRenderCombatTrackerForActionDice, once: false },
+  renderCombatTracker: { handler: onRenderCombatTrackerComposed, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }
 })

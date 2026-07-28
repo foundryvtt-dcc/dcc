@@ -88,6 +88,8 @@ const {
   onPreUpdateActor,
   onUpdateCombat,
   onUpdateCombatComposed,
+  onUpdateActorComposed,
+  onRenderCombatTrackerComposed,
   onItemPilesReady,
   onGetProseMirrorMenuDropDowns,
   registerChatAndHookWiring
@@ -95,11 +97,9 @@ const {
 
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
 const { onModifyAttackRollTerms } = await import('../weapon-range.mjs')
-const { onUpdateActorForDeath } = await import('../auto-dead-status.mjs')
 const {
   onCombatTurnForActionDice,
   onCombatRoundForActionDice,
-  onRenderCombatTrackerForActionDice,
   onUpdateCombatantForActionDice,
   onDeleteCombatForActionDice,
   onCombatantLifecycleForActionDice
@@ -781,7 +781,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.preCreateItem).toEqual([onPreCreateItem])
     expect(onCalls.applyActiveEffect).toEqual([onApplyActiveEffect])
     expect(onCalls.preUpdateActor).toEqual([onPreUpdateActor, abilityLogPreUpdateActor])
-    expect(onCalls.updateActor).toEqual([onUpdateActorForDeath])
+    expect(onCalls.updateActor).toEqual([onUpdateActorComposed])
     expect(onCalls.updateCombat).toEqual([onUpdateCombatComposed])
     expect(onCalls.deleteCombat).toEqual([onDeleteCombatForActionDice])
     expect(onCalls.updateCombatant).toEqual([onUpdateCombatantForActionDice])
@@ -789,7 +789,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.deleteCombatant).toEqual([onCombatantLifecycleForActionDice])
     expect(onCalls.combatTurn).toEqual([onCombatTurnForActionDice])
     expect(onCalls.combatRound).toEqual([onCombatRoundForActionDice])
-    expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerForActionDice])
+    expect(onCalls.renderCombatTracker).toEqual([onRenderCombatTrackerComposed])
     expect(onCalls.getProseMirrorMenuDropDowns).toEqual([onGetProseMirrorMenuDropDowns])
     expect(onCalls['dcc.modifyAttackRollTerms']).toEqual([onModifyAttackRollTerms])
   })

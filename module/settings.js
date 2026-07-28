@@ -617,6 +617,20 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Death Clock (issue #843): auto-start the DCC death & dying countdown
+   * when a Player drops to 0 HP — (level) rounds to be healed, dead status
+   * on expiry, 0-level PCs dead immediately. Off by default.
+   */
+  game.settings.register('dcc', 'enableDeathClock', {
+    name: 'DCC.SettingEnableDeathClock',
+    hint: 'DCC.SettingEnableDeathClockHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: false
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {

@@ -46,6 +46,8 @@ The remaining settings add automated combat rules to the system. They are **all 
 
 **Auto-apply dead status to NPCs** automatically adds the "dead" status effect to a non-player character whose hit points drop to 0 or below. Player characters are left alone (at 0 HP they are dying and may recover per DCC rules). The status is added automatically but not removed automatically — a GM can clear it if the creature is healed or revived.
 
+**Enable death clock for PCs** implements the death and dying countdown for player characters. When a PC drops to 0 hit points they gain a "Dying" condition with their level in rounds remaining — the combat tracker shows the countdown next to their name, and each combat round burns one round from the clock. If the clock reaches zero the character receives the dead status and their death is announced in chat; healing the character above 0 HP before then clears the clock. Level 0 characters die immediately at 0 HP, per the funnel rules. The countdown is also visible on the Dying condition itself, and a judge can apply or remove the Dying condition manually from the token HUD.
+
 ## Tables & Compendia
 
 Click the **Tables & Compendia** button to choose which compendia and roll tables the system uses for lookups.
