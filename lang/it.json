@@ -263,7 +263,7 @@
   "DCC.DeedRoll": "Tiro Dado Cimento",
   "DCC.Deity": "Divinità",
   "DCC.DeityHint": "Nome della divinità del Chierico",
-  "DCC.DeathClockAbilityLoss": "{name} riporta una ferita permanente dal suo incontro con la morte: -1 {ability}.",
+  "DCC.DeathClockAbilityLoss": "{name} riporta una ferita permanente dal suo incontro con la morte: -1 {ability}. (applicato)",
   "DCC.DeathClockBodyLost": "{name} è morto davvero. (Prova di Fortuna {roll} contro {target}: fallimento)",
   "DCC.DeathClockBodyRecovered": "{name} era solo privo di sensi! Si riprende con 1 punto ferita ed è stordito per la prossima ora (-4 a tutti i tiri). (Prova di Fortuna {roll} contro {target}: successo)",
   "DCC.DeathClockGroggy": "Stordito (-4 a tutti i tiri)",

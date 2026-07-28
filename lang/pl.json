@@ -263,7 +263,7 @@
   "DCC.DeedRoll": "Rzuć Kostką Czynu",
   "DCC.Deity": "Bóstwo",
   "DCC.DeityHint": "Imię bóstwa twojego kleryka",
-  "DCC.DeathClockAbilityLoss": "{name} odnosi trwałe obrażenia po otarciu się o śmierć: -1 do cechy {ability}.",
+  "DCC.DeathClockAbilityLoss": "{name} odnosi trwałe obrażenia po otarciu się o śmierć: -1 do cechy {ability}. (zastosowano)",
   "DCC.DeathClockBodyLost": "{name} naprawdę nie żyje. (Test Szczęścia {roll} przeciw {target}: porażka)",
   "DCC.DeathClockBodyRecovered": "{name} był tylko nieprzytomny! Postać ocknęła się z 1 punktem wytrzymałości i jest oszołomiona przez następną godzinę (-4 do wszystkich rzutów). (Test Szczęścia {roll} przeciw {target}: sukces)",
   "DCC.DeathClockGroggy": "Oszołomiony (-4 do wszystkich rzutów)",

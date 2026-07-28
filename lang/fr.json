@@ -249,7 +249,7 @@
   "DCC.DeedRoll": "Jet de haut fait",
   "DCC.Deity": "Divinité",
   "DCC.DeityHint": "Nom de la divinité de votre clerc",
-  "DCC.DeathClockAbilityLoss": "{name} garde une blessure permanente de son face-à-face avec la mort : -1 {ability}.",
+  "DCC.DeathClockAbilityLoss": "{name} garde une blessure permanente de son face-à-face avec la mort : -1 {ability}. (appliqué)",
   "DCC.DeathClockBodyLost": "{name} est bel et bien mort. (Test de Chance {roll} contre {target} : échec)",
   "DCC.DeathClockBodyRecovered": "{name} était seulement assommé ! Le personnage revient à lui avec 1 point de vie et reste groggy pendant une heure (-4 à tous les jets). (Test de Chance {roll} contre {target} : réussite)",
   "DCC.DeathClockGroggy": "Groggy (-4 à tous les jets)",

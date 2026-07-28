@@ -263,7 +263,7 @@
   "DCC.DeedRoll": "Großtatwurf",
   "DCC.Deity": "Gottheit",
   "DCC.DeityHint": "Name der Gottheit deines Klerikers",
-  "DCC.DeathClockAbilityLoss": "{name} trägt eine bleibende Verletzung von der Begegnung mit dem Tod davon: -1 {ability}.",
+  "DCC.DeathClockAbilityLoss": "{name} trägt eine bleibende Verletzung von der Begegnung mit dem Tod davon: -1 {ability}. (angewendet)",
   "DCC.DeathClockBodyLost": "{name} ist wirklich tot. (Glücksprobe {roll} gegen {target}: Fehlschlag)",
   "DCC.DeathClockBodyRecovered": "{name} war nur bewusstlos! Der Charakter erwacht mit 1 Trefferpunkt und ist für die nächste Stunde benommen (-4 auf alle Würfe). (Glücksprobe {roll} gegen {target}: Erfolg)",
   "DCC.DeathClockGroggy": "Benommen (-4 auf alle Würfe)",

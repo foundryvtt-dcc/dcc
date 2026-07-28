@@ -263,7 +263,7 @@
   "DCC.DeedRoll": "Tirar dado de acción",
   "DCC.Deity": "Deidad",
   "DCC.DeityHint": "Nombre de la deidad de tu clérigo",
-  "DCC.DeathClockAbilityLoss": "{name} sufre una lesión permanente de su roce con la muerte: -1 {ability}.",
+  "DCC.DeathClockAbilityLoss": "{name} sufre una lesión permanente de su roce con la muerte: -1 {ability}. (aplicado)",
   "DCC.DeathClockBodyLost": "{name} está realmente muerto. (Prueba de Suerte {roll} contra {target}: fallo)",
   "DCC.DeathClockBodyRecovered": "¡{name} solo estaba inconsciente! Despierta con 1 punto de golpe, aturdido durante la próxima hora (-4 a todas las tiradas). (Prueba de Suerte {roll} contra {target}: éxito)",
   "DCC.DeathClockGroggy": "Aturdido (-4 a todas las tiradas)",
