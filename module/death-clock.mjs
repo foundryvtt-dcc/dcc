@@ -288,7 +288,8 @@ export async function rollAbilityLoss (actor) {
   const abilityDie = new Roll('1d3')
   await abilityDie.evaluate()
   const abilities = ['str', 'agl', 'sta']
-  const penaltyAbility = abilities[(abilityDie.total - 1) % 3] ?? 'sta'
+  const rolledIndex = (abilityDie.total - 1) % 3
+  const penaltyAbility = abilities[rolledIndex] ?? 'sta'
 
   await logAbilityChange(actor, {
     ability: penaltyAbility,
@@ -299,10 +300,24 @@ export async function rollAbilityLoss (actor) {
   }, { announce: false })
   await actor.unsetFlag('dcc', PENDING_ABILITY_LOSS_FLAG)
 
-  await postDeathClockCard('DCC.DeathClockAbilityLoss', actor, {
+  // Build the card ourselves: the rendered die, the 1-3 chart with the
+  // rolled row highlighted, then the result line. The Roll is embedded in
+  // the content rather than attached via `rolls`, which would displace the
+  // card body and show only a bare d3.
+  const rollHtml = await abilityDie.render()
+  const chartRows = abilities.map((key, index) =>
+    `<tr class="${index === rolledIndex ? 'rolled' : ''}"><td>${index + 1}</td>` +
+    `<td>${game.i18n.localize(CONFIG.DCC.abilities[key] ?? key)}</td></tr>`
+  ).join('')
+  const resultText = game.i18n.format('DCC.DeathClockAbilityLoss', {
+    name: actor.name,
     ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility),
     roll: abilityDie.total
-  }, { rolls: [abilityDie] })
+  })
+  await ChatMessage.create({
+    content: `${rollHtml}<table class="dcc-ability-loss-chart"><tbody>${chartRows}</tbody></table><p>${resultText}</p>`,
+    speaker: ChatMessage.getSpeaker({ actor })
+  })
 }
 
 /**

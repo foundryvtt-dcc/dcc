@@ -263,8 +263,12 @@ test.describe('Death clock', () => {
           game.messages.contents.slice(-5).find(m => m.content.includes('data-action="rollAbilityLoss"'))))
         await mod.rollAbilityLoss(lucky)
         observed.abilityLost = await pollFor(() => abilitySum(lucky) === sumBefore - 1)
-        observed.lossCardPosted = !!(await pollFor(() =>
-          game.messages.contents.slice(-5).find(m => m.content.includes(lucky.name) && m.content.includes('permanent injury'))))
+        const lossCard = await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(lucky.name) && m.content.includes('permanent injury')))
+        observed.lossCardPosted = !!lossCard
+        // The card embeds the rendered d3 and the 1-3 ability chart.
+        observed.lossCardHasChart = !!lossCard?.content.includes('dcc-ability-loss-chart')
+        observed.lossCardHasRolledRow = !!lossCard?.content.includes('class="rolled"')
 
         await unlucky.update({ 'system.attributes.hp.value': 0 })
         await pollFor(() => isDead(unlucky))
@@ -289,6 +293,8 @@ test.describe('Death clock', () => {
     expect(result.lossPromptOnCard).toBe(true)
     expect(result.abilityLost).toBe(true)
     expect(result.lossCardPosted).toBe(true)
+    expect(result.lossCardHasChart).toBe(true)
+    expect(result.lossCardHasRolledRow).toBe(true)
     expect(result.trulyDeadCard).toBe(true)
     expect(result.stillDead).toBe(true)
   })

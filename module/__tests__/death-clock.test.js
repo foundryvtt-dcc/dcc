@@ -31,6 +31,7 @@ class RollMock {
   static queue = []
   constructor (formula) { this.formula = formula }
   async evaluate () { this.total = RollMock.queue.shift() }
+  async render () { return `<div class="dice-roll">${this.formula}=${this.total}</div>` }
 }
 
 let original
@@ -372,6 +373,12 @@ describe('rollAbilityLoss', () => {
     expect(actor.unsetFlag).toHaveBeenCalledWith('dcc', 'pendingAbilityLoss')
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockAbilityLoss',
       expect.objectContaining({ roll: 2 }))
+    // The card carries the rendered die and the 1-3 chart with the rolled
+    // row highlighted.
+    const { content } = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(content).toContain('dice-roll')
+    expect(content).toContain('dcc-ability-loss-chart')
+    expect(content).toContain('class="rolled"')
   })
 
   test('maps the full d3 range onto Strength / Agility / Stamina', async () => {
