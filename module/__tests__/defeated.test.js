@@ -5,7 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { markActorDefeated } from '../defeated.mjs'
+import { isActorDefeated, markActorDefeated, markActorRecovered } from '../defeated.mjs'
 
 let original
 
@@ -65,5 +65,42 @@ describe('markActorDefeated', () => {
     const actor = makeActor()
     await markActorDefeated(actor)
     expect(actor.toggleStatusEffect).toHaveBeenCalledWith('unconscious', { active: true, overlay: true })
+  })
+})
+
+describe('markActorRecovered', () => {
+  test('removes the dead status from a dead actor', async () => {
+    const actor = makeActor({ statuses: ['dead'] })
+    await markActorRecovered(actor)
+    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: false })
+  })
+
+  test('leaves a living actor\'s effects alone', async () => {
+    const actor = makeActor()
+    await markActorRecovered(actor)
+    expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
+  })
+
+  test('clears defeated on the actor\'s combatants, like un-clicking the skull button', async () => {
+    const actor = makeActor({ statuses: ['dead'] })
+    const mine = { actor, defeated: true, update: vi.fn().mockResolvedValue(undefined) }
+    const alive = { actor, defeated: false, update: vi.fn() }
+    const other = { actor: makeActor(), defeated: true, update: vi.fn() }
+    globalThis.game.combats.contents = [
+      { combatants: { filter: (fn) => [mine, alive, other].filter(fn) } }
+    ]
+
+    await markActorRecovered(actor)
+    expect(mine.update).toHaveBeenCalledWith({ defeated: false })
+    expect(alive.update).not.toHaveBeenCalled()
+    expect(other.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('isActorDefeated', () => {
+  test('reads the derived status set and the live effects', () => {
+    expect(isActorDefeated(makeActor())).toBe(false)
+    expect(isActorDefeated(makeActor({ statuses: ['dead'] }))).toBe(true)
+    expect(isActorDefeated(makeActor({ effects: ['dead'] }))).toBe(true)
   })
 })

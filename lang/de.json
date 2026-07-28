@@ -266,6 +266,7 @@
   "DCC.DeathClockExpired": "{name} ist verblutet und gestorben.",
   "DCC.DeathClockInstantDeath": "{name} stirbt sofort.",
   "DCC.DeathClockStarted": "{name} liegt am Boden und verblutet! {rounds} Runde(n), um den Charakter zu retten.",
+  "DCC.DeathClockRevived": "{name} wurde wiederbelebt!",
   "DCC.DeathClockStopped": "{name} verblutet nicht mehr.",
   "DCC.DeathClockTooltip": "Verblutet: noch {rounds} Runde(n)",
   "DCC.DeleteItem": "Gegenstand vom Charakterbogen löschen?",

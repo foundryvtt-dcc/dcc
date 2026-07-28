@@ -266,6 +266,7 @@
   "DCC.DeathClockExpired": "{name} se ha desangrado y ha muerto.",
   "DCC.DeathClockInstantDeath": "{name} muere instantáneamente.",
   "DCC.DeathClockStarted": "¡{name} está en el suelo desangrándose! {rounds} ronda(s) para salvarlo.",
+  "DCC.DeathClockRevived": "¡{name} ha sido revivido!",
   "DCC.DeathClockStopped": "{name} ya no se está desangrando.",
   "DCC.DeathClockTooltip": "Desangrándose: quedan {rounds} ronda(s)",
   "DCC.DeleteItem": "¿Eliminar este objeto de la hoja?",

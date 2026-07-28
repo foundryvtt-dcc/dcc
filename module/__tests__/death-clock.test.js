@@ -110,6 +110,20 @@ describe('onUpdateActorForDeathClock', () => {
     expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockStopped', expect.anything())
   })
 
+  test('healing a dead PC above 0 revives them (un-dead + revival card)', async () => {
+    const actor = makeActor({ statuses: new Set(['dead']) })
+    await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 2 } } } })
+    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: false })
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockRevived', expect.anything())
+  })
+
+  test('healing a living, un-clocked PC does nothing', async () => {
+    const actor = makeActor()
+    await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 5 } } } })
+    expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
+    expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
+  })
+
   test('ignores non-Player actors, non-HP updates, and runs only when enabled', async () => {
     const npc = makeActor({ type: 'NPC' })
     await onUpdateActorForDeathClock(npc, { system: { attributes: { hp: { value: 0 } } } })

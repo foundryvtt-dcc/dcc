@@ -161,6 +161,14 @@ test.describe('Death clock', () => {
         observed.combatantDefeated = !!(await pollFor(() => combat.combatants.contents[0]?.defeated))
         observed.deathCardPosted = !!(await pollFor(() =>
           game.messages.contents.slice(-5).find(m => m.content.includes(pc.name) && m.content.includes('died'))))
+
+        // Healing the dead PC above 0 revives them: dead effect and
+        // combatant.defeated both cleared, revival announced.
+        await pc.update({ 'system.attributes.hp.value': 2 })
+        observed.revived = await pollFor(() => !pc.effects.contents.some(e => e.statuses?.has?.('dead')))
+        observed.combatantRecovered = await pollFor(() => combat.combatants.contents[0]?.defeated === false)
+        observed.revivalCardPosted = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(pc.name) && m.content.includes('revived'))))
       } finally {
         await game.settings.set('dcc', 'enableDeathClock', prev)
         await combat.delete()
@@ -177,6 +185,9 @@ test.describe('Death clock', () => {
     expect(result.deadIsOverlay).toBe(true)
     expect(result.combatantDefeated).toBe(true)
     expect(result.deathCardPosted).toBe(true)
+    expect(result.revived).toBe(true)
+    expect(result.combatantRecovered).toBe(true)
+    expect(result.revivalCardPosted).toBe(true)
   })
 
   test('the clock does not run while the setting is off', async ({ page }) => {

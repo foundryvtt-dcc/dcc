@@ -252,6 +252,7 @@
   "DCC.DeathClockExpired": "{name} s'est vidé de son sang et est mort.",
   "DCC.DeathClockInstantDeath": "{name} meurt sur le coup.",
   "DCC.DeathClockStarted": "{name} est à terre et se vide de son sang ! {rounds} round(s) pour le sauver.",
+  "DCC.DeathClockRevived": "{name} a été ranimé !",
   "DCC.DeathClockStopped": "{name} ne se vide plus de son sang.",
   "DCC.DeathClockTooltip": "Hémorragie : {rounds} round(s) restant(s)",
   "DCC.DeleteItem": "Supprimer cette entrée de la feuille?",

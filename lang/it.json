@@ -266,6 +266,7 @@
   "DCC.DeathClockExpired": "{name} è morto dissanguato.",
   "DCC.DeathClockInstantDeath": "{name} muore all'istante.",
   "DCC.DeathClockStarted": "{name} è a terra e sta morendo dissanguato! {rounds} round per salvarlo.",
+  "DCC.DeathClockRevived": "{name} è stato rianimato!",
   "DCC.DeathClockStopped": "{name} non sta più morendo dissanguato.",
   "DCC.DeathClockTooltip": "Dissanguamento: {rounds} round rimanenti",
   "DCC.DeleteItem": "Conferma eliminazione",

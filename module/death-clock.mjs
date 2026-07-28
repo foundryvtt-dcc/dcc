@@ -11,7 +11,8 @@
  * - `updateActor`: when a Player's HP drops to 0 or below, auto-start the
  *   clock — a "Dying" Active Effect carrying the countdown in
  *   `flags.dcc.deathClock` (the lib's bleed-out state shape). 0-level PCs
- *   get the dead status immediately. Healing above 0 clears the clock.
+ *   get the dead status immediately. Healing above 0 clears the clock, and
+ *   revives a dead PC (dead overlay + combatant.defeated removed).
  * - `updateCombat`: on round advance, tick each dying combatant's clock;
  *   at zero the PC gets the dead status and a chat announcement.
  * - `renderCombatTracker`: a rounds-remaining badge on dying combatants'
@@ -29,7 +30,7 @@
  */
 
 import { advanceBleedOutRound, getBleedOutRounds } from './vendor/dcc-core-lib/combat/death-and-dying.js'
-import { markActorDefeated } from './defeated.mjs'
+import { isActorDefeated, markActorDefeated, markActorRecovered } from './defeated.mjs'
 import { isActiveGM } from './socket.mjs'
 
 /** The status id carried by the Dying Active Effect. */
@@ -107,11 +108,17 @@ export async function onUpdateActorForDeathClock (actor, changes) {
 
     const dying = getDyingEffect(actor)
 
-    // Healed above 0: the clock stops.
+    // Healed above 0: a running clock stops; a dead PC is revived — the
+    // full inverse of the tracker skull button (status overlay removed,
+    // combatant.defeated cleared).
     if (newHp > 0) {
       if (dying) {
         await dying.delete()
         await postDeathClockCard('DCC.DeathClockStopped', actor)
+      }
+      if (isActorDefeated(actor)) {
+        await markActorRecovered(actor)
+        await postDeathClockCard('DCC.DeathClockRevived', actor)
       }
       return
     }

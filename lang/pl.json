@@ -266,6 +266,7 @@
   "DCC.DeathClockExpired": "{name} wykrwawił się i zmarł.",
   "DCC.DeathClockInstantDeath": "{name} umiera natychmiast.",
   "DCC.DeathClockStarted": "{name} pada i się wykrwawia! {rounds} rund(y) na ratunek.",
+  "DCC.DeathClockRevived": "{name} został przywrócony do życia!",
   "DCC.DeathClockStopped": "{name} już się nie wykrwawia.",
   "DCC.DeathClockTooltip": "Wykrwawianie: pozostało {rounds} rund(y)",
   "DCC.DeleteItem": "Usunąć ten przedmiot z arkusza?",

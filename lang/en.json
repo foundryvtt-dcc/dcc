@@ -266,6 +266,7 @@
   "DCC.DeathClockExpired": "{name} has bled out and died.",
   "DCC.DeathClockInstantDeath": "{name} dies instantly.",
   "DCC.DeathClockStarted": "{name} is down and bleeding out! {rounds} round(s) to save them.",
+  "DCC.DeathClockRevived": "{name} has been revived!",
   "DCC.DeathClockStopped": "{name} is no longer bleeding out.",
   "DCC.DeathClockTooltip": "Bleeding out: {rounds} round(s) remaining",
   "DCC.DeleteItem": "Delete this item from the sheet?",
