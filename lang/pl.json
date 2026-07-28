@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "Pokazuj okno powitalne przy uruchomieniu modułu"
   },
   "DCC.SheetConfig": "Konfiguracja Arkusza",
+  "DCC.SidebarTab": "Narzędzia DCC",
   "DCC.ShieldBash": "Uderzenie Tarczą",
   "DCC.ShieldBashHint": "Rozmiar kostki do używania dla ataków uderzeniem tarczą; ustaw broń uderzenia tarczą na karcie wyposażenia i użyj tego jako nadpisania kostki akcji.",
   "DCC.ShowBackstabConfig": "Pokazuj Pchnięcie w Plecy",

@@ -760,6 +760,7 @@
     "ShowWelcomeDialogHint": "Mostra la finestra di dialogo di benvenuto all'avvio del modulo"
   },
   "DCC.SheetConfig": "Configurazione Scheda",
+  "DCC.SidebarTab": "Strumenti DCC",
   "DCC.ShieldBash": "Spada e scudo",
   "DCC.ShieldBashHint": "Clicca per effettuare un tiro con spada e scudo, tieni premuto CMD/CTRL per ulteriori opzioni",
   "DCC.ShowBackstabConfig": "Mostra Attacco Furtivo",
