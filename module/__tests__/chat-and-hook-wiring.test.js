@@ -90,6 +90,7 @@ const {
   onUpdateCombatComposed,
   onUpdateActorComposed,
   onRenderCombatTrackerComposed,
+  onRenderChatMessageHTMLComposed,
   onItemPilesReady,
   onGetProseMirrorMenuDropDowns,
   registerChatAndHookWiring
@@ -704,7 +705,7 @@ describe('onGetProseMirrorMenuDropDowns', () => {
 describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
   test('routes each hook name to its matching handler', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.hotbarDrop.handler).toBe(onHotbarDrop)
-    expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTML)
+    expect(CHAT_AND_HOOK_WIRING_HOOKS.renderChatMessageHTML.handler).toBe(onRenderChatMessageHTMLComposed)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getChatMessageContextOptions.handler).toBe(onGetChatMessageContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getCompendiumContextOptions.handler).toBe(onGetCompendiumContextOptions)
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getUserContextOptions.handler).toBe(onGetUserContextOptions)
@@ -772,7 +773,7 @@ describe('registerChatAndHookWiring', () => {
       (onCalls[hookName] ??= []).push(handler)
     }
     expect(onCalls.hotbarDrop).toEqual([onHotbarDrop])
-    expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTML])
+    expect(onCalls.renderChatMessageHTML).toEqual([onRenderChatMessageHTMLComposed])
     expect(onCalls.getChatMessageContextOptions).toEqual([onGetChatMessageContextOptions])
     expect(onCalls.getCompendiumContextOptions).toEqual([onGetCompendiumContextOptions])
     expect(onCalls.getUserContextOptions).toEqual([onGetUserContextOptions])

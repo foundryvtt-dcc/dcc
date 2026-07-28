@@ -49,10 +49,15 @@ test.describe('Death clock', () => {
         observed.singleClock = pc.effects.contents.filter(e => e.statuses?.has?.('dying')).length === 1
         observed.roundsAfterRedrop = getDying()?.getFlag('dcc', 'deathClock')?.roundsRemaining
 
-        // Healing above 0 clears the clock.
+        // Healing above 0 clears the clock — and being saved from bleeding
+        // out costs a permanent point of Stamina and leaves a scar.
+        const staBefore = pc.system.abilities.sta.value
         await pc.update({ 'system.attributes.hp.value': 3 })
         observed.clearedOnHeal = await pollFor(() => !getDying())
         observed.notDead = !pc.effects.contents.some(e => e.statuses?.has?.('dead'))
+        observed.staminaLost = await pollFor(() => pc.system.abilities.sta.value === staBefore - 1)
+        observed.scarCardPosted = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(pc.name) && m.content.includes('scar'))))
       } finally {
         await game.settings.set('dcc', 'enableDeathClock', prev)
         await pc.delete()
@@ -67,6 +72,8 @@ test.describe('Death clock', () => {
     expect(result.roundsAfterRedrop).toBe(2)
     expect(result.clearedOnHeal).toBe(true)
     expect(result.notDead).toBe(true)
+    expect(result.staminaLost).toBe(true)
+    expect(result.scarCardPosted).toBe(true)
   })
 
   test('a 0-level PC at 0 HP dies immediately', async ({ page }) => {
@@ -188,6 +195,75 @@ test.describe('Death clock', () => {
     expect(result.revived).toBe(true)
     expect(result.combatantRecovered).toBe(true)
     expect(result.revivalCardPosted).toBe(true)
+  })
+
+  test('roll the body: Luck decides between recovery and true death', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const pollFor = async (fn, timeout = 2000) => {
+        const deadline = Date.now() + timeout
+        let value = await fn()
+        while (Date.now() < deadline && !value) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+          value = await fn()
+        }
+        return value
+      }
+      const prev = game.settings.get('dcc', 'enableDeathClock')
+      await game.settings.set('dcc', 'enableDeathClock', true)
+
+      const makeFunnelPC = (name, luck) => Actor.create({
+        name,
+        type: 'Player',
+        system: {
+          attributes: { hp: { value: 2, max: 2 } },
+          details: { level: { value: 0 } },
+          abilities: { str: { value: 10 }, agl: { value: 10 }, sta: { value: 10 }, lck: { value: luck } }
+        }
+      })
+      const lucky = await makeFunnelPC('P_RollBody Lucky PC', 20) // d20 <= 20 always succeeds
+      const unlucky = await makeFunnelPC('P_RollBody Unlucky PC', 0) // d20 <= 0 never succeeds
+      const observed = {}
+      try {
+        const isDead = (a) => a.effects?.contents?.some(e => e.statuses?.has?.('dead'))
+        const mod = await import('../../../../../../../../systems/dcc/module/death-clock.mjs')
+
+        await lucky.update({ 'system.attributes.hp.value': 0 })
+        await pollFor(() => isDead(lucky))
+        // The death card carries the Roll the Body button.
+        observed.buttonOnCard = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m =>
+            m.content.includes('data-action="rollTheBody"') && m.content.includes(lucky.uuid))))
+
+        const abilitySum = (a) => ['str', 'agl', 'sta'].reduce((n, k) => n + a.system.abilities[k].value, 0)
+        const sumBefore = abilitySum(lucky)
+        await mod.rollTheBody(lucky)
+        observed.recovered = await pollFor(() => !isDead(lucky))
+        observed.hpAfter = await pollFor(() => lucky.system.attributes.hp.value)
+        observed.groggy = !!(await pollFor(() =>
+          lucky.effects.contents.find(e => e.name.toLowerCase().includes('groggy'))))
+        observed.abilityLost = await pollFor(() => abilitySum(lucky) === sumBefore - 1)
+
+        await unlucky.update({ 'system.attributes.hp.value': 0 })
+        await pollFor(() => isDead(unlucky))
+        await mod.rollTheBody(unlucky)
+        observed.trulyDeadCard = !!(await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.content.includes(unlucky.name) && m.content.includes('truly dead'))))
+        observed.stillDead = isDead(unlucky)
+      } finally {
+        await game.settings.set('dcc', 'enableDeathClock', prev)
+        await lucky.delete()
+        await unlucky.delete()
+      }
+      return observed
+    })
+
+    expect(result.buttonOnCard).toBe(true)
+    expect(result.recovered).toBe(true)
+    expect(result.hpAfter).toBe(1)
+    expect(result.groggy).toBe(true)
+    expect(result.abilityLost).toBe(true)
+    expect(result.trulyDeadCard).toBe(true)
+    expect(result.stillDead).toBe(true)
   })
 
   test('the clock does not run while the setting is off', async ({ page }) => {

@@ -8,14 +8,27 @@
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
-import {
+
+vi.mock('../ability-score-log.js', () => ({ logAbilityChange: vi.fn() }))
+
+const { logAbilityChange } = await import('../ability-score-log.js')
+const {
   getDeathClockRemaining,
   getDyingEffect,
+  onRenderChatMessageHTMLForDeathClock,
   onRenderCombatTrackerForDeathClock,
   onUpdateActorForDeathClock,
   onUpdateCombatForDeathClock,
+  rollTheBody,
   tickDeathClock
-} from '../death-clock.mjs'
+} = await import('../death-clock.mjs')
+
+/** A Roll stub fed from a test-set queue of results. */
+class RollMock {
+  static queue = []
+  constructor (formula) { this.formula = formula }
+  async evaluate () { this.total = RollMock.queue.shift() }
+}
 
 let original
 
@@ -30,15 +43,17 @@ function makeDyingEffect (roundsRemaining) {
 }
 
 /** Build a Player actor stub. */
-function makeActor ({ level = 2, effects = [], statuses = new Set(), type = 'Player' } = {}) {
+function makeActor ({ level = 2, luck = 10, effects = [], statuses = new Set(), type = 'Player' } = {}) {
   return {
     type,
     name: 'Test PC',
-    system: { details: { level: { value: level } } },
+    uuid: 'Actor.test',
+    system: { details: { level: { value: level } }, abilities: { lck: { value: luck } } },
     effects,
     statuses,
     toggleStatusEffect: vi.fn().mockResolvedValue(undefined),
-    createEmbeddedDocuments: vi.fn().mockResolvedValue([])
+    createEmbeddedDocuments: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockResolvedValue(undefined)
   }
 }
 
@@ -59,12 +74,19 @@ beforeEach(() => {
     create: vi.fn().mockResolvedValue(undefined),
     getSpeaker: vi.fn(() => ({}))
   }
+  original.Roll = globalThis.Roll
+  original.ui = globalThis.ui
+  globalThis.Roll = RollMock
+  RollMock.queue = []
+  globalThis.ui = { notifications: { warn: vi.fn() } }
   console.error = vi.fn()
 })
 
 afterEach(() => {
   globalThis.game = original.game
   globalThis.ChatMessage = original.ChatMessage
+  globalThis.Roll = original.Roll
+  globalThis.ui = original.ui
   console.error = original.error
 })
 
@@ -102,12 +124,20 @@ describe('onUpdateActorForDeathClock', () => {
     expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
   })
 
-  test('healing above 0 clears a running clock', async () => {
+  test('healing above 0 clears a running clock and applies the bleed-out trauma', async () => {
     const dying = makeDyingEffect(1)
     const actor = makeActor({ effects: [dying] })
     await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 4 } } } })
     expect(dying.delete).toHaveBeenCalledTimes(1)
-    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockStopped', expect.anything())
+    // Saved from bleeding out: permanent -1 Stamina, terrible scar.
+    expect(logAbilityChange).toHaveBeenCalledWith(actor, expect.objectContaining({
+      ability: 'sta',
+      change: -1,
+      maxChange: -1,
+      type: 'otherPermanent'
+    }), { announce: false })
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockSaved',
+      expect.objectContaining({ scar: expect.any(String) }))
   })
 
   test('healing a dead PC above 0 revives them (un-dead + revival card)', async () => {
@@ -241,6 +271,71 @@ describe('onRenderCombatTrackerForDeathClock', () => {
     }
 
     expect(nameEl.appendChild).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('rollTheBody', () => {
+  test('warns and does nothing when the actor is not dead', async () => {
+    const actor = makeActor()
+    await rollTheBody(actor)
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledTimes(1)
+    expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
+  })
+
+  test('a failed Luck check leaves them truly dead', async () => {
+    const actor = makeActor({ luck: 5, statuses: new Set(['dead']) })
+    RollMock.queue = [15, 1]
+    await rollTheBody(actor)
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockBodyLost',
+      expect.objectContaining({ roll: 15, target: 5 }))
+    // No recovery: status untouched, HP untouched.
+    expect(actor.toggleStatusEffect).not.toHaveBeenCalled()
+    expect(actor.update).not.toHaveBeenCalled()
+  })
+
+  test('a successful Luck check revives at 1 HP with groggy + a random permanent -1', async () => {
+    const actor = makeActor({ luck: 15, statuses: new Set(['dead']) })
+    RollMock.queue = [10, 2] // d20 10 <= 15; d3 2 → Agility
+    await rollTheBody(actor)
+    expect(actor.toggleStatusEffect).toHaveBeenCalledWith('dead', { active: false })
+    expect(actor.update).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
+    expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('ActiveEffect', [expect.objectContaining({
+      name: 'DCC.DeathClockGroggy',
+      duration: { seconds: 3600 }
+    })])
+    expect(logAbilityChange).toHaveBeenCalledWith(actor, expect.objectContaining({
+      ability: 'agl',
+      change: -1,
+      maxChange: -1,
+      type: 'otherPermanent'
+    }), { announce: false })
+    expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.DeathClockBodyRecovered',
+      expect.objectContaining({ roll: 10, target: 15 }))
+  })
+})
+
+describe('onRenderChatMessageHTMLForDeathClock', () => {
+  function makeCard (button) {
+    return { querySelector: vi.fn(sel => sel === 'button[data-action="rollTheBody"]' ? button : null) }
+  }
+
+  test('binds a click listener for the GM', () => {
+    const button = { dataset: { actorUuid: 'Actor.test' }, addEventListener: vi.fn(), disabled: false }
+    onRenderChatMessageHTMLForDeathClock({}, makeCard(button))
+    expect(button.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
+    expect(button.disabled).toBe(false)
+  })
+
+  test('disables the button for non-GMs', () => {
+    globalThis.game.user.isGM = false
+    const button = { dataset: { actorUuid: 'Actor.test' }, addEventListener: vi.fn(), disabled: false }
+    onRenderChatMessageHTMLForDeathClock({}, makeCard(button))
+    expect(button.disabled).toBe(true)
+    expect(button.addEventListener).not.toHaveBeenCalled()
+  })
+
+  test('is a no-op on cards without the button', () => {
+    expect(() => onRenderChatMessageHTMLForDeathClock({}, makeCard(null))).not.toThrow()
   })
 })
 

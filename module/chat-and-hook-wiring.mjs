@@ -45,7 +45,7 @@ import { createDCCMacro } from './macros.mjs'
 import { onModifyAttackRollTerms } from './weapon-range.mjs'
 import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTrackerForActionDice, onUpdateCombatantForActionDice, onCombatLifecycleForActionDice, onDeleteCombatForActionDice, onCombatantLifecycleForActionDice } from './action-dice-tracker.mjs'
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
-import { onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
+import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 
 /**
@@ -336,6 +336,16 @@ export function onRenderCombatTrackerComposed (app, html) {
   onRenderCombatTrackerForDeathClock(app, html)
 }
 
+/**
+ * `renderChatMessageHTML` runs the roll-card pipeline (which bails early on
+ * non-roll messages) and the death-clock Roll the Body button wiring (which
+ * lives on plain announcement cards).
+ */
+export async function onRenderChatMessageHTMLComposed (message, html, data) {
+  onRenderChatMessageHTMLForDeathClock(message, html)
+  return onRenderChatMessageHTML(message, html, data)
+}
+
 export async function onUpdateCombat (combat, changed, options, userId) {
   // Only process on the GM's client to avoid duplicates
   if (!game.user.isGM) return
@@ -459,7 +469,7 @@ export function onGetProseMirrorMenuDropDowns (menu, items) {
 export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   'dcc.modifyAttackRollTerms': { handler: onModifyAttackRollTerms, once: false },
   hotbarDrop: { handler: onHotbarDrop, once: false },
-  renderChatMessageHTML: { handler: onRenderChatMessageHTML, once: false },
+  renderChatMessageHTML: { handler: onRenderChatMessageHTMLComposed, once: false },
   getChatMessageContextOptions: { handler: onGetChatMessageContextOptions, once: false },
   getCompendiumContextOptions: { handler: onGetCompendiumContextOptions, once: false },
   getUserContextOptions: { handler: onGetUserContextOptions, once: false },
