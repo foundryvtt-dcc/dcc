@@ -26,6 +26,7 @@
 import {
   DYING_STATUS_ID,
   adjustDeathClock,
+  deathClockEnabled,
   expireDeathClock,
   getDeathClockRemaining,
   getDyingEffect,
@@ -72,6 +73,7 @@ class DeathClockTrackerDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** @inheritDoc */
   async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
     const dying = DeathClockTrackerDialog.dyingActors.map(actor => {
       const remaining = getDeathClockRemaining(actor)
       return {
@@ -82,18 +84,35 @@ class DeathClockTrackerDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         lastChance: remaining === 0
       }
     })
-    return {
+    return Object.assign(context, {
       cssClass: 'dcc',
       isGM: game.user.isGM,
       config: CONFIG.DCC,
       dying
-    }
+    })
   }
 
-  /** Resolve the actor a row control refers to. */
-  static #rowActor (target) {
-    return game.actors.get(target.closest('[data-actor-id]')?.dataset.actorId ?? target.dataset.actorId)
+  /** @override */
+  async close (options = {}) {
+    // Keep the facade in sync when the window is closed via the header X
+    // or Escape, so the next sidebar-tool click reopens in one click
+    // (mirrors FleetingLuckDialog#close).
+    DeathClockTracker.dialog = null
+    return super.close(options)
   }
+
+  /**
+   * Resolve the actor a row control refers to (`closest` also matches the
+   * target itself).
+   */
+  static #rowActor (target) {
+    return game.actors.get(target.closest('[data-actor-id]')?.dataset.actorId)
+  }
+
+  // The isGM checks below are UI gating, not security: the real
+  // enforcement boundary is Foundry's document permissions — a player
+  // driving these helpers from the console can only mutate effects on
+  // actors they own, which they could already edit directly.
 
   /**
    * Manual out-of-combat round advance: tick every dying PC's clock.
@@ -176,19 +195,6 @@ export class DeathClockTracker {
     if (DeathClockTracker.dialog?.rendered) {
       return DeathClockTracker.dialog.render(false)
     }
-  }
-}
-
-/**
- * Whether the death clock feature is enabled (settings may not be
- * registered yet when the hook first fires in an edge case — treat that
- * as disabled).
- */
-function deathClockEnabled () {
-  try {
-    return game.settings.get('dcc', 'enableDeathClock')
-  } catch (e) {
-    return false
   }
 }
 

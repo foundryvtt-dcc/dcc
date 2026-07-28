@@ -337,6 +337,11 @@ test.describe('Death clock', () => {
         observed.toolHasHelp = !!tools.deathClock?.help?.includes('Death-Clock')
         observed.coreToolsHaveHelp = !!tools.spellDuel?.help
 
+        // And the rendered DCC Tools tab shows the tool's button.
+        await ui.dcc.render({ force: true })
+        observed.toolInTabDom = !!(await pollFor(() =>
+          document.querySelector('#sidebar-content .tab[data-tab="dcc"] button[data-tool="deathClock"]')))
+
         await pcA.update({ 'system.attributes.hp.value': 0 })
         await pcB.update({ 'system.attributes.hp.value': 0 })
         await pollFor(() => getDying(pcA) && getDying(pcB))
@@ -352,9 +357,11 @@ test.describe('Death clock', () => {
         observed.tickedA = await pollFor(() => remaining(pcA) === 2)
         observed.tickedB = await pollFor(() => remaining(pcB) === 2)
 
-        // Adjust +1, then stabilize A (clock cleared, no trauma) and
-        // resolve B as dead.
-        await mod.adjustDeathClock(pcA, 1)
+        // Adjust +1 via the row control, then stabilize A (clock cleared,
+        // no trauma) and resolve B as dead.
+        const rowA = await pollFor(() =>
+          game.dcc.DeathClockTracker.dialog?.element?.querySelector(`.death-clock-row[data-actor-id="${pcA.id}"]`))
+        rowA.querySelector('[data-action="adjustClock"][data-delta="1"]').click()
         observed.adjusted = await pollFor(() => remaining(pcA) === 3)
         const staBefore = pcA.system.abilities.sta.value
         await mod.stabilizeDeathClock(pcA)

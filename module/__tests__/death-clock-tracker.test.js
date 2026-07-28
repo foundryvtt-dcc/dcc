@@ -12,6 +12,7 @@ import '../__mocks__/foundry.js'
 vi.mock('../death-clock.mjs', () => ({
   DYING_STATUS_ID: 'dying',
   adjustDeathClock: vi.fn(),
+  deathClockEnabled: vi.fn(() => true),
   expireDeathClock: vi.fn(),
   getDeathClockRemaining: vi.fn(() => 2),
   getDyingEffect: vi.fn(actor => actor?.dying),
@@ -34,6 +35,7 @@ function makeActor ({ dying = null, type = 'Player' } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  deathClock.deathClockEnabled.mockReturnValue(true)
   deathClock.getDeathClockRemaining.mockReturnValue(2)
   deathClock.getDyingEffect.mockImplementation(actor => actor?.dying)
   original = { game: globalThis.game, Hooks: globalThis.Hooks }
@@ -64,7 +66,7 @@ describe('onGetSidebarToolsForDeathClock', () => {
   })
 
   test('contributes nothing while the setting is off', () => {
-    globalThis.game.settings.get.mockReturnValue(false)
+    deathClock.deathClockEnabled.mockReturnValue(false)
     const tools = {}
     onGetSidebarToolsForDeathClock(tools)
     expect(tools.deathClock).toBeUndefined()
@@ -125,5 +127,21 @@ describe('DeathClockTracker dialog', () => {
     await DeathClockTracker.show()
     expect(dialog.close).toHaveBeenCalledTimes(1)
     expect(DeathClockTracker.dialog).toBeNull()
+  })
+
+  test('closing via the window (X / Escape) resets the facade so one click reopens', async () => {
+    await DeathClockTracker.show()
+    const dialog = DeathClockTracker.dialog
+    await dialog.close()
+    expect(DeathClockTracker.dialog).toBeNull()
+  })
+
+  test('judge actions no-op for non-GM users', async () => {
+    globalThis.game.user.isGM = false
+    globalThis.game.actors = [makeActor({ dying: {} })]
+    await DeathClockTracker.show()
+    const tickRound = DeathClockTracker.dialog.constructor.DEFAULT_OPTIONS.actions.tickRound
+    await tickRound.call(DeathClockTracker.dialog)
+    expect(deathClock.tickDeathClock).not.toHaveBeenCalled()
   })
 })

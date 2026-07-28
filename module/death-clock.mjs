@@ -52,9 +52,11 @@ const CLOCK_FLAG = 'deathClock'
 const PENDING_ABILITY_LOSS_FLAG = 'pendingAbilityLoss'
 
 /**
- * Whether the death clock feature is enabled in this world.
+ * Whether the death clock feature is enabled in this world. Exported for
+ * the tracker tool's sidebar gating (settings may not be registered yet
+ * when read during early boot — treated as disabled).
  */
-function deathClockEnabled () {
+export function deathClockEnabled () {
   try {
     return game.settings.get('dcc', 'enableDeathClock')
   } catch (e) {
