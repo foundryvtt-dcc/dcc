@@ -399,6 +399,102 @@ test('adapter path surfaces twoWeapon flags on libResult', async () => {
   expect(flatTwoWeaponMod).toBeUndefined()
 })
 
+/**
+ * Mock `DCCRoll.createRoll` to return a Roll with a single evaluated
+ * action-die term at `dice[0]` with the given natural and formula.
+ * Returns a restore function that reverts the mock.
+ */
+function withActionDieRoll (natural, formula) {
+  const previous = dccRollCreateRollMock.getMockImplementation()
+  dccRollCreateRollMock.mockImplementation(() => ({
+    total: natural,
+    formula,
+    options: { dcc: {} },
+    dice: [
+      { total: natural, formula, options: {} }
+    ],
+    terms: [
+      { apply: false, class: 'Die', options: { flavor: null }, evaluated: true, number: 1, faces: parseInt(formula.match(/d(\d+)/)[1]), modifiers: [], results: [] }
+    ],
+    evaluate: async () => {},
+    render: async () => '',
+    toAnchor: () => ({ outerHTML: '' })
+  }))
+  return () => {
+    if (previous) dccRollCreateRollMock.mockImplementation(previous)
+    else dccRollCreateRollMock.mockReset()
+  }
+}
+
+test('halfling two-weapon pair fought on a d12 extra die crits only on the max face', async () => {
+  // Regression for the crit-on-natural-11 bug: the halfling two-weapon
+  // crit threshold is the max face of the die actually rolled (item.js
+  // bakes critRange + twoWeaponCritOnMaxDie; the multiple-action-dice
+  // override re-derives critRange for the extra die). The adapter must
+  // pass it as a NATURAL threshold — without `threatRangeIsNatural` the
+  // lib rescaled 12-on-d12 to a d20-relative "top N faces" range and a
+  // natural 11 (even 4!) critted.
+  const restore = withAutomate(true)
+  // Mirror the post-prepare + override state of the second pair: the
+  // 1d14 slot fought at -1d (d12), critting on its max face.
+  const makePairWeapon = () => makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d12[2w-primary]',
+    critRange: 12,
+    twoWeaponCritOnMaxDie: true
+  })
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+
+  let restoreRoll = withActionDieRoll(11, '1d12')
+  let result
+  try {
+    result = await actor.rollToHit(makePairWeapon(), {})
+    expect(result.naturalCrit).toBe(false)
+    expect(result.crit).toBe(false)
+
+    restoreRoll()
+    restoreRoll = withActionDieRoll(12, '1d12')
+    result = await actor.rollToHit(makePairWeapon(), {})
+    expect(result.naturalCrit).toBe(true)
+  } finally {
+    restoreRoll()
+    restore()
+  }
+})
+
+test('multiple-action-dice override re-derives the max-die crit threshold', async () => {
+  // Drives the ACTUAL override path (rolls-weapon-mixin ~499): the weapon
+  // carries its first-pair post-prepare state (d16, critRange 16,
+  // twoWeaponCritOnMaxDie) and `options._actionDieFormula` swaps in the
+  // extra-die pair's 1d12 — rollToHit must re-derive critRange from the
+  // die actually rolled, so a natural 11 misses the crit and 12 lands it.
+  const restore = withAutomate(true)
+  const makePairWeapon = () => makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d16[2w-primary]',
+    critRange: 16,
+    twoWeaponCritOnMaxDie: true
+  })
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+
+  let restoreRoll = withActionDieRoll(11, '1d12')
+  let result
+  try {
+    result = await actor.rollToHit(makePairWeapon(), { _actionDieFormula: '1d12' })
+    expect(result.naturalCrit).toBe(false)
+
+    restoreRoll()
+    restoreRoll = withActionDieRoll(12, '1d12')
+    result = await actor.rollToHit(makePairWeapon(), { _actionDieFormula: '1d12' })
+    expect(result.naturalCrit).toBe(true)
+  } finally {
+    restoreRoll()
+    restore()
+  }
+})
+
 test('adapter path fires when actor + weapon both carry a deed-die formula (session 10)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)
@@ -529,6 +625,29 @@ test('buildAttackInput translates weapon + actor to the lib AttackInput shape', 
   expect(input.attackBonus).toBe(3)
   // Ability mod folded into attackBonus (weapon.toHit bakes it in)
   expect(input.abilityModifier).toBe(0)
+})
+
+test('buildAttackInput flags a crit-on-max-die threat range as natural', () => {
+  // Halfling two-weapon / Agl 16-17 primary: critRange is the max face of
+  // the die actually rolled (16 on d16, 12 on a d12 extra-die pair), not a
+  // d20-relative range. Without the flag the lib rescales it to "top N
+  // faces" — a natural-16 threshold on d12 became crit-on-8+.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d16[2w-primary]',
+    critRange: 16,
+    twoWeaponCritOnMaxDie: true
+  })
+
+  const input = buildAttackInput(actor, weapon)
+  expect(input.threatRange).toBe(16)
+  expect(input.threatRangeIsNatural).toBe(true)
+
+  // Ordinary weapons keep the d20-relative semantics (no flag).
+  const plain = buildAttackInput(actor, makeSimpleWeapon({ critRange: 19 }))
+  expect(plain.threatRangeIsNatural).toBeUndefined()
 })
 
 test('buildAttackInput falls back to the sheet action die when the weapon die is blank', () => {

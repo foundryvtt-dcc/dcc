@@ -349,17 +349,29 @@ export function adjustThreatRange(threatRange, dieFaces) {
 /**
  * Check if a roll meets or exceeds a threat range
  *
- * For dice larger than d20, the threat range is adjusted to preserve
- * the same "top N values" relationship. For example, a threat range
- * of 19-20 on d20 becomes 23-24 on d24.
+ * By default the threat range is d20-relative and is adjusted to the
+ * rolled die to preserve the same "top N values" relationship — a
+ * threat range of 19-20 on d20 becomes 23-24 on d24, or 15-16 on d16
+ * (the warrior multi-die scaling rule).
+ *
+ * When `isNatural` is true the threshold is a natural-roll value on
+ * the die actually rolled and is compared as-is. Use this for rules
+ * that name a fixed natural number — the halfling two-weapon "crits
+ * on a natural 16", or Agl 16-17 "crits on the max face of the die
+ * rolled" — where rescaling would produce absurd ranges (a natural-16
+ * threshold on a d12 would otherwise become 8+).
  *
  * @param result - The roll result
  * @param threatRange - Minimum natural roll for threat (e.g., 19 for 19-20 on d20)
- * @returns True if natural roll meets the adjusted threat range
+ * @param isNatural - Compare against the natural roll without d20-relative rescaling
+ * @returns True if natural roll meets the (possibly adjusted) threat range
  */
-export function meetsThreatRange(result, threatRange) {
+export function meetsThreatRange(result, threatRange, isNatural = false) {
     if (result.natural === undefined) {
         return false;
+    }
+    if (isNatural) {
+        return result.natural >= threatRange;
     }
     const faces = parseInt(result.die.slice(1), 10);
     const adjustedRange = adjustThreatRange(threatRange, faces);

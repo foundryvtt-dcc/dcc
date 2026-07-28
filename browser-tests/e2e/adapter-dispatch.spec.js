@@ -2852,11 +2852,13 @@ test.describe('DCC Adapter Dispatch Validation', () => {
 
     test('halfling two-weapon crit range survives the adapter (1d16, threatRange 16)', async ({ page }) => {
       // Halfling RAW (DCC core): when fighting two-weapon at agl ≤17,
-      // halflings score crits AND auto-hit on natural 16. item.js
-      // prepareBaseData sets `weapon.system.critRange = 16` on the
-      // pre-bumped weapon. The adapter passes that through as
-      // `AttackInput.threatRange`. We force a natural 16 (mid-range
-      // for a d16) and assert the lib classifies it as a crit.
+      // halflings score crits AND auto-hit on natural 16 — the max face
+      // of their penalized d16. item.js prepareBaseData sets
+      // `weapon.system.critRange = 16` + `twoWeaponCritOnMaxDie` on the
+      // pre-bumped weapon, and the adapter passes it through as a
+      // NATURAL `AttackInput.threatRange` (`threatRangeIsNatural`). We
+      // force a natural 16 (max on the d16) and assert the lib
+      // classifies it as a crit.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Halfling Crit',
@@ -2925,6 +2927,73 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // 'natural-max' since 16 IS the max on this die.
       expect(flag.isCriticalThreat).toBe(true)
       expect(flag.critSource).toBe('natural-max')
+    })
+
+    test('halfling two-weapon roll below the max face does not crit (natural 12 on d16)', async ({ page }) => {
+      // Regression for the crit-on-natural-11 bug: the lib used to
+      // reinterpret the halfling threatRange 16 as a d20-relative
+      // "top 5 faces" range and rescale it to the rolled die — 12+ on
+      // the d16 pair (8+ on a d12 extra-die pair) critted. With the
+      // threshold passed as natural, only the max face crits.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Halfling NoCrit',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 13 } },
+            details: { sheetClass: 'Halfling' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-HalflingDagger',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponPrimary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural 12 on the d16: ceil((1 - 0.26) * 16) = 12.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.26
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Halfling NoCrit').items.getName('P1-HalflingDagger').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Halfling NoCrit').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Halfling NoCrit' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // Restore randomUniform BEFORE asserting — see fumble-note test.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(flag, 'halfling two-weapon non-max roll must set dcc.libResult').not.toBeNull()
+      expect(flag.die).toBe('d16')
+      expect(flag.natural).toBe(12)
+      expect(flag.isCriticalThreat).toBe(false)
     })
 
     test('automate off → adapter (session 12 / A5)', async ({ page }) => {

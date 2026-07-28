@@ -23,6 +23,20 @@ export interface AttackInput {
     actionDie: DieType;
     /** Threat range for critical hits (20 = only on 20, 19 = 19-20, etc.) */
     threatRange: number;
+    /**
+     * Treat `threatRange` as a natural-roll threshold on the die actually
+     * rolled, instead of a d20-relative range that gets rescaled to the
+     * rolled die's "top N faces".
+     *
+     * By default `threatRange: 19` means "top 2 faces" and becomes 15-16
+     * on a d16 (the warrior multi-die scaling rule). Some rules specify a
+     * fixed natural number instead — the halfling two-weapon "crits on a
+     * natural 16", or the Agl 16-17 "crits on the max face of the die
+     * rolled" — and rescaling those produces absurd ranges (a natural-16
+     * threshold on a d12 would become 8+). Set this flag when the caller
+     * has already expressed `threatRange` for the die in `actionDie`.
+     */
+    threatRangeIsNatural?: boolean | undefined;
     /** Ability modifier to add (usually STR for melee, AGL for missile) */
     abilityModifier: number;
     /** Deed die for warriors/dwarves (e.g., "d3", "d4") */
