@@ -93,13 +93,27 @@ describe('DCCSidebarTab', () => {
     expect(Object.keys(context.tools)).toEqual(['fleetingLuck', 'spellDuel'])
   })
 
-  test('the clickTool action dispatches to the matching tool onClick', () => {
+  test('the clickTool action dispatches to the tools assembled at render', async () => {
     globalThis.game.settings.get.mockReturnValue(true)
     const handler = DCCSidebarTab.DEFAULT_OPTIONS.actions.clickTool
-    handler.call(new DCCSidebarTab(), {}, { dataset: { tool: 'spellDuel' } })
+    const tab = new DCCSidebarTab()
+    await tab._prepareContext({})
+    handler.call(tab, {}, { dataset: { tool: 'spellDuel' } })
     expect(globalThis.game.dcc.SpellDuel.show).toHaveBeenCalledTimes(1)
     // An unknown tool is a no-op rather than a throw.
-    expect(() => handler.call(new DCCSidebarTab(), {}, { dataset: { tool: 'nope' } })).not.toThrow()
+    expect(() => handler.call(tab, {}, { dataset: { tool: 'nope' } })).not.toThrow()
+    // A click before any render (no assembled tools) is also a no-op.
+    expect(() => handler.call(new DCCSidebarTab(), {}, { dataset: { tool: 'spellDuel' } })).not.toThrow()
+    expect(globalThis.game.dcc.SpellDuel.show).toHaveBeenCalledTimes(1)
+  })
+
+  test('a click does not re-fire the dcc.getSidebarTools hook', async () => {
+    const handler = DCCSidebarTab.DEFAULT_OPTIONS.actions.clickTool
+    const tab = new DCCSidebarTab()
+    await tab._prepareContext({})
+    const callsAfterRender = globalThis.Hooks.callAll.mock.calls.length
+    handler.call(tab, {}, { dataset: { tool: 'spellDuel' } })
+    expect(globalThis.Hooks.callAll.mock.calls.length).toBe(callsAfterRender)
   })
 })
 

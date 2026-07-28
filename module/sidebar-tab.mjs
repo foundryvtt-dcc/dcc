@@ -88,10 +88,18 @@ export class DCCSidebarTab extends HandlebarsApplicationMixin(AbstractSidebarTab
     }
   }
 
+  /**
+   * The tools assembled at the last render, so clicks dispatch to exactly
+   * what was rendered (and the dcc.getSidebarTools hook fires only when the
+   * tool list is rebuilt for a render, not on every click).
+   * @type {Record<string, DCCSidebarTool>|undefined}
+   */
+  #tools
+
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    context.tools = getSidebarTools()
+    context.tools = this.#tools = getSidebarTools()
     return context
   }
 
@@ -102,7 +110,7 @@ export class DCCSidebarTab extends HandlebarsApplicationMixin(AbstractSidebarTab
    * @param {HTMLElement} target
    */
   static #onClickTool (event, target) {
-    getSidebarTools()[target.dataset.tool]?.onClick?.(event)
+    this.#tools?.[target.dataset.tool]?.onClick?.(event)
   }
 }
 
