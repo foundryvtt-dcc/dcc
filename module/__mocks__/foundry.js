@@ -1607,6 +1607,12 @@ global.foundry = {
       }
       return expanded
     },
+    // Escape HTML-sensitive characters in a string
+    escapeHTML (value) {
+      return String(value).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]))
+    },
     // Get a property from an object using dot notation
     getProperty (object, key) {
       if (!key) return undefined

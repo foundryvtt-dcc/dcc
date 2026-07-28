@@ -50,12 +50,16 @@ function makeDyingEffect (roundsRemaining) {
 }
 
 /** Build a Player actor stub. */
-function makeActor ({ level = 2, luck = 10, effects = [], statuses = new Set(), type = 'Player', flags = {} } = {}) {
+function makeActor ({ level = 2, luck = 10, hp = 5, effects = [], statuses = new Set(), type = 'Player', flags = {} } = {}) {
   const actor = {
     type,
     name: 'Test PC',
     uuid: 'Actor.test',
-    system: { details: { level: { value: level } }, abilities: { lck: { value: luck } } },
+    system: {
+      details: { level: { value: level } },
+      abilities: { lck: { value: luck } },
+      attributes: { hp: { value: hp } }
+    },
     effects,
     statuses,
     flags,
@@ -154,6 +158,17 @@ describe('onUpdateActorForDeathClock', () => {
       expect.objectContaining({ scar: expect.any(String) }))
   })
 
+  test('a Stamina HP cascade to 0 during the save is clamped back to 1, without restarting the clock', async () => {
+    const dying = makeDyingEffect(1)
+    const actor = makeActor({ effects: [dying] })
+    // Simulate the log applying an hpChange that drives current HP to 0.
+    logAbilityChange.mockImplementationOnce(async () => { actor.system.attributes.hp.value = 0 })
+    await onUpdateActorForDeathClock(actor, { system: { attributes: { hp: { value: 2 } } } })
+    expect(actor.update).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
+    // No fresh Dying effect was created by the cascade.
+    expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
   test('healing on the final-chance round (0 remaining) still saves, with trauma', async () => {
     const dying = makeDyingEffect(0)
     const actor = makeActor({ effects: [dying] })
@@ -240,11 +255,11 @@ describe('tickDeathClock', () => {
 })
 
 describe('onUpdateCombatForDeathClock', () => {
-  test('ticks every dying Player combatant on round advance only', async () => {
+  test('ticks every dying Player combatant on forward round advance only', async () => {
     const dying = makeDyingEffect(2)
     const pc = makeActor({ effects: [dying] })
     const npc = makeActor({ type: 'NPC', effects: [makeDyingEffect(2)] })
-    const combat = { combatants: [{ actor: pc }, { actor: npc }, { actor: null }] }
+    const combat = { previous: { round: 1 }, combatants: [{ actor: pc }, { actor: npc }, { actor: null }] }
 
     await onUpdateCombatForDeathClock(combat, { turn: 2 })
     expect(dying.setFlag).not.toHaveBeenCalled()
@@ -253,6 +268,29 @@ describe('onUpdateCombatForDeathClock', () => {
     expect(dying.setFlag).toHaveBeenCalledWith('dcc', 'deathClock', { roundsRemaining: 1 })
     // The NPC's effect is untouched — the clock is a Player rule.
     expect(npc.effects[0].setFlag).not.toHaveBeenCalled()
+  })
+
+  test('does not tick on a round rewind or on combat start', async () => {
+    const dying = makeDyingEffect(2)
+    const pc = makeActor({ effects: [dying] })
+
+    // Rewind: 3 → 2.
+    await onUpdateCombatForDeathClock({ previous: { round: 3 }, combatants: [{ actor: pc }] }, { round: 2 })
+    // Combat start: 0 → 1 is not an elapsed round.
+    await onUpdateCombatForDeathClock({ previous: { round: 0 }, combatants: [{ actor: pc }] }, { round: 1 })
+
+    expect(dying.setFlag).not.toHaveBeenCalled()
+    expect(dying.delete).not.toHaveBeenCalled()
+  })
+
+  test('a Player with two combatants loses one round per round, not two', async () => {
+    const dying = makeDyingEffect(3)
+    const pc = makeActor({ effects: [dying] })
+    const combat = { previous: { round: 1 }, combatants: [{ actor: pc }, { actor: pc }] }
+
+    await onUpdateCombatForDeathClock(combat, { round: 2 })
+    expect(dying.setFlag).toHaveBeenCalledTimes(1)
+    expect(dying.setFlag).toHaveBeenCalledWith('dcc', 'deathClock', { roundsRemaining: 2 })
   })
 })
 
@@ -412,11 +450,21 @@ describe('onRenderChatMessageHTMLForDeathClock', () => {
     }
   }
 
-  test('binds a click listener for the GM', () => {
+  test('binds a click listener for the GM that disables the button synchronously', async () => {
     const button = { dataset: { actorUuid: 'Actor.test' }, addEventListener: vi.fn(), disabled: false }
     onRenderChatMessageHTMLForDeathClock({}, makeCard(button))
     expect(button.addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
     expect(button.disabled).toBe(false)
+    // Clicking disables immediately so a double-click cannot fire twice.
+    globalThis.fromUuid = vi.fn().mockResolvedValue(null)
+    try {
+      const listener = button.addEventListener.mock.calls[0][1]
+      const pending = listener()
+      expect(button.disabled).toBe(true)
+      await pending
+    } finally {
+      delete globalThis.fromUuid
+    }
   })
 
   test('disables the button for non-GMs', () => {

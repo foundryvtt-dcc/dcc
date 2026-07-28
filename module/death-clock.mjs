@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, console, fromUuid, game, Roll, ui */
+/* global ChatMessage, CONFIG, console, foundry, fromUuid, game, Roll, ui */
 
 /**
  * Death Clock (issue #843, phase 1) — the DCC death & dying countdown.
@@ -87,25 +87,43 @@ export function getDeathClockRemaining (actor, effect = getDyingEffect(actor)) {
 }
 
 /**
- * Build the ability-score-log entry for a permanent -1 from the death &
- * dying rules, using the log's dedicated `bleedOut` / `rollTheBody` entry
- * types. A Stamina loss that crosses an ability-modifier threshold also
- * carries the max-HP delta (level × modifier change), same as a manual
- * Stamina edit in the log dialog.
+ * Reentrancy latch: while a permanent loss is being applied, its HP
+ * cascade (a Stamina modifier-threshold crossing lowers current HP too)
+ * can drive a freshly-saved PC back to 0 — the resulting `updateActor`
+ * must not start a brand-new clock mid-save.
+ */
+let applyingPermanentLoss = false
+
+/**
+ * Apply a permanent -1 from the death & dying rules through the ability
+ * score log, using its dedicated `bleedOut` / `rollTheBody` entry types.
+ * A Stamina loss that crosses an ability-modifier threshold also carries
+ * the max-HP delta (level × modifier change), same as a manual Stamina
+ * edit in the log dialog — and if that cascade drops the survivor's
+ * current HP to 0, it is clamped back to 1: they survived, the lasting
+ * cost is the reduced maximum.
  *
  * @param {Actor} actor
  * @param {string} ability - 'str' | 'agl' | 'sta'
  * @param {string} type - 'bleedOut' | 'rollTheBody'
- * @returns {object} entryData for {@link logAbilityChange}
  */
-function permanentLossEntry (actor, ability, type) {
+async function applyPermanentLoss (actor, ability, type) {
   const entry = { ability, change: -1, maxChange: -1, type }
   if (ability === 'sta') {
     const current = parseInt(actor.system?.abilities?.sta?.value) || 0
     const { hpChange } = staminaHpDelta(actor, current, current - 1)
     if (hpChange) entry.hpChange = hpChange
   }
-  return entry
+
+  applyingPermanentLoss = true
+  try {
+    await logAbilityChange(actor, entry, { announce: false })
+    if ((parseInt(actor.system?.attributes?.hp?.value) || 0) <= 0) {
+      await actor.update({ 'system.attributes.hp.value': 1 })
+    }
+  } finally {
+    applyingPermanentLoss = false
+  }
 }
 
 /**
@@ -124,7 +142,8 @@ async function postDeathClockCard (key, actor, data = {}, { button = null, rolls
     rollTheBody: 'DCC.RollTheBody',
     rollAbilityLoss: 'DCC.RollAbilityLoss'
   }
-  let content = game.i18n.format(key, { name: actor.name, ...data })
+  // The card is raw HTML; the actor name is player-controlled data.
+  let content = game.i18n.format(key, { name: foundry.utils.escapeHTML(actor.name), ...data })
   if (button) {
     content += `<div class="dcc-death-clock-actions"><button type="button" data-action="${button}" data-actor-uuid="${actor.uuid}">` +
       `${game.i18n.localize(buttonLabels[button])}</button></div>`
@@ -146,6 +165,7 @@ async function postDeathClockCard (key, actor, data = {}, { button = null, rolls
  */
 export async function onUpdateActorForDeathClock (actor, changes) {
   try {
+    if (applyingPermanentLoss) return
     if (!deathClockEnabled()) return
     if (!isActiveGM()) return
     if (actor?.type !== 'Player') return
@@ -169,7 +189,7 @@ export async function onUpdateActorForDeathClock (actor, changes) {
         // loss with its reason.
         const saved = stabilizeCharacter({ roundsRemaining: remaining }, newHp)
         if (saved.saved && saved.staminaLoss) {
-          await logAbilityChange(actor, permanentLossEntry(actor, 'sta', 'bleedOut'), { announce: false })
+          await applyPermanentLoss(actor, 'sta', 'bleedOut')
           await postDeathClockCard('DCC.DeathClockSaved', actor, { scar: saved.scar })
         } else {
           await postDeathClockCard('DCC.DeathClockStopped', actor)
@@ -184,8 +204,7 @@ export async function onUpdateActorForDeathClock (actor, changes) {
 
     // At or below 0 with a clock already running (or already dead): no-op.
     if (dying) return
-    const hasDeadEffect = [...(actor.effects ?? [])].some(e => e.statuses?.has?.('dead'))
-    if (actor.statuses?.has('dead') || hasDeadEffect) return
+    if (isActorDefeated(actor)) return
 
     const level = actor.system?.details?.level?.value ?? 0
     const rounds = getBleedOutRounds(level)
@@ -314,7 +333,7 @@ export async function rollAbilityLoss (actor) {
   const rolledIndex = (abilityDie.total - 1) % 3
   const penaltyAbility = abilities[rolledIndex] ?? 'sta'
 
-  await logAbilityChange(actor, permanentLossEntry(actor, penaltyAbility, 'rollTheBody'), { announce: false })
+  await applyPermanentLoss(actor, penaltyAbility, 'rollTheBody')
   await actor.unsetFlag('dcc', PENDING_ABILITY_LOSS_FLAG)
 
   // Build the card ourselves: the rendered die, the 1-3 chart with the
@@ -327,7 +346,7 @@ export async function rollAbilityLoss (actor) {
     `<td>${game.i18n.localize(CONFIG.DCC.abilities[key] ?? key)}</td></tr>`
   ).join('')
   const resultText = game.i18n.format('DCC.DeathClockAbilityLoss', {
-    name: actor.name,
+    name: foundry.utils.escapeHTML(actor.name),
     ability: game.i18n.localize(CONFIG.DCC.abilities[penaltyAbility] ?? penaltyAbility)
   })
   await ChatMessage.create({
@@ -355,6 +374,10 @@ export function onRenderChatMessageHTMLForDeathClock (message, html) {
           continue
         }
         button.addEventListener('click', async () => {
+          // Disable synchronously: the single-use guards inside the
+          // handlers sit behind awaits, so a double-click could otherwise
+          // pass both times.
+          button.disabled = true
           const actor = await fromUuid(button.dataset.actorUuid)
           if (actor) await handlers[action](actor)
         })
@@ -378,9 +401,20 @@ export async function onUpdateCombatForDeathClock (combat, changed) {
     if (!isActiveGM()) return
     if (!('round' in changed)) return
 
+    // Only a forward round advance burns the clock: a GM rewinding a
+    // misclicked round must not tick (or kill on) it, and starting the
+    // combat (round 0 → 1) is not an elapsed round for a clock that began
+    // before initiative.
+    const previousRound = combat.previous?.round ?? 0
+    if (previousRound === 0 || changed.round <= previousRound) return
+
+    // Dedupe by actor: a Player with several tokens in the encounter must
+    // lose one round per round, not one per combatant.
+    const ticked = new Set()
     for (const combatant of combat.combatants) {
       const actor = combatant.actor
-      if (!actor || actor.type !== 'Player') continue
+      if (!actor || actor.type !== 'Player' || ticked.has(actor)) continue
+      ticked.add(actor)
       const dying = getDyingEffect(actor)
       if (!dying) continue
       await tickDeathClock(actor, dying)
