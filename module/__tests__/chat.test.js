@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
 vi.mock('../utilities.js', async (importOriginal) => {
@@ -244,15 +244,19 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
 
   beforeEach(() => {
     applyDamage = vi.fn(async () => {})
-    globalThis.canvas = { tokens: { controlled: [{ actor: { applyDamage } }] } }
-    globalThis.game = {
+    vi.stubGlobal('canvas', { tokens: { controlled: [{ actor: { applyDamage } }] } })
+    vi.stubGlobal('game', {
       messages: { get: vi.fn() },
       i18n: { localize: (key) => key }
-    }
-    globalThis.ui = { notifications: { warn: vi.fn() } }
+    })
+    vi.stubGlobal('ui', { notifications: { warn: vi.fn() } })
     const options = addChatMessageContextOptions({}, [])
     damageEntry = options[0]
     healingEntry = options[1]
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('pushes two v14-shaped entries (label/visible/onClick, class-name icon)', () => {
@@ -279,7 +283,7 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
   })
 
   it('not visible when the card has neither a damage-applyable nor a dice total', () => {
-    expect(damageEntry.visible(makeLi())).toBeFalsy()
+    expect(damageEntry.visible(makeLi())).toBe(false)
   })
 
   it('onClick applies the damage-applyable amount to each controlled token actor', async () => {
