@@ -19,7 +19,13 @@ For automated release process:
 1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge all changes into main
 1. Commit `version.txt` File with new release version number in it (no 'v')
-   — this is the **only** file you hand-edit for a release. The
+   — **always as its own commit directly on `main`, containing only the
+   `version.txt` change, after the PRs have merged.** Never bump
+   `version.txt` inside a feature PR: squash-merge folds the bump into the
+   feature commit, and `foundry-release-action` skips the bump-carrying
+   commit when generating release notes, so the feature disappears from its
+   own release notes (this happened to #849 in v0.70.35 and #852 in
+   v0.70.37). This is the **only** file you hand-edit for a release. The
    `Create GitHub Release` workflow syncs `package.json` **and**
    `package-lock.json` to that version (via `npm version --no-git-tag-version`)
    before the release action rewrites `system.json` and commits the lot, so the
