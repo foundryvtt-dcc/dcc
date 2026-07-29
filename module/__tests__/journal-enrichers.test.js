@@ -122,6 +122,12 @@ describe('ENRICHER_PATTERN', () => {
     expect([...'[[/r 1d20+2]]'.matchAll(ENRICHER_PATTERN)]).toHaveLength(0)
     expect([...'[[1d6]]'.matchAll(ENRICHER_PATTERN)]).toHaveLength(0)
   })
+
+  test('requires a word boundary after the command — near-misses stay raw', () => {
+    expect([...'[[/skills sneak]]'.matchAll(ENRICHER_PATTERN)]).toHaveLength(0)
+    expect([...'[[/skillcheck x]]'.matchAll(ENRICHER_PATTERN)]).toHaveLength(0)
+    expect([...'[[/checker agl]]'.matchAll(ENRICHER_PATTERN)]).toHaveLength(0)
+  })
 })
 
 describe('parseEnricherConfig', () => {

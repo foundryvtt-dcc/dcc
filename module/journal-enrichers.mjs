@@ -38,12 +38,14 @@ export const DCC_ENRICHER_ID = 'dcc-roll'
 /**
  * Pattern for DCC roll links. The config group is everything up to the
  * closing brackets; an optional trailing `{...}` supplies a custom label.
- * Core's inline-roll enricher runs first but leaves unknown `/commands`
- * untouched (its `ChatLog.parse` gate), so the raw text reaches us intact —
- * including inside chat message content.
+ * The lookahead requires whitespace (or the closing brackets) right after
+ * the command word so near-miss commands like `[[/skills ...]]` stay raw
+ * text instead of half-matching. Core's inline-roll enricher runs first
+ * but leaves unknown `/commands` untouched (its `ChatLog.parse` gate), so
+ * the raw text reaches us intact — including inside chat message content.
  * @type {RegExp}
  */
-export const ENRICHER_PATTERN = /\[\[\/(?<type>check|save|skill)(?<config>[^\]]*)]](?:{(?<label>[^}]+)})?/g
+export const ENRICHER_PATTERN = /\[\[\/(?<type>check|save|skill)(?=[\s\]])(?<config>[^\]]*)]](?:{(?<label>[^}]+)})?/g
 
 /**
  * Full-name aliases accepted in addition to the canonical ability keys.
@@ -321,11 +323,17 @@ export async function handleEnricherRequestClick (anchor) {
  * @param {HTMLElement} element  The wrapping enriched-content element
  */
 export function onRenderRollLink (element) {
+  // `connectedCallback` fires again if the element is detached and
+  // reattached (popouts, DOM-moving modules) — guard so a node never
+  // accumulates duplicate listeners (which would double-roll).
+  if (element.dataset.dccWired) return
+  element.dataset.dccWired = 'true'
   const rollAnchor = element.querySelector('[data-action="dccRoll"]')
   if (rollAnchor) {
     rollAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRollClick(event.currentTarget)
+        .catch(err => console.error('DCC | Enricher roll click failed', err))
     })
   }
   const requestAnchor = element.querySelector('[data-action="dccRequest"]')
@@ -333,6 +341,7 @@ export function onRenderRollLink (element) {
     requestAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRequestClick(event.currentTarget)
+        .catch(err => console.error('DCC | Enricher roll request failed', err))
     })
   }
 }

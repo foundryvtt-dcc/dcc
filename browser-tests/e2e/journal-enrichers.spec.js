@@ -17,6 +17,8 @@ const PAGE_CONTENT =
   '[[/save ref 15]] ' +
   '[[/check lck]] ' +
   '[[/save frt 15]]{resist the poison} ' +
+  '[[/skill detectSecretDoors]] ' +
+  '[[/skill notARealSkill]] ' +
   '[[/check zzz 5]]' +
   '</p>'
 
@@ -64,7 +66,7 @@ async function cleanupJournal (page, setup) {
     // Remove the chat messages these tests post so reruns stay deterministic
     const strays = game.messages.contents.filter(m =>
       m.getFlag('dcc', 'rollRequest') ||
-      ['AbilityCheck', 'AbilityCheckRollUnder', 'SavingThrow'].includes(m.getFlag('dcc', 'RollType')))
+      ['AbilityCheck', 'AbilityCheckRollUnder', 'SavingThrow', 'SkillCheck'].includes(m.getFlag('dcc', 'RollType')))
     for (const message of strays) await message.delete().catch(() => {})
   }, setup)
 }
@@ -98,8 +100,11 @@ test.describe('Journal roll-link enrichers', () => {
 
       await expect(probe.locator('a[data-action="dccRoll"][data-key="frt"]')).toHaveText(/resist the poison/)
 
+      const skill = probe.locator('a[data-action="dccRoll"][data-roll-type="skill"][data-key="detectSecretDoors"]')
+      await expect(skill).toHaveText(/Detect Secret Doors Check/)
+
       // GM session → each valid link grows a chat-bubble request icon
-      await expect(probe.locator('a.dcc-enricher-request[data-action="dccRequest"]')).toHaveCount(4)
+      await expect(probe.locator('a.dcc-enricher-request[data-action="dccRequest"]')).toHaveCount(6)
 
       // The bad ability key is left as raw text so the author can spot it
       await expect(probe).toContainText('[[/check zzz 5]]')
@@ -113,13 +118,16 @@ test.describe('Journal roll-link enrichers', () => {
     try {
       const probe = page.locator('.journal-entry-page #dcc-enricher-probe')
 
-      // Ability check link → AbilityCheck roll card for the controlled actor
+      // Ability check link → exactly ONE AbilityCheck roll card for the
+      // controlled actor (a duplicate would mean double-wired listeners)
       await probe.locator('a[data-action="dccRoll"][data-key="agl"]').click()
       await pollForMessage(page, 'RollType', 'AbilityCheck')
       const ability = await page.evaluate(() => {
-        const message = game.messages.contents.findLast(m => m.getFlag('dcc', 'RollType') === 'AbilityCheck')
-        return { flavor: message.flavor, alias: message.speaker.alias, ability: message.getFlag('dcc', 'Ability') }
+        const messages = game.messages.contents.filter(m => m.getFlag('dcc', 'RollType') === 'AbilityCheck')
+        const message = messages[messages.length - 1]
+        return { count: messages.length, flavor: message.flavor, alias: message.speaker.alias, ability: message.getFlag('dcc', 'Ability') }
       })
+      expect(ability.count).toBe(1)
       expect(ability.alias).toBe('DCC Enricher Roller')
       expect(ability.ability).toBe('agl')
 
@@ -136,6 +144,17 @@ test.describe('Journal roll-link enrichers', () => {
       // Luck link → roll-under card
       await probe.locator('a[data-action="dccRoll"][data-key="lck"]').click()
       await pollForMessage(page, 'RollType', 'AbilityCheckRollUnder')
+
+      // Built-in skill link → SkillCheck card (falls back to the action die)
+      await probe.locator('a[data-action="dccRoll"][data-key="detectSecretDoors"]').click()
+      await pollForMessage(page, 'RollType', 'SkillCheck')
+
+      // Unknown skill → rollSkillCheck's warning notification, no roll card
+      await probe.locator('a[data-action="dccRoll"][data-key="notARealSkill"]').click()
+      await expect(page.locator('.notification.warning', { hasText: 'notARealSkill' })).toBeVisible({ timeout: 10000 })
+      const skillCount = await page.evaluate(() =>
+        game.messages.contents.filter(m => m.getFlag('dcc', 'RollType') === 'SkillCheck').length)
+      expect(skillCount).toBe(1)
     } finally {
       await cleanupJournal(page, setup)
     }
