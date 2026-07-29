@@ -60,6 +60,7 @@ vi.mock('../settings.js', () => ({
   registerSystemSettings: vi.fn()
 }))
 vi.mock('../sidebar-tab.mjs', () => ({ registerDCCSidebarTab: vi.fn() }))
+vi.mock('../journal-enrichers.mjs', () => ({ registerJournalEnrichers: vi.fn() }))
 vi.mock('../death-clock-tracker.mjs', () => ({
   DeathClockTracker: { name: 'DeathClockTracker' },
   registerDeathClockTracker: vi.fn()
@@ -316,6 +317,9 @@ describe('onInit', () => {
     // The Death Clock tracker registered (issue #843 phase 2)
     const { registerDeathClockTracker } = await import('../death-clock-tracker.mjs')
     expect(registerDeathClockTracker).toHaveBeenCalledTimes(1)
+    // The journal roll-link enrichers registered (issue #794)
+    const { registerJournalEnrichers } = await import('../journal-enrichers.mjs')
+    expect(registerJournalEnrichers).toHaveBeenCalledTimes(1)
   })
 })
 

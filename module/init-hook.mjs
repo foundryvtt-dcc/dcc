@@ -44,6 +44,7 @@ import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { registerEarlySystemSettings } from './settings.js'
+import { registerJournalEnrichers } from './journal-enrichers.mjs'
 import { registerDCCSidebarTab } from './sidebar-tab.mjs'
 import { DeathClockTracker, registerDeathClockTracker } from './death-clock-tracker.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
@@ -331,6 +332,7 @@ export async function onInit () {
   registerSheets()
   registerDCCSidebarTab()
   registerDeathClockTracker()
+  registerJournalEnrichers()
   await loadSystemTemplates()
   registerEarlySettings()
 }
