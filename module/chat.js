@@ -85,18 +85,18 @@ export const addChatMessageContextOptions = function (html, options) {
 
   options.push(
     {
-      name: 'DCC.ChatContextDamage',
-      icon: '<i class="fas fa-user-minus"></i>',
-      condition: canApply,
-      callback: li => applyChatCardDamage(li, 1)
+      label: 'DCC.ChatContextDamage',
+      icon: 'fas fa-user-minus',
+      visible: canApply,
+      onClick: (event, li) => applyChatCardDamage(li, 1)
     }
   )
   options.push(
     {
-      name: 'DCC.ChatContextHealing',
-      icon: '<i class="fas fa-user-plus"></i>',
-      condition: canApply,
-      callback: li => applyChatCardDamage(li, -1)
+      label: 'DCC.ChatContextHealing',
+      icon: 'fas fa-user-plus',
+      visible: canApply,
+      onClick: (event, li) => applyChatCardDamage(li, -1)
     }
   )
   return options

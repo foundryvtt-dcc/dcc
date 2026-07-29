@@ -313,8 +313,8 @@ describe('onGetUserContextOptions', () => {
 describe('onGetChatMessageContextOptions', () => {
   test('delegates to chat.addChatMessageContextOptions', () => {
     chat.addChatMessageContextOptions.mockReturnValue('ctx-result')
-    const result = onGetChatMessageContextOptions('<html/>', [{ name: 'A' }])
-    expect(chat.addChatMessageContextOptions).toHaveBeenCalledWith('<html/>', [{ name: 'A' }])
+    const result = onGetChatMessageContextOptions('<html/>', [{ label: 'A' }])
+    expect(chat.addChatMessageContextOptions).toHaveBeenCalledWith('<html/>', [{ label: 'A' }])
     expect(result).toBe('ctx-result')
   })
 })
