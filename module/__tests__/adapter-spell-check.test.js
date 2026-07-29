@@ -1101,32 +1101,38 @@ test('adapter wizard first-cast pre-rolls mercurial magic when the item has none
 // Issue #339 — a first-cast pre-roll that lands on a flagged rollAgain
 // entry must expand it with FRESH sub-rolls. This drives the roller
 // closure in `_rollMercurialIfNeeded` end-to-end: the pre-evaluated
-// Foundry d100 serves only the trigger roll, and each sub-roll is a new
-// evaluateSync'd Roll on the special's own formula. Under the old
-// fixed-total roller, every sub-roll would replay the trigger total (99),
-// recurse to the depth cap, and store "Roll again twice" literals —
-// which this test would catch.
+// Foundry d100 serves only the trigger roll, and each sub-roll parses
+// via the lib's `evaluateRoll` and draws its dice from Foundry's sync
+// RNG stream (`CONFIG.Dice.randomUniform`) — NOT from a Foundry Roll,
+// whose `evaluateSync` can never evaluate dice terms in v14 (#848).
+// Under the old fixed-total roller, every sub-roll would replay the
+// trigger total (99), recurse to the depth cap, and store "Roll again
+// twice" literals — which this test would catch.
 test('adapter wizard first-cast expands a flagged rollAgain entry with fresh sub-rolls', async () => {
   rollToMessageMock.mockClear()
 
   const OriginalRoll = globalThis.Roll
   const originalTable = CONFIG.DCC.mercurialMagicTable
   const originalTables = game.tables
+  const originalConfigDice = CONFIG.Dice
 
-  // Deterministic totals keyed by formula: the trigger d100 rolls 99
-  // (the flagged entry), the 4d20 sub-rolls serve 45 then 55.
-  const subTotals = [45, 55]
+  // The trigger d100 rolls 99 (the flagged entry). Sub-rolls draw one
+  // die at a time from CONFIG.Dice.randomUniform with Foundry's face
+  // mapping, ceil((1 − u) × 20) per d20, so the two 4d20 sub-rolls
+  // serve 12+11+11+11 = 45 and 15+14+13+13 = 55.
+  const rolledFormulas = []
   class SeqRoll extends OriginalRoll {
     constructor (formula) {
       super(formula)
+      rolledFormulas.push(formula)
       if (formula === '1d100') {
         this.total = 99
-      } else if (formula === '4d20') {
-        this.total = subTotals.shift() ?? 45
       }
     }
   }
   globalThis.Roll = SeqRoll
+  const uniformQueue = [0.4, 0.45, 0.45, 0.45, 0.25, 0.3, 0.35, 0.35]
+  CONFIG.Dice = { randomUniform: () => uniformQueue.shift() ?? 0.5 }
 
   CONFIG.DCC.mercurialMagicTable = 'Roll Again Mercurial'
   const specialTable = {
@@ -1157,7 +1163,7 @@ test('adapter wizard first-cast expands a flagged rollAgain entry with fresh sub
 
   await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
-  const remainingSubTotals = subTotals.length
+  const remainingUniforms = uniformQueue.length
   const mercUpdate = spellItem.update.mock.calls
     .map(([data]) => data)
     .find((data) => data && 'system.mercurialEffect.summary' in data)
@@ -1166,11 +1172,17 @@ test('adapter wizard first-cast expands a flagged rollAgain entry with fresh sub
   // poison the tests that follow.
   globalThis.Roll = OriginalRoll
   CONFIG.DCC.mercurialMagicTable = originalTable
+  CONFIG.Dice = originalConfigDice
   game.tables = originalTables
   findSpy.mockRestore()
 
-  // Both 4d20 sub-rolls were consumed — fresh Rolls, not the replayed trigger
-  expect(remainingSubTotals).toBe(0)
+  // Both 4d20 sub-rolls drew all 8 dice from the sync RNG — fresh rolls,
+  // not the replayed trigger.
+  expect(remainingUniforms).toBe(0)
+  // Sub-rolls never construct a Foundry Roll: `Roll#evaluateSync` cannot
+  // evaluate dice terms in v14 and would throw (#848). Only the trigger
+  // d100 (and unrelated spell-check machinery) may build Rolls.
+  expect(rolledFormulas).not.toContain('4d20')
 
   expect(mercUpdate).toBeDefined()
   // The mock actor's Luck 18 gives mod +3, so every roll carries +30:
