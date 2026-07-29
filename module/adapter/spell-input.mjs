@@ -627,6 +627,14 @@ export async function loadPatronTaintTable (actor) {
   const expectedName = `Patron Taint: ${patron.trim()}`
   const expectedLower = expectedName.toLowerCase()
 
+  // Names a table can be matched under — the display name plus the
+  // untranslated original a Babele-translated pack index carries, so the
+  // reconstructed English `Patron Taint: <patron>` still resolves in a
+  // translated world (issue #799).
+  const namesOf = (doc) =>
+    [doc?.name, doc?.originalName, doc?.flags?.babele?.originalName]
+      .filter((name) => typeof name === 'string')
+
   const packManager = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.patronTaintPacks) || null
   const packs = packManager?.packs || []
 
@@ -635,8 +643,8 @@ export async function loadPatronTaintTable (actor) {
     const pack = game.packs?.get?.(packName)
     if (!pack) continue
     const entry =
-      pack.index?.find?.((e) => e.name === expectedName) ||
-      pack.index?.find?.((e) => typeof e.name === 'string' && e.name.toLowerCase() === expectedLower)
+      pack.index?.find?.((e) => namesOf(e).includes(expectedName)) ||
+      pack.index?.find?.((e) => namesOf(e).some((name) => name.toLowerCase() === expectedLower))
     if (!entry) continue
     let doc
     try {
@@ -656,8 +664,8 @@ export async function loadPatronTaintTable (actor) {
   // World-table fallback — match the full `Patron Taint: <patron>`
   // name, with case-insensitive fallback as above.
   const worldTable =
-    game.tables?.find?.((t) => t.name === expectedName) ||
-    game.tables?.find?.((t) => typeof t.name === 'string' && t.name.toLowerCase() === expectedLower)
+    game.tables?.find?.((t) => namesOf(t).includes(expectedName)) ||
+    game.tables?.find?.((t) => namesOf(t).some((name) => name.toLowerCase() === expectedLower))
   if (worldTable) {
     const libTable = toLibSimpleTable(worldTable)
     if (libTable) return libTable

@@ -6,13 +6,20 @@ import DCCItem from '../item.js'
 vi.mock('../dice-chain.js', () => ({
   default: { bumpDie: vi.fn((die) => die) }
 }))
-vi.mock('../utilities.js', async (importOriginal) => ({
-  ensurePlus: vi.fn((value) => (String(value).startsWith('-') ? String(value) : `+${value}`)),
-  getFirstDie: vi.fn(() => null),
-  // Real implementation — the special (roll-again) expansion tests below
-  // exercise its flag/text detection through rollMercurialMagic (#339)
-  getMercurialSpecial: (await importOriginal()).getMercurialSpecial
-}))
+vi.mock('../utilities.js', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ensurePlus: vi.fn((value) => (String(value).startsWith('-') ? String(value) : `+${value}`)),
+    getFirstDie: vi.fn(() => null),
+    // Real implementations — the special (roll-again) expansion tests exercise
+    // getMercurialSpecial's flag/text detection through rollMercurialMagic
+    // (#339), and the Babele-aware manifestation resolution tests exercise the
+    // name-candidate helpers (#799)
+    getMercurialSpecial: actual.getMercurialSpecial,
+    getNameCandidates: actual.getNameCandidates,
+    findPackEntryByName: actual.findPackEntryByName
+  }
+})
 
 // Deterministic Roll stub: `new Roll('@value', { value })` resolves total to the
 // looked-up value, mirroring the manifestation/mercurial lookup-by-value path.
@@ -252,6 +259,121 @@ describe('SpellItemMixin extraction', () => {
       expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
         'system.manifestation.value': 2,
         'system.manifestation.description': '<p>Caster glows faintly</p>'
+      }))
+    })
+
+    // Issue #799 — Babele worlds translate the spell's name but not
+    // (necessarily) the side-effect table pack, so the reconstructed
+    // `<name> Manifestation` string must also be tried with the untranslated
+    // original name Babele records on the item.
+    test('rollManifestation resolves the untranslated table for a Babele-translated spell', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      Object.defineProperty(item, 'name', { value: 'Schlaf', configurable: true })
+      item.flags = { babele: { originalName: 'Sleep', translated: true } }
+
+      const drawnRoll = new FakeRoll('1d4', { value: 3 })
+      const table = {
+        formula: '1d4',
+        draw: vi.fn(async () => ({ roll: drawnRoll, results: [{ description: 'caster glows faintly' }] }))
+      }
+      const entry = { _id: 'tbl1', name: 'Sleep Manifestation' }
+      global.game.packs = {
+        get: vi.fn(() => ({
+          index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+          getDocument: vi.fn(async () => table)
+        }))
+      }
+      global.game.dcc = { DCCRoll: { createRoll: vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 3 })) } }
+
+      await item.rollManifestation()
+
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 3
+      }))
+    })
+
+    // Issue #799 (inverse asymmetry) — the side-effect pack IS translated but
+    // the spell keeps its English name: match on the index entry's original name.
+    test('rollManifestation resolves a Babele-translated pack entry by its original name', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      Object.defineProperty(item, 'name', { value: 'Sleep', configurable: true })
+
+      const drawnRoll = new FakeRoll('1d4', { value: 2 })
+      const table = {
+        formula: '1d4',
+        draw: vi.fn(async () => ({ roll: drawnRoll, results: [{ description: 'caster glows faintly' }] }))
+      }
+      const entry = { _id: 'tbl1', name: 'Schlaf-Manifestation', originalName: 'Sleep Manifestation' }
+      global.game.packs = {
+        get: vi.fn(() => ({
+          index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+          getDocument: vi.fn(async () => table)
+        }))
+      }
+      global.game.dcc = { DCCRoll: { createRoll: vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 2 })) } }
+
+      await item.rollManifestation()
+
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 2
+      }))
+    })
+
+    // Issue #799 — an explicit `system.manifestation.table` reference is
+    // language-independent and wins over name reconstruction, mirroring
+    // `system.results.table` / `.collection`.
+    test('rollManifestation honors an explicit table reference and its collection', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      item.system.manifestation = { table: 'My Custom Manifestations', collection: 'world.homebrew-tables' }
+
+      const drawnRoll = new FakeRoll('1d4', { value: 4 })
+      const table = {
+        formula: '1d4',
+        draw: vi.fn(async () => ({ roll: drawnRoll, results: [{ description: 'sparks fly' }] }))
+      }
+      const entry = { _id: 'tblX', name: 'My Custom Manifestations' }
+      const refPack = {
+        index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+        getDocument: vi.fn(async () => table)
+      }
+      global.game.packs = { get: vi.fn((name) => (name === 'world.homebrew-tables' ? refPack : null)) }
+      global.game.dcc = { DCCRoll: { createRoll: vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 4 })) } }
+
+      await item.rollManifestation()
+
+      expect(global.game.packs.get).toHaveBeenCalledWith('world.homebrew-tables')
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 4,
+        'system.manifestation.description': '<p>Sparks fly</p>'
+      }))
+    })
+
+    test('rollManifestation resolves an explicit RollTable.<id> reference from world tables', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      item.system.manifestation = { table: 'RollTable.abc123' }
+
+      const drawnRoll = new FakeRoll('1d4', { value: 1 })
+      const table = {
+        _id: 'abc123',
+        name: 'Anything At All',
+        formula: '1d4',
+        draw: vi.fn(async () => ({ roll: drawnRoll, results: [{ description: 'a chill wind' }] }))
+      }
+      global.game.tables.contents = [table]
+      global.game.dcc = { DCCRoll: { createRoll: vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 1 })) } }
+
+      await item.rollManifestation()
+
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 1
       }))
     })
 

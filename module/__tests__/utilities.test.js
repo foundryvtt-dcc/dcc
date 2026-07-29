@@ -4,8 +4,10 @@ import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
   ensurePlus,
+  findPackEntryByName,
   formatMercurialDescriptionHTML,
   getMercurialSpecial,
+  getNameCandidates,
   removeActiveEffectOverrides,
   getFirstDie,
   getFirstMod,
@@ -887,6 +889,62 @@ describe('Utilities', () => {
 
       const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
       expect(result).toEqual({ text: 'World NPC fumble result' })
+    })
+  })
+
+  // Issue #799 — Babele-aware name resolution helpers
+  describe('getNameCandidates', () => {
+    it('returns just the display name for an untranslated document', () => {
+      expect(getNameCandidates({ name: 'Sleep' })).toEqual(['Sleep'])
+    })
+
+    it('adds the Babele original name for a translated document', () => {
+      const doc = { name: 'Schlaf', flags: { babele: { originalName: 'Sleep', translated: true } } }
+      expect(getNameCandidates(doc)).toEqual(['Schlaf', 'Sleep'])
+    })
+
+    it('deduplicates when the original name equals the display name', () => {
+      const doc = { name: 'Sleep', flags: { babele: { originalName: 'Sleep' } } }
+      expect(getNameCandidates(doc)).toEqual(['Sleep'])
+    })
+
+    it('tolerates null/undefined documents and missing names', () => {
+      expect(getNameCandidates(null)).toEqual([])
+      expect(getNameCandidates(undefined)).toEqual([])
+      expect(getNameCandidates({})).toEqual([])
+    })
+  })
+
+  describe('findPackEntryByName', () => {
+    const pack = (entries) => ({ index: entries })
+
+    it('matches an entry by its display name', () => {
+      const entry = { _id: 'a', name: 'Sleep Manifestation' }
+      expect(findPackEntryByName(pack([entry]), 'Sleep Manifestation')).toBe(entry)
+    })
+
+    it('matches a translated entry by its top-level originalName', () => {
+      const entry = { _id: 'a', name: 'Schlaf-Manifestation', originalName: 'Sleep Manifestation' }
+      expect(findPackEntryByName(pack([entry]), ['Sleep Manifestation'])).toBe(entry)
+    })
+
+    it('matches a translated entry by flags.babele.originalName', () => {
+      const entry = { _id: 'a', name: 'Schlaf-Manifestation', flags: { babele: { originalName: 'Sleep Manifestation' } } }
+      expect(findPackEntryByName(pack([entry]), ['Sleep Manifestation'])).toBe(entry)
+    })
+
+    it('accepts multiple candidate names and returns the first matching entry', () => {
+      const entries = [
+        { _id: 'a', name: 'Other Table' },
+        { _id: 'b', name: 'Schlaf Manifestation' }
+      ]
+      expect(findPackEntryByName(pack(entries), ['Sleep Manifestation', 'Schlaf Manifestation'])).toBe(entries[1])
+    })
+
+    it('returns null when nothing matches or the pack is missing', () => {
+      expect(findPackEntryByName(pack([{ _id: 'a', name: 'Other' }]), 'Sleep Manifestation')).toBeNull()
+      expect(findPackEntryByName(null, 'Sleep Manifestation')).toBeNull()
+      expect(findPackEntryByName({}, 'Sleep Manifestation')).toBeNull()
     })
   })
 })

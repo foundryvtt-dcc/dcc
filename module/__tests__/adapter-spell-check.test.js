@@ -2002,6 +2002,33 @@ test('loadPatronTaintTable resolves an exact-name match from a compendium pack',
   game.packs = originalGamePacks
 })
 
+test('loadPatronTaintTable resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  // In a translated world the pack index shows the translated table name,
+  // but the reconstructed `Patron Taint: <patron>` string is English — the
+  // loader must match on the untranslated original name Babele carries.
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalGamePacks = game.packs
+  const fakeTable = {
+    id: 'bob-taint-de',
+    name: 'Schutzpatron-Makel: Bobugbubilz',
+    results: [{ range: [1, 1], description: 'Surrende Fliegen' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'e3', name: 'Schutzpatron-Makel: Bobugbubilz', originalName: 'Patron Taint: Bobugbubilz' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  CONFIG.DCC.patronTaintPacks = { packs: ['dcc-core-book.dcc-core-spell-side-effect-tables'] }
+  game.packs = { get: () => fakePack }
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('Bobugbubilz'))
+
+  expect(libTable?.entries).toHaveLength(1)
+  expect(fakePack.getDocument).toHaveBeenCalledWith('e3')
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
 test('loadPatronTaintTable case-insensitive fallback resolves "The King of Elfland" against lowercase "the"', async () => {
   // The official dcc-core-book table is named
   // "Patron Taint: the King of Elfland" (lowercase "the"), but actors

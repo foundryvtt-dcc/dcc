@@ -83,6 +83,12 @@ export class SpellData extends BaseItemData {
 
       // Manifestation
       manifestation: new SchemaField({
+        // Optional language-independent table reference (name, id, or
+        // RollTable.<id>) + source pack, mirroring `results.table` /
+        // `results.collection`. When unset, the table is resolved by the
+        // `<spell name> Manifestation` naming convention (issue #799).
+        table: new StringField({ initial: '' }),
+        collection: new StringField({ initial: '' }),
         value: new StringField({ initial: '' }),
         description: new StringField({ initial: '' }),
         displayInChat: new BooleanField({ initial: true })

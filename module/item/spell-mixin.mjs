@@ -1,7 +1,7 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
 import { logSpellburn } from '../ability-score-log.js'
-import { ensurePlus, getMercurialSpecial } from '../utilities.js'
+import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
 
 /**
  * Determine the die formula to roll for a manifestation table.
@@ -246,20 +246,44 @@ export const SpellItemMixin = (Base) => class extends Base {
     // never 1d100 — rolling a hardcoded 1d100 lands outside the table's range and
     // never matches a result. See issue #773.
     const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-side-effect-tables'
-    const manifestationTableName = `${this.name} Manifestation`
     let table = null
-    const pack = game.packs.get(manifestationPackName)
-    if (pack) {
-      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
-      if (entry) {
-        table = await pack.getDocument(entry._id)
+
+    // An explicit reference on the spell wins: language-independent, so it
+    // survives Babele translation the same way `system.results.table` does.
+    const manifestationRef = this.system.manifestation ?? {}
+    if (manifestationRef.table) {
+      const predicate = t => t.name === manifestationRef.table || t._id === manifestationRef.table.replace('RollTable.', '')
+      const refPack = game.packs.get(manifestationRef.collection || manifestationPackName)
+      if (refPack) {
+        const entry = refPack.index.find(predicate)
+        if (entry) {
+          table = await refPack.getDocument(entry._id)
+        }
       }
-    } else {
-      // The compendium itself is missing — tell the user to install/activate it.
-      console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      if (!table) {
+        table = game.tables.contents.find(predicate)
+      }
+    }
+
+    // Fall back to the `<spell name> Manifestation` naming convention. Both
+    // sides of that comparison are language-sensitive in a Babele world (the
+    // spell's name translates while the table pack may not, or vice versa), so
+    // try the untranslated original names on both sides too (issue #799).
+    const manifestationTableNames = getNameCandidates(this).map((name) => `${name} Manifestation`)
+    if (!table) {
+      const pack = game.packs.get(manifestationPackName)
+      if (pack) {
+        const entry = findPackEntryByName(pack, manifestationTableNames)
+        if (entry) {
+          table = await pack.getDocument(entry._id)
+        }
+      } else {
+        // The compendium itself is missing — tell the user to install/activate it.
+        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      }
     }
     if (!table) {
-      table = game.tables.getName(manifestationTableName)
+      table = manifestationTableNames.map((name) => game.tables.getName(name)).find(Boolean) ?? null
     }
 
     // Many DCC spells (e.g. Invisibility) have no manifestation at all, so no
@@ -389,7 +413,8 @@ export const SpellItemMixin = (Base) => class extends Base {
         pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
       }
       if (pack) {
-        const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
+        // Tolerate a Babele-translated pack index (issue #799)
+        const entry = findPackEntryByName(pack, mercurialMagicTablePath[2])
         if (entry) {
           table = await pack.getDocument(entry._id)
         }

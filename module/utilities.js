@@ -74,6 +74,38 @@ export function getMercurialSpecial (tableResult) {
 }
 
 /**
+ * Names a document can be looked up under in a translated (Babele) world:
+ * the display name plus the untranslated original that Babele records in
+ * `flags.babele.originalName`. Compendium content ships named in English,
+ * so any lookup that reconstructs a table name from a document's name must
+ * try the original name too — the display name alone never matches once
+ * Babele has translated either side of the comparison (issue #799).
+ *
+ * @param {Object} doc - a Document (or plain object in tests)
+ * @returns {Array<String>} unique candidate names, display name first
+ */
+export function getNameCandidates (doc) {
+  return [...new Set([doc?.name, doc?.flags?.babele?.originalName].filter(Boolean))]
+}
+
+/**
+ * Find a compendium index entry by name, tolerating Babele translation on
+ * the entry side. Babele's translated indexes carry the untranslated name
+ * (`originalName` on the entry, or under `flags.babele`), so a translated
+ * table still matches its English name and vice versa.
+ *
+ * @param {Object} pack - a CompendiumCollection (or stub in tests)
+ * @param {String|Array<String>} names - candidate name(s) to match
+ * @returns {Object|null} the matching index entry, or null
+ */
+export function findPackEntryByName (pack, names) {
+  const candidates = Array.isArray(names) ? names : [names]
+  return pack?.index?.find?.((entry) =>
+    [entry?.name, entry?.originalName, entry?.flags?.babele?.originalName]
+      .some((name) => name && candidates.includes(name))) ?? null
+}
+
+/**
  * Wrap a dcc-core-lib mercurial-effect description in HTML paragraphs.
  * The lib joins expanded (roll-again) sub-effect descriptions with a
  * plain `\n\n` (it is renderer-agnostic); browsers collapse that to a

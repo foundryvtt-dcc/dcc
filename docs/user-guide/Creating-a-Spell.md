@@ -62,6 +62,8 @@ If the spell has Manifestation, Misfire, or Corruption sub-tables, create each o
 
 (Dragging the table into the editor fills in the `@UUID[...]` link for you.)
 
+The **Roll Manifestation** button on the spell finds its table by the *`SPELL NAME` Manifestation* naming convention, searching the configured Spell Side Effects compendium first and then your world's Rollable Tables. Worlds running a translation module (e.g. Babele) are handled automatically — the lookup also matches on the untranslated original names. Advanced pack authors can instead point a spell at an arbitrarily-named table by setting `system.manifestation.table` (a table name, id, or `RollTable.<id>`) and optionally `system.manifestation.collection` (a compendium key) in the spell's source data, mirroring how `system.results` references the spell-check results table.
+
 ## Step 3: Link the Table to the Spell
 
 The spell needs to know which table to roll on. There are two ways to connect them:
