@@ -1,5 +1,5 @@
 ---
-description: "Create a pull request for the DCC system. Handles branch verify, i18n translation, version bump, checks, simplify, commit, push, create/update PR, review, auto-fix."
+description: "Create a pull request for the DCC system. Handles branch verify, i18n translation, checks, simplify, commit, push, create/update PR, review, auto-fix. No version bump — that happens on main at release time."
 argument-hint: "optional: base branch (default: main)"
 ---
 
@@ -25,13 +25,22 @@ If any `lang/*.json` files have been modified (check `git diff --name-only main.
 
 If NO lang files were modified in the diff, check whether any new `game.i18n.localize()` or `game.i18n.format()` calls were added in changed JS/HBS files that reference keys not present in `lang/en.json`. If so, add the missing keys to `en.json` and translate to all other languages.
 
-## Step 3: Version Bump
+## Step 3: Version Bump — NOT in the PR
 
-Read `version.txt` to get the current version (format: `MAJOR.MINOR.PATCH`).
+Do **NOT** change `version.txt` in the PR. The bump always lands on `main` as
+its **own commit**, after the PR merges (that's the `/release` skill's job).
 
-- Increment the **patch** version (e.g., `0.66.39` → `0.66.40`).
-- Write the new version to `version.txt` (just the version number, no `v` prefix, with a trailing newline).
-- Do NOT update `system.json` or `package.json` — the GitHub Action handles that from `version.txt`.
+Why: PRs are squash-merged, so a bump inside the PR gets folded into the
+feature commit. The `foundry-release-action` builds release notes from commits
+since the last release but **excludes the commit that carries the
+`version.txt` change** — so the PR vanishes from its own release notes (this
+bit #849 in v0.70.35 and #852 in v0.70.37).
+
+If the diff already touches `version.txt`, revert that change before
+committing and mention it in the final summary.
+
+- Never update `system.json` or `package.json` versions either — the GitHub
+  Action derives them from `version.txt`.
 
 ## Step 4: Pre-Flight Checks
 
@@ -76,7 +85,7 @@ If a dependent module references something that was changed, **STOP** and report
 3. Recommended commit ordering:
   - Feature/fix commits first
   - i18n translation commits (e.g., `chore: translate new i18n keys to all languages`)
-  - Version bump commit last (e.g., `chore: bump version to X.Y.Z`)
+  - No version bump commit — `version.txt` is bumped on `main` after the merge (Step 3)
 4. Stage and commit each group separately. Use `git add <specific files>` — avoid `git add -A`.
 5. End each commit message with: `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
 
@@ -131,7 +140,7 @@ Output a structured summary:
 ```
 [PR SUMMARY]
 PR URL: <url>
-Version: <old> → <new>
+Version: unchanged (bump happens on main at release time)
 i18n: <count> keys added/removed across <count> language files
 Commits: <count> (<original> original + <fix> fixes)
 Issues fixed: <count>

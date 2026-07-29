@@ -18,12 +18,17 @@ Execute these steps in order:
   ```
 - If already on main, confirm with user before proceeding
 
-## 2. Update version.txt
+## 2. Update version.txt — always its own commit on main
 
 - Read current version from `version.txt`
 - Increment the final number (e.g., 0.66.27 → 0.66.28)
 - Write new version to `version.txt`
-- Commit: `Update version.txt`
+- Commit: `Update version.txt` — the commit must contain **only** the
+  `version.txt` change, and it happens **on `main` after the PR merges**,
+  never inside a feature PR. Squash-merge folds an in-PR bump into the
+  feature commit, and `foundry-release-action` excludes the bump-carrying
+  commit when generating release notes — the feature then vanishes from its
+  own release notes (this bit #849 in v0.70.35 and #852 in v0.70.37).
 - Push to main
 
 ## 3. Wait for GitHub Actions

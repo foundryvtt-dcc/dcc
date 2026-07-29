@@ -114,6 +114,15 @@ rule. They apply only to the scoped context described.
   to in that session. Default: stop at the draft and hand off. See
   `docs/dev/RELEASE_PROCESS.md` and the `/release` skill.
 
+- **The `version.txt` bump is always its own commit on `main`, never part
+  of a feature PR.** PRs are squash-merged, so an in-PR bump gets folded
+  into the feature commit — and `foundry-release-action` excludes the
+  bump-carrying commit when generating release notes, so the feature
+  vanishes from its own release notes (bit #849 in v0.70.35 and #852 in
+  v0.70.37). Do not touch `version.txt` on a feature branch; bump it in a
+  standalone `Update version.txt` commit on `main` at release time (the
+  `/release` flow).
+
 ## Documentation
 
 ### Developer Guides
