@@ -50,7 +50,7 @@ import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
-import { getMercurialSpecial } from '../utilities.js'
+import { docNameMatches, findPackEntryByName, getMercurialSpecial } from '../utilities.js'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -471,7 +471,10 @@ async function resolveDisapprovalTable (tableName) {
     if (!packName) continue
     const pack = game.packs?.get?.(packName)
     if (!pack) continue
-    const entry = pack.index?.find?.((e) => `${packName}.${e.name}` === tableName)
+    // Only this pack's tables can match the `packName.tableName` path; match
+    // the tail Babele-aware so a translated index still resolves (issue #799).
+    if (!tableName.startsWith(`${packName}.`)) continue
+    const entry = findPackEntryByName(pack, tableName.slice(packName.length + 1))
     if (!entry) continue
     let doc
     try {
@@ -494,7 +497,7 @@ async function resolveDisapprovalTable (tableName) {
   const worldTableName = tableName.includes('.')
     ? tableName.split('.').pop()
     : tableName
-  const worldTable = game.tables?.find?.((t) => t.name === worldTableName)
+  const worldTable = game.tables?.find?.((t) => docNameMatches(t, worldTableName))
   if (worldTable) {
     const libTable = toLibSimpleTable(worldTable)
     if (libTable) return libTable
@@ -561,7 +564,8 @@ async function resolveMercurialMagicTable (tableName) {
   if (parts.length === 3) {
     const pack = game.packs?.get?.(`${parts[0]}.${parts[1]}`)
     if (pack) {
-      const entry = pack.index?.find?.((e) => e.name === parts[2])
+      // Tolerate a Babele-translated pack index (issue #799)
+      const entry = findPackEntryByName(pack, parts[2])
       if (entry) {
         let doc
         try {
@@ -627,6 +631,14 @@ export async function loadPatronTaintTable (actor) {
   const expectedName = `Patron Taint: ${patron.trim()}`
   const expectedLower = expectedName.toLowerCase()
 
+  // Names a table can be matched under — the display name plus the
+  // untranslated original a Babele-translated pack index carries, so the
+  // reconstructed English `Patron Taint: <patron>` still resolves in a
+  // translated world (issue #799).
+  const namesOf = (doc) =>
+    [doc?.name, doc?.originalName, doc?.flags?.babele?.originalName]
+      .filter((name) => typeof name === 'string')
+
   const packManager = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.patronTaintPacks) || null
   const packs = packManager?.packs || []
 
@@ -635,8 +647,8 @@ export async function loadPatronTaintTable (actor) {
     const pack = game.packs?.get?.(packName)
     if (!pack) continue
     const entry =
-      pack.index?.find?.((e) => e.name === expectedName) ||
-      pack.index?.find?.((e) => typeof e.name === 'string' && e.name.toLowerCase() === expectedLower)
+      pack.index?.find?.((e) => namesOf(e).includes(expectedName)) ||
+      pack.index?.find?.((e) => namesOf(e).some((name) => name.toLowerCase() === expectedLower))
     if (!entry) continue
     let doc
     try {
@@ -656,8 +668,8 @@ export async function loadPatronTaintTable (actor) {
   // World-table fallback — match the full `Patron Taint: <patron>`
   // name, with case-insensitive fallback as above.
   const worldTable =
-    game.tables?.find?.((t) => t.name === expectedName) ||
-    game.tables?.find?.((t) => typeof t.name === 'string' && t.name.toLowerCase() === expectedLower)
+    game.tables?.find?.((t) => namesOf(t).includes(expectedName)) ||
+    game.tables?.find?.((t) => namesOf(t).some((name) => name.toLowerCase() === expectedLower))
   if (worldTable) {
     const libTable = toLibSimpleTable(worldTable)
     if (libTable) return libTable

@@ -1362,6 +1362,39 @@ test('loadMercurialMagicTable: classKey selects the class-specific world table',
   game.tables = originalGameTables
 })
 
+test('loadMercurialMagicTable: resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+
+  // Configured 3-part pack path names the table in English; the translated
+  // pack index shows a German display name and carries the original.
+  CONFIG.DCC.mercurialMagicTables = { default: 'dcc-core-book.dcc-core-tables.Table 5-2: Mercurial Magic DE Probe' }
+  CONFIG.DCC.mercurialMagicTable = null
+  const fakeTable = {
+    id: 'merc-de',
+    name: 'Tabelle 5-2: Launische Magie',
+    results: [{ range: [-20, 130], description: 'Blaue Aura.' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'm1', name: 'Tabelle 5-2: Launische Magie', originalName: 'Table 5-2: Mercurial Magic DE Probe' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  game.packs = { get: (name) => (name === 'dcc-core-book.dcc-core-tables' ? fakePack : null) }
+  game.tables = { getName: () => null, find: () => null }
+
+  const libTable = await loadMercurialMagicTable('wizard')
+
+  expect(libTable?.entries?.[0]?.summary).toBe('Blaue Aura')
+  expect(fakePack.getDocument).toHaveBeenCalledWith('m1')
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
 // Issue #339 — special (roll-again) entries map onto the lib's
 // `entry.special` so `rollMercurialMagic` expands them into sub-effects
 // instead of returning the literal instruction text.
@@ -2002,6 +2035,33 @@ test('loadPatronTaintTable resolves an exact-name match from a compendium pack',
   game.packs = originalGamePacks
 })
 
+test('loadPatronTaintTable resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  // In a translated world the pack index shows the translated table name,
+  // but the reconstructed `Patron Taint: <patron>` string is English — the
+  // loader must match on the untranslated original name Babele carries.
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalGamePacks = game.packs
+  const fakeTable = {
+    id: 'bob-taint-de',
+    name: 'Schutzpatron-Makel: Bobugbubilz',
+    results: [{ range: [1, 1], description: 'Surrende Fliegen' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'e3', name: 'Schutzpatron-Makel: Bobugbubilz', originalName: 'Patron Taint: Bobugbubilz' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  CONFIG.DCC.patronTaintPacks = { packs: ['dcc-core-book.dcc-core-spell-side-effect-tables'] }
+  game.packs = { get: () => fakePack }
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('Bobugbubilz'))
+
+  expect(libTable?.entries).toHaveLength(1)
+  expect(fakePack.getDocument).toHaveBeenCalledWith('e3')
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
 test('loadPatronTaintTable case-insensitive fallback resolves "The King of Elfland" against lowercase "the"', async () => {
   // The official dcc-core-book table is named
   // "Patron Taint: the King of Elfland" (lowercase "the"), but actors
@@ -2220,6 +2280,27 @@ test('loadDisapprovalTable resolves a compendium table via CONFIG.DCC.disapprova
   expect(libTable?.name).toBe('Disapproval-1')
   expect(libTable?.entries).toHaveLength(2)
   expect(pack.getDocument).toHaveBeenCalledTimes(1)
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+test('loadDisapprovalTable resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeDisapprovalSourceTable('pack-doc-de', 'Missbilligung-1')
+  const pack = {
+    index: [{ _id: 'pack-doc-de', name: 'Missbilligung-1', originalName: 'Disapproval-1' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.disapprovalPacks = { packs: ['dcc-core-book.dcc-disapproval-tables'] }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('dcc-core-book.dcc-disapproval-tables.Disapproval-1'))
+
+  expect(libTable?.entries).toHaveLength(2)
+  expect(pack.getDocument).toHaveBeenCalledWith('pack-doc-de')
 
   CONFIG.DCC.disapprovalPacks = originalPacks
   game.packs = originalGamePacks

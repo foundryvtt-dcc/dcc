@@ -3,9 +3,12 @@
 import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
+  docNameMatches,
   ensurePlus,
+  findPackEntryByName,
   formatMercurialDescriptionHTML,
   getMercurialSpecial,
+  getNameCandidates,
   removeActiveEffectOverrides,
   getFirstDie,
   getFirstMod,
@@ -492,6 +495,13 @@ describe('Utilities', () => {
       expect(result).toEqual({ text: 'Critical hit result' })
     })
 
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockEntry.name = 'Table de Critique III'
+      mockEntry.originalName = 'Crit Table III'
+      const result = await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(result).toEqual({ text: 'Critical hit result' })
+    })
+
     it('handles elemental crit table specially', async () => {
       await getCritTableResult(mockRoll, 'Crit Table EL')
       expect(CONFIG.DCC.criticalHitPacks.addPack).toHaveBeenCalledWith(
@@ -704,6 +714,22 @@ describe('Utilities', () => {
       const result = await getTableFromPath('Nonexistent Table')
       expect(result).toBeNull()
     })
+
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockPack.index = [{ _id: 'deed-table-id', name: 'Heldentat: Würfe', originalName: 'Deed: Trips and Throws' }]
+      const result = await getTableFromPath('some-module.deed-tables.Deed: Trips and Throws')
+      expect(mockPack.getDocument).toHaveBeenCalledWith('deed-table-id')
+      expect(result).toBe(mockTable)
+    })
+
+    it('falls back to a world table imported from a translated pack (#799)', async () => {
+      const worldTable = { name: 'Heldentat: Würfe', flags: { babele: { originalName: 'Deed: Trips and Throws' } } }
+      global.game.packs.get.mockReturnValue(null)
+      global.game.tables.find = vi.fn((predicate) => (predicate(worldTable) ? worldTable : null))
+
+      const result = await getTableFromPath('Deed: Trips and Throws')
+      expect(result).toBe(worldTable)
+    })
   })
 
   describe('getFumbleTableResult', () => {
@@ -789,6 +815,13 @@ describe('Utilities', () => {
       const result = await getFumbleTableResult(mockRoll)
       expect(result).toBe('Unable to find fumble result')
     })
+
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockEntry.name = 'Patzer-Tabelle'
+      mockEntry.originalName = 'Fumble Table'
+      const result = await getFumbleTableResult(mockRoll)
+      expect(result).toEqual({ text: 'Fumble result' })
+    })
   })
 
   describe('getNPCFumbleTableResult', () => {
@@ -832,6 +865,13 @@ describe('Utilities', () => {
       expect(result).toEqual({ text: 'NPC fumble result' })
       expect(global.game.packs.get).toHaveBeenCalledWith('dcc-core-book.dcc-monster-fumble-tables')
       expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(12)
+    })
+
+    it('resolves a Babele-translated pack entry by its original name prefix (#799)', async () => {
+      mockEntry.name = 'Patzer-Tabelle M (Monster)'
+      mockEntry.originalName = 'Fumble Table M (Monsters)'
+      const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
+      expect(result).toEqual({ text: 'NPC fumble result' })
     })
 
     it('handles missing fumble table name', async () => {
@@ -887,6 +927,84 @@ describe('Utilities', () => {
 
       const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
       expect(result).toEqual({ text: 'World NPC fumble result' })
+    })
+  })
+
+  // Issue #799 — Babele-aware name resolution helpers
+  describe('getNameCandidates', () => {
+    it('returns just the display name for an untranslated document', () => {
+      expect(getNameCandidates({ name: 'Sleep' })).toEqual(['Sleep'])
+    })
+
+    it('adds the Babele original name for a translated document', () => {
+      const doc = { name: 'Schlaf', flags: { babele: { originalName: 'Sleep', translated: true } } }
+      expect(getNameCandidates(doc)).toEqual(['Schlaf', 'Sleep'])
+    })
+
+    it('deduplicates when the original name equals the display name', () => {
+      const doc = { name: 'Sleep', flags: { babele: { originalName: 'Sleep' } } }
+      expect(getNameCandidates(doc)).toEqual(['Sleep'])
+    })
+
+    it('tolerates null/undefined documents and missing names', () => {
+      expect(getNameCandidates(null)).toEqual([])
+      expect(getNameCandidates(undefined)).toEqual([])
+      expect(getNameCandidates({})).toEqual([])
+    })
+  })
+
+  describe('docNameMatches', () => {
+    it('matches exactly by default', () => {
+      expect(docNameMatches({ name: 'Crit Table III' }, 'Crit Table III')).toBe(true)
+      expect(docNameMatches({ name: 'Crit Table III (Warriors)' }, 'Crit Table III')).toBe(false)
+    })
+
+    it('matches by prefix when requested', () => {
+      expect(docNameMatches({ name: 'Crit Table III (Warriors)' }, 'Crit Table III', { prefix: true })).toBe(true)
+      expect(docNameMatches({ name: 'Crit Table II' }, 'Crit Table III', { prefix: true })).toBe(false)
+    })
+
+    it('matches prefixes against the Babele original name', () => {
+      const doc = { name: 'T. dei Critici III (Guerrieri)', originalName: 'Crit Table III (Warriors)' }
+      expect(docNameMatches(doc, 'Crit Table III', { prefix: true })).toBe(true)
+    })
+
+    it('tolerates missing docs and names', () => {
+      expect(docNameMatches(null, 'X')).toBe(false)
+      expect(docNameMatches({}, 'X', { prefix: true })).toBe(false)
+    })
+  })
+
+  describe('findPackEntryByName', () => {
+    const pack = (entries) => ({ index: entries })
+
+    it('matches an entry by its display name', () => {
+      const entry = { _id: 'a', name: 'Sleep Manifestation' }
+      expect(findPackEntryByName(pack([entry]), 'Sleep Manifestation')).toBe(entry)
+    })
+
+    it('matches a translated entry by its top-level originalName', () => {
+      const entry = { _id: 'a', name: 'Schlaf-Manifestation', originalName: 'Sleep Manifestation' }
+      expect(findPackEntryByName(pack([entry]), ['Sleep Manifestation'])).toBe(entry)
+    })
+
+    it('matches a translated entry by flags.babele.originalName', () => {
+      const entry = { _id: 'a', name: 'Schlaf-Manifestation', flags: { babele: { originalName: 'Sleep Manifestation' } } }
+      expect(findPackEntryByName(pack([entry]), ['Sleep Manifestation'])).toBe(entry)
+    })
+
+    it('accepts multiple candidate names and returns the first matching entry', () => {
+      const entries = [
+        { _id: 'a', name: 'Other Table' },
+        { _id: 'b', name: 'Schlaf Manifestation' }
+      ]
+      expect(findPackEntryByName(pack(entries), ['Sleep Manifestation', 'Schlaf Manifestation'])).toBe(entries[1])
+    })
+
+    it('returns null when nothing matches or the pack is missing', () => {
+      expect(findPackEntryByName(pack([{ _id: 'a', name: 'Other' }]), 'Sleep Manifestation')).toBeNull()
+      expect(findPackEntryByName(null, 'Sleep Manifestation')).toBeNull()
+      expect(findPackEntryByName({}, 'Sleep Manifestation')).toBeNull()
     })
   })
 })

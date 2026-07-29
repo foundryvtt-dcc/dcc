@@ -18,6 +18,7 @@
 
 import TablePackManager from './table-pack-manager.js'
 import { clearCritTableCaches } from './adapter/table-cache.mjs'
+import { findPackEntryByName } from './utilities.js'
 
 /**
  * Module-private predicate. Reads `game.i18n` per call so the localized
@@ -242,7 +243,8 @@ export async function getSkillTable (skillName) {
       pack = game.packs.get(tablePath[0] + '.' + tablePath[1])
     }
     if (pack) {
-      const entry = pack.index.find((entity) => entity.name === tablePath[2])
+      // Babele-aware: translated indexes match on originalName (#799)
+      const entry = findPackEntryByName(pack, tablePath[2])
       if (entry) {
         return pack.getDocument(entry._id)
       }

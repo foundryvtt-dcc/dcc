@@ -48,11 +48,14 @@ test.describe('Friendly fire', () => {
       const before = game.messages.size
       await attacker.rollWeaponAttack(weapon.id, {})
 
-      // Friendly fire is fire-and-forget (rolls → ChatMessage.create); poll for it.
+      // Friendly fire is fire-and-forget (rolls → ChatMessage.create); poll for
+      // it — but only among messages created by THIS attack. Earlier runs of
+      // this spec leave their friendly-fire cards in the world chat log, and a
+      // stale hit would break the crit branch's "no stray shot" assertion.
       let ffMessage = null
       const deadline = Date.now() + 4000
       while (Date.now() < deadline && !ffMessage) {
-        ffMessage = game.messages.contents.find(m => m.getFlag('dcc', 'isFriendlyFire'))
+        ffMessage = game.messages.contents.slice(before).find(m => m.getFlag('dcc', 'isFriendlyFire'))
         if (!ffMessage) await new Promise(resolve => setTimeout(resolve, 100))
       }
 
