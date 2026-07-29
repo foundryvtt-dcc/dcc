@@ -49,10 +49,15 @@ export function removeActiveEffectOverrides (document, updateData) {
 export function getMercurialSpecial (tableResult) {
   const flag = tableResult?.flags?.dcc?.mercurial
   if (flag?.action === 'rollAgain') {
+    // Canonicalize the user-authored formula to lowercase NdX(+M) with an
+    // explicit count — the lib's parser requires exactly that shape, and a
+    // near-miss like 'd6' or '1D8' would otherwise be swept up as flat
+    // modifiers, making every sub-roll an identical constant.
+    const match = /^(\d*)[dD]([1-9]\d*)([+-]\d+)?$/.exec(String(flag.formula || '').trim())
     return {
       action: 'rollAgain',
       count: Math.max(1, Math.min(10, parseInt(flag.count, 10) || 2)),
-      formula: flag.formula || '1d100'
+      formula: match ? `${match[1] || '1'}d${match[2]}${match[3] || ''}` : '1d100'
     }
   }
 

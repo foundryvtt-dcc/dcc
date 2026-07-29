@@ -974,41 +974,47 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         })
         const originalTableName = CONFIG.DCC.mercurialMagicTable
         const originalRegistry = CONFIG.DCC.mercurialMagicTables
+        const originalRandomUniform = CONFIG.Dice.randomUniform
         CONFIG.DCC.mercurialMagicTable = 'E2E-848 Mercurial RollAgain'
         CONFIG.DCC.mercurialMagicTables = {}
-        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
         CONFIG.Dice.randomUniform = () => 0.015
 
-        const actor = await Actor.create({
-          name: 'P1 Mercurial 848 Wizard',
-          type: 'Player',
-          system: { class: { className: 'Wizard' } }
-        })
-        await actor.createEmbeddedDocuments('Item', [{
-          name: 'P1-848-Spell',
-          type: 'spell',
-          system: {
-            level: 1,
-            config: { castingMode: 'wizard', inheritCheckPenalty: true },
-            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
-            lost: false
-          }
-        }])
-
+        // Everything after the overrides sits inside the try — a failed
+        // Actor/Item create must not leave randomUniform pinned at 0.015
+        // for the rest of the shared browser session.
+        let actor = null
         let castError = null
         let mercurial = null
         try {
-          await actor.rollSpellCheck({ spell: 'P1-848-Spell' })
-          mercurial = foundry.utils.deepClone(
-            actor.items.getName('P1-848-Spell')?.system?.mercurialEffect ?? null
-          )
-        } catch (err) {
-          castError = err?.message || String(err)
+          actor = await Actor.create({
+            name: 'P1 Mercurial 848 Wizard',
+            type: 'Player',
+            system: { class: { className: 'Wizard' } }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-848-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: false
+            }
+          }])
+
+          try {
+            await actor.rollSpellCheck({ spell: 'P1-848-Spell' })
+            mercurial = foundry.utils.deepClone(
+              actor.items.getName('P1-848-Spell')?.system?.mercurialEffect ?? null
+            )
+          } catch (err) {
+            castError = err?.message || String(err)
+          }
         } finally {
-          CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+          CONFIG.Dice.randomUniform = originalRandomUniform
           CONFIG.DCC.mercurialMagicTable = originalTableName
           CONFIG.DCC.mercurialMagicTables = originalRegistry
-          await actor.delete()
+          if (actor) await actor.delete()
           await table.delete()
         }
         return { castError, mercurial }

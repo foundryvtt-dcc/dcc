@@ -46,6 +46,19 @@ describe('Utilities', () => {
       expect(getMercurialSpecial(make('nonsense')).count).toBe(2)
     })
 
+    it('canonicalizes near-miss flag formulas and rejects unrollable ones (#848)', () => {
+      const make = (formula) => ({ flags: { dcc: { mercurial: { action: 'rollAgain', count: 2, formula } } } })
+      // Implicit count and uppercase D normalize to the lib's NdX shape
+      expect(getMercurialSpecial(make('d6')).formula).toBe('1d6')
+      expect(getMercurialSpecial(make('1D8')).formula).toBe('1d8')
+      expect(getMercurialSpecial(make(' 2d6+3 ')).formula).toBe('2d6+3')
+      expect(getMercurialSpecial(make('3d10-2')).formula).toBe('3d10-2')
+      // Garbage, zero-faced, and empty formulas fall back to 1d100
+      expect(getMercurialSpecial(make('banana')).formula).toBe('1d100')
+      expect(getMercurialSpecial(make('2d0')).formula).toBe('1d100')
+      expect(getMercurialSpecial(make('')).formula).toBe('1d100')
+    })
+
     it('ignores flags with an unknown action', () => {
       const result = {
         description: 'A plain effect.',

@@ -1161,20 +1161,25 @@ test('adapter wizard first-cast expands a flagged rollAgain entry with fresh sub
   const spellItem = makeWizardSpellItem()
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
 
-  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+  let remainingUniforms
+  let mercUpdate
+  try {
+    await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
-  const remainingUniforms = uniformQueue.length
-  const mercUpdate = spellItem.update.mock.calls
-    .map(([data]) => data)
-    .find((data) => data && 'system.mercurialEffect.summary' in data)
-
-  // Restore shared globals BEFORE asserting so a failure here cannot
-  // poison the tests that follow.
-  globalThis.Roll = OriginalRoll
-  CONFIG.DCC.mercurialMagicTable = originalTable
-  CONFIG.Dice = originalConfigDice
-  game.tables = originalTables
-  findSpy.mockRestore()
+    remainingUniforms = uniformQueue.length
+    mercUpdate = spellItem.update.mock.calls
+      .map(([data]) => data)
+      .find((data) => data && 'system.mercurialEffect.summary' in data)
+  } finally {
+    // Restore shared globals BEFORE asserting — and even if the cast
+    // itself throws — so a failure here cannot poison the tests that
+    // follow (withRollErrorBoundary rethrows).
+    globalThis.Roll = OriginalRoll
+    CONFIG.DCC.mercurialMagicTable = originalTable
+    CONFIG.Dice = originalConfigDice
+    game.tables = originalTables
+    findSpy.mockRestore()
+  }
 
   // Both 4d20 sub-rolls drew all 8 dice from the sync RNG — fresh rolls,
   // not the replayed trigger.
