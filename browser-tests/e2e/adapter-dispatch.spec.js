@@ -946,6 +946,90 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { spell: 'P1-Wizard-Spell', mode: 'wizard' })
     })
 
+    test('first-cast mercurial roll-again entry expands without crashing (issue #848)', async ({ page }) => {
+      // Regression for #848: mercurial sub-rolls (roll-again specials) used
+      // `new Roll(...).evaluateSync()`, but Foundry v14's `Roll#evaluateSync`
+      // can NEVER evaluate a dice term (DiceTerm.isDeterministic is hard
+      // false; strict mode throws "cannot be synchronously evaluated"), so
+      // any first cast whose mercurial d100 landed on a roll-again entry
+      // crashed the whole spell check. Sub-rolls now draw from
+      // CONFIG.Dice.randomUniform via the lib's expression parser.
+      //
+      // A dedicated world table makes the special path deterministic:
+      // randomUniform = 0.015 rolls the trigger d100 at ceil(0.985×100) = 99
+      // (luck 10 → mod 0) onto the flagged entry, and each 4d20 sub-roll at
+      // 4 × ceil(0.985×20) = 80 onto the plain entry.
+      const result = await page.evaluate(async () => {
+        const table = await RollTable.create({
+          name: 'E2E-848 Mercurial RollAgain',
+          formula: '1d100',
+          results: [
+            { range: [1, 98], description: 'Blue aura. A shimmering blue aura.' },
+            {
+              range: [99, 240],
+              description: 'Roll again twice, but with 4d20.',
+              flags: { dcc: { mercurial: { action: 'rollAgain', count: 2, formula: '4d20' } } }
+            }
+          ]
+        })
+        const originalTableName = CONFIG.DCC.mercurialMagicTable
+        const originalRegistry = CONFIG.DCC.mercurialMagicTables
+        const originalRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.DCC.mercurialMagicTable = 'E2E-848 Mercurial RollAgain'
+        CONFIG.DCC.mercurialMagicTables = {}
+        CONFIG.Dice.randomUniform = () => 0.015
+
+        // Everything after the overrides sits inside the try — a failed
+        // Actor/Item create must not leave randomUniform pinned at 0.015
+        // for the rest of the shared browser session.
+        let actor = null
+        let castError = null
+        let mercurial = null
+        try {
+          actor = await Actor.create({
+            name: 'P1 Mercurial 848 Wizard',
+            type: 'Player',
+            system: { class: { className: 'Wizard' } }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-848-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: false
+            }
+          }])
+
+          try {
+            await actor.rollSpellCheck({ spell: 'P1-848-Spell' })
+            mercurial = foundry.utils.deepClone(
+              actor.items.getName('P1-848-Spell')?.system?.mercurialEffect ?? null
+            )
+          } catch (err) {
+            castError = err?.message || String(err)
+          }
+        } finally {
+          CONFIG.Dice.randomUniform = originalRandomUniform
+          CONFIG.DCC.mercurialMagicTable = originalTableName
+          CONFIG.DCC.mercurialMagicTables = originalRegistry
+          if (actor) await actor.delete()
+          await table.delete()
+        }
+        return { castError, mercurial }
+      })
+
+      expect(result.castError, 'roll-again mercurial expansion must not crash the cast').toBeNull()
+      expect(result.mercurial, 'first cast must store a mercurial effect').not.toBeNull()
+      // Trigger 99 hit the flagged entry; both 4d20 sub-rolls (80) landed
+      // on the plain entry and were combined. (The item schema stores the
+      // value as a string.)
+      expect(String(result.mercurial.value)).toBe('99')
+      expect(result.mercurial.summary).toBe('Blue aura; Blue aura')
+      expect(result.mercurial.description).toContain('(80)')
+    })
+
     test('failed wizard cast fires onSpellLost → spell item system.lost becomes true (Phase 7 session 29)', async ({ page }) => {
       // PR #720 test-coverage gap: `onSpellLost` was tested as a direct
       // callback (adapter-spell-check.test.js) but never verified to fire

@@ -5,7 +5,8 @@ import {
   calculateSpellCheck as libCalculateSpellCheck,
   getCasterProfile as libGetCasterProfile,
   getAbilityModifier as libGetAbilityModifier,
-  rollMercurialMagic as libRollMercurialMagic
+  rollMercurialMagic as libRollMercurialMagic,
+  evaluateRoll as libEvaluateRoll
 } from '../vendor/dcc-core-lib/index.js'
 import { logSpellburn } from '../ability-score-log.js'
 import { renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
@@ -1076,12 +1077,31 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // The pre-evaluated total serves ONLY the first call — special
     // (roll-again) entries make the lib call the roller again for each
     // sub-roll (issue #339), and those must be fresh rolls, not the
-    // trigger total replayed. Sub-rolls use evaluateSync (the lib's
-    // roller contract is synchronous), which also lets the special's own
-    // formula (e.g. 4d20) differ from the initial d100.
+    // trigger total replayed. The lib's roller contract is synchronous,
+    // and Foundry's `Roll#evaluateSync` can NEVER evaluate a dice term
+    // (v14 `DiceTerm.isDeterministic` is hard false; strict mode throws
+    // "cannot be synchronously evaluated" — issue #848), so sub-rolls
+    // parse via the lib's `evaluateRoll` and draw from Foundry's own
+    // RNG stream (`CONFIG.Dice.randomUniform`) one die at a time. This
+    // also lets the special's own formula (e.g. 4d20) differ from the
+    // initial d100.
     const d100Roll = new Roll('1d100')
     await d100Roll.evaluate()
     const luckMod = Number(this.system?.abilities?.lck?.mod) || 0
+
+    // `dice` is one plain dice group ("4d20") from the lib's parser. The
+    // face mapping mirrors Foundry's `DiceTerm#mapRandomFace` —
+    // ceil((1 − u) × faces) — so sub-rolls behave identically to native
+    // Foundry dice drawn from the same RNG stream.
+    const randomUniform = globalThis.CONFIG?.Dice?.randomUniform ?? Math.random
+    const syncDiceRoller = (dice) => {
+      const [count, faces] = dice.split('d').map(Number)
+      let total = 0
+      for (let i = 0; i < count; i++) {
+        total += Math.ceil((1 - randomUniform()) * faces)
+      }
+      return total
+    }
 
     let firstRoll = true
     const effect = libRollMercurialMagic(luckMod, mercurialTable, {
@@ -1090,9 +1110,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
           firstRoll = false
           return d100Roll.total
         }
-        const subRoll = new Roll(expression)
-        subRoll.evaluateSync()
-        return subRoll.total
+        return libEvaluateRoll(expression, { mode: 'evaluate', roller: syncDiceRoller }).total
       }
     })
 
