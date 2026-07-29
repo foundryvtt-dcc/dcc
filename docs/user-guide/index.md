@@ -50,6 +50,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Save Time - Get the Core Book Module](Save-Time---Get-the-Core-Book-Module.md)
 * [Using a Published Adventure Module](Using-a-Published-Adventure-Module.md)
 * [Using aliases for rolls](Using-aliases-for-rolls.md)
+* [Journal Roll Links](Journal-Roll-Links.md)
 * [Dragging rollable items to the macro bar](Dragging-rollable-items-to-the-macro-bar.md)
 * [Bundled Macros](Bundled-Macros.md)
 * [Death Clock](Death-Clock.md)

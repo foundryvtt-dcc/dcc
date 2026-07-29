@@ -1,0 +1,39 @@
+/* ----------------------------------------- */
+/*  Roll-link enrichers (issue #794)
+/* ----------------------------------------- */
+/* [[/check ...]] / [[/save ...]] / [[/skill ...]] links rendered by
+   module/journal-enrichers.mjs — journals, sheets, and chat alike. */
+
+.dcc-enricher-group {
+  white-space: nowrap;
+
+  .dcc-enricher {
+    background: var(--system-light-bg);
+    border: 1px solid var(--color-border-dark-tertiary, #7a7971);
+    border-radius: 3px;
+    color: var(--system-primary-color);
+    padding: 1px 4px;
+    margin-right: 2px;
+    cursor: pointer;
+
+    > i {
+      color: var(--system-primary-color);
+      margin-right: 3px;
+    }
+
+    &:hover {
+      text-shadow: 0 0 8px var(--color-shadow-primary, #ff6400);
+    }
+  }
+
+  .dcc-enricher-request > i {
+    margin-right: 0;
+  }
+}
+
+.dcc-roll-request {
+  .dcc-roll-request-link {
+    text-align: center;
+    margin: 0.3em 0;
+  }
+}
