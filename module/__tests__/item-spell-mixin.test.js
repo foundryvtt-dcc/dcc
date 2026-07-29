@@ -354,6 +354,38 @@ describe('SpellItemMixin extraction', () => {
       }))
     })
 
+    test('rollManifestation falls back to the name convention when an explicit reference dangles', async () => {
+      const item = makeSpell()
+      item.actor = actor
+      item.system.manifestation = { table: 'Renamed Or Deleted Table' }
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const drawnRoll = new FakeRoll('1d4', { value: 3 })
+      const table = {
+        formula: '1d4',
+        draw: vi.fn(async () => ({ roll: drawnRoll, results: [{ description: 'caster glows faintly' }] }))
+      }
+      // The dangling ref matches nothing in the pack, but the conventional
+      // `<name> Manifestation` entry is present and must still resolve.
+      const entry = { _id: 'tbl1', name: 'Probe Spell Manifestation' }
+      global.game.packs = {
+        get: vi.fn(() => ({
+          index: { find: vi.fn((fn) => (fn(entry) ? entry : undefined)) },
+          getDocument: vi.fn(async () => table)
+        }))
+      }
+      global.game.dcc = { DCCRoll: { createRoll: vi.fn(async (terms) => new FakeRoll(terms[0].formula, { value: 3 })) } }
+
+      await item.rollManifestation()
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Renamed Or Deleted Table'))
+      expect(table.draw).toHaveBeenCalledOnce()
+      expect(item.update).toHaveBeenCalledWith(expect.objectContaining({
+        'system.manifestation.value': 3
+      }))
+      warnSpy.mockRestore()
+    })
+
     test('rollManifestation resolves an explicit RollTable.<id> reference from world tables', async () => {
       const item = makeSpell()
       item.actor = actor

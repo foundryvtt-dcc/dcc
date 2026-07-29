@@ -59,8 +59,10 @@ const MAX_MERCURIAL_SPECIAL_DEPTH = 5
  * `logDispatch` of their own — the dispatch-logged spell-check *routing* lives
  * on the actor side (`DCCActor._rollSpellCheckViaAdapter`); this item-level path
  * is the spell-sheet / macro entry point that builds terms and hands off to
- * `processSpellCheck`. The one module dependency is `ensurePlus`
- * (`../utilities.js`), used by `rollMercurialMagic`'s luck-modifier term.
+ * `processSpellCheck`. The module dependencies are the `../utilities.js`
+ * helpers: `ensurePlus` (luck-modifier term), `getMercurialSpecial`
+ * (roll-again expansion, #339), and `getNameCandidates` /
+ * `findPackEntryByName` (Babele-aware table resolution, #799).
  *
  * @param {typeof Item} Base - the document class to extend (production: a
  *   `CurrencyItemMixin(ContainerItemMixin(Item))`; unit tests: a stub).
@@ -262,6 +264,12 @@ export const SpellItemMixin = (Base) => class extends Base {
       }
       if (!table) {
         table = game.tables.contents.find(predicate)
+      }
+      if (!table) {
+        // A configured reference that resolves nowhere (renamed/deleted table)
+        // should not masquerade as "this spell has no manifestation" — leave a
+        // trace before falling back to the naming convention.
+        console.warn(`DCC | Spell "${this.name}": manifestation table reference "${manifestationRef.table}" did not resolve; falling back to name lookup`)
       }
     }
 

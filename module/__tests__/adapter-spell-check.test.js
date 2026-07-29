@@ -1362,6 +1362,39 @@ test('loadMercurialMagicTable: classKey selects the class-specific world table',
   game.tables = originalGameTables
 })
 
+test('loadMercurialMagicTable: resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  const originalGamePacks = game.packs
+  const originalGameTables = game.tables
+
+  // Configured 3-part pack path names the table in English; the translated
+  // pack index shows a German display name and carries the original.
+  CONFIG.DCC.mercurialMagicTables = { default: 'dcc-core-book.dcc-core-tables.Table 5-2: Mercurial Magic DE Probe' }
+  CONFIG.DCC.mercurialMagicTable = null
+  const fakeTable = {
+    id: 'merc-de',
+    name: 'Tabelle 5-2: Launische Magie',
+    results: [{ range: [-20, 130], description: 'Blaue Aura.' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'm1', name: 'Tabelle 5-2: Launische Magie', originalName: 'Table 5-2: Mercurial Magic DE Probe' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  game.packs = { get: (name) => (name === 'dcc-core-book.dcc-core-tables' ? fakePack : null) }
+  game.tables = { getName: () => null, find: () => null }
+
+  const libTable = await loadMercurialMagicTable('wizard')
+
+  expect(libTable?.entries?.[0]?.summary).toBe('Blaue Aura')
+  expect(fakePack.getDocument).toHaveBeenCalledWith('m1')
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+  game.packs = originalGamePacks
+  game.tables = originalGameTables
+})
+
 // Issue #339 — special (roll-again) entries map onto the lib's
 // `entry.special` so `rollMercurialMagic` expands them into sub-effects
 // instead of returning the literal instruction text.

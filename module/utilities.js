@@ -82,7 +82,8 @@ export function getMercurialSpecial (tableResult) {
  * Babele has translated either side of the comparison (issue #799).
  *
  * @param {Object} doc - a Document (or plain object in tests)
- * @returns {Array<String>} unique candidate names, display name first
+ * @returns {Array<String>} unique candidate names (no priority implied —
+ *   {@link findPackEntryByName} matches in pack index order)
  */
 export function getNameCandidates (doc) {
   return [...new Set([doc?.name, doc?.flags?.babele?.originalName].filter(Boolean))]

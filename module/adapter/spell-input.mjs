@@ -50,7 +50,7 @@ import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
-import { getMercurialSpecial } from '../utilities.js'
+import { findPackEntryByName, getMercurialSpecial } from '../utilities.js'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -561,7 +561,8 @@ async function resolveMercurialMagicTable (tableName) {
   if (parts.length === 3) {
     const pack = game.packs?.get?.(`${parts[0]}.${parts[1]}`)
     if (pack) {
-      const entry = pack.index?.find?.((e) => e.name === parts[2])
+      // Tolerate a Babele-translated pack index (issue #799)
+      const entry = findPackEntryByName(pack, parts[2])
       if (entry) {
         let doc
         try {
