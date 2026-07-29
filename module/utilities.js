@@ -90,20 +90,38 @@ export function getNameCandidates (doc) {
 }
 
 /**
+ * Test whether a document (or index entry) is known under any of the given
+ * names, tolerating Babele translation: the display name is checked alongside
+ * the untranslated original Babele records (`originalName` on translated
+ * index entries, `flags.babele.originalName` on documents).
+ *
+ * @param {Object} doc - a Document or index entry (or plain object in tests)
+ * @param {String|Array<String>} names - candidate name(s) to match
+ * @param {Object} [options]
+ * @param {Boolean} [options.prefix] - match on startsWith instead of equality
+ *   (for the `Crit Table III …` style lookups that tolerate name suffixes)
+ * @returns {Boolean}
+ */
+export function docNameMatches (doc, names, { prefix = false } = {}) {
+  const candidates = Array.isArray(names) ? names : [names]
+  return [doc?.name, doc?.originalName, doc?.flags?.babele?.originalName]
+    .some((name) => name && (prefix
+      ? candidates.some((candidate) => name.startsWith(candidate))
+      : candidates.includes(name)))
+}
+
+/**
  * Find a compendium index entry by name, tolerating Babele translation on
- * the entry side. Babele's translated indexes carry the untranslated name
- * (`originalName` on the entry, or under `flags.babele`), so a translated
- * table still matches its English name and vice versa.
+ * the entry side (see {@link docNameMatches}) so a translated table still
+ * matches its English name and vice versa. Matches in pack index order.
  *
  * @param {Object} pack - a CompendiumCollection (or stub in tests)
  * @param {String|Array<String>} names - candidate name(s) to match
+ * @param {Object} [options] - passed through to {@link docNameMatches}
  * @returns {Object|null} the matching index entry, or null
  */
-export function findPackEntryByName (pack, names) {
-  const candidates = Array.isArray(names) ? names : [names]
-  return pack?.index?.find?.((entry) =>
-    [entry?.name, entry?.originalName, entry?.flags?.babele?.originalName]
-      .some((name) => name && candidates.includes(name))) ?? null
+export function findPackEntryByName (pack, names, options = {}) {
+  return pack?.index?.find?.((entry) => docNameMatches(entry, names, options)) ?? null
 }
 
 /**
@@ -271,12 +289,13 @@ async function resolveCritTable (critTableCanonical) {
     if (!criticalHitPackName) continue
     const pack = game.packs.get(criticalHitPackName)
     if (!pack) continue
-    const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
+    // Prefix + Babele-aware: translated indexes match on originalName (#799)
+    const entry = findPackEntryByName(pack, critTableCanonical, { prefix: true })
     if (!entry) continue
     return await pack.getDocument(entry._id)
   }
 
-  const worldCritTable = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
+  const worldCritTable = game.tables.find((entity) => docNameMatches(entity, critTableCanonical, { prefix: true }))
   if (worldCritTable) return worldCritTable
 
   return null
@@ -323,14 +342,15 @@ function resolveCritTableLink (critTableSuffix) {
     if (!criticalHitPackName) continue
     const pack = game.packs.get(criticalHitPackName)
     if (!pack) continue
-    const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
+    // Prefix + Babele-aware: translated indexes match on originalName (#799)
+    const entry = findPackEntryByName(pack, critTableCanonical, { prefix: true })
     if (entry) {
       return `@UUID[Compendium.${criticalHitPackName}.${entry._id}]`
     }
   }
 
   // Try in the local world
-  const worldCritTable = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
+  const worldCritTable = game.tables.find((entity) => docNameMatches(entity, critTableCanonical, { prefix: true }))
   if (worldCritTable) {
     return `@UUID[RollTable.${worldCritTable.id}]`
   }
@@ -353,15 +373,18 @@ export async function getTableFromPath (tablePath) {
     const tableName = pathComponents.slice(2).join('.')
     const pack = game.packs.get(packName)
     if (pack) {
-      const entry = pack.index.find((entity) => entity.name === tableName)
+      // Babele-aware: translated indexes match on originalName (#799)
+      const entry = findPackEntryByName(pack, tableName)
       if (entry) {
         return pack.getDocument(entry._id)
       }
     }
   }
 
-  // Fall back to a world table by name
-  return game.tables.getName(tablePath) || null
+  // Fall back to a world table by name (or its untranslated original)
+  return game.tables.getName(tablePath) ||
+    game.tables.find?.((entity) => docNameMatches(entity, tablePath)) ||
+    null
 }
 
 /**
@@ -371,7 +394,7 @@ export async function getTableFromPath (tablePath) {
  */
 export async function getFumbleTableResult (roll, localTableName = 'Table 4-2: Fumbles') {
   // First check for a local world table
-  const worldFumbleTable = game.tables.find((entity) => entity.name === localTableName)
+  const worldFumbleTable = game.tables.find((entity) => docNameMatches(entity, localTableName))
   if (worldFumbleTable) {
     const fumbleResult = worldFumbleTable.getResultsForRoll(roll.total)
     return fumbleResult[0] || 'Unable to find fumble result'
@@ -386,7 +409,8 @@ export async function getFumbleTableResult (roll, localTableName = 'Table 4-2: F
       pack = game.packs.get(fumbleTablePath[0] + '.' + fumbleTablePath[1])
     }
     if (pack) {
-      const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
+      // Babele-aware: translated indexes match on originalName (#799)
+      const entry = findPackEntryByName(pack, fumbleTablePath[2])
       if (entry) {
         const table = await pack.getDocument(entry._id)
         const fumbleResult = table.getResultsForRoll(roll.total)
@@ -427,16 +451,17 @@ export async function getNPCFumbleTableResult (roll, fumbleTableName) {
     const fumblePackName = 'dcc-core-book.dcc-monster-fumble-tables'
     const pack = game.packs.get(fumblePackName)
     if (pack) {
-      const entry = pack.index.filter((entity) => entity.name.startsWith(fumbleTableName))
-      if (entry.length > 0) {
-        const table = await pack.getDocument(entry[0]._id)
+      // Prefix + Babele-aware: translated indexes match on originalName (#799)
+      const entry = findPackEntryByName(pack, fumbleTableName, { prefix: true })
+      if (entry) {
+        const table = await pack.getDocument(entry._id)
         const fumbleResult = table.getResultsForRoll(roll.total)
         return fumbleResult[0] || 'Unable to find fumble result'
       }
     }
 
     // Fall back to searching world tables by name
-    const worldTable = game.tables.find((entity) => entity.name.startsWith(fumbleTableName))
+    const worldTable = game.tables.find((entity) => docNameMatches(entity, fumbleTableName, { prefix: true }))
     if (worldTable) {
       const fumbleResult = worldTable.getResultsForRoll(roll.total)
       return fumbleResult[0] || 'Unable to find fumble result'

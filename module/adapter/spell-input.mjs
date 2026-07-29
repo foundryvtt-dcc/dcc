@@ -50,7 +50,7 @@ import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
-import { findPackEntryByName, getMercurialSpecial } from '../utilities.js'
+import { docNameMatches, findPackEntryByName, getMercurialSpecial } from '../utilities.js'
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -471,7 +471,10 @@ async function resolveDisapprovalTable (tableName) {
     if (!packName) continue
     const pack = game.packs?.get?.(packName)
     if (!pack) continue
-    const entry = pack.index?.find?.((e) => `${packName}.${e.name}` === tableName)
+    // Only this pack's tables can match the `packName.tableName` path; match
+    // the tail Babele-aware so a translated index still resolves (issue #799).
+    if (!tableName.startsWith(`${packName}.`)) continue
+    const entry = findPackEntryByName(pack, tableName.slice(packName.length + 1))
     if (!entry) continue
     let doc
     try {
@@ -494,7 +497,7 @@ async function resolveDisapprovalTable (tableName) {
   const worldTableName = tableName.includes('.')
     ? tableName.split('.').pop()
     : tableName
-  const worldTable = game.tables?.find?.((t) => t.name === worldTableName)
+  const worldTable = game.tables?.find?.((t) => docNameMatches(t, worldTableName))
   if (worldTable) {
     const libTable = toLibSimpleTable(worldTable)
     if (libTable) return libTable

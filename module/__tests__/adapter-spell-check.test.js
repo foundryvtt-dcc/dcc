@@ -2285,6 +2285,27 @@ test('loadDisapprovalTable resolves a compendium table via CONFIG.DCC.disapprova
   game.packs = originalGamePacks
 })
 
+test('loadDisapprovalTable resolves a Babele-translated pack entry by its original name (#799)', async () => {
+  const originalPacks = CONFIG.DCC.disapprovalPacks
+  const originalGamePacks = game.packs
+  clearAllTableCaches()
+  const sourceTable = makeDisapprovalSourceTable('pack-doc-de', 'Missbilligung-1')
+  const pack = {
+    index: [{ _id: 'pack-doc-de', name: 'Missbilligung-1', originalName: 'Disapproval-1' }],
+    getDocument: vi.fn().mockResolvedValue(sourceTable)
+  }
+  CONFIG.DCC.disapprovalPacks = { packs: ['dcc-core-book.dcc-disapproval-tables'] }
+  game.packs = { get: vi.fn().mockReturnValue(pack) }
+
+  const libTable = await loadDisapprovalTable(makeDisapprovalActor('dcc-core-book.dcc-disapproval-tables.Disapproval-1'))
+
+  expect(libTable?.entries).toHaveLength(2)
+  expect(pack.getDocument).toHaveBeenCalledWith('pack-doc-de')
+
+  CONFIG.DCC.disapprovalPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
 test('loadDisapprovalTable falls back to world tables when compendium lookup misses', async () => {
   const originalPacks = CONFIG.DCC.disapprovalPacks
   const originalGamePacks = game.packs

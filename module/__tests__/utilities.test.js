@@ -3,6 +3,7 @@
 import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
+  docNameMatches,
   ensurePlus,
   findPackEntryByName,
   formatMercurialDescriptionHTML,
@@ -494,6 +495,13 @@ describe('Utilities', () => {
       expect(result).toEqual({ text: 'Critical hit result' })
     })
 
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockEntry.name = 'Table de Critique III'
+      mockEntry.originalName = 'Crit Table III'
+      const result = await getCritTableResult(mockRoll, 'Crit Table III')
+      expect(result).toEqual({ text: 'Critical hit result' })
+    })
+
     it('handles elemental crit table specially', async () => {
       await getCritTableResult(mockRoll, 'Crit Table EL')
       expect(CONFIG.DCC.criticalHitPacks.addPack).toHaveBeenCalledWith(
@@ -706,6 +714,22 @@ describe('Utilities', () => {
       const result = await getTableFromPath('Nonexistent Table')
       expect(result).toBeNull()
     })
+
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockPack.index = [{ _id: 'deed-table-id', name: 'Heldentat: Würfe', originalName: 'Deed: Trips and Throws' }]
+      const result = await getTableFromPath('some-module.deed-tables.Deed: Trips and Throws')
+      expect(mockPack.getDocument).toHaveBeenCalledWith('deed-table-id')
+      expect(result).toBe(mockTable)
+    })
+
+    it('falls back to a world table imported from a translated pack (#799)', async () => {
+      const worldTable = { name: 'Heldentat: Würfe', flags: { babele: { originalName: 'Deed: Trips and Throws' } } }
+      global.game.packs.get.mockReturnValue(null)
+      global.game.tables.find = vi.fn((predicate) => (predicate(worldTable) ? worldTable : null))
+
+      const result = await getTableFromPath('Deed: Trips and Throws')
+      expect(result).toBe(worldTable)
+    })
   })
 
   describe('getFumbleTableResult', () => {
@@ -791,6 +815,13 @@ describe('Utilities', () => {
       const result = await getFumbleTableResult(mockRoll)
       expect(result).toBe('Unable to find fumble result')
     })
+
+    it('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+      mockEntry.name = 'Patzer-Tabelle'
+      mockEntry.originalName = 'Fumble Table'
+      const result = await getFumbleTableResult(mockRoll)
+      expect(result).toEqual({ text: 'Fumble result' })
+    })
   })
 
   describe('getNPCFumbleTableResult', () => {
@@ -834,6 +865,13 @@ describe('Utilities', () => {
       expect(result).toEqual({ text: 'NPC fumble result' })
       expect(global.game.packs.get).toHaveBeenCalledWith('dcc-core-book.dcc-monster-fumble-tables')
       expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(12)
+    })
+
+    it('resolves a Babele-translated pack entry by its original name prefix (#799)', async () => {
+      mockEntry.name = 'Patzer-Tabelle M (Monster)'
+      mockEntry.originalName = 'Fumble Table M (Monsters)'
+      const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
+      expect(result).toEqual({ text: 'NPC fumble result' })
     })
 
     it('handles missing fumble table name', async () => {
@@ -912,6 +950,28 @@ describe('Utilities', () => {
       expect(getNameCandidates(null)).toEqual([])
       expect(getNameCandidates(undefined)).toEqual([])
       expect(getNameCandidates({})).toEqual([])
+    })
+  })
+
+  describe('docNameMatches', () => {
+    it('matches exactly by default', () => {
+      expect(docNameMatches({ name: 'Crit Table III' }, 'Crit Table III')).toBe(true)
+      expect(docNameMatches({ name: 'Crit Table III (Warriors)' }, 'Crit Table III')).toBe(false)
+    })
+
+    it('matches by prefix when requested', () => {
+      expect(docNameMatches({ name: 'Crit Table III (Warriors)' }, 'Crit Table III', { prefix: true })).toBe(true)
+      expect(docNameMatches({ name: 'Crit Table II' }, 'Crit Table III', { prefix: true })).toBe(false)
+    })
+
+    it('matches prefixes against the Babele original name', () => {
+      const doc = { name: 'T. dei Critici III (Guerrieri)', originalName: 'Crit Table III (Warriors)' }
+      expect(docNameMatches(doc, 'Crit Table III', { prefix: true })).toBe(true)
+    })
+
+    it('tolerates missing docs and names', () => {
+      expect(docNameMatches(null, 'X')).toBe(false)
+      expect(docNameMatches({}, 'X', { prefix: true })).toBe(false)
     })
   })
 

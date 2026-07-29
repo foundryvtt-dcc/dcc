@@ -305,6 +305,20 @@ describe('getSkillTable', () => {
     expect(result).toBe(tableDoc)
   })
 
+  test('resolves a Babele-translated pack entry by its original name (#799)', async () => {
+    globalThis.CONFIG.DCC.turnUnholyTable = 'dcc-core-book.dcc-core-tables.Turn Unholy'
+    const tableDoc = { id: 'tt1', name: 'Unheilige vertreiben' }
+    const entry = { _id: 'tt1', name: 'Unheilige vertreiben', originalName: 'Turn Unholy' }
+    globalThis.game.packs.get = vi.fn(() => ({
+      index: { find: vi.fn((predicate) => (predicate(entry) ? entry : null)) },
+      getDocument: vi.fn().mockResolvedValue(tableDoc)
+    }))
+
+    const result = await getSkillTable('turnUnholy')
+
+    expect(result).toBe(tableDoc)
+  })
+
   test('falls back to a world table when the configured compendium pack is missing', async () => {
     globalThis.CONFIG.DCC.turnUnholyTable = 'missing.module.Turn Unholy'
     globalThis.game.packs.get = vi.fn(() => null)
