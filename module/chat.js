@@ -71,7 +71,8 @@ export const highlightCriticalSuccessFailure = function (message, html) {
  * This function is used to hook into the Chat Log context menu to add additional options to each message
  * These options make it easy to conveniently apply damage to controlled tokens based on the value of a Roll
  *
- * @param {HTMLElement} html    The Chat Message being rendered
+ * @param {Application} html    The ChatLog application (unused; the hook fires
+ *                              once at its first render, not per message)
  * @param {Array} options       The Array of Context Menu options
  *
  * @return {Array}              The extended options Array including new context choices
@@ -79,24 +80,23 @@ export const highlightCriticalSuccessFailure = function (message, html) {
 export const addChatMessageContextOptions = function (html, options) {
   const canApply = function (li) {
     if (canvas.tokens.controlled.length === 0) return false
-    if (li.querySelector('.damage-applyable')) return true
-    if (li.querySelector('.dice-total')) return true
+    return !!(li.querySelector('.damage-applyable') || li.querySelector('.dice-total'))
   }
 
   options.push(
     {
-      name: 'DCC.ChatContextDamage',
-      icon: '<i class="fas fa-user-minus"></i>',
-      condition: canApply,
-      callback: li => applyChatCardDamage(li, 1)
+      label: 'DCC.ChatContextDamage',
+      icon: 'fas fa-user-minus',
+      visible: canApply,
+      onClick: (event, li) => applyChatCardDamage(li, 1)
     }
   )
   options.push(
     {
-      name: 'DCC.ChatContextHealing',
-      icon: '<i class="fas fa-user-plus"></i>',
-      condition: canApply,
-      callback: li => applyChatCardDamage(li, -1)
+      label: 'DCC.ChatContextHealing',
+      icon: 'fas fa-user-plus',
+      visible: canApply,
+      onClick: (event, li) => applyChatCardDamage(li, -1)
     }
   )
   return options

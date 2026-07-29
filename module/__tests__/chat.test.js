@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
 vi.mock('../utilities.js', async (importOriginal) => {
@@ -8,7 +8,7 @@ vi.mock('../utilities.js', async (importOriginal) => {
   return { ...actual, getCritTableResult: vi.fn(), getTableFromPath: vi.fn(async () => null) }
 })
 
-const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners } = await import('../chat.js')
+const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions } = await import('../chat.js')
 const { getCritTableResult } = await import('../utilities.js')
 
 /**
@@ -219,5 +219,91 @@ describe('attachMightyDeedListeners', () => {
     attachMightyDeedListeners(message, card)
 
     expect(select.changeListeners).toBe(1)
+  })
+})
+
+describe('addChatMessageContextOptions (chat card context menu, issue #828)', () => {
+  // The v14 ContextMenu passes a plain HTMLElement to visible/onClick — these
+  // stubs model `li` with just the queries the entries perform.
+  const makeLi = ({ damage = null, diceTotal = null } = {}) => ({
+    querySelector: (sel) => {
+      if (sel === '.damage-applyable' && damage !== null) {
+        return { getAttribute: (attr) => (attr === 'data-damage' ? damage : null) }
+      }
+      if (sel === '.dice-total' && diceTotal !== null) {
+        return { textContent: diceTotal }
+      }
+      return null
+    },
+    closest: () => null
+  })
+
+  let damageEntry
+  let healingEntry
+  let applyDamage
+
+  beforeEach(() => {
+    applyDamage = vi.fn(async () => {})
+    vi.stubGlobal('canvas', { tokens: { controlled: [{ actor: { applyDamage } }] } })
+    vi.stubGlobal('game', {
+      messages: { get: vi.fn() },
+      i18n: { localize: (key) => key }
+    })
+    vi.stubGlobal('ui', { notifications: { warn: vi.fn() } })
+    const options = addChatMessageContextOptions({}, [])
+    damageEntry = options[0]
+    healingEntry = options[1]
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('pushes two v14-shaped entries (label/visible/onClick, class-name icon)', () => {
+    expect(damageEntry.label).toBe('DCC.ChatContextDamage')
+    expect(healingEntry.label).toBe('DCC.ChatContextHealing')
+    for (const entry of [damageEntry, healingEntry]) {
+      expect(entry.icon).not.toMatch(/</) // class name string, not an <i> HTML string
+      expect(typeof entry.visible).toBe('function')
+      expect(typeof entry.onClick).toBe('function')
+      expect(entry.name).toBeUndefined()
+      expect(entry.condition).toBeUndefined()
+      expect(entry.callback).toBeUndefined()
+    }
+  })
+
+  it('visible when a token is controlled and the card has an applyable amount', () => {
+    expect(damageEntry.visible(makeLi({ damage: '5' }))).toBe(true)
+    expect(damageEntry.visible(makeLi({ diceTotal: '7' }))).toBe(true)
+  })
+
+  it('not visible when no tokens are controlled', () => {
+    globalThis.canvas.tokens.controlled = []
+    expect(damageEntry.visible(makeLi({ damage: '5' }))).toBe(false)
+  })
+
+  it('not visible when the card has neither a damage-applyable nor a dice total', () => {
+    expect(damageEntry.visible(makeLi())).toBe(false)
+  })
+
+  it('onClick applies the damage-applyable amount to each controlled token actor', async () => {
+    await damageEntry.onClick(new Event('click'), makeLi({ damage: '5' }))
+    expect(applyDamage).toHaveBeenCalledWith('5', 1)
+  })
+
+  it('healing onClick applies the amount with a -1 multiplier', async () => {
+    await healingEntry.onClick(new Event('click'), makeLi({ damage: '3' }))
+    expect(applyDamage).toHaveBeenCalledWith('3', -1)
+  })
+
+  it('onClick falls back to the dice total for plain rolls', async () => {
+    await damageEntry.onClick(new Event('click'), makeLi({ diceTotal: '7' }))
+    expect(applyDamage).toHaveBeenCalledWith('7', 1)
+  })
+
+  it('onClick warns instead of applying when no amount can be found', async () => {
+    await damageEntry.onClick(new Event('click'), makeLi())
+    expect(applyDamage).not.toHaveBeenCalled()
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
   })
 })
