@@ -202,7 +202,7 @@
     &[type='checkbox']:focus,
     &[type='radio']:focus {
       color: inherit;
-      outline: 1px solid var(--system-input-outline-focus-color);
+      outline: 1px solid var(--system-input-focus-outline-color);
       outline-offset: 2px;
     }
 
@@ -278,7 +278,7 @@
 
     &:focus-visible {
       box-shadow: none;
-      outline: 2px solid var(--system-input-outline-focus);
+      outline: 2px solid var(--system-input-focus-outline-color);
       outline-offset: 2px;
       border-radius: unset;
     }

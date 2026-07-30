@@ -191,7 +191,7 @@
     gap: 5px;
     justify-content: center;
     padding: 10px 0;
-    border-bottom: 1px solid var(--color-border-light-tertiary);
+    border-bottom: 1px solid var(--system-border-muted-color);
 
     button {
       flex: 1 1 auto;
@@ -204,7 +204,7 @@
     font-family: var(--system-label-font), serif;
     font-size: 14px;
     margin: 0 0 10px 0;
-    border-bottom: 1px solid var(--color-border-light-tertiary);
+    border-bottom: 1px solid var(--system-border-muted-color);
     padding-bottom: 5px;
   }
 
@@ -235,7 +235,7 @@
         height: 100%;
         object-fit: cover;
         border-radius: 3px;
-        border: 1px solid var(--color-border-light-tertiary);
+        border: 1px solid var(--system-border-muted-color);
       }
     }
 
@@ -294,7 +294,7 @@
   }
 
   .spell-duel-log {
-    border-top: 1px solid var(--color-border-light-tertiary);
+    border-top: 1px solid var(--system-border-muted-color);
     padding-top: 10px;
     font-family: var(--system-data-font), serif;
 
@@ -332,7 +332,7 @@
 
     .log-entry {
       padding: 3px 5px;
-      border-bottom: 1px solid var(--color-border-light-tertiary);
+      border-bottom: 1px solid var(--system-border-muted-color);
 
       &:last-child {
         border-bottom-width: 0;

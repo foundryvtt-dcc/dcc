@@ -401,7 +401,7 @@
 }
 .dcc input[type=checkbox]:focus, .dcc input[type=radio]:focus {
   color: inherit;
-  outline: 1px solid var(--system-input-outline-focus-color);
+  outline: 1px solid var(--system-input-focus-outline-color);
   outline-offset: 2px;
 }
 .dcc input[type=checkbox]:focus-visible::before, .dcc input[type=radio]:focus-visible::before {
@@ -461,7 +461,7 @@
 }
 .dcc input:focus-visible {
   box-shadow: none;
-  outline: 2px solid var(--system-input-outline-focus);
+  outline: 2px solid var(--system-input-focus-outline-color);
   outline-offset: 2px;
   border-radius: unset;
 }
@@ -725,7 +725,7 @@ a.inline-roll {
 }
 .deed-table-prompt .deed-table-select {
   background: var(--chat-background);
-  border: 1px solid var(--color-border-light-primary);
+  border: 1px solid var(--chat-border-subtle-color);
   color: var(--chat-primary-color);
   max-width: 100%;
 }
@@ -773,6 +773,9 @@ a.inline-roll {
 .chat-message .dcc-enricher-group .dcc-enricher > i {
   color: inherit;
 }
+.chat-message .dcc-enricher-group .dcc-enricher {
+  border-color: var(--chat-border-muted-color);
+}
 .chat-message .dcc {
   color: var(--chat-primary-color);
 }
@@ -793,7 +796,7 @@ a.inline-roll {
 
 .chat-message .table-draw .mercurial,
 .chat-message .table-draw .manifestation {
-  border-top: 1px solid var(--color-border-light-primary);
+  border-top: 1px solid var(--chat-border-subtle-color);
   font-size: var(--font-size-12);
   line-height: 22px;
   margin-bottom: 8px;
@@ -927,8 +930,8 @@ a.inline-roll {
   cursor: pointer;
 }
 .dcc-enhanced-card .weapon-description {
-  border-bottom: 1px solid var(--color-border-light-primary);
-  border-top: 1px solid var(--color-border-light-primary);
+  border-bottom: 1px solid var(--chat-border-subtle-color);
+  border-top: 1px solid var(--chat-border-subtle-color);
   font-size: 0.9em;
   margin: 4px 0;
   padding: 4px 0;
@@ -978,7 +981,7 @@ a.inline-roll {
   pointer-events: none;
 }
 .dcc-enhanced-card .card-footer .tag {
-  border: 1px solid var(--color-border-light-primary);
+  border: 1px solid var(--chat-border-subtle-color);
   border-radius: 3px;
   font-size: 0.8em;
   margin: 2px;
@@ -1001,7 +1004,7 @@ a.inline-roll {
 }
 .dcc-ability-loss-chart td {
   padding: 2px 12px;
-  border: 1px solid var(--color-border-light-2, #999);
+  border: 1px solid var(--chat-border-muted-color);
   text-align: center;
 }
 .dcc-ability-loss-chart tr.rolled {
@@ -1767,7 +1770,7 @@ a.inline-roll {
 }
 .dcc.item .tab-body .item-values input {
   background: rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--color-border-light-tertiary);
+  border: 1px solid var(--system-border-muted-color);
   border-radius: 3px;
   line-height: 13px;
   height: 15px;
@@ -2338,7 +2341,7 @@ a.inline-roll {
   gap: 5px;
   justify-content: center;
   padding: 10px 0;
-  border-bottom: 1px solid var(--color-border-light-tertiary);
+  border-bottom: 1px solid var(--system-border-muted-color);
 }
 .dcc .spell-duel .spell-duel-header button {
   flex: 1 1 auto;
@@ -2349,7 +2352,7 @@ a.inline-roll {
   font-family: var(--system-label-font), serif;
   font-size: 14px;
   margin: 0 0 10px 0;
-  border-bottom: 1px solid var(--color-border-light-tertiary);
+  border-bottom: 1px solid var(--system-border-muted-color);
   padding-bottom: 5px;
 }
 .dcc .spell-duel .spell-duel-participants .no-participants {
@@ -2376,7 +2379,7 @@ a.inline-roll {
   height: 100%;
   object-fit: cover;
   border-radius: 3px;
-  border: 1px solid var(--color-border-light-tertiary);
+  border: 1px solid var(--system-border-muted-color);
 }
 .dcc .spell-duel .spell-duel-participant .participant-name {
   font-size: 1.2rem;
@@ -2426,7 +2429,7 @@ a.inline-roll {
   margin-left: 5px;
 }
 .dcc .spell-duel .spell-duel-log {
-  border-top: 1px solid var(--color-border-light-tertiary);
+  border-top: 1px solid var(--system-border-muted-color);
   padding-top: 10px;
   font-family: var(--system-data-font), serif;
 }
@@ -2459,7 +2462,7 @@ a.inline-roll {
 }
 .dcc .spell-duel .spell-duel-log .log-entry {
   padding: 3px 5px;
-  border-bottom: 1px solid var(--color-border-light-tertiary);
+  border-bottom: 1px solid var(--system-border-muted-color);
 }
 .dcc .spell-duel .spell-duel-log .log-entry:last-child {
   border-bottom-width: 0;
@@ -3532,7 +3535,7 @@ a.inline-roll {
   white-space: nowrap;
 }
 .dcc-enricher-group .dcc-enricher {
-  border: 1px solid var(--color-border-dark-tertiary, #7a7971);
+  border: 1px solid var(--system-border-muted-color);
   border-radius: 3px;
   color: var(--system-primary-color);
   padding: 1px 4px;

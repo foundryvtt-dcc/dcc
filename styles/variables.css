@@ -40,10 +40,27 @@
 
   /* Theming contract — semantic colors referenced from style partials.
      Variants (xcc, mcc) override these in their own stylesheets without
-     redeclaring component selectors. See
-     docs/dev/ARCHITECTURE_REIMAGINED.md §7 for the full contract. */
+     redeclaring component selectors. Prefer a name from this block over a
+     Foundry `--color-*` one — see docs/dev/V14.md, "CSS variables that no
+     longer resolve", for why core's are unsafe. */
   --system-text-muted-color: #666;
   --system-damage-color: #8b0000;
+  /* Two border weights below --system-border-color (which frames boxes),
+     replacing `--color-border-light-primary` / `--color-border-light-tertiary`
+     (issue #861). Foundry V14 declares those only under `body.game .app`, the
+     AppV1 selector, and V14 has no AppV1 windows — so every `border: 1px solid
+     var(--color-border-light-*)` was invalid at computed-value time and
+     rendered as `border-style: none`, i.e. no border at all. Both light values
+     are core's, so each site keeps the weight it was designed with.
+
+     -subtle: decorative hairlines that divide content inside a card. Quiet by
+     design — ~1.7:1 against its background in BOTH themes, matching the weight
+     core shipped in light.
+     -muted: boundaries that have to be seen — control outlines, data-table
+     grids, the roll-link chip whose border is its only affordance. Stays above
+     the 3:1 WCAG 1.4.11 floor for UI component boundaries in both themes. */
+  --system-border-subtle-color: #b5b3a4;
+  --system-border-muted-color: #7a7971;
   --system-rollable-hover-color: #000;
   --system-flat-button-border-color: #c9c7b8;
   --system-two-weapon-primary-color: #4caf50;
@@ -56,18 +73,35 @@
   --system-tab-overflow-text-color: #4a3c2a;
   --system-tab-overflow-hover-background: #e0d5c0;
   --system-tab-overflow-hover-text-color: #2a1f14;
-  --system-tab-overflow-active-text-color: var(--color-text-dark-primary);
+  /* Literal, not `var(--color-text-dark-primary)` (issue #861): Foundry V14
+     declares that only under `body.game .app`, which nothing matches, so this
+     custom property was guaranteed-invalid and the active tab in the overflow
+     menu had no color at all in the light theme. The dark block sets #fff, which
+     is why it looked like it worked. #191813 is the value core's variable held. */
+  --system-tab-overflow-active-text-color: #191813;
 }
 
-/* Chat card colors - scoped to body to follow app theme, not UI theme */
+/* Chat card colors - scoped to body to follow app theme, not UI theme.
+   The border pair mirrors --system-border-*-color for the same two weights, and
+   has to exist separately for the reason this whole block does: Foundry stamps
+   `themed theme-light` on `ol.chat-log`, which re-establishes the `.theme-light`
+   variables for that entire subtree — so a `.theme-light`-scoped value resolves
+   LIGHT inside chat whatever the active theme is (#856, #861). Only a name
+   declared on `body` alone escapes that. Literals, not
+   `var(--system-border-*-color)`: a custom property's value is substituted where
+   it is USED, so the indirection would resolve light inside the chat log too. */
 body.theme-light {
   --chat-background: url('/ui/parchment.jpg');
   --chat-primary-color: #222;
+  --chat-border-subtle-color: #b5b3a4;
+  --chat-border-muted-color: #7a7971;
 }
 
 body.theme-dark {
   --chat-background: #0b0a13;
   --chat-primary-color: #d0beaa;
+  --chat-border-subtle-color: #3d3c44;
+  --chat-border-muted-color: #6b6a75;
 }
 
 /*Override for dark theme */
@@ -77,6 +111,13 @@ body.theme-dark {
   --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
   --system-backstab-button-image: url('./images/backstab-grey.svg');
   --system-border-color: #525252;
+  /* Quieter than --system-border-color (#525252, which frames boxes) so a
+     separator stays a hairline against the near-black background rather than
+     reading as a box edge. */
+  --system-border-subtle-color: #3d3c44;
+  /* ~3.7:1 on #0b0a13 — the light value (#7a7971) would drop to 1.9:1 there,
+     so anything relying on its border to be visible needs this instead. */
+  --system-border-muted-color: #6b6a75;
   /* Must stay clearly visible against the near-black dialog/sheet background
      (#0b0a13) — the unchecked box is a solid square in this color, and the
      input background (#323138) is indistinguishable from it at 18px. */
@@ -119,4 +160,6 @@ body.theme-dark {
 .chat-cards-use-ui-theme #interface {
   --chat-background: var(--system-background);
   --chat-primary-color: var(--system-primary-color);
+  --chat-border-subtle-color: var(--system-border-subtle-color);
+  --chat-border-muted-color: var(--system-border-muted-color);
 }

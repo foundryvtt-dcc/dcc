@@ -7,16 +7,18 @@
 .dcc-enricher-group {
   white-space: nowrap;
 
+  // No `background` (#856): the link is a bordered outline, filled by nothing.
+  // It carried `var(--system-light-bg)`, a variable nothing declares, so it was
+  // invalid and already computing to `transparent` — and unlike `.content-link`
+  // there is no core rule for `.dcc-enricher` to fall back to, so dropping it
+  // renders identically. Removed rather than given a value: the enricher shows up
+  // in chat as well as on sheets and journals, and chat colors its text `inherit`
+  // (styles/_chat.scss), so a fixed light fill would be light-on-light there in
+  // the dark theme — the #856 bug from the other side. That also makes the border
+  // the only affordance marking the link, hence the -muted token rather than
+  // -subtle (#861).
   .dcc-enricher {
-    // No `background`: the link is a bordered outline, filled by nothing. This
-    // carried `var(--system-light-bg)`, a variable nothing declares, so it was
-    // invalid and already computing to `transparent` — and unlike `.content-link`
-    // there is no core rule for `.dcc-enricher` to fall back to, so dropping it
-    // renders identically. Removed rather than given a value: the enricher shows
-    // up in chat as well as on sheets and journals, and chat colors its text
-    // `inherit` (styles/_chat.scss), so a fixed light fill would be light-on-light
-    // there in the dark theme — the #856 bug from the other side.
-    border: 1px solid var(--color-border-dark-tertiary, #7a7971);
+    border: 1px solid var(--system-border-muted-color);
     border-radius: 3px;
     color: var(--system-primary-color);
     padding: 1px 4px;
