@@ -78,29 +78,46 @@ const read = (file) => fs.readFileSync(path.join(STYLES_DIR, file), 'utf8')
 /** Every custom property DCC declares, across the compiled sheet and variables. */
 function declaredProperties () {
   const css = read('dcc.css') + read('variables.css')
-  return new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]))
+  return new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map(m => m[1]))
 }
 
 /**
- * Every `var(--x)` reference in the compiled sheet that supplies NO fallback,
- * mapped to the declarations that use it (for a readable failure message).
+ * Every `var(--x)` reference that supplies NO fallback, mapped to the sites
+ * using it (for a readable failure message).
+ *
+ * Scans variables.css and the SCSS partials as well as the compiled sheet.
+ * variables.css matters because a custom property whose own value contains an
+ * invalid `var()` becomes guaranteed-invalid, taking every consumer with it —
+ * one indirection away from the compiled output and therefore easy to miss. The
+ * partials matter because dcc.css is a build artifact: without them a stale
+ * compile would leave this test green while the shipped stylesheet is broken.
  */
 function referencesWithoutFallback () {
-  const css = read('dcc.css')
   const uses = new Map()
-  // Capture the declaration each reference sits in, so a failure names the
-  // property rather than only the variable.
-  for (const rule of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-    const selector = rule[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim()
-    for (const declaration of rule[2].split(';')) {
-      for (const use of declaration.matchAll(/var\((--[a-z0-9-]+)\s*([,)])/g)) {
-        if (use[2] === ',') continue // has a fallback — degrades predictably
-        const site = `${selector} { ${declaration.trim()} }`
-        uses.set(use[1], [...(uses.get(use[1]) || []), site])
+  for (const file of ['dcc.css', 'variables.css', ...scssPartials()]) {
+    // `//` line comments are SCSS-only; strip them so a commented-out variable
+    // name is not reported as a live reference.
+    const css = read(file).replace(/^\s*\/\/.*$/gm, '')
+    for (const rule of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+      const selector = rule[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim()
+      for (const declaration of rule[2].split(';')) {
+        // A nested `var(--a, var(--b))` degrades safely, so only the OUTERMOST
+        // reference of each declaration decides — take the first `var(` and
+        // check whether it supplies a comma before its closing paren.
+        for (const use of declaration.matchAll(/var\((--[\w-]+)\s*([,)])/g)) {
+          if (use[2] === ',') break // has a fallback — this declaration is safe
+          const site = `${file}: ${selector} { ${declaration.trim()} }`
+          uses.set(use[1], [...(uses.get(use[1]) || []), site])
+        }
       }
     }
   }
   return uses
+}
+
+/** The SCSS partials, so the guard checks source and not only the artifact. */
+function scssPartials () {
+  return fs.readdirSync(STYLES_DIR).filter(f => f.startsWith('_') && f.endsWith('.scss'))
 }
 
 describe('CSS custom properties', () => {

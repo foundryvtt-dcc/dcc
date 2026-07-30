@@ -33,6 +33,11 @@ const test = createSessionTest()
 const LIGHT_TEXT = 'rgb(34, 34, 34)' // #222 — the light-theme chat/sheet color
 const DARK_TEXT = 'rgb(208, 190, 170)' // #d0beaa — the dark-theme chat color
 const TRANSPARENT = 'rgba(0, 0, 0, 0)'
+// The two border weights from the theming contract (#861).
+const BORDER_SUBTLE_LIGHT = 'rgb(181, 179, 164)' // #b5b3a4 — decorative divider
+const BORDER_SUBTLE_DARK = 'rgb(61, 60, 68)' //  #3d3c44
+const BORDER_MUTED_LIGHT = 'rgb(122, 121, 113)' // #7a7971 — must stay visible
+const BORDER_MUTED_DARK = 'rgb(107, 106, 117)' // #6b6a75
 const CRIT_GREEN = 'rgb(0, 128, 0)'
 const FUMBLE_RED = 'rgb(255, 0, 0)'
 
@@ -77,6 +82,12 @@ test.describe('Chat card text color', () => {
         const readBackground = (sel) => {
           const el = document.querySelector(sel)
           return el ? getComputedStyle(el).backgroundColor : null
+        }
+        const readBorder = (sel) => {
+          const el = document.querySelector(sel)
+          if (!el) return null
+          const cs = getComputedStyle(el)
+          return `${cs.borderTopStyle} ${cs.borderTopWidth} ${cs.borderTopColor}`
         }
         return {
           // The header was always correct — it is the reference the card body
@@ -129,6 +140,13 @@ test.describe('Chat card text color', () => {
           //    variable: giving that a light value would be #856 from the other
           //    side, light text on a light chip.
           enricherBackground: readBackground('.theme856-enricher a.dcc-enricher'),
+          //    With no fill, the border IS the affordance — and it referenced a
+          //    variable V14 dropped, so it rendered `none 0px` (issue #861).
+          //    Static analysis cannot prove a variable resolves; only this can.
+          enricherBorder: readBorder('.theme856-enricher a.dcc-enricher'),
+          // A decorative divider inside a card, on the quieter of the two border
+          // tokens — same #861 failure, same proof.
+          weaponDescriptionBorder: readBorder('.theme856-borders .weapon-description'),
           // 3. the release-notes card body — the card root is
           //    `.dcc-release-notes-card`, not `.dcc`.
           releaseMessage: read('.theme856-release .dcc-release-message')
@@ -219,6 +237,14 @@ test.describe('Chat card text color', () => {
           content: '<div class="theme856-enricher"><p>[[/check str]]</p></div>'
         }))
 
+        // An enhanced-attack-card fragment, for the divider border (#861).
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="dcc-enhanced-card theme856-borders">' +
+            '<div class="weapon-description">Longsword, 1d8</div>' +
+            '</div>'
+        }))
+
         // The release-notes card, from the real template.
         msgs.push(await ChatMessage.create({
           speaker: ChatMessage.getSpeaker({ actor }),
@@ -295,6 +321,16 @@ test.describe('Chat card text color', () => {
     expect(result.light.releaseMessage).toBe(LIGHT_TEXT)
     expect(result.dark.enricherBackground).toBe(TRANSPARENT)
     expect(result.light.enricherBackground).toBe(TRANSPARENT)
+
+    // Borders actually paint (#861). These referenced `--color-border-light-*`,
+    // which V14 declares only under `body.game .app` — a selector nothing
+    // matches — so the shorthand was invalid and computed to `border-style:
+    // none`. `border-width: 0px` here means the variable stopped resolving
+    // again, which no unit test can see.
+    expect(result.dark.enricherBorder).toBe(`solid 1px ${BORDER_MUTED_DARK}`)
+    expect(result.light.enricherBorder).toBe(`solid 1px ${BORDER_MUTED_LIGHT}`)
+    expect(result.dark.weaponDescriptionBorder).toBe(`solid 1px ${BORDER_SUBTLE_DARK}`)
+    expect(result.light.weaponDescriptionBorder).toBe(`solid 1px ${BORDER_SUBTLE_LIGHT}`)
 
     // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions
