@@ -890,10 +890,18 @@ describe('DCCItem Tests', () => {
         },
         dcc: {
           DCCRoll: {
-            createRoll: vi.fn(() => ({
-              evaluate: vi.fn(),
-              dice: [{ options: {} }]
-            }))
+            // The rolled die reports the faces of the Die term it was built
+            // from, so the multiple-action-dice reconcile actually runs against
+            // a realistic roll instead of short-circuiting on a missing `faces`
+            // (a stub without it would let a wrong `defaultActionDieFaces` pass).
+            createRoll: vi.fn((terms) => {
+              const dieFormula = terms?.find(t => t.type === 'Die')?.formula ?? '1d20'
+              const faces = parseInt(String(dieFormula).match(/d(\d+)/)?.[1] || '20')
+              return {
+                evaluate: vi.fn(),
+                dice: [{ options: {}, faces }]
+              }
+            })
           },
           processSpellCheck: vi.fn()
         },
@@ -1165,6 +1173,31 @@ describe('DCCItem Tests', () => {
         expect(combatant.setFlag).not.toHaveBeenCalled()
         const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
         expect(spellData.actionDiceChatLine).toBe('')
+      })
+
+      test('a spell that opts out of inheritActionDie keeps its own die', async () => {
+        enterCombat([true, false])
+        spell.system.config.inheritActionDie = false
+        spell.system.spellCheck.die = '1d24'
+
+        await spell.rollSpellCheck('int')
+
+        // The authored die is a deliberate choice; the slot must not discard it.
+        expect(dieTerm().formula).toBe('1d24')
+        // The action is still taken, so the slot is still spent.
+        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+          spent: [true, true]
+        }))
+      })
+
+      test('a class spellCheckOverrideDie survives the slot step-down', async () => {
+        enterCombat([true, false])
+        actor.system.class.spellCheckOverrideDie = '1d30'
+        spell.system.spellCheck.die = '1d30'
+
+        await spell.rollSpellCheck('int')
+
+        expect(dieTerm().formula).toBe('1d30')
       })
 
       test('a spell with no results table posts nothing, so it costs nothing', async () => {

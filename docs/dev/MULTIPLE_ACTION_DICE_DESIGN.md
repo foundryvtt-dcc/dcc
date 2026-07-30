@@ -219,6 +219,33 @@ actor has multiple dice.
   `rollSpellCheck({ spell })` twice on a generic spell (slot 0 d20 → slot 1 d16)
   asserting the per-round flag advance + the emitted action-dice line.
 
+**What was MISSING until #857 (spell-check path, item entry point):**
+
+The section above covers `DCCActor.rollSpellCheck` — the *raw / class-level*
+entry point. Casting an **owned spell from the character sheet** goes through
+`DCCItem.rollSpellCheck` (`module/item/spell-mixin.mjs`) instead, and that path
+had no action-dice integration at all: it rolled `system.spellCheck.die` (which
+`prepareBaseData` derives with `getSingleActionDie`, i.e. always the FIRST action
+die) and spent no slot, so a caster's second spell in a round never stepped down
+and the pips never advanced. #857 gives it the same plan → override → presets →
+reconcile → spend cycle, and adds a probe driving two real casts by a wizard
+(rolled faces 20 → 14, pips `[true,false]` → `[true,true]`).
+
+Two related corrections in #857:
+
+- **The slot only replaces an action-die-derived die.** `spellCheck.die` is only
+  action-die-derived when `config.inheritActionDie` is set, and a class's
+  `spellCheckOverrideDie` wins over it. Both are deliberate authoring choices, so
+  the step-down leaves them alone — the same "re-apply relative to the chosen
+  base die, don't discard it" rule as the two-weapon penalty.
+- **Crit/fumble realignment on the legacy path.** `processSpellCheck` classified
+  a crit as a hardcoded natural 20, so an override die (or any custom action die)
+  made a crit unrollable while the natural-1 fumble grew *more* likely. It now
+  reads the rolled die's faces, matching the lib's own
+  `natural === getDieFaces(die)` rule that the adapter-routed actor path already
+  used, and `forceCrit` lands on the die max rather than a literal 20.
+  Unchanged for every d20 caller.
+
 **What is DONE (system layer — Phase 4, soft spells-only filtering, D1a):**
 
 - **No-eligible-die is distinguished from over-budget.** `planActionDie` now also
@@ -250,8 +277,10 @@ actor has multiple dice.
   take the action — so the roll-modifier dialog never offers a wizard's
   spells-only die for a weapon attack. Wired at the preset call sites:
   `rolls-weapon-mixin.rollToHit` (`'attack'`), the ability-check dialog and the
-  skill term-builder (`'check'`); the spell dialog builds no preset list, and a
-  spell check would keep the die anyway. The correlation is best-effort by index
+  skill term-builder (`'check'`); both spell dialogs build their preset list from
+  the live plan via `actionDicePresetsFromPlan(plan, { action: 'spell' })` as of
+  #857, which keeps the spells-only die (a spell check is eligible for it). The
+  correlation is best-effort by index
   and gated on the list's existence (the `getActionDice()[0]` default-die calls
   pass no `forAction`, so they're untouched); slot 0 is always unrestricted, so
   the default die is never filtered. Off-path (master off / no list) the preset

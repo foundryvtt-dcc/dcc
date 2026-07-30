@@ -67,10 +67,13 @@ const MAX_MERCURIAL_SPECIAL_DEPTH = 5
  * `logDispatch` of their own — the dispatch-logged spell-check *routing* lives
  * on the actor side (`DCCActor._rollSpellCheckViaAdapter`); this item-level path
  * is the spell-sheet / macro entry point that builds terms and hands off to
- * `processSpellCheck`. The module dependencies are the `../utilities.js`
- * helpers: `ensurePlus` (luck-modifier term), `getMercurialSpecial`
- * (roll-again expansion, #339), and `getNameCandidates` /
- * `findPackEntryByName` (Babele-aware table resolution, #799).
+ * `processSpellCheck`. The module dependencies are `../ability-score-log.js`
+ * (`logSpellburn`); the `../utilities.js` helpers `ensurePlus` (luck-modifier
+ * term), `getMercurialSpecial` (roll-again expansion, #339), and
+ * `getNameCandidates` / `findPackEntryByName` (Babele-aware table resolution,
+ * #799); and `../action-dice-tracker.mjs` for the multiple-action-dice budget
+ * (#857) — the same direct import the six other roll paths use, and not an
+ * adapter module.
  *
  * @param {typeof Item} Base - the document class to extend (production: a
  *   `CurrencyItemMixin(ContainerItemMixin(Item))`; unit tests: a stub).
@@ -112,9 +115,18 @@ export const SpellItemMixin = (Base) => class extends Base {
     // off-path (setting off / not in combat / no budget), which leaves the
     // whole block inert. A spells-only die IS eligible here — that is the
     // canonical wizard "cast with the second action die" case.
+    // The slot only replaces a die that WAS derived from the action die.
+    // `DCCItem.prepareBaseData` composes `spellCheck.die`: it reads the action
+    // die only when `config.inheritActionDie` is set, and a class's
+    // `spellCheckOverrideDie` wins over it. Either of those is a deliberate
+    // authoring choice, so stepping to another slot must not silently discard it
+    // — the same "re-apply relative to the chosen base die, don't discard it"
+    // rule #834 established for the two-weapon penalty.
     let die = this.system.spellCheck.die
+    const dieFollowsActionDie = !!this.system.config.inheritActionDie &&
+      !actor.system.class?.spellCheckOverrideDie
     let actionDicePlan = planActionDie(actor, 'spell')
-    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+    if (dieFollowsActionDie && actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
       die = slotRollFormula(actionDicePlan.choice.slot)
     }
     // The die the roll uses with no player intervention — passed to the
