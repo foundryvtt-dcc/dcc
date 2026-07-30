@@ -44,6 +44,14 @@
      docs/dev/ARCHITECTURE_REIMAGINED.md §7 for the full contract. */
   --system-text-muted-color: #666;
   --system-damage-color: #8b0000;
+  /* Hairline separators and control outlines on cards, dialogs and sheets.
+     Replaces `--color-border-light-primary` / `--color-border-light-tertiary`
+     (issue #861): Foundry V14 declares those only under `body.game .app`, the
+     AppV1 selector, and V14 has no AppV1 windows — so every `border: 1px solid
+     var(--color-border-light-*)` was invalid at computed-value time and
+     rendered as `border-style: none`, i.e. no border at all. The light value is
+     the one core used, so the original design intent is preserved. */
+  --system-border-subtle-color: #b5b3a4;
   --system-rollable-hover-color: #000;
   --system-flat-button-border-color: #c9c7b8;
   --system-two-weapon-primary-color: #4caf50;
@@ -77,6 +85,10 @@ body.theme-dark {
   --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
   --system-backstab-button-image: url('./images/backstab-grey.svg');
   --system-border-color: #525252;
+  /* Quieter than --system-border-color (#525252, which frames boxes) so a
+     separator stays a hairline against the near-black background rather than
+     reading as a box edge. */
+  --system-border-subtle-color: #3d3c44;
   /* Must stay clearly visible against the near-black dialog/sheet background
      (#0b0a13) — the unchecked box is a solid square in this color, and the
      input background (#323138) is indistinguishable from it at 18px. */

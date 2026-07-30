@@ -103,7 +103,7 @@ a.inline-roll {
 
   .deed-table-select {
     background: var(--chat-background);
-    border: 1px solid var(--color-border-light-primary);
+    border: 1px solid var(--system-border-subtle-color);
     color: var(--chat-primary-color);
     // Never spill past the card's right edge, whatever a host card imposes.
     max-width: 100%;
@@ -259,7 +259,7 @@ a.inline-roll {
 // chat-card-theme.spec.js so it cannot be reintroduced.
 .chat-message .table-draw .mercurial,
 .chat-message .table-draw .manifestation {
-  border-top: 1px solid var(--color-border-light-primary);
+  border-top: 1px solid var(--system-border-subtle-color);
   font-size: var(--font-size-12);
   line-height: 22px;
   margin-bottom: 8px;
@@ -422,8 +422,8 @@ a.inline-roll {
   }
 
   .weapon-description {
-    border-bottom: 1px solid var(--color-border-light-primary);
-    border-top: 1px solid var(--color-border-light-primary);
+    border-bottom: 1px solid var(--system-border-subtle-color);
+    border-top: 1px solid var(--system-border-subtle-color);
     font-size: 0.9em;
     margin: 4px 0;
     padding: 4px 0;
@@ -495,7 +495,7 @@ a.inline-roll {
 
   .card-footer {
     .tag {
-      border: 1px solid var(--color-border-light-primary);
+      border: 1px solid var(--system-border-subtle-color);
       border-radius: 3px;
       font-size: 0.8em;
       margin: 2px;
@@ -526,7 +526,7 @@ a.inline-roll {
 
   td {
     padding: 2px 12px;
-    border: 1px solid var(--color-border-light-2, #999);
+    border: 1px solid var(--system-border-subtle-color);
     text-align: center;
   }
 
