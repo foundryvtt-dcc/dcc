@@ -57,13 +57,14 @@ a.inline-roll {
 // Lists each modifier the lib contributed to a check / save / spell
 // result under the rolled formula (e.g. "Strength +1"). Built by
 // `buildModifierBreakdownHtml` in module/adapter/chat-renderer.mjs.
-// Dimmed with opacity rather than `--system-text-muted-color` (#666), for the
-// same reason `.dcc-action-dice-line` above does: that variable has no
-// dark-theme value, and even if it had one it would not apply here — Foundry
-// stamps `theme-light` on the chat log, so the light block wins inside it
-// regardless of theme. The fixed mid-grey therefore rendered #666 on the dark
-// chat background, the same dark-on-dark problem as #856. Inheriting the card's
-// theme-aware color and softening it stays a quiet caption in both themes.
+// Dimmed with opacity rather than `--system-text-muted-color`, for the same
+// reason `.dcc-action-dice-line` above does: that variable now has a dark value
+// (#861), but it would not apply here anyway — Foundry stamps `theme-light` on
+// the chat log, so the light block wins inside it regardless of theme, and the
+// caption would render #666 on the dark chat background, the same dark-on-dark
+// problem as #856. Anything in chat needs a `--chat-*` name or, as here, the
+// card's own inherited color. Inheriting it and softening stays quiet in both
+// themes without adding a token for one caption.
 .dcc-modifier-breakdown {
   margin-top: 4px;
   font-size: var(--font-size-12);
@@ -286,7 +287,7 @@ a.inline-roll {
     font-family: var(--system-heading-font), serif;
     font-size: 18px;
     margin-top: 8px;
-    color: var(--system-heading-color);
+    color: var(--chat-primary-color);
   }
 
   .table-results {

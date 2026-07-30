@@ -1324,7 +1324,23 @@ test.describe('DCC Extension API', () => {
         tabOverflowTextDark: read(darkStyle, '--system-tab-overflow-text-color'),
         tabOverflowHoverBgDark: read(darkStyle, '--system-tab-overflow-hover-background'),
         tabOverflowHoverTextDark: read(darkStyle, '--system-tab-overflow-hover-text-color'),
-        tabOverflowActiveTextDark: read(darkStyle, '--system-tab-overflow-active-text-color')
+        tabOverflowActiveTextDark: read(darkStyle, '--system-tab-overflow-active-text-color'),
+        // (4) Issue #861. Every one of these referenced a variable Foundry V14
+        // declares only under `body.game .app` — a selector nothing matches —
+        // so they resolved to nothing. Read in BOTH themes: the light block is
+        // the base layer, so a name missing from dark silently keeps its light
+        // value there, which is how #666 muted text ended up at 2.3:1 on the
+        // dark background.
+        mutedColorDark: read(darkStyle, '--system-text-muted-color'),
+        negativeColorLight: read(lightStyle, '--system-text-negative-color'),
+        negativeColorDark: read(darkStyle, '--system-text-negative-color'),
+        borderSubtleLight: read(lightStyle, '--system-border-subtle-color'),
+        borderSubtleDark: read(darkStyle, '--system-border-subtle-color'),
+        borderMutedLight: read(lightStyle, '--system-border-muted-color'),
+        borderMutedDark: read(darkStyle, '--system-border-muted-color'),
+        // Was declared AS `var(--color-text-dark-primary)`, which made the whole
+        // custom property invalid — the active tab had no color in light theme.
+        tabOverflowActiveTextLight: read(lightStyle, '--system-tab-overflow-active-text-color')
       }
       probe.remove()
       return out
@@ -1360,6 +1376,17 @@ test.describe('DCC Extension API', () => {
     expect(result.tabOverflowHoverBgDark).toBe('#3a3a3a')
     expect(result.tabOverflowHoverTextDark).toBe('#fff')
     expect(result.tabOverflowActiveTextDark).toBe('#fff')
+    // (4) Issue #861 — the contract members that replaced V14-dropped names.
+    // Each must resolve in BOTH themes; an empty string means the variable is
+    // undeclared again and every rule using it renders as `unset`.
+    expect(result.mutedColorDark).toBe('#8a8993')
+    expect(result.negativeColorLight).toBe('#8b1a1a')
+    expect(result.negativeColorDark).toBe('#ef8080')
+    expect(result.borderSubtleLight).toBe('#b5b3a4')
+    expect(result.borderSubtleDark).toBe('#3d3c44')
+    expect(result.borderMutedLight).toBe('#7a7971')
+    expect(result.borderMutedDark).toBe('#6b6a75')
+    expect(result.tabOverflowActiveTextLight).toBe('#191813')
   })
 
   test('DCC adapter table caches short-circuit pack walks and invalidate on world-RollTable events', async ({ page }) => {

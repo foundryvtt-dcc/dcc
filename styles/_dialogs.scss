@@ -211,7 +211,7 @@
   .spell-duel-participants {
     .no-participants {
       font-style: italic;
-      color: var(--color-text-dark-secondary);
+      color: var(--system-text-muted-color);
       text-align: center;
     }
   }
@@ -269,7 +269,7 @@
         font-weight: bold;
         min-width: 2em;
         text-align: center;
-        background: var(--color-border-light-highlight);
+        background: var(--system-value-display-background-color);
         padding: 2px 8px;
         border-radius: 3px;
         position: relative;
@@ -287,7 +287,7 @@
       }
 
       .participant-remove {
-        color: var(--color-text-negative);
+        color: var(--system-text-negative-color);
         margin-left: 5px;
       }
     }
@@ -316,7 +316,7 @@
 
         &:hover {
           opacity: 1;
-          color: var(--color-text-negative);
+          color: var(--system-text-negative-color);
         }
       }
     }
@@ -340,12 +340,12 @@
 
       .log-timestamp {
         font-size: 0.8rem;
-        color: var(--color-text-dark-secondary);
+        color: var(--system-text-muted-color);
         margin-right: 8px;
       }
 
       .log-message {
-        color: var(--color-text-dark-primary);
+        color: var(--system-primary-color);
       }
     }
   }
