@@ -30,10 +30,29 @@ const CRIT_GREEN = 'rgb(0, 128, 0)'
 const FUMBLE_RED = 'rgb(255, 0, 0)'
 
 test.describe('Chat card text color', () => {
+  // This spec flips the world-level `core.uiConfig` colorScheme, and the session
+  // page is shared across the whole suite. If the in-page `finally` is abandoned
+  // (a Playwright timeout kills `page.evaluate` mid-flight) the world would stay
+  // on whatever theme was set last, for every later spec — and the setting is
+  // persisted to `worlds/*/data/settings`. Restore from the runner side too, so
+  // the reset survives a timeout.
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(async () => {
+      const saved = globalThis.__dccSavedUiConfig
+      if (saved) {
+        await game.settings.set('core', 'uiConfig', saved)
+        delete globalThis.__dccSavedUiConfig
+      }
+    }).catch(() => {})
+  })
+
   test('DCC card bodies follow the chat theme in both light and dark', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const out = {}
       const cfg = game.settings.get('core', 'uiConfig')
+      // Stashed so the runner-side afterEach can restore it if this evaluate is
+      // abandoned before its own `finally` runs.
+      globalThis.__dccSavedUiConfig = cfg
       let actor
       const msgs = []
 
@@ -66,7 +85,18 @@ test.describe('Chat card text color', () => {
           critInlineRoll: read('.theme856-extras a.inline-roll.critical'),
           fumbleInlineRoll: read('.theme856-extras a.inline-roll.fumble'),
           critEmote: read('.theme856-extras .emote-alert.critical'),
-          fumbleEmote: read('.theme856-extras .emote-alert.fumble')
+          fumbleEmote: read('.theme856-extras .emote-alert.fumble'),
+          // Cards WITHOUT a `.dcc` wrapper — the attack cards, the adapter check
+          // cards and the emote path all look like this, and they are the bulk of
+          // chat. A `.dcc`-scoped fix would leave every one of them dark-on-dark.
+          bareInlineRoll: read('.theme856-bare p a.inline-roll'),
+          bareInlineRollIcon: read('.theme856-bare p a.inline-roll > i'),
+          bareContentLink: read('.theme856-bare a.content-link'),
+          // The shape module/chat.js actually emits for a crit: the class is on a
+          // wrapping span and the visible anchor inside carries none, so the
+          // anchor has to INHERIT the span's green rather than be recolored.
+          critWrapperSpan: read('.theme856-bare span.inline-roll.critical'),
+          critWrapperAnchor: read('.theme856-bare span.inline-roll.critical a.inline-roll')
         }
       }
 
@@ -115,6 +145,21 @@ test.describe('Chat card text color', () => {
             '<p class="emote-alert fumble">fumble</p>' +
             '</div>'
         }))
+
+        // A card with NO `.dcc` wrapper, carrying a real roll anchor, a content
+        // link, and the crit span-wrapper shape module/chat.js emits.
+        const bareRoll = new Roll('1d20')
+        await bareRoll.evaluate()
+        const bareAnchor = bareRoll.toAnchor().outerHTML
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          rolls: [bareRoll],
+          content: '<div class="theme856-bare">' +
+            `<p>emote-style roll ${bareAnchor}</p>` +
+            '<a class="content-link">Some Actor</a>' +
+            `<span class="inline-roll inline-result critical">${bareAnchor}</span>` +
+            '</div>'
+        }))
         await new Promise(resolve => setTimeout(resolve, 500))
 
         out.dark = await measure('dark')
@@ -156,15 +201,28 @@ test.describe('Chat card text color', () => {
     expect(result.light.inlineRollIcon).toBe(LIGHT_TEXT)
     expect(result.light.modifierBreakdown).toBe(LIGHT_TEXT)
 
-    // Crit / fumble stay green / red in BOTH themes. The card-body rule is more
+    // Cards with no `.dcc` wrapper — the majority of chat — follow the theme too.
+    // These are what a `.dcc`-scoped fix would have missed, and what the removed
+    // `a.inline-roll` declaration was silently holding up.
+    expect(result.dark.bareInlineRoll).toBe(DARK_TEXT)
+    expect(result.dark.bareInlineRollIcon).toBe(DARK_TEXT)
+    expect(result.dark.bareContentLink).toBe(DARK_TEXT)
+    expect(result.light.bareInlineRoll).toBe(LIGHT_TEXT)
+    expect(result.light.bareInlineRollIcon).toBe(LIGHT_TEXT)
+    expect(result.light.bareContentLink).toBe(LIGHT_TEXT)
+
+    // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions
-    // in styles/_chat.scss a natural 20 in a DCC card would render as ordinary
-    // body text.
+    // in styles/_chat.scss a natural 20 would render as ordinary body text; and
+    // because it resolves to `inherit`, the anchor nested inside a crit WRAPPER
+    // span picks up the span's green rather than being recolored.
     for (const theme of ['dark', 'light']) {
       expect(result[theme].critInlineRoll, `${theme} crit inline roll`).toBe(CRIT_GREEN)
       expect(result[theme].fumbleInlineRoll, `${theme} fumble inline roll`).toBe(FUMBLE_RED)
       expect(result[theme].critEmote, `${theme} crit emote`).toBe(CRIT_GREEN)
       expect(result[theme].fumbleEmote, `${theme} fumble emote`).toBe(FUMBLE_RED)
+      expect(result[theme].critWrapperSpan, `${theme} crit wrapper span`).toBe(CRIT_GREEN)
+      expect(result[theme].critWrapperAnchor, `${theme} crit wrapper anchor`).toBe(CRIT_GREEN)
     }
   })
 })

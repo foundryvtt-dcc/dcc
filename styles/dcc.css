@@ -761,16 +761,16 @@ a.inline-roll {
 .chat-message .message-header {
   color: var(--chat-primary-color);
 }
+.chat-message a.inline-roll:not(.critical):not(.fumble),
+.chat-message a.content-link:not(.critical):not(.fumble) {
+  color: inherit;
+}
+.chat-message a.inline-roll:not(.critical):not(.fumble) > i,
+.chat-message a.content-link:not(.critical):not(.fumble) > i {
+  color: inherit;
+}
 .chat-message .dcc {
   color: var(--chat-primary-color);
-}
-.chat-message .dcc a.inline-roll:not(.critical):not(.fumble),
-.chat-message .dcc a.content-link {
-  color: var(--chat-primary-color);
-}
-.chat-message .dcc a.inline-roll:not(.critical):not(.fumble) > i,
-.chat-message .dcc a.content-link > i {
-  color: inherit;
 }
 .chat-message .table-draw {
   color: var(--chat-primary-color);

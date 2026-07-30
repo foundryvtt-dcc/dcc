@@ -146,6 +146,48 @@ a.inline-roll {
     color: var(--chat-primary-color);
   }
 
+  // Inline rolls and content links anywhere in a chat message take the color of
+  // whatever they sit in (#856).
+  //
+  // Foundry colors these with `--content-link-text-color` from
+  // `@layer elements.custom`, paired with a light chip background. DCC strips
+  // that background (`a.inline-roll` at the top of this file, `.dcc
+  // .content-link` in _base.scss), so the text sits straight on the card and its
+  // color is ours to own — and `--content-link-text-color` resolves to #222
+  // inside the chat log in BOTH themes, because Foundry stamps
+  // `themed theme-light` on `ol.chat-log`.
+  //
+  // This has to be a real declaration, not an omission. DCC's stylesheet loads
+  // into `@layer system` (see system.json), which outranks
+  // `@layer elements.custom` regardless of specificity, so whatever DCC declares
+  // here suppresses core's rule. `a.inline-roll` previously carried
+  // `var(--system-primrary-text)` — a typo, so the declaration was invalid and
+  // computed to `inherit`, but it still *won* the cascade and that inherit was
+  // load-bearing. Deleting it handed inline rolls back to core's #222; only a
+  // `.dcc`-scoped replacement would have left every card without a `.dcc`
+  // wrapper (the attack cards, the adapter check cards, the enhanced card)
+  // dark-on-dark. `inherit` here covers all of them, and fixes bare
+  // `a.content-link`, which never had a DCC declaration and so was already
+  // rendering #222 on the dark background.
+  //
+  // `inherit` rather than `--chat-primary-color` so a crit/fumble WRAPPER also
+  // flows through: `module/chat.js` emits
+  // `<span class="inline-roll critical"><a class="inline-roll">…</a></span>`,
+  // where the anchor carries no `.critical` — inheriting picks up the span's
+  // green. The `:not()` guards cover the other shape, an anchor that carries the
+  // class itself (xcc emits that), whose (0,2,0) rule this selector would
+  // otherwise outrank at (0,2,1).
+  a.inline-roll:not(.critical):not(.fumble),
+  a.content-link:not(.critical):not(.fumble) {
+    color: inherit;
+
+    // Otherwise the die glyph keeps `--content-link-icon-color`, which is #666
+    // inside the chat log.
+    > i {
+      color: inherit;
+    }
+  }
+
   // Any DCC card body inside a chat message (#856).
   //
   // `.dcc` (styles/_base.scss) sets `color: var(--system-primary-color)` — the
@@ -158,33 +200,13 @@ a.inline-roll {
   // below, the attack cards) were fine; the friendly-fire card and the
   // ability-score-log card never did, which is what the issue reported.
   //
-  // Setting it once here covers both, and every future card, instead of
-  // patching each one as it is noticed. No visual change in light theme, where
+  // Setting it once here covers both, and every future card that opts into the
+  // `.dcc` wrapper, instead of patching each one as it is noticed. Cards without
+  // that wrapper are covered by the inline-roll / content-link rule above and by
+  // `.chat-message`'s own color. No visual change in light theme, where
   // `--chat-primary-color` and `--system-primary-color` are both #222.
   .dcc {
     color: var(--chat-primary-color);
-
-    // Inline rolls and content links inside a DCC card. Foundry gives these a
-    // light chip (`--content-link-background`) with matching dark text, but DCC
-    // strips that background (`a.inline-roll` at the top of this file,
-    // `.dcc .content-link` in _base.scss) so the text sits straight on the card
-    // — which makes the color ours to own. Foundry's
-    // `--content-link-text-color` resolves light inside the chat log for the
-    // same `theme-light` reason as above, which is why the die result in the
-    // friendly-fire card was dark-on-dark too. The icon follows the text.
-    //
-    // Crit / fumble inline rolls are excluded: `.inline-roll.critical` and
-    // `.inline-roll.fumble` at the top of this file are only (0,2,0), so a
-    // bare `a.inline-roll` here would outrank them and a natural 20 would lose
-    // its green. Their colors are meaningful and theme-independent.
-    a.inline-roll:not(.critical):not(.fumble),
-    a.content-link {
-      color: var(--chat-primary-color);
-
-      > i {
-        color: inherit;
-      }
-    }
   }
 
   .table-draw {
