@@ -658,7 +658,6 @@
 /* ----------------------------------------- */
 a.inline-roll {
   line-height: 25px;
-  color: var(--system-primrary-text);
   background: transparent;
 }
 
@@ -761,6 +760,17 @@ a.inline-roll {
 }
 .chat-message .message-header {
   color: var(--chat-primary-color);
+}
+.chat-message .dcc {
+  color: var(--chat-primary-color);
+}
+.chat-message .dcc a.inline-roll,
+.chat-message .dcc a.content-link {
+  color: var(--chat-primary-color);
+}
+.chat-message .dcc a.inline-roll > i,
+.chat-message .dcc a.content-link > i {
+  color: inherit;
 }
 .chat-message .table-draw {
   color: var(--chat-primary-color);
@@ -934,9 +944,6 @@ a.inline-roll {
 }
 .dcc-enhanced-card .roll-result.status-failure {
   color: red;
-}
-.dcc-enhanced-card .roll-result.status-info {
-  color: var(--system-primrary-text);
 }
 .dcc-enhanced-card .card-buttons {
   display: flex;

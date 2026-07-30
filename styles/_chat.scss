@@ -3,7 +3,12 @@
 /* ----------------------------------------- */
 a.inline-roll {
   line-height: 25px;
-  color: var(--system-primrary-text);
+  // Deliberately no `color`: inline rolls take the color of whatever card or
+  // sheet they sit in. This carried `var(--system-primrary-text)` — a typo, so
+  // the variable never existed and the declaration was invalid, i.e. already
+  // behaving as `inherit`. Removed rather than "corrected", because pointing it
+  // at `--system-primary-color` would resolve light inside the chat log and
+  // reintroduce the dark-on-dark text of #856 for every inline roll in chat.
   background: transparent;
 }
 
@@ -132,6 +137,42 @@ a.inline-roll {
 
   .message-header {
     color: var(--chat-primary-color);
+  }
+
+  // Any DCC card body inside a chat message (#856).
+  //
+  // `.dcc` (styles/_base.scss) sets `color: var(--system-primary-color)` — the
+  // SHEET color — and Foundry stamps `theme-light` on `ol.chat-log`, which
+  // re-establishes the light variable block from styles/variables.css for that
+  // whole subtree. So inside the chat log `--system-primary-color` resolves to
+  // the light value (#222) no matter which theme is active, and any card that
+  // does not set its own color renders near-black on the dark chat background.
+  // Cards that already declare `--chat-primary-color` (the table-draw block
+  // below, the attack cards) were fine; the friendly-fire card and the
+  // ability-score-log card never did, which is what the issue reported.
+  //
+  // Setting it once here covers both, and every future card, instead of
+  // patching each one as it is noticed. No visual change in light theme, where
+  // `--chat-primary-color` and `--system-primary-color` are both #222.
+  .dcc {
+    color: var(--chat-primary-color);
+
+    // Inline rolls and content links inside a DCC card. Foundry gives these a
+    // light chip (`--content-link-background`) with matching dark text, but DCC
+    // strips that background (`a.inline-roll` at the top of this file,
+    // `.dcc .content-link` in _base.scss) so the text sits straight on the card
+    // — which makes the color ours to own. Foundry's
+    // `--content-link-text-color` resolves light inside the chat log for the
+    // same `theme-light` reason as above, which is why the die result in the
+    // friendly-fire card was dark-on-dark too. The icon follows the text.
+    a.inline-roll,
+    a.content-link {
+      color: var(--chat-primary-color);
+
+      > i {
+        color: inherit;
+      }
+    }
   }
 
   .table-draw {
@@ -344,9 +385,11 @@ a.inline-roll {
       color: red;
     }
 
-    &.status-info {
-      color: var(--system-primrary-text);
-    }
+    // `&.status-info` — the neutral counterpart to the success/failure states
+    // above — intentionally has no rule: it keeps the `.roll-result` weight and
+    // takes the card's color. It previously set
+    // `color: var(--system-primrary-text)`, the same typo as `a.inline-roll`, so
+    // the variable never existed and the declaration was already `inherit`.
   }
 
   .card-buttons {
