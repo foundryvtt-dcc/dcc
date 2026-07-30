@@ -56,7 +56,15 @@
     font-size: larger;
 
     .content-link {
-      background: var(--system-light-bg);
+      // Explicitly transparent, matching how DCC strips Foundry's chip from
+      // content links and inline rolls elsewhere (_base.scss, _chat.scss). This
+      // said `var(--system-light-bg)`, a variable nothing declares, so it was
+      // invalid and computing to `transparent` anyway — but unlike the enricher
+      // above, `.content-link` HAS a core rule (`background:
+      // var(--content-link-background)`), so simply deleting the declaration
+      // would hand journal links a chip back. Spelled out to keep the rendering
+      // and lose the undefined variable.
+      background: transparent;
       color: var(--system-primary-color);
       padding: 2px;
       margin-right: 2px;

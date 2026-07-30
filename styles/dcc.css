@@ -581,7 +581,7 @@
   font-size: larger;
 }
 .journal-entry .journal-entry-content .content-link {
-  background: var(--system-light-bg);
+  background: transparent;
   color: var(--system-primary-color);
   padding: 2px;
   margin-right: 2px;
@@ -3532,7 +3532,6 @@ a.inline-roll {
   white-space: nowrap;
 }
 .dcc-enricher-group .dcc-enricher {
-  background: var(--system-light-bg);
   border: 1px solid var(--color-border-dark-tertiary, #7a7971);
   border-radius: 3px;
   color: var(--system-primary-color);

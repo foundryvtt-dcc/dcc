@@ -191,9 +191,8 @@ a.inline-roll {
   // Roll-link enrichers — `[[/check]]`, `[[/save]]`, `[[/skill]]` — rendered in
   // chat (#856). styles/_enrichers.scss colors them with
   // `--system-primary-color`, right for a sheet or journal page but the light
-  // #222 inside the chat log, and their `background: var(--system-light-bg)` is
-  // a variable nothing defines, so the declaration is invalid and there is no
-  // chip for the text to sit on. They are not `.dcc`, not `a.inline-roll` and
+  // #222 inside the chat log, and they carry no background of their own, so the
+  // text sits straight on the card. They are not `.dcc`, not `a.inline-roll` and
   // not `a.content-link`, and _enrichers.scss is @use'd after this file, so at
   // an equal (0,2,0) they would win on source order — this rule has to be
   // chat-scoped to outrank them. Reached by the GM roll-request card

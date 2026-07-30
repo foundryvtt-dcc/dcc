@@ -32,6 +32,7 @@ const test = createSessionTest()
 
 const LIGHT_TEXT = 'rgb(34, 34, 34)' // #222 — the light-theme chat/sheet color
 const DARK_TEXT = 'rgb(208, 190, 170)' // #d0beaa — the dark-theme chat color
+const TRANSPARENT = 'rgba(0, 0, 0, 0)'
 const CRIT_GREEN = 'rgb(0, 128, 0)'
 const FUMBLE_RED = 'rgb(255, 0, 0)'
 
@@ -72,6 +73,10 @@ test.describe('Chat card text color', () => {
         const read = (sel) => {
           const el = document.querySelector(sel)
           return el ? getComputedStyle(el).color : null
+        }
+        const readBackground = (sel) => {
+          const el = document.querySelector(sel)
+          return el ? getComputedStyle(el).backgroundColor : null
         }
         return {
           // The header was always correct — it is the reference the card body
@@ -118,6 +123,12 @@ test.describe('Chat card text color', () => {
           //    styles/_enrichers.scss with no background of their own;
           enricherLink: read('.theme856-enricher a.dcc-enricher'),
           enricherIcon: read('.theme856-enricher a.dcc-enricher > i'),
+          //    The text is `inherit`, so it follows the dark card — which only
+          //    works while the link has no fill of its own. Pinned here because
+          //    the fill it used to name (`--system-light-bg`) was an undefined
+          //    variable: giving that a light value would be #856 from the other
+          //    side, light text on a light chip.
+          enricherBackground: readBackground('.theme856-enricher a.dcc-enricher'),
           // 3. the release-notes card body — the card root is
           //    `.dcc-release-notes-card`, not `.dcc`.
           releaseMessage: read('.theme856-release .dcc-release-message')
@@ -282,6 +293,8 @@ test.describe('Chat card text color', () => {
     expect(result.light.enricherLink).toBe(LIGHT_TEXT)
     expect(result.light.enricherIcon).toBe(LIGHT_TEXT)
     expect(result.light.releaseMessage).toBe(LIGHT_TEXT)
+    expect(result.dark.enricherBackground).toBe(TRANSPARENT)
+    expect(result.light.enricherBackground).toBe(TRANSPARENT)
 
     // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions
