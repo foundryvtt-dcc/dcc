@@ -21,9 +21,12 @@
       margin-bottom: 8px;
     }
 
-    // Active Effect otherMod display (#801) — read-only context row
+    // Active Effect otherMod display (#801) — read-only context row.
+    // Dimmed by opacity rather than --system-secondary-color: that is a surface
+    // color, and its dark value (#343339) is ~1.5:1 on the dialog background.
     .effective-row {
-      color: var(--system-secondary-color);
+      color: inherit;
+      opacity: 0.65;
       display: flex;
       font-size: 13px;
       gap: 18px;
@@ -42,8 +45,10 @@
         width: 52px;
       }
 
+      // Same as .effective-row above.
       .change-display {
-        color: var(--system-secondary-color);
+        color: inherit;
+        opacity: 0.65;
         font-size: 13px;
       }
     }

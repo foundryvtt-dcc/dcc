@@ -47,11 +47,11 @@
         border: 0;
         cursor: pointer;
         padding: 4px 8px;
-        color: var(--color-text-dark-secondary);
+        color: var(--system-text-muted-color);
         font-size: 1em;
 
         &:hover {
-          color: var(--color-text-dark-primary);
+          color: var(--system-primary-color);
         }
 
         i {

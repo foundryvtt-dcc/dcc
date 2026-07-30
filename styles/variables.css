@@ -44,6 +44,11 @@
      Foundry `--color-*` one — see docs/dev/V14.md, "CSS variables that no
      longer resolve", for why core's are unsafe. */
   --system-text-muted-color: #666;
+  /* Destructive controls — "remove participant", "clear log" — as distinct from
+     --system-damage-color, which is HP loss. Replaces `--color-text-negative`
+     (issue #861), which V14 declares nowhere at all, under any selector, so
+     those controls had no danger cue. */
+  --system-text-negative-color: #8b1a1a;
   --system-damage-color: #8b0000;
   /* Two border weights below --system-border-color (which frames boxes),
      replacing `--color-border-light-primary` / `--color-border-light-tertiary`
@@ -111,6 +116,13 @@ body.theme-dark {
   --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
   --system-backstab-button-image: url('./images/backstab-grey.svg');
   --system-border-color: #525252;
+  /* Dark values for the contract's text colors (issue #861). The light block is
+     the base layer, so a name missing here silently keeps its light value in the
+     dark theme — #666 muted text is 2.3:1 on #0b0a13, well under the 4.5:1 body
+     floor. These match their light counterparts' weight instead: 5.6:1 for
+     muted (light #666 is 4.6:1 on parchment) and a red that stays legible. */
+  --system-text-muted-color: #8a8993;
+  --system-text-negative-color: #ef8080;
   /* Quieter than --system-border-color (#525252, which frames boxes) so a
      separator stays a hairline against the near-black background rather than
      reading as a box edge. */

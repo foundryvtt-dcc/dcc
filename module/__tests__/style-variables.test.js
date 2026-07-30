@@ -15,10 +15,11 @@
  * `body.game .app` — the AppV1 selector, and V14 has no AppV1 windows, so
  * `document.querySelectorAll('.app').length === 0` (#861).
  *
- * The test parses the COMPILED stylesheet, because that is what the browser
- * loads. A reference is considered safe when it either resolves to a DCC
- * declaration or supplies a fallback (`var(--x, #999)`), which renders
- * predictably even when `--x` is missing.
+ * The test parses the compiled stylesheet (what the browser loads), plus
+ * variables.css and the SCSS partials (see `referencesWithoutFallback`). A
+ * reference is safe when it either resolves to a DCC declaration or supplies a
+ * fallback (`var(--x, #999)`), which renders predictably even when `--x` is
+ * missing.
  *
  * What this CANNOT catch: a name that is declared somewhere but on a selector
  * the using element never sits inside — which is exactly how the V14 breakage
@@ -46,34 +47,18 @@ const STYLES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..',
  * needs a fallback or a DCC-owned replacement.
  */
 const CORE_PROVIDED = [
-  '--color-level-error',
-  '--color-level-success',
-  '--color-shadow-primary',
-  '--font-awesome',
   '--font-size-12',
-  '--input-height',
   '--input-text-color'
 ]
 
 /**
- * Known-dead references awaiting the rest of #861. The `--color-*` ones and
- * `--system-heading-color` / `--system-secondary-text` compute to `inherit` or
- * `transparent`: legible, but the intended visual hierarchy is gone. They are
- * listed rather than mechanically translated because each wants a deliberate
- * dark-theme value.
- *
- * Shrink this list as #861 lands; do NOT add to it.
+ * Read a stylesheet with comments stripped. Both forms have to go: these files
+ * discuss variable names in prose (why a name was dropped, what it used to
+ * hold), and a `var(--x)` inside a comment is not a reference.
  */
-const KNOWN_DEAD_PENDING_861 = [
-  '--color-border-light-highlight',
-  '--color-text-dark-primary',
-  '--color-text-dark-secondary',
-  '--color-text-negative',
-  '--system-heading-color',
-  '--system-secondary-text'
-]
-
 const read = (file) => fs.readFileSync(path.join(STYLES_DIR, file), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '') // CSS block comments
+  .replace(/^\s*\/\/.*$/gm, '') //     SCSS line comments
 
 /** Every custom property DCC declares, across the compiled sheet and variables. */
 function declaredProperties () {
@@ -95,11 +80,9 @@ function declaredProperties () {
 function referencesWithoutFallback () {
   const uses = new Map()
   for (const file of ['dcc.css', 'variables.css', ...scssPartials()]) {
-    // `//` line comments are SCSS-only; strip them so a commented-out variable
-    // name is not reported as a live reference.
-    const css = read(file).replace(/^\s*\/\/.*$/gm, '')
+    const css = read(file)
     for (const rule of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-      const selector = rule[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim()
+      const selector = rule[1].replace(/\s+/g, ' ').trim()
       for (const declaration of rule[2].split(';')) {
         // A nested `var(--a, var(--b))` degrades safely, so only the OUTERMOST
         // reference of each declaration decides — take the first `var(` and
@@ -128,7 +111,6 @@ describe('CSS custom properties', () => {
     const unresolved = [...uses.keys()]
       .filter(name => !declared.has(name))
       .filter(name => !CORE_PROVIDED.includes(name))
-      .filter(name => !KNOWN_DEAD_PENDING_861.includes(name))
       .sort()
 
     const detail = unresolved
@@ -146,13 +128,14 @@ describe('CSS custom properties', () => {
     ).toEqual([])
   })
 
-  test('the #861 pending list stays accurate and does not grow', () => {
-    // A name that no longer appears means it was fixed — drop it from the list
-    // so the guard keeps its teeth.
-    const stale = KNOWN_DEAD_PENDING_861.filter(name => !uses.has(name) || declared.has(name))
+  test('the CORE_PROVIDED allowlist has no stale entries', () => {
+    // An allowlisted name that nothing references without a fallback is dead
+    // weight — and a stale entry is exactly how a future dead variable would
+    // slip through, since the guard trusts this list unconditionally.
+    const stale = CORE_PROVIDED.filter(name => !uses.has(name))
     expect(
       stale,
-      `Fixed or now-declared — remove from KNOWN_DEAD_PENDING_861: ${stale.join(', ')}`
+      `Nothing references these without a fallback — drop from CORE_PROVIDED: ${stale.join(', ')}`
     ).toEqual([])
   })
 })

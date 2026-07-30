@@ -23,7 +23,7 @@
     }
 
     &.spent {
-      color: var(--color-text-dark-inactive, #7a7971);
+      color: var(--system-text-muted-color);
     }
 
     // A spells-only (restricted) die reads as its ⊛ mark regardless of

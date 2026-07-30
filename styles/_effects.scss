@@ -54,11 +54,19 @@
     }
   }
 
+  // Empty-state hint. Inherits the sheet's body color and dims it, rather than
+  // naming --system-secondary-color: that is a SURFACE color (box fills, dotted
+  // rules), and in the dark theme it is #343339 — measured at 1.5:1 against the
+  // #0b0a13 sheet background, i.e. all but invisible. Opacity over the inherited
+  // color lands near 4.4:1, keeps the tone warm instead of cold grey, and tracks
+  // the theme on its own — the treatment .dcc-action-dice-line and
+  // .dcc-modifier-breakdown already use for quiet captions.
   .effects-empty {
     grid-column: 1 / -1;
     text-align: center;
     padding: 20px;
-    color: var(--system-secondary-color);
+    color: inherit;
+    opacity: 0.65;
     font-style: italic;
 
     .empty-message {
@@ -110,10 +118,13 @@
     padding: 10px;
     margin-bottom: 15px;
 
+    // Same fix as .effects-empty above — #343339 text on the #17161e panel is
+    // roughly 1.2:1 in the dark theme.
     .help-text {
       margin: 0;
       font-size: 12px;
-      color: var(--system-secondary-color);
+      color: inherit;
+      opacity: 0.65;
     }
   }
 }
