@@ -65,13 +65,6 @@ const CORE_PROVIDED = [
  * listed rather than mechanically translated because each wants a deliberate
  * dark-theme value.
  *
- * The two `--system-input-*-focus*` names are NOT a design question — they are
- * transpositions of `--system-input-focus-outline-color`, which is declared in
- * both themes. Because they sit in `outline:` shorthands, keyboard focus rings
- * on checkboxes, radios and `:focus-visible` inputs currently render nothing at
- * all. That is an accessibility bug with a one-word fix; it is only here to keep
- * this guard green until the next slice of #861 lands.
- *
  * Shrink this list as #861 lands; do NOT add to it.
  */
 const KNOWN_DEAD_PENDING_861 = [
@@ -80,8 +73,6 @@ const KNOWN_DEAD_PENDING_861 = [
   '--color-text-dark-secondary',
   '--color-text-negative',
   '--system-heading-color',
-  '--system-input-outline-focus',
-  '--system-input-outline-focus-color',
   '--system-secondary-text'
 ]
 
