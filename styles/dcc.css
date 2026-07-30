@@ -769,6 +769,10 @@ a.inline-roll {
 .chat-message a.content-link:not(.critical):not(.fumble) > i {
   color: inherit;
 }
+.chat-message .dcc-enricher-group .dcc-enricher,
+.chat-message .dcc-enricher-group .dcc-enricher > i {
+  color: inherit;
+}
 .chat-message .dcc {
   color: var(--chat-primary-color);
 }
@@ -790,7 +794,6 @@ a.inline-roll {
 .chat-message .table-draw .mercurial,
 .chat-message .table-draw .manifestation {
   border-top: 1px solid var(--color-border-light-primary);
-  color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
   line-height: 22px;
   margin-bottom: 8px;
@@ -3149,7 +3152,7 @@ a.inline-roll {
   width: 16px;
 }
 .dcc-release-notes-card .dcc-release-message {
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
   font-family: var(--system-data-font), serif;
   margin-top: 8px;
   padding: 8px;

@@ -18,6 +18,12 @@ const { expect, createSessionTest } = require('./fixtures')
  * at `--chat-primary-color`, which variables.css defines on `body` precisely so
  * chat cards follow the app theme rather than the chat log's own stamp.
  *
+ * The same mechanism reached two more cards whose own color declarations sat
+ * above the card-body rule: the `[[/check]]` roll-link enrichers and the
+ * release-notes card body. Those are covered here too, along with the
+ * spell-check card's manifestation / mercurial blocks, so the fix is pinned as
+ * "chat text follows the chat theme", not "these two cards do".
+ *
  * Asserted against real rendered messages in both themes: the body text must
  * match the header (i.e. the theme's chat color), and in dark theme must NOT be
  * the light #222.
@@ -96,7 +102,25 @@ test.describe('Chat card text color', () => {
           // wrapping span and the visible anchor inside carries none, so the
           // anchor has to INHERIT the span's green rather than be recolored.
           critWrapperSpan: read('.theme856-bare span.inline-roll.critical'),
-          critWrapperAnchor: read('.theme856-bare span.inline-roll.critical a.inline-roll')
+          critWrapperAnchor: read('.theme856-bare span.inline-roll.critical a.inline-roll'),
+          // Cards whose own color declarations sat above the card-body rule, so
+          // the first pass at #856 did not reach them:
+          //
+          // 1. the spell-check card's manifestation / mercurial blocks. These
+          //    carried `--color-text-dark-secondary`, which Foundry declares only
+          //    on `body.game .app` (legacy AppV1 — the V2 sidebar chat does not
+          //    match it), so the declaration was invalid and they already
+          //    inherited. Measured to keep it that way: swapping in a real fixed
+          //    grey would be dark-on-dark.
+          spellManifestation: read('.theme856-spell .manifestation'),
+          spellMercurial: read('.theme856-spell .mercurial'),
+          // 2. roll-link enrichers, colored `--system-primary-color` by
+          //    styles/_enrichers.scss with no background of their own;
+          enricherLink: read('.theme856-enricher a.dcc-enricher'),
+          enricherIcon: read('.theme856-enricher a.dcc-enricher > i'),
+          // 3. the release-notes card body — the card root is
+          //    `.dcc-release-notes-card`, not `.dcc`.
+          releaseMessage: read('.theme856-release .dcc-release-message')
         }
       }
 
@@ -160,6 +184,38 @@ test.describe('Chat card text color', () => {
             `<span class="inline-roll inline-result critical">${bareAnchor}</span>` +
             '</div>'
         }))
+
+        // The spell-check card, from the real template — the manifestation and
+        // mercurial blocks carry the only other color declaration in chat that
+        // outranks the card-body rule.
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-spell">' + await foundry.applications.handlebars.renderTemplate(
+            'systems/dcc/templates/chat-card-spell-result.html',
+            {
+              manifestation: { description: 'A shimmering aura surrounds the caster' },
+              mercurial: { description: 'The caster\'s hair turns white' },
+              results: []
+            }
+          ) + '</div>'
+        }))
+
+        // Raw enricher source in the message body, exactly as the GM roll-request
+        // card posts it (module/journal-enrichers.mjs) — Foundry enriches chat
+        // content per-client at render, so this exercises the real link markup.
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-enricher"><p>[[/check str]]</p></div>'
+        }))
+
+        // The release-notes card, from the real template.
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-release">' + await foundry.applications.handlebars.renderTemplate(
+            'systems/dcc/templates/chat-card-release-notes.html',
+            { message: 'What is new in this release' }
+          ) + '</div>'
+        }))
         await new Promise(resolve => setTimeout(resolve, 500))
 
         out.dark = await measure('dark')
@@ -210,6 +266,22 @@ test.describe('Chat card text color', () => {
     expect(result.light.bareInlineRoll).toBe(LIGHT_TEXT)
     expect(result.light.bareInlineRollIcon).toBe(LIGHT_TEXT)
     expect(result.light.bareContentLink).toBe(LIGHT_TEXT)
+
+    // Cards that declared a color of their own, above the card-body rule. The
+    // enricher links and the release-notes body were dark-on-dark after the first
+    // pass at #856; the spell-check card's manifestation / mercurial blocks were
+    // already inheriting (their declaration referenced an undefined variable) and
+    // are measured so a "fix" that points them at a real grey gets caught.
+    expect(result.dark.spellManifestation).toBe(DARK_TEXT)
+    expect(result.dark.spellMercurial).toBe(DARK_TEXT)
+    expect(result.dark.enricherLink).toBe(DARK_TEXT)
+    expect(result.dark.enricherIcon).toBe(DARK_TEXT)
+    expect(result.dark.releaseMessage).toBe(DARK_TEXT)
+    expect(result.light.spellManifestation).toBe(LIGHT_TEXT)
+    expect(result.light.spellMercurial).toBe(LIGHT_TEXT)
+    expect(result.light.enricherLink).toBe(LIGHT_TEXT)
+    expect(result.light.enricherIcon).toBe(LIGHT_TEXT)
+    expect(result.light.releaseMessage).toBe(LIGHT_TEXT)
 
     // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions

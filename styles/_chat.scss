@@ -188,6 +188,25 @@ a.inline-roll {
     }
   }
 
+  // Roll-link enrichers — `[[/check]]`, `[[/save]]`, `[[/skill]]` — rendered in
+  // chat (#856). styles/_enrichers.scss colors them with
+  // `--system-primary-color`, right for a sheet or journal page but the light
+  // #222 inside the chat log, and their `background: var(--system-light-bg)` is
+  // a variable nothing defines, so the declaration is invalid and there is no
+  // chip for the text to sit on. They are not `.dcc`, not `a.inline-roll` and
+  // not `a.content-link`, and _enrichers.scss is @use'd after this file, so at
+  // an equal (0,2,0) they would win on source order — this rule has to be
+  // chat-scoped to outrank them. Reached by the GM roll-request card
+  // (module/journal-enrichers.mjs), an enricher typed straight into chat, and
+  // enricher links inside an enriched item / spell description shown on a card.
+  //
+  // `inherit` rather than `--chat-primary-color`, matching the link rule above,
+  // so an enricher inside a colored block takes that block's color.
+  .dcc-enricher-group .dcc-enricher,
+  .dcc-enricher-group .dcc-enricher > i {
+    color: inherit;
+  }
+
   // Any DCC card body inside a chat message (#856).
   //
   // `.dcc` (styles/_base.scss) sets `color: var(--system-primary-color)` — the
@@ -227,10 +246,21 @@ a.inline-roll {
   line-height: 20px;
 }
 
+// The manifestation / mercurial-effect blocks on the spell-check card
+// (templates/chat-card-spell-result.html).
+//
+// Deliberately no `color`: they take `.table-draw`'s `--chat-primary-color`.
+// This carried `var(--color-text-dark-secondary)`, which Foundry declares only
+// on `body.game .app` — the legacy AppV1 selector, which the V2 sidebar chat
+// does not match — so the variable was undefined here, the declaration was
+// invalid, and it was already behaving as `inherit`. Removed rather than
+// "corrected" for the same reason as the typo'd vars at the top of this file:
+// pointing it at a real fixed grey would put dark text on the dark chat
+// background, the bug #856 is about. Pinned by browser-tests/e2e/
+// chat-card-theme.spec.js so it cannot be reintroduced.
 .chat-message .table-draw .mercurial,
-.chat-message .table-draw .manifestation, {
+.chat-message .table-draw .manifestation {
   border-top: 1px solid var(--color-border-light-primary);
-  color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
   line-height: 22px;
   margin-bottom: 8px;
