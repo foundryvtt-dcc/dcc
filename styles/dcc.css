@@ -532,13 +532,13 @@
 .journal-sheet h1:not(.window-title) {
   font-family: var(--system-heading-font), serif;
   line-height: 1.3em;
-  color: var(--system-secondary-text);
+  color: var(--system-primary-color);
 }
 
 .journal-sheet h2 {
   font-family: var(--system-heading-font), serif;
   line-height: 1.5em;
-  color: var(--system-secondary-text);
+  color: var(--system-primary-color);
 }
 
 .journal-sheet h3 {
@@ -814,7 +814,7 @@ a.inline-roll {
   font-family: var(--system-heading-font), serif;
   font-size: 18px;
   margin-top: 8px;
-  color: var(--system-heading-color);
+  color: var(--chat-primary-color);
 }
 .table-draw .table-results {
   list-style: none;
@@ -2020,11 +2020,11 @@ a.inline-roll {
   border: 0;
   cursor: pointer;
   padding: 4px 8px;
-  color: var(--color-text-dark-secondary);
+  color: var(--system-text-muted-color);
   font-size: 1em;
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-button:hover {
-  color: var(--color-text-dark-primary);
+  color: var(--system-primary-color);
 }
 .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-button i {
   pointer-events: none;
@@ -2357,7 +2357,7 @@ a.inline-roll {
 }
 .dcc .spell-duel .spell-duel-participants .no-participants {
   font-style: italic;
-  color: var(--color-text-dark-secondary);
+  color: var(--system-text-muted-color);
   text-align: center;
 }
 .dcc .spell-duel .spell-duel-participant {
@@ -2408,7 +2408,7 @@ a.inline-roll {
   font-weight: bold;
   min-width: 2em;
   text-align: center;
-  background: var(--color-border-light-highlight);
+  background: var(--system-value-display-background-color);
   padding: 2px 8px;
   border-radius: 3px;
   position: relative;
@@ -2425,7 +2425,7 @@ a.inline-roll {
   opacity: 1;
 }
 .dcc .spell-duel .spell-duel-participant .participant-momentum .participant-remove {
-  color: var(--color-text-negative);
+  color: var(--system-text-negative-color);
   margin-left: 5px;
 }
 .dcc .spell-duel .spell-duel-log {
@@ -2450,7 +2450,7 @@ a.inline-roll {
 }
 .dcc .spell-duel .spell-duel-log .log-header .clear-log:hover {
   opacity: 1;
-  color: var(--color-text-negative);
+  color: var(--system-text-negative-color);
 }
 .dcc .spell-duel .spell-duel-log .log-entries {
   max-height: 200px;
@@ -2469,11 +2469,11 @@ a.inline-roll {
 }
 .dcc .spell-duel .spell-duel-log .log-entry .log-timestamp {
   font-size: 0.8rem;
-  color: var(--color-text-dark-secondary);
+  color: var(--system-text-muted-color);
   margin-right: 8px;
 }
 .dcc .spell-duel .spell-duel-log .log-entry .log-message {
-  color: var(--color-text-dark-primary);
+  color: var(--system-primary-color);
 }
 
 .dcc .death-clock-tracker {
@@ -3180,7 +3180,7 @@ a.inline-roll {
   color: var(--color-level-success, #282);
 }
 .dcc-action-dice-pips .dcc-action-die-pip.spent {
-  color: var(--color-text-dark-inactive, #7a7971);
+  color: var(--system-text-muted-color);
 }
 .dcc-action-dice-pips .dcc-action-die-pip.restricted.spent {
   opacity: 0.55;
@@ -3518,7 +3518,7 @@ a.inline-roll {
   flex: none;
 }
 .dcc-sidebar .dcc-sidebar-tool .tool-help {
-  color: var(--color-text-dark-secondary, #666);
+  color: var(--system-text-muted-color);
   font-size: 14px;
   line-height: 1;
 }
