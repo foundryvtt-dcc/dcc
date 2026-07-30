@@ -26,6 +26,8 @@ const test = createSessionTest()
 
 const LIGHT_TEXT = 'rgb(34, 34, 34)' // #222 — the light-theme chat/sheet color
 const DARK_TEXT = 'rgb(208, 190, 170)' // #d0beaa — the dark-theme chat color
+const CRIT_GREEN = 'rgb(0, 128, 0)'
+const FUMBLE_RED = 'rgb(255, 0, 0)'
 
 test.describe('Chat card text color', () => {
   test('DCC card bodies follow the chat theme in both light and dark', async ({ page }) => {
@@ -55,7 +57,16 @@ test.describe('Chat card text color', () => {
           abilityRecovery: read('.ability-change-card .recovery'),
           friendlyFireText: read('.friendly-fire p'),
           inlineRoll: read('.friendly-fire a.inline-roll'),
-          inlineRollIcon: read('.friendly-fire a.inline-roll > i')
+          inlineRollIcon: read('.friendly-fire a.inline-roll > i'),
+          // The muted caption under a rolled formula. Dimmed with opacity, not
+          // a fixed grey, so it stays legible in both themes.
+          modifierBreakdown: read('.theme856-extras .dcc-modifier-breakdown'),
+          // Crit / fumble colors are meaningful and theme-independent — the
+          // card-body rule must not outrank them.
+          critInlineRoll: read('.theme856-extras a.inline-roll.critical'),
+          fumbleInlineRoll: read('.theme856-extras a.inline-roll.fumble'),
+          critEmote: read('.theme856-extras .emote-alert.critical'),
+          fumbleEmote: read('.theme856-extras .emote-alert.fumble')
         }
       }
 
@@ -90,6 +101,20 @@ test.describe('Chat card text color', () => {
             '</div>',
           flags: { 'dcc.isFriendlyFire': true }
         }))
+
+        // A DCC card carrying the muted modifier breakdown plus the
+        // crit/fumble variants, to pin that the card-body rule dims the former
+        // without stealing the latter's meaningful colors.
+        msgs.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="dcc chat-card theme856-extras">' +
+            '<span class="dcc-modifier-breakdown">Strength +1</span>' +
+            '<p><a class="inline-roll critical">20</a></p>' +
+            '<p><a class="inline-roll fumble">1</a></p>' +
+            '<p class="emote-alert critical">crit</p>' +
+            '<p class="emote-alert fumble">fumble</p>' +
+            '</div>'
+        }))
         await new Promise(resolve => setTimeout(resolve, 500))
 
         out.dark = await measure('dark')
@@ -119,6 +144,7 @@ test.describe('Chat card text color', () => {
     expect(result.dark.friendlyFireText).toBe(DARK_TEXT)
     expect(result.dark.inlineRoll).toBe(DARK_TEXT)
     expect(result.dark.inlineRollIcon).toBe(DARK_TEXT)
+    expect(result.dark.modifierBreakdown).toBe(DARK_TEXT)
 
     // Light theme is unchanged — both variables are #222 there.
     expect(result.light.messageHeader).toBe(LIGHT_TEXT)
@@ -128,5 +154,17 @@ test.describe('Chat card text color', () => {
     expect(result.light.friendlyFireText).toBe(LIGHT_TEXT)
     expect(result.light.inlineRoll).toBe(LIGHT_TEXT)
     expect(result.light.inlineRollIcon).toBe(LIGHT_TEXT)
+    expect(result.light.modifierBreakdown).toBe(LIGHT_TEXT)
+
+    // Crit / fumble stay green / red in BOTH themes. The card-body rule is more
+    // specific than `.inline-roll.critical`, so without the `:not()` exclusions
+    // in styles/_chat.scss a natural 20 in a DCC card would render as ordinary
+    // body text.
+    for (const theme of ['dark', 'light']) {
+      expect(result[theme].critInlineRoll, `${theme} crit inline roll`).toBe(CRIT_GREEN)
+      expect(result[theme].fumbleInlineRoll, `${theme} fumble inline roll`).toBe(FUMBLE_RED)
+      expect(result[theme].critEmote, `${theme} crit emote`).toBe(CRIT_GREEN)
+      expect(result[theme].fumbleEmote, `${theme} fumble emote`).toBe(FUMBLE_RED)
+    }
   })
 })

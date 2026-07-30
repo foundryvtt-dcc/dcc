@@ -57,10 +57,17 @@ a.inline-roll {
 // Lists each modifier the lib contributed to a check / save / spell
 // result under the rolled formula (e.g. "Strength +1"). Built by
 // `buildModifierBreakdownHtml` in module/adapter/chat-renderer.mjs.
+// Dimmed with opacity rather than `--system-text-muted-color` (#666), for the
+// same reason `.dcc-action-dice-line` above does: that variable has no
+// dark-theme value, and even if it had one it would not apply here — Foundry
+// stamps `theme-light` on the chat log, so the light block wins inside it
+// regardless of theme. The fixed mid-grey therefore rendered #666 on the dark
+// chat background, the same dark-on-dark problem as #856. Inheriting the card's
+// theme-aware color and softening it stays a quiet caption in both themes.
 .dcc-modifier-breakdown {
   margin-top: 4px;
   font-size: var(--font-size-12);
-  color: var(--system-text-muted-color);
+  opacity: 0.8;
 
   .dcc-modifier-breakdown-heading {
     display: block;
@@ -165,7 +172,12 @@ a.inline-roll {
     // `--content-link-text-color` resolves light inside the chat log for the
     // same `theme-light` reason as above, which is why the die result in the
     // friendly-fire card was dark-on-dark too. The icon follows the text.
-    a.inline-roll,
+    //
+    // Crit / fumble inline rolls are excluded: `.inline-roll.critical` and
+    // `.inline-roll.fumble` at the top of this file are only (0,2,0), so a
+    // bare `a.inline-roll` here would outrank them and a natural 20 would lose
+    // its green. Their colors are meaningful and theme-independent.
+    a.inline-roll:not(.critical):not(.fumble),
     a.content-link {
       color: var(--chat-primary-color);
 
