@@ -3,7 +3,12 @@
 /* ----------------------------------------- */
 a.inline-roll {
   line-height: 25px;
-  color: var(--system-primrary-text);
+  // Deliberately no `color`: inline rolls take the color of whatever card or
+  // sheet they sit in. This carried `var(--system-primrary-text)` — a typo, so
+  // the variable never existed and the declaration was invalid, i.e. already
+  // behaving as `inherit`. Removed rather than "corrected", because pointing it
+  // at `--system-primary-color` would resolve light inside the chat log and
+  // reintroduce the dark-on-dark text of #856 for every inline roll in chat.
   background: transparent;
 }
 
@@ -52,10 +57,17 @@ a.inline-roll {
 // Lists each modifier the lib contributed to a check / save / spell
 // result under the rolled formula (e.g. "Strength +1"). Built by
 // `buildModifierBreakdownHtml` in module/adapter/chat-renderer.mjs.
+// Dimmed with opacity rather than `--system-text-muted-color` (#666), for the
+// same reason `.dcc-action-dice-line` above does: that variable has no
+// dark-theme value, and even if it had one it would not apply here — Foundry
+// stamps `theme-light` on the chat log, so the light block wins inside it
+// regardless of theme. The fixed mid-grey therefore rendered #666 on the dark
+// chat background, the same dark-on-dark problem as #856. Inheriting the card's
+// theme-aware color and softening it stays a quiet caption in both themes.
 .dcc-modifier-breakdown {
   margin-top: 4px;
   font-size: var(--font-size-12);
-  color: var(--system-text-muted-color);
+  opacity: 0.8;
 
   .dcc-modifier-breakdown-heading {
     display: block;
@@ -134,6 +146,87 @@ a.inline-roll {
     color: var(--chat-primary-color);
   }
 
+  // Inline rolls and content links anywhere in a chat message take the color of
+  // whatever they sit in (#856).
+  //
+  // Foundry colors these with `--content-link-text-color` from
+  // `@layer elements.custom`, paired with a light chip background. DCC strips
+  // that background (`a.inline-roll` at the top of this file, `.dcc
+  // .content-link` in _base.scss), so the text sits straight on the card and its
+  // color is ours to own — and `--content-link-text-color` resolves to #222
+  // inside the chat log in BOTH themes, because Foundry stamps
+  // `themed theme-light` on `ol.chat-log`.
+  //
+  // This has to be a real declaration, not an omission. DCC's stylesheet loads
+  // into `@layer system` (see system.json), which outranks
+  // `@layer elements.custom` regardless of specificity, so whatever DCC declares
+  // here suppresses core's rule. `a.inline-roll` previously carried
+  // `var(--system-primrary-text)` — a typo, so the declaration was invalid and
+  // computed to `inherit`, but it still *won* the cascade and that inherit was
+  // load-bearing. Deleting it handed inline rolls back to core's #222; only a
+  // `.dcc`-scoped replacement would have left every card without a `.dcc`
+  // wrapper (the attack cards, the adapter check cards, the enhanced card)
+  // dark-on-dark. `inherit` here covers all of them, and fixes bare
+  // `a.content-link`, which never had a DCC declaration and so was already
+  // rendering #222 on the dark background.
+  //
+  // `inherit` rather than `--chat-primary-color` so a crit/fumble WRAPPER also
+  // flows through: `module/chat.js` emits
+  // `<span class="inline-roll critical"><a class="inline-roll">…</a></span>`,
+  // where the anchor carries no `.critical` — inheriting picks up the span's
+  // green. The `:not()` guards cover the other shape, an anchor that carries the
+  // class itself (xcc emits that), whose (0,2,0) rule this selector would
+  // otherwise outrank at (0,2,1).
+  a.inline-roll:not(.critical):not(.fumble),
+  a.content-link:not(.critical):not(.fumble) {
+    color: inherit;
+
+    // Otherwise the die glyph keeps `--content-link-icon-color`, which is #666
+    // inside the chat log.
+    > i {
+      color: inherit;
+    }
+  }
+
+  // Roll-link enrichers — `[[/check]]`, `[[/save]]`, `[[/skill]]` — rendered in
+  // chat (#856). styles/_enrichers.scss colors them with
+  // `--system-primary-color`, right for a sheet or journal page but the light
+  // #222 inside the chat log, and they carry no background of their own, so the
+  // text sits straight on the card. They are not `.dcc`, not `a.inline-roll` and
+  // not `a.content-link`, and _enrichers.scss is @use'd after this file, so at
+  // an equal (0,2,0) they would win on source order — this rule has to be
+  // chat-scoped to outrank them. Reached by the GM roll-request card
+  // (module/journal-enrichers.mjs), an enricher typed straight into chat, and
+  // enricher links inside an enriched item / spell description shown on a card.
+  //
+  // `inherit` rather than `--chat-primary-color`, matching the link rule above,
+  // so an enricher inside a colored block takes that block's color.
+  .dcc-enricher-group .dcc-enricher,
+  .dcc-enricher-group .dcc-enricher > i {
+    color: inherit;
+  }
+
+  // Any DCC card body inside a chat message (#856).
+  //
+  // `.dcc` (styles/_base.scss) sets `color: var(--system-primary-color)` — the
+  // SHEET color — and Foundry stamps `theme-light` on `ol.chat-log`, which
+  // re-establishes the light variable block from styles/variables.css for that
+  // whole subtree. So inside the chat log `--system-primary-color` resolves to
+  // the light value (#222) no matter which theme is active, and any card that
+  // does not set its own color renders near-black on the dark chat background.
+  // Cards that already declare `--chat-primary-color` (the table-draw block
+  // below, the attack cards) were fine; the friendly-fire card and the
+  // ability-score-log card never did, which is what the issue reported.
+  //
+  // Setting it once here covers both, and every future card that opts into the
+  // `.dcc` wrapper, instead of patching each one as it is noticed. Cards without
+  // that wrapper are covered by the inline-roll / content-link rule above and by
+  // `.chat-message`'s own color. No visual change in light theme, where
+  // `--chat-primary-color` and `--system-primary-color` are both #222.
+  .dcc {
+    color: var(--chat-primary-color);
+  }
+
   .table-draw {
     color: var(--chat-primary-color);
 
@@ -152,10 +245,21 @@ a.inline-roll {
   line-height: 20px;
 }
 
+// The manifestation / mercurial-effect blocks on the spell-check card
+// (templates/chat-card-spell-result.html).
+//
+// Deliberately no `color`: they take `.table-draw`'s `--chat-primary-color`.
+// This carried `var(--color-text-dark-secondary)`, which Foundry declares only
+// on `body.game .app` — the legacy AppV1 selector, which the V2 sidebar chat
+// does not match — so the variable was undefined here, the declaration was
+// invalid, and it was already behaving as `inherit`. Removed rather than
+// "corrected" for the same reason as the typo'd vars at the top of this file:
+// pointing it at a real fixed grey would put dark text on the dark chat
+// background, the bug #856 is about. Pinned by browser-tests/e2e/
+// chat-card-theme.spec.js so it cannot be reintroduced.
 .chat-message .table-draw .mercurial,
-.chat-message .table-draw .manifestation, {
+.chat-message .table-draw .manifestation {
   border-top: 1px solid var(--color-border-light-primary);
-  color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
   line-height: 22px;
   margin-bottom: 8px;
@@ -344,9 +448,11 @@ a.inline-roll {
       color: red;
     }
 
-    &.status-info {
-      color: var(--system-primrary-text);
-    }
+    // `&.status-info` — the neutral counterpart to the success/failure states
+    // above — intentionally has no rule: it keeps the `.roll-result` weight and
+    // takes the card's color. It previously set
+    // `color: var(--system-primrary-text)`, the same typo as `a.inline-roll`, so
+    // the variable never existed and the declaration was already `inherit`.
   }
 
   .card-buttons {

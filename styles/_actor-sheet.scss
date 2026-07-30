@@ -771,8 +771,14 @@
     }
   }
 
+  // `--chat-primary-color`, not `--system-primary-color` (#856): this card only
+  // ever renders as a chat message (module/release-notes.js), and Foundry stamps
+  // `theme-light` on `ol.chat-log`, so the sheet color resolves to the light #222
+  // in there whatever the active theme is — dark text on the dark chat
+  // background. The card root is `.dcc-release-notes-card`, not `.dcc`, so the
+  // `.chat-message .dcc` rule in _chat.scss does not reach it either.
   .dcc-release-message {
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
     font-family: var(--system-data-font), serif;
     margin-top: 8px;
     padding: 8px;
