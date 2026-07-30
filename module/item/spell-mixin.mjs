@@ -2,6 +2,14 @@
 
 import { logSpellburn } from '../ability-score-log.js'
 import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
+import {
+  planActionDie,
+  actionDicePresetsFromPlan,
+  reconcilePlannedActionDie,
+  spendPlannedActionDie,
+  formatActionDiceChatLine,
+  slotRollFormula
+} from '../action-dice-tracker.mjs'
 
 /**
  * Determine the die formula to roll for a manifestation table.
@@ -90,7 +98,35 @@ export const SpellItemMixin = (Base) => class extends Base {
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
     options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
-    const die = this.system.spellCheck.die
+
+    // Multiple action dice (#834) — this is the sheet/macro entry point for an
+    // owned spell, so it owns the same plan → override → reconcile → spend
+    // cycle the weapon and check paths run. Without it a caster's second cast
+    // in a round silently re-rolled `spellCheck.die`, which
+    // `DCCItem.prepareBaseData` derives via `getSingleActionDie` — i.e. always
+    // the FIRST action die — and never spent a slot, so the tracker pips never
+    // advanced either (#857).
+    //
+    // Only an extra die (slot index > 0) overrides the spell's own die, so the
+    // first cast of a round stays byte-identical; `planActionDie` returns null
+    // off-path (setting off / not in combat / no budget), which leaves the
+    // whole block inert. A spells-only die IS eligible here — that is the
+    // canonical wizard "cast with the second action die" case.
+    let die = this.system.spellCheck.die
+    let actionDicePlan = planActionDie(actor, 'spell')
+    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+      die = slotRollFormula(actionDicePlan.choice.slot)
+    }
+    // The die the roll uses with no player intervention — passed to the
+    // reconcile below so landing on it is never mistaken for a slot choice.
+    const defaultActionDieFaces = parseInt(String(die).match(/d(\d+)/)?.[1] || '') || null
+    // Slot-aware presets (#834 §3) so the modifier dialog is a real action-die
+    // chooser. Null when there is only one slot (or off-path), in which case
+    // the Die term carries no presets exactly as before.
+    const actionDicePresets = actionDicePlan
+      ? actionDicePresetsFromPlan(actionDicePlan, { action: 'spell' })
+      : null
+
     let bonus = this.system.spellCheck.value.toString()
 
     // Consolidate the spell check value so that the modifier dialog is not too wide
@@ -115,7 +151,11 @@ export const SpellItemMixin = (Base) => class extends Base {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: die
+        formula: die,
+        // Only on-path with two or more slots; absent otherwise, so the dialog
+        // renders the plain die field it always has. No untrained 1d10 here —
+        // that is an attack/skill concept, not a spell-check one.
+        ...(actionDicePresets?.length ? { presets: actionDicePresets } : {})
       },
       {
         type: 'Compound',
@@ -200,6 +240,18 @@ export const SpellItemMixin = (Base) => class extends Base {
       flavor += ` (${game.i18n.localize(ability.label)})`
     }
 
+    // The player may have picked a different slot in the modifier dialog, so
+    // re-point the plan at the die actually rolled before spending it, then
+    // spend (the tracker pip flips on the flag write). Null plan ⇒ off-path ⇒
+    // empty line, and the card renders exactly as it does today. Deliberately
+    // after the no-results-table bail-out above: that path posts nothing at all,
+    // so — as before this change — it must cost nothing either.
+    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, roll.dice?.[0]?.faces, {
+      action: 'spell',
+      defaultFaces: defaultActionDieFaces
+    })
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
+
     // Tell the system to handle the spell check result
     await game.dcc.processSpellCheck(actor, {
       rollTable: resultsTable,
@@ -211,7 +263,8 @@ export const SpellItemMixin = (Base) => class extends Base {
       forceCrit: options.forceCrit,
       forceFumble: options.forceFumble,
       suppressPatronTaint: options.suppressPatronTaint,
-      spellburn: spellburnTotal
+      spellburn: spellburnTotal,
+      actionDiceChatLine
     })
   }
 

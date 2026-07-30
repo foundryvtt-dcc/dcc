@@ -14,6 +14,8 @@ class SpellResult {
    * @param {boolean} fumble       The Spell Check was a nat 1
    * @param {Object} item          The spell item
    * @param {Object} patronTaint  The patron taint data object containing chance and message
+   * @param {string} actionDiceChatLine  Multiple-action-dice "Action N of M"
+   *   line (#834). Empty off-path, in which case the card is unchanged.
    */
   static async addChatMessage (roll, rollTable, result, {
     messageData = {},
@@ -22,7 +24,8 @@ class SpellResult {
     fumble = false,
     item = undefined,
     manifestation: manifestationOverride = undefined,
-    patronTaint = undefined
+    patronTaint = undefined,
+    actionDiceChatLine = ''
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
       messageMode: game.settings.get('core', 'messageMode')
@@ -87,7 +90,8 @@ class SpellResult {
       rollHTML: rollTable.displayRoll ? await roll.render() : null,
       table: rollTable,
       crit,
-      fumble
+      fumble,
+      actionDiceChatLine
     })
 
     // Use the item name instead of the rollTable name to allow customizing spell names

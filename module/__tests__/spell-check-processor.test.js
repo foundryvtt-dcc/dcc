@@ -42,7 +42,8 @@ function makeRoll ({ natural = 10, total = null, evaluated = true } = {}) {
       _total: natural
     }],
     evaluate: vi.fn(async function () { this._evaluated = true }),
-    toMessage: vi.fn(async function () { return { id: 'msg' } })
+    toMessage: vi.fn(async function () { return { id: 'msg' } }),
+    render: vi.fn(async () => '<div class="dice-roll"></div>')
   }
   return roll
 }
@@ -521,5 +522,76 @@ describe('processSpellCheck — item lastResult update', () => {
 
     expect(stubs.updateFlags).toHaveBeenCalledTimes(1)
     expect(roll.toMessage).toHaveBeenCalledTimes(1)
+  })
+})
+
+// Multiple-action-dice "Action N of M" line (#857). `DCCItem.rollSpellCheck`
+// supplies it; it is optional, so callers that never set it — including sibling
+// content modules using this stable API — must be unaffected.
+describe('processSpellCheck — actionDiceChatLine', () => {
+  const actor = () => ({
+    type: 'Player',
+    system: { class: {}, details: { level: { value: 1 } } },
+    classId: 'wizard'
+  })
+
+  test('forwards the line into SpellResult.addChatMessage on the table branch', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable, actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll,
+      rollTable,
+      expect.anything(),
+      expect.objectContaining({ actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+    )
+  })
+
+  test('renders the line under the roll on the no-table branch', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll, actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+
+    const content = roll.toMessage.mock.calls[0][0].content
+    expect(content).toContain('<div class="dice-roll"></div>')
+    expect(content).toContain('<div class="dcc-action-dice-line">Action 2 of 2 (1d14)</div>')
+  })
+
+  test('escapes the line rather than trusting it as HTML', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll, actionDiceChatLine: '<img src=x onerror=alert(1)>' })
+
+    expect(roll.toMessage.mock.calls[0][0].content).not.toContain('<img')
+  })
+
+  test('with no line the no-table branch leaves content unset (default body)', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll })
+
+    expect(roll.toMessage.mock.calls[0][0].content).toBeUndefined()
+    expect(roll.render).not.toHaveBeenCalled()
+  })
+
+  test('with no line the table branch passes an empty string through', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll,
+      rollTable,
+      expect.anything(),
+      expect.objectContaining({ actionDiceChatLine: '' })
+    )
   })
 })

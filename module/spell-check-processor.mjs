@@ -15,7 +15,11 @@
  * `game.dcc.FleetingLuck` rather than importing those modules directly,
  * mirroring how `module/actor.js`'s spell-check paths already invoke
  * them; keeps the init-time `game.dcc` registration order unchanged.
+ * (`actionDiceLineHtml` is the one direct import — a pure string formatter
+ * with no init-time side effects, so it carries no ordering risk.)
  */
+
+import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
 
 /**
  * Handle the results of a spell check cast through any mechanism.
@@ -47,6 +51,11 @@ export async function processSpellCheck (actor, spellData) {
   // reacts via the `dcc.afterSpellCheckResult` hook below. Defaults false, so
   // existing callers are unaffected.
   const suppressPatronTaint = spellData.suppressPatronTaint || false
+  // Multiple-action-dice "Action N of M" line (#834), supplied by
+  // `DCCItem.rollSpellCheck`. Optional and empty on the off-path, so callers
+  // that never set it — including sibling content modules calling this stable
+  // API — render byte-identically to before.
+  const actionDiceChatLine = spellData.actionDiceChatLine || ''
 
   let crit = false
   let fumble = false
@@ -146,7 +155,7 @@ export async function processSpellCheck (actor, spellData) {
         roll._total += levelValue
       }
 
-      const spellResultOptions = { crit, fumble, item, patronTaint }
+      const spellResultOptions = { crit, fumble, item, patronTaint, actionDiceChatLine }
       const messageData = {}
       if (flavor) {
         messageData.flavor = flavor
@@ -189,13 +198,20 @@ export async function processSpellCheck (actor, spellData) {
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
-      // Display the roll
-      await roll.toMessage({
+      // Display the roll. When a multiple-action-dice line is present it has to
+      // ride under the rolled formula, which means rendering the body by hand
+      // (mirrors `renderSkillCheck` in `adapter/chat-renderer.mjs`); with no
+      // line `content` stays unset and `toMessage` builds its default body.
+      const toMessageData = {
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor,
         flags,
         system: { spellId: item?.id }
-      })
+      }
+      if (actionDiceChatLine) {
+        toMessageData.content = `${await roll.render()}${actionDiceLineHtml(actionDiceChatLine)}`
+      }
+      await roll.toMessage(toMessageData)
     }
 
     // Determine casting mode: an explicit override from the caller wins,

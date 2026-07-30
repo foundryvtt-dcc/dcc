@@ -17,7 +17,7 @@ import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs'
-import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula } from '../action-dice-tracker.mjs'
+import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import { formatMercurialDescriptionHTML } from '../utilities.js'
 
 /**
@@ -127,14 +127,35 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // (`planActionDie` → null) leaves today's behavior; the spend happens in
     // the cast branch after the roll resolves (so a cancelled dialog spends
     // nothing). Only an extra die (index > 0) overrides the spell-check die —
-    // the first action of a round, and the off-path, stay byte-identical — and
-    // a shown modifier dialog's own `actionDie` choice still wins (it overwrites
-    // `actionDieOverride` in `_applySpellCheckDialogToOptions`).
+    // the first action of a round, and the off-path, stay byte-identical.
+    //
+    // The planned die is also handed to the modifier dialog (below) as its Die
+    // term default plus the slot presets, so the dialog shows the die that will
+    // actually be rolled and can be used to pick a different slot. Before that
+    // the dialog defaulted to the spell's own (always-first-slot) die and
+    // `_applySpellCheckDialogToOptions` wrote it straight back over the planned
+    // override, so with the dialog on, an extra-die cast silently reverted to
+    // the primary die (#857).
     const actionDicePlan = planActionDie(this, 'spell')
     options._actionDicePlan = actionDicePlan
     if (actionDicePlan?.choice && actionDicePlan.choice.index > 0 && !options.actionDieOverride) {
       options.actionDieOverride = slotRollFormula(actionDicePlan.choice.slot)
     }
+    // Slot-aware presets for the dialog (#834 §3); null when there is only one
+    // slot or off-path, in which case the dialog's Die term is unchanged.
+    delete options._actionDicePresets
+    if (actionDicePlan) {
+      const slotPresets = actionDicePresetsFromPlan(actionDicePlan, { action: 'spell' })
+      if (slotPresets?.length) options._actionDicePresets = slotPresets
+    }
+    // Faces of the die the roll uses with no player intervention, so the
+    // post-roll reconcile can tell a real slot choice from the default.
+    const defaultDie = options.actionDieOverride ||
+      spellItem?.system?.spellCheck?.die ||
+      this.system.class?.spellCheckOverrideDie ||
+      this.system.attributes?.actionDice?.value ||
+      '1d20'
+    options._actionDiceDefaultFaces = parseInt(String(defaultDie).match(/d(\d+)/)?.[1] || '') || null
 
     const castingMode = spellItem?.system?.config?.castingMode
     const hasPatron = !!this.system.class?.patron
@@ -231,9 +252,22 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * @private
    */
   async _promptSpellCheckDialog (spellItem, ctx = {}) {
-    const { castingMode = 'wizard', isIdolMagic = false, spellburnEligible = false } = ctx
+    const {
+      castingMode = 'wizard',
+      isIdolMagic = false,
+      spellburnEligible = false,
+      actionDie = '',
+      actionDicePresets = null
+    } = ctx
 
+    // `ctx.actionDie` is the multiple-action-dice override the dispatcher
+    // planned for this cast (#857). It has to win over the spell's own
+    // `spellCheck.die` — that value is always derived from the FIRST action die
+    // (`getSingleActionDie`), so defaulting to it here and then folding the
+    // dialog result back into `options.actionDieOverride` is what used to undo
+    // the plan.
     const die =
+      actionDie ||
       spellItem?.system?.spellCheck?.die ||
       this.system.class?.spellCheckOverrideDie ||
       this.system.attributes?.actionDice?.value ||
@@ -261,7 +295,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: die
+        formula: die,
+        // Only present on-path with two or more slots, so the dialog otherwise
+        // renders the plain die field it always has.
+        ...(actionDicePresets?.length ? { presets: actionDicePresets } : {})
       },
       {
         type: 'Compound',
@@ -381,7 +418,9 @@ export const RollsSpellMixin = (Base) => class extends Base {
       const prompt = await this._promptSpellCheckDialog(spellItem, {
         castingMode: isCleric ? 'cleric' : 'wizard',
         isIdolMagic: isCleric,
-        spellburnEligible: !isCleric
+        spellburnEligible: !isCleric,
+        actionDie: options.actionDieOverride || '',
+        actionDicePresets: options._actionDicePresets || null
       })
       if (prompt === null) return
       this._applySpellCheckDialogToOptions(prompt, options)
@@ -484,7 +523,9 @@ export const RollsSpellMixin = (Base) => class extends Base {
       const prompt = await this._promptSpellCheckDialog(null, {
         castingMode: isIdolMagic ? 'cleric' : 'wizard',
         isIdolMagic,
-        spellburnEligible: !isIdolMagic
+        spellburnEligible: !isIdolMagic,
+        actionDie: options.actionDieOverride || '',
+        actionDicePresets: options._actionDicePresets || null
       })
       if (prompt === null) return
       this._applySpellCheckDialogToOptions(prompt, options)
@@ -643,7 +684,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }
 
-    const actionDiceChatLine = await this._spendActionDiceLine(options)
+    const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     await renderSpellCheck({
       actor: this,
       spellItem: null,
@@ -716,7 +757,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     })
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options)
-    const actionDiceChatLine = await this._spendActionDiceLine(options)
+    const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     await renderSpellCheck({
       actor: this,
       spellItem,
@@ -965,7 +1006,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
-    const actionDiceChatLine = await this._spendActionDiceLine(options)
+    const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     await renderSpellCheck({
       actor: this,
       spellItem,
@@ -1137,10 +1178,21 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * by `_rollSpellCheckDispatch`; null plan ⇒ off-path ⇒ `''`. Called by each
    * cast branch after its roll resolves, so a cancelled dialog (which returns
    * before reaching the cast) spends nothing.
+   *
+   * `foundryRoll` re-points the plan at the slot whose die was actually rolled
+   * (#834 §3) before spending, so choosing a different slot in the modifier
+   * dialog moves the spend instead of silently burning the auto-picked one.
+   * @param {object} options
+   * @param {Roll} [foundryRoll] - the evaluated roll, for the reconcile
    * @private
    */
-  async _spendActionDiceLine (options) {
-    return formatActionDiceChatLine(await spendPlannedActionDie(options?._actionDicePlan))
+  async _spendActionDiceLine (options, foundryRoll = null) {
+    const plan = reconcilePlannedActionDie(
+      options?._actionDicePlan,
+      foundryRoll?.dice?.[0]?.faces,
+      { action: 'spell', defaultFaces: options?._actionDiceDefaultFaces ?? null }
+    )
+    return formatActionDiceChatLine(await spendPlannedActionDie(plan))
   }
 
   /**

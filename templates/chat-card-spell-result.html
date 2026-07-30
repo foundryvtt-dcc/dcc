@@ -20,6 +20,10 @@
 
   {{{ rollHTML }}}
 
+  {{#if actionDiceChatLine}}
+    <div class="dcc-action-dice-line">{{actionDiceChatLine}}</div>
+  {{/if}}
+
   {{#if crit}}
     <div class="spell-check-mod">
       <h4 class="critical">{{localize "DCC.SpellCheckCrit"}}</h4>
