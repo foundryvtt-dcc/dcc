@@ -42,7 +42,8 @@ function makeRoll ({ natural = 10, total = null, evaluated = true } = {}) {
       _total: natural
     }],
     evaluate: vi.fn(async function () { this._evaluated = true }),
-    toMessage: vi.fn(async function () { return { id: 'msg' } })
+    toMessage: vi.fn(async function () { return { id: 'msg' } }),
+    render: vi.fn(async () => '<div class="dice-roll"></div>')
   }
   return roll
 }
@@ -521,5 +522,143 @@ describe('processSpellCheck — item lastResult update', () => {
 
     expect(stubs.updateFlags).toHaveBeenCalledTimes(1)
     expect(roll.toMessage).toHaveBeenCalledTimes(1)
+  })
+})
+
+// Multiple-action-dice "Action N of M" line (#857). `DCCItem.rollSpellCheck`
+// supplies it; it is optional, so callers that never set it — including sibling
+// content modules using this stable API — must be unaffected.
+// Crit/fumble follow the die actually rolled, not a hardcoded 20 (#857). The
+// multiple-action-dice override can hand this path a smaller action die, on which
+// a natural 20 is unrollable — a hardcoded threshold made a crit impossible.
+describe('processSpellCheck — crit threshold follows the rolled die', () => {
+  const actor = () => ({
+    type: 'Player',
+    name: 'Probe',
+    system: { class: {}, details: { level: { value: 3 } } },
+    classId: 'wizard',
+    loseSpell: vi.fn()
+  })
+
+  const rollWithFaces = (faces, natural) => {
+    const roll = makeRoll({ natural, total: natural + 5 })
+    roll.dice = [{ total: natural, faces }]
+    return roll
+  }
+
+  test('a natural max on a d14 action die is a crit', async () => {
+    const stubs = installFoundryStubs()
+    const roll = rollWithFaces(14, 14)
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll, rollTable, expect.anything(), expect.objectContaining({ crit: true })
+    )
+  })
+
+  test('a natural 20 is still the crit on a d20', async () => {
+    const stubs = installFoundryStubs()
+    const roll = rollWithFaces(20, 20)
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll, rollTable, expect.anything(), expect.objectContaining({ crit: true })
+    )
+  })
+
+  test('a natural 14 on a d20 is NOT a crit', async () => {
+    const stubs = installFoundryStubs()
+    const roll = rollWithFaces(20, 14)
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll, rollTable, expect.anything(), expect.objectContaining({ crit: false })
+    )
+  })
+
+  test('forceCrit lands on the die max, not a literal 20', async () => {
+    installFoundryStubs()
+    const roll = rollWithFaces(14, 7)
+    roll.terms = [{ results: [{ result: 7 }], _total: 7 }]
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable, forceCrit: true })
+
+    // The forced result must be rollable on a d14 and must register as the crit.
+    expect(roll.terms[0].results[0].result).toBe(14)
+  })
+})
+
+describe('processSpellCheck — actionDiceChatLine', () => {
+  const actor = () => ({
+    type: 'Player',
+    system: { class: {}, details: { level: { value: 1 } } },
+    classId: 'wizard'
+  })
+
+  test('forwards the line into SpellResult.addChatMessage on the table branch', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable, actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll,
+      rollTable,
+      expect.anything(),
+      expect.objectContaining({ actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+    )
+  })
+
+  test('renders the line under the roll on the no-table branch', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll, actionDiceChatLine: 'Action 2 of 2 (1d14)' })
+
+    const content = roll.toMessage.mock.calls[0][0].content
+    expect(content).toContain('<div class="dice-roll"></div>')
+    expect(content).toContain('<div class="dcc-action-dice-line">Action 2 of 2 (1d14)</div>')
+  })
+
+  test('escapes the line rather than trusting it as HTML', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll, actionDiceChatLine: '<img src=x onerror=alert(1)>' })
+
+    expect(roll.toMessage.mock.calls[0][0].content).not.toContain('<img')
+  })
+
+  test('with no line the no-table branch leaves content unset (default body)', async () => {
+    installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+
+    await processSpellCheck(actor(), { roll })
+
+    expect(roll.toMessage.mock.calls[0][0].content).toBeUndefined()
+    expect(roll.render).not.toHaveBeenCalled()
+  })
+
+  test('with no line the table branch passes an empty string through', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 12, total: 17 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ _id: 'r1' }]), displayRoll: true }
+
+    await processSpellCheck(actor(), { roll, rollTable })
+
+    expect(stubs.addChatMessage).toHaveBeenCalledWith(
+      roll,
+      rollTable,
+      expect.anything(),
+      expect.objectContaining({ actionDiceChatLine: '' })
+    )
   })
 })

@@ -1,4 +1,4 @@
-import { describe, beforeEach, test, expect, vi } from 'vitest'
+import { describe, beforeEach, afterEach, test, expect, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item.js'
 
@@ -890,10 +890,18 @@ describe('DCCItem Tests', () => {
         },
         dcc: {
           DCCRoll: {
-            createRoll: vi.fn(() => ({
-              evaluate: vi.fn(),
-              dice: [{ options: {} }]
-            }))
+            // The rolled die reports the faces of the Die term it was built
+            // from, so the multiple-action-dice reconcile actually runs against
+            // a realistic roll instead of short-circuiting on a missing `faces`
+            // (a stub without it would let a wrong `defaultActionDieFaces` pass).
+            createRoll: vi.fn((terms) => {
+              const dieFormula = terms?.find(t => t.type === 'Die')?.formula ?? '1d20'
+              const faces = parseInt(String(dieFormula).match(/d(\d+)/)?.[1] || '20')
+              return {
+                evaluate: vi.fn(),
+                dice: [{ options: {}, faces }]
+              }
+            })
           },
           processSpellCheck: vi.fn()
         },
@@ -1031,6 +1039,185 @@ describe('DCCItem Tests', () => {
       expect(spellburnTerm.str).toBe(14)
       expect(spellburnTerm.agl).toBe(12)
       expect(spellburnTerm.sta).toBe(13)
+    })
+
+    // Multiple action dice on the item-level cast path (#857). This is the
+    // entry point the character sheet uses for an owned spell, and it had no
+    // action-die integration at all: every cast rolled `spellCheck.die` (always
+    // the FIRST action die, via getSingleActionDie) and spent no slot, so a
+    // wizard's second spell in a round never dropped to its second action die.
+    describe('multiple action dice (#857)', () => {
+      let combatant
+
+      // A level-5 wizard: 1d20 (any) + a spells-only 1d14.
+      const wizardSlots = () => [
+        { slot: 0, die: 'd20', modifier: 0, use: 'any' },
+        { slot: 1, die: 'd14', modifier: 0, use: 'spell' }
+      ]
+
+      // `spent` is the stored per-round state; null ⇒ fresh round.
+      const enterCombat = (spent = null, { round = 3, list = wizardSlots() } = {}) => {
+        actor.id = 'wiz1'
+        combatant = {
+          actor: { id: 'wiz1', system: { attributes: { actionDice: { list } } }, isOwner: true },
+          isOwner: true,
+          getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice'
+            ? (spent ? { round, spent } : undefined)
+            : undefined),
+          setFlag: vi.fn(async () => {})
+        }
+        global.game.combat = { round, combatants: [combatant] }
+      }
+
+      const dieTerm = () => global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+        .find(term => term.type === 'Die')
+
+      beforeEach(() => {
+        global.game.user = { isGM: true }
+        global.game.settings.get = vi.fn((module, key) => {
+          if (module !== 'dcc') return false
+          if (key === 'automateWizardSpellLoss') return true
+          // The multiple-action-dice master switch plus in-combat tracking.
+          if (key === 'multipleActionDice' || key === 'trackActionDiceInCombat') return true
+          return false
+        })
+      })
+
+      afterEach(() => {
+        delete global.game.combat
+        delete global.game.user
+      })
+
+      test("the round's first cast uses the spell's own die and spends slot 0", async () => {
+        enterCombat()
+
+        await spell.rollSpellCheck('int')
+
+        expect(dieTerm().formula).toBe('1d20')
+        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+          round: 3,
+          spent: [true, false]
+        }))
+      })
+
+      test("the second cast drops to the wizard's spells-only second action die", async () => {
+        enterCombat([true, false])
+
+        await spell.rollSpellCheck('int')
+
+        // The bug: this rolled 1d20 again, because `spellCheck.die` only ever
+        // carries the first action die.
+        expect(dieTerm().formula).toBe('1d14')
+        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+          round: 3,
+          spent: [true, true]
+        }))
+      })
+
+      test('the "Action N of M" line reaches the chat card', async () => {
+        enterCombat([true, false])
+
+        await spell.rollSpellCheck('int')
+
+        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
+        expect(spellData.actionDiceChatLine).toBe('DCC.ActionDiceChatLine formatted')
+      })
+
+      test('a third cast is over budget — no die is spent and the line says so', async () => {
+        enterCombat([true, true])
+
+        await spell.rollSpellCheck('int')
+
+        // Nothing left to spend, so the die falls back to the spell's own and
+        // the state is never rewritten; the card carries the over-budget line.
+        expect(dieTerm().formula).toBe('1d20')
+        expect(combatant.setFlag).not.toHaveBeenCalled()
+        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
+        expect(spellData.actionDiceChatLine).toBe('DCC.ActionDiceChatLineOverBudget formatted')
+      })
+
+      test('the modifier dialog is offered one preset per eligible slot', async () => {
+        enterCombat()
+
+        await spell.rollSpellCheck('int')
+
+        // Both slots are unspent and both take a spell, so both are offered —
+        // and no untrained 1d10 (that is an attack/skill concept).
+        expect(dieTerm().presets.map(p => p.formula)).toEqual(['1d20', '1d14'])
+      })
+
+      test('a die chosen in the dialog re-points the spend to that slot', async () => {
+        enterCombat()
+        // The player overrode the auto-picked 1d20 with slot 1's 1d14.
+        global.game.dcc.DCCRoll.createRoll = vi.fn(() => ({
+          evaluate: vi.fn(),
+          dice: [{ options: {}, faces: 14 }]
+        }))
+
+        await spell.rollSpellCheck('int')
+
+        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+          spent: [false, true]
+        }))
+      })
+
+      test('off-path (setting disabled) the cast is unchanged and spends nothing', async () => {
+        enterCombat([true, false])
+        global.game.settings.get = vi.fn((module, key) =>
+          module === 'dcc' && key === 'automateWizardSpellLoss')
+
+        await spell.rollSpellCheck('int')
+
+        expect(dieTerm().formula).toBe('1d20')
+        expect(dieTerm().presets).toBeUndefined()
+        expect(combatant.setFlag).not.toHaveBeenCalled()
+        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
+        expect(spellData.actionDiceChatLine).toBe('')
+      })
+
+      test('a spell that opts out of inheritActionDie keeps its own die', async () => {
+        enterCombat([true, false])
+        spell.system.config.inheritActionDie = false
+        spell.system.spellCheck.die = '1d24'
+
+        await spell.rollSpellCheck('int')
+
+        // The authored die is a deliberate choice; the slot must not discard it.
+        expect(dieTerm().formula).toBe('1d24')
+        // The action is still taken, so the slot is still spent.
+        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
+          spent: [true, true]
+        }))
+      })
+
+      test('a class spellCheckOverrideDie survives the slot step-down', async () => {
+        enterCombat([true, false])
+        actor.system.class.spellCheckOverrideDie = '1d30'
+        spell.system.spellCheck.die = '1d30'
+
+        await spell.rollSpellCheck('int')
+
+        expect(dieTerm().formula).toBe('1d30')
+      })
+
+      test('a spell with no results table posts nothing, so it costs nothing', async () => {
+        enterCombat()
+        spell.system.results.table = ''
+
+        await spell.rollSpellCheck('int')
+
+        expect(global.ui.notifications.warn).toHaveBeenCalledWith('DCC.NoSpellResultsTableWarning')
+        expect(combatant.setFlag).not.toHaveBeenCalled()
+      })
+
+      test('out of combat there is no budget, so the cast is unchanged', async () => {
+        // Master setting on, but no active combat ⇒ planActionDie returns null.
+        await spell.rollSpellCheck('int')
+
+        expect(dieTerm().formula).toBe('1d20')
+        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
+        expect(spellData.actionDiceChatLine).toBe('')
+      })
     })
   })
 

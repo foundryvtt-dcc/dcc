@@ -15,7 +15,11 @@
  * `game.dcc.FleetingLuck` rather than importing those modules directly,
  * mirroring how `module/actor.js`'s spell-check paths already invoke
  * them; keeps the init-time `game.dcc` registration order unchanged.
+ * (`actionDiceLineHtml` is the one direct import — a pure string formatter
+ * with no init-time side effects, so it carries no ordering risk.)
  */
+
+import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
 
 /**
  * Handle the results of a spell check cast through any mechanism.
@@ -47,6 +51,11 @@ export async function processSpellCheck (actor, spellData) {
   // reacts via the `dcc.afterSpellCheckResult` hook below. Defaults false, so
   // existing callers are unaffected.
   const suppressPatronTaint = spellData.suppressPatronTaint || false
+  // Multiple-action-dice "Action N of M" line (#834), supplied by
+  // `DCCItem.rollSpellCheck`. Optional and empty on the off-path, so callers
+  // that never set it — including sibling content modules calling this stable
+  // API — render byte-identically to before.
+  const actionDiceChatLine = spellData.actionDiceChatLine || ''
 
   let crit = false
   let fumble = false
@@ -59,13 +68,17 @@ export async function processSpellCheck (actor, spellData) {
 
   let naturalRoll = roll.dice[0].total
 
-  // Force a critical for testing (shift-click)
+  // Force a critical for testing (shift-click). Lands on the die's own max face
+  // rather than a literal 20, so it still registers as a crit when the action
+  // die is smaller than a d20 (see the faces-aware detection below) — and never
+  // writes a result the die cannot roll.
   if (forceCrit && naturalRoll !== 1) {
     const originalDieRoll = naturalRoll
-    naturalRoll = 20
-    roll.terms[0].results[0].result = 20
-    roll.terms[0]._total = 20
-    roll._total += (20 - originalDieRoll)
+    const critFace = roll.dice[0].faces || 20
+    naturalRoll = critFace
+    roll.terms[0].results[0].result = critFace
+    roll.terms[0]._total = critFace
+    roll._total += (critFace - originalDieRoll)
   }
 
   // Force a fumble for testing (ctrl+shift-click). Unconditional (a forced
@@ -119,11 +132,23 @@ export async function processSpellCheck (actor, spellData) {
   }
 
   try {
-    // Detect fumbles and crits before applying to table
+    // Detect fumbles and crits before applying to table.
+    //
+    // The crit threshold follows the die actually rolled rather than a
+    // hardcoded 20. The multiple-action-dice override can hand this path a
+    // smaller action die (a wizard's spells-only d14), and a custom action die
+    // can be any size — on either, a natural 20 is unrollable, so a hardcoded
+    // 20 made a crit impossible while the natural-1 fumble got *more* likely.
+    // This matches the lib's own spell-check rule
+    // (`natural === getDieFaces(die)` in vendor/dcc-core-lib/spells/cast.js),
+    // which the adapter-routed actor path already uses, and the crit/fumble
+    // realignment docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md requires of an
+    // override die. Unchanged for every d20 caller.
     if (roll.dice.length > 0) {
+      const dieFaces = roll.dice[0].faces || 20
       if (naturalRoll === 1) {
         fumble = true
-      } else if (naturalRoll === 20) {
+      } else if (naturalRoll === dieFaces) {
         if (actor.type === 'Player') {
           crit = true
         }
@@ -146,7 +171,7 @@ export async function processSpellCheck (actor, spellData) {
         roll._total += levelValue
       }
 
-      const spellResultOptions = { crit, fumble, item, patronTaint }
+      const spellResultOptions = { crit, fumble, item, patronTaint, actionDiceChatLine }
       const messageData = {}
       if (flavor) {
         messageData.flavor = flavor
@@ -189,13 +214,20 @@ export async function processSpellCheck (actor, spellData) {
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
-      // Display the roll
-      await roll.toMessage({
+      // Display the roll. When a multiple-action-dice line is present it has to
+      // ride under the rolled formula, which means rendering the body by hand
+      // (mirrors `renderSkillCheck` in `adapter/chat-renderer.mjs`); with no
+      // line `content` stays unset and `toMessage` builds its default body.
+      const toMessageData = {
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor,
         flags,
         system: { spellId: item?.id }
-      })
+      }
+      if (actionDiceChatLine) {
+        toMessageData.content = `${await roll.render()}${actionDiceLineHtml(actionDiceChatLine)}`
+      }
+      await roll.toMessage(toMessageData)
     }
 
     // Determine casting mode: an explicit override from the caller wins,

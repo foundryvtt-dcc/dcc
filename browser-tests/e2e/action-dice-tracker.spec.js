@@ -739,6 +739,111 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsD16).toBe(true)
   })
 
+  // The test above drives `actor.rollSpellCheck` — the raw/class-level entry
+  // point. Casting an owned spell from the character sheet instead goes through
+  // `DCCItem.rollSpellCheck`, which had no action-die integration at all: every
+  // cast rolled `spellCheck.die` (always the FIRST action die, derived via
+  // getSingleActionDie) and spent nothing, so a wizard's second spell in a round
+  // never dropped to its second action die and the pips never advanced (#857).
+  //
+  // Uses a real wizard (`details.sheetClass: 'Wizard'`) so slot 1 is inferred
+  // spells-only — the canonical "his second action die can only be used for
+  // spell checks" case, which must still be eligible for a spell.
+  test('casting an owned spell spends the budget and drops to the wizard second die', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat
+      const createdMessageIds = []
+      try {
+        actor = await Actor.create({
+          name: 'P3 Item SpellCheck Probe',
+          type: 'Player',
+          system: {
+            config: { actionDice: '1d20,1d14' },
+            details: { sheetClass: 'Wizard' }
+          }
+        })
+        // `results.table` is set but names no real table, so the cast reaches
+        // `processSpellCheck`'s no-table branch and still posts a card (an empty
+        // `results.table` would bail out before the card).
+        const [spell] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'Item Path Probe Spell',
+          type: 'spell',
+          system: {
+            config: { castingMode: 'generic', inheritActionDie: true },
+            spellCheck: { die: '1d20', value: '+0' },
+            results: { table: 'No Such Spell Table', collection: '' }
+          }
+        }])
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+        const combatant = combat.combatants.contents[0]
+
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+
+        // The derived budget: slot 0 unrestricted, slot 1 spells-only.
+        const slotUses = actor.system.attributes.actionDice.list.map(s => s.use)
+
+        // Cast 1 → slot 0 (d20).
+        await spell.rollSpellCheck('int')
+        const flag1 = combatant.getFlag('dcc', 'actionDice')
+
+        // Cast 2 → slot 1 (the spells-only d14).
+        await spell.rollSpellCheck('int')
+        const flag2 = combatant.getFlag('dcc', 'actionDice')
+
+        const actorMsgs = game.messages.contents.filter(m => m.speaker?.actor === actor.id)
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+        const firstMsg = actorMsgs[0]
+        const lastMsg = actorMsgs[actorMsgs.length - 1]
+
+        return {
+          slotUses,
+          flag1Spent: flag1?.spent,
+          flag2Spent: flag2?.spent,
+          firstDieFaces: firstMsg?.rolls?.[0]?.dice?.[0]?.faces,
+          lastDieFaces: lastMsg?.rolls?.[0]?.dice?.[0]?.faces,
+          firstHasLine: (firstMsg?.content || '').includes('dcc-action-dice-line'),
+          lastHasLine: (lastMsg?.content || '').includes('dcc-action-dice-line'),
+          lastMentionsAction2: (lastMsg?.content || '').includes('2 of 2'),
+          lastMentionsD14: (lastMsg?.content || '').includes('1d14')
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    // A wizard's extra die is spells-only; a spell check may still use it.
+    expect(result.slotUses).toEqual(['any', 'spell'])
+
+    // The budget advances one slot per cast — this never happened before.
+    expect(result.flag1Spent).toEqual([true, false])
+    expect(result.flag2Spent).toEqual([true, true])
+
+    // The dice actually rolled: primary die first, second action die next.
+    expect(result.firstDieFaces).toBe(20)
+    expect(result.lastDieFaces).toBe(14)
+
+    // Both cards carry the action-dice line; the second names the smaller die.
+    expect(result.firstHasLine).toBe(true)
+    expect(result.lastHasLine).toBe(true)
+    expect(result.lastMentionsAction2).toBe(true)
+    expect(result.lastMentionsD14).toBe(true)
+  })
+
   // Two-weapon fighting (#834): a primary + off-hand pair is ONE action, so
   // the pair consumes one action die. Drives the real `rollWeaponAttack`
   // dispatcher end-to-end with two flagged weapons on a 2-die actor:
