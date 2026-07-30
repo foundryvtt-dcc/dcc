@@ -1419,7 +1419,8 @@ a.inline-roll {
   margin-bottom: 8px;
 }
 .dcc.ability-score-config .ability-score-config-content .effective-row {
-  color: var(--system-secondary-color);
+  color: inherit;
+  opacity: 0.65;
   display: flex;
   font-size: 13px;
   gap: 18px;
@@ -1437,7 +1438,8 @@ a.inline-roll {
   width: 52px;
 }
 .dcc.ability-score-config .ability-score-config-content .new-value-row .change-display {
-  color: var(--system-secondary-color);
+  color: inherit;
+  opacity: 0.65;
   font-size: 13px;
 }
 .dcc.ability-score-config .ability-score-config-content .reasons {
@@ -3249,7 +3251,8 @@ a.inline-roll {
   grid-column: 1/-1;
   text-align: center;
   padding: 20px;
-  color: var(--system-secondary-color);
+  color: inherit;
+  opacity: 0.65;
   font-style: italic;
 }
 .dcc .effects-empty .empty-message p {
@@ -3293,7 +3296,8 @@ a.inline-roll {
 .dcc .transfer-info .help-text {
   margin: 0;
   font-size: 12px;
-  color: var(--system-secondary-color);
+  color: inherit;
+  opacity: 0.65;
 }
 
 /* Item effects - different grid for items with Transfer column */
