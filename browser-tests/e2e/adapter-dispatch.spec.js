@@ -526,6 +526,46 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { skillId: 'divineAid', mode: 'skillTable' })
     })
 
+    test('failed built-in cleric ability applies disapproval when automation is on', async ({ page }) => {
+      // Regression guard: built-in cleric abilities (Lay on Hands, Turn
+      // Unholy) have no backing item and no castingMode, so the adapter's
+      // #375 automation branch never fired for them — a failed check drew
+      // the table but never incremented `system.class.disapproval`. The
+      // adapter now falls back to the cleric casting mode for item-less
+      // skills on a cleric (legacy processSpellCheck's sheet-class
+      // default). Force-fumble makes the check a deterministic natural 1 —
+      // an automatic failure — so disapproval must go 1 → 2.
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Skill Cleric Disapproval',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+      })
+      const result = await page.evaluate(async () => {
+        const prior = game.settings.get('dcc', 'automateClericDisapproval')
+        await game.settings.set('dcc', 'automateClericDisapproval', true)
+        try {
+          const actor = game.actors.getName('P1 Skill Cleric Disapproval')
+          await actor.rollSkillCheck('turnUnholy', { forceFumble: true })
+          // `applyDisapproval` fires its actor update without awaiting it,
+          // so poll briefly for the increment to land.
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            if (actor.system.class.disapproval === 2) break
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          return { disapproval: actor.system.class.disapproval }
+        } finally {
+          await game.settings.set('dcc', 'automateClericDisapproval', prior)
+        }
+      })
+      expect(result.disapproval).toBe(2)
+    })
+
     test('skill item with die → adapter', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Skill Item Die', type: 'Player' })

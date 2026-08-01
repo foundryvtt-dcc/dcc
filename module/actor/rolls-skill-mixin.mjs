@@ -370,6 +370,11 @@ export const RollsSkillMixin = (Base) => class extends Base {
    *   - Spell-like skills (an explicit `skill.castingMode`) additionally
    *     apply wizard spell loss or cleric disapproval automation on a
    *     failed check (#375), the single path for all spell-like skills.
+   *   - Built-in cleric abilities (no backing item, no castingMode) fall
+   *     back to the cleric casting mode when the actor is a cleric, so a
+   *     failed Lay on Hands / Turn Unholy applies disapproval like a
+   *     cleric spell check — mirroring legacy `processSpellCheck`'s
+   *     sheet-class default.
    * @private
    */
   async _skillTableViaAdapter (skillId, options, resolved) {
@@ -486,14 +491,25 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // explicit casting mode applies the same wizard spell loss / cleric
     // disapproval as a spell check. Spell-like skills carry no level field, so
     // the success threshold uses level 1 (10 + 1 * 2), matching
-    // processSpellCheck. Built-in cleric abilities have no castingMode and are
-    // unaffected (they keep the disapproval-range / drainDisapproval handling).
-    if (skill.castingMode === 'wizard') {
+    // processSpellCheck.
+    //
+    // Built-in cleric abilities (Lay on Hands, Turn Unholy, Divine Aid) have
+    // no backing item and no castingMode of their own, so they fall back to
+    // the cleric casting mode when the actor is a cleric — restoring the
+    // legacy sheet-class default from `processSpellCheck` (see
+    // spell-check-processor.mjs:237-241) that this adapter path dropped:
+    // without it a failed built-in ability drew the result table but never
+    // incremented `system.class.disapproval`.
+    let castingMode = skill.castingMode
+    if (!castingMode && !skillItem && this.classId === 'cleric') {
+      castingMode = 'cleric'
+    }
+    if (castingMode === 'wizard') {
       const spellLikeLevel = skillItem?.system?.level ?? 1
       if (game.settings.get('dcc', 'automateWizardSpellLoss') && roll.total < (10 + spellLikeLevel * 2)) {
         await this.loseSpell(skillItem)
       }
-    } else if (skill.castingMode === 'cleric') {
+    } else if (castingMode === 'cleric') {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
         const spellLikeLevel = skillItem?.system?.level ?? 1
         let success = roll.total >= (10 + spellLikeLevel * 2)
