@@ -1446,6 +1446,48 @@ test('rollSkillCheck rolls disapproval when a built-in cleric ability lands in t
   game.settings.get = originalGet
 })
 
+test('rollSkillCheck applies no disapproval on a successful built-in cleric ability', async () => {
+  // The cleric fallback must not over-fire: a passing total with the
+  // natural outside the disapproval range leaves the actor untouched.
+  dccRollCreateRollMock.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  actorUpdateMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateClericDisapproval') return true
+    if (module === 'core' && key === 'messageMode') return 'public'
+    return originalGet(module, key)
+  })
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  // Natural 14 outside the range of 1, total 14 clears the threshold (12).
+  const roll = new Roll('1d20')
+  roll.total = 14
+  roll.dice = [{ total: 14, results: [14], options: {}, faces: 20 }]
+  dccRollCreateRollMock.mockReturnValueOnce(roll)
+
+  const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(undefined)
+
+  await actor.rollSkillCheck('turnUnholy')
+
+  expect(rollDisapprovalSpy).not.toHaveBeenCalled()
+  expect(actorUpdateMock).not.toHaveBeenCalled()
+
+  rollDisapprovalSpy.mockRestore()
+  game.settings.get = originalGet
+})
+
 test('rollSkillCheck does not apply disapproval for a non-cleric rolling a disapproval-range skill', async () => {
   // The cleric casting-mode fallback is guarded on `classId === 'cleric'`,
   // matching legacy processSpellCheck's sheet-class check — a non-cleric

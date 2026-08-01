@@ -452,7 +452,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // pass/fail/crit/fumble HTML indicator as the legacy no-table
       // processSpellCheck branch. `level` for the threshold defaults
       // to 1 (skill items typically don't carry a spell level).
-      const noTableLevel = skillItem?.system?.level || 1
+      const noTableLevel = skillItem?.system?.level ?? 1
       const noTableSuccess = roll.total >= 10 + noTableLevel * 2
       let spellResultHtml
       if (fumble) {
@@ -499,7 +499,9 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // legacy sheet-class default from `processSpellCheck` (see
     // spell-check-processor.mjs:237-241) that this adapter path dropped:
     // without it a failed built-in ability drew the result table but never
-    // incremented `system.class.disapproval`.
+    // incremented `system.class.disapproval`. Legacy's *wizard* default for
+    // item-less skills on non-clerics is deliberately not restored — it
+    // could only ever call `loseSpell(undefined)`.
     let castingMode = skill.castingMode
     if (!castingMode && !skillItem && this.classId === 'cleric') {
       castingMode = 'cleric'
