@@ -10,6 +10,7 @@ import { logDispatch, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
+import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 /**
  * Skill-check dispatch mixin for {@link DCCActor}.
@@ -397,7 +398,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     const terms = this._buildSkillCheckRollTerms(skillId, resolved)
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    if (!roll) return // Dialog cancelled — post no skill-check card
 
     if (skill.useDisapprovalRange && roll.dice.length > 0) {
       roll.dice[0].options.dcc = {

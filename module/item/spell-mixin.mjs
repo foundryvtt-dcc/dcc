@@ -218,9 +218,12 @@ export const SpellItemMixin = (Base) => class extends Base {
       })
     }
 
-    // Roll the spell check
+    // Roll the spell check. `false` is the cancel signal for callers that
+    // must not commit a cost for a cast that never happened — see
+    // `DCCItem.castSpell`, which spends a charge per cast attempt. Every
+    // other exit returns undefined (or a notification), never `false`.
     const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options))
-    if (!roll) return // Dialog cancelled — no spell check, no spellburn
+    if (!roll) return false // Dialog cancelled — no spell check, no spellburn
     await roll.evaluate()
 
     if (roll.dice.length > 0) {

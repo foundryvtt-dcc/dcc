@@ -37,9 +37,15 @@ describe('isRollCancellation', () => {
     expect(isRollCancellation({ isRollCancellation: true })).toBe(true)
   })
 
-  test('recognizes the legacy bare null / undefined cancel signal', () => {
+  test('recognizes the legacy bare-null cancel signal', () => {
     expect(isRollCancellation(null)).toBe(true)
-    expect(isRollCancellation(undefined)).toBe(true)
+  })
+
+  test('does NOT treat undefined as a cancellation', () => {
+    // Nothing has ever rejected with `undefined`, and the boundary
+    // swallows a cancellation without rethrowing — so accepting it would
+    // make an accidental `throw someUninitializedVar` vanish silently.
+    expect(isRollCancellation(undefined)).toBe(false)
   })
 
   test('does not swallow a real error', () => {

@@ -652,9 +652,16 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     formField.value = this.getTermByIndex(index).formula
   }
 
-  /** @override */
-  async close (options = {}) {
-    await super.close(options)
+  /**
+   * @override
+   * `_onClose` rather than a `close()` override: core invokes it however
+   * the window went away (✕, Escape, `close()`, a module's
+   * `closeApplicationV2` handler), it runs even if the close animation
+   * throws, and it leaves `close()`'s "resolves to the application"
+   * contract intact.
+   */
+  _onClose (options) {
+    super._onClose(options)
     this._cancel()
   }
 
@@ -777,7 +784,10 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
 async function showRollModifier (roll, options) {
   return new Promise((resolve, reject) => {
-    new RollModifierDialog(resolve, reject, roll, options).render(true)
+    // `.catch(reject)` matters: an un-awaited render failure (a bad
+    // template/partial) would otherwise leave this promise pending
+    // forever, hanging whichever roll is awaiting the dialog.
+    new RollModifierDialog(resolve, reject, roll, options).render(true).catch(reject)
   })
 }
 

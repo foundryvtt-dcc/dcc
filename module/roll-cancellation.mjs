@@ -34,17 +34,22 @@ export class RollCancelledError extends Error {
 /**
  * Is this caught value a roll-modifier-dialog cancellation?
  *
- * Accepts a bare `null` / `undefined` too: that was the pre-#867 cancel
- * signal, and third-party dialogs wired to the same
+ * Accepts a bare `null` too: that was the pre-#867 cancel signal, and
+ * third-party dialogs wired to the same
  * `showRollModifier(resolve, reject)` contract may still reject that
  * way. Treating it as a cancellation keeps those quiet rather than
  * showing a contentless error.
+ *
+ * `undefined` is deliberately NOT accepted. Nothing has ever rejected
+ * with it, and since the error boundary swallows a cancellation without
+ * rethrowing, accepting it would make an accidental
+ * `throw someUninitializedVar` vanish without a trace.
  *
  * @param {unknown} err - a caught value
  * @returns {boolean}
  */
 export function isRollCancellation (err) {
-  if (err === null || err === undefined) return true
+  if (err === null) return true
   return err instanceof RollCancelledError || err?.isRollCancellation === true
 }
 

@@ -67,9 +67,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // doesn't always land) survived into later tests and settled its
       // promise there — the mechanism behind the #867 flake. Close them
       // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
-      // the core UI apps in the same registry are left alone.
+      // the core UI apps in the same registry are left alone, and to
+      // `rendered` because `createRollFromTerms` constructs (and never
+      // renders) a RollModifierDialog on every no-dialog roll — those
+      // husks sit in the registry too.
       for (const app of foundry.applications.instances.values()) {
-        if (app?.options?.classes?.includes('roll-modifier')) await app.close()
+        if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
       // Purge accumulated chat messages from prior tests so `find(m => …)`
@@ -92,9 +95,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // doesn't always land) survived into later tests and settled its
       // promise there — the mechanism behind the #867 flake. Close them
       // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
-      // the core UI apps in the same registry are left alone.
+      // the core UI apps in the same registry are left alone, and to
+      // `rendered` because `createRollFromTerms` constructs (and never
+      // renders) a RollModifierDialog on every no-dialog roll — those
+      // husks sit in the registry too.
       for (const app of foundry.applications.instances.values()) {
-        if (app?.options?.classes?.includes('roll-modifier')) await app.close()
+        if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
     }).catch(() => {})
@@ -2817,8 +2823,11 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const closed = await page.evaluate(async () => {
         const deadline = Date.now() + 5000
         while (Date.now() < deadline) {
+          // `rendered` is required: `createRollFromTerms` leaves
+          // never-rendered RollModifierDialog husks in the registry, and
+          // closing one is a silent no-op that would strand this probe.
           const dialog = [...foundry.applications.instances.values()]
-            .find(app => app?.options?.classes?.includes('roll-modifier'))
+            .find(app => app?.rendered && app?.options?.classes?.includes('roll-modifier'))
           if (dialog) {
             await dialog.close()
             return true
