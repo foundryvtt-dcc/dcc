@@ -1,4 +1,4 @@
-/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll, Hooks */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -1278,7 +1278,7 @@ test('rollSkillCheck passes the Lay on Hands manifestation to the chat card (#42
   game.dcc.SpellResult = originalSpellResult
 })
 
-test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D4 skill-table)', async () => {
+test('rollSkillCheck routes divineAid via adapter and applies +1 then +10 disapproval (D4 skill-table)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
@@ -1294,6 +1294,17 @@ test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D
     return originalGet(module, key)
   })
 
+  // A failed Divine Aid calls `applyDisapproval` twice in a row, so the
+  // second call must observe the first one's write. Make the update mock
+  // apply to the actor for this test — with a fire-and-forget `this.update()`
+  // in `applyDisapproval` both increments would compute off the same base
+  // and the failure point would be lost to last-write-wins.
+  actorUpdateMock.mockImplementation(data => {
+    if ('system.class.disapproval' in data) {
+      actor.system.class.disapproval = data['system.class.disapproval']
+    }
+  })
+
   actor.system.details.sheetClass = 'Cleric'
   actor.system.class.disapproval = 1
   actor.system.skills.divineAid = {
@@ -1304,26 +1315,28 @@ test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D
     drainDisapproval: 10
   }
 
-  await actor.rollSkillCheck('divineAid')
+  try {
+    await actor.rollSkillCheck('divineAid')
 
-  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
-  // The failed check (mock roll total 10 < threshold 12) adds one point of
-  // disapproval via the cleric casting-mode fallback for item-less built-in
-  // abilities — legacy processSpellCheck behavior restored by the adapter.
-  // (The update mock doesn't mutate the actor, so both calls compute from
-  // the base disapproval of 1.)
-  expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': 2
-  })
-  // drainDisapproval still applies via the adapter's
-  // `actor.applyDisapproval(skill.drainDisapproval)` call — mirrors
-  // the former legacy skill-check post-step.
-  expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': 11
-  })
-
-  // Restore original settings mock
-  game.settings.get = originalGet
+    expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+    // The failed check (mock roll total 10 < threshold 12) adds one point of
+    // disapproval via the cleric casting-mode fallback for item-less built-in
+    // abilities — legacy processSpellCheck behavior restored by the adapter.
+    expect(actorUpdateMock).toHaveBeenCalledWith({
+      'system.class.disapproval': 2
+    })
+    // drainDisapproval then applies on top via the adapter's
+    // `actor.applyDisapproval(skill.drainDisapproval)` call — mirrors
+    // the former legacy skill-check post-step. It stacks with the failure
+    // point rather than overwriting it: 1 → 2 → 12.
+    expect(actorUpdateMock).toHaveBeenCalledWith({
+      'system.class.disapproval': 12
+    })
+    expect(actor.system.class.disapproval).toBe(12)
+  } finally {
+    actorUpdateMock.mockImplementation(data => {})
+    game.settings.get = originalGet
+  }
 })
 
 test('rollSkillCheck does not apply drainDisapproval for turnUnholy (D4 skill-table)', async () => {
@@ -1384,18 +1397,23 @@ test('rollSkillCheck applies disapproval on a failed built-in cleric ability (la
 
   const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(undefined)
 
-  await actor.rollSkillCheck('layOnHands')
+  try {
+    await actor.rollSkillCheck('layOnHands')
 
-  // The default mock roll (total 10, natural 10) fails the 10 + 1 * 2
-  // threshold, so one point of disapproval applies; the natural (10) is
-  // outside the disapproval range (1) so no disapproval roll fires.
-  expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': 2
-  })
-  expect(rollDisapprovalSpy).not.toHaveBeenCalled()
-
-  rollDisapprovalSpy.mockRestore()
-  game.settings.get = originalGet
+    // The default mock roll (total 10, natural 10) fails the 10 + 1 * 2
+    // threshold, so one point of disapproval applies; the natural (10) is
+    // outside the disapproval range (1) so no disapproval roll fires.
+    expect(actorUpdateMock).toHaveBeenCalledWith({
+      'system.class.disapproval': 2
+    })
+    // Exactly once — Lay on Hands has no `drainDisapproval`, so the fallback
+    // must not stack a second increment on top of the failure point.
+    expect(actorUpdateMock).toHaveBeenCalledTimes(1)
+    expect(rollDisapprovalSpy).not.toHaveBeenCalled()
+  } finally {
+    rollDisapprovalSpy.mockRestore()
+    game.settings.get = originalGet
+  }
 })
 
 test('rollSkillCheck rolls disapproval when a built-in cleric ability lands in the disapproval range', async () => {
@@ -1433,17 +1451,20 @@ test('rollSkillCheck rolls disapproval when a built-in cleric ability lands in t
 
   const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(undefined)
 
-  await actor.rollSkillCheck('turnUnholy')
+  try {
+    await actor.rollSkillCheck('turnUnholy')
 
-  expect(rollDisapprovalSpy).toHaveBeenCalledWith(3)
-  // The in-range natural is an automatic failure, so a point of
-  // disapproval applies on top of the disapproval roll.
-  expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': 6
-  })
-
-  rollDisapprovalSpy.mockRestore()
-  game.settings.get = originalGet
+    expect(rollDisapprovalSpy).toHaveBeenCalledWith(3)
+    // The in-range natural is an automatic failure, so a point of
+    // disapproval applies on top of the disapproval roll.
+    expect(actorUpdateMock).toHaveBeenCalledWith({
+      'system.class.disapproval': 6
+    })
+    expect(actorUpdateMock).toHaveBeenCalledTimes(1)
+  } finally {
+    rollDisapprovalSpy.mockRestore()
+    game.settings.get = originalGet
+  }
 })
 
 test('rollSkillCheck applies no disapproval on a successful built-in cleric ability', async () => {
@@ -1479,13 +1500,15 @@ test('rollSkillCheck applies no disapproval on a successful built-in cleric abil
 
   const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(undefined)
 
-  await actor.rollSkillCheck('turnUnholy')
+  try {
+    await actor.rollSkillCheck('turnUnholy')
 
-  expect(rollDisapprovalSpy).not.toHaveBeenCalled()
-  expect(actorUpdateMock).not.toHaveBeenCalled()
-
-  rollDisapprovalSpy.mockRestore()
-  game.settings.get = originalGet
+    expect(rollDisapprovalSpy).not.toHaveBeenCalled()
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+  } finally {
+    rollDisapprovalSpy.mockRestore()
+    game.settings.get = originalGet
+  }
 })
 
 test('rollSkillCheck does not apply disapproval for a non-cleric rolling a disapproval-range skill', async () => {
@@ -1514,11 +1537,73 @@ test('rollSkillCheck does not apply disapproval for a non-cleric rolling a disap
     useDisapprovalRange: true
   }
 
-  await actor.rollSkillCheck('turnUnholy')
+  try {
+    await actor.rollSkillCheck('turnUnholy')
 
-  expect(actorUpdateMock).not.toHaveBeenCalled()
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+  } finally {
+    game.settings.get = originalGet
+  }
+})
 
-  game.settings.get = originalGet
+test('rollSkillCheck fires dcc.afterSpellCheckResult from the skill-table path', async () => {
+  // Seam parity: legacy routed skill-table / disapproval-range checks through
+  // `processSpellCheck`, which emitted the post-result hook
+  // (`spell-check-processor.mjs:291`). The adapter rewrite dropped it, so
+  // variant modules keying off the seam (MCC patron taint / glowburn) stopped
+  // seeing Turn Unholy, Lay on Hands and Divine Aid. `_skillTableViaAdapter`
+  // emits it again, including the drawn TableResult as `result` — the one
+  // payload field the spell-check terminals leave null.
+  dccRollCreateRollMock.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  actorUpdateMock.mockClear()
+
+  const tableResult = [{ text: 'The unholy flee' }]
+  game.dcc.getSkillTable.mockResolvedValue({
+    getResultsForRoll: () => tableResult
+  })
+  const originalSpellResult = game.dcc.SpellResult
+  game.dcc.SpellResult = { addChatMessage: vi.fn() }
+
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  try {
+    await actor.rollSkillCheck('turnUnholy')
+
+    const call = callAllSpy.mock.calls.findLast(c => c[0] === 'dcc.afterSpellCheckResult')
+    expect(call).toBeDefined()
+    const [, hookActor, payload] = call
+    expect(hookActor).toBe(actor)
+    expect(payload).toMatchObject({
+      item: null,
+      // The default mock roll (total 10, natural 10) misses the 10 + 1 * 2
+      // threshold, and the cleric fallback supplies the casting mode.
+      naturalRoll: 10,
+      total: 10,
+      crit: false,
+      fumble: false,
+      success: false,
+      castingMode: 'cleric',
+      result: tableResult,
+      patronTaint: null,
+      suppressPatronTaint: false
+    })
+    expect(payload.roll).toBeDefined()
+  } finally {
+    callAllSpy.mockRestore()
+    game.dcc.SpellResult = originalSpellResult
+    game.dcc.getSkillTable.mockResolvedValue(null)
+  }
 })
 
 test('rollSkillCheck does not route regular skills through processSpellCheck', async () => {

@@ -102,6 +102,28 @@ describe('emitAfterSpellCheckResult', () => {
     expect(payload.success).toBe(true)
   })
 
+  test('surfaces a drawn TableResult as the payload result, defaulting to null', () => {
+    // The spell-check terminals have no Foundry TableResult (the lib
+    // classifies tiers), but the skill-table terminal draws one and passes
+    // it through as `tableResult` — legacy `processSpellCheck` put the drawn
+    // result on this key for Turn Unholy / Lay on Hands / Divine Aid.
+    const drawn = [{ text: 'The unholy flee' }]
+    emitAfterSpellCheckResult({}, {
+      foundryRoll: { total: 16, dice: [{ total: 16 }] },
+      result: { total: 16, natural: 16, tier: 'success' },
+      tableResult: drawn,
+      castingMode: 'cleric'
+    })
+    expect(payloadFrom().payload.result).toBe(drawn)
+
+    emitAfterSpellCheckResult({}, {
+      foundryRoll: { total: 16, dice: [{ total: 16 }] },
+      result: { total: 16, natural: 16, tier: 'success' },
+      castingMode: 'cleric'
+    })
+    expect(payloadFrom().payload.result).toBe(null)
+  })
+
   test('falls back to the rolled die total for naturalRoll when the result omits it', () => {
     emitAfterSpellCheckResult({}, {
       foundryRoll: { total: 9, dice: [{ total: 9 }] },
