@@ -1,5 +1,7 @@
 /* global foundry, game */
 
+import { isRollCancellation } from '../roll-cancellation.mjs'
+
 /**
  * Adapter-side roll-modifier dialog.
  *
@@ -125,7 +127,11 @@ export async function promptRollModifierDialog (terms, options = {}) {
       rollLabel: options.rollLabel
     })
   } catch (err) {
-    console.warn('[DCC adapter] promptRollModifierDialog: dialog threw', { err })
+    // A cancel is the expected way out of the dialog (issue #867) — only
+    // an actual failure is worth a console warning.
+    if (!isRollCancellation(err)) {
+      console.warn('[DCC adapter] promptRollModifierDialog: dialog threw', { err })
+    }
     return null
   }
   if (!roll) return null

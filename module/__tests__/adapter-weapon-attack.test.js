@@ -24,6 +24,7 @@ import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie, parseDeedAttackBonus } from '../adapter/attack-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
+import { RollCancelledError } from '../roll-cancellation.mjs'
 
 vi.mock('../actor-level-change.js')
 
@@ -276,6 +277,55 @@ test('adapter path fires when options.showModifierDialog is set (session 13 / A6
   expect(Array.isArray(createRollOptions.damageTerms)).toBe(true)
   expect(createRollOptions.damageTerms).toHaveLength(1)
   expect(createRollOptions.damageTerms[0].formula).toBe('1d8')
+})
+
+test('cancelling the modifier dialog returns null instead of throwing (issue #867)', async () => {
+  // The dialog rejects with a `RollCancelledError` when the user closes
+  // or cancels it. That is a decision, not a failure: `rollToHit` must
+  // return falsy so `_rollWeaponAttackDispatch`'s
+  // `if (!attackRollResult) return` bail runs and no chat card is
+  // posted. Left to propagate it reached `rollWeaponAttack`'s error
+  // boundary and showed the player "The Attack roll failed
+  // unexpectedly" — which is what #867 was.
+  logDispatch.mockClear()
+  const previous = dccRollCreateRollMock.getMockImplementation()
+  dccRollCreateRollMock.mockImplementation(() => Promise.reject(new RollCancelledError()))
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, { showModifierDialog: true })
+  } finally {
+    restore()
+    if (previous) dccRollCreateRollMock.mockImplementation(previous)
+    else dccRollCreateRollMock.mockReset()
+  }
+
+  expect(result).toBeNull()
+})
+
+test('a genuine createRoll failure still propagates out of rollToHit (issue #867)', async () => {
+  // The cancel guard must not become a catch-all: a real dialog/roll
+  // failure has to keep reaching the error boundary.
+  logDispatch.mockClear()
+  const boom = new Error('createRoll exploded')
+  const previous = dccRollCreateRollMock.getMockImplementation()
+  dccRollCreateRollMock.mockImplementation(() => Promise.reject(boom))
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  try {
+    await expect(actor.rollToHit(weapon, { showModifierDialog: true })).rejects.toBe(boom)
+  } finally {
+    restore()
+    if (previous) dccRollCreateRollMock.mockImplementation(previous)
+    else dccRollCreateRollMock.mockReset()
+  }
 })
 
 test('adapter path appends a situational "+0" bonus term when the dialog is shown (issue #791)', async () => {

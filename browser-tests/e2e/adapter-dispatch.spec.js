@@ -62,6 +62,15 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     consoleErrors.length = 0
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
+      // `ui.windows` is the AppV1 registry and is empty under V14, so a
+      // roll-modifier dialog a test left open (fireAndForget's Escape
+      // doesn't always land) survived into later tests and settled its
+      // promise there — the mechanism behind the #867 flake. Close them
+      // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
+      // the core UI apps in the same registry are left alone.
+      for (const app of foundry.applications.instances.values()) {
+        if (app?.options?.classes?.includes('roll-modifier')) await app.close()
+      }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
       // Purge accumulated chat messages from prior tests so `find(m => …)`
       // scans don't grow O(N) with suite size — Foundry doesn't prune
@@ -78,6 +87,15 @@ test.describe('DCC Adapter Dispatch Validation', () => {
   test.afterEach(async ({ page }) => {
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
+      // `ui.windows` is the AppV1 registry and is empty under V14, so a
+      // roll-modifier dialog a test left open (fireAndForget's Escape
+      // doesn't always land) survived into later tests and settled its
+      // promise there — the mechanism behind the #867 flake. Close them
+      // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
+      // the core UI apps in the same registry are left alone.
+      for (const app of foundry.applications.instances.values()) {
+        if (app?.options?.classes?.includes('roll-modifier')) await app.close()
+      }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
     }).catch(() => {})
   })
@@ -87,10 +105,17 @@ test.describe('DCC Adapter Dispatch Validation', () => {
   /**
    * Await the logDispatch line for a given rollType, up to `timeoutMs`.
    * Returns the first matching log, or throws with a diagnostic dump.
+   *
+   * The `→` in the tag is load-bearing (issue #867): the error
+   * boundary's own line starts `[DCC adapter] rollWeaponAttack threw …`
+   * and used to satisfy a bare `[DCC adapter] rollWeaponAttack` prefix
+   * match, so a stray boundary log from an earlier test could be
+   * returned here in place of the dispatch line. Only a real
+   * `logDispatch` line carries the arrow.
    */
   async function waitForAdapterLog (rollType, { timeoutMs = 6000, pollMs = 50 } = {}) {
     const deadline = Date.now() + timeoutMs
-    const tag = `${ADAPTER_TAG} ${rollType}`
+    const tag = `${ADAPTER_TAG} ${rollType} →`
     while (Date.now() < deadline) {
       const hit = adapterLogs.find(l => l.startsWith(tag))
       if (hit) return hit
@@ -2750,6 +2775,85 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       }, weaponId)
       const line = await waitForAdapterLog('rollWeaponAttack')
       assertPath(line, 'adapter', { weapon: 'P1-DialogSword' })
+    })
+
+    test('closing the modifier dialog cancels quietly — no error toast, no card (issue #867)', async ({ page }) => {
+      // The roll-modifier dialog has no Cancel button: closing the window
+      // IS the cancel. It used to `reject(null)`, which unwound to
+      // `rollWeaponAttack`'s error boundary and showed the player a red
+      // "The Attack roll failed unexpectedly" notification (and logged a
+      // contentless `null`). A cancel must now resolve quietly: no
+      // notification, no console error, and no attack card in chat.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Cancel Dialog', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-CancelSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+0',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Cancel Dialog').items.getName('P1-CancelSword').id
+      })
+
+      // Kick off the attack and record how its promise settles — the
+      // dialog blocks, so this can't be awaited inline.
+      await page.evaluate((id) => {
+        globalThis.__dccCancelProbe = null
+        game.actors.getName('P1 Cancel Dialog').rollWeaponAttack(id, { showModifierDialog: true })
+          .then(value => { globalThis.__dccCancelProbe = { resolved: true, value: value ?? null } })
+          .catch(err => { globalThis.__dccCancelProbe = { resolved: false, error: String(err) } })
+      }, weaponId)
+
+      // Close the dialog the way a player would (the window's ✕).
+      const closed = await page.evaluate(async () => {
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          const dialog = [...foundry.applications.instances.values()]
+            .find(app => app?.options?.classes?.includes('roll-modifier'))
+          if (dialog) {
+            await dialog.close()
+            return true
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return false
+      })
+      expect(closed, 'the roll-modifier dialog should have rendered').toBe(true)
+
+      const outcome = await page.evaluate(async () => {
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          if (globalThis.__dccCancelProbe) return globalThis.__dccCancelProbe
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+      expect(outcome, 'rollWeaponAttack should settle after the dialog closes').not.toBeNull()
+      expect(outcome.resolved, `cancel must resolve, not reject (got ${outcome.error})`).toBe(true)
+      expect(outcome.value).toBeNull()
+
+      // Nothing posted, and nothing shouted at the user.
+      const cardCount = await page.evaluate(() =>
+        game.messages.contents.filter(m => m.speaker?.alias === 'P1 Cancel Dialog').length
+      )
+      expect(cardCount, 'a cancelled attack must post no chat card').toBe(0)
+      expect(
+        consoleErrors.filter(l => l.includes('threw — surfacing to the user')),
+        'a cancel must not reach the roll error boundary'
+      ).toEqual([])
+      const errorToasts = await page.evaluate(() =>
+        document.querySelectorAll('#notifications .notification.error').length
+      )
+      expect(errorToasts, 'a cancel must not raise an error notification').toBe(0)
     })
 
     test('warrior deed die → adapter (session 10 / A3)', async ({ page }) => {

@@ -1,5 +1,7 @@
 /* global CONFIG, CONST, game, Hooks, foundry, ui */
 
+import { rollOrNullOnCancel } from './roll-cancellation.mjs'
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -131,7 +133,8 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       rollLabel: game.i18n.localize('DCC.FleetingLuckSpendButton')
     }
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, {}, options))
+    if (!roll) return // Dialog cancelled — spend no fleeting luck
     await roll.evaluate()
 
     await FleetingLuck.spend(userId, roll.total)

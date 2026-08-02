@@ -16,6 +16,7 @@ import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapte
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
+import { isRollCancellation, rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
 import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import DiceChain from '../dice-chain.js'
@@ -450,7 +451,9 @@ export const RollsWeaponMixin = (Base) => class extends Base {
    *
    * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
-   * @return {Object}            Object representing the results of the attack roll
+   * @return {Object|null}       Object representing the results of the attack
+   *                             roll, or `null` if the user cancelled the
+   *                             roll-modifier dialog
    */
   async rollToHit (weapon, options = {}) {
     logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
@@ -591,7 +594,19 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       ]
     }
 
-    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
+    // Cancelling the modifier dialog rejects with a `RollCancelledError`
+    // (issue #867). That is the user backing out, not a failure: return
+    // `null` so the caller's `if (!attackRollResult) return` bail runs and
+    // no chat card is posted. Left unhandled it would unwind all the way to
+    // `rollWeaponAttack`'s error boundary, which is where the spurious "The
+    // Attack roll failed unexpectedly" notification came from.
+    let attackRoll
+    try {
+      attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
+    } catch (err) {
+      if (isRollCancellation(err)) return null
+      throw err
+    }
     await attackRoll.evaluate()
 
     const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
@@ -1167,7 +1182,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       }
     ]
 
-    const critRoll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const critRoll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    if (!critRoll) return // Dialog cancelled — post no crit card
     await critRoll.evaluate()
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')

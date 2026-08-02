@@ -1,5 +1,7 @@
 /* global Die, OperatorTerm, Roll, game, foundry */
 
+import { RollCancelledError } from './roll-cancellation.mjs'
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
@@ -501,7 +503,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onCancel (event, target) {
     event.preventDefault()
-    this._reject(null)
+    this._cancel()
     await this.close()
   }
 
@@ -652,7 +654,27 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   async close (options = {}) {
     await super.close(options)
-    this._reject(null)
+    this._cancel()
+  }
+
+  /**
+   * Settle the roll promise as a *cancellation* — the user closed or
+   * cancelled the dialog without submitting.
+   *
+   * Rejects with a typed `RollCancelledError` rather than the bare
+   * `null` this used to throw: callers (and the roll error boundary in
+   * `adapter/debug.mjs`) can then tell a deliberate cancel apart from a
+   * crash and stay quiet instead of showing the player a contentless
+   * "the roll failed unexpectedly" error (issue #867).
+   *
+   * A no-op once the promise has settled, so the `close()` that follows
+   * a successful submit can't clobber the resolved roll. Optional-call:
+   * `createRollFromTerms` builds a never-rendered dialog with no
+   * resolve/reject pair.
+   * @private
+   */
+  _cancel () {
+    this._reject?.(new RollCancelledError())
   }
 
   /**

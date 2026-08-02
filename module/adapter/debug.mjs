@@ -1,5 +1,7 @@
 /* global game, ui */
 
+import { isRollCancellation } from '../roll-cancellation.mjs'
+
 /**
  * Adapter dispatch logging.
  *
@@ -80,6 +82,13 @@ export function warnIfDivergent (rollType, foundryTotal, libTotal, context = {})
  * propagates (and any caller / test still sees it). Wrap the body of
  * each public dispatcher with `return await withRollErrorBoundary(...)`.
  *
+ * The one exception is a roll-modifier-dialog *cancellation* (issue
+ * #867): the user closing the dialog is a decision, not a failure, so
+ * it returns `undefined` quietly — no console.error, no notification,
+ * no rethrow. The throw has already unwound the dispatcher, so nothing
+ * partial reaches chat; the click simply does nothing, which is what
+ * "Cancel" means.
+ *
  * `await` matters: returning the inner promise without awaiting would
  * let the rejection escape the try/catch. The wrapped `fn` may itself
  * be sync (e.g. `getInitiativeRoll` returns a `Roll`) — awaiting a
@@ -89,12 +98,14 @@ export function warnIfDivergent (rollType, foundryTotal, libTotal, context = {})
  * @param {string} label - already-localized human label for the
  *   notification (e.g. the result of `game.i18n.localize('DCC.Roll')`)
  * @param {() => any} fn - the dispatcher body to run
- * @returns {Promise<any>} whatever `fn` returns
+ * @returns {Promise<any>} whatever `fn` returns, or `undefined` if the
+ *   user cancelled the roll-modifier dialog
  */
 export async function withRollErrorBoundary (rollType, label, fn) {
   try {
     return await fn()
   } catch (err) {
+    if (isRollCancellation(err)) return undefined
     notifyRollError(rollType, label, err)
     throw err
   }
@@ -119,6 +130,7 @@ export function withRollErrorBoundarySync (rollType, label, fn) {
   try {
     return fn()
   } catch (err) {
+    if (isRollCancellation(err)) return undefined
     notifyRollError(rollType, label, err)
     throw err
   }
@@ -127,11 +139,37 @@ export function withRollErrorBoundarySync (rollType, label, fn) {
 /**
  * Shared fail-loud reporting for the roll error boundaries: log the full
  * error to the console and show a localized `ui.notifications.error`.
+ *
+ * `describeThrown` matters because a rejection is not guaranteed to be
+ * an `Error`: Foundry internals and third-party modules can reject with
+ * a bare value, and `console.error(tag, null)` produced a log line that
+ * said nothing at all (issue #867). Whatever arrives, the console line
+ * always carries a readable description alongside the raw value.
  * @private
  */
 function notifyRollError (rollType, label, err) {
-  console.error(`[DCC adapter] ${rollType} threw — surfacing to the user`, err)
+  console.error(
+    `[DCC adapter] ${rollType} threw — surfacing to the user: ${describeThrown(err)}`,
+    err
+  )
   ui.notifications.error(
     game.i18n.format('DCC.RollErrorNotification', { rollType: label })
   )
+}
+
+/**
+ * Best-effort one-line description of an arbitrary thrown value, so a
+ * non-`Error` rejection never yields a contentless log line.
+ * @private
+ */
+function describeThrown (err) {
+  if (err instanceof Error) return err.stack || `${err.name}: ${err.message}`
+  if (typeof err === 'object' && err !== null) {
+    try {
+      return JSON.stringify(err)
+    } catch {
+      return Object.prototype.toString.call(err)
+    }
+  }
+  return `non-Error value thrown: ${String(err)}`
 }
