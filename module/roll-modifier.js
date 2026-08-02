@@ -503,7 +503,8 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onCancel (event, target) {
     event.preventDefault()
-    this._cancel()
+    // `close()` is the cancel — it settles the roll promise as a
+    // cancellation on the way out, so there is nothing to do here first.
     await this.close()
   }
 
