@@ -495,8 +495,13 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     // Calculate new disapproval
     const newRange = Math.min(this.system.class.disapproval + amount, 20)
 
-    // Apply the new disapproval range
-    this.update({
+    // Apply the new disapproval range. The update MUST be awaited: a failed
+    // Divine Aid applies disapproval twice in a row (+1 for the failed check,
+    // then +10 for the drain — see `_skillTableViaAdapter`). Without the await
+    // the second call re-reads `system.class.disapproval` before the first
+    // write has landed, both increments compute off the same base, and
+    // last-write-wins silently swallows the failure point.
+    await this.update({
       'system.class.disapproval': newRange
     })
 

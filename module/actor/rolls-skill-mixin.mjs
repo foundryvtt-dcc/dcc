@@ -8,6 +8,7 @@ import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
+import { emitAfterSpellCheckResult } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
 
 /**
@@ -370,6 +371,15 @@ export const RollsSkillMixin = (Base) => class extends Base {
    *   - Spell-like skills (an explicit `skill.castingMode`) additionally
    *     apply wizard spell loss or cleric disapproval automation on a
    *     failed check (#375), the single path for all spell-like skills.
+   *   - Built-in cleric abilities (no backing item, no castingMode) fall
+   *     back to the cleric casting mode when the actor is a cleric, so a
+   *     failed Lay on Hands / Turn Unholy applies disapproval like a
+   *     cleric spell check — mirroring legacy `processSpellCheck`'s
+   *     sheet-class default.
+   *   - The `dcc.afterSpellCheckResult` post-result hook fires once per
+   *     check, as it did when this path routed through
+   *     `processSpellCheck`, so variant modules keep observing skill-table
+   *     outcomes.
    * @private
    */
   async _skillTableViaAdapter (skillId, options, resolved) {
@@ -420,26 +430,29 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     const flavor = `${game.i18n.localize(skill.label)}${abilityLabel}`
 
+    // Hoisted for the `dcc.afterSpellCheckResult` payload below — legacy
+    // `processSpellCheck` surfaced the drawn TableResult to listeners.
+    let tableResult = null
+
     if (skillTable) {
-      let result
       if (fumble) {
-        result = skillTable.getResultsForRoll(1)
+        tableResult = skillTable.getResultsForRoll(1)
       } else if (crit) {
         const critRoll = roll.total + actorLevel
-        result = skillTable.getResultsForRoll(critRoll)
+        tableResult = skillTable.getResultsForRoll(critRoll)
         roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
         roll.terms.push(new foundry.dice.terms.NumericTerm({ number: actorLevel }))
         roll._formula += ` + ${actorLevel}`
         roll._total += actorLevel
       } else {
-        result = skillTable.getResultsForRoll(roll.total)
+        tableResult = skillTable.getResultsForRoll(roll.total)
       }
 
       // Built-in cleric Lay on Hands carries an optional Spell
       // Manifestation on the actor skill (no spell item) — surface it in
       // the chat card when present (#426).
       const skillManifestation = this.system.skills?.[skillId]?.manifestation
-      await game.dcc.SpellResult.addChatMessage(roll, skillTable, result, {
+      await game.dcc.SpellResult.addChatMessage(roll, skillTable, tableResult, {
         crit, fumble, item: skillItem, manifestation: skillManifestation
       })
     } else {
@@ -447,7 +460,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // pass/fail/crit/fumble HTML indicator as the legacy no-table
       // processSpellCheck branch. `level` for the threshold defaults
       // to 1 (skill items typically don't carry a spell level).
-      const noTableLevel = skillItem?.system?.level || 1
+      const noTableLevel = skillItem?.system?.level ?? 1
       const noTableSuccess = roll.total >= 10 + noTableLevel * 2
       let spellResultHtml
       if (fumble) {
@@ -486,17 +499,35 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // explicit casting mode applies the same wizard spell loss / cleric
     // disapproval as a spell check. Spell-like skills carry no level field, so
     // the success threshold uses level 1 (10 + 1 * 2), matching
-    // processSpellCheck. Built-in cleric abilities have no castingMode and are
-    // unaffected (they keep the disapproval-range / drainDisapproval handling).
-    if (skill.castingMode === 'wizard') {
-      const spellLikeLevel = skillItem?.system?.level ?? 1
-      if (game.settings.get('dcc', 'automateWizardSpellLoss') && roll.total < (10 + spellLikeLevel * 2)) {
+    // processSpellCheck.
+    //
+    // Built-in cleric abilities (Lay on Hands, Turn Unholy, Divine Aid) have
+    // no backing item and no castingMode of their own, so they fall back to
+    // the cleric casting mode when the actor is a cleric — restoring the
+    // legacy sheet-class default from `processSpellCheck` (see
+    // spell-check-processor.mjs:237-241) that this adapter path dropped:
+    // without it a failed built-in ability drew the result table but never
+    // incremented `system.class.disapproval`. Legacy's *wizard* default for
+    // item-less skills on non-clerics is deliberately not restored — it
+    // could only ever call `loseSpell(undefined)`.
+    let castingMode = skill.castingMode
+    if (!castingMode && !skillItem && this.classId === 'cleric') {
+      castingMode = 'cleric'
+    }
+
+    // Skill items carry no level field, so the threshold is level 1 (10 + 2).
+    // Hoisted out of the casting-mode branches because the
+    // `dcc.afterSpellCheckResult` payload below reports `success` for every
+    // skill-table check, not just spell-like ones.
+    const spellLikeLevel = skillItem?.system?.level ?? 1
+    let success = roll.total >= (10 + spellLikeLevel * 2)
+
+    if (castingMode === 'wizard') {
+      if (game.settings.get('dcc', 'automateWizardSpellLoss') && !success) {
         await this.loseSpell(skillItem)
       }
-    } else if (skill.castingMode === 'cleric') {
+    } else if (castingMode === 'cleric') {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
-        const spellLikeLevel = skillItem?.system?.level ?? 1
-        let success = roll.total >= (10 + spellLikeLevel * 2)
         // A natural roll inside the disapproval range triggers disapproval and
         // is an automatic failure
         if (naturalRoll <= this.system.class.disapproval) {
@@ -508,6 +539,29 @@ export const RollsSkillMixin = (Base) => class extends Base {
         }
       }
     }
+
+    // Post-result extension point, fired for every skill-table / disapproval-
+    // range check. Legacy routed these through `processSpellCheck`, which
+    // emitted the hook (`spell-check-processor.mjs:291`) — the adapter rewrite
+    // dropped it, so variant modules keying off the seam (MCC's patron taint /
+    // glowburn) stopped seeing Turn Unholy, Lay on Hands and Divine Aid.
+    // Emitted before the drain below to match legacy ordering: legacy fired
+    // inside processSpellCheck, and the skill-check caller applied
+    // drainDisapproval only after it returned.
+    emitAfterSpellCheckResult(this, {
+      foundryRoll: roll,
+      result: {
+        natural: naturalRoll,
+        total: roll.total,
+        critical: crit,
+        fumble,
+        tier: success ? 'success' : 'failure'
+      },
+      tableResult,
+      spellItem: skillItem,
+      castingMode,
+      suppressPatronTaint: !!options.suppressPatronTaint
+    })
 
     // Skill-driven disapproval drain (Turn Unholy etc.) — preserves
     // the former legacy skill-check post-step.

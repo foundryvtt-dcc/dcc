@@ -526,6 +526,115 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { skillId: 'divineAid', mode: 'skillTable' })
     })
 
+    test('failed built-in cleric ability applies disapproval when automation is on', async ({ page }) => {
+      // Regression guard: built-in cleric abilities (Lay on Hands, Turn
+      // Unholy) have no backing item and no castingMode, so the adapter's
+      // #375 automation branch never fired for them — a failed check drew
+      // the table but never incremented `system.class.disapproval`. The
+      // adapter now falls back to the cleric casting mode for item-less
+      // skills on a cleric (legacy processSpellCheck's sheet-class
+      // default). Force-fumble makes the check a deterministic natural 1 —
+      // an automatic failure — so disapproval must go 1 → 2.
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Skill Cleric Disapproval',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+      })
+      const result = await page.evaluate(async () => {
+        const prior = game.settings.get('dcc', 'automateClericDisapproval')
+        await game.settings.set('dcc', 'automateClericDisapproval', true)
+        try {
+          const actor = game.actors.getName('P1 Skill Cleric Disapproval')
+          await actor.rollSkillCheck('turnUnholy', { forceFumble: true })
+          return { disapproval: actor.system.class.disapproval }
+        } finally {
+          await game.settings.set('dcc', 'automateClericDisapproval', prior)
+        }
+      })
+      expect(result.disapproval).toBe(2)
+    })
+
+    test('failed divine aid stacks the failure point and the drain (1 → 2 → 12)', async ({ page }) => {
+      // Divine Aid calls `applyDisapproval` twice for a failed check: +1 for
+      // the failed check itself, then +10 for the documented drain. The two
+      // must stack, which only holds because `applyDisapproval` awaits its
+      // actor update — a fire-and-forget update lets the second call read a
+      // stale base and last-write-wins silently eats the failure point.
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Skill Cleric Drain',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+      })
+      const result = await page.evaluate(async () => {
+        const prior = game.settings.get('dcc', 'automateClericDisapproval')
+        await game.settings.set('dcc', 'automateClericDisapproval', true)
+        try {
+          const actor = game.actors.getName('P1 Skill Cleric Drain')
+          await actor.rollSkillCheck('divineAid', { forceFumble: true })
+          return { disapproval: actor.system.class.disapproval }
+        } finally {
+          await game.settings.set('dcc', 'automateClericDisapproval', prior)
+        }
+      })
+      expect(result.disapproval).toBe(12)
+    })
+
+    test('built-in cleric ability fires dcc.afterSpellCheckResult', async ({ page }) => {
+      // Seam parity: legacy routed skill-table checks through
+      // `processSpellCheck`, which emitted the post-result hook. The adapter
+      // rewrite dropped it, so variant modules (MCC patron taint / glowburn)
+      // stopped observing Turn Unholy / Lay on Hands / Divine Aid.
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Skill Cleric Hook',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+      })
+      const payload = await page.evaluate(async () => {
+        const captured = []
+        const hookId = Hooks.on('dcc.afterSpellCheckResult', (actor, data) => {
+          captured.push({
+            actorName: actor.name,
+            naturalRoll: data.naturalRoll,
+            castingMode: data.castingMode,
+            fumble: data.fumble,
+            success: data.success,
+            hasResult: !!data.result,
+            hasRoll: !!data.roll
+          })
+        })
+        try {
+          const actor = game.actors.getName('P1 Skill Cleric Hook')
+          await actor.rollSkillCheck('turnUnholy', { forceFumble: true })
+          return captured.at(-1) ?? null
+        } finally {
+          Hooks.off('dcc.afterSpellCheckResult', hookId)
+        }
+      })
+      expect(payload).toMatchObject({
+        actorName: 'P1 Skill Cleric Hook',
+        naturalRoll: 1,
+        castingMode: 'cleric',
+        fumble: true,
+        success: false,
+        hasRoll: true
+      })
+    })
+
     test('skill item with die → adapter', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Skill Item Die', type: 'Player' })

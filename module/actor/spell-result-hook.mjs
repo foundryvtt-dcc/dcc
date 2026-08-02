@@ -15,9 +15,13 @@
  *
  * Payload keys match the `processSpellCheck` contract so a single listener
  * works for both paths. Two fields are necessarily adapter-path-specific:
- *   - `result` is `null`: the adapter renders via `renderSpellCheck` and has
- *     no Foundry `TableResult` (the lib classifies tiers internally). The
- *     verdict lives in `crit` / `fumble` / `success` / `total`.
+ *   - `result` is `null` on the spell-check terminals: the adapter renders
+ *     via `renderSpellCheck` and has no Foundry `TableResult` (the lib
+ *     classifies tiers internally). The verdict lives in `crit` / `fumble` /
+ *     `success` / `total`. The skill-table terminal
+ *     (`_skillTableViaAdapter`) does look up a real `TableResult` and passes
+ *     it as `tableResult`, matching what legacy `processSpellCheck` surfaced
+ *     for Turn Unholy / Lay on Hands / Divine Aid.
  *   - `patronTaint` is `null`: the adapter routes patron taint through the
  *     lib's RAW pipeline (`onPatronTaint` in `adapter/spell-events.mjs`), so
  *     there is no Foundry-side taint object to surface here. A listener that
@@ -27,7 +31,12 @@
  * @param {Object} ctx
  * @param {Roll} ctx.foundryRoll - The evaluated Foundry Roll.
  * @param {Object} ctx.result - The lib SpellCheckResult
- *   (`total` / `natural` / `critical` / `fumble` / `tier`).
+ *   (`total` / `natural` / `critical` / `fumble` / `tier`). The skill-table
+ *   terminal has no lib result and passes an equivalently-shaped descriptor
+ *   built from its own crit / fumble / threshold verdict.
+ * @param {Object|null} [ctx.tableResult=null] - The Foundry `TableResult`
+ *   drawn for this check, when the path drew one; surfaced as the payload's
+ *   `result` key.
  * @param {Object|null} [ctx.spellItem=null] - The cast spell item, or null
  *   for a naked check.
  * @param {string} ctx.castingMode - `'wizard'` / `'cleric'` / `'elf'` /
@@ -41,6 +50,7 @@ const SUCCESS_TIERS = ['success', 'success-minor', 'success-major', 'success-cri
 export function emitAfterSpellCheckResult (actor, {
   foundryRoll,
   result,
+  tableResult = null,
   spellItem = null,
   castingMode,
   suppressPatronTaint = false,
@@ -53,7 +63,7 @@ export function emitAfterSpellCheckResult (actor, {
     item: spellItem,
     naturalRoll,
     total: result?.total ?? foundryRoll?.total,
-    result: null,
+    result: tableResult ?? null,
     crit: !!result?.critical,
     fumble: !!result?.fumble,
     success: !!(result?.tier && SUCCESS_TIERS.includes(result.tier)),
