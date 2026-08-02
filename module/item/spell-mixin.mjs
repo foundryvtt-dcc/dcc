@@ -2,6 +2,7 @@
 
 import { logSpellburn } from '../ability-score-log.js'
 import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
+import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import {
   planActionDie,
   actionDicePresetsFromPlan,
@@ -217,8 +218,12 @@ export const SpellItemMixin = (Base) => class extends Base {
       })
     }
 
-    // Roll the spell check
-    const roll = await game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options)
+    // Roll the spell check. `false` is the cancel signal for callers that
+    // must not commit a cost for a cast that never happened — see
+    // `DCCItem.castSpell`, which spends a charge per cast attempt. Every
+    // other exit returns undefined (or a notification), never `false`.
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options))
+    if (!roll) return false // Dialog cancelled — no spell check, no spellburn
     await roll.evaluate()
 
     if (roll.dice.length > 0) {
@@ -384,7 +389,8 @@ export const SpellItemMixin = (Base) => class extends Base {
       ]
 
       // Otherwise roll for a manifestation on the table's own die
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+      roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, {}, options))
+      if (!roll) return // Dialog cancelled — leave the manifestation unrolled
     }
 
     // Draw the manifestation from the table using our roll
@@ -464,7 +470,8 @@ export const SpellItemMixin = (Base) => class extends Base {
       ]
 
       // Otherwise roll for a mercurial effect
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+      roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, {}, options))
+      if (!roll) return // Dialog cancelled — leave the mercurial effect unrolled
     }
 
     // Lookup the mercurial magic table if available — per-class

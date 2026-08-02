@@ -12,6 +12,7 @@ import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } fr
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
+import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 /**
  * Ability/luck/initiative/hit-dice/saving-throw dispatch mixin for
@@ -675,7 +676,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
       })
     }
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    if (!roll) return // Dialog cancelled — leave hit points untouched
 
     if (this.type !== 'Player') {
       await roll.evaluate()

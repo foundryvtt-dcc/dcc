@@ -5,6 +5,7 @@ import { ensurePlus, getFirstDie, getSingleActionDie } from './utilities.js'
 import { ContainerItemMixin } from './item/container-mixin.mjs'
 import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 import { SpellItemMixin } from './item/spell-mixin.mjs'
+import { isRollCancellation } from './roll-cancellation.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -484,11 +485,15 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
 
     const abilityId = actor.system.class?.spellCheckAbility || ''
     try {
-      await spell.rollSpellCheck(abilityId, options)
+      // `rollSpellCheck` returns `false` when the user closes the roll
+      // modifier dialog (issue #867) — no cast, so no charge. It used to
+      // reject with a bare `null` here; the catch stays for genuine
+      // failures, which must not silently spend a charge either.
+      const cast = await spell.rollSpellCheck(abilityId, options)
+      if (cast === false) { return }
     } catch (err) {
-      // The roll modifier dialog rejects with null on cancel - no cast, no charge
-      if (err !== null) { throw err }
-      return
+      if (isRollCancellation(err)) { return }
+      throw err
     }
 
     // Spend a charge per cast attempt (when charges are tracked). Re-read

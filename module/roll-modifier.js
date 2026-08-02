@@ -1,5 +1,7 @@
 /* global Die, OperatorTerm, Roll, game, foundry */
 
+import { RollCancelledError } from './roll-cancellation.mjs'
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
@@ -501,7 +503,8 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onCancel (event, target) {
     event.preventDefault()
-    this._reject(null)
+    // `close()` is the cancel — it settles the roll promise as a
+    // cancellation on the way out, so there is nothing to do here first.
     await this.close()
   }
 
@@ -649,10 +652,37 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     formField.value = this.getTermByIndex(index).formula
   }
 
-  /** @override */
-  async close (options = {}) {
-    await super.close(options)
-    this._reject(null)
+  /**
+   * @override
+   * `_onClose` rather than a `close()` override: core invokes it however
+   * the window went away (✕, Escape, `close()`, a module's
+   * `closeApplicationV2` handler), it runs even if the close animation
+   * throws, and it leaves `close()`'s "resolves to the application"
+   * contract intact.
+   */
+  _onClose (options) {
+    super._onClose(options)
+    this._cancel()
+  }
+
+  /**
+   * Settle the roll promise as a *cancellation* — the user closed or
+   * cancelled the dialog without submitting.
+   *
+   * Rejects with a typed `RollCancelledError` rather than the bare
+   * `null` this used to throw: callers (and the roll error boundary in
+   * `adapter/debug.mjs`) can then tell a deliberate cancel apart from a
+   * crash and stay quiet instead of showing the player a contentless
+   * "the roll failed unexpectedly" error (issue #867).
+   *
+   * A no-op once the promise has settled, so the `close()` that follows
+   * a successful submit can't clobber the resolved roll. Optional-call:
+   * `createRollFromTerms` builds a never-rendered dialog with no
+   * resolve/reject pair.
+   * @private
+   */
+  _cancel () {
+    this._reject?.(new RollCancelledError())
   }
 
   /**
@@ -754,7 +784,10 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
 async function showRollModifier (roll, options) {
   return new Promise((resolve, reject) => {
-    new RollModifierDialog(resolve, reject, roll, options).render(true)
+    // `.catch(reject)` matters: an un-awaited render failure (a bad
+    // template/partial) would otherwise leave this promise pending
+    // forever, hanging whichever roll is awaiting the dialog.
+    new RollModifierDialog(resolve, reject, roll, options).render(true).catch(reject)
   })
 }
 

@@ -27,6 +27,7 @@
 
 import { qolHandlingCombat } from '../integrations.mjs'
 import { executeAsGM, registerSocketHandler } from '../socket.mjs'
+import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 const UPDATE_FLAGS_ACTION = 'dcc.updateMessageFlags'
 const TEMPLATE = 'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -211,11 +212,12 @@ async function rollCardButton (message, actor, kind, event) {
   }[kind]
   if (!spec?.formula || !actor) return
 
-  const roll = await game.dcc.DCCRoll.createRoll(
+  const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(
     [{ type: 'Compound', formula: spec.formula }],
     actor.getRollData(),
     { showModifierDialog: wantsModifierDialog(event), rollLabel: game.i18n.localize(spec.label), title: game.i18n.localize(spec.title) }
-  )
+  ))
+  if (!roll) return // Dialog cancelled — the button stays clickable
   await roll.evaluate()
   if (kind === 'damage' && roll.total < 1) roll._total = 1 // match auto-roll minimum-1
 

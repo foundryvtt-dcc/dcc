@@ -10,6 +10,11 @@
  * it does NOT swallow the error or fall back to legacy — that preserves
  * the observational refactor's surface-bugs philosophy.
  *
+ * The single exception is a roll-modifier-dialog cancellation (issue
+ * #867): the user backing out is a decision, not a failure, so it exits
+ * quietly. Everything else — including a non-`Error` rejection, which
+ * used to log a contentless `null` — still notifies and rethrows.
+ *
  * These tests pin both the helper contract directly and the
  * dispatcher-level wiring (a forced throw inside a real dispatcher is
  * notified + rethrown).
@@ -19,6 +24,7 @@ import { expect, test, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import { withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
+import { RollCancelledError } from '../roll-cancellation.mjs'
 
 vi.mock('../actor-level-change.js')
 
@@ -103,6 +109,58 @@ test('withRollErrorBoundarySync notifies + rethrows synchronously on a throw', (
     () => withRollErrorBoundarySync('getInit', 'Initiative', () => { throw boom })
   ).toThrow(boom)
   expectNotifiedWithLabel('Initiative')
+  errorSpy.mockRestore()
+})
+
+// ── cancellation is not a failure (issue #867) ────────────────────────
+
+test('withRollErrorBoundary swallows a roll cancellation — no notification, no rethrow', async () => {
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const result = await withRollErrorBoundary('rollWeaponAttack', 'Attack', async () => {
+    throw new RollCancelledError()
+  })
+  // Resolves quietly with nothing — the click just does nothing, which
+  // is what "Cancel" means. No red toast, no console noise.
+  expect(result).toBeUndefined()
+  expect(uiNotificationsErrorMock).not.toHaveBeenCalled()
+  expect(errorSpy).not.toHaveBeenCalled()
+  errorSpy.mockRestore()
+})
+
+test('withRollErrorBoundary swallows the legacy bare-null rejection', async () => {
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const result = await withRollErrorBoundary('rollWeaponAttack', 'Attack', async () => {
+    // eslint-disable-next-line no-throw-literal
+    throw null
+  })
+  expect(result).toBeUndefined()
+  expect(uiNotificationsErrorMock).not.toHaveBeenCalled()
+  expect(errorSpy).not.toHaveBeenCalled()
+  errorSpy.mockRestore()
+})
+
+test('withRollErrorBoundarySync swallows a roll cancellation', () => {
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const result = withRollErrorBoundarySync('getInit', 'Initiative', () => {
+    throw new RollCancelledError()
+  })
+  expect(result).toBeUndefined()
+  expect(uiNotificationsErrorMock).not.toHaveBeenCalled()
+  errorSpy.mockRestore()
+})
+
+test('a non-Error rejection still produces a console line with content', async () => {
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  // A bare object is NOT a cancellation, so it must still be reported —
+  // and the log line must describe it rather than printing nothing.
+  const junk = { code: 42 }
+  await expect(
+    withRollErrorBoundary('rollX', 'Attack', async () => { throw junk })
+  ).rejects.toBe(junk)
+  expectNotifiedWithLabel('Attack')
+  const [message] = errorSpy.mock.calls[0]
+  expect(message).toContain('rollX threw')
+  expect(message).toContain('42')
   errorSpy.mockRestore()
 })
 

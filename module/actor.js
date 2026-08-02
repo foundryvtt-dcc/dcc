@@ -12,6 +12,7 @@ import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
 import { parseActionDice } from './vendor/dcc-core-lib/index.js'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
+import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -385,7 +386,8 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       }
     ]
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    if (!roll) return // Dialog cancelled — spend no luck
     const flavor = game.i18n.format('DCC.LuckSpend', { luckSpend })
 
     // Spend the luck (logged in the ability score log when enabled)
@@ -604,9 +606,12 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
         })
       }
     } catch (err) {
-      if (err) {
-        ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning'))
-      }
+      // `if (err)` used to be the cancel guard, back when the dialog
+      // rejected with a bare `null` (issue #867). Closing the disapproval
+      // dialog must stay silent — warning here would just relocate the
+      // spurious error #867 removed.
+      if (isRollCancellation(err)) { return }
+      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning'))
     }
   }
 

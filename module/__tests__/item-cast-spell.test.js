@@ -189,13 +189,36 @@ describe('Charged magic items (equipment with attached spell)', () => {
   })
 
   test('castSpell does not spend a charge when the roll dialog is cancelled', async () => {
-    // The roll modifier dialog rejects with null on cancel
+    // Closing the roll-modifier dialog makes `rollSpellCheck` resolve
+    // `false` (issue #867) — it used to reject with a bare `null`. A
+    // charge must not be spent for a cast that never happened.
+    rollSpellCheckSpy.mockResolvedValue(false)
+
+    await item.castSpell()
+
+    expect(rollSpellCheckSpy).toHaveBeenCalledTimes(1)
+    expect(item.update).not.toHaveBeenCalled()
+  })
+
+  test('castSpell still handles a legacy null-rejecting rollSpellCheck', async () => {
+    // Belt and braces for a sibling module that overrides `rollSpellCheck`
+    // and kept the pre-#867 bare-null cancel contract.
     rollSpellCheckSpy.mockRejectedValue(null)
 
     await item.castSpell()
 
     expect(rollSpellCheckSpy).toHaveBeenCalledTimes(1)
     expect(item.update).not.toHaveBeenCalled()
+  })
+
+  test('castSpell spends a charge on a normal cast', async () => {
+    // Inverse guard: the `false` cancel signal must not suppress the
+    // charge on a cast that did happen.
+    rollSpellCheckSpy.mockResolvedValue(undefined)
+
+    await item.castSpell()
+
+    expect(item.update).toHaveBeenCalledWith({ 'system.charges.value': 2 })
   })
 
   test('castSpell rethrows real roll errors without spending a charge', async () => {
