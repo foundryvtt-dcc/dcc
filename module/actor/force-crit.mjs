@@ -26,11 +26,16 @@
  */
 export function applyForceCritToFoundryRoll (foundryRoll, natural, options) {
   if (options?.forceCrit && natural !== 1) {
+    // Land on the rolled die's own max face, not a literal 20 — a smaller
+    // action die (multiple-action-dice slot, spells-only die) can't roll a
+    // 20, and the faces-aware crit detection keys off the die max. Matches
+    // the forceCrit rule in processSpellCheck and the design doc.
+    const critFace = foundryRoll.dice?.[0]?.faces || 20
     const original = natural
-    foundryRoll.terms[0].results[0].result = 20
-    foundryRoll.terms[0]._total = 20
-    foundryRoll._total += 20 - original
-    return 20
+    foundryRoll.terms[0].results[0].result = critFace
+    foundryRoll.terms[0]._total = critFace
+    foundryRoll._total += critFace - original
+    return critFace
   }
   if (options?.forceFumble && natural !== 1) {
     const original = natural

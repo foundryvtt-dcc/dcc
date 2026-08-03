@@ -179,6 +179,9 @@ class SpellResult {
       const entry = rollTable.results.get(resultId)
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
+      // Carry the "Action N of M" line through the re-render — it lives in
+      // the card HTML, not the flags, so recover it from the current content.
+      const actionDiceChatLine = (this.content || '').match(/<div class="dcc-action-dice-line">([^<]*)<\/div>/)?.[1] ?? ''
       const newContent = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
         description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
@@ -188,7 +191,8 @@ class SpellResult {
         table: rollTable,
         crit,
         fumble,
-        disapprovalFailure
+        disapprovalFailure,
+        actionDiceChatLine
       })
 
       this.update({ content: newContent })

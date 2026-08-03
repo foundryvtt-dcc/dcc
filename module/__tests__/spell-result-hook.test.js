@@ -66,6 +66,7 @@ describe('emitAfterSpellCheckResult', () => {
       result: null,
       crit: false,
       fumble: false,
+      disapprovalFailure: false,
       success: true,
       castingMode: 'wizard',
       patronTaint: null,

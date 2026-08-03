@@ -406,7 +406,7 @@ function penalizedSlotFormula (slot, penalty) {
 
 /** The die faces of a formula's primary die (`'1d16+2'` ⇒ 16), or `null`. */
 function formulaFaces (formula) {
-  const faces = parseInt(String(formula ?? '').match(/d(\d+)/)?.[1] || '')
+  const faces = parseInt(String(formula ?? '').match(/d(\d+)/i)?.[1] || '')
   return Number.isInteger(faces) ? faces : null
 }
 

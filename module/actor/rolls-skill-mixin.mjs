@@ -163,10 +163,18 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     let die = (skill?.die && skill.die.trim()) ? skill.die : null
     let hasDie = !!die
+    // Provenance of the resolved die — 'skill' (authored on the skill),
+    // 'classOverride' (spellCheckOverrideDie), or 'actionDice' (inherited
+    // from the actor's action die). Only the 'actionDice' case may be
+    // stepped down to a later action-die slot: authored dice are deliberate
+    // choices the multiple-action-dice rules leave alone (#857 rule,
+    // docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md).
+    let dieSource = hasDie ? 'skill' : null
 
     if (skill?.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
       die = this.system.class.spellCheckOverrideDie
       hasDie = true
+      dieSource = 'classOverride'
     }
 
     // Fall back to the actor's action die when no per-skill die is
@@ -194,6 +202,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       die = this.system.attributes.actionDice.value ||
         this.getActionDice()[0].formula || '1d20'
       hasDie = true
+      dieSource = 'actionDice'
     }
 
     const abilityId = skill?.ability && skill.ability.trim() ? skill.ability : null
@@ -211,7 +220,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       abilityLabel,
       abilityMod,
       die,
-      hasDie
+      hasDie,
+      dieSource
     }
   }
 
@@ -401,8 +411,10 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     const terms = this._buildSkillCheckRollTerms(skillId, resolved)
     const dieTerm = terms.find(t => t.type === 'Die')
-    const diePinnedByClass = !!(skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie)
-    if (dieTerm && !diePinnedByClass) {
+    // Only an action-die-derived die steps down to a later slot. A die
+    // authored on the skill itself or pinned via `spellCheckOverrideDie`
+    // is a deliberate choice the slot must not replace (#857 rule).
+    if (dieTerm && resolved.dieSource === 'actionDice') {
       if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
         dieTerm.formula = slotRollFormula(actionDicePlan.choice.slot)
       }
@@ -413,7 +425,9 @@ export const RollsSkillMixin = (Base) => class extends Base {
     }
     // Faces of the die the roll uses with no player intervention, so the
     // post-roll reconcile can tell a real slot choice from the default.
-    const defaultActionDieFaces = parseInt(String(dieTerm?.formula || '').match(/d(\d+)/)?.[1] || '') || null
+    // Case-insensitive: a hand-authored '1D14' must not silently disable
+    // the reconcile guard.
+    const defaultActionDieFaces = parseInt(String(dieTerm?.formula || '').match(/d(\d+)/i)?.[1] || '') || null
 
     const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
     if (!roll) return // Dialog cancelled — post no skill-check card
@@ -451,8 +465,32 @@ export const RollsSkillMixin = (Base) => class extends Base {
     )
 
     const fumble = naturalRoll === 1
-    const crit = naturalRoll === 20 && this.type === 'Player'
+    // Faces-aware crit: a later action-die slot can hand this branch a
+    // smaller die (#873), on which a natural 20 is unrollable — mirror the
+    // faces-aware detection in processSpellCheck / the lib's castSpell.
+    const dieFaces = roll.dice[0]?.faces || 20
+    let crit = naturalRoll === dieFaces && this.type === 'Player'
     const actorLevel = parseInt(this.system.details?.level?.value || 0, 10) || 0
+
+    // Casting mode + disapproval auto-failure, resolved BEFORE the table
+    // lookup so the card agrees with the mechanics. Spell-like skills carry
+    // an explicit castingMode (#375); built-in cleric abilities (Lay on
+    // Hands, Turn Unholy, Divine Aid) have none and fall back to cleric on
+    // a cleric actor — same default the failure-automation block below uses.
+    let castingMode = skill.castingMode
+    if (!castingMode && !skillItem && this.classId === 'cleric') {
+      castingMode = 'cleric'
+    }
+
+    // DCC RAW: any natural roll within a cleric's disapproval range
+    // automatically fails, even when the total would succeed (#874). These
+    // skill-table checks ARE spell checks per RAW, so the same rule applies:
+    // failure row, banner, no crit. Natural 1 stays a fumble.
+    const disapprovalRange = parseInt(this.system.class?.disapproval, 10) || 1
+    const disapprovalFailure = castingMode === 'cleric' && !fumble && naturalRoll <= disapprovalRange
+    if (disapprovalFailure) {
+      crit = false
+    }
 
     const flavor = `${game.i18n.localize(skill.label)}${abilityLabel}`
 
@@ -461,7 +499,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
     let tableResult = null
 
     if (skillTable) {
-      if (fumble) {
+      if (fumble || disapprovalFailure) {
         tableResult = skillTable.getResultsForRoll(1)
       } else if (crit) {
         const critRoll = roll.total + actorLevel
@@ -479,7 +517,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // the chat card when present (#426).
       const skillManifestation = this.system.skills?.[skillId]?.manifestation
       await game.dcc.SpellResult.addChatMessage(roll, skillTable, tableResult, {
-        crit, fumble, item: skillItem, manifestation: skillManifestation, actionDiceChatLine
+        crit, fumble, disapprovalFailure, item: skillItem, manifestation: skillManifestation, actionDiceChatLine
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same
@@ -491,6 +529,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       let spellResultHtml
       if (fumble) {
         spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
+      } else if (disapprovalFailure) {
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
       } else if (crit) {
         spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
       } else if (noTableSuccess) {
@@ -527,26 +567,20 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // the success threshold uses level 1 (10 + 1 * 2), matching
     // processSpellCheck.
     //
-    // Built-in cleric abilities (Lay on Hands, Turn Unholy, Divine Aid) have
-    // no backing item and no castingMode of their own, so they fall back to
-    // the cleric casting mode when the actor is a cleric — restoring the
-    // legacy sheet-class default from `processSpellCheck` (see
-    // spell-check-processor.mjs:237-241) that this adapter path dropped:
-    // without it a failed built-in ability drew the result table but never
-    // incremented `system.class.disapproval`. Legacy's *wizard* default for
-    // item-less skills on non-clerics is deliberately not restored — it
-    // could only ever call `loseSpell(undefined)`.
-    let castingMode = skill.castingMode
-    if (!castingMode && !skillItem && this.classId === 'cleric') {
-      castingMode = 'cleric'
-    }
+    // `castingMode` was resolved before the table lookup (the disapproval
+    // auto-failure needs it there); the automation below reuses it.
+    // Legacy's *wizard* default for item-less skills on non-clerics is
+    // deliberately not restored — it could only ever call
+    // `loseSpell(undefined)`.
 
     // Skill items carry no level field, so the threshold is level 1 (10 + 2).
-    // Hoisted out of the casting-mode branches because the
-    // `dcc.afterSpellCheckResult` payload below reports `success` for every
-    // skill-table check, not just spell-like ones.
+    // A disapproval-range natural is an automatic failure regardless of the
+    // total (RAW — see disapprovalFailure above). Hoisted out of the
+    // casting-mode branches because the `dcc.afterSpellCheckResult` payload
+    // below reports `success` for every skill-table check, not just
+    // spell-like ones.
     const spellLikeLevel = skillItem?.system?.level ?? 1
-    let success = roll.total >= (10 + spellLikeLevel * 2)
+    let success = roll.total >= (10 + spellLikeLevel * 2) && !disapprovalFailure
 
     if (castingMode === 'wizard') {
       if (game.settings.get('dcc', 'automateWizardSpellLoss') && !success) {
@@ -554,9 +588,9 @@ export const RollsSkillMixin = (Base) => class extends Base {
       }
     } else if (castingMode === 'cleric') {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
-        // A natural roll inside the disapproval range triggers disapproval and
-        // is an automatic failure
-        if (naturalRoll <= this.system.class.disapproval) {
+        // A natural roll inside the disapproval range triggers disapproval
+        // (nat 1 fumbles land here too — 1 is always inside the range)
+        if (naturalRoll <= disapprovalRange) {
           await this.rollDisapproval(naturalRoll)
           success = false
         }
@@ -581,6 +615,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
         total: roll.total,
         critical: crit,
         fumble,
+        disapprovalAutoFail: disapprovalFailure,
         tier: success ? 'success' : 'failure'
       },
       tableResult,
