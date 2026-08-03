@@ -66,6 +66,10 @@ export function emitAfterSpellCheckResult (actor, {
     result: tableResult ?? null,
     crit: !!result?.critical,
     fumble: !!result?.fumble,
+    // Parity with processSpellCheck's payload (#874): the lib result carries
+    // `disapprovalAutoFail`; the skill-table terminal's hand-built descriptor
+    // sets it from its own disapproval-failure verdict.
+    disapprovalFailure: !!result?.disapprovalAutoFail,
     success: !!(result?.tier && SUCCESS_TIERS.includes(result.tier)),
     castingMode,
     patronTaint: null,

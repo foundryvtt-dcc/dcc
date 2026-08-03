@@ -601,8 +601,15 @@ export async function renderSpellCheck ({
   // a result table. Item-bound casts (with a result table) skip this
   // and let the lib's `result.resultText` surface through the
   // downstream SpellResult.addChatMessage path that the item-aware
-  // dispatchers use.
-  const nakedHtml = !spellItem ? buildNakedSpellResultHtml(result) : null
+  // dispatchers use — EXCEPT the disapproval auto-failure banner (#874),
+  // which explains a forced failure row and must show on item-bound
+  // casts too (a macro-invoked cleric spell reads the same as the sheet).
+  let nakedHtml = null
+  if (!spellItem) {
+    nakedHtml = buildNakedSpellResultHtml(result)
+  } else if (result.disapprovalAutoFail) {
+    nakedHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
+  }
 
   const toMessagePayload = {
     speaker: ChatMessage.getSpeaker({ actor }),

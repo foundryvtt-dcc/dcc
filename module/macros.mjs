@@ -266,7 +266,7 @@ export function _createDCCApplyDisapprovalMacro (data) {
 
   // Create the macro command
   return {
-    name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
+    name: game.i18n.localize('DCC.ApplyDisapprovalMacroName'),
     command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.applyDisapproval() }`,
     img: EntityImages.imageForMacro('applyDisapproval')
   }
@@ -282,7 +282,7 @@ export function _createDCCRollDisapprovalMacro (data) {
 
   // Create the macro command
   return {
-    name: game.i18n.format('DCC.RollDisapprovalMacroName'),
+    name: game.i18n.localize('DCC.RollDisapprovalMacroName'),
     command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollDisapproval() }`,
     img: EntityImages.imageForMacro('rollDisapproval')
   }

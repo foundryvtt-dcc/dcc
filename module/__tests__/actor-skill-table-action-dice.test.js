@@ -1,4 +1,4 @@
-/* global game, dccRollCreateRollMock */
+/* global game, dccRollCreateRollMock, rollToMessageMock */
 /**
  * Multiple-action-dice slot handling in the skill-table adapter branch
  * (issue #873).
@@ -39,7 +39,7 @@ const slot2Plan = () => ({
   choice: { index: 1, slot: { die: 'd14', use: 'any' } }
 })
 
-function makeClericActor ({ overrideDie = null } = {}) {
+function makeClericActor ({ overrideDie = null, skillDie = null } = {}) {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   actor.system.details.sheetClass = 'Cleric'
@@ -47,11 +47,14 @@ function makeClericActor ({ overrideDie = null } = {}) {
   if (overrideDie) {
     actor.system.class.spellCheckOverrideDie = overrideDie
   }
+  // Like the real built-in cleric slots, no authored die by default — the
+  // resolver falls back to the actor's action die (dieSource 'actionDice'),
+  // which is the only provenance a later slot may replace.
   actor.system.skills.layOnHands = {
     label: 'DCC.LayOnHands',
-    die: '1d20',
     value: 0,
-    useDisapprovalRange: true
+    useDisapprovalRange: true,
+    ...(skillDie ? { die: skillDie } : {})
   }
   return actor
 }
@@ -147,6 +150,110 @@ test('the plan is reconciled against the rolled die before spending', async () =
     defaultFaces: 14
   })
   expect(spendPlannedActionDie).toHaveBeenCalledWith(plan)
+
+  spellResult.restore()
+  game.dcc.getSkillTable.mockResolvedValue(null)
+})
+
+test('an authored per-skill die is never replaced by a slot (dieSource guard)', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.getSkillTable.mockResolvedValue({ getResultsForRoll: () => [{ text: 'Healing' }] })
+  const spellResult = installSpellResultMock()
+
+  planActionDie.mockReturnValueOnce(slot2Plan())
+
+  const actor = makeClericActor({ skillDie: '1d24' })
+  await actor.rollSkillCheck('layOnHands')
+
+  const [terms] = dccRollCreateRollMock.mock.calls[0]
+  expect(terms.find(t => t.type === 'Die').formula).toBe('1d24')
+
+  spellResult.restore()
+  game.dcc.getSkillTable.mockResolvedValue(null)
+})
+
+test('a cleric natural inside the disapproval range draws the failure row with the banner (#874 parity)', async () => {
+  dccRollCreateRollMock.mockClear()
+  const getResultsForRoll = vi.fn(() => [{ text: 'row' }])
+  game.dcc.getSkillTable.mockResolvedValue({ getResultsForRoll })
+  const spellResult = installSpellResultMock()
+  const callAllSpy = vi.spyOn(globalThis.Hooks, 'callAll')
+
+  // The mock d20 rolls a fixed natural 10 — range 10 swallows it.
+  const actor = makeClericActor()
+  actor.system.class.disapproval = 10
+  await actor.rollSkillCheck('layOnHands')
+
+  expect(getResultsForRoll).toHaveBeenLastCalledWith(1)
+  const opts = spellResult.addChatMessage.mock.calls[0][3]
+  expect(opts.disapprovalFailure).toBe(true)
+  expect(opts.fumble).toBe(false)
+
+  // Hook payload parity with processSpellCheck (#874)
+  const hookCall = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(hookCall[2].disapprovalFailure).toBe(true)
+  expect(hookCall[2].success).toBe(false)
+
+  callAllSpy.mockRestore()
+  spellResult.restore()
+  game.dcc.getSkillTable.mockResolvedValue(null)
+})
+
+test('the no-table branch emits the disapproval auto-failure banner', async () => {
+  dccRollCreateRollMock.mockClear()
+  rollToMessageMock.mockClear()
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  const actor = makeClericActor()
+  actor.system.class.disapproval = 10
+  await actor.rollSkillCheck('layOnHands')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.content).toContain('SpellCheckDisapprovalFailure')
+})
+
+test('crit detection follows the rolled die faces, not a hardcoded 20', async () => {
+  const getResultsForRoll = vi.fn(() => [{ text: 'row' }])
+  game.dcc.getSkillTable.mockResolvedValue({ getResultsForRoll })
+  const spellResult = installSpellResultMock()
+
+  // A d10 slot whose natural 10 is its max face — must crit (lookup total+level)
+  const customRoll = {
+    _evaluated: true,
+    _total: 10,
+    _formula: '1d10',
+    get total () { return this._total },
+    dice: [{ total: 10, faces: 10, options: {} }],
+    terms: [{ results: [{ result: 10 }], _total: 10 }],
+    evaluate: vi.fn(),
+    render: vi.fn(async () => ''),
+    toMessage: vi.fn(async () => ({}))
+  }
+  dccRollCreateRollMock.mockImplementationOnce(() => customRoll)
+
+  // The crit branch appends +level terms via foundry.dice.terms — stub them
+  const savedFoundry = globalThis.foundry
+  globalThis.foundry = {
+    ...savedFoundry,
+    dice: {
+      ...(savedFoundry?.dice || {}),
+      terms: {
+        OperatorTerm: class { constructor (o) { Object.assign(this, o) } },
+        NumericTerm: class { constructor (o) { Object.assign(this, o) } }
+      }
+    }
+  }
+
+  const actor = makeClericActor()
+  actor.type = 'Player' // crit detection is Player-only
+  actor.system.details.xp = { value: 0 } // getRollData reads this for Players
+  await actor.rollSkillCheck('layOnHands')
+  globalThis.foundry = savedFoundry
+
+  // Crit lookup is roll.total + level (level 0 in the mock actor ⇒ 10),
+  // and the crit flag reaches the card.
+  const opts = spellResult.addChatMessage.mock.calls[0][3]
+  expect(opts.crit).toBe(true)
 
   spellResult.restore()
   game.dcc.getSkillTable.mockResolvedValue(null)

@@ -1003,7 +1003,12 @@ export const RollsSpellMixin = (Base) => class extends Base {
       events
     )
 
-    warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
+    // The lib deliberately forces `total = 1` for fumbles and disapproval
+    // auto-failures (the failure-row lookup rule), so the Foundry roll's
+    // arithmetic total legitimately diverges there — not a formula drift.
+    if (!result.fumble && !result.disapprovalAutoFail) {
+      warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
+    }
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)

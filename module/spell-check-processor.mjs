@@ -135,7 +135,10 @@ export async function processSpellCheck (actor, spellData) {
   // the failure automation both key off it. An explicit override from the
   // caller wins, then the item's configuration, defaulting to wizard; cleric
   // sheets fall back to cleric for item-less checks (issue #375).
-  let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
+  // Optional-chained: this is a stable extension API and runs before the
+  // try/catch — a sibling module's item-like object without `system.config`
+  // must not throw out of the call.
+  let castingMode = spellData.castingMode || (item ? item.system?.config?.castingMode : 'wizard')
   if (!spellData.castingMode && !item && actor.classId === 'cleric') {
     castingMode = 'cleric'
   }
@@ -278,7 +281,7 @@ export async function processSpellCheck (actor, spellData) {
       const automate = game.settings.get('dcc', 'automateClericDisapproval')
 
       // Check if our natural roll was inside the disapproval range
-      if (automate && naturalRoll <= actor.system.class.disapproval) {
+      if (automate && naturalRoll <= disapprovalRange) {
         // Trigger disapproval
         await actor.rollDisapproval(naturalRoll)
 
