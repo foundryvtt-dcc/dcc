@@ -131,6 +131,15 @@ export async function processSpellCheck (actor, spellData) {
     }
   }
 
+  // Determine casting mode early — the disapproval auto-failure below and
+  // the failure automation both key off it. An explicit override from the
+  // caller wins, then the item's configuration, defaulting to wizard; cleric
+  // sheets fall back to cleric for item-less checks (issue #375).
+  let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
+  if (!spellData.castingMode && !item && actor.classId === 'cleric') {
+    castingMode = 'cleric'
+  }
+
   try {
     // Detect fumbles and crits before applying to table.
     //
@@ -155,11 +164,26 @@ export async function processSpellCheck (actor, spellData) {
       }
     }
 
+    // DCC RAW (core rulebook p. 30, cleric magic): "any natural roll within
+    // that range automatically fails ... even though a roll of 13 would
+    // normally mean success". So a cleric whose natural roll lands inside the
+    // disapproval range fails outright — the card must show the failure row,
+    // not the success row the total would otherwise buy (#874). The chat
+    // highlight already paints the total red for these rolls (the die's
+    // `lowerThreshold` is the disapproval range); this makes the card body
+    // agree with it. Natural 1 stays a fumble; a would-be crit inside the
+    // range is still an automatic failure.
+    const disapprovalRange = parseInt(actor.system.class?.disapproval, 10) || 1
+    const disapprovalFailure = castingMode === 'cleric' && !fumble && naturalRoll <= disapprovalRange
+    if (disapprovalFailure) {
+      crit = false
+    }
+
     // Apply the roll to the table if present
     if (rollTable) {
       result = rollTable.getResultsForRoll(roll.total)
 
-      if (fumble) {
+      if (fumble || disapprovalFailure) {
         result = rollTable.getResultsForRoll(1)
       } else if (crit) {
         const levelValue = parseInt(actor.system.details.level.value)
@@ -171,7 +195,7 @@ export async function processSpellCheck (actor, spellData) {
         roll._total += levelValue
       }
 
-      const spellResultOptions = { crit, fumble, item, patronTaint, actionDiceChatLine }
+      const spellResultOptions = { crit, fumble, disapprovalFailure, item, patronTaint, actionDiceChatLine }
       const messageData = {}
       if (flavor) {
         messageData.flavor = flavor
@@ -196,6 +220,8 @@ export async function processSpellCheck (actor, spellData) {
       let spellResultHtml = ''
       if (fumble) {
         spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
+      } else if (disapprovalFailure) {
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
       } else if (crit) {
         spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
       } else if (noTableSuccess) {
@@ -230,20 +256,12 @@ export async function processSpellCheck (actor, spellData) {
       await roll.toMessage(toMessageData)
     }
 
-    // Determine casting mode: an explicit override from the caller wins,
-    // then the item's configuration, defaulting to wizard. The explicit
-    // override lets custom spell-like skills opt into wizard spell loss or
-    // cleric disapproval handling (issue #375).
-    let castingMode = spellData.castingMode || (item ? item.system.config.castingMode : 'wizard')
-    if (!spellData.castingMode && !item && actor.classId === 'cleric') {
-      // Cleric sheets will use the cleric casting mode if not set by the item
-      castingMode = 'cleric'
-    }
-
-    // Spell check threshold is 10 + spell level * 2, anything below this is a failure
+    // Spell check threshold is 10 + spell level * 2, anything below this is a failure.
+    // A natural roll inside the disapproval range is an automatic failure
+    // regardless of the total (RAW — see disapprovalFailure above).
     // Items without a level field (e.g. spell-like skills) are treated as level 1
     const level = (item ? item.system.level : 1) ?? 1
-    let success = roll.total >= (10 + level * 2)
+    let success = roll.total >= (10 + level * 2) && !disapprovalFailure
 
     // Handle spell failure based on casting mode
     if (castingMode === 'wizard') {
@@ -296,6 +314,7 @@ export async function processSpellCheck (actor, spellData) {
       result,
       crit,
       fumble,
+      disapprovalFailure,
       success,
       castingMode,
       patronTaint,

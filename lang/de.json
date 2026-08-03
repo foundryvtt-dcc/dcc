@@ -877,6 +877,7 @@
   "DCC.SpellCheckCardMessage": "Würfelt einen Zauberwurf.",
   "DCC.SpellCheckCrit": "Krit! Stufenbonus x2.",
   "DCC.SpellCheckCritNoTable": "Krit! Natürliche 20.",
+  "DCC.SpellCheckDisapprovalFailure": "Automatischer Fehlschlag! Natürlicher Wurf innerhalb des Missfallensbereichs.",
   "DCC.SpellCheckFumble": "Patzer! Verwende Ergebnis 1.",
   "DCC.SpellCheckFailureNoTable": "Fehlschlag.",
   "DCC.SpellCheckFumbleNoTable": "Patzer! Natürliche 1.",

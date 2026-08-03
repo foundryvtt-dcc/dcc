@@ -877,6 +877,7 @@
   "DCC.SpellCheckCardMessage": "Realiza un chequeo de hechizo",
   "DCC.SpellCheckCrit": "¡Crítico! Bono de nivel x2.",
   "DCC.SpellCheckCritNoTable": "¡Crítico! 20 natural.",
+  "DCC.SpellCheckDisapprovalFailure": "¡Fallo automático! Tirada natural dentro del rango de desaprobación.",
   "DCC.SpellCheckFumble": "¡Fallo! Usando resultado 1.",
   "DCC.SpellCheckFailureNoTable": "Fracaso.",
   "DCC.SpellCheckFumbleNoTable": "¡Fallo! 1 natural.",
