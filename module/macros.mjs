@@ -334,11 +334,13 @@ export async function createDCCMacro (data, slot) {
   // Call the appropriate function to generate a macro
   const macroData = MACRO_FACTORIES[data.type](data, slot)
   if (macroData) {
-    // Create or reuse existing macro
+    // Create or reuse existing macro. The command embeds the actor id, so
+    // matching on name + command keeps per-actor macros distinct without
+    // polluting the visible name.
     let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
     if (!macro) {
       macro = await Macro.create({
-        name: `${macroData.name}-${data.actorId}`,
+        name: macroData.name,
         type: 'script',
         img: macroData.img,
         command: macroData.command,

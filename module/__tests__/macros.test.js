@@ -379,6 +379,45 @@ describe('createDCCMacro dispatcher', () => {
     expect(globalThis.game.user.assignHotbarMacro).toHaveBeenCalledOnce()
   })
 
+  test('creates the macro with the clean factory name — no actorId suffix (#876)', async () => {
+    await createDCCMacro({
+      type: 'Weapon',
+      actorId: 'A1',
+      data: {},
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Longsword', img: 'longsword.webp' } }
+    }, 1)
+    expect(globalThis.Macro.create).toHaveBeenCalledOnce()
+    const created = globalThis.Macro.create.mock.calls[0][0]
+    expect(created.name).toBe('Longsword')
+    expect(created.name).not.toContain('A1')
+    // Per-actor uniqueness lives in the command, not the name
+    expect(created.command).toContain('"A1"')
+  })
+
+  test('same-named weapons from different actors still get distinct macros', async () => {
+    const drop = (actorId) => ({
+      type: 'Weapon',
+      actorId,
+      data: {},
+      system: { weapon: { _id: 'W1', type: 'weapon', name: 'Longsword', img: 'longsword.webp' } }
+    })
+    await createDCCMacro(drop('A1'), 1)
+    // Simulate the first macro now existing in the world
+    const first = await globalThis.Macro.create.mock.results[0].value
+    globalThis.game.macros.contents = [first]
+
+    // Same actor again: reused, no second create
+    await createDCCMacro(drop('A1'), 2)
+    expect(globalThis.Macro.create).toHaveBeenCalledOnce()
+
+    // Different actor: command differs, so a new macro is created
+    await createDCCMacro(drop('A2'), 3)
+    expect(globalThis.Macro.create).toHaveBeenCalledTimes(2)
+    const second = globalThis.Macro.create.mock.calls[1][0]
+    expect(second.name).toBe('Longsword')
+    expect(second.command).toContain('"A2"')
+  })
+
   test('returns true for Macro drops to let Foundry handle them', async () => {
     const result = await createDCCMacro({ type: 'Macro', data: {} }, 1)
     expect(result).toBe(true)
