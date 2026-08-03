@@ -868,6 +868,7 @@
   "DCC.SpellCheckCardMessage": "Lance un teste d'incantation.",
   "DCC.SpellCheckCrit": "Critique! Bonus de niveau x2.",
   "DCC.SpellCheckCritNoTable": "Critique! 20 naturel.",
+  "DCC.SpellCheckDisapprovalFailure": "Échec automatique ! Jet naturel dans la plage de désapprobation.",
   "DCC.SpellCheckFumble": "Maladresse! utilisation du résultat 1.",
   "DCC.SpellCheckFailureNoTable": "Échec.",
   "DCC.SpellCheckFumbleNoTable": "Maladresse! 1 naturel.",

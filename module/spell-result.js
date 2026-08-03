@@ -12,6 +12,10 @@ class SpellResult {
    * @param {Object} messageOptions  Additional options for the ChatMessage object
    * @param {boolean} crit         The Spell Check was a nat 20
    * @param {boolean} fumble       The Spell Check was a nat 1
+   * @param {boolean} disapprovalFailure  Cleric natural roll fell inside the
+   *   disapproval range — an automatic failure per RAW even when the total
+   *   would otherwise succeed (#874). The card shows the failure row plus an
+   *   explanatory banner.
    * @param {Object} item          The spell item
    * @param {Object} patronTaint  The patron taint data object containing chance and message
    * @param {string} actionDiceChatLine  Multiple-action-dice "Action N of M"
@@ -22,6 +26,7 @@ class SpellResult {
     messageOptions = {},
     crit = false,
     fumble = false,
+    disapprovalFailure = false,
     item = undefined,
     manifestation: manifestationOverride = undefined,
     patronTaint = undefined,
@@ -91,6 +96,7 @@ class SpellResult {
       table: rollTable,
       crit,
       fumble,
+      disapprovalFailure,
       actionDiceChatLine
     })
 
@@ -151,6 +157,7 @@ class SpellResult {
     const resultId = event.target.parentElement.parentElement.getAttribute('data-result-id')
     const crit = event.target.parentElement.parentElement.getAttribute('data-crit') === 'true'
     const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble') === 'true'
+    const disapprovalFailure = event.target.parentElement.parentElement.getAttribute('data-disapproval-failure') === 'true'
 
     // Lookup the appropriate table
     let rollTable
@@ -180,7 +187,8 @@ class SpellResult {
         rollHTML: rollTable.displayRoll ? await this.rolls[0].render() : null,
         table: rollTable,
         crit,
-        fumble
+        fumble,
+        disapprovalFailure
       })
 
       this.update({ content: newContent })

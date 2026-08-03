@@ -877,6 +877,7 @@
   "DCC.SpellCheckCardMessage": "投骰法术检定",
   "DCC.SpellCheckCrit": "大成功！法术奖励×2",
   "DCC.SpellCheckCritNoTable": "大成功！自然20。",
+  "DCC.SpellCheckDisapprovalFailure": "自动失败！自然骰落在失宠范围内。",
   "DCC.SpellCheckFumble": "大失败！使用结果1。",
   "DCC.SpellCheckFailureNoTable": "失败。",
   "DCC.SpellCheckFumbleNoTable": "大失败！自然1。",

@@ -284,6 +284,109 @@ describe('processSpellCheck — rollTable branch', () => {
   })
 })
 
+describe('processSpellCheck — cleric disapproval auto-failure (#874)', () => {
+  const makeClericItem = (id = 'c1') => ({
+    id,
+    name: 'Paralysis',
+    system: { level: 1, config: { castingMode: 'cleric' }, associatedPatron: '' },
+    update: vi.fn()
+  })
+  const makeCleric = (disapproval) => ({
+    type: 'Player',
+    system: { class: { disapproval }, details: { level: { value: 6 } } },
+    classId: 'cleric',
+    rollDisapproval: vi.fn(),
+    applyDisapproval: vi.fn()
+  })
+
+  test('natural roll inside disapproval range shows the failure row even when the total succeeds', async () => {
+    const stubs = installFoundryStubs()
+    // Natural 4 + 8 = 12 — would hit the 12-13 success row, but range 4 auto-fails per RAW
+    const roll = makeRoll({ natural: 4, total: 12 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ text: 'row' }]) }
+    const actor = makeCleric(4)
+
+    await processSpellCheck(actor, { roll, rollTable, item: makeClericItem() })
+
+    expect(rollTable.getResultsForRoll).toHaveBeenLastCalledWith(1)
+    const opts = stubs.addChatMessage.mock.calls[0][3]
+    expect(opts.disapprovalFailure).toBe(true)
+    expect(opts.fumble).toBe(false)
+  })
+
+  test('natural roll just outside the disapproval range keeps the total-based row', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 5, total: 13 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ text: 'row' }]) }
+    const actor = makeCleric(4)
+
+    await processSpellCheck(actor, { roll, rollTable, item: makeClericItem() })
+
+    expect(rollTable.getResultsForRoll).toHaveBeenLastCalledWith(13)
+    expect(stubs.addChatMessage.mock.calls[0][3].disapprovalFailure).toBe(false)
+  })
+
+  test('wizard casts never auto-fail from the disapproval field', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 4, total: 12 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ text: 'row' }]) }
+    const item = {
+      id: 'w1',
+      name: 'Magic Missile',
+      system: { level: 1, config: { castingMode: 'wizard' }, associatedPatron: '' },
+      update: vi.fn()
+    }
+    const actor = {
+      type: 'Player',
+      system: { class: { disapproval: 4 }, details: { level: { value: 6 } } },
+      classId: 'wizard',
+      loseSpell: vi.fn()
+    }
+
+    await processSpellCheck(actor, { roll, rollTable, item })
+
+    expect(rollTable.getResultsForRoll).toHaveBeenLastCalledWith(12)
+    expect(stubs.addChatMessage.mock.calls[0][3].disapprovalFailure).toBe(false)
+  })
+
+  test('a would-be crit inside the disapproval range is an automatic failure, not a crit', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 20, total: 28 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ text: 'row' }]) }
+    const actor = makeCleric(20)
+
+    await processSpellCheck(actor, { roll, rollTable, item: makeClericItem() })
+
+    expect(rollTable.getResultsForRoll).toHaveBeenLastCalledWith(1)
+    const opts = stubs.addChatMessage.mock.calls[0][3]
+    expect(opts.crit).toBe(false)
+    expect(opts.disapprovalFailure).toBe(true)
+  })
+
+  test('no-table branch emits the disapproval auto-failure verdict', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 4, total: 12 })
+    const actor = makeCleric(4)
+
+    await processSpellCheck(actor, { roll, item: makeClericItem() })
+
+    const flags = stubs.updateFlags.mock.calls[0][0]
+    expect(flags['dcc.spellResult']).toContain('DCC.SpellCheckDisapprovalFailure')
+  })
+
+  test('automation ON: auto-failure triggers rollDisapproval and applyDisapproval despite the successful total', async () => {
+    installFoundryStubs({ settings: { automateClericDisapproval: true } })
+    const roll = makeRoll({ natural: 4, total: 12 })
+    const rollTable = { getResultsForRoll: vi.fn(() => [{ text: 'row' }]) }
+    const actor = makeCleric(4)
+
+    await processSpellCheck(actor, { roll, rollTable, item: makeClericItem() })
+
+    expect(actor.rollDisapproval).toHaveBeenCalledWith(4)
+    expect(actor.applyDisapproval).toHaveBeenCalled()
+  })
+})
+
 describe('processSpellCheck — casting-mode side effects', () => {
   test('wizard automation OFF does NOT call loseSpell on failure', async () => {
     installFoundryStubs({ settings: { automateWizardSpellLoss: false } })
