@@ -531,6 +531,88 @@ test.describe('Action-dice combat tracker pips', () => {
     expect(result.lastMentionsD16).toBe(true)
   })
 
+  // #873: cleric spell-like skills (Lay on Hands / Turn Unholy / divine aid)
+  // ARE spell checks per RAW, so a later action must roll that slot's lower
+  // die. The skill-TABLE branch (`_skillTableViaAdapter`) previously spent
+  // the slot but rolled the primary die again. A world table named after the
+  // localized skill label routes the built-in cleric skill through the table
+  // branch; the second roll must use 1d14 and carry the action line on the
+  // spell-result card.
+  test('cleric Lay on Hands as the second action rolls the lower slot die (#873)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prevMaster = game.settings.get('dcc', 'multipleActionDice')
+      await game.settings.set('dcc', 'multipleActionDice', true)
+
+      let actor, combat, table
+      const createdMessageIds = []
+      try {
+        table = await RollTable.create({
+          name: game.i18n.localize('DCC.LayOnHands'),
+          formula: '1d20',
+          results: [{ type: CONST.TABLE_RESULT_TYPES.TEXT, range: [1, 33], description: 'e2e healing row', weight: 1 }]
+        })
+
+        actor = await Actor.create({
+          name: 'P873 Cleric Probe',
+          type: 'Player',
+          system: {
+            config: { actionDice: '1d20,1d14' },
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+
+        combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+        const combatant = combat.combatants.contents[0]
+
+        const msgIdsBefore = new Set(game.messages.contents.map(m => m.id))
+
+        // Action 1 → slot 0 (d20).
+        await actor.rollSkillCheck('layOnHands')
+        const flag1 = combatant.getFlag('dcc', 'actionDice')
+        const roll1 = game.messages.contents[game.messages.contents.length - 1]?.rolls?.[0]
+
+        // Action 2 → slot 1 (d14) — the fix under test.
+        await actor.rollSkillCheck('layOnHands')
+        const flag2 = combatant.getFlag('dcc', 'actionDice')
+        const lastMessage = game.messages.contents[game.messages.contents.length - 1]
+        const roll2 = lastMessage?.rolls?.[0]
+
+        for (const m of game.messages.contents) {
+          if (!msgIdsBefore.has(m.id)) createdMessageIds.push(m.id)
+        }
+
+        return {
+          flag1Spent: flag1?.spent,
+          flag2Spent: flag2?.spent,
+          roll1Faces: roll1?.dice?.[0]?.faces ?? null,
+          roll2Faces: roll2?.dice?.[0]?.faces ?? null,
+          lastHasLine: (lastMessage?.content || '').includes('dcc-action-dice-line'),
+          lastMentionsD14: (lastMessage?.content || '').includes('1d14')
+        }
+      } finally {
+        for (const id of createdMessageIds) {
+          const m = game.messages.get(id)
+          if (m) await m.delete()
+        }
+        if (combat) await combat.delete()
+        if (actor) await actor.delete()
+        if (table) await table.delete()
+        await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+      }
+    })
+
+    expect(result.flag1Spent).toEqual([true, false])
+    expect(result.flag2Spent).toEqual([true, true])
+    expect(result.roll1Faces).toBe(20)
+    expect(result.roll2Faces).toBe(14)
+    expect(result.lastHasLine).toBe(true)
+    expect(result.lastMentionsD14).toBe(true)
+  })
+
   // Phase 3 (continued): the ability-check roll path spends an action die and
   // surfaces the "Action N of M" line. Drives the real `rollAbilityCheck`
   // dispatcher: a 2-die actor in combat rolls a Strength check twice — the

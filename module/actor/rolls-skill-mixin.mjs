@@ -3,13 +3,13 @@
 import { ensurePlus } from '../utilities.js'
 import { rollCheck as libRollCheck } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
-import { renderSkillCheck } from '../adapter/chat-renderer.mjs'
+import { renderSkillCheck, actionDiceLineHtml } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult } from './spell-result-hook.mjs'
-import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
+import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, reconcilePlannedActionDie, actionDicePresetsFromPlan, slotRollFormula } from '../action-dice-tracker.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 /**
@@ -388,15 +388,32 @@ export const RollsSkillMixin = (Base) => class extends Base {
     const { skill, skillItem, abilityLabel } = resolved
 
     // Multiple action dice (Phase 3): a result-table skill (Turn Unholy, cleric
-    // Lay on Hands, spell-like skills) is an action, so plan + spend a die to
-    // advance the per-round budget. The die is NOT overridden — these roll a
-    // class-specific die (the cleric spell-check / disapproval die), not the
-    // generic action die, so the slot's size doesn't apply. No "Action N of M"
-    // chat line either: this path renders via `SpellResult.addChatMessage`,
-    // which builds its own card content. Off-path (`null`) ⇒ no spend.
-    const actionDicePlan = planActionDie(this, 'check')
+    // Lay on Hands, spell-like skills) is an action — plan a slot and spend it
+    // after the roll resolves. These ARE spell checks per RAW ("By making a
+    // spell check, a cleric may lay on hands..."), so a later slot rolls its
+    // own (lower) die (#873): the Die term is overridden with the slot's
+    // formula and the slot presets replace the config-derived ones, so the
+    // modifier dialog shows the die that will actually roll and can pick a
+    // different slot (mirrors the spell path, #857). A class that pins its
+    // check die via `spellCheckOverrideDie` keeps it regardless of slot.
+    // Off-path (`planActionDie` → null) ⇒ no override, no spend.
+    let actionDicePlan = planActionDie(this, 'check')
 
     const terms = this._buildSkillCheckRollTerms(skillId, resolved)
+    const dieTerm = terms.find(t => t.type === 'Die')
+    const diePinnedByClass = !!(skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie)
+    if (dieTerm && !diePinnedByClass) {
+      if (actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
+        dieTerm.formula = slotRollFormula(actionDicePlan.choice.slot)
+      }
+      const slotPresets = actionDicePresetsFromPlan(actionDicePlan, { action: 'check' })
+      if (slotPresets?.length) {
+        dieTerm.presets = slotPresets
+      }
+    }
+    // Faces of the die the roll uses with no player intervention, so the
+    // post-roll reconcile can tell a real slot choice from the default.
+    const defaultActionDieFaces = parseInt(String(dieTerm?.formula || '').match(/d(\d+)/)?.[1] || '') || null
 
     const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
     if (!roll) return // Dialog cancelled — post no skill-check card
@@ -411,9 +428,16 @@ export const RollsSkillMixin = (Base) => class extends Base {
       await roll.evaluate()
     }
 
-    // Spend the planned action die now the roll has resolved (the tracker pip
-    // flips on the flag update). No chat line — see the planning note above.
-    await spendPlannedActionDie(actionDicePlan)
+    // The player may have picked a different slot's die in the modifier
+    // dialog — re-point the plan at the die actually rolled before spending,
+    // so the spend lands on the chosen slot (mirrors the spell path). Then
+    // spend (the tracker pip flips on the flag update) and keep the
+    // "Action N of M" descriptor for the chat card.
+    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, roll.dice?.[0]?.faces, {
+      action: 'check',
+      defaultFaces: defaultActionDieFaces
+    })
+    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
 
     const skillTable = await game.dcc.getSkillTable(skillId)
 
@@ -455,7 +479,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // the chat card when present (#426).
       const skillManifestation = this.system.skills?.[skillId]?.manifestation
       await game.dcc.SpellResult.addChatMessage(roll, skillTable, tableResult, {
-        crit, fumble, item: skillItem, manifestation: skillManifestation
+        crit, fumble, item: skillItem, manifestation: skillManifestation, actionDiceChatLine
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same
@@ -493,7 +517,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
         flavor,
         flags,
         system: { spellId: skillItem?.id, skillId },
-        content: `${rollHTML}${spellResultHtml}`
+        content: `${rollHTML}${spellResultHtml}${actionDiceLineHtml(actionDiceChatLine)}`
       })
     }
 
