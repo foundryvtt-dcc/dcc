@@ -76,6 +76,12 @@
   button.flat-button {
     background: rgba(0, 0, 0, 0.05);
     border: 2px groove var(--system-flat-button-border-color);
+
+    /* Core fixes buttons to height: var(--button-size), so long labels that
+       wrap (e.g. the action-die presets "1d20 — action die 1 (ready)", #878)
+       spill over the neighboring buttons. Let these grow instead. */
+    height: auto;
+    min-height: var(--button-size, 2em);
   }
 }
 
