@@ -243,10 +243,18 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     // Clear the warning banner so it cannot intercept the next click
     await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
 
+    // Enter-key implicit submission is intercepted the same way (the browser
+    // dispatches a synthetic click on the default submit button)
+    await page.press('.dcc.ability-score-config input[name="note"]', 'Enter')
+    await page.waitForTimeout(300)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
+    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
+
     // Filling the note lets the change apply, raising value and max together
     await page.fill('.dcc.ability-score-config input[name="note"]', 'Quest reward')
     await applyButton.click()
     await page.waitForTimeout(500)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(0)
 
     const applied = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Test Wizard')

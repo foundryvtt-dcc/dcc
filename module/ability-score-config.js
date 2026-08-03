@@ -224,9 +224,15 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     // "(note why)" reasons require a Source/Note - mark the field so the
-    // requirement is visible before Apply is clicked
+    // requirement is visible before Apply is clicked. aria-required rather
+    // than required: the native validation bubble is not localized
     const noteRow = this.element.querySelector('.note-row')
     if (noteRow) noteRow.classList.toggle('note-required', noteRequired)
+    const noteInput = this.element.querySelector('input[name="note"]')
+    if (noteInput) {
+      if (noteRequired) noteInput.setAttribute('aria-required', 'true')
+      else noteInput.removeAttribute('aria-required')
+    }
 
     // Apply requires a change and a reason; a missing required note warns
     // on click instead of silently disabling the button
