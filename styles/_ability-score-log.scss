@@ -83,6 +83,12 @@
       input[name='note'] {
         flex: 1;
       }
+
+      // A "(note why)" reason is selected - the note is required (#870)
+      &.note-required label::after {
+        content: ' *';
+        font-weight: bold;
+      }
     }
 
     // Scope checkbox rows tightly - a broad `input` rule here would stretch

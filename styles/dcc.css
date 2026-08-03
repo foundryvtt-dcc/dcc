@@ -1469,6 +1469,10 @@ a.inline-roll {
 .dcc.ability-score-config .ability-score-config-content .note-row input[name=note] {
   flex: 1;
 }
+.dcc.ability-score-config .ability-score-config-content .note-row.note-required label::after {
+  content: " *";
+  font-weight: bold;
+}
 .dcc.ability-score-config .ability-score-config-content .adjust-max-row,
 .dcc.ability-score-config .ability-score-config-content .adjust-hp-row {
   font-size: 13px;

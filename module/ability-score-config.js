@@ -119,10 +119,10 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const newValueInput = this.element.querySelector('input[name="newValue"]')
     newValueInput?.addEventListener('input', () => this.#refresh())
-    this.element.querySelector('input[name="note"]')?.addEventListener('input', () => this.#refresh())
     for (const radio of this.element.querySelectorAll('input[name="reason"]')) {
       radio.addEventListener('change', () => this.#refresh(true))
     }
+    this.element.querySelector('button[type="submit"]')?.addEventListener('click', (event) => this.#onClickApply(event))
 
     this.#refresh(true)
 
@@ -153,8 +153,23 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Block submission with a visible warning when the selected reason requires
+   * a note and none was entered - a silently disabled Apply gave no feedback (#870)
+   * @param {PointerEvent} event   The originating click event
+   */
+  #onClickApply (event) {
+    const state = this.#formState()
+    if (requiresNote(state.reason) && !state.note) {
+      event.preventDefault()
+      ui.notifications.warn(game.i18n.localize('DCC.AbilityLogNoteRequired'))
+      this.element.querySelector('input[name="note"]')?.focus()
+    }
+  }
+
+  /**
    * Update the dynamic parts of the dialog: change display, recovery hint,
-   * gain-only Max checkbox, Stamina HP checkbox, and Apply disabled state
+   * note-required marker, gain-only Max checkbox, Stamina HP checkbox, and
+   * Apply disabled state
    * @param {boolean} reasonChanged   Reset the Max checkbox default for the new reason
    */
   #refresh (reasonChanged = false) {
@@ -208,10 +223,16 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       adjustHpRow.classList.toggle('hidden', !showHp)
     }
 
-    // Apply requires a change and, for the generic reasons, a note
+    // "(note why)" reasons require a Source/Note - mark the field so the
+    // requirement is visible before Apply is clicked
+    const noteRow = this.element.querySelector('.note-row')
+    if (noteRow) noteRow.classList.toggle('note-required', noteRequired)
+
+    // Apply requires a change and a reason; a missing required note warns
+    // on click instead of silently disabling the button
     const applyButton = this.element.querySelector('button[type="submit"]')
     if (applyButton) {
-      applyButton.disabled = !state.change || !state.reason || (noteRequired && !state.note)
+      applyButton.disabled = !state.change || !state.reason
     }
   }
 
