@@ -131,6 +131,49 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.click('button[data-action="yes"]')
     })
 
+    test('clearing a currency field zeroes it instead of storing null/NaN (#871)', async ({ page }) => {
+      // The currency NumberFields are non-nullable: DocumentSheetV2's submit
+      // pipeline cleans an emptied text input to null on a nullable field,
+      // which numberFormat then rendered as "NaN" in the wallet.
+      const result = await page.evaluate(async () => {
+        let actor
+        try {
+          actor = await Actor.create({ name: 'P871 Wallet Probe', type: 'Player', system: { currency: { gp: 25 } } })
+          const observed = {}
+
+          // Raw update paths a form submit can produce.
+          await actor.update({ 'system.currency.gp': '' })
+          observed.emptyString = actor.system.currency.gp
+          await actor.update({ 'system.currency.gp': 25 })
+          await actor.update({ 'system.currency.gp': null })
+          observed.nullValue = actor.system.currency.gp
+
+          // Full sheet round-trip: clear the input, submit, re-read the render.
+          await actor.update({ 'system.currency.gp': 25 })
+          const sheet = actor.sheet
+          await sheet.render(true)
+          await new Promise((resolve) => setTimeout(resolve, 600))
+          sheet.changeTab?.('equipment', 'sheet')
+          await new Promise((resolve) => setTimeout(resolve, 400))
+          const input = sheet.element.querySelector('input[name="system.currency.gp"]')
+          input.value = ''
+          input.dispatchEvent(new Event('change', { bubbles: true }))
+          await new Promise((resolve) => setTimeout(resolve, 800))
+          observed.stored = actor.system.currency.gp
+          observed.displayed = sheet.element.querySelector('input[name="system.currency.gp"]')?.value
+          await sheet.close()
+          return observed
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      expect(result.emptyString).toBe(0)
+      expect(result.nullValue).toBe(0)
+      expect(result.stored).toBe(0)
+      expect(result.displayed).toBe('0')
+    })
+
     test('actor derived-stat computation survives actor/derived-stats-mixin.mjs extraction', async ({ page }) => {
       // Phase 7 (Appendix-A actor.js shrinkage): the four derived-stat computation
       // helpers (computeMeleeAndMissileAttackAndDamage / computeSavingThrows /
