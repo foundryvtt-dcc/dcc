@@ -116,7 +116,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
         name: 'ASL Test Wizard',
         type: 'Player',
         system: {
-          abilities: { str: { value: 12, max: 12 } },
+          abilities: { str: { value: 12, max: 12 }, lck: { value: 10, max: 10 } },
           details: { level: { value: 2 }, sheetClass: 'Wizard' }
         }
       })
@@ -205,6 +205,76 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     const healedRow = page.locator('.dcc.ability-score-log .ability-log-table tbody tr.healed')
     await expect(healedRow).toHaveCount(1)
     await expect(healedRow.locator('.heal-button')).toHaveCount(0)
+  })
+
+  test('a note-required reason warns on Apply instead of silently disabling it (issue #870)', async ({ page }) => {
+    await createAndOpenActor(page)
+
+    // Open the edit dialog for Luck
+    await page.locator('.dcc.actor.sheet input[name="system.abilities.lck.value"]').click()
+    await page.waitForSelector('.dcc.ability-score-config', { timeout: 5000 })
+
+    await page.fill('.dcc.ability-score-config input[name="newValue"]', '13')
+    await page.check('.dcc.ability-score-config input[value="otherPermanent"]')
+
+    // Apply stays enabled and the Source/Note field is marked required
+    const applyButton = page.locator('.dcc.ability-score-config button[type="submit"]')
+    await expect(applyButton).toBeEnabled()
+    await expect(page.locator('.dcc.ability-score-config .note-row.note-required')).toHaveCount(1)
+
+    // Clicking Apply with an empty note warns, keeps the dialog open,
+    // focuses the note field, and applies nothing
+    await applyButton.click()
+    await page.waitForTimeout(400)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
+    await expect(page.locator('#notifications .notification.warning')).toHaveCount(1)
+    const blocked = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Test Wizard')
+      return {
+        value: actor.system.abilities.lck.value,
+        logLength: actor.system.abilityLog.length,
+        noteFocused: document.activeElement?.name === 'note'
+      }
+    })
+    expect(blocked.value).toBe(10)
+    expect(blocked.logLength).toBe(0)
+    expect(blocked.noteFocused).toBe(true)
+
+    // Clear the warning banner so it cannot intercept the next click
+    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
+
+    // Enter-key implicit submission is intercepted the same way (the browser
+    // dispatches a synthetic click on the default submit button)
+    await page.press('.dcc.ability-score-config input[name="note"]', 'Enter')
+    await page.waitForTimeout(300)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
+    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
+
+    // Filling the note lets the change apply, raising value and max together
+    await page.fill('.dcc.ability-score-config input[name="note"]', 'Quest reward')
+    await applyButton.click()
+    await page.waitForTimeout(500)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(0)
+
+    const applied = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Test Wizard')
+      return {
+        value: actor.system.abilities.lck.value,
+        max: actor.system.abilities.lck.max,
+        log: actor.system.abilityLog
+      }
+    })
+    expect(applied.value).toBe(13)
+    expect(applied.max).toBe(13)
+    expect(applied.log).toHaveLength(1)
+    expect(applied.log[0]).toMatchObject({
+      ability: 'lck',
+      change: 3,
+      maxChange: 3,
+      type: 'otherPermanent',
+      source: 'Quest reward',
+      newValue: 13
+    })
   })
 
   test('clicking the ability title rolls a check without opening the edit dialog (issue #779)', async ({ page }) => {
