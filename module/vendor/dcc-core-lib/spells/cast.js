@@ -239,17 +239,29 @@ export function castSpell(input, options = {}, events) {
         }
     }
     // Determine critical/fumble
-    const critical = natural !== undefined && natural === getDieFaces(die);
     const fumble = natural !== undefined && natural === 1;
+    // DCC RAW (core rulebook, cleric magic): "any natural roll within that
+    // range automatically fails ... even though a roll of 13 would normally
+    // mean success on 1st-level spells." A natural roll inside the caster's
+    // disapproval range is an automatic failure regardless of the total.
+    // Natural 1 is already the fumble path; this covers 2..range — including
+    // a would-be crit when the range has grown to swallow the die's max face.
+    const disapprovalAutoFail = !fumble &&
+        input.casterProfile.usesDisapproval &&
+        input.disapprovalRange !== undefined &&
+        natural !== undefined &&
+        natural <= input.disapprovalRange;
+    const critical = !disapprovalAutoFail && natural !== undefined && natural === getDieFaces(die);
     // Natural 1 on a spell check is a fumble. Per DCC RAW (core rulebook,
     // spell-check chapter), a fumble eliminates modifiers — the total used
     // for result-table lookup is exactly 1, not `natural + modifiers`. This
     // is what allows patron-spell entries like Bobugbubilz's Tadpole
     // Transformation "roll 1: Lost, failure, and patron taint" to fire for
     // high-modifier wizards; without this rule the +5 INT mod would push
-    // the effective roll off the taint row.
+    // the effective roll off the taint row. A disapproval-range natural is
+    // forced to the failure row the same way.
     let total = rollResult.total;
-    if (fumble && total !== undefined) {
+    if ((fumble || disapprovalAutoFail) && total !== undefined) {
         total = 1;
     }
     // Determine result tier
@@ -300,6 +312,7 @@ export function castSpell(input, options = {}, events) {
         modifiers,
         critical,
         fumble,
+        disapprovalAutoFail,
         spellLost,
         corruptionTriggered,
         disapprovalIncrease,
