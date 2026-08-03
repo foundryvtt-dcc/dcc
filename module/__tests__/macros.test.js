@@ -99,7 +99,7 @@ function installFoundryStubs ({ i18n = {}, dcc = {}, settings = {}, actors = {},
   }
   globalThis.ChatMessage = { getSpeaker: vi.fn(() => ({ token: null, actor: null })) }
   globalThis.ui = { notifications: { warn: vi.fn(() => 'warn-result') } }
-  globalThis.Macro = { create: vi.fn(async (cfg) => ({ ...cfg, id: 'created-id' })) }
+  globalThis.Macro = { create: vi.fn(async (cfg) => ({ ...cfg, id: 'created-id', isAuthor: true })) }
 }
 
 beforeEach(() => {
@@ -434,12 +434,21 @@ describe('createDCCMacro dispatcher', () => {
   })
 
   test('reuses an existing macro when name and command match', async () => {
-    const existing = { id: 'existing-id', name: 'loc:DCC.Initiative', command: "const _actor = game.dcc.getMacroActor('A1'); if (_actor) { _actor.rollInit(event, token) }" }
+    const existing = { id: 'existing-id', name: 'loc:DCC.Initiative', command: "const _actor = game.dcc.getMacroActor('A1'); if (_actor) { _actor.rollInit(event, token) }", isAuthor: true }
     globalThis.game.macros.contents = [existing]
     const result = await createDCCMacro({ type: 'Initiative', actorId: 'A1', data: {} }, 1)
     expect(result).toBe(false)
     expect(globalThis.Macro.create).not.toHaveBeenCalled()
     expect(globalThis.game.user.assignHotbarMacro).toHaveBeenCalledWith(existing, 1)
+  })
+
+  test('does not reuse a matching macro authored by another user', async () => {
+    const existing = { id: 'other-users-id', name: 'loc:DCC.Initiative', command: "const _actor = game.dcc.getMacroActor('A1'); if (_actor) { _actor.rollInit(event, token) }", isAuthor: false }
+    globalThis.game.macros.contents = [existing]
+    const result = await createDCCMacro({ type: 'Initiative', actorId: 'A1', data: {} }, 1)
+    expect(result).toBe(false)
+    expect(globalThis.Macro.create).toHaveBeenCalledOnce()
+    expect(globalThis.game.user.assignHotbarMacro).not.toHaveBeenCalledWith(existing, 1)
   })
 })
 

@@ -336,8 +336,9 @@ export async function createDCCMacro (data, slot) {
   if (macroData) {
     // Create or reuse existing macro. The command embeds the actor id, so
     // matching on name + command keeps per-actor macros distinct without
-    // polluting the visible name.
-    let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
+    // polluting the visible name. Only reuse macros this user authored —
+    // players may not be able to execute another user's script macro.
+    let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command) && m.isAuthor)
     if (!macro) {
       macro = await Macro.create({
         name: macroData.name,
