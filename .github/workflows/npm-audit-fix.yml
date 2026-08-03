@@ -53,8 +53,14 @@ jobs:
 
       - name: Check for lockfile changes
         id: changes
+        # -I ignores hunks whose only changes are the lockfile's own root
+        # "version" fields. If the release process leaves package-lock.json's
+        # version behind package.json's, `npm audit fix` re-syncs it, which is
+        # not a security fix and must not open a PR (#877). Real audit fixes
+        # always touch "resolved"/"integrity" lines too, so they still trip
+        # the filter.
         run: |
-          if git diff --quiet -- package.json package-lock.json browser-tests/e2e/package.json browser-tests/e2e/package-lock.json; then
+          if git diff --quiet -I '^[[:space:]]*"version": ' -- package.json package-lock.json browser-tests/e2e/package.json browser-tests/e2e/package-lock.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
