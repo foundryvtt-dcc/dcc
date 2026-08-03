@@ -381,6 +381,7 @@ function createErrorResult(spellId, error) {
         modifiers: [],
         critical: false,
         fumble: false,
+        disapprovalAutoFail: false,
         spellLost: false,
         corruptionTriggered: false,
         disapprovalIncrease: 0,

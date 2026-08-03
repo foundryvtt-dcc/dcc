@@ -710,6 +710,28 @@ test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async
   expect(messageData.flags['dcc.spellResult']).toBeDefined()
 })
 
+test('naked cleric check with the natural inside the disapproval range emits the auto-failure verdict (#874)', async () => {
+  // The lib flags `disapprovalAutoFail` when the natural lands inside the
+  // disapproval range (an automatic failure per RAW even on a successful
+  // total); the naked-verdict HTML must say why instead of the generic
+  // failure line. Range 20 swallows the mock d20's fixed natural (10),
+  // making the outcome deterministic without touching the roller.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 20
+
+  await actor.rollSpellCheck({ abilityId: 'per' })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.spellResult']).toContain('SpellCheckDisapprovalFailure')
+  expect(messageData.flags['dcc.libResult'].fumble).toBe(false)
+})
+
 test('naked spell check honors options.checkLabel as the chat flavor base (raw-check relabel)', async () => {
   // checkLabel override: a raw (no-item) spell check rolled from
   // a class cell can carry a label override so e.g. MCC's "Mutation

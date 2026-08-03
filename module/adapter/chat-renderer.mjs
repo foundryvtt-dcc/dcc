@@ -646,6 +646,12 @@ function buildNakedSpellResultHtml (result) {
   if (result.fumble) {
     return `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
   }
+  // Natural roll inside the cleric's disapproval range — an automatic
+  // failure per RAW even when the total would succeed (#874). The lib
+  // already forced the tier to the failure row; say why.
+  if (result.disapprovalAutoFail) {
+    return `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
+  }
   if (result.critical) {
     return `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
   }
