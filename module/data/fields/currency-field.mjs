@@ -10,12 +10,17 @@ export class CurrencyField extends SchemaField {
    * @param {object} additionalFields - Additional fields to include
    */
   constructor (additionalFields = {}) {
+    // Non-nullable: DocumentSheetV2's submit pipeline cleans an emptied
+    // text input to `null` on a nullable NumberField, which then renders
+    // as "NaN" via {{numberFormat}} (#871). Non-nullable cleans '' / null
+    // to 0 instead, so clearing a currency field zeroes it.
+    const coin = () => new NumberField({ initial: 0, integer: true, min: 0, nullable: false, required: true })
     super({
-      pp: new NumberField({ initial: 0, integer: true, min: 0 }),
-      ep: new NumberField({ initial: 0, integer: true, min: 0 }),
-      gp: new NumberField({ initial: 0, integer: true, min: 0 }),
-      sp: new NumberField({ initial: 0, integer: true, min: 0 }),
-      cp: new NumberField({ initial: 0, integer: true, min: 0 }),
+      pp: coin(),
+      ep: coin(),
+      gp: coin(),
+      sp: coin(),
+      cp: coin(),
       ...additionalFields
     })
   }

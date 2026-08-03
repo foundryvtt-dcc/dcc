@@ -208,22 +208,25 @@ export async function prepareItems (actor, {
     }
   }
 
-  // Combine any extra coins into a single item
+  // Combine any extra coins into a single item. `|| 0` guards every
+  // denomination: a legacy null in the wallet or an emptied item-value
+  // StringField parses to NaN, which would otherwise poison the whole
+  // wallet on merge (#871).
   if (coins.length) {
     const funds = {
-      pp: parseInt(actor.system.currency.pp),
-      ep: parseInt(actor.system.currency.ep),
-      gp: parseInt(actor.system.currency.gp),
-      sp: parseInt(actor.system.currency.sp),
-      cp: parseInt(actor.system.currency.cp)
+      pp: parseInt(actor.system.currency.pp) || 0,
+      ep: parseInt(actor.system.currency.ep) || 0,
+      gp: parseInt(actor.system.currency.gp) || 0,
+      sp: parseInt(actor.system.currency.sp) || 0,
+      cp: parseInt(actor.system.currency.cp) || 0
     }
     let needsUpdate = false
     for (const c of coins) {
-      funds.pp += parseInt(c.system.value.pp)
-      funds.ep += parseInt(c.system.value.ep)
-      funds.gp += parseInt(c.system.value.gp)
-      funds.sp += parseInt(c.system.value.sp)
-      funds.cp += parseInt(c.system.value.cp)
+      funds.pp += parseInt(c.system.value.pp) || 0
+      funds.ep += parseInt(c.system.value.ep) || 0
+      funds.gp += parseInt(c.system.value.gp) || 0
+      funds.sp += parseInt(c.system.value.sp) || 0
+      funds.cp += parseInt(c.system.value.cp) || 0
       await actor.deleteEmbeddedDocuments('Item', [c._id])
       needsUpdate = true
     }
