@@ -68,6 +68,9 @@ packs/**/MANIFEST*
 # Foundry VTT dev install for integration tests (populated by scripts/setup-foundry-dev.js)
 .foundry-dev/
 
+# Per-worktree isolated Foundry server (populated by scripts/e2e-env.mjs, #893)
+.foundry-server/
+
 # Playwright MCP temporary files
 .playwright-mcp/
 

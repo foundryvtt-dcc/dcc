@@ -43,6 +43,7 @@
     "test:coverage": "vitest run --project unit --coverage",
     "test-watch": "vitest module/",
     "setup:foundry": "node scripts/setup-foundry-dev.js",
+    "e2e:env": "node scripts/e2e-env.mjs",
     "scss": "sass styles/dcc.scss styles/dcc.css",
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
@@ -54,7 +55,10 @@
   "standard": {
     "ignore": [
       "docs/**",
-      "module/vendor/**"
+      "module/vendor/**",
+      ".claude/**",
+      ".foundry-dev/**",
+      ".foundry-server/**"
     ]
   },
   "type": "module",

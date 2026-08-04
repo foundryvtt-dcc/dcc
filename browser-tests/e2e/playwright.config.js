@@ -14,7 +14,7 @@ module.exports = defineConfig({
   reporter: process.env.CI ? 'html' : [['list', { printSteps: true }]],
   timeout: 60000, // 60 seconds per test
   use: {
-    baseURL: 'http://localhost:30000',
+    baseURL: process.env.FOUNDRY_URL || 'http://localhost:30000',
     trace: 'on-first-retry',
     launchOptions: {
       // Hardware-accelerated WebGL in headless Chromium (Metal on macOS).

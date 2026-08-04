@@ -1,0 +1,10 @@
+{
+  "world": "v14",
+  "modules": ["dcc-core-book"],
+  "settings": {
+    "core.moduleConfiguration": {
+      "dcc-core-book": true,
+      "dcc-qol": false
+    }
+  }
+}

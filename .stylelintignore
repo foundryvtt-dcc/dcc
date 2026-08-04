@@ -1,0 +1,6 @@
+# Keep stylelint's "**/*.scss" glob out of gitignored trees: worktrees under
+# .claude/, the integration-test Foundry copy, and per-worktree servers
+# (.foundry-server/ holds copied modules/worlds with their own stylesheets).
+.claude/**
+.foundry-dev/**
+.foundry-server/**

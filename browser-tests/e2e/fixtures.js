@@ -16,7 +16,9 @@
  */
 const { test: base, expect } = require('@playwright/test')
 
-const FOUNDRY_URL = 'http://localhost:30000'
+// Default is the live install; scripts/e2e-env.mjs points this at a
+// worktree's isolated server via the FOUNDRY_URL env var (#893).
+const FOUNDRY_URL = process.env.FOUNDRY_URL || 'http://localhost:30000'
 
 /**
  * Confirm Foundry is reachable before any test runs. Throws a helpful message
