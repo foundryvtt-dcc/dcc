@@ -4,10 +4,13 @@
  *
  * Builds a self-contained, gitignored .foundry-server/ dir inside this
  * checkout/worktree: its own Config/ (unique port), a Data/ where the system
- * is symlinked entry-by-entry to this checkout (code served live) but modules
- * and the test world are copies (LevelDB pack locks forbid sharing them),
- * then launches Foundry's main.js directly against it. N worktrees = N
- * servers on N ports, each with its own world, GM slot, packs and settings.
+ * is symlinked entry-by-entry to this checkout (code served live), modules
+ * are copies from the live install (LevelDB pack locks forbid sharing them),
+ * and the world is BUILT from the checked-in template at
+ * browser-tests/e2e/world-template/ (Gamemaster for Playwright + an Observer
+ * GM so a human can watch the same env). It then launches Foundry's main.js
+ * directly against it. N worktrees = N servers on N ports, each with its own
+ * world, GM slot, packs and settings.
  *
  * Usage:
  *   pnpm run e2e:env up        Bootstrap (idempotent) + launch + wait ready
@@ -111,7 +114,9 @@ function findFoundryInstall () {
     if (!fs.existsSync(pkgPath)) continue
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
     const main = path.join(installPath, pkg.main || 'main.js')
-    if (fs.existsSync(main)) return { installPath, main, build: pkg.release?.build }
+    if (fs.existsSync(main)) {
+      return { installPath, main, build: pkg.release?.build, generation: pkg.release?.generation }
+    }
   }
   fail('Could not find a Foundry VTT installation. Set FOUNDRY_PATH.')
 }
@@ -332,18 +337,66 @@ function copyModules (manifest, userdataRoot) {
   }
 }
 
-function copyWorld (manifest, userdataRoot, { force = false } = {}) {
+/**
+ * Build the disposable test world from the checked-in template at
+ * browser-tests/e2e/world-template/ — no dependence on (or leakage from) the
+ * live install's worlds, and fully reproducible on any machine. Each
+ * subdirectory of the template compiles to a world LevelDB collection via
+ * foundryvtt-cli (same pipeline as the system packs); world.json gets
+ * coreVersion/systemVersion stamped from the actual Foundry install and
+ * system.json so version drift never triggers migration prompts.
+ */
+async function buildWorld (manifest, install, { force = false } = {}) {
   const world = manifest.world
   const dest = path.join(SERVER_DIR, 'Data', 'worlds', world)
   if (fs.existsSync(dest)) {
     if (!force) return false
     fs.rmSync(dest, { recursive: true, force: true })
   }
-  const src = path.join(userdataRoot, 'Data', 'worlds', world)
-  if (!fs.existsSync(src)) fail(`World "${world}" not found at ${src}`)
-  console.log(`  Copying world ${world}...`)
-  cloneCopy(src, dest)
+  // SCRIPT_HOME fallback mirrors loadManifest: a DCC_E2E_ROOT worktree on an
+  // older branch may not carry the template yet.
+  let template = path.join(PROJECT_ROOT, 'browser-tests', 'e2e', 'world-template')
+  if (!fs.existsSync(template)) {
+    template = path.join(path.resolve(import.meta.dirname, '..'), 'browser-tests', 'e2e', 'world-template')
+  }
+  if (!fs.existsSync(path.join(template, 'world.json'))) {
+    fail(`World template not found at ${template}`)
+  }
+  console.log(`  Building world ${world} from template...`)
+  const worldJson = JSON.parse(fs.readFileSync(path.join(template, 'world.json'), 'utf-8'))
+  worldJson.id = world
+  if (install.generation && install.build) {
+    worldJson.coreVersion = `${install.generation}.${install.build}`
+    worldJson.compatibility = { minimum: String(install.generation), verified: worldJson.coreVersion }
+  }
+  const systemJson = path.join(PROJECT_ROOT, 'system.json')
+  if (fs.existsSync(systemJson)) {
+    worldJson.systemVersion = JSON.parse(fs.readFileSync(systemJson, 'utf-8')).version
+  }
+  fs.mkdirSync(path.join(dest, 'data'), { recursive: true })
+  fs.writeFileSync(path.join(dest, 'world.json'), JSON.stringify(worldJson, null, 2) + '\n')
+  const require = createRequire(path.join(PROJECT_ROOT, 'package.json'))
+  const { compilePack } = require('@foundryvtt/foundryvtt-cli')
+  for (const entry of fs.readdirSync(template, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    await compilePack(path.join(template, entry.name), path.join(dest, 'data', entry.name), { log: false })
+  }
   return true
+}
+
+/**
+ * The stored dcc.systemMigrationVersion that makes checkMigrations skip. A
+ * fresh world would otherwise run a (harmless but noisy) empty-world
+ * migration on first GM login. Parsed from migrations.js so it can't go
+ * stale; if parsing fails the migration simply runs once.
+ */
+function migrationStamp () {
+  try {
+    const src = fs.readFileSync(path.join(PROJECT_ROOT, 'module', 'migrations.js'), 'utf-8')
+    const match = src.match(/NEEDS_MIGRATION_VERSION = ([\d.]+)/)
+    if (match) return Number(match[1])
+  } catch { /* fall through */ }
+  return null
 }
 
 /**
@@ -354,7 +407,11 @@ function copyWorld (manifest, userdataRoot, { force = false } = {}) {
  * anything else replaces it.
  */
 async function applyWorldSettings (manifest) {
-  const settings = manifest.settings || {}
+  const settings = { ...(manifest.settings || {}) }
+  const stamp = migrationStamp()
+  if (stamp !== null && settings['dcc.systemMigrationVersion'] === undefined) {
+    settings['dcc.systemMigrationVersion'] = stamp
+  }
   if (Object.keys(settings).length === 0) return
   const require = createRequire(path.join(PROJECT_ROOT, 'package.json'))
   const { ClassicLevel } = require('classic-level')
@@ -612,15 +669,16 @@ async function cmdUp () {
   const port = existing?.port ?? await choosePort()
 
   console.log(`Bootstrapping .foundry-server/ (Foundry build ${install.build}, port ${port})`)
-  const needsCopies = !fs.existsSync(path.join(SERVER_DIR, 'Data', 'worlds', manifest.world)) ||
-    (manifest.modules || []).some(m => !fs.existsSync(path.join(SERVER_DIR, 'Data', 'modules', m)))
+  // The world is built from the checked-in template, so only module copies
+  // still read the live install's LevelDBs.
+  const needsCopies = (manifest.modules || []).some(m => !fs.existsSync(path.join(SERVER_DIR, 'Data', 'modules', m)))
   if (needsCopies) await warnIfLiveServerRunning()
   ensureBuildArtifacts()
   writeOptions(port, manifest.world)
   copyLicense(userdataRoot)
   linkSystem()
   copyModules(manifest, userdataRoot)
-  copyWorld(manifest, userdataRoot)
+  await buildWorld(manifest, install)
   // Re-applied on every cold start so manifest settings edits take effect
   // without a full reset (the world db is closed here — server is down).
   await applyWorldSettings(manifest)
@@ -672,10 +730,10 @@ async function cmdReset () {
   const state = readState()
   const wasRunning = await stopServer(state, { quiet: true })
   const manifest = loadManifest()
-  const userdataRoot = findUserdataRoot()
-  copyWorld(manifest, userdataRoot, { force: true })
+  const install = findFoundryInstall()
+  await buildWorld(manifest, install, { force: true })
   await applyWorldSettings(manifest)
-  console.log(`World ${manifest.world} reset to a fresh copy.`)
+  console.log(`World ${manifest.world} rebuilt from the template.`)
   if (wasRunning) await cmdUp()
 }
 

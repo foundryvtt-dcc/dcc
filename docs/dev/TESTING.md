@@ -320,17 +320,30 @@ npx playwright install chromium chromium-headless-shell
 For parallel work across worktrees (#893), `scripts/e2e-env.mjs` bootstraps a
 self-contained Foundry server inside the checkout you run it from — its own
 gitignored `.foundry-server/` with a private `Config/` (unique port), the
-system **symlinked** so code is served live, and the test world + modules
-**copied** (LevelDB pack locks forbid sharing them between servers). The
-environment (world, module set, forced world settings such as dcc-qol
-inactive) is declared in `browser-tests/e2e/test-environment.json`.
+system **symlinked** so code is served live, modules **copied** from the
+live install (LevelDB pack locks forbid sharing them between servers), and
+the test world **built from the checked-in template** at
+`browser-tests/e2e/world-template/` — no dependence on (or leakage from) the
+live install's worlds. The environment (world id, module set, forced world
+settings such as dcc-qol inactive) is declared in
+`browser-tests/e2e/test-environment.json`.
+
+The template world (`dcc-e2e`) ships two role-4 users, both without
+passwords: **Gamemaster** (claimed by Playwright) and **Observer** — log in
+as Observer to watch or poke at an env while a suite is running, without
+stealing the GM slot the tests need. To change the world's contents, edit
+the template (each subdirectory compiles to a world LevelDB collection via
+foundryvtt-cli, `_key` fields and all, exactly like `packs/*/src`) and
+`reset`. `world.json`'s coreVersion/systemVersion are stamped at build time
+from the actual install and system.json; the dcc migration stamp is set
+automatically so fresh worlds skip the empty-world migration.
 
 ```bash
 pnpm run e2e:env up        # bootstrap (idempotent) + launch + wait ready; prints URL
 pnpm run e2e:env status    # port / pid / health for this worktree's server
 pnpm run e2e:env test -- adapter-dispatch.spec.js   # up + run spec(s) against it
 pnpm run e2e:env test      # full suite (takes the machine-wide ~/.dcc-e2e.lock)
-pnpm run e2e:env reset     # fresh world copy + re-applied settings
+pnpm run e2e:env reset     # rebuild the world from the template + re-apply settings
 pnpm run e2e:env down      # stop the server, keep .foundry-server/
 pnpm run e2e:env destroy   # stop + remove .foundry-server/
 ```
@@ -349,8 +362,9 @@ Refresh semantics: manifest **settings** are re-applied on every cold `up`
 (and on `reset`); the **system packs** copy refreshes on every `up` (rerun
 `todb` in the checkout, then restart the env); **module** copies are made
 once and only refreshed by `destroy` + `up` — a dcc-core-book update in the
-live install does not reach existing envs on its own. The world copy is only
-replaced by `reset`.
+live install does not reach existing envs on its own. The **world** is only
+rebuilt from the template by `reset` (state accumulated during test runs
+persists across `up`/`down` until then).
 
 ### Running a suite (manual, against the live install)
 

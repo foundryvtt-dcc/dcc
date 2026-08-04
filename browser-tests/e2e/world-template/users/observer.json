@@ -1,0 +1,14 @@
+{
+  "_id": "dccE2eObserver00",
+  "name": "Observer",
+  "role": 4,
+  "password": "",
+  "avatar": null,
+  "character": null,
+  "color": "#28a0cc",
+  "pronouns": "",
+  "hotbar": {},
+  "permissions": {},
+  "flags": {},
+  "_key": "!users!dccE2eObserver00"
+}
