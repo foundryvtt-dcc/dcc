@@ -18,16 +18,6 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 | `pnpm run tojson` | Extract LevelDB → JSON packs |
 | `pnpm run compare-lang` | Check translation coverage |
 
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `module/dcc.js` | Entry point, system init |
-| `module/actor.js` | DCCActor class |
-| `module/item.js` | DCCItem class |
-| `template.json` | Data model definition |
-| `styles/dcc.scss` | Main styles (edit this, not .css) |
-
 ## Critical Rules
 
 - **SCSS only**: Edit `styles/dcc.scss`, never `styles/dcc.css`
@@ -69,21 +59,8 @@ to be in the lib (not just an adapter translation issue):
   adapter-side compensation as a permanent solution. (Short-lived
   workarounds in the adapter are OK while the lib PR is in flight,
   but the workaround must be removed once the fix lands.)
-- **Vendor sync.** The lib's compiled output lives at
-  `module/vendor/dcc-core-lib/` and is committed to the system repo
-  (Foundry has no bundler). After the lib PR merges and you've pulled
-  `main` in the lib checkout, run `pnpm run sync-core-lib` from the
-  system repo. The script (`scripts/sync-core-lib.mjs`) builds the
-  lib via `pnpm run build`, copies `dist/` into the vendor directory,
-  and writes `module/vendor/dcc-core-lib/VERSION.json` with the
-  source commit SHA + timestamp. Override the source path with
-  `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib pnpm run sync-core-lib`.
-  Commit the resulting vendor diff with a message like
-  `vendor: sync dcc-core-lib to <version> (<sha7>)`.
-- **Adapter cleanup follows the sync.** Once the new vendor copy is
-  in place, remove any temporary adapter workaround you added while
-  the lib fix was in flight, and update tests that were asserting
-  the workaround's compensated values back to the natural contract.
+- After the lib fix merges, follow the `sync-core-lib` skill for the
+  vendor sync procedure and post-sync adapter cleanup.
 
 ## Standing authorizations
 
