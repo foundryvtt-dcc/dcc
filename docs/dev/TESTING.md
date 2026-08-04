@@ -315,7 +315,44 @@ npx playwright install chromium chromium-headless-shell
 > upgrade (`npm i -D @playwright/test@latest`), and retry. `browser-tests/e2e`
 > is pinned to `^1.60.0`.
 
-### Running a suite
+### Isolated per-worktree environments (`npm run e2e:env`)
+
+For parallel work across worktrees (#893), `scripts/e2e-env.mjs` bootstraps a
+self-contained Foundry server inside the checkout you run it from — its own
+gitignored `.foundry-server/` with a private `Config/` (unique port), the
+system **symlinked** so code is served live, and the test world + modules
+**copied** (LevelDB pack locks forbid sharing them between servers). The
+environment (world, module set, forced world settings such as dcc-qol
+inactive) is declared in `browser-tests/e2e/test-environment.json`.
+
+```bash
+npm run e2e:env up        # bootstrap (idempotent) + launch + wait ready; prints URL
+npm run e2e:env status    # port / pid / health for this worktree's server
+npm run e2e:env test -- adapter-dispatch.spec.js   # up + run spec(s) against it
+npm run e2e:env test      # full suite (takes the machine-wide ~/.dcc-e2e.lock)
+npm run e2e:env reset     # fresh world copy + re-applied settings
+npm run e2e:env down      # stop the server, keep .foundry-server/
+npm run e2e:env destroy   # stop + remove .foundry-server/
+```
+
+The port is `30000 + <issue#>` parsed from the branch name (`feat/893-…` →
+`30893`), overridable with `DCC_E2E_PORT`; port 30000 is never used — that
+stays the live install's. `test` exports `FOUNDRY_URL` so
+`playwright.config.js` / `fixtures.js` target the right server (they default
+to `http://localhost:30000` for the manual workflow below). Full-suite runs
+serialize on `~/.dcc-e2e.lock` because several specs are load-sensitive and
+flake when suites run concurrently; single-spec runs skip the lock. First
+`up` in a fresh worktree also installs npm deps and compiles packs
+(`npm run todb`), so it doubles as worktree bootstrap.
+
+Refresh semantics: manifest **settings** are re-applied on every cold `up`
+(and on `reset`); the **system packs** copy refreshes on every `up` (rerun
+`todb` in the checkout, then restart the env); **module** copies are made
+once and only refreshed by `destroy` + `up` — a dcc-core-book update in the
+live install does not reach existing envs on its own. The world copy is only
+replaced by `reset`.
+
+### Running a suite (manual, against the live install)
 
 Foundry must be running before Playwright starts. The fvtt CLI config is global — set it to match the worktree you're testing:
 

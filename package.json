@@ -7,6 +7,7 @@
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",
     "@vitest/coverage-v8": "^4.1.10",
+    "classic-level": "^3.0.0",
     "husky": "^9.1.7",
     "sass": "^1.102.0",
     "standard": "^17.1.2",
@@ -43,6 +44,7 @@
     "test:coverage": "vitest run --project unit --coverage",
     "test-watch": "vitest module/",
     "setup:foundry": "node scripts/setup-foundry-dev.js",
+    "e2e:env": "node scripts/e2e-env.mjs",
     "scss": "sass styles/dcc.scss styles/dcc.css",
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
@@ -54,7 +56,10 @@
   "standard": {
     "ignore": [
       "docs/**",
-      "module/vendor/**"
+      "module/vendor/**",
+      ".claude/**",
+      ".foundry-dev/**",
+      ".foundry-server/**"
     ]
   },
   "type": "module",

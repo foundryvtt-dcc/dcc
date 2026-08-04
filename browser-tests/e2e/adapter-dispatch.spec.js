@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { expect, createSessionTest } = require('./fixtures')
+const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
 
 const ADAPTER_TAG = '[DCC adapter]'
 
@@ -42,14 +42,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
   test.beforeAll(async () => {
     let serverUp
     try {
-      const response = await fetch('http://localhost:30000/', { signal: AbortSignal.timeout(5000) })
+      const response = await fetch(`${FOUNDRY_URL}/`, { signal: AbortSignal.timeout(5000) })
       serverUp = response.ok
     } catch {
       serverUp = false
     }
     if (!serverUp) {
       throw new Error(
-        'Could not connect to Foundry VTT at http://localhost:30000.\n\n' +
+        `Could not connect to Foundry VTT at ${FOUNDRY_URL}.\n\n` +
         'Please start Foundry before running tests:\n' +
         '1. Run: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing\n' +
         '2. Run tests again: npm test'
