@@ -7,8 +7,7 @@ fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# Use `npm ci` for a deterministic install from package-lock.json: it never
-# rewrites the lockfile (unlike `npm install`, which can reconcile it and leave
-# stray churn in the working tree). Requires the lockfile to be in sync, which
-# is the desired failure mode in an ephemeral session.
-npm ci --no-audit --no-fund
+# Deterministic install from pnpm-lock.yaml: --frozen-lockfile never rewrites
+# the lockfile and fails if it's out of sync with package.json, which is the
+# desired failure mode in an ephemeral session.
+pnpm install --frozen-lockfile
