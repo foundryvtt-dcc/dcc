@@ -238,7 +238,7 @@ module/socket.mjs (new)    ← GM-side apply-damage / apply-dead / flag updates
 **Key principle (from `CLAUDE.md`):** roll/combat *rules* bugs and behavior
 belong in `dcc-core-lib` with regression tests, not in adapter-side
 compensation. So range/FF/luck math should be **lib PRs first**, then vendored
-in via `npm run sync-core-lib`, then wired up in the system. The
+in via `pnpm run sync-core-lib`, then wired up in the system. The
 canvas/token-distance helpers and all chat/socket code stay in the system
 (the lib never touches Foundry globals).
 

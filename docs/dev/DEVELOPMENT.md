@@ -4,7 +4,7 @@ This document covers the development workflow and commands for the DCC system.
 
 ## Prerequisites
 
-- Node.js and npm
+- Node.js 24+ and pnpm 11+ (`corepack enable`, or `brew install pnpm` — the repo pins the version via the `packageManager` field)
 - FoundryVTT installation for testing
 - [foundry-cli](https://github.com/foundryvtt/foundryvtt-cli) for pack management
 
@@ -12,33 +12,37 @@ This document covers the development workflow and commands for the DCC system.
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run tests
-npm test
+pnpm test
 
 # Format code
-npm run format
+pnpm run format
 
 # Compile SCSS
-npm run scss
+pnpm run scss
 ```
 
-## NPM Commands
+## Commands
+
+The repo is a **pnpm workspace** (root package + `browser-tests/e2e` share one
+lockfile and one `pnpm install`). npm is blocked by a `preinstall` guard —
+use pnpm.
 
 ### Code Quality
 
 | Command | Description |
 |---------|-------------|
-| `npm test` | Run unit tests using Vitest |
-| `npm run format` | Format code with StandardJS and StyleLint (includes --fix) |
+| `pnpm test` | Run unit tests using Vitest |
+| `pnpm run format` | Format code with StandardJS and StyleLint (includes --fix) |
 
 ### Styles
 
 | Command | Description |
 |---------|-------------|
-| `npm run scss` | Compile SASS from `styles/dcc.scss` to `styles/dcc.css` |
-| `npm run scss-watch` | Watch and auto-compile SASS during development |
+| `pnpm run scss` | Compile SASS from `styles/dcc.scss` to `styles/dcc.css` |
+| `pnpm run scss-watch` | Watch and auto-compile SASS during development |
 
 **Important**: Always edit `styles/dcc.scss`, never edit `dcc.css` directly!
 
@@ -46,8 +50,8 @@ npm run scss
 
 | Command | Description |
 |---------|-------------|
-| `npm run todb` | Compile JSON source files to LevelDB packs |
-| `npm run tojson` | Extract LevelDB packs to JSON source files |
+| `pnpm run todb` | Compile JSON source files to LevelDB packs |
+| `pnpm run tojson` | Extract LevelDB packs to JSON source files |
 
 See [Pack Management](PACKS.md) for detailed workflow.
 
@@ -55,7 +59,7 @@ See [Pack Management](PACKS.md) for detailed workflow.
 
 | Command | Description |
 |---------|-------------|
-| `npm run compare-lang` | Compare all language files with English reference |
+| `pnpm run compare-lang` | Compare all language files with English reference |
 
 See [Internationalization](I18N.md) for translation workflow.
 
@@ -67,10 +71,10 @@ environments" for the underlying `e2e:env` tool):
 
 | Command | Description |
 |---------|-------------|
-| `npm run work:start -- <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name (keep an `<issue#>-` token in it, or `work:sync`/`work:finish` won't find the worktree), `--modules a,b` to extend the env's module set (written to the gitignored `browser-tests/e2e/test-environment.local.json`, e.g. for sibling-module compat work). |
-| `npm run work:list` | Board of active worktrees: issue, branch, dirty/clean, server URL + pid, PR state. |
-| `npm run work:sync -- <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile scss + packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
-| `npm run work:finish -- <issue#>` | Teardown after the PR merges: destroy the env, remove worktree + local branch, drop the `in-progress` label. Refuses while dirty or unmerged (`--force` overrides). |
+| `pnpm run work:start -- <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name (keep an `<issue#>-` token in it, or `work:sync`/`work:finish` won't find the worktree), `--modules a,b` to extend the env's module set (written to the gitignored `browser-tests/e2e/test-environment.local.json`, e.g. for sibling-module compat work). |
+| `pnpm run work:list` | Board of active worktrees: issue, branch, dirty/clean, server URL + pid, PR state. |
+| `pnpm run work:sync -- <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile scss + packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
+| `pnpm run work:finish -- <issue#>` | Teardown after the PR merges: destroy the env, remove worktree + local branch, drop the `in-progress` label. Refuses while dirty or unmerged (`--force` overrides). |
 
 Worktrees are deliberately created **outside** the live Foundry `Data/`
 directory — a second checkout under `Data/systems/` would be scanned by the
@@ -90,7 +94,7 @@ live server as a duplicate `dcc` system.
 ### Pull Requests
 - All PRs must pass automated tests
 - All user-facing text must use i18n (no hardcoded strings)
-- Run `npm run format` before committing
+- Run `pnpm run format` before committing
 - **Check dependent modules**: Verify changes don't break these related modules:
   - `../../modules/dcc-qol` - Quality of Life enhancements
   - `../../modules/xcc` - Xcrawl Classics support

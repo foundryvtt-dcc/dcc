@@ -42,8 +42,8 @@ is ideal):
   may be stale — rebuild it. The LevelDB packs Foundry actually loads
   (`packs/**/*.ldb`, `CURRENT`, `MANIFEST*`, `LOG*`) are gitignored; only
   the JSON sources (`packs/*/src/*.json`) are committed. You must
-  `npm run todb` to compile them into the zip.
-- **Foundry must be shut down before `npm run todb`** — a running Foundry
+  `pnpm run todb` to compile them into the zip.
+- **Foundry must be shut down before `pnpm run todb`** — a running Foundry
   holds the pack LevelDB `LOCK` and the compile will fail or corrupt.
 - **Same system `id` (`dcc`).** Keep it. Existing `dcc` worlds open under
   the pre-release. The cost: installing the pre-release **replaces** a
@@ -81,8 +81,8 @@ pkill -f "foundry-14/main.js"
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:30000 --max-time 3 || echo "down"
 
 # 2. Compile fresh CSS + LevelDB packs.
-npm run scss
-npm run todb
+pnpm run scss
+pnpm run todb
 
 # 3. Stage the working tree, excluding dev cruft (mirrors the official
 #    zip: files at root, no tests/docs/node_modules). Keeps module/vendor/

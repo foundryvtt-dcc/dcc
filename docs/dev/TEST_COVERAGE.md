@@ -583,8 +583,8 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 ### Test Infrastructure Issues Discovered
 
 1. **Vitest Configuration Conflict with Playwright Tests**
-   - **Issue**: `npm test` command includes Playwright files despite exclusion patterns
-   - **Solution**: Use specific file paths like `npm test module/__tests__/actor.test.js`
+   - **Issue**: `pnpm test` command includes Playwright files despite exclusion patterns
+   - **Solution**: Use specific file paths like `pnpm test module/__tests__/actor.test.js`
    - **File**: `package.json:47-52` - vitest exclude pattern needs refinement
 
 2. **Mock Object Property Redefinition Restrictions**

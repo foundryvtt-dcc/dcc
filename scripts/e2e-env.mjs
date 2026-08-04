@@ -10,12 +10,12 @@
  * servers on N ports, each with its own world, GM slot, packs and settings.
  *
  * Usage:
- *   npm run e2e:env up        Bootstrap (idempotent) + launch + wait ready
- *   npm run e2e:env status    Port/pid/health for this worktree's server
- *   npm run e2e:env reset     Fresh world copy + re-applied settings
- *   npm run e2e:env down      Stop the server, keep .foundry-server/
- *   npm run e2e:env destroy   Stop + remove .foundry-server/
- *   npm run e2e:env test [-- <playwright args>]   up + run e2e against it
+ *   pnpm run e2e:env up        Bootstrap (idempotent) + launch + wait ready
+ *   pnpm run e2e:env status    Port/pid/health for this worktree's server
+ *   pnpm run e2e:env reset     Fresh world copy + re-applied settings
+ *   pnpm run e2e:env down      Stop the server, keep .foundry-server/
+ *   pnpm run e2e:env destroy   Stop + remove .foundry-server/
+ *   pnpm run e2e:env test [-- <playwright args>]   up + run e2e against it
  *
  * The environment (world, module set, forced world settings) is declared in
  * browser-tests/e2e/test-environment.json.
@@ -408,22 +408,24 @@ async function warnIfLiveServerRunning () {
 /** Fresh worktrees lack every gitignored build artifact — install and compile them. */
 function ensureBuildArtifacts () {
   if (!fs.existsSync(path.join(PROJECT_ROOT, 'node_modules'))) {
-    console.log('  Installing root dependencies (npm install)...')
-    execSync('npm install --no-audit --no-fund', { cwd: PROJECT_ROOT, stdio: 'inherit' })
+    console.log('  Installing workspace dependencies (pnpm install)...')
+    execSync('pnpm install', { cwd: PROJECT_ROOT, stdio: 'inherit' })
   }
   const packsCompiled = fs.existsSync(path.join(PROJECT_ROOT, 'packs', 'dcc-macros', 'CURRENT'))
   if (!packsCompiled) {
-    console.log('  Compiling system packs (npm run todb)...')
-    execSync('npm run todb', { cwd: PROJECT_ROOT, stdio: 'inherit' })
+    console.log('  Compiling system packs (pnpm run todb)...')
+    execSync('pnpm run todb', { cwd: PROJECT_ROOT, stdio: 'inherit' })
   }
+  // The workspace install above covers browser-tests/e2e too; this only
+  // fires for a DCC_E2E_ROOT worktree on a pre-workspace branch.
   if (!fs.existsSync(path.join(E2E_DIR, 'node_modules'))) {
-    console.log('  Installing e2e dependencies (npm ci)...')
-    execSync('npm ci --no-audit --no-fund', { cwd: E2E_DIR, stdio: 'inherit' })
+    console.log('  Installing e2e dependencies (pnpm install)...')
+    execSync('pnpm install', { cwd: E2E_DIR, stdio: 'inherit' })
   }
   // Idempotent + fast when the machine cache already has this Playwright
   // version's browsers; a fresh worktree may pin a newer revision than the
   // main checkout ever downloaded.
-  execSync('npx playwright install chromium chromium-headless-shell', { cwd: E2E_DIR, stdio: 'inherit' })
+  execSync('pnpm exec playwright install chromium chromium-headless-shell', { cwd: E2E_DIR, stdio: 'inherit' })
 }
 
 // ============================================================================
@@ -457,13 +459,26 @@ function launchFoundry (install, port, world) {
 
 async function probe (url) {
   try {
+    // /api/status is the authority: active:true means the world is actually
+    // launched. A bare 200 on /join is NOT enough — the "Software license
+    // verification failed" boot state serves a 200 "Critical Failure" page
+    // on /join, which a path-based check misreads as ready.
+    const statusRes = await fetch(`${url}/api/status`, { signal: AbortSignal.timeout(5000) })
+    if (statusRes.ok) {
+      const status = await statusRes.json().catch(() => null)
+      if (status?.active) return { state: 'ready' }
+    }
     const res = await fetch(`${url}/join`, { signal: AbortSignal.timeout(5000), redirect: 'follow' })
     if (!res.ok) return { state: 'error', detail: `HTTP ${res.status}` }
     const finalPath = new URL(res.url).pathname
-    if (finalPath.startsWith('/join') || finalPath.startsWith('/game')) return { state: 'ready' }
     if (finalPath.startsWith('/license')) return { state: 'license' }
     if (finalPath.startsWith('/setup')) return { state: 'setup' }
     if (finalPath.startsWith('/auth')) return { state: 'auth' }
+    if (finalPath.startsWith('/join') || finalPath.startsWith('/game')) {
+      const body = await res.text()
+      if (body.includes('Critical Failure')) return { state: 'license' }
+      return { state: 'booting' }
+    }
     return { state: 'unknown', detail: finalPath }
   } catch {
     return { state: 'down' }
@@ -483,8 +498,12 @@ async function acceptEula (url) {
   try {
     const page = await browser.newPage()
     await page.goto(`${url}/license`, { waitUntil: 'domcontentloaded' })
+    // The EULA dialog is an ApplicationV2 rendered by page JS well after
+    // domcontentloaded — give it a real window, not a quick visibility poll.
     const eulaAgree = page.locator('#eula-agree')
-    if (await eulaAgree.isVisible({ timeout: 3000 }).catch(() => false)) {
+    const appeared = await eulaAgree.waitFor({ state: 'visible', timeout: 15000 })
+      .then(() => true).catch(() => false)
+    if (appeared) {
       await eulaAgree.check()
       await page.locator('#sign').click()
       await page.waitForLoadState('domcontentloaded').catch(() => {})
@@ -499,29 +518,30 @@ async function acceptEula (url) {
   }
 }
 
-async function waitReady (state) {
+/**
+ * Wait for the world to be active. Returns 'ok', or 'relaunch' after signing
+ * the EULA: a boot that failed license verification has already skipped the
+ * world autolaunch, so signing alone never yields a ready server — the caller
+ * must kill and relaunch (the known reconfirm-blocks-autolaunch behavior).
+ */
+async function waitReady (state, { allowEula = true } = {}) {
   const started = Date.now()
-  let eulaTried = false
   while (Date.now() - started < READY_TIMEOUT_MS) {
     if (!pidAlive(state.pid)) {
       fail(`Foundry exited during startup — see ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
     }
     const { state: bootState, detail } = await probe(state.url)
-    if (bootState === 'ready') return
+    if (bootState === 'ready') return 'ok'
     if (bootState === 'license') {
-      if (!eulaTried) {
-        eulaTried = true
-        console.log('  License/EULA screen detected — accepting...')
-        await acceptEula(state.url)
-        continue
+      if (!allowEula) {
+        fail(`Foundry is still failing license verification at ${state.url} after an EULA sign + relaunch — check .foundry-server/Config/license.json against the live install's and the log at ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
       }
-      // Give the accepted EULA a beat to take effect, then fail fast instead
-      // of spinning to the generic timeout.
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      if ((await probe(state.url)).state === 'license') {
-        fail(`Foundry is stuck on the license screen at ${state.url}/license after an EULA accept attempt — check .foundry-server/Config/license.json and the log at ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
+      console.log('  License verification failed state detected — signing the EULA...')
+      const signed = await acceptEula(state.url)
+      if (!signed) {
+        fail(`Foundry is on an unrecognized license screen at ${state.url}/license — see ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
       }
-      continue
+      return 'relaunch'
     }
     if (bootState === 'setup') {
       fail(`Foundry booted to /setup instead of launching world "${state.world}" — check ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
@@ -607,8 +627,13 @@ async function cmdUp () {
 
   if (!await portIsFree(port)) fail(`Port ${port} is in use by another process`)
   console.log('Launching Foundry...')
-  const state = launchFoundry(install, port, manifest.world)
-  await waitReady(state)
+  let state = launchFoundry(install, port, manifest.world)
+  if (await waitReady(state) === 'relaunch') {
+    console.log('  EULA signed — relaunching so the world autolaunch runs...')
+    await stopServer(state, { quiet: true })
+    state = launchFoundry(install, port, manifest.world)
+    await waitReady(state, { allowEula: false })
+  }
   console.log(`\nReady: ${state.url} (world ${state.world}, pid ${state.pid})`)
   return state
 }
@@ -616,7 +641,7 @@ async function cmdUp () {
 async function cmdStatus () {
   const state = readState()
   if (!state) {
-    console.log('No environment. Run: npm run e2e:env up')
+    console.log('No environment. Run: pnpm run e2e:env up')
     return
   }
   const alive = isOwnServer(state.pid)
@@ -669,7 +694,7 @@ async function cmdTest (args) {
     }
   }
   try {
-    const result = spawnSync('npx', ['playwright', 'test', ...args], {
+    const result = spawnSync('pnpm', ['exec', 'playwright', 'test', ...args], {
       cwd: E2E_DIR,
       stdio: 'inherit',
       env: { ...process.env, FOUNDRY_URL: state.url }
@@ -693,6 +718,6 @@ switch (command) {
   case 'reset': await cmdReset(); break
   case 'test': await cmdTest(rest); break
   default:
-    console.log('Usage: npm run e2e:env <up|status|reset|down|destroy|test> [-- <playwright args>]')
+    console.log('Usage: pnpm run e2e:env <up|status|reset|down|destroy|test> [-- <playwright args>]')
     process.exit(command ? 1 : 0)
 }

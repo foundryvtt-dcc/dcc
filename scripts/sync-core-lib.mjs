@@ -6,7 +6,7 @@
 //
 // Source of truth defaults to the co-evolving checkout at
 // /Users/timlwhite/WebstormProjects/dcc-core-lib. Override with
-// DCC_CORE_LIB_SRC=/path/to/dcc-core-lib npm run sync-core-lib.
+// DCC_CORE_LIB_SRC=/path/to/dcc-core-lib pnpm run sync-core-lib.
 
 import { execSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'

@@ -1,0 +1,11 @@
+# pnpm workspace: root system package + the Playwright e2e package share one
+# lockfile and one install (#893 — makes per-worktree bootstrap nearly free
+# via the shared content-addressable store).
+packages:
+  - 'browser-tests/e2e'
+# Native build scripts pnpm may run (everything else stays sandboxed):
+# classic-level backs e2e-env's world-settings edits, @parcel/watcher backs
+# file watching.
+allowBuilds:
+  '@parcel/watcher': true
+  classic-level: true

@@ -9,7 +9,9 @@
 # and still come through immediately.
 version: 2
 updates:
-  # Root system dependencies (package.json / package-lock.json)
+  # Root system dependencies (package.json / pnpm-lock.yaml — the "npm"
+  # ecosystem also covers pnpm workspaces; both manifests below share the
+  # single workspace lockfile at the root)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
