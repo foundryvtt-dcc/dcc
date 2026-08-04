@@ -97,6 +97,7 @@ const {
 } = await import('../chat-and-hook-wiring.mjs')
 
 const { abilityLogPreUpdateActor } = await import('../ability-score-log.js')
+const { onRenderActiveEffectConfig } = await import('../active-effect-key-autocomplete.mjs')
 const { onModifyAttackRollTerms } = await import('../weapon-range.mjs')
 const {
   onCombatTurnForActionDice,
@@ -732,7 +733,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the twenty-two documented hook names', () => {
+  test('covers exactly the twenty-three documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
       'combatRound',
@@ -750,6 +751,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
       'preCreateActor',
       'preCreateItem',
       'preUpdateActor',
+      'renderActiveEffectConfig',
       'renderActorDirectory',
       'renderChatMessageHTML',
       'renderCombatTracker',
@@ -787,6 +789,7 @@ describe('registerChatAndHookWiring', () => {
     expect(onCalls.getCompendiumContextOptions).toEqual([onGetCompendiumContextOptions])
     expect(onCalls.getUserContextOptions).toEqual([onGetUserContextOptions])
     expect(onCalls.renderActorDirectory).toEqual([onRenderActorDirectory])
+    expect(onCalls.renderActiveEffectConfig).toEqual([onRenderActiveEffectConfig])
     expect(onCalls.preCreateActor).toEqual([onPreCreateActor])
     expect(onCalls.preCreateItem).toEqual([onPreCreateItem])
     expect(onCalls.applyActiveEffect).toEqual([onApplyActiveEffect])
@@ -810,12 +813,12 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly twenty-two Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly twenty-three Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Twenty-one dispatch-table listeners (incl. the seven action-dice combat
+    // Twenty-two dispatch-table listeners (incl. the seven action-dice combat
     // hooks) + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(22)
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(23)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

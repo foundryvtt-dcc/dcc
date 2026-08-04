@@ -354,6 +354,57 @@ DCC.languages = {
 DCC.DICE_CHAIN = DICE_CHAIN
 DCC.effectChangeTypes = effectChangeTypes
 
+/**
+ * Sanctioned Active Effect attribute keys mapped to i18n label keys.
+ * These are the modifier-style fields effects should target (never the
+ * editable base values — see docs/user-guide/Active-Effects.md). Used to
+ * label the effect-config key autocomplete, and as the full fallback list
+ * when no owning actor is available (e.g. effects on unowned world items).
+ * Order here is the order options appear in the autocomplete dropdown.
+ */
+DCC.activeEffectKeyLabels = {
+  'system.abilities.str.otherMod': 'DCC.AbilityStr',
+  'system.abilities.agl.otherMod': 'DCC.AbilityAgl',
+  'system.abilities.sta.otherMod': 'DCC.AbilitySta',
+  'system.abilities.per.otherMod': 'DCC.AbilityPer',
+  'system.abilities.int.otherMod': 'DCC.AbilityInt',
+  'system.abilities.lck.otherMod': 'DCC.AbilityLck',
+  'system.attributes.ac.otherMod': 'DCC.ACOtherMod',
+  'system.attributes.init.otherMod': 'DCC.InitiativeOtherMod',
+  'system.attributes.speed.otherMod': 'DCC.SpeedOtherMod',
+  'system.attributes.actionDice.value': 'DCC.ActionDie',
+  'system.attributes.critical.die': 'DCC.CritDie',
+  'system.attributes.fumble.die': 'DCC.FumbleDie',
+  'system.details.attackHitBonus.melee.adjustment': 'DCC.MeleeAttackAdjustment',
+  'system.details.attackHitBonus.missile.adjustment': 'DCC.MissileAttackAdjustment',
+  'system.details.attackDamageBonus.melee.adjustment': 'DCC.MeleeDamageAdjustment',
+  'system.details.attackDamageBonus.missile.adjustment': 'DCC.MissileDamageAdjustment',
+  'system.saves.frt.otherBonus': 'DCC.SavesFortitude',
+  'system.saves.ref.otherBonus': 'DCC.SavesReflex',
+  'system.saves.wil.otherBonus': 'DCC.SavesWill',
+  'system.class.spellCheckOtherMod': 'DCC.SpellCheck',
+  'system.class.luckDie': 'DCC.LuckDie',
+  'system.class.backstab': 'DCC.Backstab',
+  'system.skills.detectSecretDoors.otherMod': 'DCC.HeightenedSenses',
+  'system.skills.sneakSilently.otherMod': 'DCC.SneakSilently',
+  'system.skills.hideInShadows.otherMod': 'DCC.HideInShadows',
+  'system.skills.pickPockets.otherMod': 'DCC.PickPocket',
+  'system.skills.climbSheerSurfaces.otherMod': 'DCC.ClimbSheerSurfaces',
+  'system.skills.pickLock.otherMod': 'DCC.PickLock',
+  'system.skills.findTrap.otherMod': 'DCC.FindTrap',
+  'system.skills.disableTrap.otherMod': 'DCC.DisableTrap',
+  'system.skills.forgeDocument.otherMod': 'DCC.ForgeDocument',
+  'system.skills.disguiseSelf.otherMod': 'DCC.DisguiseSelf',
+  'system.skills.readLanguages.otherMod': 'DCC.ReadLanguages',
+  'system.skills.handlePoison.otherMod': 'DCC.HandlePoison',
+  'system.skills.castSpellFromScroll.otherMod': 'DCC.CastSpellFromScroll',
+  'system.skills.sneakAndHide.otherMod': 'DCC.SneakAndHide',
+  'system.skills.divineAid.otherMod': 'DCC.DivineAid',
+  'system.skills.turnUnholy.otherMod': 'DCC.TurnUnholy',
+  'system.skills.layOnHands.otherMod': 'DCC.LayOnHands',
+  'system.skills.shieldBash.otherMod': 'DCC.ShieldBash'
+}
+
 // Critical Hit and Disapproval Compendiums, Fumble table, and Mercurial Magic table
 // Updated at runtime from settings
 DCC.criticalHitPacks = null

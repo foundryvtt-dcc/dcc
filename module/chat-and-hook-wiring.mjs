@@ -12,6 +12,7 @@
  *   - `getCompendiumContextOptions` — hide "Import All" for non-world-document packs
  *     (our `dcc-effects` ActiveEffect compendium)
  *   - `renderActorDirectory` — parser quick-import bridge
+ *   - `renderActiveEffectConfig` — attribute-key autocomplete datalist (#904)
  *   - `preCreateActor` / `preCreateItem` — default-image assignment + Player
  *     prototype-token actor-link
  *   - `applyActiveEffect` — DiceChain bump for string-valued dice expressions
@@ -47,6 +48,7 @@ import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTr
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
+import { onRenderActiveEffectConfig } from './active-effect-key-autocomplete.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -475,6 +477,7 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   getCompendiumContextOptions: { handler: onGetCompendiumContextOptions, once: false },
   getUserContextOptions: { handler: onGetUserContextOptions, once: false },
   renderActorDirectory: { handler: onRenderActorDirectory, once: false },
+  renderActiveEffectConfig: { handler: onRenderActiveEffectConfig, once: false },
   preCreateActor: { handler: onPreCreateActor, once: false },
   preCreateItem: { handler: onPreCreateItem, once: false },
   applyActiveEffect: { handler: onApplyActiveEffect, once: false },
