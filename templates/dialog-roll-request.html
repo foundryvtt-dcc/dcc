@@ -10,13 +10,13 @@
   <select class="grid-col-span-8" name="check" id="dcc-roll-request-check">
     <optgroup label="{{localize 'DCC.Abilities'}}">
       {{#each checks.abilities}}
-        <option value="{{this.value}}">{{this.label}}</option>
+        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
       {{/each}}
     </optgroup>
     {{#if checks.skills.length}}
       <optgroup label="{{localize 'DCC.Skills'}}">
         {{#each checks.skills}}
-          <option value="{{this.value}}">{{this.label}}</option>
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
         {{/each}}
       </optgroup>
     {{/if}}

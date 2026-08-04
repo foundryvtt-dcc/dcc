@@ -61,7 +61,8 @@ beforeEach(() => {
         per: 'DCC.AbilityPer',
         int: 'DCC.AbilityInt',
         lck: 'DCC.AbilityLck'
-      }
+      },
+      skillTables: { divineAid: 'divineAidTable' }
     }
   }
   globalThis.canvas = { tokens: { controlled: [] } }
@@ -179,8 +180,13 @@ describe('buildRollRequestSource', () => {
   })
 
   test('pattern-breaking characters are stripped from key and label', () => {
-    expect(buildRollRequestSource({ type: 'skill', key: 'Weird]] "Skill"', label: 'a{b}c' }))
+    expect(buildRollRequestSource({ type: 'skill', key: 'Weird]] "Sk=ill"', label: 'a{b}c' }))
       .toBe('[[/skill "Weird Skill"]]{abc}')
+  })
+
+  test('an explicit rollUnder override serializes into the config', () => {
+    expect(buildRollRequestSource({ type: 'check', key: 'lck', dc: 10, actorUuid: 'Actor.abc', rollUnder: false }))
+      .toBe('[[/check lck 10 rollUnder=false actor=Actor.abc]]')
   })
 })
 
@@ -218,10 +224,42 @@ describe('postRollRequest', () => {
     )
   })
 
-  test('an empty DC field posts without a DC', async () => {
+  test('an empty DC field posts without a DC (luck stays roll-under)', async () => {
     const actor = mockActor()
     await postRollRequest({ actor, checkValue: 'check:lck', dc: '' })
     const payload = globalThis.ChatMessage.create.mock.calls[0][0]
     expect(payload.content).toContain('[[/check lck actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('rollUnder')
+  })
+
+  test('a Luck check with a DC becomes a roll-high check (rollUnder=false)', async () => {
+    const actor = mockActor()
+    await postRollRequest({ actor, checkValue: 'check:lck', dc: 10 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/check lck 10 rollUnder=false actor=Actor.actor1]]')
+  })
+
+  test('table-backed skills drop the DC — the result table decides the outcome', async () => {
+    const divineAid = mockActor({
+      system: { skills: { divineAid: { label: 'DCC.DivineAid' } } }
+    })
+    await postRollRequest({ actor: divineAid, checkValue: 'skill:divineAid', dc: 12 })
+    let payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/skill divineAid actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('12')
+
+    const disapproval = mockActor({
+      system: { skills: { customTable: { label: 'DCC.NoSuchKey', useDisapprovalRange: true } } }
+    })
+    await postRollRequest({ actor: disapproval, checkValue: 'skill:customTable', dc: 12 })
+    payload = globalThis.ChatMessage.create.mock.calls[1][0]
+    expect(payload.content).toContain('[[/skill customTable actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('12')
+  })
+
+  test('a malformed checkValue throws instead of posting a broken link', async () => {
+    await expect(postRollRequest({ actor: mockActor(), checkValue: 'garbage' })).rejects.toThrow(/invalid checkValue/)
+    await expect(postRollRequest({ actor: mockActor(), checkValue: 'save:ref' })).rejects.toThrow(/invalid checkValue/)
+    expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
   })
 })

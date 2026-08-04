@@ -109,13 +109,16 @@ function localizeSkillLabel (id, skill) {
  * @param {string} params.key        Ability key, skill slot id, or skill item name
  * @param {number|null} [params.dc]  Optional DC
  * @param {string} [params.actorUuid]  Target actor uuid
+ * @param {boolean|null} [params.rollUnder]  Explicit roll-under override
+ *   (false forces a roll-high Luck check); null leaves the enricher default
  * @param {string} [params.label]    Optional custom display label
  * @returns {string} e.g. '[[/skill "Nature Lore" 12 actor=Actor.abc]]{DC 12 Nature Lore Check}'
  */
-export function buildRollRequestSource ({ type, key, dc = null, actorUuid = '', label = '' }) {
-  const cleanKey = String(key).replace(/["[\]{}]/g, '')
+export function buildRollRequestSource ({ type, key, dc = null, actorUuid = '', rollUnder = null, label = '' }) {
+  const cleanKey = String(key).replace(/["[\]{}=]/g, '')
   const parts = [`/${type}`, /\s/.test(cleanKey) ? `"${cleanKey}"` : cleanKey]
   if (Number.isFinite(dc)) parts.push(String(dc))
+  if (rollUnder !== null) parts.push(`rollUnder=${rollUnder}`)
   if (actorUuid) parts.push(`actor=${actorUuid}`)
   let source = `[[${parts.join(' ')}]]`
   if (label) source += `{${String(label).replace(/[{}[\]]/g, '')}}`
@@ -138,14 +141,29 @@ export async function postRollRequest ({ actor, checkValue, dc = null }) {
   const separator = String(checkValue).indexOf(':')
   const type = String(checkValue).slice(0, separator)
   const key = String(checkValue).slice(separator + 1)
+  if (separator < 1 || !key || !['check', 'skill'].includes(type)) {
+    throw new Error(`DCC | postRollRequest: invalid checkValue "${checkValue}"`)
+  }
   const parsedDc = parseInt(dc)
-  const dcValue = Number.isFinite(parsedDc) ? parsedDc : null
+  let dcValue = Number.isFinite(parsedDc) ? parsedDc : null
+
+  // Table-backed skills (Divine Aid, Turn Unholy, Lay on Hands, and
+  // disapproval-range skills) resolve on their result table, not against
+  // a DC — drop the DC rather than promise a verdict the result card
+  // cannot show.
+  const slot = type === 'skill' ? actor.system?.skills?.[key] : null
+  if (type === 'skill' && (CONFIG.DCC?.skillTables?.[key] || slot?.useDisapprovalRange)) {
+    dcValue = null
+  }
+
+  // A DC turns a Luck check into a roll-high check — roll-under has no
+  // DC to beat, so the roll-under default would ignore it.
+  const rollUnder = (type === 'check' && key === 'lck' && dcValue !== null) ? false : null
 
   // Built-in skill ids and item names have no actor-independent label
   // the enricher could resolve, so pass the label we showed the GM.
   let label = ''
   if (type === 'skill') {
-    const slot = actor.system?.skills?.[key]
     const skillName = slot
       ? localizeSkillLabel(key, slot)
       : (actor.itemTypes?.skill?.find(item => item.name === key)?.name ?? skillDisplayName(key))
@@ -155,7 +173,7 @@ export async function postRollRequest ({ actor, checkValue, dc = null }) {
       : baseLabel
   }
 
-  const source = buildRollRequestSource({ type, key, dc: dcValue, actorUuid: actor.uuid, label })
+  const source = buildRollRequestSource({ type, key, dc: dcValue, actorUuid: actor.uuid, rollUnder, label })
   const content = '<div class="dcc-roll-request">' +
     `<p>${escapeHtml(game.i18n.format('DCC.RequestRollText', { user: game.user.name, actor: actor.name }))}</p>` +
     `<p class="dcc-roll-request-link">${escapeHtml(source)}</p>` +
@@ -200,6 +218,9 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
   /** Selected actor id, persisted across actor-change re-renders. */
   #actorId = null
 
+  /** Selected check, persisted across actor-change re-renders. */
+  #check = ''
+
   /** Entered DC, persisted across actor-change re-renders. */
   #dc = ''
 
@@ -219,6 +240,11 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     }))
     context.hasActors = actors.length > 0
     context.checks = buildCheckOptions(selected)
+    // Keep the previous check selected across re-renders when the new
+    // actor still offers it (ability checks always survive).
+    for (const option of [...context.checks.abilities, ...context.checks.skills]) {
+      option.selected = option.value === this.#check
+    }
     context.dc = this.#dc
     return context
   }
@@ -230,6 +256,7 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     // stash the DC so the re-render keeps it.
     this.element.querySelector('select[name="actorId"]')?.addEventListener('change', (event) => {
       this.#actorId = event.target.value
+      this.#check = this.element.querySelector('select[name="check"]')?.value ?? ''
       this.#dc = this.element.querySelector('input[name="dc"]')?.value ?? ''
       this.render()
     })
@@ -243,10 +270,11 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
    * @param {FormDataExtended} formData
    */
   static async #onSubmit (event, form, formData) {
-    const { actorId, check, dc } = foundry.utils.expandObject(formData.object)
+    const { actorId, check, dc } = formData.object
     const actor = game.actors.get(actorId)
     if (!actor || !check) {
-      return ui.notifications.warn(game.i18n.localize('DCC.RequestRollNoActorsWarning'))
+      // e.g. the selected actor was deleted while the dialog was open
+      return ui.notifications.warn(game.i18n.localize('DCC.EnricherActorMissingWarning'))
     }
     await postRollRequest({ actor, checkValue: check, dc })
   }

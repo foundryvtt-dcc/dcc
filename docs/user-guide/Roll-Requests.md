@@ -20,5 +20,6 @@ Only owners of the requested character can trigger the roll (the GM also can, si
 
 ## Notes
 
-* Luck checks keep their normal roll-under behavior, so a DC does not apply to them.
+* A Luck check requested *without* a DC keeps its normal roll-under behavior. Requesting a Luck check *with* a DC turns it into a roll-high check against that DC.
+* Table-driven skills (Divine Aid, Turn Unholy, Lay on Hands) resolve on their result table, so any DC entered for them is ignored.
 * Roll request cards are built on the same syntax as [Journal Roll Links](Journal-Roll-Links.md) — the card body is a `[[/check ...]]` or `[[/skill ...]]` link targeted at the character via `actor=<uuid>`, which you can also write by hand in journals.
