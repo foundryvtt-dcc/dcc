@@ -82,6 +82,8 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Automate Fleeting Luck** will automatically add Fleeting Luck on criticals. If this is unchecked, it will not automatically apply Fleeting Luck.
 
+**Vision From All Owned Tokens** (on by default) lets players see from every token they own — or can observe, matching Foundry's own vision fallback rule — even while controlling a single token. Foundry normally limits vision to the controlled token only, so when a player runs several characters — such as during a funnel — a character who walks out of the selected token's line of sight disappears from the map and can't be clicked. With this setting on, all of a player's characters keep providing vision, so they stay visible and selectable wherever they are. Turn it off to use standard Foundry vision. Judges are unaffected either way.
+
 **Active Variant** selects the active ruleset variant. Variant modules (XCC, MCC, etc.) register themselves with the system; their styles and class lists apply when their variant is selected. Leave this on **Dungeon Crawl Classics** unless a variant module tells you otherwise.
 
 **Enable Mighty Deed Tables** offers a Mighty Deed table prompt on attack cards when a warrior's deed die succeeds (3 or higher). See [Mighty Deeds](Mighty-Deeds.md).

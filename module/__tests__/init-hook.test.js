@@ -65,6 +65,7 @@ vi.mock('../death-clock-tracker.mjs', () => ({
   DeathClockTracker: { name: 'DeathClockTracker' },
   registerDeathClockTracker: vi.fn()
 }))
+vi.mock('../token-vision.mjs', () => ({ registerTokenVision: vi.fn() }))
 vi.mock('../macros.mjs', () => ({ getMacroActor: vi.fn(), getMacroOptions: vi.fn(), rollDCCWeaponMacro: vi.fn() }))
 vi.mock('../spell-check-processor.mjs', () => ({ processSpellCheck: vi.fn() }))
 vi.mock('../table-loading.mjs', () => ({ getSkillTable: vi.fn() }))
@@ -317,6 +318,9 @@ describe('onInit', () => {
     // The Death Clock tracker registered (issue #843 phase 2)
     const { registerDeathClockTracker } = await import('../death-clock-tracker.mjs')
     expect(registerDeathClockTracker).toHaveBeenCalledTimes(1)
+    // The owned-token-vision Token class registered (issue #872)
+    const { registerTokenVision } = await import('../token-vision.mjs')
+    expect(registerTokenVision).toHaveBeenCalledTimes(1)
     // The journal roll-link enrichers registered (issue #794)
     const { registerJournalEnrichers } = await import('../journal-enrichers.mjs')
     expect(registerJournalEnrichers).toHaveBeenCalledTimes(1)

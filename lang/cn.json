@@ -721,6 +721,8 @@
   "DCC.SettingTrackActionDiceInCombatHint": "在战斗追踪器中每名参战者旁显示每回合动作骰标记（● 就绪，○ 已用，⊛ 仅限法术）。仅在启用「多动作骰」时生效。",
   "DCC.SettingAutoResetActionDice": "每回合自动重置动作骰",
   "DCC.SettingAutoResetActionDiceHint": "在每回合参战者轮到行动时补满其动作骰标记，无需手动追踪。仅在启用「多动作骰」时生效。",
+  "DCC.SettingOwnedTokenVision": "所有拥有指示物的视野",
+  "DCC.SettingOwnedTokenVisionHint": "玩家即使只控制一个指示物，也能通过自己拥有或可观察的所有指示物获得视野，因此分开行动的角色仍然可见且可选中。当每位玩家操控多个角色（例如漏斗团）时非常有用。关闭后使用 Foundry 标准视野（仅受控指示物）。",
   "DCC.SettingHideSingleActionDiePips": "隐藏单动作骰角色的标记",
   "DCC.SettingHideSingleActionDiePipsHint": "仅为拥有两颗或更多动作骰的参战者显示标记，让战斗追踪器更简洁。仅在启用「多动作骰」时生效。",
   "DCC.SettingMightyDeedsTablesCompendium": "壮举表合集",

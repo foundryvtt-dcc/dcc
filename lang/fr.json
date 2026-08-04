@@ -708,6 +708,8 @@
   "DCC.SettingTrackActionDiceInCombatHint": "Affiche des pastilles de dés d'action par round à côté de chaque combattant dans le suivi de combat (● prêt, ○ dépensé, ⊛ sorts uniquement). N'a d'effet que lorsque Dés d'action multiples est activé.",
   "DCC.SettingAutoResetActionDice": "Réinitialiser les dés d'action à chaque round",
   "DCC.SettingAutoResetActionDiceHint": "Recharge les pastilles de dés d'action d'un combattant au début de son tour à chaque round, pour que personne n'ait à le suivre à la main. N'a d'effet que lorsque Dés d'action multiples est activé.",
+  "DCC.SettingOwnedTokenVision": "Vision de tous les tokens possédés",
+  "DCC.SettingOwnedTokenVisionHint": "Les joueurs voient à travers tous les tokens qu'ils possèdent ou peuvent observer, même lorsqu'ils contrôlent un seul token : les personnages qui se séparent restent visibles et sélectionnables. Utile quand chaque joueur incarne plusieurs personnages, comme dans un entonnoir (funnel). Désactivez pour la vision standard de Foundry (token contrôlé uniquement).",
   "DCC.SettingHideSingleActionDiePips": "Masquer les pastilles pour les acteurs à un seul dé d'action",
   "DCC.SettingHideSingleActionDiePipsHint": "Allège le suivi de combat en n'affichant les pastilles que pour les combattants ayant deux dés d'action ou plus. N'a d'effet que lorsque Dés d'action multiples est activé.",
   "DCC.SettingMightyDeedsTablesCompendium": "Compendium des tables de hauts faits",

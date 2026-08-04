@@ -1,4 +1,4 @@
-/* global CONFIG, game, Hooks */
+/* global CONFIG, canvas, game, Hooks */
 
 import { DCCEnhancedCombatSettings, DCCTableSettings, DCCActionDiceSettings } from './settings-menus.mjs'
 
@@ -23,6 +23,10 @@ export const pubConstants = {
  *   at `ready` meant the action-dice list was never derived on world load
  *   and sheet chips/pips only appeared after an actor update re-prepared
  *   the actor.
+ * - `ownedTokenVision` is read by `DCCToken#_isVisionSource` during the
+ *   first canvas draw, which `Game#setupGame` kicks off *before* firing
+ *   `ready` — a `ready`-registered setting could still be unregistered
+ *   when the initial vision sources are computed.
  *
  * Registration order is display order in the settings window, but all of
  * these either render inside a submenu (`config: false`) or pair with a
@@ -113,6 +117,26 @@ export const registerEarlySystemSettings = function () {
     type: Boolean,
     default: true,
     config: false
+  })
+
+  /**
+   * Vision from all owned tokens (issue #872): while on, every token a
+   * player owns keeps providing vision even while a single token is
+   * controlled, so a party of funnel characters that splits up stays
+   * visible and selectable. Read by `DCCToken#_isVisionSource`
+   * (module/token-vision.mjs). No reload needed — the onChange refresh
+   * re-initializes vision sources on every client.
+   */
+  game.settings.register('dcc', 'ownedTokenVision', {
+    name: 'DCC.SettingOwnedTokenVision',
+    hint: 'DCC.SettingOwnedTokenVisionHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true,
+    onChange: () => {
+      if (canvas?.ready) canvas.perception.update({ initializeVision: true })
+    }
   })
 }
 

@@ -27,6 +27,8 @@ You can then double-click this to see the party sheet. You can use the gear on t
 ## Using individual tokens on the map
 You can still drag individual actors onto the map, and they will create their own tokens. You can then move them around the map individually.
 
+When a player runs several characters this way, the **Vision From All Owned Tokens** setting (on by default) keeps all of their characters visible and selectable even while one token is selected — see [System Settings](System-Settings.md).
+
 You can use the topmost box when you right-click a token to edit their hp - you can type expressions like '-2' or '+2' to make incremental changes to their HP.
 
 ![Individual Token ](images/token_edit_hp.png)

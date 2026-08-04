@@ -1523,6 +1523,8 @@ global.gameSettingsGetMock = vi.fn((module, key) => {
         return 'dcc-core-book.dcc-lay-on-hands'
       case 'levelData':
         return 'dcc-core-book.dcc-level-data'
+      case 'ownedTokenVision':
+        return true
       default:
         return undefined
     }
@@ -1537,6 +1539,22 @@ class ClientSettings {
 }
 
 global.game.settings = new ClientSettings()
+
+/**
+ * Canvas — shared minimal stub of the pieces production code touches
+ * (`canvas.tokens.controlled`, the vision-source checks in
+ * module/token-vision.mjs, the perception refresh). Tests that need
+ * different shapes override the fields (or the whole global) locally.
+ */
+global.canvasPerceptionUpdateMock = vi.fn().mockName('canvas.perception.update')
+global.canvas = {
+  ready: true,
+  level: { id: 0 },
+  tokens: { controlled: [], placeables: [] },
+  visibility: { tokenVision: true },
+  perception: { update: global.canvasPerceptionUpdateMock }
+}
+global.game.canvas ??= global.canvas
 
 /**
  * ChatMessage
