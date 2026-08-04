@@ -15,6 +15,15 @@
   input {
     flex: 1;
   }
+
+  .party-initiative {
+    flex: 0 0 auto;
+    white-space: nowrap;
+
+    i {
+      margin-right: 3px;
+    }
+  }
 }
 
 .dcc .party-body {

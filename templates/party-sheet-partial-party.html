@@ -7,6 +7,10 @@
     <label for="name">{{localize "DCC.Name"}}</label>
     <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.Name'}}"
            placeholder="{{localize 'DCC.Name'}}" autocomplete="off">
+    <a class="party-initiative rollable" data-action="rollPartyInitiative"
+       title="{{localize 'DCC.RollPartyInitiativeHint'}}">
+      <i class="fas fa-dice-d20"></i>{{localize "DCC.RollPartyInitiative"}}
+    </a>
   </div>
 
   <div class="party-body">

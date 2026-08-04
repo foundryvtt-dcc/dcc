@@ -443,6 +443,15 @@ describe('onPreCreateActor', () => {
     expect(document.updateSource).toHaveBeenCalledWith({ 'prototypeToken.actorLink': true })
   })
 
+  test('sets prototypeToken.actorLink for brand-new Party actors (#789)', () => {
+    EntityImages.imageForActor.mockReturnValue(null)
+    const document = { type: 'Party', name: 'The Meat Shields', updateSource: vi.fn() }
+
+    onPreCreateActor(document, {}, { keepId: false })
+
+    expect(document.updateSource).toHaveBeenCalledWith({ 'prototypeToken.actorLink': true })
+  })
+
   test('skips actorLink for duplicates (keepId true) and Item Pile-named Player actors', () => {
     EntityImages.imageForActor.mockReturnValue(null)
 

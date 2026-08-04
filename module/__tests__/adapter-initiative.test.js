@@ -270,3 +270,24 @@ test('pre-built Roll short-circuit: returns the incoming Roll unchanged', () => 
   expect(result).toBe(preBuilt)
   expect(dccRollCreateRollMock).not.toHaveBeenCalled()
 })
+
+test('formula string override: builds a fresh Roll from that formula (#789 party initiative)', () => {
+  // Foundry core's `Combat#rollInitiative({ formula })` override contract —
+  // the party sheet rolls the best member's formula on the party actor.
+  dccRollCreateRollMock.mockClear()
+  const result = actor.getInitiativeRoll('1d16+3')
+
+  expect(result).toBeInstanceOf(Roll)
+  expect(result.formula).toBe('1d16+3')
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+})
+
+test('empty-string formula falls through to the adapter path', () => {
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = 0
+
+  const result = actor.getInitiativeRoll('')
+
+  expect(result).toBeInstanceOf(Roll)
+  expect(result.formula).toBe('1d20')
+})

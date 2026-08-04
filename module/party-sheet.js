@@ -1,4 +1,4 @@
-/* global game, foundry */
+/* global game, foundry, ui */
 
 import DCCActorSheet from './actor-sheet.js'
 import HitPointsConfig from './hit-points-config.js'
@@ -33,6 +33,7 @@ class DCCPartySheet extends DCCActorSheet {
       rollAbility: this.#rollAbility,
       rollSave: this.#rollSave,
       rollAttack: this.#rollAttack,
+      rollPartyInitiative: this.#rollPartyInitiative,
       editImage: DCCPartySheet.editImage,
       adjustHitPoints: this.#adjustHitPoints
     },
@@ -364,6 +365,73 @@ class DCCPartySheet extends DCCActorSheet {
       if (actor) {
         actor.rollSavingThrow(saveId, options)
       }
+    }
+  }
+
+  /**
+   * Roll initiative for the party
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @private
+   */
+  static async #rollPartyInitiative (event, target) {
+    event.preventDefault()
+    await this.rollPartyInitiative()
+  }
+
+  /**
+   * Roll initiative for the party actor and add its token to the combat
+   * tracker, using the best member's initiative formula.
+   *
+   * "Best" is the highest derived initiative bonus
+   * (`system.attributes.init.value` bakes in the Agility mod, init otherMod,
+   * and warrior class level — what that member would roll themselves), with
+   * ties broken on raw Agility score. The formula comes from that member's
+   * `getInitiativeRoll()` so weapon init-die overrides (two-handed d16,
+   * custom init die) carry over from their equipped weapon.
+   *
+   * @return {Promise<undefined>}
+   */
+  async rollPartyInitiative () {
+    const memberActors = this.members.map(member => game.actors.get(member.id)).filter(actor => actor)
+    if (memberActors.length === 0) {
+      ui.notifications.warn(game.i18n.localize('DCC.PartyNoMembersWarning'))
+      return
+    }
+
+    const combatant = game.combat?.combatants.find(c => c.actor?.id === this.actor.id)
+    if (combatant && combatant.initiative !== null) {
+      ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
+      return
+    }
+
+    // `createCombatants` silently does nothing without a token in the viewed scene
+    const tokens = this.actor.getActiveTokens()
+    if (tokens.length === 0) {
+      ui.notifications.warn(game.i18n.localize('DCC.PartyNoTokenWarning'))
+      return
+    }
+
+    let best = null
+    for (const actor of memberActors) {
+      const init = parseInt(actor.system.attributes?.init?.value) || 0
+      const agility = parseInt(actor.system.abilities?.agl?.value) || 0
+      if (!best || init > best.init || (init === best.init && agility > best.agility)) {
+        best = { actor, init, agility }
+      }
+    }
+
+    const formula = best.actor.getInitiativeRoll()?.formula || null
+    const initOptions = { createCombatants: true, initiativeOptions: { formula } }
+
+    // Roll through each token's actor: core's Actor#rollInitiative only rolls
+    // combatants whose actor IS the caller, and an unlinked party token (from
+    // a party created before #789 linked them by default) has a synthetic
+    // token actor. Linked tokens resolve to the world actor, deduped here.
+    const tokenActors = [...new Set(tokens.map(token => token.actor).filter(actor => actor))]
+    for (const tokenActor of tokenActors) {
+      await tokenActor.rollInitiative(initOptions)
     }
   }
 
