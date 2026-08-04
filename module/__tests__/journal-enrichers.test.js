@@ -24,6 +24,7 @@ import {
   parseEnricherConfig,
   registerJournalEnrichers,
   resolveEnricherActors,
+  resolveTargetedEnricherActor,
   skillDisplayName
 } from '../journal-enrichers.mjs'
 
@@ -38,7 +39,9 @@ const I18N = {
   'DCC.SavesWill': 'Will',
   'DCC.EnricherRequestRoll': 'Request this roll in chat',
   'DCC.EnricherRequestText': '{user} requests a roll:',
-  'DCC.EnricherNoActorWarning': 'Select a token or assign a character to your user before clicking a roll link.'
+  'DCC.EnricherNoActorWarning': 'Select a token or assign a character to your user before clicking a roll link.',
+  'DCC.EnricherActorMissingWarning': 'The actor for this roll link could not be found.',
+  'DCC.EnricherNotOwnerWarning': 'You do not have permission to roll for {actor}.'
 }
 
 let original
@@ -49,7 +52,8 @@ beforeEach(() => {
     CONFIG: globalThis.CONFIG,
     canvas: globalThis.canvas,
     ui: globalThis.ui,
-    ChatMessage: globalThis.ChatMessage
+    ChatMessage: globalThis.ChatMessage,
+    fromUuid: globalThis.fromUuid
   }
   globalThis.game = {
     i18n: {
@@ -82,6 +86,7 @@ beforeEach(() => {
   globalThis.canvas = { tokens: { controlled: [] } }
   globalThis.ui = { notifications: { warn: vi.fn() } }
   globalThis.ChatMessage = { create: vi.fn().mockResolvedValue({ id: 'msg' }) }
+  globalThis.fromUuid = vi.fn().mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -90,6 +95,7 @@ afterEach(() => {
   globalThis.canvas = original.canvas
   globalThis.ui = original.ui
   globalThis.ChatMessage = original.ChatMessage
+  globalThis.fromUuid = original.fromUuid
   vi.restoreAllMocks()
 })
 
@@ -148,6 +154,17 @@ describe('parseEnricherConfig', () => {
   test('first bare token wins as key', () => {
     expect(parseEnricherConfig(' ref extra')).toEqual({ key: 'ref' })
   })
+
+  test('double quotes group multi-word values', () => {
+    expect(parseEnricherConfig(' "Nature Lore" 12')).toEqual({ key: 'Nature Lore', dc: '12' })
+    expect(parseEnricherConfig(' skill="Nature Lore" dc=12'))
+      .toEqual({ skill: 'Nature Lore', dc: '12' })
+  })
+
+  test('actor uuid option parses intact', () => {
+    expect(parseEnricherConfig(' agl 10 actor=Actor.abc123'))
+      .toEqual({ key: 'agl', dc: '10', actor: 'Actor.abc123' })
+  })
 })
 
 describe('key normalization', () => {
@@ -185,6 +202,7 @@ describe('buildEnricherData', () => {
       key: 'agl',
       dc: 10,
       rollUnder: false,
+      actorUuid: null,
       displayLabel: 'DC 10 Agility Check'
     })
   })
@@ -206,8 +224,14 @@ describe('buildEnricherData', () => {
       key: 'ref',
       dc: 15,
       rollUnder: false,
+      actorUuid: null,
       displayLabel: 'DC 15 Reflex Save'
     })
+  })
+
+  test('actor option is carried through as actorUuid', () => {
+    const data = buildEnricherData({ type: 'check', config: ' agl 10 actor=Actor.abc123' })
+    expect(data.actorUuid).toBe('Actor.abc123')
   })
 
   test('skill check keeps the raw id and prettifies the label', () => {
@@ -216,6 +240,7 @@ describe('buildEnricherData', () => {
       key: 'sneakSilently',
       dc: 12,
       rollUnder: false,
+      actorUuid: null,
       displayLabel: 'DC 12 Sneak Silently Check'
     })
   })
@@ -247,6 +272,11 @@ describe('buildEnricherHtml', () => {
   test('roll-under flag serializes for luck checks', () => {
     const html = buildEnricherHtml(buildEnricherData({ type: 'check', config: ' lck' }))
     expect(html).toContain('data-roll-under="true"')
+  })
+
+  test('actor targeting serializes as data-actor-uuid', () => {
+    const html = buildEnricherHtml(buildEnricherData({ type: 'check', config: ' agl actor=Actor.abc123' }))
+    expect(html).toContain('data-actor-uuid="Actor.abc123"')
   })
 
   test('GM gets the chat-bubble request anchor with the raw source', () => {
@@ -328,6 +358,54 @@ describe('handleEnricherRollClick', () => {
     expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith(
       I18N['DCC.EnricherNoActorWarning']
     )
+  })
+
+  test('actor-targeted link rolls for exactly that actor', async () => {
+    const target = mockActor({ isOwner: true })
+    const controlled = mockActor()
+    globalThis.canvas.tokens.controlled = [{ actor: controlled }]
+    globalThis.fromUuid.mockResolvedValue(target)
+    await handleEnricherRollClick({
+      dataset: { rollType: 'check', key: 'agl', dc: '10', actorUuid: 'Actor.abc123' }
+    })
+    expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.abc123')
+    expect(target.rollAbilityCheck).toHaveBeenCalledWith('agl', { dc: 10, showDc: true, rollUnder: false })
+    expect(controlled.rollAbilityCheck).not.toHaveBeenCalled()
+  })
+
+  test('actor-targeted skill link unwraps a token uuid to its actor', async () => {
+    const target = mockActor({ isOwner: true })
+    globalThis.fromUuid.mockResolvedValue({ actor: target })
+    await handleEnricherRollClick({
+      dataset: { rollType: 'skill', key: 'Nature Lore', actorUuid: 'Scene.a.Token.b' }
+    })
+    expect(target.rollSkillCheck).toHaveBeenCalledWith('Nature Lore', {})
+  })
+})
+
+describe('resolveTargetedEnricherActor', () => {
+  test('warns and yields null when the actor cannot be found', async () => {
+    globalThis.fromUuid.mockResolvedValue(null)
+    expect(await resolveTargetedEnricherActor('Actor.gone')).toBeNull()
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith(
+      I18N['DCC.EnricherActorMissingWarning']
+    )
+  })
+
+  test('warns and yields null when the user does not own the actor', async () => {
+    const target = mockActor({ isOwner: false, name: 'Torvald' })
+    globalThis.fromUuid.mockResolvedValue(target)
+    expect(await resolveTargetedEnricherActor('Actor.abc123')).toBeNull()
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith(
+      'You do not have permission to roll for Torvald.'
+    )
+    expect(target.rollAbilityCheck).not.toHaveBeenCalled()
+  })
+
+  test('resolves an owned actor', async () => {
+    const target = mockActor({ isOwner: true })
+    globalThis.fromUuid.mockResolvedValue(target)
+    expect(await resolveTargetedEnricherActor('Actor.abc123')).toBe(target)
   })
 })
 

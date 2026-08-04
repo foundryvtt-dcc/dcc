@@ -143,7 +143,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
       result,
       foundryRoll,
       checkPenaltyRoll,
-      actionDiceChatLine
+      actionDiceChatLine,
+      options
     })
   }
 
@@ -318,7 +319,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
       result,
       foundryRoll,
       checkPenaltyRoll,
-      actionDiceChatLine
+      actionDiceChatLine,
+      options
     })
   }
 

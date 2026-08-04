@@ -17,7 +17,8 @@ beforeEach(() => {
   original = { game: globalThis.game, Hooks: globalThis.Hooks, error: console.error }
   globalThis.game = {
     settings: { get: vi.fn().mockReturnValue(false) },
-    dcc: { FleetingLuck: { show: vi.fn() }, SpellDuel: { show: vi.fn() } }
+    dcc: { FleetingLuck: { show: vi.fn() }, SpellDuel: { show: vi.fn() } },
+    user: { isGM: false }
   }
   globalThis.Hooks = { callAll: vi.fn() }
   console.error = vi.fn()
@@ -59,6 +60,15 @@ describe('getSidebarTools', () => {
   test('the Spell Duel onClick delegates to game.dcc.SpellDuel.show()', () => {
     getSidebarTools().spellDuel.onClick({})
     expect(globalThis.game.dcc.SpellDuel.show).toHaveBeenCalledTimes(1)
+  })
+
+  test('includes the Request Roll tool for GMs only (issue #855)', () => {
+    expect(getSidebarTools().requestRoll).toBeUndefined()
+    globalThis.game.user.isGM = true
+    expect(getSidebarTools().requestRoll).toMatchObject({
+      label: 'DCC.RequestRoll',
+      icon: 'fas fa-dice-d20'
+    })
   })
 
   test('swallows a Fleeting Luck setting-read failure and still adds Spell Duel', () => {

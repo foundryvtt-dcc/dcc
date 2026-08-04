@@ -1,0 +1,32 @@
+<section class="roll-request-form grid-container grid-row-gap-8 grid-col-gap-8 grid-align-center p-8">
+  <label class="grid-col-span-4" for="dcc-roll-request-actor">{{localize "DCC.RequestRollCharacter"}}</label>
+  <select class="grid-col-span-8" name="actorId" id="dcc-roll-request-actor">
+    {{#each actors}}
+      <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+    {{/each}}
+  </select>
+
+  <label class="grid-col-span-4" for="dcc-roll-request-check">{{localize "DCC.RequestRollCheck"}}</label>
+  <select class="grid-col-span-8" name="check" id="dcc-roll-request-check">
+    <optgroup label="{{localize 'DCC.Abilities'}}">
+      {{#each checks.abilities}}
+        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+      {{/each}}
+    </optgroup>
+    {{#if checks.skills.length}}
+      <optgroup label="{{localize 'DCC.Skills'}}">
+        {{#each checks.skills}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </optgroup>
+    {{/if}}
+  </select>
+
+  <label class="grid-col-span-4" for="dcc-roll-request-dc">{{localize "DCC.RequestRollDC"}}</label>
+  <input class="grid-col-span-8" type="number" name="dc" id="dcc-roll-request-dc" value="{{dc}}"
+         min="0" step="1" placeholder="{{localize 'DCC.RequestRollDCHint'}}">
+
+  <button class="grid-col-span-12" type="submit" {{#unless hasActors}}disabled{{/unless}}>
+    <i class="fas fa-dice-d20" inert></i> {{localize "DCC.RequestRoll"}}
+  </button>
+</section>

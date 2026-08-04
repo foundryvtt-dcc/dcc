@@ -214,6 +214,32 @@ export function buildModifierBreakdownHtml (modifiers, heading = '') {
 }
 
 /**
+ * Build the DC success/failure flavor suffix shared by the saving-throw,
+ * ability-check, and skill-check renderers (roll requests #855 pass a DC
+ * through checks and skills; saves have rendered it since #794).
+ *
+ * `options.dc` opts in; `options.showDc` additionally shows the DC value
+ * itself (a GM may want a hidden threshold).
+ *
+ * @param {number} total - The evaluated roll total to classify.
+ * @param {Object} options - Roll options carrying `dc` / `showDc`.
+ * @returns {string} e.g. ' (DC 10) — Success', ' — Failure', or '' when
+ *   no valid DC was supplied.
+ */
+export function dcResultSuffix (total, options = {}) {
+  if (options.dc === undefined) return ''
+  const dc = parseInt(options.dc)
+  if (!Number.isFinite(dc)) return ''
+  const resultLabel = total >= dc
+    ? game.i18n.localize('DCC.SaveSuccess')
+    : game.i18n.localize('DCC.SaveFailure')
+  if (options.showDc) {
+    return ` (${game.i18n.format('DCC.SaveDC', { dc })}) — ${resultLabel}`
+  }
+  return ` — ${resultLabel}`
+}
+
+/**
  * Render an ability-check result as a Foundry ChatMessage.
  *
  * @param {Object} params
@@ -233,6 +259,9 @@ export function buildModifierBreakdownHtml (modifiers, heading = '') {
  *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
  *   not in combat), in which case the content is byte-identical to before;
  *   when present it rides under the rolled formula + breakdown.
+ * @param {Object} [params.options] - Original call options. Supports
+ *   `dc` / `showDc` for the DC success/failure suffix (roll requests
+ *   #855), matching the saving-throw renderer.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheck ({
@@ -242,9 +271,11 @@ export async function renderAbilityCheck ({
   result,
   foundryRoll,
   checkPenaltyRoll = null,
-  actionDiceChatLine = ''
+  actionDiceChatLine = '',
+  options = {}
 }) {
-  const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+  const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}` +
+    dcResultSuffix(foundryRoll.total, options)
 
   // Lib structured result goes into flags (arbitrary JSON) rather than
   // system (which is schema-constrained and will drop unknown fields).
@@ -399,22 +430,8 @@ export async function renderSavingThrow ({
   foundryRoll,
   options = {}
 }) {
-  let flavor = `${saveLabel} ${game.i18n.localize('DCC.Save')}`
-
-  if (options.dc !== undefined) {
-    const dc = parseInt(options.dc)
-    if (Number.isFinite(dc)) {
-      const success = foundryRoll.total >= dc
-      const resultLabel = success
-        ? game.i18n.localize('DCC.SaveSuccess')
-        : game.i18n.localize('DCC.SaveFailure')
-      if (options.showDc) {
-        flavor += ` (${game.i18n.format('DCC.SaveDC', { dc })}) \u2014 ${resultLabel}`
-      } else {
-        flavor += ` \u2014 ${resultLabel}`
-      }
-    }
-  }
+  const flavor = `${saveLabel} ${game.i18n.localize('DCC.Save')}` +
+    dcResultSuffix(foundryRoll.total, options)
 
   const flags = {
     'dcc.RollType': 'SavingThrow',
@@ -474,6 +491,9 @@ export async function renderSavingThrow ({
  *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
  *   not in combat), in which case the content is byte-identical to before;
  *   when present it rides under the rolled formula + breakdown.
+ * @param {Object} [params.options] - Original call options. Supports
+ *   `dc` / `showDc` for the DC success/failure suffix (roll requests
+ *   #855), matching the saving-throw renderer.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSkillCheck ({
@@ -485,9 +505,11 @@ export async function renderSkillCheck ({
   skillItem,
   result,
   foundryRoll,
-  actionDiceChatLine = ''
+  actionDiceChatLine = '',
+  options = {}
 }) {
-  const flavor = `${skillLabel}${abilityLabel}`
+  const flavor = `${skillLabel}${abilityLabel}` +
+    dcResultSuffix(foundryRoll.total, options)
 
   const flags = {
     'dcc.RollType': 'SkillCheck',

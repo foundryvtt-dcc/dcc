@@ -20,6 +20,8 @@
  * `Game#initializeUI` instantiates `CONFIG.ui.*` during setup.
  */
 
+import RollRequestDialog from './roll-request.mjs'
+
 const { HandlebarsApplicationMixin } = foundry.applications.api
 const { AbstractSidebarTab, Sidebar } = foundry.applications.sidebar
 
@@ -62,6 +64,17 @@ export function getSidebarTools () {
     icon: 'fas fa-hat-wizard',
     onClick: () => game.dcc.SpellDuel.show(),
     help: `${USER_GUIDE_URL}Spell-Duels/`
+  }
+
+  // Request Roll (issue #855) — GM asks a character for a check via a
+  // clickable chat card, so it is only offered to GMs.
+  if (game.user?.isGM) {
+    tools.requestRoll = {
+      label: 'DCC.RequestRoll',
+      icon: 'fas fa-dice-d20',
+      onClick: () => RollRequestDialog.show(),
+      help: `${USER_GUIDE_URL}Roll-Requests/`
+    }
   }
 
   // Let modules (e.g. XCC's Mojo tracker) contribute their own tools

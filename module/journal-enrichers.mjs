@@ -1,4 +1,4 @@
-/* global game, canvas, ui, CONFIG, ChatMessage, document */
+/* global game, canvas, ui, CONFIG, ChatMessage, document, fromUuid */
 
 /**
  * Clickable roll links in journals, item descriptions, and chat (issue #794).
@@ -74,25 +74,28 @@ const SAVE_ALIASES = {
 /**
  * Parse an enricher config string into bare values and key=value options.
  *
- * Tokens are whitespace-separated. `key=value` pairs land as properties;
- * a bare number becomes `dc`; the first other bare token becomes `key`.
+ * Tokens are whitespace-separated; double quotes group a value containing
+ * spaces (skill items are referenced by name, e.g. `"Nature Lore"`).
+ * `key=value` pairs land as properties; a bare number becomes `dc`; the
+ * first other bare token becomes `key`.
  * e.g. ' agl 10' → { key: 'agl', dc: '10' };
- *      ' ability=agl dc=10' → { ability: 'agl', dc: '10' }.
+ *      ' ability=agl dc=10' → { ability: 'agl', dc: '10' };
+ *      ' "Nature Lore" 12' → { key: 'Nature Lore', dc: '12' }.
  *
  * @param {string} config  The raw config group (may be empty)
  * @returns {Object<string, string>} parsed fields
  */
 export function parseEnricherConfig (config) {
   const parsed = {}
-  for (const token of String(config ?? '').trim().split(/\s+/)) {
-    if (!token) continue
+  const unquote = (value) => value.replace(/"([^"]*)"/g, '$1')
+  for (const token of String(config ?? '').match(/(?:[^\s"]+|"[^"]*")+/g) ?? []) {
     const eq = token.indexOf('=')
     if (eq > 0) {
-      parsed[token.slice(0, eq)] = token.slice(eq + 1)
+      parsed[token.slice(0, eq)] = unquote(token.slice(eq + 1))
     } else if (/^\d+$/.test(token)) {
       parsed.dc = token
     } else if (!parsed.key) {
-      parsed.key = token
+      parsed.key = unquote(token)
     }
   }
   return parsed
@@ -160,15 +163,18 @@ export function skillDisplayName (skillId) {
  * @param {string} params.type    'check' | 'save' | 'skill'
  * @param {string} params.config  The raw config group
  * @param {string} [params.label] Optional custom label
- * @returns {Object|null} `{ type, key, dc, rollUnder, displayLabel }`, or
- *   null when the reference is invalid (the raw text is left in place so
- *   the author can see the mistake).
+ * @returns {Object|null} `{ type, key, dc, rollUnder, actorUuid,
+ *   displayLabel }`, or null when the reference is invalid (the raw text
+ *   is left in place so the author can see the mistake).
  */
 export function buildEnricherData ({ type, config, label }) {
   const parsed = parseEnricherConfig(config)
   const rawKey = parsed.key ?? parsed.ability ?? parsed.save ?? parsed.skill
   if (!rawKey) return null
   const dc = parsed.dc !== undefined && /^\d+$/.test(parsed.dc) ? parseInt(parsed.dc) : null
+  // An `actor=<uuid>` option targets a specific actor (roll requests,
+  // issue #855) instead of the clicking user's controlled tokens.
+  const actorUuid = parsed.actor ?? null
 
   let key
   let baseLabel
@@ -194,7 +200,7 @@ export function buildEnricherData ({ type, config, label }) {
   const displayLabel = label ||
     (dc !== null ? `${game.i18n.format('DCC.SaveDC', { dc })} ${baseLabel}` : baseLabel)
 
-  return { type, key, dc, rollUnder, displayLabel }
+  return { type, key, dc, rollUnder, actorUuid, displayLabel }
 }
 
 /**
@@ -209,13 +215,14 @@ export function buildEnricherData ({ type, config, label }) {
  * @returns {string} HTML for the link group
  */
 export function buildEnricherHtml (data, { isGM = false, source = '' } = {}) {
-  const { type, key, dc, rollUnder, displayLabel } = data
+  const { type, key, dc, rollUnder, actorUuid, displayLabel } = data
   const attributes = [
     `data-roll-type="${escapeHtml(type)}"`,
     `data-key="${escapeHtml(key)}"`
   ]
   if (dc !== null) attributes.push(`data-dc="${dc}"`)
   if (rollUnder) attributes.push('data-roll-under="true"')
+  if (actorUuid) attributes.push(`data-actor-uuid="${escapeHtml(actorUuid)}"`)
   const dataAttributes = attributes.join(' ')
 
   let html = '<span class="dcc-enricher-group">' +
@@ -266,14 +273,47 @@ export function resolveEnricherActors () {
 }
 
 /**
+ * Resolve an actor-targeted link (`data-actor-uuid`) to the one actor it
+ * applies to, or null (with a user-facing warning) when the actor is gone
+ * or the clicking user may not roll for it. GMs own everything, so a GM
+ * can always trigger the roll they requested.
+ * @param {string} actorUuid
+ * @returns {Promise<Actor|null>}
+ */
+export async function resolveTargetedEnricherActor (actorUuid) {
+  const resolved = await fromUuid(actorUuid).catch(() => null)
+  // A token uuid resolves to the TokenDocument — unwrap to its actor.
+  const actor = resolved?.actor ?? resolved
+  if (!actor?.rollAbilityCheck) {
+    ui.notifications.warn(game.i18n.localize('DCC.EnricherActorMissingWarning'))
+    return null
+  }
+  if (!actor.isOwner) {
+    ui.notifications.warn(game.i18n.format('DCC.EnricherNotOwnerWarning', { actor: actor.name }))
+    return null
+  }
+  return actor
+}
+
+/**
  * Dispatch a clicked roll link through the matching public roll method.
  * The DC is passed through in options — saves render the success/failure
  * suffix from it today; checks and skills carry it for downstream use.
+ * An actor-targeted link (`data-actor-uuid`, roll requests #855) rolls
+ * for exactly that actor, gated on ownership; otherwise the link rolls
+ * for the clicking user's controlled tokens / assigned character.
  * @param {HTMLElement} anchor  The clicked anchor carrying the data attributes
  */
 export async function handleEnricherRollClick (anchor) {
-  const { rollType, key, dc, rollUnder } = anchor.dataset
-  const actors = resolveEnricherActors()
+  const { rollType, key, dc, rollUnder, actorUuid } = anchor.dataset
+  let actors
+  if (actorUuid) {
+    const actor = await resolveTargetedEnricherActor(actorUuid)
+    if (!actor) return
+    actors = [actor]
+  } else {
+    actors = resolveEnricherActors()
+  }
   if (!actors.length) {
     return ui.notifications.warn(game.i18n.localize('DCC.EnricherNoActorWarning'))
   }

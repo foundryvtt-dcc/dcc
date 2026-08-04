@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { actionDiceLineHtml, applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml } from '../adapter/chat-renderer.mjs'
+import { actionDiceLineHtml, applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml, dcResultSuffix } from '../adapter/chat-renderer.mjs'
 
 // A representative lib SkillCheckResult-shaped object. Carries every
 // core field the flag projects plus the spell-only extras so the
@@ -231,6 +231,44 @@ describe('applyFleetingLuck', () => {
     // Also safe when game itself has no dcc namespace at all.
     globalThis.game = {}
     expect(() => applyFleetingLuck({ a: 1 }, { total: 5 })).not.toThrow()
+  })
+})
+
+describe('dcResultSuffix', () => {
+  afterEach(() => {
+    delete globalThis.game
+  })
+
+  function stubI18n () {
+    globalThis.game = {
+      i18n: {
+        localize: vi.fn((key) => ({ 'DCC.SaveSuccess': 'Success', 'DCC.SaveFailure': 'Failure' })[key] ?? key),
+        format: vi.fn((key, data) => key === 'DCC.SaveDC' ? `DC ${data.dc}` : key)
+      }
+    }
+  }
+
+  test('empty when no dc is supplied or the dc is not a number', () => {
+    stubI18n()
+    expect(dcResultSuffix(15)).toBe('')
+    expect(dcResultSuffix(15, {})).toBe('')
+    expect(dcResultSuffix(15, { dc: 'abc' })).toBe('')
+  })
+
+  test('meeting or beating the DC is a success, below is a failure', () => {
+    stubI18n()
+    expect(dcResultSuffix(10, { dc: 10, showDc: true })).toBe(' (DC 10) — Success')
+    expect(dcResultSuffix(9, { dc: 10, showDc: true })).toBe(' (DC 10) — Failure')
+  })
+
+  test('hides the DC value without showDc', () => {
+    stubI18n()
+    expect(dcResultSuffix(12, { dc: 10 })).toBe(' — Success')
+  })
+
+  test('accepts a numeric string dc (data-attribute passthrough)', () => {
+    stubI18n()
+    expect(dcResultSuffix(12, { dc: '15', showDc: true })).toBe(' (DC 15) — Failure')
   })
 })
 
