@@ -721,6 +721,8 @@
   "DCC.SettingTrackActionDiceInCombatHint": "Zeigt pro Runde Aktionswürfel-Marken neben jedem Kämpfer in der Kampfleiste (● bereit, ○ verbraucht, ⊛ nur Zauber). Wirkt nur, wenn Mehrere Aktionswürfel aktiviert ist.",
   "DCC.SettingAutoResetActionDice": "Aktionswürfel jede Runde zurücksetzen",
   "DCC.SettingAutoResetActionDiceHint": "Füllt die Aktionswürfel-Marken eines Kämpfers zu Beginn seines Zuges jede Runde wieder auf, damit niemand von Hand mitzählen muss. Wirkt nur, wenn Mehrere Aktionswürfel aktiviert ist.",
+  "DCC.SettingOwnedTokenVision": "Sicht durch alle eigenen Token",
+  "DCC.SettingOwnedTokenVisionHint": "Spieler sehen durch alle Token, die ihnen gehören, auch während sie einen einzelnen Token kontrollieren — getrennte Charaktere bleiben so sichtbar und auswählbar. Hilfreich, wenn jeder Spieler mehrere Charaktere führt, etwa in einem Trichter (Funnel). Deaktivieren für die Standard-Foundry-Sicht (nur der kontrollierte Token).",
   "DCC.SettingHideSingleActionDiePips": "Marken für Akteure mit nur einem Aktionswürfel ausblenden",
   "DCC.SettingHideSingleActionDiePipsHint": "Entrümpelt die Kampfleiste, indem Marken nur für Kämpfer mit zwei oder mehr Aktionswürfeln angezeigt werden. Wirkt nur, wenn Mehrere Aktionswürfel aktiviert ist.",
   "DCC.SettingMightyDeedsTablesCompendium": "Kompendium für Großtat-Tabellen",
