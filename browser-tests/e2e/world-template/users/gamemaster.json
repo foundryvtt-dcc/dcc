@@ -1,0 +1,14 @@
+{
+  "_id": "dccE2eGamemaster",
+  "name": "Gamemaster",
+  "role": 4,
+  "password": "",
+  "avatar": null,
+  "character": null,
+  "color": "#cc2893",
+  "pronouns": "",
+  "hotbar": {},
+  "permissions": {},
+  "flags": {},
+  "_key": "!users!dccE2eGamemaster"
+}

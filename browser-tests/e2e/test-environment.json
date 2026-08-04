@@ -1,5 +1,5 @@
 {
-  "world": "v14",
+  "world": "dcc-e2e",
   "modules": ["dcc-core-book"],
   "settings": {
     "core.moduleConfiguration": {

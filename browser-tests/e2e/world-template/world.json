@@ -1,0 +1,13 @@
+{
+  "id": "dcc-e2e",
+  "title": "DCC E2E",
+  "system": "dcc",
+  "coreVersion": "14.365",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.365"
+  },
+  "systemVersion": "0.70.43",
+  "description": "<p>Disposable world for the isolated e2e environment (#893). Rebuilt from browser-tests/e2e/world-template on every env bootstrap and reset — never edit the built copy, edit the template. coreVersion/systemVersion are stamped at build time by scripts/e2e-env.mjs.</p>",
+  "flags": {}
+}
