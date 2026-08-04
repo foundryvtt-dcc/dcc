@@ -57,14 +57,16 @@ function gh (args, opts = {}) {
 }
 
 /**
- * Run an e2e-env subcommand against a worktree. Uses the worktree's own copy
- * of the script when it has one; a branch cut from a main that predates
- * e2e-env falls back to this checkout's copy, pointed at the worktree via
- * DCC_E2E_ROOT.
+ * Run an e2e-env subcommand against a worktree — always with THIS checkout's
+ * copy of e2e-env.mjs, pointed at the worktree via DCC_E2E_ROOT. work.mjs and
+ * e2e-env.mjs evolve together (e.g. --modules writes a local-override
+ * manifest the paired script knows to read); the worktree's own copy can be
+ * older (branched from an earlier main) or missing entirely. Sessions inside
+ * the worktree still use its own copy via `npm run e2e:env`, which is
+ * consistent with that branch by construction.
  */
 function e2eEnv (worktree, subcommand) {
-  const own = path.join(worktree, 'scripts', 'e2e-env.mjs')
-  const script = fs.existsSync(own) ? own : path.join(PROJECT_ROOT, 'scripts', 'e2e-env.mjs')
+  const script = path.join(PROJECT_ROOT, 'scripts', 'e2e-env.mjs')
   execFileSync('node', [script, subcommand], {
     cwd: worktree,
     stdio: 'inherit',
@@ -78,8 +80,10 @@ function e2eEnv (worktree, subcommand) {
  * main doesn't have that entry yet and would read as permanently dirty.
  */
 function isDirty (worktree) {
+  const ownArtifacts = ['.foundry-server/', 'browser-tests/e2e/test-environment.local.json']
   const porcelain = git(['status', '--porcelain'], { cwd: worktree })
-  return porcelain.split('\n').some(line => line && !line.slice(3).startsWith('.foundry-server/'))
+  return porcelain.split('\n').some(line =>
+    line && !ownArtifacts.some(artifact => line.slice(3).startsWith(artifact)))
 }
 
 /** The primary checkout (worktrees included, we may be running from one). */
@@ -89,32 +93,61 @@ function mainCheckout () {
 }
 
 function slugify (title) {
-  return title.toLowerCase()
+  const words = title.toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .split('-').reduce((acc, word) => {
-      const next = acc ? `${acc}-${word}` : word
-      return next.length <= 40 ? next : acc
-    }, '')
+    .split('-').filter(Boolean)
+  let slug = ''
+  for (const word of words) {
+    const next = slug ? `${slug}-${word}` : word
+    if (next.length > 40) break // keep the slug a contiguous prefix
+    slug = next
+  }
+  return slug || 'issue' // all-non-ASCII titles slugify to nothing
 }
 
-function worktreeFor (issue) {
+function allWorktrees () {
   const porcelain = git(['worktree', 'list', '--porcelain'])
+  const out = []
   for (const block of porcelain.split('\n\n')) {
     const wtPath = block.match(/^worktree (.+)$/m)?.[1]
     const branch = block.match(/^branch refs\/heads\/(.+)$/m)?.[1]
-    if (!wtPath || !branch) continue
-    if (branch.match(/(?:^|\/)(\d+)-/)?.[1] === String(issue)) return { path: wtPath, branch }
+    if (wtPath && branch) out.push({ path: wtPath, branch })
   }
-  return null
+  return out
+}
+
+/**
+ * Resolve an issue number to exactly one worktree. Several worktrees can
+ * legitimately carry the same issue number (stacked branches, agent
+ * worktrees), and sync/finish are destructive — on ambiguity, fail and make
+ * the caller disambiguate rather than picking whichever git lists first.
+ */
+function worktreeFor (issue, { forUse = 'target' } = {}) {
+  const matches = allWorktrees().filter(w => w.branch.match(/(?:^|\/)(\d+)-/)?.[1] === String(issue))
+  if (matches.length === 0) return null
+  if (matches.length > 1) {
+    // Prefer a unique match under our own work dir before giving up
+    const ours = matches.filter(w => path.resolve(w.path).startsWith(path.resolve(WORK_DIR) + path.sep))
+    if (ours.length === 1) return ours[0]
+    fail(`Issue #${issue} matches ${matches.length} worktrees — cannot safely pick a ${forUse}:\n` +
+      matches.map(w => `  ${w.branch}  ${w.path}`).join('\n') +
+      '\nRemove or rename the ones that should not match, or operate on it manually.')
+  }
+  return matches[0]
 }
 
 function parseFlags (args) {
   const flags = { rest: [] }
+  const takeValue = (name, i) => {
+    const value = args[i]
+    if (value === undefined || value.startsWith('--')) fail(`${name} requires a value`)
+    return value
+  }
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
-      case '--branch': flags.branch = args[++i]; break
-      case '--modules': flags.modules = args[++i]; break
+      case '--branch': flags.branch = takeValue('--branch', ++i); break
+      case '--modules': flags.modules = takeValue('--modules', ++i); break
       case '--no-claude': flags.noClaude = true; break
       case '--force': flags.force = true; break
       case '--all': flags.all = true; break
@@ -134,7 +167,7 @@ function buildPrompt (issue, title, branch, url) {
 Read the full issue first with: gh issue view ${issue}
 
 Then implement it. Ground rules for this worktree:
-- An isolated Foundry server for this worktree is available via \`npm run e2e:env\` (\`up\` prints the URL; state lives in .foundry-server/server.json). Use it for E2E validation — never target port 30000, that is the live install.
+- An isolated Foundry server for this worktree is already running at ${url} (manage it with \`npm run e2e:env\`; state lives in .foundry-server/server.json). Use it for E2E validation — never target port 30000, that is the live install.
 - Run the unit suite (npm test) and the affected Playwright specs (npm run e2e:env test -- <spec>) as you work; run the full e2e suite (npm run e2e:env test) before pushing anything touching attack/card/roll/sheet paths.
 - Commit and push on this branch per the standing authorizations in CLAUDE.md.
 - When the work is complete and green, use /pr to open a pull request. The PR body must reference "Fixes #${issue}".
@@ -156,34 +189,49 @@ async function cmdStart (flags) {
   const worktree = path.join(WORK_DIR, `dcc-${issue}-${slugify(info.title)}`)
 
   // A checkout inside the live Data dir would be scanned by the live Foundry
-  // server as a second system with the duplicate id "dcc".
+  // server as a second system with the duplicate id "dcc". Compare real
+  // paths so a symlinked DCC_WORK_DIR can't slip past the prefix check.
+  fs.mkdirSync(WORK_DIR, { recursive: true })
   const liveData = path.resolve(mainCheckout(), '..', '..')
-  if (worktree.startsWith(liveData + path.sep)) {
+  if (fs.realpathSync(WORK_DIR).startsWith(fs.realpathSync(liveData) + path.sep)) {
     fail(`Work dir ${WORK_DIR} is inside the live Foundry Data dir (${liveData}) — set DCC_WORK_DIR elsewhere`)
   }
 
   console.log(`Creating worktree ${worktree} on ${branch} (from origin/main)...`)
-  fs.mkdirSync(WORK_DIR, { recursive: true })
   git(['fetch', 'origin'])
   git(['worktree', 'add', worktree, '-b', branch, 'origin/main'])
 
-  // The permission allowlist is gitignored and per-checkout — without it the
-  // new session permission-prompts from scratch.
-  const localSettings = path.join(mainCheckout(), '.claude', 'settings.local.json')
-  if (fs.existsSync(localSettings)) {
-    fs.mkdirSync(path.join(worktree, '.claude'), { recursive: true })
-    fs.copyFileSync(localSettings, path.join(worktree, '.claude', 'settings.local.json'))
-    console.log('Copied .claude/settings.local.json')
+  // Everything past this point has state to lose — on failure, say what was
+  // left behind and how to clean it instead of dying with a stack trace.
+  try {
+    // The permission allowlist is gitignored and per-checkout — without it the
+    // new session permission-prompts from scratch.
+    const localSettings = path.join(mainCheckout(), '.claude', 'settings.local.json')
+    if (fs.existsSync(localSettings)) {
+      fs.mkdirSync(path.join(worktree, '.claude'), { recursive: true })
+      fs.copyFileSync(localSettings, path.join(worktree, '.claude', 'settings.local.json'))
+      console.log('Copied .claude/settings.local.json')
+    }
+
+    if (flags.modules) {
+      // Written to the gitignored local-override manifest, not the tracked
+      // test-environment.json — the session would otherwise commit the tweak.
+      const overridePath = path.join(worktree, 'browser-tests', 'e2e', 'test-environment.local.json')
+      const modules = flags.modules.split(',').map(m => m.trim()).filter(Boolean)
+      fs.writeFileSync(overridePath, JSON.stringify({ modules }, null, 2) + '\n')
+      console.log(`Extended env module set via test-environment.local.json: +${modules.join(', +')}`)
+    }
+
+    console.log('Bootstrapping isolated Foundry environment...')
+    e2eEnv(worktree, 'up')
+  } catch (err) {
+    console.error(`\nBootstrap failed: ${err.message}`)
+    fail(`Partial state left behind: worktree ${worktree} on branch ${branch}.\n` +
+      `Fix the cause and rerun, or clean up with: npm run work:finish -- ${issue} --force`)
   }
 
-  if (flags.modules) {
-    const manifestPath = path.join(worktree, 'browser-tests', 'e2e', 'test-environment.json')
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
-    manifest.modules = [...new Set([...manifest.modules, ...flags.modules.split(',')])]
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
-    console.log(`Extended env module set: ${manifest.modules.join(', ')}`)
-  }
-
+  // Claim only once the env actually boots, so a failed start doesn't leave
+  // the issue assigned with nothing running.
   const quiet = { stdio: ['ignore', 'pipe', 'ignore'] }
   try {
     gh(['issue', 'edit', issue, '--add-assignee', '@me', '--add-label', 'in-progress'], quiet)
@@ -197,9 +245,6 @@ async function cmdStart (flags) {
     }
   }
 
-  console.log('Bootstrapping isolated Foundry environment...')
-  e2eEnv(worktree, 'up')
-
   const state = JSON.parse(fs.readFileSync(path.join(worktree, '.foundry-server', 'server.json'), 'utf-8'))
   const prompt = buildPrompt(issue, info.title, branch, state.url)
 
@@ -210,7 +255,10 @@ async function cmdStart (flags) {
   }
   console.log(`\nLaunching Claude in ${worktree}...\n`)
   const result = spawnSync('claude', [prompt], { cwd: worktree, stdio: 'inherit' })
-  if (result.error?.code === 'ENOENT') fail('`claude` CLI not found on PATH — rerun with --no-claude and start it manually')
+  if (result.error) {
+    const hint = result.error.code === 'ENOENT' ? '`claude` CLI not found on PATH' : `could not launch claude: ${result.error.message}`
+    fail(`${hint} — the worktree and server are ready; start the session manually:\n  cd ${worktree} && claude`)
+  }
   process.exitCode = result.status ?? 0
 }
 
@@ -227,18 +275,10 @@ async function cmdList () {
     if (!wtPath || !branch) continue
     const issue = branch.match(/(?:^|\/)(\d+)-/)?.[1] ?? '-'
     const dirty = isDirty(wtPath)
+    const { state, running } = envServerRunning(wtPath)
     let server = 'no env'
-    const statePath = path.join(wtPath, '.foundry-server', 'server.json')
-    if (fs.existsSync(statePath)) {
-      try {
-        const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'))
-        let alive = false
-        if (state.pid) {
-          try { process.kill(state.pid, 0); alive = true } catch { alive = false }
-        }
-        server = alive ? `${state.url} (pid ${state.pid})` : `${state.url} (stopped)`
-      } catch { server = 'env: unreadable state' }
-    }
+    if (state) server = running ? `${state.url} (pid ${state.pid})` : `${state.url} (stopped)`
+    else if (fs.existsSync(path.join(wtPath, '.foundry-server'))) server = 'env: unreadable state'
     let pr = '-'
     if (branch !== 'main') {
       try {
@@ -261,23 +301,39 @@ async function cmdList () {
 // sync
 // ============================================================================
 
+/** Is this worktree's env server actually alive (pid identity-checked)? */
+function envServerRunning (worktree) {
+  const stateFile = path.join(worktree, '.foundry-server', 'server.json')
+  if (!fs.existsSync(stateFile)) return { state: null, running: false }
+  try {
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'))
+    if (!state.pid) return { state, running: false }
+    // Match e2e-env's isOwnServer: a recycled pid after a reboot must not
+    // count as (or be treated like) our server.
+    const cmd = execFileSync('ps', ['-o', 'command=', '-p', String(state.pid)], { encoding: 'utf-8' })
+    return { state, running: cmd.includes(path.join(worktree, '.foundry-server')) }
+  } catch {
+    return { state: null, running: false }
+  }
+}
+
 async function syncOne (worktree, branch) {
   console.log(`\nSyncing ${branch} (${worktree})...`)
-  // todb must not run while the env's server has the system packs open
-  const stateFile = path.join(worktree, '.foundry-server', 'server.json')
-  let wasRunning = false
-  if (fs.existsSync(stateFile)) {
-    const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'))
-    if (state.pid) {
-      try { process.kill(state.pid, 0); wasRunning = true } catch { wasRunning = false }
-    }
-    if (wasRunning) e2eEnv(worktree, 'down')
+  const gitDir = git(['rev-parse', '--path-format=absolute', '--git-dir'], { cwd: worktree })
+  if (fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))) {
+    throw new Error(`${worktree} has an unresolved merge in progress — finish it (commit or git merge --abort) first`)
   }
+  if (isDirty(worktree)) {
+    throw new Error(`${worktree} is dirty — commit or stash before syncing`)
+  }
+  // todb must not run while the env's server has the system packs open
+  const wasRunning = envServerRunning(worktree).running
+  if (wasRunning) e2eEnv(worktree, 'down')
   git(['fetch', 'origin'], { cwd: worktree })
   try {
     git(['merge', '--no-edit', 'origin/main'], { cwd: worktree, stdio: 'inherit' })
   } catch {
-    fail(`Merge conflict in ${worktree} — resolve it there (worktree left mid-merge), then rerun work:sync`)
+    throw new Error(`Merge conflict in ${worktree} — resolve and commit there, then restart its server with: npm run e2e:env up (it was stopped for the sync)`)
   }
   execSync('npm run scss && npm run todb', { cwd: worktree, stdio: 'inherit' })
   if (wasRunning) e2eEnv(worktree, 'up')
@@ -286,21 +342,35 @@ async function syncOne (worktree, branch) {
 
 async function cmdSync (flags) {
   if (flags.all) {
-    const porcelain = git(['worktree', 'list', '--porcelain'])
-    for (const block of porcelain.split('\n\n')) {
-      const wtPath = block.match(/^worktree (.+)$/m)?.[1]
-      const branch = block.match(/^branch refs\/heads\/(.+)$/m)?.[1]
-      if (!wtPath || !branch || branch === 'main') continue
-      if (path.resolve(wtPath) === path.resolve(mainCheckout())) continue
-      await syncOne(wtPath, branch)
+    // --all only touches worktrees under our own work dir — agent or manual
+    // worktrees elsewhere may be mid-use by someone else.
+    const targets = allWorktrees().filter(w =>
+      w.branch !== 'main' && path.resolve(w.path).startsWith(path.resolve(WORK_DIR) + path.sep))
+    if (!targets.length) {
+      console.log(`No worktrees under ${WORK_DIR} to sync.`)
+      return
     }
+    const failures = []
+    for (const target of targets) {
+      try {
+        await syncOne(target.path, target.branch)
+      } catch (err) {
+        console.error(`Skipping ${target.branch}: ${err.message}`)
+        failures.push(target.branch)
+      }
+    }
+    if (failures.length) fail(`Sync incomplete for: ${failures.join(', ')}`)
     return
   }
   const issue = flags.rest[0]
   if (!issue) fail('Usage: npm run work:sync -- <issue#> | --all')
-  const target = worktreeFor(issue)
+  const target = worktreeFor(issue, { forUse: 'sync target' })
   if (!target) fail(`No worktree found for issue #${issue}`)
-  await syncOne(target.path, target.branch)
+  try {
+    await syncOne(target.path, target.branch)
+  } catch (err) {
+    fail(err.message)
+  }
 }
 
 // ============================================================================
@@ -310,7 +380,7 @@ async function cmdSync (flags) {
 async function cmdFinish (flags) {
   const issue = flags.rest[0]
   if (!issue) fail('Usage: npm run work:finish -- <issue#> [--force]')
-  const target = worktreeFor(issue)
+  const target = worktreeFor(issue, { forUse: 'teardown target' })
   if (!target) fail(`No worktree found for issue #${issue}`)
 
   if (!flags.force) {

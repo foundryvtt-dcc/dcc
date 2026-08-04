@@ -67,7 +67,7 @@ environments" for the underlying `e2e:env` tool):
 
 | Command | Description |
 |---------|-------------|
-| `npm run work:start -- <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name, `--modules a,b` to extend the env's module set (e.g. for sibling-module compat work). |
+| `npm run work:start -- <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name (keep an `<issue#>-` token in it, or `work:sync`/`work:finish` won't find the worktree), `--modules a,b` to extend the env's module set (written to the gitignored `browser-tests/e2e/test-environment.local.json`, e.g. for sibling-module compat work). |
 | `npm run work:list` | Board of active worktrees: issue, branch, dirty/clean, server URL + pid, PR state. |
 | `npm run work:sync -- <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile scss + packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
 | `npm run work:finish -- <issue#>` | Teardown after the PR merges: destroy the env, remove worktree + local branch, drop the `in-progress` label. Refuses while dirty or unmerged (`--force` overrides). |

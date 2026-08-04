@@ -70,6 +70,7 @@ packs/**/MANIFEST*
 
 # Per-worktree isolated Foundry server (populated by scripts/e2e-env.mjs, #893)
 .foundry-server/
+browser-tests/e2e/test-environment.local.json
 
 # Playwright MCP temporary files
 .playwright-mcp/
