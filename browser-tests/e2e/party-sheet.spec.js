@@ -27,6 +27,14 @@ const test = createSessionTest({
 /** Delete probe actors, combats, and open windows left over from a test. */
 async function cleanProbeState (page) {
   await page.evaluate(async () => {
+    // ApplicationV2 windows (the party sheet) live in foundry.applications.instances,
+    // AppV1 windows in ui.windows — close both. Only close FRAMED AppV2 apps:
+    // the sidebar/hotbar/etc. are frameless instances in the same registry and
+    // closing them breaks the session. The probe scene is deliberately left in
+    // place (deleting a viewed scene re-inits the canvas; see fixtures.js).
+    for (const app of [...foundry.applications.instances.values()]) {
+      try { if (app.hasFrame) await app.close() } catch {}
+    }
     for (const app of Object.values(ui.windows)) { try { await app.close() } catch {} }
     document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
     for (const c of [...game.combats.contents]) { try { await c.delete() } catch {} }
@@ -36,7 +44,9 @@ async function cleanProbeState (page) {
 
 /**
  * Create two Player members (Alice agl 17 → init +2 is the best, Bob agl 8 →
- * init -1) and a Party actor containing both. Returns their ids.
+ * init -1) and a Party actor containing both, via the default creation path —
+ * the preCreate hook must link the party prototype token (#789). Returns
+ * their ids and the resulting actorLink so the test can assert the hook ran.
  */
 async function createParty (page) {
   return await page.evaluate(async () => {
@@ -53,10 +63,14 @@ async function createParty (page) {
     const party = await Actor.create({
       name: 'PARTY Test Party',
       type: 'Party',
-      prototypeToken: { actorLink: true },
       flags: { dcc: { partyMembers: [{ id: bob.id }, { id: alice.id }] } }
     })
-    return { aliceId: alice.id, bobId: bob.id, partyId: party.id }
+    return {
+      aliceId: alice.id,
+      bobId: bob.id,
+      partyId: party.id,
+      partyActorLink: party.prototypeToken.actorLink
+    }
   })
 }
 
@@ -73,10 +87,16 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
   })
 
   test('button rolls initiative for the party token using the best member formula', async ({ page }) => {
-    const { partyId } = await createParty(page)
+    const { partyId, partyActorLink } = await createParty(page)
 
-    // Ensure a viewed scene, then place a linked party token and wait for its
-    // placeable — getActiveTokens() reads canvas placeables.
+    // The preCreate hook links party prototype tokens by default (#789) —
+    // without this, core's Actor#rollInitiative would skip the synthetic
+    // token actor and the button would silently not roll.
+    expect(partyActorLink).toBe(true)
+
+    // Ensure a viewed scene, then place a party token from its prototype
+    // (mirrors dragging the actor onto the map) and wait for its placeable —
+    // getActiveTokens() reads canvas placeables.
     await page.evaluate(async (pid) => {
       if (!game.canvas?.ready || !game.canvas?.scene) {
         const scene = await Scene.create({
@@ -87,9 +107,9 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
         })
         await scene.view()
       }
-      const [doc] = await game.canvas.scene.createEmbeddedDocuments('Token', [
-        { name: 'Party', actorId: pid, actorLink: true, x: 1000, y: 1000, width: 1, height: 1 }
-      ])
+      const party = game.actors.get(pid)
+      const tokenData = (await party.getTokenDocument({ x: 1000, y: 1000 })).toObject()
+      const [doc] = await game.canvas.scene.createEmbeddedDocuments('Token', [tokenData])
       const deadline = Date.now() + 4000
       while (Date.now() < deadline && !game.canvas.tokens.get(doc.id)) {
         await new Promise(resolve => setTimeout(resolve, 50))

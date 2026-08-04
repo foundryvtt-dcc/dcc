@@ -407,7 +407,8 @@ class DCCPartySheet extends DCCActorSheet {
     }
 
     // `createCombatants` silently does nothing without a token in the viewed scene
-    if (this.actor.getActiveTokens().length === 0) {
+    const tokens = this.actor.getActiveTokens()
+    if (tokens.length === 0) {
       ui.notifications.warn(game.i18n.localize('DCC.PartyNoTokenWarning'))
       return
     }
@@ -422,7 +423,16 @@ class DCCPartySheet extends DCCActorSheet {
     }
 
     const formula = best.actor.getInitiativeRoll()?.formula || null
-    await this.actor.rollInitiative({ createCombatants: true, initiativeOptions: { formula } })
+    const initOptions = { createCombatants: true, initiativeOptions: { formula } }
+
+    // Roll through each token's actor: core's Actor#rollInitiative only rolls
+    // combatants whose actor IS the caller, and an unlinked party token (from
+    // a party created before #789 linked them by default) has a synthetic
+    // token actor. Linked tokens resolve to the world actor, deduped here.
+    const tokenActors = [...new Set(tokens.map(token => token.actor).filter(actor => actor))]
+    for (const tokenActor of tokenActors) {
+      await tokenActor.rollInitiative(initOptions)
+    }
   }
 
   /**

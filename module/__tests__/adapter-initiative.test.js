@@ -281,3 +281,13 @@ test('formula string override: builds a fresh Roll from that formula (#789 party
   expect(result.formula).toBe('1d16+3')
   expect(dccRollCreateRollMock).not.toHaveBeenCalled()
 })
+
+test('empty-string formula falls through to the adapter path', () => {
+  actor.system.attributes.init.die = '1d20'
+  actor.system.attributes.init.value = 0
+
+  const result = actor.getInitiativeRoll('')
+
+  expect(result).toBeInstanceOf(Roll)
+  expect(result.formula).toBe('1d20')
+})

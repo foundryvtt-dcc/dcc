@@ -213,7 +213,7 @@ export function onRenderActorDirectory (app, html) {
 }
 
 /**
- * Set the DCC default image + Player prototype-token actor-link on
+ * Set the DCC default image + Player/Party prototype-token actor-link on
  * newly-created actors (GM-only, brand-new actors only — not duplicates
  * or imports). Item Pile actors are skipped for the actor-link flag.
  */
@@ -226,9 +226,10 @@ export function onPreCreateActor (document, data, options) {
     }
   }
 
-  // Set Player actor prototype tokens to Link Actor Data by default
-  // Only for brand-new actors (not duplicates or imports)
-  if (!options.keepId && document.type === 'Player' && !document.name.includes('Item Pile')) {
+  // Set Player and Party actor prototype tokens to Link Actor Data by default
+  // Only for brand-new actors (not duplicates or imports). A Party token must
+  // be linked for Actor#rollInitiative to roll for it (#789).
+  if (!options.keepId && ['Player', 'Party'].includes(document.type) && !document.name.includes('Item Pile')) {
     document.updateSource({ 'prototypeToken.actorLink': true })
   }
 }

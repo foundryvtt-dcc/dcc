@@ -75,16 +75,17 @@ describe('rollPartyInitiative', () => {
     }
   }
 
-  /** Fake sheet context over the given member actors. */
+  /** Fake sheet context over the given member actors, with one linked token. */
   function makeCtx (memberActors) {
     globalThis.game.actors.get = vi.fn(id => memberActors.find(a => a.id === id))
+    const actor = {
+      id: 'party1',
+      rollInitiative: vi.fn(async () => {})
+    }
+    actor.getActiveTokens = vi.fn(() => [{ actor }])
     return {
       members: memberActors.map(a => ({ id: a.id })),
-      actor: {
-        id: 'party1',
-        getActiveTokens: vi.fn(() => [{}]),
-        rollInitiative: vi.fn(async () => {})
-      }
+      actor
     }
   }
 
@@ -148,6 +149,25 @@ describe('rollPartyInitiative', () => {
       createCombatants: true,
       initiativeOptions: { formula: '1d20+2[alice]' }
     })
+  })
+
+  test('rolls through the synthetic token actor for an unlinked party token', async () => {
+    const ctx = makeCtx([makeMember('alice', { formula: '1d20+2' })])
+    const syntheticActor = { id: 'party1', rollInitiative: vi.fn(async () => {}) }
+    ctx.actor.getActiveTokens = vi.fn(() => [{ actor: syntheticActor }])
+    await proto.rollPartyInitiative.call(ctx)
+    expect(syntheticActor.rollInitiative).toHaveBeenCalledWith({
+      createCombatants: true,
+      initiativeOptions: { formula: '1d20+2' }
+    })
+    expect(ctx.actor.rollInitiative).not.toHaveBeenCalled()
+  })
+
+  test('rolls once when multiple tokens resolve to the same linked actor', async () => {
+    const ctx = makeCtx([makeMember('alice')])
+    ctx.actor.getActiveTokens = vi.fn(() => [{ actor: ctx.actor }, { actor: ctx.actor }])
+    await proto.rollPartyInitiative.call(ctx)
+    expect(ctx.actor.rollInitiative).toHaveBeenCalledTimes(1)
   })
 
   test('skips members whose actor no longer exists', async () => {
