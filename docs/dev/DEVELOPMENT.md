@@ -59,6 +59,23 @@ See [Pack Management](PACKS.md) for detailed workflow.
 
 See [Internationalization](I18N.md) for translation workflow.
 
+### Parallel Issue Workflow (#893)
+
+Work several issues at once, each in its own worktree with its own isolated
+Foundry server (see [Testing](TESTING.md) → "Isolated per-worktree
+environments" for the underlying `e2e:env` tool):
+
+| Command | Description |
+|---------|-------------|
+| `npm run work:start -- <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name, `--modules a,b` to extend the env's module set (e.g. for sibling-module compat work). |
+| `npm run work:list` | Board of active worktrees: issue, branch, dirty/clean, server URL + pid, PR state. |
+| `npm run work:sync -- <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile scss + packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
+| `npm run work:finish -- <issue#>` | Teardown after the PR merges: destroy the env, remove worktree + local branch, drop the `in-progress` label. Refuses while dirty or unmerged (`--force` overrides). |
+
+Worktrees are deliberately created **outside** the live Foundry `Data/`
+directory — a second checkout under `Data/systems/` would be scanned by the
+live server as a duplicate `dcc` system.
+
 ## Code Standards
 
 ### JavaScript

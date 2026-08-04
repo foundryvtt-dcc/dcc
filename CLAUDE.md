@@ -11,6 +11,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 | `npm run test:integration` | Run integration tests only (real Foundry) |
 | `npm run setup:foundry` | Setup Foundry for integration tests |
 | `npm run e2e:env <up\|status\|reset\|down\|destroy\|test>` | Isolated per-worktree Foundry server for E2E (#893) |
+| `npm run work:<start\|list\|sync\|finish>` | Parallel-issue workflow: issue → worktree + env + Claude session (#893) |
 | `npm run format` | Format code (StandardJS + StyleLint) |
 | `npm run scss` | Compile SASS to CSS |
 | `npm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |
