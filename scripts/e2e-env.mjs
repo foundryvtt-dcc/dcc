@@ -36,7 +36,11 @@ import net from 'node:net'
 import { createRequire } from 'node:module'
 import { spawn, execSync, spawnSync } from 'node:child_process'
 
-const PROJECT_ROOT = path.resolve(import.meta.dirname, '..')
+// DCC_E2E_ROOT lets scripts/work.mjs run this script against a worktree whose
+// branch predates it (branched from a main without e2e-env yet).
+const PROJECT_ROOT = process.env.DCC_E2E_ROOT
+  ? path.resolve(process.env.DCC_E2E_ROOT)
+  : path.resolve(import.meta.dirname, '..')
 const SERVER_DIR = path.join(PROJECT_ROOT, '.foundry-server')
 const SERVER_STATE = path.join(SERVER_DIR, 'server.json')
 const MANIFEST_PATH = path.join(PROJECT_ROOT, 'browser-tests', 'e2e', 'test-environment.json')
@@ -71,8 +75,12 @@ function fail (message) {
 }
 
 function loadManifest () {
-  if (!fs.existsSync(MANIFEST_PATH)) fail(`Missing environment manifest: ${MANIFEST_PATH}`)
-  return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'))
+  // Fallback covers a DCC_E2E_ROOT worktree whose branch predates the manifest
+  const fallback = path.join(path.resolve(import.meta.dirname, '..'), 'browser-tests', 'e2e', 'test-environment.json')
+  for (const p of [MANIFEST_PATH, fallback]) {
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'))
+  }
+  fail(`Missing environment manifest: ${MANIFEST_PATH}`)
 }
 
 // ============================================================================
@@ -143,7 +151,13 @@ function portIsFree (port) {
 }
 
 async function choosePort () {
-  if (process.env.DCC_E2E_PORT) return parseInt(process.env.DCC_E2E_PORT, 10)
+  if (process.env.DCC_E2E_PORT) {
+    const port = Number(process.env.DCC_E2E_PORT)
+    if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 30000) {
+      fail(`DCC_E2E_PORT=${process.env.DCC_E2E_PORT} — must be an integer in 1024-65535 and not 30000 (the live install's port)`)
+    }
+    return port
+  }
   const issue = issueNumberFromBranch()
   if (issue && issue + 30000 <= 65535) return 30000 + issue
   for (let port = 30001; port < 30100; port++) {
@@ -175,8 +189,29 @@ function pidAlive (pid) {
   }
 }
 
+/**
+ * server.json outlives reboots, and a recycled pid may now belong to an
+ * unrelated process — never signal a pid without confirming its command line
+ * still references this env's server dir.
+ */
+function isOwnServer (pid) {
+  if (!pidAlive(pid)) return false
+  try {
+    const cmd = execSync(`ps -o command= -p ${pid}`, { encoding: 'utf-8' })
+    return cmd.includes(SERVER_DIR)
+  } catch {
+    return false
+  }
+}
+
 async function stopServer (state, { quiet = false } = {}) {
-  if (!state || !pidAlive(state.pid)) return false
+  if (!state?.pid) return false
+  if (!isOwnServer(state.pid)) {
+    if (pidAlive(state.pid)) {
+      fs.writeFileSync(SERVER_STATE, JSON.stringify({ ...state, pid: null }, null, 2) + '\n')
+    }
+    return false
+  }
   process.kill(state.pid, 'SIGTERM')
   for (let i = 0; i < 20 && pidAlive(state.pid); i++) {
     await new Promise(resolve => setTimeout(resolve, 250))
@@ -241,10 +276,15 @@ function linkSystem () {
     fs.rmSync(systemDir)
   }
   fs.mkdirSync(systemDir, { recursive: true })
-  const exclude = new Set(['.foundry-server', '.git', '.claude', '.idea', '.foundry-dev', 'node_modules', 'browser-tests'])
+  // packs/ is copied below, not symlinked: when this script runs from the
+  // main checkout the live server on 30000 has these pack LevelDBs open, and
+  // two servers cannot share them (LOCK contention).
+  const exclude = new Set(['.foundry-server', '.git', '.claude', '.idea', '.foundry-dev', 'node_modules', 'browser-tests', 'packs'])
   const wanted = fs.readdirSync(PROJECT_ROOT).filter(name => !exclude.has(name))
   for (const existing of fs.readdirSync(systemDir)) {
-    if (!wanted.includes(existing)) fs.rmSync(path.join(systemDir, existing), { recursive: true, force: true })
+    if (existing !== 'packs' && !wanted.includes(existing)) {
+      fs.rmSync(path.join(systemDir, existing), { recursive: true, force: true })
+    }
   }
   for (const name of wanted) {
     const link = path.join(systemDir, name)
@@ -252,6 +292,12 @@ function linkSystem () {
       fs.symlinkSync(path.join(PROJECT_ROOT, name), link)
     }
   }
+  // Refresh the pack copy on every up (cheap: APFS clone) so a todb rerun in
+  // the checkout reaches the env after a restart.
+  const packsDest = path.join(systemDir, 'packs')
+  fs.rmSync(packsDest, { recursive: true, force: true })
+  const packsSrc = path.join(PROJECT_ROOT, 'packs')
+  if (fs.existsSync(packsSrc)) cloneCopy(packsSrc, packsDest)
 }
 
 function copyModules (manifest, userdataRoot) {
@@ -327,6 +373,18 @@ async function applyWorldSettings (manifest) {
   } finally {
     await db.close()
   }
+}
+
+/**
+ * Copying a LevelDB the live server is actively writing is not an atomic
+ * snapshot — a mid-compaction copy can reference missing .ldb files. Can't
+ * detect writes, but can warn when a live server is even running.
+ */
+async function warnIfLiveServerRunning () {
+  try {
+    await fetch('http://localhost:30000/', { signal: AbortSignal.timeout(1500) })
+    console.warn('Warning: a Foundry server is running on port 30000 — if it is actively writing the source world/modules, the copies made now could be torn. Prefer bootstrapping while it is idle or stopped.')
+  } catch { /* not running — the good case */ }
 }
 
 /** Fresh worktrees lack every gitignored build artifact — install and compile them. */
@@ -432,10 +490,19 @@ async function waitReady (state) {
     }
     const { state: bootState, detail } = await probe(state.url)
     if (bootState === 'ready') return
-    if (bootState === 'license' && !eulaTried) {
-      eulaTried = true
-      console.log('  License/EULA screen detected — accepting...')
-      await acceptEula(state.url)
+    if (bootState === 'license') {
+      if (!eulaTried) {
+        eulaTried = true
+        console.log('  License/EULA screen detected — accepting...')
+        await acceptEula(state.url)
+        continue
+      }
+      // Give the accepted EULA a beat to take effect, then fail fast instead
+      // of spinning to the generic timeout.
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      if ((await probe(state.url)).state === 'license') {
+        fail(`Foundry is stuck on the license screen at ${state.url}/license after an EULA accept attempt — check .foundry-server/Config/license.json and the log at ${path.join(SERVER_DIR, 'logs', 'foundry.log')}`)
+      }
       continue
     }
     if (bootState === 'setup') {
@@ -459,16 +526,21 @@ async function acquireE2eLock () {
     try {
       fs.writeFileSync(E2E_LOCK, JSON.stringify({ pid: process.pid, cwd: PROJECT_ROOT }), { flag: 'wx' })
       return
-    } catch {
-      let holder = null
-      try { holder = JSON.parse(fs.readFileSync(E2E_LOCK, 'utf-8')) } catch { /* corrupt */ }
-      if (!holder || !pidAlive(holder.pid)) {
-        fs.rmSync(E2E_LOCK, { force: true })
-        continue
-      }
-      console.log(`Waiting for e2e lock (held by pid ${holder.pid}, ${holder.cwd})...`)
-      await new Promise(resolve => setTimeout(resolve, 5000))
+    } catch { /* held — examine below */ }
+    let raw = null
+    try { raw = fs.readFileSync(E2E_LOCK, 'utf-8') } catch { continue } // vanished — retry wx
+    let holder = null
+    try { holder = JSON.parse(raw) } catch { /* corrupt */ }
+    if (!holder || !pidAlive(holder.pid)) {
+      // Stale. Remove only if unchanged since we read it, so a concurrent
+      // waiter that already recreated the lock isn't clobbered.
+      try {
+        if (fs.readFileSync(E2E_LOCK, 'utf-8') === raw) fs.rmSync(E2E_LOCK, { force: true })
+      } catch { /* already gone */ }
+      continue
     }
+    console.log(`Waiting for e2e lock (held by pid ${holder.pid}, ${holder.cwd})...`)
+    await new Promise(resolve => setTimeout(resolve, 5000))
   }
 }
 
@@ -485,12 +557,16 @@ function releaseE2eLock () {
 
 async function cmdUp () {
   const existing = readState()
-  if (existing && pidAlive(existing.pid)) {
+  if (existing && isOwnServer(existing.pid)) {
     const { state } = await probe(existing.url)
     if (state === 'ready') {
       console.log(`Already running: ${existing.url} (world ${existing.world}, pid ${existing.pid})`)
       return existing
     }
+    // Our own server, but stuck (license/setup/mid-boot/wedged) — replace it
+    // rather than bootstrapping underneath it.
+    console.log(`Existing server (pid ${existing.pid}) is ${state} — restarting it`)
+    await stopServer(existing, { quiet: true })
   }
   const manifest = loadManifest()
   const install = findFoundryInstall()
@@ -498,13 +574,18 @@ async function cmdUp () {
   const port = existing?.port ?? await choosePort()
 
   console.log(`Bootstrapping .foundry-server/ (Foundry build ${install.build}, port ${port})`)
+  const needsCopies = !fs.existsSync(path.join(SERVER_DIR, 'Data', 'worlds', manifest.world)) ||
+    (manifest.modules || []).some(m => !fs.existsSync(path.join(SERVER_DIR, 'Data', 'modules', m)))
+  if (needsCopies) await warnIfLiveServerRunning()
   ensureBuildArtifacts()
   writeOptions(port, manifest.world)
   copyLicense(userdataRoot)
   linkSystem()
   copyModules(manifest, userdataRoot)
-  const freshWorld = copyWorld(manifest, userdataRoot)
-  if (freshWorld) await applyWorldSettings(manifest)
+  copyWorld(manifest, userdataRoot)
+  // Re-applied on every cold start so manifest settings edits take effect
+  // without a full reset (the world db is closed here — server is down).
+  await applyWorldSettings(manifest)
 
   if (!await portIsFree(port)) fail(`Port ${port} is in use by another process`)
   console.log('Launching Foundry...')
@@ -520,7 +601,7 @@ async function cmdStatus () {
     console.log('No environment. Run: npm run e2e:env up')
     return
   }
-  const alive = pidAlive(state.pid)
+  const alive = isOwnServer(state.pid)
   const { state: bootState } = alive ? await probe(state.url) : { state: 'down' }
   console.log(`URL:     ${state.url}`)
   console.log(`World:   ${state.world}`)
@@ -561,6 +642,13 @@ async function cmdTest (args) {
   if (isFullSuite) {
     await acquireE2eLock()
     process.on('exit', releaseE2eLock)
+    // 'exit' doesn't run on signal death — release explicitly on Ctrl-C etc.
+    for (const signal of ['SIGINT', 'SIGTERM']) {
+      process.on(signal, () => {
+        releaseE2eLock()
+        process.exit(130)
+      })
+    }
   }
   try {
     const result = spawnSync('npx', ['playwright', 'test', ...args], {

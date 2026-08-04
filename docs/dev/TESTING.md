@@ -345,6 +345,13 @@ flake when suites run concurrently; single-spec runs skip the lock. First
 `up` in a fresh worktree also installs npm deps and compiles packs
 (`npm run todb`), so it doubles as worktree bootstrap.
 
+Refresh semantics: manifest **settings** are re-applied on every cold `up`
+(and on `reset`); the **system packs** copy refreshes on every `up` (rerun
+`todb` in the checkout, then restart the env); **module** copies are made
+once and only refreshed by `destroy` + `up` — a dcc-core-book update in the
+live install does not reach existing envs on its own. The world copy is only
+replaced by `reset`.
+
 ### Running a suite (manual, against the live install)
 
 Foundry must be running before Playwright starts. The fvtt CLI config is global — set it to match the worktree you're testing:

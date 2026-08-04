@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, Item, CONFIG, etc.) used in page.evaluate callbacks */
-const { expect, createSessionTest, openActorSheet, significantConsoleErrors } = require('./fixtures')
+const { expect, createSessionTest, openActorSheet, significantConsoleErrors, FOUNDRY_URL } = require('./fixtures')
 
 /**
  * Active Effects E2E tests (the V14 ActiveEffect V2 layer).
@@ -25,14 +25,14 @@ test.describe('DCC Active Effects', () => {
   test.beforeAll(async () => {
     let serverUp
     try {
-      const response = await fetch('http://localhost:30000/', { signal: AbortSignal.timeout(5000) })
+      const response = await fetch(`${FOUNDRY_URL}/`, { signal: AbortSignal.timeout(5000) })
       serverUp = response.ok
     } catch {
       serverUp = false
     }
     if (!serverUp) {
       throw new Error(
-        'Could not connect to Foundry VTT at http://localhost:30000.\n\n' +
+        `Could not connect to Foundry VTT at ${FOUNDRY_URL}.\n\n` +
         'Please start Foundry before running tests:\n' +
         '1. Run: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing\n' +
         '2. Run tests again: npm test'
