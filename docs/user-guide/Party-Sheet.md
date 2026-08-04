@@ -19,6 +19,11 @@ You can click the avatar image of an actor on the party sheet to open their char
 There is a button that is a person with an X in the lower right of each actor on the party sheet. Click that to remove the actor from the party.
 ![Party Actor Remove](images/party_sheet_remove_member.png)
 
+## Rolling Party Initiative
+The Initiative button (d20 icon) at the top of the party sheet rolls initiative for the party and adds the party token to the combat tracker. The roll uses the initiative formula of the party's best member — the one with the highest initiative bonus (ties broken by Agility) — including any initiative die changes from that member's equipped weapon (for example a two-handed weapon's d16).
+
+The party token must be placed in the current scene before rolling; the party sheet will warn you if it isn't.
+
 ## Using the Party Actor on the map
 You can drag the Party Actor onto the map, and it will create a token for the party. You can then move the token around the map to represent the position of the party.
 
