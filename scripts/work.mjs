@@ -5,10 +5,10 @@
  * isolated Foundry server (see scripts/e2e-env.mjs).
  *
  * Usage:
- *   npm run work:start -- <issue#> [--branch <name>] [--modules a,b] [--no-claude]
- *   npm run work:list
- *   npm run work:sync -- <issue#> | --all
- *   npm run work:finish -- <issue#> [--force]
+ *   pnpm run work:start -- <issue#> [--branch <name>] [--modules a,b] [--no-claude]
+ *   pnpm run work:list
+ *   pnpm run work:sync -- <issue#> | --all
+ *   pnpm run work:finish -- <issue#> [--force]
  *
  * work:start
  *   Fetches the issue, derives a branch (fix/<n>-<slug> for bugs, else
@@ -62,7 +62,7 @@ function gh (args, opts = {}) {
  * e2e-env.mjs evolve together (e.g. --modules writes a local-override
  * manifest the paired script knows to read); the worktree's own copy can be
  * older (branched from an earlier main) or missing entirely. Sessions inside
- * the worktree still use its own copy via `npm run e2e:env`, which is
+ * the worktree still use its own copy via `pnpm run e2e:env`, which is
  * consistent with that branch by construction.
  */
 function e2eEnv (worktree, subcommand) {
@@ -167,16 +167,16 @@ function buildPrompt (issue, title, branch, url) {
 Read the full issue first with: gh issue view ${issue}
 
 Then implement it. Ground rules for this worktree:
-- An isolated Foundry server for this worktree is already running at ${url} (manage it with \`npm run e2e:env\`; state lives in .foundry-server/server.json). Use it for E2E validation — never target port 30000, that is the live install.
-- Run the unit suite (npm test) and the affected Playwright specs (npm run e2e:env test -- <spec>) as you work; run the full e2e suite (npm run e2e:env test) before pushing anything touching attack/card/roll/sheet paths.
+- An isolated Foundry server for this worktree is already running at ${url} (manage it with \`pnpm run e2e:env\`; state lives in .foundry-server/server.json). Use it for E2E validation — never target port 30000, that is the live install.
+- Run the unit suite (pnpm test) and the affected Playwright specs (pnpm run e2e:env test -- <spec>) as you work; run the full e2e suite (pnpm run e2e:env test) before pushing anything touching attack/card/roll/sheet paths.
 - Commit and push on this branch per the standing authorizations in CLAUDE.md.
 - When the work is complete and green, use /pr to open a pull request. The PR body must reference "Fixes #${issue}".
-- If you merge origin/main into this branch mid-work, stop the env server first, then rerun \`npm run scss\` + \`npm run todb\` and restart it (or just run \`npm run work:sync -- ${issue}\` from the main checkout).`
+- If you merge origin/main into this branch mid-work, stop the env server first, then rerun \`pnpm run scss\` + \`pnpm run todb\` and restart it (or just run \`pnpm run work:sync -- ${issue}\` from the main checkout).`
 }
 
 async function cmdStart (flags) {
   const issue = flags.rest[0]
-  if (!issue || !/^\d+$/.test(issue)) fail('Usage: npm run work:start -- <issue#> [--branch name] [--modules a,b] [--no-claude]')
+  if (!issue || !/^\d+$/.test(issue)) fail('Usage: pnpm run work:start -- <issue#> [--branch name] [--modules a,b] [--no-claude]')
 
   const existing = worktreeFor(issue)
   if (existing) fail(`Issue #${issue} already has a worktree: ${existing.path} (${existing.branch}). Use work:finish first, or just cd there.`)
@@ -227,7 +227,7 @@ async function cmdStart (flags) {
   } catch (err) {
     console.error(`\nBootstrap failed: ${err.message}`)
     fail(`Partial state left behind: worktree ${worktree} on branch ${branch}.\n` +
-      `Fix the cause and rerun, or clean up with: npm run work:finish -- ${issue} --force`)
+      `Fix the cause and rerun, or clean up with: pnpm run work:finish -- ${issue} --force`)
   }
 
   // Claim only once the env actually boots, so a failed start doesn't leave
@@ -333,9 +333,9 @@ async function syncOne (worktree, branch) {
   try {
     git(['merge', '--no-edit', 'origin/main'], { cwd: worktree, stdio: 'inherit' })
   } catch {
-    throw new Error(`Merge conflict in ${worktree} — resolve and commit there, then restart its server with: npm run e2e:env up (it was stopped for the sync)`)
+    throw new Error(`Merge conflict in ${worktree} — resolve and commit there, then restart its server with: pnpm run e2e:env up (it was stopped for the sync)`)
   }
-  execSync('npm run scss && npm run todb', { cwd: worktree, stdio: 'inherit' })
+  execSync('pnpm run scss && pnpm run todb', { cwd: worktree, stdio: 'inherit' })
   if (wasRunning) e2eEnv(worktree, 'up')
   console.log(`Synced ${branch}`)
 }
@@ -363,7 +363,7 @@ async function cmdSync (flags) {
     return
   }
   const issue = flags.rest[0]
-  if (!issue) fail('Usage: npm run work:sync -- <issue#> | --all')
+  if (!issue) fail('Usage: pnpm run work:sync -- <issue#> | --all')
   const target = worktreeFor(issue, { forUse: 'sync target' })
   if (!target) fail(`No worktree found for issue #${issue}`)
   try {
@@ -379,7 +379,7 @@ async function cmdSync (flags) {
 
 async function cmdFinish (flags) {
   const issue = flags.rest[0]
-  if (!issue) fail('Usage: npm run work:finish -- <issue#> [--force]')
+  if (!issue) fail('Usage: pnpm run work:finish -- <issue#> [--force]')
   const target = worktreeFor(issue, { forUse: 'teardown target' })
   if (!target) fail(`No worktree found for issue #${issue}`)
 
@@ -416,6 +416,6 @@ switch (command) {
   case 'sync': await cmdSync(flags); break
   case 'finish': await cmdFinish(flags); break
   default:
-    console.log('Usage: npm run work:<start|list|sync|finish> -- [args]')
+    console.log('Usage: pnpm run work:<start|list|sync|finish> -- [args]')
     process.exit(command ? 1 : 0)
 }

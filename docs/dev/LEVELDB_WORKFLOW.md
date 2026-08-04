@@ -1,8 +1,8 @@
 ## Work process with LevelDB JSON Files
 
 1) Clone module GitHub Repo into your FoundryVTT modules folder
-2) Run `npm install` from this module folder
-3) Run `npm run todb` from this module folder to compile the JSON into the FoundryVTT database files
+2) Run `pnpm install` from this module folder
+3) Run `pnpm run todb` from this module folder to compile the JSON into the FoundryVTT database files
 4) Start FoundryVTT
 5) Create new world
 6) Go into New World and enable this module and the DCC Core Book module
@@ -15,7 +15,7 @@
 13) Click "Rebuild Adventure"
 14) Exit the world
 15) Quit FoundryVTT
-16) Run `npm run tojson` from this module folder to update the JSON of the Adventure
+16) Run `pnpm run tojson` from this module folder to update the JSON of the Adventure
 17) Commit and push changes to GitHub
 
 

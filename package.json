@@ -20,8 +20,9 @@
   },
   "engines": {
     "node": ">=24.0.0",
-    "npm": ">10.0.0"
+    "pnpm": ">=11.0.0"
   },
+  "packageManager": "pnpm@11.9.0",
   "homepage": "https://github.com/foundryvtt-dcc/dcc#readme",
   "keywords": [
     "FoundryVTT",
@@ -36,7 +37,8 @@
     "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
-    "check": "npm run format && npm run scss && npm run test && npm run compare-lang",
+    "preinstall": "npx only-allow pnpm",
+    "check": "pnpm run format && pnpm run scss && pnpm run test && pnpm run compare-lang",
     "format": "standard --fix && stylelint \"**/*.scss\" --fix",
     "test": "vitest run module/",
     "test:unit": "vitest run --project unit",

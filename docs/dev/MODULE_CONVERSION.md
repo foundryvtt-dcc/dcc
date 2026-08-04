@@ -89,7 +89,7 @@ Maps need to be **gridded battle maps**, not the printed page layout:
 This phase happens **inside FoundryVTT** with the module loaded. See
 [LEVELDB_WORKFLOW.md](LEVELDB_WORKFLOW.md) for the lower-level mechanics
 of the JSON ↔ LevelDB round-trip. Quick version: develop in Foundry's UI,
-then `npm run tojson` to capture changes to git.
+then `pnpm run tojson` to capture changes to git.
 
 ### Set Up the Module Skeleton
 
@@ -102,7 +102,7 @@ Foundry recognizes. Copy the structure from an existing adventure module
   items, tables, adventures)
 - `lang/en.json` — any UI strings the module adds
 
-Run `npm run todb` to compile the (empty) packs, then start Foundry.
+Run `pnpm run todb` to compile the (empty) packs, then start Foundry.
 
 ### Make Journals
 
@@ -318,7 +318,7 @@ actors, items, and tables into a single importable package:
    contents and all internal `@UUID` links.
 3. Save the Adventure.
 4. Exit Foundry.
-5. Run `npm run tojson` to extract LevelDB → JSON for git.
+5. Run `pnpm run tojson` to extract LevelDB → JSON for git.
 6. Commit JSON to the branch.
 
 Rebuilds after future edits: see
@@ -430,7 +430,7 @@ Before going live, run a **dry-run release** on a private test repo:
 See [RELEASE_PROCESS.md](RELEASE_PROCESS.md) for the canonical steps.
 Short form:
 
-1. `npm run tojson` to make sure JSON is up to date (LevelDB isn't
+1. `pnpm run tojson` to make sure JSON is up to date (LevelDB isn't
    committed).
 2. Merge everything to `main`.
 3. Bump `version.txt` (no `v` prefix), commit, push.
@@ -471,9 +471,9 @@ Run through this every time before bumping `version.txt`:
 - [ ] All map walls and doors render correctly in player view
 - [ ] Lighting verified by switching to a player perspective
 - [ ] Adventure compendium rebuilt and saved
-- [ ] `npm run tojson` run, JSON committed
-- [ ] All tests pass: `npm test`
-- [ ] Translation coverage checked: `npm run compare-lang`
+- [ ] `pnpm run tojson` run, JSON committed
+- [ ] All tests pass: `pnpm test`
+- [ ] Translation coverage checked: `pnpm run compare-lang`
 - [ ] `module.json` `version`, `compatibility`, and URLs correct
 
 ---

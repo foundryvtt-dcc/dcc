@@ -28,8 +28,8 @@ packs/
 
 | Command | Description |
 |---------|-------------|
-| `npm run tojson` | Extract LevelDB packs → JSON source files |
-| `npm run todb` | Compile JSON source files → LevelDB packs |
+| `pnpm run tojson` | Extract LevelDB packs → JSON source files |
+| `pnpm run todb` | Compile JSON source files → LevelDB packs |
 
 ## Development Workflow
 
@@ -37,14 +37,14 @@ packs/
 
 1. **Extract current data** (if needed):
    ```bash
-   npm run tojson
+   pnpm run tojson
    ```
 
 2. **Edit JSON source files** in `packs/*/src/`
 
 3. **Compile to LevelDB**:
    ```bash
-   npm run todb
+   pnpm run todb
    ```
 
 4. **Test in FoundryVTT**
@@ -55,8 +55,8 @@ packs/
 
 If you prefer editing content in FoundryVTT's UI:
 
-1. Clone repo and run `npm install`
-2. Run `npm run todb` to compile packs
+1. Clone repo and run `pnpm install`
+2. Run `pnpm run todb` to compile packs
 3. Start FoundryVTT and create a test world
 4. Enable the DCC system
 5. Make changes in Foundry UI
@@ -66,7 +66,7 @@ If you prefer editing content in FoundryVTT's UI:
 9. Drag updated folders onto Rebuild dialog
 10. Click "Rebuild Adventure"
 11. Exit world and quit FoundryVTT
-12. Run `npm run tojson` to extract changes
+12. Run `pnpm run tojson` to extract changes
 13. Commit JSON changes to git
 
 ## Important Notes
@@ -76,12 +76,12 @@ If you prefer editing content in FoundryVTT's UI:
 - **DO NOT commit**: LevelDB files (`*.db`) - these are in `.gitignore`
 
 ### Release Process
-The GitHub release workflow automatically runs `npm run todb` before packaging, so releases always have compiled packs.
+The GitHub release workflow automatically runs `pnpm run todb` before packaging, so releases always have compiled packs.
 
 ### Prerequisites
 Install the [foundry-cli](https://github.com/foundryvtt/foundryvtt-cli) for pack compilation:
 ```bash
-npm install -g @foundryvtt/foundryvtt-cli
+pnpm install -g @foundryvtt/foundryvtt-cli
 ```
 
 ## Pack Types
@@ -96,7 +96,7 @@ npm install -g @foundryvtt/foundryvtt-cli
 ## Troubleshooting
 
 ### Pack not showing in Foundry
-- Ensure you ran `npm run todb` after editing JSON
+- Ensure you ran `pnpm run todb` after editing JSON
 - Check that the pack is listed in `system.json`
 - Restart FoundryVTT if needed
 
@@ -106,8 +106,8 @@ npm install -g @foundryvtt/foundryvtt-cli
 
 ### Merge conflicts in pack files
 - Always work with JSON source files
-- Run `npm run tojson` before pulling changes
-- Resolve conflicts in JSON, then run `npm run todb`
+- Run `pnpm run tojson` before pulling changes
+- Resolve conflicts in JSON, then run `pnpm run todb`
 
 ## Related Documentation
 

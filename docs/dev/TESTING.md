@@ -13,19 +13,19 @@ The DCC system uses **Vitest** with two test tiers:
 
 ```bash
 # Run all tests (unit + integration)
-npm test
+pnpm test
 
 # Run only unit tests
-npm run test:unit
+pnpm run test:unit
 
 # Run only integration tests
-npm run test:integration
+pnpm run test:integration
 
 # Run specific test file
-npm test module/__tests__/actor.test.js
+pnpm test module/__tests__/actor.test.js
 
 # Run the unit suite with coverage + enforce the ratchet thresholds
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ## Test Structure
@@ -117,7 +117,7 @@ Both Foundry v13 and v14 are supported. v14 is preferred when both are available
 
 ```bash
 # Auto-detect from a local Foundry install
-npm run setup:foundry
+pnpm run setup:foundry
 
 # Or specify a path
 node scripts/setup-foundry-dev.js --source ~/Applications/foundry-14
@@ -126,7 +126,7 @@ node scripts/setup-foundry-dev.js --source ~/Applications/foundry-14
 node scripts/setup-foundry-dev.js --download
 
 # Force re-setup (e.g., after installing a new Foundry version)
-npm run setup:foundry -- --force
+pnpm run setup:foundry -- --force
 ```
 
 The resolution order for finding Foundry is:
@@ -250,7 +250,7 @@ See [Test Coverage](TEST_COVERAGE.md) for:
 
 ### Coverage tooling + ratchet
 
-`npm run test:coverage` runs the **unit** project (deterministic — no
+`pnpm run test:coverage` runs the **unit** project (deterministic — no
 Foundry dependency) under the `v8` provider and enforces the thresholds in
 `vitest.config.js`. They are a **ratchet floor**, set just below the measured
 baseline so coverage can only hold or climb:
@@ -263,7 +263,7 @@ baseline so coverage can only hold or climb:
 | Lines | 60% | 60.95% |
 
 Raise the floors as coverage improves; **never lower them to make a red run
-pass** — a drop means new code shipped untested. The default `npm test` does
+pass** — a drop means new code shipped untested. The default `pnpm test` does
 **not** measure coverage (kept fast for the pre-commit hook); coverage is
 opt-in via `test:coverage` and is the natural gate to wire into CI. Reports
 land in `coverage/` (gitignored); open `coverage/index.html` for the
@@ -301,7 +301,7 @@ Shared login/session plumbing lives in `browser-tests/e2e/fixtures.js` (`createS
 
 ```bash
 # From browser-tests/e2e/
-npm install
+pnpm install
 npx playwright install chromium chromium-headless-shell
 ```
 
@@ -312,10 +312,10 @@ npx playwright install chromium chromium-headless-shell
 > extractor wedges. If you hit this: `pkill -f oopDownloadBrowserMain`,
 > remove the stale lock + partial dir
 > (`rm -rf ~/Library/Caches/ms-playwright/__dirlock ~/Library/Caches/ms-playwright/chromium*-*`),
-> upgrade (`npm i -D @playwright/test@latest`), and retry. `browser-tests/e2e`
+> upgrade (`pnpm add -D @playwright/test@latest`), and retry. `browser-tests/e2e`
 > is pinned to `^1.60.0`.
 
-### Isolated per-worktree environments (`npm run e2e:env`)
+### Isolated per-worktree environments (`pnpm run e2e:env`)
 
 For parallel work across worktrees (#893), `scripts/e2e-env.mjs` bootstraps a
 self-contained Foundry server inside the checkout you run it from — its own
@@ -326,13 +326,13 @@ environment (world, module set, forced world settings such as dcc-qol
 inactive) is declared in `browser-tests/e2e/test-environment.json`.
 
 ```bash
-npm run e2e:env up        # bootstrap (idempotent) + launch + wait ready; prints URL
-npm run e2e:env status    # port / pid / health for this worktree's server
-npm run e2e:env test -- adapter-dispatch.spec.js   # up + run spec(s) against it
-npm run e2e:env test      # full suite (takes the machine-wide ~/.dcc-e2e.lock)
-npm run e2e:env reset     # fresh world copy + re-applied settings
-npm run e2e:env down      # stop the server, keep .foundry-server/
-npm run e2e:env destroy   # stop + remove .foundry-server/
+pnpm run e2e:env up        # bootstrap (idempotent) + launch + wait ready; prints URL
+pnpm run e2e:env status    # port / pid / health for this worktree's server
+pnpm run e2e:env test -- adapter-dispatch.spec.js   # up + run spec(s) against it
+pnpm run e2e:env test      # full suite (takes the machine-wide ~/.dcc-e2e.lock)
+pnpm run e2e:env reset     # fresh world copy + re-applied settings
+pnpm run e2e:env down      # stop the server, keep .foundry-server/
+pnpm run e2e:env destroy   # stop + remove .foundry-server/
 ```
 
 The port is `30000 + <issue#>` parsed from the branch name (`feat/893-…` →
@@ -342,8 +342,8 @@ stays the live install's. `test` exports `FOUNDRY_URL` so
 to `http://localhost:30000` for the manual workflow below). Full-suite runs
 serialize on `~/.dcc-e2e.lock` because several specs are load-sensitive and
 flake when suites run concurrently; single-spec runs skip the lock. First
-`up` in a fresh worktree also installs npm deps and compiles packs
-(`npm run todb`), so it doubles as worktree bootstrap.
+`up` in a fresh worktree also installs dependencies and compiles packs
+(`pnpm run todb`), so it doubles as worktree bootstrap.
 
 Refresh semantics: manifest **settings** are re-applied on every cold `up`
 (and on `reset`); the **system packs** copy refreshes on every `up` (rerun
@@ -370,9 +370,9 @@ nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
   >/tmp/foundry-v14.log 2>&1 & disown
 
 # From browser-tests/e2e/:
-npm test                                      # full suite
-npm test -- adapter-dispatch.spec.js   # one spec
-npm run test:headed                           # watch it drive the browser
+pnpm test                                      # full suite
+pnpm test -- adapter-dispatch.spec.js   # one spec
+pnpm run test:headed                           # watch it drive the browser
 ```
 
 ### Gotchas

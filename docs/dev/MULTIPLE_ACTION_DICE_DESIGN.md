@@ -262,7 +262,7 @@ Two related corrections in #857:
   via `ui.notifications.warn` when an attack has no eligible die. The roll still
   proceeds on the default die — the judge's Ctrl-click escape hatch is intact.
 - **i18n.** Both keys added + translated in all seven lang files
-  (`npm run compare-lang` clean).
+  (`pnpm run compare-lang` clean).
 - Covered by new `action-dice-tracker.test.js` cases (`restrictedUnspentDice`,
   `noEligibleDie` descriptor, `noEligibleActionDieWarning`,
   `formatActionDiceChatLine` no-eligible branch), a `getActionDice` filtering unit

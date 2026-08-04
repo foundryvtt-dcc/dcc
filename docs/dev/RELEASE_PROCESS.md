@@ -16,7 +16,7 @@ When you are about to do a release, and not before:
 
 For automated release process:
 1. You need to have the foundry-cli installed ([https://github.com/FoundryApp/foundry-cli](https://github.com/foundryvtt/foundryvtt-cli))
-1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
+1. Ensure you run `pnpm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge all changes into main
 1. Commit `version.txt` File with new release version number in it (no 'v')
    — **always as its own commit directly on `main`, containing only the
@@ -26,10 +26,11 @@ For automated release process:
    commit when generating release notes, so the feature disappears from its
    own release notes (this happened to #849 in v0.70.35 and #852 in
    v0.70.37). This is the **only** file you hand-edit for a release. The
-   `Create GitHub Release` workflow syncs `package.json` **and**
-   `package-lock.json` to that version (via `npm version --no-git-tag-version`)
-   before the release action rewrites `system.json` and commits the lot, so the
-   lockfile no longer drifts behind the bumped `package.json`.
+   `Create GitHub Release` workflow syncs `package.json` to that version
+   (via `npm version --no-git-tag-version`, used purely as a field editor)
+   before the release action rewrites `system.json` and commits the lot.
+   (`pnpm-lock.yaml` carries no copy of the package's own version, so the
+   npm-era lockfile drift can no longer happen.)
 1. GitHub Action will automatically create a **draft** release (it never
    publishes — the workflow always stops at a draft)
 1. Edit the draft release notes and title
@@ -38,7 +39,7 @@ For automated release process:
 
 For manual release process:
 1. You need to have the foundry-cli installed ([https://github.com/FoundryApp/foundry-cli](https://github.com/foundryvtt/foundryvtt-cli))
-1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
+1. Ensure you run `pnpm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge in all changes to main
 1. Update system.json to change the version number at the top
 1. Update system.json to change the zipfile path at the bottom (you have to guess the path, because you haven't created release yet)

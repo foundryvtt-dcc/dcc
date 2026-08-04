@@ -6,17 +6,17 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 
 | Command | Description |
 |---------|-------------|
-| `npm test` | Run all tests (unit + integration) |
-| `npm run test:unit` | Run unit tests only (mocked Foundry) |
-| `npm run test:integration` | Run integration tests only (real Foundry) |
-| `npm run setup:foundry` | Setup Foundry for integration tests |
-| `npm run e2e:env <up\|status\|reset\|down\|destroy\|test>` | Isolated per-worktree Foundry server for E2E (#893) |
-| `npm run work:<start\|list\|sync\|finish>` | Parallel-issue workflow: issue → worktree + env + Claude session (#893) |
-| `npm run format` | Format code (StandardJS + StyleLint) |
-| `npm run scss` | Compile SASS to CSS |
-| `npm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |
-| `npm run tojson` | Extract LevelDB → JSON packs |
-| `npm run compare-lang` | Check translation coverage |
+| `pnpm test` | Run all tests (unit + integration) |
+| `pnpm run test:unit` | Run unit tests only (mocked Foundry) |
+| `pnpm run test:integration` | Run integration tests only (real Foundry) |
+| `pnpm run setup:foundry` | Setup Foundry for integration tests |
+| `pnpm run e2e:env <up\|status\|reset\|down\|destroy\|test>` | Isolated per-worktree Foundry server for E2E (#893) |
+| `pnpm run work:<start\|list\|sync\|finish>` | Parallel-issue workflow: issue → worktree + env + Claude session (#893) |
+| `pnpm run format` | Format code (StandardJS + StyleLint) |
+| `pnpm run scss` | Compile SASS to CSS |
+| `pnpm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |
+| `pnpm run tojson` | Extract LevelDB → JSON packs |
+| `pnpm run compare-lang` | Check translation coverage |
 
 ## Key Files
 
@@ -53,7 +53,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 ## Working with dcc-core-lib
 
 We own **`@moonloch/dcc-core-lib`** (scoped npm name — the unscoped
-`dcc-core-lib` is **not** published; never `npm install dcc-core-lib`).
+`dcc-core-lib` is **not** published; never `pnpm add dcc-core-lib`).
 The upstream library is at `/Users/timlwhite/WebstormProjects/dcc-core-lib`,
 GitHub repo `moonloch/dcc-core-lib`, vendored into this repo at
 `module/vendor/dcc-core-lib/`. When a doc or path uses the bare
@@ -72,12 +72,12 @@ to be in the lib (not just an adapter translation issue):
 - **Vendor sync.** The lib's compiled output lives at
   `module/vendor/dcc-core-lib/` and is committed to the system repo
   (Foundry has no bundler). After the lib PR merges and you've pulled
-  `main` in the lib checkout, run `npm run sync-core-lib` from the
+  `main` in the lib checkout, run `pnpm run sync-core-lib` from the
   system repo. The script (`scripts/sync-core-lib.mjs`) builds the
-  lib via `npm run build`, copies `dist/` into the vendor directory,
+  lib via `pnpm run build`, copies `dist/` into the vendor directory,
   and writes `module/vendor/dcc-core-lib/VERSION.json` with the
   source commit SHA + timestamp. Override the source path with
-  `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib npm run sync-core-lib`.
+  `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib pnpm run sync-core-lib`.
   Commit the resulting vendor diff with a message like
   `vendor: sync dcc-core-lib to <version> (<sha7>)`.
 - **Adapter cleanup follows the sync.** Once the new vendor copy is
@@ -92,13 +92,13 @@ rule. They apply only to the scoped context described.
 
 - **Commit and push on any non-`main` branch without asking.** On any
   branch other than `main`, when a unit of work is complete and the fast
-  Vitest suite (`npm test`) is green, **commit** locally and
+  Vitest suite (`pnpm test`) is green, **commit** locally and
   `git push origin <branch>` without asking. This covers feature / fix
   branches, merges of `main` into them, and similar work. Use
   conventional-commit messages matching the branch's existing history.
   For changes touching the core attack / sheet / chat paths, prefer
   running the full Playwright E2E suite before pushing, and say so if you
-  pushed without it. Still pause and ask if: `npm test` is failing,
+  pushed without it. Still pause and ask if: `pnpm test` is failing,
   `git status` shows unexpected untracked files, the pre-commit hook
   rewrites code in ways that should be reviewed, or the work is
   incomplete.

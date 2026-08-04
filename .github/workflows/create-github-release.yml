@@ -18,14 +18,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
-      - name: Sync package.json + package-lock.json to version.txt
+      - name: Sync package.json to version.txt
         # version.txt is the only file the maintainer hand-edits. The release
         # action below rewrites system.json and commits everything with
-        # `git commit -am`, but it does not touch package.json / package-lock.json,
-        # so without this step the lockfile drifts (package.json gets bumped while
-        # package-lock.json keeps the previous version). `npm version` bumps the
-        # version field in BOTH package.json and package-lock.json without
-        # re-resolving dependencies, so the Release commit carries a consistent set.
+        # `git commit -am`, but it does not touch package.json, so this step
+        # bumps its version field to match. (pnpm-lock.yaml carries no copy of
+        # the package's own version, so no lockfile sync is needed — the npm-era
+        # package-lock drift this step originally fixed can no longer happen.)
+        # `npm version` is used purely as a package.json field editor; it does
+        # not resolve or install anything.
         run: npm version "$(tr -d '[:space:]' < version.txt)" --no-git-tag-version --allow-same-version --ignore-scripts
       - name: GitHub Release
         id: github-release
