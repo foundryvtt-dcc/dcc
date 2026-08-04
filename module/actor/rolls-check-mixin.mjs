@@ -414,6 +414,14 @@ export const RollsCheckMixin = (Base) => class extends Base {
         return formula
       }
 
+      // Honor an explicit formula string (Foundry core's
+      // `Combat#rollInitiative({ formula })` override contract), building a
+      // fresh Roll per combatant. The party sheet uses this to roll the best
+      // member's initiative formula on the party actor (#789).
+      if (typeof formula === 'string' && formula) {
+        return new Roll(formula, this.getRollData())
+      }
+
       // Roll-modifier dialog (legacy-decom step 2). The dialog is async
       // and is only ever reached via `rollInit`, which awaits the
       // returned promise — so the dialog branch returns a Promise<Roll>

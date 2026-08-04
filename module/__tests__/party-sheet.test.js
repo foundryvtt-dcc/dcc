@@ -60,6 +60,109 @@ describe('membership mutation', () => {
   })
 })
 
+describe('rollPartyInitiative', () => {
+  let warn
+
+  /** Fake member actor with the fields best-member selection reads. */
+  function makeMember (id, { init = 0, agl = 10, formula = '1d20' } = {}) {
+    return {
+      id,
+      system: {
+        attributes: { init: { value: init } },
+        abilities: { agl: { value: agl } }
+      },
+      getInitiativeRoll: vi.fn(() => ({ formula }))
+    }
+  }
+
+  /** Fake sheet context over the given member actors. */
+  function makeCtx (memberActors) {
+    globalThis.game.actors.get = vi.fn(id => memberActors.find(a => a.id === id))
+    return {
+      members: memberActors.map(a => ({ id: a.id })),
+      actor: {
+        id: 'party1',
+        getActiveTokens: vi.fn(() => [{}]),
+        rollInitiative: vi.fn(async () => {})
+      }
+    }
+  }
+
+  beforeEach(() => {
+    warn = vi.fn()
+    globalThis.ui = { notifications: { warn } }
+    globalThis.game.i18n = { localize: key => key }
+    globalThis.game.combat = null
+  })
+
+  test('warns and bails when the party is empty', async () => {
+    const ctx = makeCtx([])
+    await proto.rollPartyInitiative.call(ctx)
+    expect(warn).toHaveBeenCalledWith('DCC.PartyNoMembersWarning')
+    expect(ctx.actor.rollInitiative).not.toHaveBeenCalled()
+  })
+
+  test('warns and bails when the party already has an initiative score', async () => {
+    const ctx = makeCtx([makeMember('alice')])
+    globalThis.game.combat = { combatants: [{ actor: { id: 'party1' }, initiative: 12 }] }
+    await proto.rollPartyInitiative.call(ctx)
+    expect(warn).toHaveBeenCalledWith('DCC.AlreadyHasInitiative')
+    expect(ctx.actor.rollInitiative).not.toHaveBeenCalled()
+  })
+
+  test('rolls when the party is in combat without an initiative score', async () => {
+    const ctx = makeCtx([makeMember('alice')])
+    globalThis.game.combat = { combatants: [{ actor: { id: 'party1' }, initiative: null }] }
+    await proto.rollPartyInitiative.call(ctx)
+    expect(warn).not.toHaveBeenCalled()
+    expect(ctx.actor.rollInitiative).toHaveBeenCalled()
+  })
+
+  test('warns and bails when the party has no token in the viewed scene', async () => {
+    const ctx = makeCtx([makeMember('alice')])
+    ctx.actor.getActiveTokens = vi.fn(() => [])
+    await proto.rollPartyInitiative.call(ctx)
+    expect(warn).toHaveBeenCalledWith('DCC.PartyNoTokenWarning')
+    expect(ctx.actor.rollInitiative).not.toHaveBeenCalled()
+  })
+
+  test('rolls with the formula of the member with the highest init bonus', async () => {
+    const alice = makeMember('alice', { init: 1, agl: 17, formula: '1d20+1' })
+    const bob = makeMember('bob', { init: 3, agl: 8, formula: '1d16[Weapon]+3' })
+    const ctx = makeCtx([alice, bob])
+    await proto.rollPartyInitiative.call(ctx)
+    expect(bob.getInitiativeRoll).toHaveBeenCalled()
+    expect(alice.getInitiativeRoll).not.toHaveBeenCalled()
+    expect(ctx.actor.rollInitiative).toHaveBeenCalledWith({
+      createCombatants: true,
+      initiativeOptions: { formula: '1d16[Weapon]+3' }
+    })
+  })
+
+  test('breaks init-bonus ties on raw Agility', async () => {
+    const alice = makeMember('alice', { init: 2, agl: 15, formula: '1d20+2[alice]' })
+    const bob = makeMember('bob', { init: 2, agl: 10, formula: '1d20+2[bob]' })
+    const ctx = makeCtx([bob, alice]) // bob first so the tie-break has to flip the pick
+    await proto.rollPartyInitiative.call(ctx)
+    expect(ctx.actor.rollInitiative).toHaveBeenCalledWith({
+      createCombatants: true,
+      initiativeOptions: { formula: '1d20+2[alice]' }
+    })
+  })
+
+  test('skips members whose actor no longer exists', async () => {
+    const bob = makeMember('bob', { init: 0, agl: 10, formula: '1d20' })
+    const ctx = makeCtx([bob])
+    ctx.members = [{ id: 'ghost' }, { id: 'bob' }]
+    await proto.rollPartyInitiative.call(ctx)
+    expect(warn).not.toHaveBeenCalled()
+    expect(ctx.actor.rollInitiative).toHaveBeenCalledWith({
+      createCombatants: true,
+      initiativeOptions: { formula: '1d20' }
+    })
+  })
+})
+
 describe('_processFormData / _processSubmitData member-weapon round-trip', () => {
   // _processFormData calls super._processFormData; stub the parent prototype method
   // for the duration so we exercise only the weapon-update extraction.

@@ -1279,6 +1279,13 @@ a.inline-roll {
 .dcc .party-name input {
   flex: 1;
 }
+.dcc .party-name .party-initiative {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.dcc .party-name .party-initiative i {
+  margin-right: 3px;
+}
 
 .dcc .party-body {
   display: grid;
