@@ -77,10 +77,28 @@ function fail (message) {
 function loadManifest () {
   // Fallback covers a DCC_E2E_ROOT worktree whose branch predates the manifest
   const fallback = path.join(path.resolve(import.meta.dirname, '..'), 'browser-tests', 'e2e', 'test-environment.json')
+  let manifest = null
   for (const p of [MANIFEST_PATH, fallback]) {
-    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'))
+    if (fs.existsSync(p)) {
+      manifest = JSON.parse(fs.readFileSync(p, 'utf-8'))
+      break
+    }
   }
-  fail(`Missing environment manifest: ${MANIFEST_PATH}`)
+  if (!manifest) fail(`Missing environment manifest: ${MANIFEST_PATH}`)
+  // Gitignored per-worktree override (e.g. written by work:start --modules) so
+  // env tweaks never end up committed: modules union, settings shallow-merge,
+  // other keys replace.
+  const localPath = path.join(PROJECT_ROOT, 'browser-tests', 'e2e', 'test-environment.local.json')
+  if (fs.existsSync(localPath)) {
+    const local = JSON.parse(fs.readFileSync(localPath, 'utf-8'))
+    manifest = {
+      ...manifest,
+      ...local,
+      modules: [...new Set([...(manifest.modules || []), ...(local.modules || [])])],
+      settings: { ...manifest.settings, ...local.settings }
+    }
+  }
+  return manifest
 }
 
 // ============================================================================
