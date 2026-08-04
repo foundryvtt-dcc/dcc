@@ -96,7 +96,7 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Show the Modify Roll dialog by default** will show the Modify Roll dialog when you roll from the character sheet. If this is unchecked, you will need to cmd/ctrl click to show the Modify Roll dialog.
 
-**Enable Ability Score Log** tracks ability score changes on Player sheets with a reason, recovery expectation, and a per-actor history log — useful for spellburn and stat drain. Click an ability score to record a change.
+**Enable Ability Score Log** tracks ability score changes on Player sheets with a reason, recovery expectation, and a per-actor history log — useful for spellburn and stat drain. Click an ability score to record a change: arrows step the new value up or down, and the most likely reason is preselected (Spellburn on physical stats for wizards and elves, Ability Damage otherwise, Luck Spend for Luck).
 
 **Disable icon filter in dark theme** turns off the sepia filter applied to item and sheet icons when using the dark theme (per player).
 
