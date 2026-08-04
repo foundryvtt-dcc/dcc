@@ -26,7 +26,10 @@
  * Mirrors core `_isVisionSource`'s own requirements — scene token vision
  * on, sight enabled, viewed level, not hidden, OBSERVER-or-better on the
  * actor (core's fallback rule uses OBSERVER, not OWNER) — minus the
- * "player controls another sighted token" suppression.
+ * "player controls another sighted token" suppression. Re-diff against
+ * core's `Token#_isVisionSource` when bumping the supported Foundry
+ * version: a new core gate must be mirrored here, or the OR-composition
+ * in DCCToken widens vision past it silently.
  *
  * @param {foundry.canvas.placeables.Token} token
  * @returns {boolean}

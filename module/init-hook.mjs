@@ -335,8 +335,10 @@ export async function onInit () {
   registerDeathClockTracker()
   registerTokenVision()
   registerJournalEnrichers()
-  await loadSystemTemplates()
+  // Before the template await: a template-loading failure must not leave the
+  // early settings unregistered while DCCToken (which reads one) is live.
   registerEarlySettings()
+  await loadSystemTemplates()
 }
 
 /**

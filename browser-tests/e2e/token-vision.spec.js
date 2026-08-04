@@ -23,41 +23,54 @@ async function setupTokens (page) {
   return page.evaluate(async () => {
     const prevSceneId = game.canvas.scene?.id ?? null
     const scene = await Scene.create({ name: 'DCC TokenVision Probe', width: 4000, height: 3000, tokenVision: true, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
-    // view() is refused while a previous scene switch is still loading, and
-    // control() no-ops while the canvas is loading — retry until the probe
-    // scene is actually viewed and ready
-    const viewDeadline = Date.now() + 15000
-    while (Date.now() < viewDeadline && !(game.canvas.ready && game.canvas.scene?.id === scene.id)) {
-      if (game.canvas.scene?.id !== scene.id) {
-        try { await scene.view() } catch { /* still loading — retry */ }
+    const actorIds = []
+    try {
+      // view() is refused while a previous scene switch is still loading, and
+      // control() no-ops while the canvas is loading — retry until the probe
+      // scene is actually viewed and ready
+      const viewDeadline = Date.now() + 15000
+      while (Date.now() < viewDeadline && !(game.canvas.ready && game.canvas.scene?.id === scene.id)) {
+        if (game.canvas.scene?.id !== scene.id) {
+          try { await scene.view() } catch { /* still loading — retry */ }
+        }
+        await new Promise(resolve => setTimeout(resolve, 200))
       }
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
 
-    const makeActor = name => Actor.create({
-      name,
-      type: 'Player',
-      ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
-      prototypeToken: { actorLink: true, sight: { enabled: true } }
-    })
-    const controller = await makeActor('DCC TokenVision Controller')
-    const companion = await makeActor('DCC TokenVision Companion')
+      const makeActor = async name => {
+        const actor = await Actor.create({
+          name,
+          type: 'Player',
+          ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
+          prototypeToken: { actorLink: true, sight: { enabled: true } }
+        })
+        actorIds.push(actor.id)
+        return actor
+      }
+      const controller = await makeActor('DCC TokenVision Controller')
+      const companion = await makeActor('DCC TokenVision Companion')
 
-    const [controllerToken, companionToken] = await scene.createEmbeddedDocuments('Token', [
-      { name: 'Controller', actorId: controller.id, actorLink: true, x: 500, y: 500, sight: { enabled: true } },
-      { name: 'Companion', actorId: companion.id, actorLink: true, x: 2500, y: 2500, sight: { enabled: true } }
-    ])
-    const deadline = Date.now() + 3000
-    while (Date.now() < deadline && !(game.canvas.tokens.get(controllerToken.id) && game.canvas.tokens.get(companionToken.id))) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
+      const [controllerToken, companionToken] = await scene.createEmbeddedDocuments('Token', [
+        { name: 'Controller', actorId: controller.id, actorLink: true, x: 500, y: 500, sight: { enabled: true } },
+        { name: 'Companion', actorId: companion.id, actorLink: true, x: 2500, y: 2500, sight: { enabled: true } }
+      ])
+      const deadline = Date.now() + 3000
+      while (Date.now() < deadline && !(game.canvas.tokens.get(controllerToken.id) && game.canvas.tokens.get(companionToken.id))) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
 
-    return {
-      prevSceneId,
-      sceneId: scene.id,
-      actorIds: [controller.id, companion.id],
-      controllerTokenId: controllerToken.id,
-      companionTokenId: companionToken.id
+      return {
+        prevSceneId,
+        sceneId: scene.id,
+        actorIds,
+        controllerTokenId: controllerToken.id,
+        companionTokenId: companionToken.id
+      }
+    } catch (err) {
+      // Don't leak probe documents into the shared E2E world if setup dies
+      // mid-way — the tests' finally-cleanup never runs without a setup object
+      for (const id of actorIds) await game.actors.get(id)?.delete().catch(() => {})
+      await scene.delete().catch(() => {})
+      throw err
     }
   })
 }

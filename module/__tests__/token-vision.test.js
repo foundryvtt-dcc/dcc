@@ -3,9 +3,10 @@
  *
  * `isOwnedTokenVisionSource` is exercised against the shared foundry mock's
  * `game` / `canvas` globals with plain token stubs; `registerTokenVision` is
- * checked against a stand-in core Token class. The live-Foundry behavior
- * (vision-source evaluation during canvas draw, perception refresh on the
- * setting's onChange) is covered by `browser-tests/e2e/token-vision.spec.js`.
+ * checked against a stand-in core Token class, and the setting's onChange
+ * perception refresh against the mock's captured registration. The
+ * live-Foundry behavior (vision-source evaluation during canvas draw) is
+ * covered by `browser-tests/e2e/token-vision.spec.js`.
  */
 
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -13,6 +14,12 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
 import { isOwnedTokenVisionSource, registerTokenVision } from '../token-vision.mjs'
+
+vi.mock('../settings-menus.mjs', () => ({
+  DCCEnhancedCombatSettings: class {},
+  DCCTableSettings: class {},
+  DCCActionDiceSettings: class {}
+}))
 
 /** A token stub satisfying every owned-token-vision requirement. */
 function makeToken (overrides = {}) {
@@ -105,5 +112,29 @@ describe('registerTokenVision', () => {
     // ... but not when the setting is off
     global.gameSettingsGetMock.mockReturnValueOnce(false)
     expect(token._isVisionSource()).toBe(false)
+  })
+})
+
+describe('ownedTokenVision setting onChange', () => {
+  test('re-initializes vision sources on change, only while the canvas is ready', async () => {
+    const registrations = {}
+    global.game.settings.register = vi.fn((namespace, key, config) => { registrations[key] = config })
+    const { registerEarlySystemSettings } = await import('../settings.js')
+    registerEarlySystemSettings()
+
+    const config = registrations.ownedTokenVision
+    expect(config.scope).toBe('world')
+    expect(config.default).toBe(true)
+
+    global.canvasPerceptionUpdateMock.mockClear()
+    global.canvas.ready = true
+    config.onChange()
+    expect(global.canvasPerceptionUpdateMock).toHaveBeenCalledWith({ initializeVision: true })
+
+    global.canvasPerceptionUpdateMock.mockClear()
+    global.canvas.ready = false
+    config.onChange()
+    expect(global.canvasPerceptionUpdateMock).not.toHaveBeenCalled()
+    global.canvas.ready = true
   })
 })

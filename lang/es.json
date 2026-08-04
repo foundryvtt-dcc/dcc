@@ -722,7 +722,7 @@
   "DCC.SettingAutoResetActionDice": "Reiniciar los dados de acción cada asalto",
   "DCC.SettingAutoResetActionDiceHint": "Rellena las marcas de dados de acción de un combatiente al inicio de su turno cada asalto, para que nadie tenga que llevar la cuenta a mano. Solo tiene efecto cuando Múltiples dados de acción está activado.",
   "DCC.SettingOwnedTokenVision": "Visión de todos los tokens propios",
-  "DCC.SettingOwnedTokenVisionHint": "Los jugadores ven a través de todos los tokens que poseen, incluso mientras controlan un solo token, de modo que los personajes que se separan siguen visibles y seleccionables. Útil cuando cada jugador lleva varios personajes, como en un embudo (funnel). Desactívalo para usar la visión estándar de Foundry (solo el token controlado).",
+  "DCC.SettingOwnedTokenVisionHint": "Los jugadores ven a través de todos los tokens que poseen o pueden observar, incluso mientras controlan un solo token, de modo que los personajes que se separan siguen visibles y seleccionables. Útil cuando cada jugador lleva varios personajes, como en un embudo (funnel). Desactívalo para usar la visión estándar de Foundry (solo el token controlado).",
   "DCC.SettingHideSingleActionDiePips": "Ocultar marcas para actores con un solo dado de acción",
   "DCC.SettingHideSingleActionDiePipsHint": "Despeja el rastreador de combate mostrando marcas solo para combatientes con dos o más dados de acción. Solo tiene efecto cuando Múltiples dados de acción está activado.",
   "DCC.SettingMightyDeedsTablesCompendium": "Compendio de Tablas de Hazañas",
