@@ -13,7 +13,9 @@
 
   <div class="new-value-row">
     <label for="ability-config-new-value">{{localize "DCC.AbilityLogNewValue"}}:</label>
+    <button type="button" class="value-step minus" data-delta="-1" title="{{localize 'DCC.AbilityLogDecreaseValue'}}" aria-label="{{localize 'DCC.AbilityLogDecreaseValue'}}"><i class="fas fa-minus"></i></button>
     <input type="number" name="newValue" id="ability-config-new-value" value="{{currentValue}}" min="0" step="1">
+    <button type="button" class="value-step plus" data-delta="1" title="{{localize 'DCC.AbilityLogIncreaseValue'}}" aria-label="{{localize 'DCC.AbilityLogIncreaseValue'}}"><i class="fas fa-plus"></i></button>
     <span class="change-display"></span>
   </div>
 

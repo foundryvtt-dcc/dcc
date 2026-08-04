@@ -45,6 +45,16 @@
         width: 52px;
       }
 
+      // Increment/decrement arrows flanking the value (#860)
+      .value-step {
+        flex: 0 0 auto;
+        font-size: 11px;
+        height: 24px;
+        line-height: 1;
+        padding: 0;
+        width: 24px;
+      }
+
       // Same as .effective-row above.
       .change-display {
         color: inherit;

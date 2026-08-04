@@ -119,6 +119,9 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const newValueInput = this.element.querySelector('input[name="newValue"]')
     newValueInput?.addEventListener('input', () => this.#refresh())
+    for (const button of this.element.querySelectorAll('.value-step')) {
+      button.addEventListener('click', () => this.#onStepValue(parseInt(button.dataset.delta)))
+    }
     for (const radio of this.element.querySelectorAll('input[name="reason"]')) {
       radio.addEventListener('change', () => this.#refresh(true))
     }
@@ -130,6 +133,19 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       newValueInput.focus()
       newValueInput.select()
     }
+  }
+
+  /**
+   * Step the new value up or down from an arrow button (#860)
+   * @param {number} delta   +1 or -1
+   */
+  #onStepValue (delta) {
+    const input = this.element.querySelector('input[name="newValue"]')
+    if (!input) return
+    const value = parseInt(input.value)
+    const base = isNaN(value) ? this.#formState().currentValue : value
+    input.value = Math.max(0, base + delta)
+    this.#refresh()
   }
 
   /**
