@@ -1,6 +1,7 @@
 /* global CONFIG, game, ui */
 
 import { getRecoveryClass, getRecoveryText, logAbilityChange, requiresNote, staminaHpDelta } from './ability-score-log.js'
+import { getCasterProfile } from './vendor/dcc-core-lib/index.js'
 
 // Resolved defensively so this module stays importable in bare unit-test
 // contexts (see ability-score-log.js); at runtime the real classes are used.
@@ -77,16 +78,20 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * The default reason preselected for this ability
+   * Physical stats preselect spellburn only for classes whose lib caster
+   * profile has `canSpellburn` (Wizard, Elf) - everyone else's most
+   * common change is ability damage (#860)
    * @returns {string}
    */
   #defaultReason () {
-    switch (this.abilityId) {
-      case 'lck': return 'luckSpend'
-      case 'sta': return 'bleedOut'
-      case 'str':
-      case 'agl': return 'spellburn'
-      default: return 'damage'
-    }
+    if (this.abilityId === 'lck') return 'luckSpend'
+    // Prefer the canonical lowercase classId getter; fall back to the raw
+    // sheetClass field for plain objects (unit test fixtures)
+    const classId = (typeof this.actor.classId === 'string' && this.actor.classId) ||
+      this.actor.system.details?.sheetClass?.toLowerCase?.() || null
+    const canSpellburn = getCasterProfile(classId)?.canSpellburn ?? false
+    if (canSpellburn && ['str', 'agl', 'sta'].includes(this.abilityId)) return 'spellburn'
+    return 'damage'
   }
 
   /** @inheritDoc */
@@ -119,6 +124,9 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const newValueInput = this.element.querySelector('input[name="newValue"]')
     newValueInput?.addEventListener('input', () => this.#refresh())
+    for (const button of this.element.querySelectorAll('.value-step')) {
+      button.addEventListener('click', () => this.#onStepValue(parseInt(button.dataset.delta)))
+    }
     for (const radio of this.element.querySelectorAll('input[name="reason"]')) {
       radio.addEventListener('change', () => this.#refresh(true))
     }
@@ -130,6 +138,19 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       newValueInput.focus()
       newValueInput.select()
     }
+  }
+
+  /**
+   * Step the new value up or down from an arrow button (#860)
+   * @param {number} delta   +1 or -1
+   */
+  #onStepValue (delta) {
+    const input = this.element.querySelector('input[name="newValue"]')
+    if (!input) return
+    const value = parseInt(input.value)
+    const base = isNaN(value) ? this.#formState().currentValue : value
+    input.value = Math.max(0, base + delta)
+    this.#refresh()
   }
 
   /**

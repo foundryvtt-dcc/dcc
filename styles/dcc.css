@@ -1437,6 +1437,14 @@ a.inline-roll {
   text-align: center;
   width: 52px;
 }
+.dcc.ability-score-config .ability-score-config-content .new-value-row .value-step {
+  flex: 0 0 auto;
+  font-size: 11px;
+  height: 24px;
+  line-height: 1;
+  padding: 0;
+  width: 24px;
+}
 .dcc.ability-score-config .ability-score-config-content .new-value-row .change-display {
   color: inherit;
   opacity: 0.65;

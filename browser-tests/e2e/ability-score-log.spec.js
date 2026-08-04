@@ -118,7 +118,10 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
         system: {
           abilities: { str: { value: 12, max: 12 }, lck: { value: 10, max: 10 } },
           details: { level: { value: 2 }, sheetClass: 'Wizard' }
-        }
+        },
+        // Without this flag the first-registered Player sheet (Cleric)
+        // renders and its class-defaults pass re-stamps the actor
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetWizard' } }
       })
       actor.sheet.render(true)
     })
@@ -205,6 +208,65 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     const healedRow = page.locator('.dcc.ability-score-log .ability-log-table tbody tr.healed')
     await expect(healedRow).toHaveCount(1)
     await expect(healedRow.locator('.heal-button')).toHaveCount(0)
+  })
+
+  test('physical stats default to Ability Damage for non-casters (issue #860)', async ({ page }) => {
+    // A Warrior cannot spellburn, so Str should preselect ability damage
+    await page.evaluate(async () => {
+      const actor = await Actor.create({
+        name: 'ASL Test Warrior',
+        type: 'Player',
+        system: {
+          abilities: { str: { value: 12, max: 12 } },
+          details: { level: { value: 2 }, sheetClass: 'Warrior' }
+        },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetWarrior' } }
+      })
+      actor.sheet.render(true)
+    })
+    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
+    await page.waitForTimeout(2000) // Wait for _prepareContext class setup + re-render
+
+    await page.evaluate(() => document.querySelector('.dcc.actor.sheet input[name="system.abilities.str.value"]').click())
+    await page.waitForSelector('.dcc.ability-score-config', { timeout: 5000 })
+
+    await expect(page.locator('.dcc.ability-score-config input[value="damage"]')).toBeChecked()
+    await expect(page.locator('.dcc.ability-score-config input[value="spellburn"]')).not.toBeChecked()
+  })
+
+  test('arrow buttons step the new value up and down (issue #860)', async ({ page }) => {
+    await createAndOpenActor(page)
+
+    // Open the edit dialog for Str (current value 12)
+    await page.locator('.dcc.actor.sheet input[name="system.abilities.str.value"]').click()
+    await page.waitForSelector('.dcc.ability-score-config', { timeout: 5000 })
+
+    const newValueInput = page.locator('.dcc.ability-score-config input[name="newValue"]')
+    const minusButton = page.locator('.dcc.ability-score-config .value-step.minus')
+    const plusButton = page.locator('.dcc.ability-score-config .value-step.plus')
+
+    // Two clicks down: 12 → 10, and the change display + Apply state follow
+    await minusButton.click()
+    await minusButton.click()
+    await expect(newValueInput).toHaveValue('10')
+    await expect(page.locator('.dcc.ability-score-config .change-display')).toContainText('-2')
+    await expect(page.locator('.dcc.ability-score-config button[type="submit"]')).toBeEnabled()
+
+    // One click up: 10 → 11
+    await plusButton.click()
+    await expect(newValueInput).toHaveValue('11')
+    await expect(page.locator('.dcc.ability-score-config .change-display')).toContainText('-1')
+
+    // Stepping the arrows must not submit the form (type="button")
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
+
+    // An emptied input steps from the current value; the floor is 0
+    await newValueInput.fill('')
+    await minusButton.click()
+    await expect(newValueInput).toHaveValue('11')
+    await newValueInput.fill('0')
+    await minusButton.click()
+    await expect(newValueInput).toHaveValue('0')
   })
 
   test('a note-required reason warns on Apply instead of silently disabling it (issue #870)', async ({ page }) => {
