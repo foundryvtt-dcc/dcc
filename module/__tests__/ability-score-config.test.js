@@ -25,6 +25,11 @@ function makeActor (overrides = {}) {
     type: 'Player',
     system: {
       abilities: {
+        str: { value: 12, max: 12 },
+        agl: { value: 12, max: 12 },
+        sta: { value: 12, max: 12 },
+        per: { value: 12, max: 12 },
+        int: { value: 12, max: 12 },
         lck: { value: 8, max: 12 }
       },
       attributes: {
@@ -57,6 +62,62 @@ beforeEach(() => {
   gameSettingsGetMock.mockImplementation((module, key) => {
     if (module === 'dcc' && key === 'enableAbilityScoreLog') return true
     return undefined
+  })
+})
+
+/**
+ * Render context for a dialog on the given actor/ability and return the
+ * preselected reason key
+ */
+async function defaultReasonFor (actor, abilityId) {
+  const dialog = new AbilityScoreConfig({ document: actor, abilityId })
+  const context = await dialog._prepareContext()
+  return context.reasons.find(r => r.checked)?.key
+}
+
+/**
+ * Build an actor whose class dispatch resolves to the given sheetClass
+ */
+function actorWithClass (sheetClass) {
+  const actor = makeActor()
+  actor.system.details.sheetClass = sheetClass
+  return actor
+}
+
+describe('AbilityScoreConfig default reason (issue #860)', () => {
+  test('physical stats default to spellburn for spellburning casters', async () => {
+    for (const sheetClass of ['Wizard', 'Elf']) {
+      const actor = actorWithClass(sheetClass)
+      expect(await defaultReasonFor(actor, 'str')).toBe('spellburn')
+      expect(await defaultReasonFor(actor, 'agl')).toBe('spellburn')
+      expect(await defaultReasonFor(actor, 'sta')).toBe('spellburn')
+    }
+  })
+
+  test('physical stats default to ability damage for non-casters', async () => {
+    const actor = actorWithClass('Warrior')
+    expect(await defaultReasonFor(actor, 'str')).toBe('damage')
+    expect(await defaultReasonFor(actor, 'agl')).toBe('damage')
+    expect(await defaultReasonFor(actor, 'sta')).toBe('damage')
+  })
+
+  test('clerics cannot spellburn and default to ability damage', async () => {
+    const actor = actorWithClass('Cleric')
+    expect(await defaultReasonFor(actor, 'str')).toBe('damage')
+  })
+
+  test('mental stats and Luck are class-independent', async () => {
+    for (const sheetClass of ['Wizard', 'Warrior']) {
+      const actor = actorWithClass(sheetClass)
+      expect(await defaultReasonFor(actor, 'int')).toBe('damage')
+      expect(await defaultReasonFor(actor, 'per')).toBe('damage')
+      expect(await defaultReasonFor(actor, 'lck')).toBe('luckSpend')
+    }
+  })
+
+  test('an actor without class data (e.g. NPC) defaults to ability damage', async () => {
+    const actor = actorWithClass('')
+    expect(await defaultReasonFor(actor, 'str')).toBe('damage')
   })
 })
 

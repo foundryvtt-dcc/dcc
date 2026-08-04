@@ -118,7 +118,10 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
         system: {
           abilities: { str: { value: 12, max: 12 }, lck: { value: 10, max: 10 } },
           details: { level: { value: 2 }, sheetClass: 'Wizard' }
-        }
+        },
+        // Without this flag the first-registered Player sheet (Cleric)
+        // renders and its class-defaults pass re-stamps the actor
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetWizard' } }
       })
       actor.sheet.render(true)
     })
@@ -205,6 +208,30 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     const healedRow = page.locator('.dcc.ability-score-log .ability-log-table tbody tr.healed')
     await expect(healedRow).toHaveCount(1)
     await expect(healedRow.locator('.heal-button')).toHaveCount(0)
+  })
+
+  test('physical stats default to Ability Damage for non-casters (issue #860)', async ({ page }) => {
+    // A Warrior cannot spellburn, so Str should preselect ability damage
+    await page.evaluate(async () => {
+      const actor = await Actor.create({
+        name: 'ASL Test Warrior',
+        type: 'Player',
+        system: {
+          abilities: { str: { value: 12, max: 12 } },
+          details: { level: { value: 2 }, sheetClass: 'Warrior' }
+        },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetWarrior' } }
+      })
+      actor.sheet.render(true)
+    })
+    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
+    await page.waitForTimeout(2000) // Wait for _prepareContext class setup + re-render
+
+    await page.evaluate(() => document.querySelector('.dcc.actor.sheet input[name="system.abilities.str.value"]').click())
+    await page.waitForSelector('.dcc.ability-score-config', { timeout: 5000 })
+
+    await expect(page.locator('.dcc.ability-score-config input[value="damage"]')).toBeChecked()
+    await expect(page.locator('.dcc.ability-score-config input[value="spellburn"]')).not.toBeChecked()
   })
 
   test('arrow buttons step the new value up and down (issue #860)', async ({ page }) => {
