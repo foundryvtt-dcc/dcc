@@ -336,7 +336,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       skillItem,
       result,
       foundryRoll,
-      actionDiceChatLine
+      actionDiceChatLine,
+      options
     })
 
     if (skillItem && skillItem.system.config.showLastResult) {

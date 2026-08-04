@@ -142,6 +142,7 @@ Set in `module/dcc.js:108–121`.
 | Export | Kind | Reason |
 |---|---|---|
 | `game.dcc.DCCActor` | class | No external references found; Foundry reaches the document class through `CONFIG.Actor.documentClass`. XCC replaces that globally anyway — it doesn't use `game.dcc.DCCActor`. |
+| `game.dcc.RollRequestDialog` | class | No external references (added with issue #855; exposed for macros — `game.dcc.RollRequestDialog.show()`). |
 | `game.dcc.SpellDuel` | class | No external references. |
 | `game.dcc.SpellResult` | class | No external references. |
 | `game.dcc.TableResult` | class | No external references. |

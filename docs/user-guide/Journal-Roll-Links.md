@@ -15,8 +15,10 @@ You can put clickable ability checks, saving throws, and skill checks in journal
 * **Ability keys**: `str`, `agl`, `sta`, `per`, `int`, `lck` — full English names also work (e.g. `[[/check agility 10]]`).
 * **Save keys**: `ref`, `frt` (or `fort`), `wil` — full names also work.
 * **Skill keys**: the skill's id on the actor (e.g. `sneakSilently`, `findSecretDoors`) or the exact name of a skill item the actor owns. If the clicking actor doesn't have the skill, they get a warning.
-* A bare number is the DC. You can also write options explicitly: `[[/check ability=agl dc=10]]`.
+* A bare number is the DC. You can also write options explicitly: `[[/check ability=agl dc=10]]`. Checks and skills with a DC show Success/Failure on the result card, like saves.
+* Skill names containing spaces go in double quotes: `[[/skill "Nature Lore" 12]]`.
 * Luck checks are roll-under by default; use `[[/check lck rollUnder=false]]` for a roll-high Luck check.
+* `actor=<uuid>` targets the link at one specific actor instead of the clicker's tokens: `[[/check agl 10 actor=Actor.abc123]]`. Only that actor's owners can trigger it. This is what the [Roll Requests](Roll-Requests.md) tool generates for you.
 
 ## Requesting rolls from players
 
