@@ -360,7 +360,8 @@ DCC.effectChangeTypes = effectChangeTypes
  * editable base values — see docs/user-guide/Active-Effects.md). Used to
  * label the effect-config key autocomplete, and as the full fallback list
  * when no owning actor is available (e.g. effects on unowned world items).
- * Order here is the order options appear in the autocomplete dropdown.
+ * Order here is the order options appear when this fallback list is used;
+ * actor-derived keys follow the actor's schema order instead.
  */
 DCC.activeEffectKeyLabels = {
   'system.abilities.str.otherMod': 'DCC.AbilityStr',
