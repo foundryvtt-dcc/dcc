@@ -18,7 +18,9 @@
  *   pnpm run e2e:env reset     Fresh world copy + re-applied settings
  *   pnpm run e2e:env down      Stop the server, keep .foundry-server/
  *   pnpm run e2e:env destroy   Stop + remove .foundry-server/
- *   pnpm run e2e:env test [-- <playwright args>]   up + run e2e against it
+ *   pnpm run e2e:env test [<playwright args>]   up + run e2e against it
+ *     (no `--` separator — pnpm forwards it literally and the spec filter
+ *     gets lost downstream; cmdTest strips a leading `--` defensively)
  *
  * The environment (world, module set, forced world settings) is declared in
  * browser-tests/e2e/test-environment.json.
@@ -738,6 +740,10 @@ async function cmdReset () {
 }
 
 async function cmdTest (args) {
+  // pnpm ≥7 forwards a literal `--` from `pnpm run e2e:env test -- <spec>`;
+  // passing it on to `pnpm exec playwright` loses the spec filter and the
+  // full suite runs instead. Strip it so both invocation forms work.
+  args = args.filter(a => a !== '--')
   const state = await cmdUp()
   const isFullSuite = !args.some(a => a.includes('.spec.'))
   if (isFullSuite) {
@@ -776,6 +782,6 @@ switch (command) {
   case 'reset': await cmdReset(); break
   case 'test': await cmdTest(rest); break
   default:
-    console.log('Usage: pnpm run e2e:env <up|status|reset|down|destroy|test> [-- <playwright args>]')
+    console.log('Usage: pnpm run e2e:env <up|status|reset|down|destroy|test> [<playwright args>]')
     process.exit(command ? 1 : 0)
 }

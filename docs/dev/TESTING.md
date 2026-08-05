@@ -341,7 +341,7 @@ automatically so fresh worlds skip the empty-world migration.
 ```bash
 pnpm run e2e:env up        # bootstrap (idempotent) + launch + wait ready; prints URL
 pnpm run e2e:env status    # port / pid / health for this worktree's server
-pnpm run e2e:env test -- adapter-dispatch.spec.js   # up + run spec(s) against it
+pnpm run e2e:env test adapter-dispatch.spec.js   # up + run spec(s) against it — no `--` separator (pnpm forwards it literally and the spec filter is lost)
 pnpm run e2e:env test      # full suite (takes the machine-wide ~/.dcc-e2e.lock)
 pnpm run e2e:env reset     # rebuild the world from the template + re-apply settings
 pnpm run e2e:env down      # stop the server, keep .foundry-server/
