@@ -39,7 +39,13 @@ When you create a new effect, you can configure:
 
 Each change consists of:
 
-- **Attribute Key**: The path to the value you want to modify
+- **Attribute Key**: The path to the value you want to modify. This field
+  autocompletes: click into it (or start typing, e.g. `sneak` or `saves`) and
+  your browser offers the valid modifier keys for the actor the effect
+  applies to, each labeled with the stat it modifies. Only the sanctioned
+  modifier-style keys are suggested — the editable base values you should
+  never target (see the warning below) are deliberately left out. You can
+  still type any path by hand.
 - **Change Mode**: How to apply the modification (Add, Multiply, Override, etc.)
 - **Effect Value**: The value to use for the modification. This can be a plain number (e.g., `2`) or an `@`-variable reference to another actor attribute (e.g., `@system.abilities.lck.mod`). See [Using @-Variable References](#using--variable-references) below.
 

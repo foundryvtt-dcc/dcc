@@ -1026,4 +1026,136 @@ test.describe('DCC Active Effects', () => {
       expect(result.hp).toEqual(['HP Boon'])
     })
   })
+
+  test.describe('Effect Key Autocomplete (#904)', () => {
+    test('effect config injects a datalist wired to the key input', async ({ page }) => {
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 Effect Autocomplete', type: 'Player' })
+        const [effect] = await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Autocomplete Probe',
+          changes: [{ key: '', value: '1', type: 'add' }]
+        }])
+        const sheet = effect.sheet
+        try {
+          await sheet.render(true)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          const el = sheet.element
+          const datalist = el.querySelector('datalist.dcc-effect-key-list')
+          const input = el.querySelector('input[name="system.changes.0.key"]')
+          const values = datalist ? Array.from(datalist.options).map(o => o.value) : []
+          return {
+            hasDatalist: !!datalist,
+            datalistId: datalist?.id ?? null,
+            inputList: input?.getAttribute('list') ?? null,
+            hasStrOtherMod: values.includes('system.abilities.str.otherMod'),
+            hasSaveBonus: values.includes('system.saves.ref.otherBonus'),
+            hasActionDice: values.includes('system.attributes.actionDice.value'),
+            hasHpValue: values.includes('system.attributes.hp.value'),
+            hasAbilityBase: values.includes('system.abilities.str.value'),
+            strLabel: datalist?.querySelector('option[value="system.abilities.str.otherMod"]')?.label ?? null
+          }
+        } finally {
+          await sheet.close().catch(() => {})
+        }
+      })
+
+      expect(result.hasDatalist).toBe(true)
+      expect(result.inputList).toBe(result.datalistId)
+      expect(result.hasStrOtherMod).toBe(true)
+      expect(result.hasSaveBonus).toBe(true)
+      expect(result.hasActionDice).toBe(true)
+      // Editable base values must never be offered
+      expect(result.hasHpValue).toBe(false)
+      expect(result.hasAbilityBase).toBe(false)
+      // Options carry human-readable labels ("Strength")
+      expect(result.strLabel).toBeTruthy()
+    })
+
+    test('rows added via the add-change control pick up the datalist', async ({ page }) => {
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'V14 Effect Autocomplete Add', type: 'Player' })
+        const [effect] = await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Autocomplete Add Probe',
+          changes: [{ key: 'system.abilities.str.otherMod', value: '1', type: 'add' }]
+        }])
+        const sheet = effect.sheet
+        try {
+          await sheet.render(true)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          sheet.element.querySelector('[data-action="addChange"]').click()
+          // Poll for the re-rendered second row carrying the list attribute
+          let newInput = null
+          for (let i = 0; i < 20 && !newInput?.getAttribute('list'); i++) {
+            await new Promise(resolve => setTimeout(resolve, 250))
+            newInput = sheet.element.querySelector('input[name="system.changes.1.key"]')
+          }
+          const datalist = sheet.element.querySelector('datalist.dcc-effect-key-list')
+          return {
+            hasNewInput: !!newInput,
+            newInputList: newInput?.getAttribute('list') ?? null,
+            datalistId: datalist?.id ?? null,
+            datalistCount: sheet.element.querySelectorAll('datalist.dcc-effect-key-list').length
+          }
+        } finally {
+          await sheet.close().catch(() => {})
+        }
+      })
+
+      expect(result.hasNewInput).toBe(true)
+      expect(result.newInputList).toBe(result.datalistId)
+      expect(result.datalistCount).toBe(1)
+    })
+
+    test('NPC effects offer NPC keys only; unowned item effects fall back to the curated list', async ({ page }) => {
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        const npc = await Actor.create({ name: 'V14 Effect Autocomplete NPC', type: 'NPC' })
+        const [npcEffect] = await npc.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'NPC Probe',
+          changes: [{ key: '', value: '1', type: 'add' }]
+        }])
+        const npcSheet = npcEffect.sheet
+        try {
+          await npcSheet.render(true)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          const npcValues = Array.from(npcSheet.element.querySelector('datalist.dcc-effect-key-list')?.options ?? []).map(o => o.value)
+          observed.npcHasSave = npcValues.includes('system.saves.wil.otherBonus')
+          observed.npcHasAbility = npcValues.includes('system.abilities.str.otherMod')
+          observed.npcHasLuckDie = npcValues.includes('system.class.luckDie')
+          observed.npcHasThiefSkill = npcValues.includes('system.skills.sneakSilently.otherMod')
+        } finally {
+          await npcSheet.close().catch(() => {})
+        }
+
+        const item = await Item.create({ name: 'V14 Autocomplete Charm', type: 'equipment' })
+        const [itemEffect] = await item.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Item Probe',
+          transfer: true,
+          changes: [{ key: '', value: '1', type: 'add' }]
+        }])
+        const itemSheet = itemEffect.sheet
+        try {
+          await itemSheet.render(true)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          const itemValues = Array.from(itemSheet.element.querySelector('datalist.dcc-effect-key-list')?.options ?? []).map(o => o.value)
+          observed.itemHasLuckDie = itemValues.includes('system.class.luckDie')
+          observed.itemHasAbility = itemValues.includes('system.abilities.str.otherMod')
+          observed.itemHasShieldBash = itemValues.includes('system.skills.shieldBash.otherMod')
+        } finally {
+          await itemSheet.close().catch(() => {})
+        }
+        return observed
+      })
+
+      expect(result.npcHasSave).toBe(true)
+      expect(result.npcHasAbility).toBe(true)
+      // Player-class fields don't exist on the NPC schema
+      expect(result.npcHasLuckDie).toBe(false)
+      expect(result.npcHasThiefSkill).toBe(false)
+      // Unowned world item: curated fallback list offers everything
+      expect(result.itemHasLuckDie).toBe(true)
+      expect(result.itemHasAbility).toBe(true)
+      expect(result.itemHasShieldBash).toBe(true)
+    })
+  })
 })
