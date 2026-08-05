@@ -113,7 +113,7 @@ If `$ARGUMENTS` is provided, use it as the base branch instead of `main`.
 
 ## Step 11: Automated PR Review
 
-Launch the `foundryvtt-dev:foundryvtt-reviewer` agent using the Agent tool with `isolation: "worktree"` to prevent branch switching in the main working directory.
+Launch the `foundryvtt-dev:foundryvtt-reviewer` agent using the Agent tool, pointed at the current working directory. Do **not** use `isolation: "worktree"`: the reviewer is read-only (`Read`, `Grep`, `Glob`), so it cannot switch branches or modify anything — and when running inside a per-issue `work:start` worktree, a spawned worktree comes from the shared parent repo and lands on a stale `worktree-agent-*` branch that does not contain the PR's changes.
 
 The reviewer will check for CLAUDE.md compliance, bugs, style issues, empty catches, swallowed errors, and test coverage gaps.
 
