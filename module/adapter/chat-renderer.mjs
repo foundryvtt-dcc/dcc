@@ -339,8 +339,11 @@ export async function renderAbilityCheck ({
  * `highlightCriticalSuccessFailure` (module/chat.js) swaps the
  * success/failure highlight classes (roll ≤ score = success).
  *
- * Reproduces the legacy `_rollAbilityCheckLegacy` roll-under branch's
- * flag + flavor contract exactly; only the producing code path changed.
+ * The flavor carries an explicit " — Success" / " — Failure" suffix from
+ * the lib's `result.success` (roll ≤ score), matching the DC suffix
+ * convention the ability/save/skill renderers use via `dcResultSuffix` —
+ * roll-under has no DC (the target IS the Luck score), so the outcome is
+ * always known and always shown.
  *
  * @param {Object} params
  * @param {Object} params.actor - The DCCActor that rolled.
@@ -364,7 +367,8 @@ export async function renderAbilityCheckRollUnder ({
   foundryRoll,
   actionDiceChatLine = ''
 }) {
-  const flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
+  const resultLabel = game.i18n.localize(result.success ? 'DCC.SaveSuccess' : 'DCC.SaveFailure')
+  const flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')} — ${resultLabel}`
 
   // Tag the rolled die so the chat highlight hook treats it as
   // roll-under: ≤ target highlights as success (critical class),

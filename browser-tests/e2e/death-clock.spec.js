@@ -251,8 +251,11 @@ test.describe('Death clock', () => {
         const sumBefore = abilitySum(lucky)
         await mod.rollTheBody(lucky)
         // The attempt posts the system's native roll-under Luck check card.
-        observed.luckCheckCardPosted = !!(await pollFor(() =>
-          game.messages.contents.slice(-5).find(m => m.getFlag('dcc', 'RollType') === 'AbilityCheckRollUnder')))
+        const luckCheckCard = await pollFor(() =>
+          game.messages.contents.slice(-5).find(m => m.getFlag('dcc', 'RollType') === 'AbilityCheckRollUnder'))
+        observed.luckCheckCardPosted = !!luckCheckCard
+        // Luck 20 → d20 always ≤ 20: the flavor announces the outcome.
+        observed.luckCheckCardFlavor = luckCheckCard?.flavor ?? ''
         observed.recovered = await pollFor(() => !isDead(lucky))
         observed.hpAfter = await pollFor(() => lucky.system.attributes.hp.value)
         observed.groggy = !!(await pollFor(() =>
@@ -276,6 +279,11 @@ test.describe('Death clock', () => {
         await unlucky.update({ 'system.attributes.hp.value': 0 })
         await pollFor(() => isDead(unlucky))
         await mod.rollTheBody(unlucky)
+        // Luck 0 → d20 never ≤ 0: the roll-under card announces the failure.
+        const failedCheckCard = await pollFor(() =>
+          game.messages.contents.slice(-5).find(m =>
+            m.getFlag('dcc', 'RollType') === 'AbilityCheckRollUnder' && m.speaker?.alias === unlucky.name))
+        observed.failedCheckCardFlavor = failedCheckCard?.flavor ?? ''
         observed.trulyDeadCard = !!(await pollFor(() =>
           game.messages.contents.slice(-5).find(m => m.content.includes(unlucky.name) && m.content.includes('truly dead'))))
         observed.stillDead = isDead(unlucky)
@@ -289,6 +297,8 @@ test.describe('Death clock', () => {
 
     expect(result.buttonOnCard).toBe(true)
     expect(result.luckCheckCardPosted).toBe(true)
+    expect(result.luckCheckCardFlavor).toContain('Success')
+    expect(result.failedCheckCardFlavor).toContain('Failure')
     expect(result.recovered).toBe(true)
     expect(result.hpAfter).toBe(1)
     expect(result.groggy).toBe(true)

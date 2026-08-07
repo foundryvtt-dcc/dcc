@@ -122,7 +122,7 @@ test('roll ability check', async () => {
   // Adapter path — DCCRoll.createRoll is never invoked.
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
-    flavor: 'Luck CheckRollUnder',
+    flavor: 'Luck CheckRollUnder — Success',
     speaker: actor,
     flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder', 'dcc.isAbilityCheck': true },
     system: {

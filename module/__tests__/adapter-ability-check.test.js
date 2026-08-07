@@ -100,11 +100,13 @@ test('rollUnder (Luck check) routes through the lib luck-check adapter path', as
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
   const [messageData, toMessageOpts] = rollToMessageMock.mock.calls[0]
 
-  // Roll-under flag + flavor contract (unchanged from the legacy path).
+  // Roll-under flag contract (unchanged from the legacy path); the flavor
+  // now carries an explicit success/failure suffix (mock natural 10 vs
+  // mock lck 18 → success).
   expect(messageData.flags['dcc.RollType']).toBe('AbilityCheckRollUnder')
   expect(messageData.flags['dcc.Ability']).toBe('lck')
   expect(messageData.flags['dcc.isAbilityCheck']).toBe(true)
-  expect(messageData.flavor).toBe('Luck CheckRollUnder')
+  expect(messageData.flavor).toBe('Luck CheckRollUnder — Success')
 
   // Roll-under is a naked d20 — no modifier breakdown, so (unlike the
   // standard ability check) it carries NO dcc.libResult flag and does
@@ -252,6 +254,21 @@ test('rollUnder thresholds follow the effective Luck score when otherMod shifts 
   })
 
   chatMessageCreateSpy.mockRestore()
+})
+
+test('rollUnder flavor indicates failure when the roll exceeds the Luck score', async () => {
+  rollToMessageMock.mockClear()
+
+  // Luck 5 vs the mock's natural 10 → roll > score → failure suffix.
+  // noinspection JSCheckFunctionSignatures
+  const unlucky = new DCCActor()
+  unlucky.system.abilities.lck.value = 5
+  unlucky.prepareBaseData()
+
+  await unlucky.rollAbilityCheck('lck', { rollUnder: true })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flavor).toBe('Luck CheckRollUnder — Failure')
 })
 
 test('adapter path returns undefined when the ability-check dialog is cancelled', async () => {
