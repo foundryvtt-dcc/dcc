@@ -246,7 +246,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
               ability: msg.getFlag('dcc', 'Ability'),
               isAbilityCheck: msg.getFlag('dcc', 'isAbilityCheck'),
               libResult: msg.getFlag('dcc', 'libResult') ?? null,
-              dcc: term?.options?.dcc ?? null
+              dcc: term?.options?.dcc ?? null,
+              flavor: msg.flavor,
+              total: msg.rolls?.[0]?.total ?? null
             }
           }
           await new Promise(resolve => setTimeout(resolve, 50))
@@ -265,6 +267,10 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(card.dcc.rollUnder).toBe(true)
       expect(card.dcc.lowerThreshold).toBe(14)
       expect(card.dcc.upperThreshold).toBe(15)
+      // The flavor announces the roll-under outcome: roll ≤ Luck (14) is a
+      // success, above it a failure.
+      expect(card.total).not.toBeNull()
+      expect(card.flavor).toContain(card.total <= 14 ? 'Success' : 'Failure')
     })
 
     // Legacy-decom step 2: the modifier dialog no longer routes ability
