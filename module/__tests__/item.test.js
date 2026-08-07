@@ -808,6 +808,44 @@ describe('DCCItem Tests', () => {
 
     // Legacy damage field migration is tested implicitly in other tests
 
+    test('legacy bare-die damage picks up a positive actor damage bonus', () => {
+      weapon = new DCCItem({ type: 'weapon', name: 'legacy sword' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '1d8', // Legacy/imported weapon: no damageWeapon set
+        damageWeapon: '',
+        config: {}
+      }
+      weapon.actor = actor
+
+      weapon.prepareBaseData()
+
+      // Bare die is the weapon die, not a custom override — actor bonus applies
+      expect(weapon.system.config.damageOverride).toBeUndefined()
+      expect(weapon.system.damageWeapon).toBe('1d8')
+      expect(weapon.system.damage).toBe('1d8+3')
+    })
+
+    test('legacy bare-die damage subtracts a negative Strength damage bonus (temp Str loss)', () => {
+      // Max Str 9 (mod 0, damage stored as bare '1d4') temporarily lowered
+      // to 7 (mod -1): the -1 must reach the melee damage formula
+      actor.system.details.attackDamageBonus.melee.value = '-1'
+
+      weapon = new DCCItem({ type: 'weapon', name: 'club' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '1d4',
+        damageWeapon: '',
+        config: {}
+      }
+      weapon.actor = actor
+
+      weapon.prepareBaseData()
+
+      expect(weapon.system.config.damageOverride).toBeUndefined()
+      expect(weapon.system.damage).toBe('1d4-1')
+    })
+
     test('should handle weapons with non-standard damage override', () => {
       weapon = new DCCItem({ type: 'weapon', name: 'special weapon' }, {})
       weapon.system = {

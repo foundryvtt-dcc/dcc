@@ -215,7 +215,12 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
           if (!this.system?.melee) {
             total = `${damageWeapon}${this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''}`
           }
-          if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '')
+          // A bare die ('1d4') is the derived shape from a +0-bonus actor, not
+          // a custom formula — treat it as the weapon die so the actor's
+          // *current* damage bonus applies. Freezing it as an override left a
+          // temporarily lowered Strength mod out of melee damage entirely.
+          if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '') ||
+            this.system.damage === damageWeapon
           ) {
             this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
             this.system.damageWeapon = damageWeapon

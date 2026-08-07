@@ -4027,6 +4027,75 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(cursedEntry.amount).toBe(-1)
     })
 
+    test('legacy weapon (bare `damage`, no `damageWeapon`) applies a temporarily lowered Strength mod to melee damage', async ({ page }) => {
+      // User report: max Str 9 (mod 0) temporarily lowered to 7 (mod -1).
+      // Legacy / imported weapons store only `system.damage` ('1d4') with no
+      // `damageWeapon`; item.js's prepareBaseData migration used to misread
+      // the bare die as a custom formula once the actor's melee damage bonus
+      // was nonzero, freeze it via `config.damageOverride`, and drop the -1
+      // from the damage roll entirely.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 PC WeakenedStr',
+          type: 'Player',
+          system: { abilities: { str: { value: 7, max: 9 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-LegacyClub',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            critRange: 20,
+            damage: '1d4', // legacy/imported shape — no damageWeapon
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+
+      // The prepared formula must carry the current (lowered) Str mod, not a
+      // frozen override
+      const prepared = await page.evaluate(() => {
+        const weapon = game.actors.getName('P1 PC WeakenedStr').items.getName('P1-LegacyClub')
+        return { damage: weapon.system.damage, override: weapon.system.config.damageOverride }
+      })
+      expect(prepared.override || '').toBe('')
+      expect(prepared.damage).toBe('1d4-1')
+
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 PC WeakenedStr').items.getName('P1-LegacyClub').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 PC WeakenedStr').rollWeaponAttack(id)
+      }, weaponId)
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-LegacyClub' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 PC WeakenedStr' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'legacy-weapon adapter-path damage must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.passthrough).toBeUndefined()
+      const strengthEntry = flag.breakdown.find(b => b.source === 'Strength')
+      expect(strengthEntry, 'lowered Strength mod must surface as its own breakdown entry').toBeDefined()
+      expect(strengthEntry.amount).toBe(-1)
+    })
+
     test('dice-bearing magic bonus (`damageWeaponBonus: "+1d4"`) routes via adapter with extraDamageDice (D2 damage sub-slice d)', async ({ page }) => {
       // Phase 3 session 19 broadened the gate to accept dice-bearing
       // `damageWeaponBonus`. `item.js` concatenates the raw bonus onto
