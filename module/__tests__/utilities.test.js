@@ -227,6 +227,15 @@ describe('Utilities', () => {
       expect(inferWeaponDie('+2')).toBe('')
       expect(inferWeaponDie(null)).toBe('')
       expect(inferWeaponDie(undefined)).toBe('')
+      expect(inferWeaponDie(4)).toBe('') // non-string input
+    })
+
+    it('handles multi-die counts and null-ish bonus values', () => {
+      expect(inferWeaponDie('2d8+3', '+3')).toBe('2d8')
+      expect(inferWeaponDie('1d4', null)).toBe('1d4')
+      expect(inferWeaponDie('1d4', undefined)).toBe('1d4')
+      // Formula-with-bonus but no bonus context stays ambiguous
+      expect(inferWeaponDie('1d4-1', null)).toBe('')
     })
   })
 

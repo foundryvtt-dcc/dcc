@@ -925,6 +925,100 @@ describe('DCCItem Tests', () => {
       expect(weapon.system.config.damageOverride).toBeUndefined()
       expect(weapon.system.damage).toBe('2d4+fire')
     })
+
+    test('_preCreate uses the missile bonus for non-melee weapons', async () => {
+      actor.type = 'Player'
+      // Suite actor's missile damage bonus is '+1'
+      weapon = new DCCItem({ type: 'weapon', name: 'shortbow' }, {})
+      weapon.system = {
+        melee: false,
+        damage: '1d6+1', // Matches die + missile bonus, NOT melee ('+3')
+        damageWeapon: '',
+        config: {}
+      }
+      weapon._source = { system: weapon.system }
+      weapon.parent = actor
+
+      await weapon._preCreate({}, {}, {})
+      expect(weapon.system.damageWeapon).toBe('1d6')
+    })
+
+    test('_preCreate never touches non-weapons, unowned items, or already-normalized weapons', async () => {
+      actor.type = 'Player'
+
+      // Non-weapon item types are ignored even with weapon-shaped data
+      const equipment = new DCCItem({ type: 'equipment', name: 'torch' }, {})
+      equipment.system = { damage: '1d4', damageWeapon: '', config: {} }
+      equipment._source = { system: equipment.system }
+      equipment.parent = actor
+      await equipment._preCreate({}, {}, {})
+      expect(equipment.system.damageWeapon).toBe('')
+
+      // World-item creation (no parent): no owner context, no split
+      const worldWeapon = new DCCItem({ type: 'weapon', name: 'display sword' }, {})
+      worldWeapon.system = { melee: true, damage: '1d8', damageWeapon: '', config: {} }
+      worldWeapon._source = { system: worldWeapon.system }
+      worldWeapon.parent = null
+      await worldWeapon._preCreate({}, {}, {})
+      expect(worldWeapon.system.damageWeapon).toBe('')
+
+      // damageWeapon already recorded: the split never overwrites it
+      const modern = new DCCItem({ type: 'weapon', name: 'modern sword' }, {})
+      modern.system = { melee: true, damage: '1d8+3', damageWeapon: '1d10', config: {} }
+      modern._source = { system: modern.system }
+      modern.parent = actor
+      await modern._preCreate({}, {}, {})
+      expect(modern.system.damageWeapon).toBe('1d10')
+
+      // Explicit damageOverride: the author's formula is authoritative
+      const custom = new DCCItem({ type: 'weapon', name: 'custom sword' }, {})
+      custom.system = { melee: true, damage: '1d8', damageWeapon: '', config: { damageOverride: '2d6' } }
+      custom._source = { system: custom.system }
+      custom.parent = actor
+      await custom._preCreate({}, {}, {})
+      expect(custom.system.damageWeapon).toBe('')
+
+      // Empty damage: nothing to infer from
+      const blank = new DCCItem({ type: 'weapon', name: 'blank sword' }, {})
+      blank.system = { melee: true, damage: '', damageWeapon: '', config: {} }
+      blank._source = { system: blank.system }
+      blank.parent = actor
+      await blank._preCreate({}, {}, {})
+      expect(blank.system.damageWeapon).toBe('')
+    })
+
+    test('a fresh weapon with no damage and no damageWeapon stays empty after prepare', () => {
+      // Pre-#907 the composition ran unconditionally, so a brand-new weapon
+      // displayed the actor bonus alone ('+3') as its damage. The gated
+      // composition leaves it empty until a weapon die is recorded.
+      weapon = new DCCItem({ type: 'weapon', name: 'new weapon' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '',
+        damageWeapon: '',
+        config: {}
+      }
+      weapon.actor = actor
+
+      weapon.prepareBaseData()
+
+      expect(weapon.system.damage).toBe('')
+    })
+
+    test('damageOverride still wins for weapons with no damageWeapon', () => {
+      weapon = new DCCItem({ type: 'weapon', name: 'overridden legacy' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '1d8',
+        damageWeapon: '',
+        config: { damageOverride: '3d6' }
+      }
+      weapon.actor = actor
+
+      weapon.prepareBaseData()
+
+      expect(weapon.system.damage).toBe('3d6')
+    })
   })
 
   describe('Initiative Bonus Calculations', () => {

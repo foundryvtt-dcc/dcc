@@ -2672,3 +2672,30 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
   ]
   expect(parsedNPC).toMatchObject(expected)
 })
+
+/* #907: the zero-level single-weapon branch splits out the weapon die at
+ * import time (like the upper-level weapons[] branch always did), so the
+ * composed damage tracks the actor's current Strength modifier. */
+test('zero-level weapon import records the weapon die', () => {
+  // Damage with a baked-in modifier: die split out, stored damage preserved
+  const parsed = parsePCs('{"occTitle": "Farmer", "weapon": "Pitchfork", "attackDamage": "1d8+1"}')
+  expect(parsed[0].items[0].system).toMatchObject({
+    damage: '1d8+1',
+    damageWeapon: '1d8',
+    melee: true
+  })
+
+  // No damage expression in the import: both fields take the 1d3 default
+  const defaulted = parsePCs('{"occTitle": "Farmer", "weapon": "Fists"}')
+  expect(defaulted[0].items[0].system).toMatchObject({
+    damage: '1d3',
+    damageWeapon: '1d3'
+  })
+
+  // Die-less damage text: no die recorded — the weapon rolls as stored
+  const dieless = parsePCs('{"occTitle": "Farmer", "weapon": "Net", "attackDamage": "special"}')
+  expect(dieless[0].items[0].system).toMatchObject({
+    damage: 'special',
+    damageWeapon: ''
+  })
+})

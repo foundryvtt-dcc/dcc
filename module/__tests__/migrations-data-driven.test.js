@@ -545,4 +545,26 @@ describe('migrateActorData — weapon context for the legacy weapon-die split (#
 
     expect(await migrateActorData(actor)).toEqual({})
   })
+
+  test('an actor without bonus data still splits the unambiguous bare die', async () => {
+    // Non-NPC actors missing attackDamageBonus (partial fixtures, odd
+    // third-party data) pass empty bonuses — the bare-die case needs none
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.items = [{ type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: {} } }]
+
+    const updateData = await migrateActorData(actor)
+
+    expect(updateData.items).toHaveLength(1)
+    expect(updateData.items[0]['system.damageWeapon']).toBe('1d4')
+  })
+
+  test('a Player-owned ambiguous weapon produces no item update at all', async () => {
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.system.details.attackDamageBonus = { melee: { value: '-1' }, missile: { value: '+0' } }
+    actor.items = [{ type: 'weapon', system: { damage: '1d8+5', damageWeapon: '', config: {} } }]
+
+    expect(await migrateActorData(actor)).toEqual({})
+  })
 })
