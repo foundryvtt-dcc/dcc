@@ -26,6 +26,18 @@ vi.mock('../utilities.js', () => ({
     const match = value?.match(/\d*d\d+/)
     return match ? match[0] : null
   }),
+  // Mirrors the real implementation: bare die or die + the given bonus
+  // (tolerating a dropped '+0') infers the die; anything else returns ''.
+  inferWeaponDie: vi.fn((damage, bonus = '') => {
+    if (typeof damage !== 'string' || damage === '') return ''
+    const match = damage.match(/\d*d\d+/)
+    const die = match ? match[0] : ''
+    if (!die) return ''
+    if (damage === die) return die
+    const total = `${die}${bonus || ''}`
+    if (damage === total || damage === total.replaceAll('+0', '')) return die
+    return ''
+  }),
   // Mirrors the real implementation: single die of the first listed faces
   // with its flat rider kept ('2d20' → '1d20', '1d20+4' → '1d20+4'), ''
   // when no die is present.
@@ -806,13 +818,16 @@ describe('DCCItem Tests', () => {
       expect(weapon.system.damage).toBe('1d6+1+2')
     })
 
-    // Legacy damage field migration is tested implicitly in other tests
+    // Legacy-shape weapons (`damage` stored, no `damageWeapon`): the
+    // heuristic runtime split retired in #907. `_preCreate` and the world
+    // migration persist `damageWeapon` for confidently-attributable shapes;
+    // prepareBaseData rolls anything left verbatim.
 
-    test('legacy bare-die damage picks up a positive actor damage bonus', () => {
+    test('weapon with no damageWeapon keeps its stored damage formula verbatim', () => {
       weapon = new DCCItem({ type: 'weapon', name: 'legacy sword' }, {})
       weapon.system = {
         melee: true,
-        damage: '1d8', // Legacy/imported weapon: no damageWeapon set
+        damage: '1d8',
         damageWeapon: '',
         config: {}
       }
@@ -820,16 +835,19 @@ describe('DCCItem Tests', () => {
 
       weapon.prepareBaseData()
 
-      // Bare die is the weapon die, not a custom override — actor bonus applies
+      // No heuristic split at prepare time, and no override baked in — the
+      // stored formula is the safety net
       expect(weapon.system.config.damageOverride).toBeUndefined()
-      expect(weapon.system.damageWeapon).toBe('1d8')
-      expect(weapon.system.damage).toBe('1d8+3')
+      expect(weapon.system.damageWeapon).toBe('')
+      expect(weapon.system.damage).toBe('1d8')
     })
 
-    test('legacy bare-die damage subtracts a negative Strength damage bonus (temp Str loss)', () => {
-      // Max Str 9 (mod 0, damage stored as bare '1d4') temporarily lowered
-      // to 7 (mod -1): the -1 must reach the melee damage formula
+    test('_preCreate splits the weapon die for a legacy weapon embedded on a Player (temp Str loss)', async () => {
+      // User report: max Str 9 (mod 0, damage stored as bare '1d4')
+      // temporarily lowered to 7 (mod -1). Normalizing at creation is what
+      // lets the composed formula subtract the current -1.
       actor.system.details.attackDamageBonus.melee.value = '-1'
+      actor.type = 'Player'
 
       weapon = new DCCItem({ type: 'weapon', name: 'club' }, {})
       weapon.system = {
@@ -838,15 +856,60 @@ describe('DCCItem Tests', () => {
         damageWeapon: '',
         config: {}
       }
+      weapon._source = { system: weapon.system }
+      weapon.parent = actor
+
+      await weapon._preCreate({}, {}, {})
+      expect(weapon.system.damageWeapon).toBe('1d4')
+
       weapon.actor = actor
-
       weapon.prepareBaseData()
-
       expect(weapon.system.config.damageOverride).toBeUndefined()
       expect(weapon.system.damage).toBe('1d4-1')
     })
 
-    test('should handle weapons with non-standard damage override', () => {
+    test('_preCreate splits when the stored formula matches die + current actor bonus', async () => {
+      actor.type = 'Player'
+      // Suite actor's melee damage bonus is '+3'
+      weapon = new DCCItem({ type: 'weapon', name: 'longsword' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '1d8+3',
+        damageWeapon: '',
+        config: {}
+      }
+      weapon._source = { system: weapon.system }
+      weapon.parent = actor
+
+      await weapon._preCreate({}, {}, {})
+      expect(weapon.system.damageWeapon).toBe('1d8')
+    })
+
+    test('_preCreate leaves ambiguous formulas and non-Player owners alone', async () => {
+      actor.type = 'Player'
+      weapon = new DCCItem({ type: 'weapon', name: 'odd blade' }, {})
+      weapon.system = {
+        melee: true,
+        damage: '1d8+5', // Doesn't match bare die or die + bonus ('+3')
+        damageWeapon: '',
+        config: {}
+      }
+      weapon._source = { system: weapon.system }
+      weapon.parent = actor
+      await weapon._preCreate({}, {}, {})
+      expect(weapon.system.damageWeapon).toBe('')
+
+      // NPC-owned weapons use `damage` directly — never split
+      const npc = { type: 'NPC', system: actor.system }
+      const npcWeapon = new DCCItem({ type: 'weapon', name: 'claw' }, {})
+      npcWeapon.system = { melee: true, damage: '1d4', damageWeapon: '', config: {} }
+      npcWeapon._source = { system: npcWeapon.system }
+      npcWeapon.parent = npc
+      await npcWeapon._preCreate({}, {}, {})
+      expect(npcWeapon.system.damageWeapon).toBe('')
+    })
+
+    test('should handle weapons with non-standard damage', () => {
       weapon = new DCCItem({ type: 'weapon', name: 'special weapon' }, {})
       weapon.system = {
         melee: true,
@@ -858,7 +921,9 @@ describe('DCCItem Tests', () => {
 
       weapon.prepareBaseData()
 
-      expect(weapon.system.config.damageOverride).toBe('2d4+fire')
+      // Rolled as stored — no override is baked in anymore (#907)
+      expect(weapon.system.config.damageOverride).toBeUndefined()
+      expect(weapon.system.damage).toBe('2d4+fire')
     })
   })
 

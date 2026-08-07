@@ -45,7 +45,7 @@ const antiPattern = /currentVersion\s*(?:<=?|>=?|===?|!==?)\s*0\.(?:0\d|1\d|2[01
 describe('classifyMigrationDecision', () => {
   test('exported floor + ceiling constants', () => {
     expect(MINIMUM_SUPPORTED_VERSION).toBe(0.22)
-    expect(NEEDS_MIGRATION_VERSION).toBe(0.71)
+    expect(NEEDS_MIGRATION_VERSION).toBe(0.72)
   })
 
   test('fresh world (default: 0) runs migrateWorld', () => {
@@ -87,8 +87,12 @@ describe('classifyMigrationDecision', () => {
     expect(classifyMigrationDecision(0.70)).toBe('run')
   })
 
-  test('already migrated (0.71) skips', () => {
-    expect(classifyMigrationDecision(0.71)).toBe('skip')
+  test('previous ceiling (0.71) re-runs for the 0.72 weapon-die split', () => {
+    expect(classifyMigrationDecision(0.71)).toBe('run')
+  })
+
+  test('already migrated (0.72) skips', () => {
+    expect(classifyMigrationDecision(0.72)).toBe('skip')
   })
 
   test('above ceiling skips', () => {

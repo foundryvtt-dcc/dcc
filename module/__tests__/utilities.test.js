@@ -13,6 +13,7 @@ import {
   getFirstDie,
   getFirstMod,
   getSingleActionDie,
+  inferWeaponDie,
   addDamageFlavorToRolls,
   getCritTableLink,
   getCritTableResult,
@@ -192,6 +193,40 @@ describe('Utilities', () => {
       expect(getFirstDie('d6')).toBe('') // No dice count
       expect(getFirstDie('1d')).toBe('') // No face count
       expect(getFirstDie('100d100')).toBe('00d10') // Note: regex captures first 2 digits
+    })
+  })
+
+  describe('inferWeaponDie', () => {
+    it('infers the die from a bare-die formula regardless of bonus', () => {
+      expect(inferWeaponDie('1d4')).toBe('1d4')
+      expect(inferWeaponDie('1d4', '-1')).toBe('1d4')
+      expect(inferWeaponDie('2d8', '+3')).toBe('2d8')
+    })
+
+    it('infers the die when the formula is die + the given bonus', () => {
+      expect(inferWeaponDie('1d4-1', '-1')).toBe('1d4')
+      expect(inferWeaponDie('1d8+3', '+3')).toBe('1d8')
+      expect(inferWeaponDie('1d6+1d3', '+1d3')).toBe('1d6')
+    })
+
+    it('tolerates a dropped +0 in the stored formula', () => {
+      expect(inferWeaponDie('1d8', '+0')).toBe('1d8')
+      expect(inferWeaponDie('1d8+1d3', '+1d3+0')).toBe('1d8')
+    })
+
+    it('returns empty string for ambiguous or custom formulas', () => {
+      expect(inferWeaponDie('1d4+1', '-1')).toBe('') // baked-in bonus no longer matches
+      expect(inferWeaponDie('1d4+1')).toBe('') // no bonus context
+      expect(inferWeaponDie('1d8+2+@ab', '+2')).toBe('') // deed form
+      expect(inferWeaponDie('2d4+fire', '+3')).toBe('') // non-standard
+      expect(inferWeaponDie('(1d8)*2+3', '+3')).toBe('') // sub-expression
+    })
+
+    it('returns empty string for die-less or empty input', () => {
+      expect(inferWeaponDie('')).toBe('')
+      expect(inferWeaponDie('+2')).toBe('')
+      expect(inferWeaponDie(null)).toBe('')
+      expect(inferWeaponDie(undefined)).toBe('')
     })
   })
 

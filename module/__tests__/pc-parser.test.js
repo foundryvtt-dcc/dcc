@@ -56,6 +56,9 @@ Languages: Common`)
         system: {
           toHit: '-1',
           damage: '1d4-1',
+          // Weapon die split out at import so the composed damage tracks
+          // the actor's current Strength modifier (#907)
+          damageWeapon: '1d4',
           melee: true
         }
       },
@@ -411,6 +414,8 @@ Languages: Common `)
           system: {
             toHit: '-1',
             damage: '1d6-1',
+            // Weapon die split out at import (#907) — plain-text path
+            damageWeapon: '1d6',
             melee: true
           }
         },

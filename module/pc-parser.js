@@ -83,6 +83,9 @@ function _parseJSONPCs (pcObject) {
     }
 
     if (pcObject.weapon && !pcObject.weapons) {
+      // Split out the weapon die like the upper-level weapons branch above,
+      // so the composed damage tracks the actor's current Strength modifier
+      // instead of freezing the imported total (#907)
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',
@@ -90,6 +93,7 @@ function _parseJSONPCs (pcObject) {
         system: {
           toHit: pcObject.attackMod || '0',
           damage: pcObject.attackDamage || '1d3',
+          damageWeapon: pcObject.attackDamage ? getFirstDie(pcObject.attackDamage) : '1d3',
           melee: true // No way to know, but melee is most likely
         }
       })

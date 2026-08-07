@@ -201,6 +201,40 @@ export function getSingleActionDie (value) {
 }
 
 /**
+ * Infer the weapon die from a legacy-shape damage formula (`system.damage`
+ * set with no `system.damageWeapon` recorded — older worlds and imports).
+ *
+ * Conservative by design: only recognizes a formula that is exactly the
+ * bare die (`1d4`) or exactly die + the owning actor's current damage
+ * bonus (`1d4-1` with bonus `-1`, tolerating a dropped `+0`). Anything
+ * else — baked-in bonuses that no longer match, `@ab` deed forms, custom
+ * expressions — returns '' so the caller leaves the stored formula alone
+ * rather than baking a wrong attribution (#907).
+ *
+ * @param {string} damage - the stored damage formula
+ * @param {string} [bonus] - the actor's current damage bonus for the
+ *   weapon's attack mode (e.g. `+2`, `-1`), if known
+ * @return {string} - the weapon die, or an empty string if not confidently inferable
+ */
+export function inferWeaponDie (damage, bonus = '') {
+  if (typeof damage !== 'string' || damage === '') {
+    return ''
+  }
+  const die = getFirstDie(damage)
+  if (!die) {
+    return ''
+  }
+  if (damage === die) {
+    return die
+  }
+  const total = `${die}${bonus || ''}`
+  if (damage === total || damage === total.replaceAll('+0', '')) {
+    return die
+  }
+  return ''
+}
+
+/**
  * Get the first modifier in a string expression
  * @param {string} value - value to extract first modifier from
  * @return {string} - first modifier expression or an empty string if none

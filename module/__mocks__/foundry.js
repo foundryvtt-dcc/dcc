@@ -1054,8 +1054,27 @@ class MockItem {
 
 // Lifecycle hooks and dialogs for MockItem
 MockItem.prototype._onCreate = async function () {}
+MockItem.prototype._preCreate = async function () {}
 MockItem.prototype._preDelete = async function () {}
 MockItem.prototype.deleteDialog = async function () { return this }
+
+// Minimal Document#updateSource: apply dotted-key changes to the document
+// (and its _source when present), like real Foundry's pre-creation mutation.
+MockItem.prototype.updateSource = function (changes = {}) {
+  for (const target of [this, this._source].filter(Boolean)) {
+    for (const [key, value] of Object.entries(changes)) {
+      const parts = key.split('.')
+      let obj = target
+      while (parts.length > 1) {
+        const part = parts.shift()
+        if (typeof obj[part] !== 'object' || obj[part] === null) obj[part] = {}
+        obj = obj[part]
+      }
+      obj[parts[0]] = value
+    }
+  }
+  return changes
+}
 
 // Minimal Document#clone: copy data, apply (possibly dotted-key) changes,
 // preserve the actor reference; keepId keeps _id/id like real Foundry.

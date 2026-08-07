@@ -4030,10 +4030,13 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     test('legacy weapon (bare `damage`, no `damageWeapon`) applies a temporarily lowered Strength mod to melee damage', async ({ page }) => {
       // User report: max Str 9 (mod 0) temporarily lowered to 7 (mod -1).
       // Legacy / imported weapons store only `system.damage` ('1d4') with no
-      // `damageWeapon`; item.js's prepareBaseData migration used to misread
-      // the bare die as a custom formula once the actor's melee damage bonus
-      // was nonzero, freeze it via `config.damageOverride`, and drop the -1
-      // from the damage roll entirely.
+      // `damageWeapon`. item.js's old per-prepare heuristic misread the bare
+      // die as a custom formula once the actor's melee damage bonus was
+      // nonzero, froze it via `config.damageOverride`, and dropped the -1
+      // from the damage roll entirely. Post-#907, `DCCItem._preCreate`
+      // persists the weapon-die split when the item is embedded (this
+      // createEmbeddedDocuments call), so the composed formula tracks the
+      // actor's current Strength modifier.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 PC WeakenedStr',
