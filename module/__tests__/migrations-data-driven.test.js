@@ -421,16 +421,19 @@ describe('migrateActorData — action die seed from config.actionDice', () => {
 })
 
 describe('migrateActorData — owned item recursion', () => {
-  test('folds a migrated owned item into updateData.items', async () => {
+  test('folds a migrated owned item into updateData.items as an {_id, ...changes} delta', async () => {
     const actor = cleanActor()
-    actor.items = [{
-      _id: 'item1',
-      effects: [effectWithChanges([{ key: 'k', mode: 2, value: '1' }])]
-    }]
+    actor.items = [
+      { _id: 'item1', effects: [effectWithChanges([{ key: 'k', mode: 2, value: '1' }])] },
+      { _id: 'item2', effects: [] } // unchanged — must not appear in the update
+    ]
 
     const updateData = await migrateActorData(actor)
 
+    // Plain differential deltas keyed by _id — the shape Actor#update
+    // persists to _source (#907 review); never merged live documents
     expect(updateData.items).toHaveLength(1)
+    expect(updateData.items[0]._id).toBe('item1')
     expect(updateData.items[0].effects[0].changes[0].type).toBe('add')
   })
 
@@ -530,12 +533,11 @@ describe('migrateActorData — weapon context for the legacy weapon-die split (#
     const actor = cleanActor()
     actor.type = 'Player'
     actor.system.details.attackDamageBonus = { melee: { value: '-1' }, missile: { value: '+0' } }
-    actor.items = [{ type: 'weapon', system: { damage: '1d8-1', damageWeapon: '', config: {} } }]
+    actor.items = [{ _id: 'weapon1', type: 'weapon', system: { damage: '1d8-1', damageWeapon: '', config: {} } }]
 
     const updateData = await migrateActorData(actor)
 
-    expect(updateData.items).toHaveLength(1)
-    expect(updateData.items[0]['system.damageWeapon']).toBe('1d8')
+    expect(updateData.items).toEqual([{ _id: 'weapon1', 'system.damageWeapon': '1d8' }])
   })
 
   test('NPC-owned weapons are never split', async () => {
@@ -551,12 +553,11 @@ describe('migrateActorData — weapon context for the legacy weapon-die split (#
     // third-party data) pass empty bonuses — the bare-die case needs none
     const actor = cleanActor()
     actor.type = 'Player'
-    actor.items = [{ type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: {} } }]
+    actor.items = [{ _id: 'weapon1', type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: {} } }]
 
     const updateData = await migrateActorData(actor)
 
-    expect(updateData.items).toHaveLength(1)
-    expect(updateData.items[0]['system.damageWeapon']).toBe('1d4')
+    expect(updateData.items).toEqual([{ _id: 'weapon1', 'system.damageWeapon': '1d4' }])
   })
 
   test('a Player-owned ambiguous weapon produces no item update at all', async () => {

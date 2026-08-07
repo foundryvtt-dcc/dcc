@@ -511,33 +511,31 @@ export const migrateActorData = async function (actor) {
 
   // Migrate Owned Items
   // Player actors pass their current damage bonuses so the legacy weapon-die
-  // split can attribute a matching baked-in modifier (#907); NPC weapons use
-  // `damage` directly (no composition), so the split is skipped for them.
-  const weaponContext = actor.type === 'NPC'
-    ? { skipWeapons: true }
-    : {
+  // split can attribute a matching baked-in modifier (#907); NPC (and Party)
+  // weapons use `damage` directly (no composition), so the split is skipped
+  // for them — matching DCCItem._preCreate's Player-only gate.
+  const weaponContext = actor.type === 'Player'
+    ? {
         damageBonusMelee: actor.system?.details?.attackDamageBonus?.melee?.value || '',
         damageBonusMissile: actor.system?.details?.attackDamageBonus?.missile?.value || ''
       }
-  let hasItemUpdates = false
-  let items = []
-  if (actor.items) {
-    items = actor.items.map(i => {
-      // Migrate the Owned Item
-      const itemUpdate = migrateItemData(i, weaponContext)
-
-      // Update the Owned Item
-      if (!foundry.utils.isEmpty(itemUpdate)) {
-        hasItemUpdates = true
-        return foundry.utils.mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
-      } else {
-        return i
-      }
-    })
+    : { skipWeapons: true }
+  // Each changed item becomes a plain `{_id, ...changes}` delta — the
+  // differential embedded-update shape `Actor#update` persists to _source.
+  // The previous `mergeObject(itemDocument, update)` pattern wrote the
+  // changes onto the live document's *prepared* data (deepClone returns
+  // class instances by reference), which document serialization — reading
+  // _source — then dropped, so owned-item updates could silently fail to
+  // persist (#907 review).
+  const itemUpdates = []
+  for (const i of actor.items ?? []) {
+    const itemUpdate = migrateItemData(i, weaponContext)
+    if (!foundry.utils.isEmpty(itemUpdate)) {
+      itemUpdates.push({ _id: i._id ?? i.id, ...itemUpdate })
+    }
   }
-
-  if (hasItemUpdates) {
-    updateData.items = items
+  if (itemUpdates.length > 0) {
+    updateData.items = itemUpdates
   }
 
   return updateData

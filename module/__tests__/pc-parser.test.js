@@ -2677,12 +2677,22 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
  * import time (like the upper-level weapons[] branch always did), so the
  * composed damage tracks the actor's current Strength modifier. */
 test('zero-level weapon import records the weapon die', () => {
-  // Damage with a baked-in modifier: die split out, stored damage preserved
-  const parsed = parsePCs('{"occTitle": "Farmer", "weapon": "Pitchfork", "attackDamage": "1d8+1"}')
+  // Damage matching die + the imported Str mod (13 -> +1): die split out,
+  // stored damage preserved
+  const parsed = parsePCs('{"occTitle": "Farmer", "weapon": "Pitchfork", "strengthScore": "13", "attackDamage": "1d8+1"}')
   expect(parsed[0].items[0].system).toMatchObject({
     damage: '1d8+1',
     damageWeapon: '1d8',
     melee: true
+  })
+
+  // Baked-in bonus that is NOT the Str mod (Str 9 -> +0): conservative — no
+  // die recorded, the weapon rolls the imported total verbatim (e.g. a
+  // damage-affecting birth augur must not be replaced by the Str bonus)
+  const augur = parsePCs('{"occTitle": "Farmer", "weapon": "Lucky Club", "strengthScore": "9", "attackDamage": "1d8+1"}')
+  expect(augur[0].items[0].system).toMatchObject({
+    damage: '1d8+1',
+    damageWeapon: ''
   })
 
   // No damage expression in the import: both fields take the 1d3 default

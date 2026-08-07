@@ -237,6 +237,15 @@ describe('Utilities', () => {
       // Formula-with-bonus but no bonus context stays ambiguous
       expect(inferWeaponDie('1d4-1', null)).toBe('')
     })
+
+    it('declines dice outside getFirstDie range instead of truncating them', () => {
+      // getFirstDie's regex caps at 2-digit counts/faces; these must be a
+      // conservative miss (rolls as stored), never a shrunken die
+      expect(inferWeaponDie('1d100')).toBe('')
+      expect(inferWeaponDie('1d100', '+2')).toBe('')
+      expect(inferWeaponDie('100d6')).toBe('')
+      expect(inferWeaponDie('d6')).toBe('')
+    })
   })
 
   describe('getSingleActionDie', () => {

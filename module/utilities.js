@@ -211,6 +211,11 @@ export function getSingleActionDie (value) {
  * expressions — returns '' so the caller leaves the stored formula alone
  * rather than baking a wrong attribution (#907).
  *
+ * Dice outside `getFirstDie`'s 1-2-digit range (`d6` with no count,
+ * `1d100`, `100d6`) never produce an exact match, so those formulas are
+ * likewise declined and roll as stored — a conservative miss, never a
+ * truncated die.
+ *
  * @param {string} damage - the stored damage formula
  * @param {string} [bonus] - the actor's current damage bonus for the
  *   weapon's attack mode (e.g. `+2`, `-1`), if known
