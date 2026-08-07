@@ -258,7 +258,6 @@ test('rollUnder thresholds follow the effective Luck score when otherMod shifts 
 
 test('rollUnder flavor indicates failure when the roll exceeds the Luck score', async () => {
   rollToMessageMock.mockClear()
-  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
 
   // Luck 5 vs the mock's natural 10 → roll > score → failure suffix.
   // noinspection JSCheckFunctionSignatures
@@ -270,8 +269,6 @@ test('rollUnder flavor indicates failure when the roll exceeds the Luck score', 
 
   const [messageData] = rollToMessageMock.mock.calls[0]
   expect(messageData.flavor).toBe('Luck CheckRollUnder — Failure')
-
-  chatMessageCreateSpy.mockRestore()
 })
 
 test('adapter path returns undefined when the ability-check dialog is cancelled', async () => {
