@@ -1,6 +1,6 @@
 /* global foundry, game, ui */
 
-import { getSingleActionDie } from './utilities.js'
+import { getSingleActionDie, inferWeaponDie } from './utilities.js'
 
 /**
  * Core class keys used for migration lookups
@@ -76,8 +76,15 @@ async function buildClassNameLookup () {
  * scene tokens never received any actor migration (including 0.70's
  * action-die seed). All branches are data-driven/idempotent, so each
  * ceiling bump costs one extra pass.
+ *
+ * 0.72: re-sweep to persist the weapon-die split for legacy-shape weapons
+ * (`damage` stored with no `damageWeapon`). item.js no longer re-derives
+ * the split heuristically on every prepare (#907), so shapes it can
+ * attribute confidently — a bare die, or die + the owning actor's current
+ * damage bonus — are stamped into `damageWeapon` here; anything ambiguous
+ * is left untouched and rolls as stored.
  */
-export const NEEDS_MIGRATION_VERSION = 0.71
+export const NEEDS_MIGRATION_VERSION = 0.72
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -503,25 +510,32 @@ export const migrateActorData = async function (actor) {
   }
 
   // Migrate Owned Items
-  let hasItemUpdates = false
-  let items = []
-  if (actor.items) {
-    items = actor.items.map(i => {
-      // Migrate the Owned Item
-      const itemUpdate = migrateItemData(i)
-
-      // Update the Owned Item
-      if (!foundry.utils.isEmpty(itemUpdate)) {
-        hasItemUpdates = true
-        return foundry.utils.mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
-      } else {
-        return i
+  // Player actors pass their current damage bonuses so the legacy weapon-die
+  // split can attribute a matching baked-in modifier (#907); NPC (and Party)
+  // weapons use `damage` directly (no composition), so the split is skipped
+  // for them — matching DCCItem._preCreate's Player-only gate.
+  const weaponContext = actor.type === 'Player'
+    ? {
+        damageBonusMelee: actor.system?.details?.attackDamageBonus?.melee?.value || '',
+        damageBonusMissile: actor.system?.details?.attackDamageBonus?.missile?.value || ''
       }
-    })
+    : { skipWeapons: true }
+  // Each changed item becomes a plain `{_id, ...changes}` delta — the
+  // differential embedded-update shape `Actor#update` persists to _source.
+  // The previous `mergeObject(itemDocument, update)` pattern wrote the
+  // changes onto the live document's *prepared* data (deepClone returns
+  // class instances by reference), which document serialization — reading
+  // _source — then dropped, so owned-item updates could silently fail to
+  // persist (#907 review).
+  const itemUpdates = []
+  for (const i of actor.items ?? []) {
+    const itemUpdate = migrateItemData(i, weaponContext)
+    if (!foundry.utils.isEmpty(itemUpdate)) {
+      itemUpdates.push({ _id: i._id ?? i.id, ...itemUpdate })
+    }
   }
-
-  if (hasItemUpdates) {
-    updateData.items = items
+  if (itemUpdates.length > 0) {
+    updateData.items = itemUpdates
   }
 
   return updateData
@@ -533,13 +547,41 @@ export const migrateActorData = async function (actor) {
  * Migrate a single Item document to incorporate latest data model changes
  *
  * Exported for unit testing of its V14 AE numeric-mode → string-type
- * conversion branch. Not part of the Foundry-facing API — internal
- * migration helper only.
+ * conversion branch and the legacy weapon-die split (#907). Not part of
+ * the Foundry-facing API — internal migration helper only.
  *
- * @param item
+ * @param {Item} item
+ * @param {Object} [options]
+ * @param {boolean} [options.skipWeapons] - Skip the weapon-die split
+ *   (NPC-owned weapons use `damage` directly, no composition)
+ * @param {string} [options.damageBonusMelee] - Owning actor's current melee
+ *   damage bonus, for attributing a baked-in modifier
+ * @param {string} [options.damageBonusMissile] - Owning actor's current
+ *   missile damage bonus
  */
-export const migrateItemData = function (item) {
+export const migrateItemData = function (item, options = {}) {
   const updateData = {}
+
+  // Persist the weapon-die split for legacy-shape weapons: `damage` stored
+  // with no `damageWeapon` and no override (#907). Reads raw _source so the
+  // new prepare path (which no longer re-derives the split) can't mask the
+  // persisted state. Data-driven and idempotent: once `damageWeapon` is
+  // set, the branch never fires again. Only confident shapes are stamped —
+  // a bare die, or die + the owner's current damage bonus (world items have
+  // no owner context, so only the bare die qualifies); ambiguous formulas
+  // are left untouched and roll as stored.
+  if (item.type === 'weapon' && !options.skipWeapons) {
+    const source = item._source?.system ?? item.system
+    if (source?.damage && !source.damageWeapon && !source.config?.damageOverride) {
+      const bonus = (source.melee !== false)
+        ? options.damageBonusMelee
+        : options.damageBonusMissile
+      const damageWeapon = inferWeaponDie(source.damage, bonus || '')
+      if (damageWeapon) {
+        updateData['system.damageWeapon'] = damageWeapon
+      }
+    }
+  }
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)
   // - Convert numeric mode to string type

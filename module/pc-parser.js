@@ -1,7 +1,7 @@
 /* global game, ui, CONFIG */
 
 import EntityImages from './entity-images.js'
-import { getFirstDie, getFirstMod, getSingleActionDie } from './utilities.js'
+import { ensurePlus, getFirstDie, getFirstMod, getSingleActionDie, inferWeaponDie } from './utilities.js'
 import DCC from './config.js'
 
 /**
@@ -83,6 +83,12 @@ function _parseJSONPCs (pcObject) {
     }
 
     if (pcObject.weapon && !pcObject.weapons) {
+      // Split out the weapon die so the composed damage tracks the actor's
+      // current Strength modifier instead of freezing the imported total
+      // (#907). Conservative: only a bare die or die + the imported Str mod
+      // is attributed — anything else (a damage-affecting birth augur, a
+      // die outside getFirstDie's range) records no die and rolls as stored.
+      const strMod = DCC.abilityModifiers[pcObject.strengthScore] ?? 0
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',
@@ -90,6 +96,7 @@ function _parseJSONPCs (pcObject) {
         system: {
           toHit: pcObject.attackMod || '0',
           damage: pcObject.attackDamage || '1d3',
+          damageWeapon: pcObject.attackDamage ? inferWeaponDie(pcObject.attackDamage, ensurePlus(strMod)) : '1d3',
           melee: true // No way to know, but melee is most likely
         }
       })

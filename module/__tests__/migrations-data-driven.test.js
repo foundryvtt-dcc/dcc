@@ -421,16 +421,19 @@ describe('migrateActorData — action die seed from config.actionDice', () => {
 })
 
 describe('migrateActorData — owned item recursion', () => {
-  test('folds a migrated owned item into updateData.items', async () => {
+  test('folds a migrated owned item into updateData.items as an {_id, ...changes} delta', async () => {
     const actor = cleanActor()
-    actor.items = [{
-      _id: 'item1',
-      effects: [effectWithChanges([{ key: 'k', mode: 2, value: '1' }])]
-    }]
+    actor.items = [
+      { _id: 'item1', effects: [effectWithChanges([{ key: 'k', mode: 2, value: '1' }])] },
+      { _id: 'item2', effects: [] } // unchanged — must not appear in the update
+    ]
 
     const updateData = await migrateActorData(actor)
 
+    // Plain differential deltas keyed by _id — the shape Actor#update
+    // persists to _source (#907 review); never merged live documents
     expect(updateData.items).toHaveLength(1)
+    expect(updateData.items[0]._id).toBe('item1')
     expect(updateData.items[0].effects[0].changes[0].type).toBe('add')
   })
 
@@ -466,5 +469,103 @@ describe('migrateItemData — V14 ActiveEffect numeric mode → string type', ()
   test('an unknown numeric mode falls back to "add"', () => {
     const item = { effects: [effectWithChanges([{ key: 'k', mode: 42, value: '1' }])] }
     expect(migrateItemData(item).effects[0].changes[0].type).toBe('add')
+  })
+})
+
+// #907: persist the weapon-die split for legacy-shape weapons (`damage`
+// stored with no `damageWeapon`). The runtime heuristic in item.js is gone,
+// so this branch is what lets old weapons track the actor's current damage
+// bonus. Only confident shapes are stamped; ambiguous formulas are left
+// untouched and roll as stored.
+describe('migrateItemData — legacy weapon-die split (#907)', () => {
+  /** A legacy-shape weapon: `damage` persisted, no `damageWeapon`. */
+  function legacyWeapon (damage, extra = {}) {
+    return { type: 'weapon', system: { damage, damageWeapon: '', config: {}, ...extra } }
+  }
+
+  test('splits a bare-die formula without owner context', () => {
+    expect(migrateItemData(legacyWeapon('1d4'))).toEqual({ 'system.damageWeapon': '1d4' })
+  })
+
+  test('splits die + matching melee bonus with owner context', () => {
+    const updateData = migrateItemData(legacyWeapon('1d8-1'), { damageBonusMelee: '-1', damageBonusMissile: '+0' })
+    expect(updateData).toEqual({ 'system.damageWeapon': '1d8' })
+  })
+
+  test('uses the missile bonus for non-melee weapons', () => {
+    const updateData = migrateItemData(legacyWeapon('1d6+2', { melee: false }), { damageBonusMelee: '-1', damageBonusMissile: '+2' })
+    expect(updateData).toEqual({ 'system.damageWeapon': '1d6' })
+  })
+
+  test('leaves ambiguous formulas untouched', () => {
+    expect(migrateItemData(legacyWeapon('1d4+1'), { damageBonusMelee: '-1' })).toEqual({})
+    expect(migrateItemData(legacyWeapon('1d8+2+@ab'), { damageBonusMelee: '+2' })).toEqual({})
+    expect(migrateItemData(legacyWeapon('2d4+fire'))).toEqual({})
+  })
+
+  test('is a no-op when damageWeapon is already set or an override exists', () => {
+    expect(migrateItemData({ type: 'weapon', system: { damage: '1d4', damageWeapon: '1d4', config: {} } })).toEqual({})
+    expect(migrateItemData({ type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: { damageOverride: '1d4' } } })).toEqual({})
+    expect(migrateItemData({ type: 'weapon', system: { damage: '', damageWeapon: '', config: {} } })).toEqual({})
+  })
+
+  test('skipWeapons suppresses the split (NPC-owned weapons)', () => {
+    expect(migrateItemData(legacyWeapon('1d4'), { skipWeapons: true })).toEqual({})
+  })
+
+  test('reads raw _source over prepared system data', () => {
+    const item = {
+      type: 'weapon',
+      // Prepared data looks normalized, but the raw source is still legacy
+      system: { damage: '1d4-1', damageWeapon: '1d4', config: {} },
+      _source: { system: { damage: '1d4', damageWeapon: '', config: {} } }
+    }
+    expect(migrateItemData(item)).toEqual({ 'system.damageWeapon': '1d4' })
+  })
+
+  test('non-weapon items are never touched', () => {
+    expect(migrateItemData({ type: 'equipment', system: { damage: '1d4', damageWeapon: '' } })).toEqual({})
+  })
+})
+
+describe('migrateActorData — weapon context for the legacy weapon-die split (#907)', () => {
+  test('a Player actor passes its damage bonuses so a matching baked-in modifier splits', async () => {
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.system.details.attackDamageBonus = { melee: { value: '-1' }, missile: { value: '+0' } }
+    actor.items = [{ _id: 'weapon1', type: 'weapon', system: { damage: '1d8-1', damageWeapon: '', config: {} } }]
+
+    const updateData = await migrateActorData(actor)
+
+    expect(updateData.items).toEqual([{ _id: 'weapon1', 'system.damageWeapon': '1d8' }])
+  })
+
+  test('NPC-owned weapons are never split', async () => {
+    const actor = cleanActor()
+    actor.type = 'NPC'
+    actor.items = [{ type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: {} } }]
+
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('an actor without bonus data still splits the unambiguous bare die', async () => {
+    // Non-NPC actors missing attackDamageBonus (partial fixtures, odd
+    // third-party data) pass empty bonuses — the bare-die case needs none
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.items = [{ _id: 'weapon1', type: 'weapon', system: { damage: '1d4', damageWeapon: '', config: {} } }]
+
+    const updateData = await migrateActorData(actor)
+
+    expect(updateData.items).toEqual([{ _id: 'weapon1', 'system.damageWeapon': '1d4' }])
+  })
+
+  test('a Player-owned ambiguous weapon produces no item update at all', async () => {
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.system.details.attackDamageBonus = { melee: { value: '-1' }, missile: { value: '+0' } }
+    actor.items = [{ type: 'weapon', system: { damage: '1d8+5', damageWeapon: '', config: {} } }]
+
+    expect(await migrateActorData(actor)).toEqual({})
   })
 })

@@ -1,7 +1,7 @@
 /* global Item, foundry, game, ui, Roll, Dialog */
 
 import DiceChain from './dice-chain.js'
-import { ensurePlus, getFirstDie, getSingleActionDie } from './utilities.js'
+import { ensurePlus, getSingleActionDie, inferWeaponDie } from './utilities.js'
 import { ContainerItemMixin } from './item/container-mixin.mjs'
 import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 import { SpellItemMixin } from './item/spell-mixin.mjs'
@@ -24,6 +24,32 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
    * @type {boolean}
    */
   #castInFlight = false
+
+  /**
+   * Normalize legacy-shape weapons (`damage` persisted with no
+   * `damageWeapon`) when they are embedded into a Player actor — dragged
+   * from a compendium, created by a module, or re-created by the importer's
+   * compendium remap (#907). Splitting out the weapon die here, with the
+   * owning actor's damage bonus available for attribution, is what lets the
+   * composed formula track the actor's *current* Strength modifier instead
+   * of freezing the imported total. Shapes that can't be attributed
+   * confidently are left alone — prepareBaseData rolls them as stored.
+   * @override
+   */
+  async _preCreate (data, options, user) {
+    const allowed = await super._preCreate(data, options, user)
+    if (allowed === false) return false
+    if (this.type !== 'weapon' || this.parent?.type !== 'Player') return
+    const source = this._source.system
+    if (!source.damage || source.damageWeapon || source.config?.damageOverride) return
+    const bonus = (source.melee !== false)
+      ? this.parent.system?.details?.attackDamageBonus?.melee?.value
+      : this.parent.system?.details?.attackDamageBonus?.missile?.value
+    const damageWeapon = inferWeaponDie(source.damage, bonus || '')
+    if (damageWeapon) {
+      this.updateSource({ 'system.damageWeapon': damageWeapon })
+    }
+  }
 
   prepareBaseData () {
     super.prepareBaseData()
@@ -199,60 +225,36 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
         this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
       }
 
-      // Damage Calculation
-      // First handle older items that may not have damageWeapon set
-      if (this.system.damage && !this.system.damageWeapon) {
-        // Refresh actor data if this is an owned item
-        if (this.actor) {
-          this.actor.prepareBaseData()
+      // Damage Calculation - compose the formula from the weapon damage die
+      // and other settings. A weapon with no recorded weapon die (legacy
+      // shape: only `damage` persisted — see #907) keeps its stored formula
+      // verbatim: `_preCreate` and the world migration normalize the shapes
+      // they can attribute confidently, and anything left is safer rolled
+      // as-stored than recomposed around a missing die.
+      if (this.system.damageWeapon) {
+        // Start by setting the damage to any bonus from the actor
+        if (this.system.melee) {
+          this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
+        } else {
+          this.system.damage = this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''
         }
 
-        // Get the first die of the damage and see if that can be the weapon damage
-        // Otherwise set the current damage value as the override
-        const damageWeapon = getFirstDie(this.system.damage) || ''
-        if (damageWeapon) {
-          let total = `${damageWeapon}${this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''}`
-          if (!this.system?.melee) {
-            total = `${damageWeapon}${this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''}`
-          }
-          if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '')
-          ) {
-            this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
-            this.system.damageWeapon = damageWeapon
+        // Then add in any weapon bonus - formatting dependent on whether there is a deed from the actor
+        if (this.system.damageWeaponBonus) {
+          if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
+            this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
           } else {
-            this.system.config.damageOverride = this.system.damage
-          }
-        } else {
-          if (this.system.damage !== '+0') {
-            this.system.config.damageOverride = this.system.damage
+            this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
           }
         }
-      }
-
-      // Next calculate the correct value from the weapon damage and other settings
-
-      // Start by setting the damage to any bonus from the actor
-      if (this.system.melee) {
-        this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
-      } else {
-        this.system.damage = this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''
-      }
-
-      // Then add in any weapon bonus - formatting dependent on whether there is a deed from the actor
-      if (this.system.damageWeaponBonus) {
-        if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
-          this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+        if (this.system.doubleIfMounted) {
+          this.system.damage = `(${this.system.damageWeapon})*2${this.system.damage}`
         } else {
-          this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
+          this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
         }
-      }
-      if (this.system.doubleIfMounted) {
-        this.system.damage = `(${this.system.damageWeapon})*2${this.system.damage}`
-      } else {
-        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
-      }
-      if (this.system.subdual) {
-        this.system.damage = `${this.system.damage}[subdual]`
+        if (this.system.subdual) {
+          this.system.damage = `${this.system.damage}[subdual]`
+        }
       }
       if (this.system.config.damageOverride) {
         this.system.damage = this.system?.config?.damageOverride
