@@ -1408,6 +1408,24 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Apply Damage Adjustment Dialog (#401)    */
+/* ----------------------------------------- */
+.dcc.apply-damage-dialog .targets {
+  margin: 0;
+  font-weight: bold;
+}
+.dcc.apply-damage-dialog input[name=amount],
+.dcc.apply-damage-dialog input[name=luckSpend] {
+  text-align: center;
+}
+.dcc.apply-damage-dialog .hint {
+  font-size: 0.85em;
+  color: var(--system-text-muted-color);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ----------------------------------------- */
 /*  Ability Score Config Dialog              */
 /* ----------------------------------------- */
 .dcc.ability-score-config .ability-score-config-content {

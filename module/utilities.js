@@ -507,3 +507,16 @@ export async function getNPCFumbleTableResult (roll, fumbleTableName) {
     }
   }
 }
+
+/**
+ * Should a modifier/adjustment dialog show for this click?
+ * The "Show Roll Modifier by Default" setting XOR ctrl/cmd — so the modifier
+ * key always flips whatever the setting makes the default.
+ * @param {Event} event The triggering click event (may be undefined)
+ * @returns {boolean}
+ */
+export function wantsModifierDialog (event) {
+  let dflt = false
+  try { dflt = game.settings.get('dcc', 'showRollModifierByDefault') } catch { dflt = false }
+  return !!(dflt ^ (event?.ctrlKey || event?.metaKey))
+}

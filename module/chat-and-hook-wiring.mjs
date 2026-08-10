@@ -1,4 +1,4 @@
-/* global foundry, game, Hooks, ui, CONST */
+/* global foundry, game, Hooks, ui, CONST, console */
 
 /**
  * Chat- and hook-wiring surface extracted from `module/dcc.js`.
@@ -58,6 +58,16 @@ export function onHotbarDrop (bar, data, slot) {
 }
 
 /**
+ * Render-time flag writes already issued per message document. A setFlag is a
+ * message update, which re-renders the card and re-enters this hook *before*
+ * the write lands — so a fresh card fires several redundant updates, and that
+ * update/re-render cascade tears down any context menu open on the card.
+ * Tracking issued writes (not just persisted values) breaks the cascade.
+ */
+const canPopoutWriteIssued = new WeakSet()
+const emoteRollWriteIssued = new WeakSet()
+
+/**
  * Decorate rolled chat messages: crit/fail highlight, minimum-damage clamp,
  * spell-result HTML, data-item-id forwarding, optional emote-roll rewrites,
  * crit/fumble result lookups, and TableResult navigation.
@@ -65,8 +75,14 @@ export function onHotbarDrop (bar, data, slot) {
 export async function onRenderChatMessageHTML (message, html, data) {
   if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
 
-  if (game.user.isGM) {
-    message.setFlag('core', 'canPopout', true)
+  if (game.user.isGM && message.getFlag('core', 'canPopout') !== true && !canPopoutWriteIssued.has(message)) {
+    canPopoutWriteIssued.add(message)
+    Promise.resolve(message.setFlag('core', 'canPopout', true))
+      .catch(err => {
+        // Un-issue so a later render can retry after a transient failure
+        canPopoutWriteIssued.delete(message)
+        console.warn('DCC | canPopout flag write failed', err)
+      })
   }
 
   // Enhanced attack card (client setting) — renders in place of the plain card
@@ -115,8 +131,13 @@ export async function onRenderChatMessageHTML (message, html, data) {
   }
 
   if (emoteRolls === true) {
-    if (game.user.isGM) {
-      message.setFlag('dcc', 'emoteRoll', true)
+    if (game.user.isGM && message.getFlag('dcc', 'emoteRoll') !== true && !emoteRollWriteIssued.has(message)) {
+      emoteRollWriteIssued.add(message)
+      Promise.resolve(message.setFlag('dcc', 'emoteRoll', true))
+        .catch(err => {
+          emoteRollWriteIssued.delete(message)
+          console.warn('DCC | emoteRoll flag write failed', err)
+        })
     }
     chat.emoteAbilityRoll(message, html, data)
     chat.emoteApplyDamageRoll(message, html, data)

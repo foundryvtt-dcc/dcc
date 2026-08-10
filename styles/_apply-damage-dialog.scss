@@ -1,0 +1,22 @@
+/* ----------------------------------------- */
+/*  Apply Damage Adjustment Dialog (#401)    */
+/* ----------------------------------------- */
+
+.dcc.apply-damage-dialog {
+  .targets {
+    margin: 0;
+    font-weight: bold;
+  }
+
+  input[name='amount'],
+  input[name='luckSpend'] {
+    text-align: center;
+  }
+
+  .hint {
+    font-size: 0.85em;
+    color: var(--system-text-muted-color);
+    font-style: italic;
+    margin: 0;
+  }
+}

@@ -8,8 +8,16 @@ vi.mock('../utilities.js', async (importOriginal) => {
   return { ...actual, getCritTableResult: vi.fn(), getTableFromPath: vi.fn(async () => null) }
 })
 
+vi.mock('../apply-damage-dialog.js', () => ({
+  default: vi.fn(function (options) {
+    this.options = options
+    this.render = vi.fn()
+  })
+}))
+
 const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions } = await import('../chat.js')
 const { getCritTableResult } = await import('../utilities.js')
+const { default: ApplyDamageDialog } = await import('../apply-damage-dialog.js')
 
 /**
  * Minimal stand-in for the rendered chat message HTML element.
@@ -305,5 +313,47 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
     await damageEntry.onClick(new Event('click'), makeLi())
     expect(applyDamage).not.toHaveBeenCalled()
     expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
+  })
+
+  describe('ctrl/cmd-click opens the adjustment dialog instead (issue #401)', () => {
+    beforeEach(() => {
+      ApplyDamageDialog.mockClear()
+    })
+
+    it.each([
+      ['ctrlKey', { ctrlKey: true }],
+      ['metaKey', { metaKey: true }]
+    ])('%s-click renders the dialog with the card amount and does not apply directly', async (_, event) => {
+      await damageEntry.onClick(event, makeLi({ damage: '5' }))
+
+      expect(applyDamage).not.toHaveBeenCalled()
+      expect(ApplyDamageDialog).toHaveBeenCalledTimes(1)
+      const dialog = ApplyDamageDialog.mock.instances[0]
+      expect(dialog.options.amount).toBe(5)
+      expect(dialog.options.multiplier).toBe(1)
+      expect(dialog.options.targets).toHaveLength(1)
+      expect(dialog.render).toHaveBeenCalledWith(true)
+    })
+
+    it('ctrl-click on Apply Healing passes the -1 multiplier through', async () => {
+      await healingEntry.onClick({ ctrlKey: true }, makeLi({ damage: '3' }))
+
+      expect(applyDamage).not.toHaveBeenCalled()
+      expect(ApplyDamageDialog.mock.instances[0].options.multiplier).toBe(-1)
+    })
+
+    it('a plain click still applies directly without a dialog', async () => {
+      await damageEntry.onClick(new Event('click'), makeLi({ damage: '5' }))
+
+      expect(applyDamage).toHaveBeenCalledWith('5', 1)
+      expect(ApplyDamageDialog).not.toHaveBeenCalled()
+    })
+
+    it('ctrl-click with no applyable amount still warns and opens nothing', async () => {
+      await damageEntry.onClick({ ctrlKey: true }, makeLi())
+
+      expect(ApplyDamageDialog).not.toHaveBeenCalled()
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
+    })
   })
 })

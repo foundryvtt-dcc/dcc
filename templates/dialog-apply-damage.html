@@ -1,0 +1,16 @@
+<section class="apply-damage-dialog grid-container grid-row-gap-8 p-8">
+  <p class="grid-col-span-12 targets">{{localize "DCC.ApplyDamageTo" targets=targetNames}}</p>
+
+  <label class="grid-col-span-12" for="apply-damage-amount">{{#if isHealing}}{{localize "DCC.Healing"}}{{else}}{{localize "DCC.Damage"}}{{/if}}</label>
+  <input class="grid-col-span-12" type="number" name="amount" id="apply-damage-amount" value="{{amount}}" min="0" step="1">
+
+  {{#if luckActor}}
+  <label class="grid-col-span-12" for="apply-damage-luck">{{localize "DCC.ApplyDamageSpendLuck" name=luckActor.name luck=luckValue}}</label>
+  <input class="grid-col-span-12" type="number" name="luckSpend" id="apply-damage-luck" value="0" min="0" step="1">
+  <p class="grid-col-span-12 hint">{{localize "DCC.ApplyDamageSpendLuckHint"}}</p>
+  {{/if}}
+
+  <button class="grid-col-span-12" type="submit">
+    <i class="fas fa-check"></i> {{localize "DCC.Apply"}}
+  </button>
+</section>
