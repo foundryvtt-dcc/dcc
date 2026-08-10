@@ -71,6 +71,16 @@ describe('ApplyDamageDialog (apply-time damage adjustment, issue #401)', () => {
     expect(target.applyDamage).toHaveBeenCalledWith(7, 1)
   })
 
+  it('still applies the damage when the Luck spend fails, with a warning', async () => {
+    logAbilityChange.mockRejectedValueOnce(new Error('no permission'))
+    const target = makeTarget()
+
+    await runSubmit({ amount: 5, multiplier: 1, targets: [target], luckActor: { name: 'Roller' } }, { amount: '4', luckSpend: '2' })
+
+    expect(target.applyDamage).toHaveBeenCalledWith(4, 1)
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
+  })
+
   it('does not log a Luck spend when none was entered or no roller is known', async () => {
     const target = makeTarget()
 

@@ -237,6 +237,20 @@ describe('onRenderChatMessageHTML', () => {
     expect(message.setFlag).not.toHaveBeenCalled()
   })
 
+  test('issues each flag write only once while the write is still in flight (#401)', async () => {
+    globalThis.game.settings.get = vi.fn((scope, key) => key === 'emoteRolls')
+    // getFlag stays undefined across renders — the persisted value has not
+    // landed yet, exactly the window where the cascade used to re-fire
+    const message = makeRollMessage()
+
+    await onRenderChatMessageHTML(message, makeHtml(), {})
+    await onRenderChatMessageHTML(message, makeHtml(), {})
+
+    expect(message.setFlag).toHaveBeenCalledTimes(2) // canPopout + emoteRoll, once each
+    expect(message.setFlag).toHaveBeenCalledWith('core', 'canPopout', true)
+    expect(message.setFlag).toHaveBeenCalledWith('dcc', 'emoteRoll', true)
+  })
+
   test('forwards the dcc.ItemId flag onto a data-item-id attribute', async () => {
     globalThis.game.settings.get = vi.fn().mockReturnValue(false)
     const message = makeRollMessage({
