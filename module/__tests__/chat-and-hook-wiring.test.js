@@ -226,6 +226,17 @@ describe('onRenderChatMessageHTML', () => {
     expect(chat.attachMightyDeedListeners).toHaveBeenCalledWith(message, html)
   })
 
+  test('does not re-write flags that are already set — each setFlag re-renders the card and would loop (#401)', async () => {
+    globalThis.game.settings.get = vi.fn((scope, key) => key === 'emoteRolls')
+    const message = makeRollMessage({
+      getFlag: vi.fn((scope, key) => (key === 'canPopout' || key === 'emoteRoll' ? true : undefined))
+    })
+
+    await onRenderChatMessageHTML(message, makeHtml(), {})
+
+    expect(message.setFlag).not.toHaveBeenCalled()
+  })
+
   test('forwards the dcc.ItemId flag onto a data-item-id attribute', async () => {
     globalThis.game.settings.get = vi.fn().mockReturnValue(false)
     const message = makeRollMessage({
