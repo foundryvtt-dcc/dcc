@@ -4343,6 +4343,92 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       })
     })
 
+    test('weapon fumbleRangeOverride widens the fumble range to a natural 2 (issue #343)', async ({ page }) => {
+      // A weapon `config.fumbleRangeOverride: 2` fumbles on natural 1-2 (a
+      // natural threshold on the rolled die — never rescaled like critRange).
+      // Force a natural 2 and roll both a cursed and a plain weapon: the
+      // cursed weapon must fumble, the plain control must not.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 FumbleRange Adapter', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-CursedSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true,
+            config: { fumbleRangeOverride: 2 }
+          }
+        }, {
+          name: 'P1-PlainControlSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural 2 on every die roll:
+        // Die#mapRandomFace = Math.ceil((1 - randomUniform) * faces);
+        // r = 0.925 → ceil(0.075 * 20) = ceil(1.5) = 2 on a d20.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.925
+      })
+      const readAttackFlags = async (weaponName) => {
+        await page.evaluate(async (name) => {
+          const actor = game.actors.getName('P1 FumbleRange Adapter')
+          await actor.rollWeaponAttack(actor.items.getName(name).id)
+        }, weaponName)
+        // ChatMessage.create is fire-and-forget from the roll — poll for the card.
+        return page.evaluate(async (name) => {
+          const actor = game.actors.getName('P1 FumbleRange Adapter')
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            const msg = game.messages.contents.slice().reverse().find(m =>
+              m.getFlag('dcc', 'isToHit') &&
+              m.speaker?.actor === actor.id &&
+              m.flavor?.includes(name)
+            )
+            if (msg) {
+              return {
+                isFumble: msg.getFlag('dcc', 'isFumble'),
+                natural: msg.getFlag('dcc', 'libResult')?.natural
+              }
+            }
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        }, weaponName)
+      }
+
+      const cursed = await readAttackFlags('P1-CursedSword')
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-CursedSword' })
+      const fumbleLine = await waitForAdapterLog('rollFumble')
+      assertPath(fumbleLine, 'adapter', { weapon: 'P1-CursedSword' })
+
+      const plain = await readAttackFlags('P1-PlainControlSword')
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(cursed, 'cursed-weapon attack card must exist').not.toBeNull()
+      expect(cursed.natural, 'forced natural must be 2').toBe(2)
+      expect(cursed.isFumble, 'natural 2 inside fumbleRangeOverride 2 is a fumble').toBe(true)
+
+      expect(plain, 'plain-weapon attack card must exist').not.toBeNull()
+      expect(plain.natural, 'forced natural must be 2').toBe(2)
+      expect(plain.isFumble, 'natural 2 on a default weapon is NOT a fumble').toBe(false)
+    })
+
     test('adapter path populates dcc.libFumbleResult chat flag', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Fumble LibFlag', type: 'Player' })

@@ -9,7 +9,7 @@
  * - Bonus aggregation from multiple sources
  */
 import { computeBonuses } from "../types/bonuses.js";
-import { evaluateRoll, meetsThreatRange, isNatural1, isAutoHit } from "../dice/roll.js";
+import { evaluateRoll, meetsThreatRange, meetsFumbleRange, isAutoHit } from "../dice/roll.js";
 import { bumpDie, getPrimaryDie } from "./../dice/dice-chain.js";
 // =============================================================================
 // Attack Roll Functions
@@ -142,8 +142,10 @@ export function makeAttackRoll(input, roller, events) {
     // Calculate total
     const deedValue = deedRoll?.natural ?? 0;
     const total = (roll.total ?? 0) + totalBonus + deedValue;
-    // Check for fumble (natural 1)
-    const isFumble = isNatural1(roll);
+    // Check for fumble (natural roll inside the fumble range; default is
+    // only a natural 1). The range is a natural threshold on the rolled
+    // die — never rescaled like the threat range.
+    const isFumble = meetsFumbleRange(roll, input.fumbleRange ?? 1);
     // Check if roll is in threat range (but this alone doesn't mean crit!)
     const meetsRange = meetsThreatRange(roll, input.threatRange, input.threatRangeIsNatural === true);
     // Check for automatic hit (natural max on die - e.g., 20 on d20, 24 on d24)
@@ -154,7 +156,8 @@ export function makeAttackRoll(input, roller, events) {
     let isHit;
     if (input.targetAC !== undefined) {
         if (isFumble) {
-            // Natural 1 always misses
+            // A fumble (natural 1, or any roll inside an expanded fumble
+            // range) always misses
             isHit = false;
         }
         else if (autoHit) {
@@ -169,11 +172,11 @@ export function makeAttackRoll(input, roller, events) {
     // Critical threat requires both a roll in the threat range AND a
     // hit — a threat-range roll that misses is NOT a crit. A backstab
     // hit auto-crits regardless of the natural roll (DCC core rules).
-    // A natural 1 is always a fumble and can never be a backstab crit,
-    // even when targetAC is omitted (isHit === undefined).
+    // A fumble can never be a crit of either kind, even when targetAC
+    // is omitted (isHit === undefined).
     const isHitting = isHit === undefined || isHit;
     const backstabAutoCrit = input.isBackstab === true && isHitting && !isFumble;
-    const threatRangeCrit = meetsRange && isHitting;
+    const threatRangeCrit = meetsRange && isHitting && !isFumble;
     const isCriticalThreat = threatRangeCrit || backstabAutoCrit;
     // Determine which cause fired. Threat-range wins if both are true
     // (the attacker would roll on their class's normal crit table in
