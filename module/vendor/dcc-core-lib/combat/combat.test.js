@@ -136,6 +136,68 @@ describe("Attack System", () => {
             expect(result.isFumble).toBe(true);
             expect(result.isCriticalThreat).toBe(false);
         });
+        it("fumbles on any natural roll inside an expanded fumbleRange", () => {
+            const input = {
+                attackType: "melee",
+                attackBonus: 5,
+                actionDie: "d20",
+                threatRange: 20,
+                fumbleRange: 2,
+                abilityModifier: 3,
+                targetAC: 10,
+            };
+            // Natural 2 is a fumble and auto-misses despite total 10 >= AC 10.
+            const natTwo = makeAttackRoll(input, createMockRoller(2));
+            expect(natTwo.isFumble).toBe(true);
+            expect(natTwo.isHit).toBe(false);
+            expect(natTwo.isCriticalThreat).toBe(false);
+            // Natural 3 is safely outside the range.
+            const natThree = makeAttackRoll(input, createMockRoller(3));
+            expect(natThree.isFumble).toBe(false);
+            expect(natThree.isHit).toBe(true);
+        });
+        it("defaults fumbleRange to natural 1 only", () => {
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 0,
+            };
+            const result = makeAttackRoll(input, createMockRoller(2));
+            expect(result.isFumble).toBe(false);
+        });
+        it("treats fumbleRange as a natural threshold on the rolled die (no rescaling)", () => {
+            // Fumble range 2 on a d16 action die stays natural 1-2 — it is
+            // not rescaled the way a d20-relative threat range would be.
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d16",
+                threatRange: 20,
+                fumbleRange: 2,
+                abilityModifier: 0,
+            };
+            expect(makeAttackRoll(input, createMockRoller(2)).isFumble).toBe(true);
+            expect(makeAttackRoll(input, createMockRoller(3)).isFumble).toBe(false);
+        });
+        it("an expanded-range fumble can never be a backstab auto-crit", () => {
+            const input = {
+                attackType: "melee",
+                attackBonus: 2,
+                actionDie: "d20",
+                threatRange: 20,
+                fumbleRange: 2,
+                abilityModifier: 0,
+                isBackstab: true,
+            };
+            // No targetAC (isHit undefined) — the fumble alone must block the
+            // backstab auto-crit, mirroring the natural-1 rule.
+            const result = makeAttackRoll(input, createMockRoller(2));
+            expect(result.isFumble).toBe(true);
+            expect(result.isCriticalThreat).toBe(false);
+            expect(result.critSource).toBeUndefined();
+        });
         it("should handle deed die for warriors", () => {
             const roller = createSequenceRoller([15, 4]); // Attack roll, deed roll
             const input = {
@@ -660,6 +722,19 @@ describe("Attack System", () => {
             }, roller);
             expect(result.primary.isHit).toBe(true);
             expect(result.primary.isCriticalThreat).toBe(true);
+        });
+        it("passes each hand's fumbleRange through to its attack roll", () => {
+            // Primary carries a cursed weapon that fumbles on 1-2; off-hand
+            // is normal. Both hands roll a natural 2.
+            const roller = createSequenceRoller([2, 2]);
+            const result = rollTwoWeaponAttack({
+                agility: 18,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, fumbleRange: 2, abilityModifier: 0 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+            }, roller);
+            expect(result.primary.isFumble).toBe(true);
+            expect(result.offHand.isFumble).toBe(false);
         });
         it("halfling: single natural 1 is NOT a fumble", () => {
             const roller = createSequenceRoller([1, 8]); // primary 1, off-hand 8
