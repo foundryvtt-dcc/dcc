@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ensurePlus, getFirstDie, getFirstMod, buildFormula, parseFormula, evaluateRoll, createRoll, rollSimple, isNatural20, isNatural1, meetsThreatRange, adjustThreatRange, isAutoHit, } from "./roll.js";
+import { ensurePlus, getFirstDie, getFirstMod, buildFormula, parseFormula, evaluateRoll, createRoll, rollSimple, isNatural20, isNatural1, meetsFumbleRange, meetsThreatRange, adjustThreatRange, isAutoHit, } from "./roll.js";
 describe("roll", () => {
     describe("ensurePlus", () => {
         it("adds + to positive numbers", () => {
@@ -231,6 +231,26 @@ describe("roll", () => {
         });
         it("returns false for unevaluated rolls", () => {
             expect(isNatural1({})).toBe(false);
+        });
+    });
+    describe("meetsFumbleRange", () => {
+        it("defaults to fumbling only on a natural 1", () => {
+            expect(meetsFumbleRange({ natural: 1 })).toBe(true);
+            expect(meetsFumbleRange({ natural: 2 })).toBe(false);
+        });
+        it("fumbles on any natural roll inside an expanded range", () => {
+            expect(meetsFumbleRange({ natural: 1 }, 3)).toBe(true);
+            expect(meetsFumbleRange({ natural: 3 }, 3)).toBe(true);
+            expect(meetsFumbleRange({ natural: 4 }, 3)).toBe(false);
+        });
+        it("is a natural threshold — never rescaled to the die size", () => {
+            // A fumble range of 2 means natural 1-2 on ANY die.
+            expect(meetsFumbleRange({ natural: 2, die: "d16" }, 2)).toBe(true);
+            expect(meetsFumbleRange({ natural: 3, die: "d16" }, 2)).toBe(false);
+            expect(meetsFumbleRange({ natural: 2, die: "d24" }, 2)).toBe(true);
+        });
+        it("returns false for unevaluated rolls", () => {
+            expect(meetsFumbleRange({}, 5)).toBe(false);
         });
     });
     describe("adjustThreatRange", () => {

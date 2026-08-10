@@ -64,7 +64,7 @@
 
     <!-- Critical Hits -->
     <div class="box-border grid-col-span-6">
-      <div class="box-title">{{localize "DCC.Critical"}}</div>
+      <div class="box-title">{{localize "DCC.CriticalFumble"}}</div>
       <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
         <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
           {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
@@ -84,13 +84,22 @@
         <label for="system.config.critTableOverride">{{localize "DCC.Override"}}</label>
         <input id="system.config.critTableOverride" name="system.config.critTableOverride" size="3"
                value="{{system.config.critTableOverride}}" data-dtype="String"/>
+
+        <label for="system.config.fumbleRangeOverride" title="{{localize 'DCC.FumbleRangeHint'}}">{{localize "DCC.FumbleRange"}}</label>
+        <select name="system.config.fumbleRangeOverride" id="system.config.fumbleRangeOverride"
+                title="{{localize 'DCC.FumbleRangeHint'}}">
+          <option value=""></option>
+          {{selectOptions config.fumbleRanges selected=system.config.fumbleRangeOverride}}
+        </select>
       </div>
     </div>
 
     <!-- Attack Distance -->
     <div class="box-border grid-col-span-6 grid-align-center">
       <div class="box-title">{{localize "DCC.AttackDistance"}}</div>
-      <div class="p-5 grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+      {{!-- Single column: side-by-side property groups overflow the box on
+            narrow sheets and crush the second checkbox to 0 width. --}}
+      <div class="p-5 grid-tpl-max grid-row-gap-3 grid-col-gap-8 grid-align-center">
         <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
           <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
           <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>

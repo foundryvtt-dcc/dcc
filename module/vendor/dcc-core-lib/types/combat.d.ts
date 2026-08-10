@@ -37,6 +37,17 @@ export interface AttackInput {
      * has already expressed `threatRange` for the die in `actionDie`.
      */
     threatRangeIsNatural?: boolean | undefined;
+    /**
+     * Fumble range as a natural-roll threshold on the die actually rolled
+     * (1 = only a natural 1, 2 = natural 1-2, etc.). Defaults to 1.
+     *
+     * Unlike `threatRange` this is NEVER rescaled when the action die
+     * changes size — a cursed weapon that fumbles on 1-2 fumbles on a
+     * natural 1-2 whether it is rolled on a d16, d20, or d24. A roll in
+     * the fumble range always misses and can never be a critical threat
+     * (including backstab auto-crits).
+     */
+    fumbleRange?: number | undefined;
     /** Ability modifier to add (usually STR for melee, AGL for missile) */
     abilityModifier: number;
     /** Deed die for warriors/dwarves (e.g., "d3", "d4") */

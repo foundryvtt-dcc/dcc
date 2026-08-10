@@ -468,7 +468,8 @@ describe('DCCItem Tests', () => {
         config: {
           critRangeOverride: 16,
           critDieOverride: '1d10',
-          critTableOverride: 'V'
+          critTableOverride: 'V',
+          fumbleRangeOverride: 3
         }
       }
       weapon.prepareBaseData()
@@ -476,6 +477,7 @@ describe('DCCItem Tests', () => {
       expect(weapon.system.critRange).toBe(16)
       expect(weapon.system.critDie).toBe('1d10')
       expect(weapon.system.critTable).toBe('V')
+      expect(weapon.system.fumbleRange).toBe(3)
     })
 
     test('should use defaults when actor properties missing', () => {
@@ -485,6 +487,7 @@ describe('DCCItem Tests', () => {
       expect(weapon.system.critRange).toBe(20)
       expect(weapon.system.critDie).toBe('1d4')
       expect(weapon.system.critTable).toBe('I')
+      expect(weapon.system.fumbleRange).toBe(1)
     })
   })
 

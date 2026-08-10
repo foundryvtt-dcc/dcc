@@ -677,6 +677,20 @@ test('buildAttackInput translates weapon + actor to the lib AttackInput shape', 
   expect(input.abilityModifier).toBe(0)
 })
 
+test('buildAttackInput passes the weapon fumble range through (#343)', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+
+  // Default: fumble only on a natural 1.
+  const plain = buildAttackInput(actor, makeSimpleWeapon())
+  expect(plain.fumbleRange).toBe(1)
+
+  // A widened weapon fumble range reaches the lib unchanged — it is a
+  // natural threshold, so no threatRange-style rescaling flag is needed.
+  const cursed = buildAttackInput(actor, makeSimpleWeapon({ fumbleRange: 3 }))
+  expect(cursed.fumbleRange).toBe(3)
+})
+
 test('buildAttackInput flags a crit-on-max-die threat range as natural', () => {
   // Halfling two-weapon / Agl 16-17 primary: critRange is the max face of
   // the die actually rolled (16 on d16, 12 on a d12 extra-die pair), not a

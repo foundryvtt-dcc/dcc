@@ -269,6 +269,11 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
     this.system.critDie = this.system?.config?.critDieOverride || this.actor?.system?.attributes?.critical?.die || '1d4'
     this.system.critTable = this.system?.config?.critTableOverride || this.actor?.system?.attributes?.critical?.table || 'I'
 
+    // Fumble range: highest natural roll that fumbles (default: natural 1).
+    // A weapon override widens it (#343); always a natural threshold on the
+    // die actually rolled, never rescaled like the crit range.
+    this.system.fumbleRange = this.system?.config?.fumbleRangeOverride ?? 1
+
     if (this.type === 'spell') {
       // Spells can use the owner's action die for the spell check
       if (this.system.config.inheritActionDie) {

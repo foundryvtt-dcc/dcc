@@ -121,11 +121,15 @@ export function buildAttackInput (actor, weapon, actorActionDiceFormula) {
   // sheet/AE-affected single action die, then the config preset (#813).
   const actionDie = normalizeLibDie(weapon.system?.actionDie || actor.system?.attributes?.actionDice?.value || actorActionDice)
   const threatRange = parseInt(weapon.system?.critRange || actor.system.details?.critRange || 20) || 20
+  // Highest natural roll that fumbles (weapon override, #343). Always a
+  // natural threshold on the die actually rolled — the lib never rescales it.
+  const fumbleRange = parseInt(weapon.system?.fumbleRange || 1) || 1
   const input = {
     attackType,
     attackBonus,
     actionDie,
     threatRange,
+    fumbleRange,
     abilityModifier: 0
   }
   // Crit-on-max-die two-weapon rules (halfling, Agl 16-17 primary) express

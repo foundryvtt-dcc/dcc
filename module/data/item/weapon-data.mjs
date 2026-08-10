@@ -30,6 +30,12 @@ export class WeaponData extends PhysicalItemData {
       source.config.critRangeOverride = critRangeOverride === '' ? null : (parseInt(critRangeOverride) || null)
     }
 
+    // Convert fumbleRangeOverride from string to number/null
+    const fumbleRangeOverride = source.config.fumbleRangeOverride
+    if (typeof fumbleRangeOverride === 'string') {
+      source.config.fumbleRangeOverride = fumbleRangeOverride === '' ? null : (parseInt(fumbleRangeOverride) || null)
+    }
+
     return super.migrateData(source)
   }
 
@@ -43,6 +49,7 @@ export class WeaponData extends PhysicalItemData {
         critDieOverride: new StringField({ initial: '' }),
         critRangeOverride: new NumberField({ nullable: true, initial: null, integer: true, min: 1, max: 20 }),
         critTableOverride: new StringField({ initial: '' }),
+        fumbleRangeOverride: new NumberField({ nullable: true, initial: null, integer: true, min: 1, max: 20 }),
         damageOverride: new StringField({ initial: '' }),
         attackBonusOverride: new StringField({ initial: '' }),
         initiativeBonusOverride: new StringField({ initial: '' }),
@@ -58,6 +65,7 @@ export class WeaponData extends PhysicalItemData {
       critDie: new StringField({ initial: '' }),
       critRange: new NumberField({ initial: 20, integer: true, min: 1, max: 20 }),
       critTable: new StringField({ initial: '' }),
+      fumbleRange: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
       damage: new StringField({ initial: '' }),
       damageWeapon: new StringField({ initial: '' }),
       damageBonus: new StringField({ initial: '' }),
