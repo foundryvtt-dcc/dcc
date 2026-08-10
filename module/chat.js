@@ -1,7 +1,8 @@
-/* global canvas, foundry, game, ui, document, console */
+/* global canvas, foundry, game, ui, document, console, ChatMessage */
 // noinspection DuplicatedCode
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog } from './utilities.js'
+import ApplyDamageDialog from './apply-damage-dialog.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -88,7 +89,7 @@ export const addChatMessageContextOptions = function (html, options) {
       label: 'DCC.ChatContextDamage',
       icon: 'fas fa-user-minus',
       visible: canApply,
-      onClick: (event, li) => applyChatCardDamage(li, 1)
+      onClick: (event, li) => applyChatCardDamage(li, 1, event)
     }
   )
   options.push(
@@ -96,7 +97,7 @@ export const addChatMessageContextOptions = function (html, options) {
       label: 'DCC.ChatContextHealing',
       icon: 'fas fa-user-plus',
       visible: canApply,
-      onClick: (event, li) => applyChatCardDamage(li, -1)
+      onClick: (event, li) => applyChatCardDamage(li, -1, event)
     }
   )
   return options
@@ -108,11 +109,16 @@ export const addChatMessageContextOptions = function (html, options) {
  * Apply rolled dice damage to the token or tokens which are currently controlled.
  * This allows for damage to be scaled by a multiplier to account for healing, critical hits, or resistance
  *
+ * Ctrl/cmd-clicking the context menu entry (XOR the "Show Roll Modifier by
+ * Default" setting) opens a dialog to adjust the final amount — and optionally
+ * record a post-roll Luck spend — before it is applied (#401).
+ *
  * @param {HTMLElement} roll    The chat entry which contains the roll data
  * @param {Number} multiplier   A damage multiplier to apply to the rolled damage.
+ * @param {Event} [event]       The triggering click event
  * @return {Promise}
  */
-function applyChatCardDamage (roll, multiplier) {
+function applyChatCardDamage (roll, multiplier, event) {
   const damageApplyable = roll.querySelector('.damage-applyable')
 
   // Check if this is an attack roll message - if so, only use damage-applyable to avoid
@@ -135,10 +141,17 @@ function applyChatCardDamage (roll, multiplier) {
     return Promise.resolve()
   }
 
-  return Promise.all(canvas.tokens.controlled.map(t => {
-    const a = t.actor
-    return a.applyDamage(amount, multiplier)
-  }))
+  const targets = canvas.tokens.controlled.map(t => t.actor)
+
+  if (wantsModifierDialog(event)) {
+    // The roller (the damage message's speaker) is who a post-roll Luck spend
+    // would come from; fall back to the user's character for speakerless rolls
+    const luckActor = (message?.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null) ?? game.user?.character ?? null
+    new ApplyDamageDialog({ amount: Number(amount), multiplier, targets, luckActor }).render(true)
+    return Promise.resolve()
+  }
+
+  return Promise.all(targets.map(a => a.applyDamage(amount, multiplier)))
 }
 
 /**

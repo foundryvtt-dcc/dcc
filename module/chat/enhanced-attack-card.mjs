@@ -28,6 +28,7 @@
 import { qolHandlingCombat } from '../integrations.mjs'
 import { executeAsGM, registerSocketHandler } from '../socket.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
+import { wantsModifierDialog } from '../utilities.js'
 
 const UPDATE_FLAGS_ACTION = 'dcc.updateMessageFlags'
 const TEMPLATE = 'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -188,13 +189,6 @@ async function markButtonClicked (message, key) {
   } else {
     await executeAsGM(UPDATE_FLAGS_ACTION, { messageId: message.id, key })
   }
-}
-
-/** Should the modifier dialog show for this click? (default XOR ctrl/meta). */
-function wantsModifierDialog (event) {
-  let dflt = false
-  try { dflt = game.settings.get('dcc', 'showRollModifierByDefault') } catch { dflt = false }
-  return !!(dflt ^ (event.ctrlKey || event.metaKey))
 }
 
 /**
