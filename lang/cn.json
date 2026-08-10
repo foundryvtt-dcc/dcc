@@ -133,6 +133,7 @@
   "DCC.Apply": "应用",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
   "DCC.ApplyDamageNoRoll": "未找到伤害骰。请先投掷伤害。",
+  "DCC.ApplyDamageLuckSpendFailed": "无法为 {name} 消耗幸运——伤害仍已应用。",
   "DCC.ApplyDamageSpendLuck": "消耗幸运（{name}：{luck}）",
   "DCC.ApplyDamageSpendLuckHint": "从投掷者身上扣除幸运，并记录在属性值变更日志中。请自行调整上方数值以符合你桌上的裁定。",
   "DCC.ApplyDamageTo": "应用于：{targets}",

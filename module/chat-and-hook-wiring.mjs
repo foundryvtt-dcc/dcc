@@ -1,4 +1,4 @@
-/* global foundry, game, Hooks, ui, CONST */
+/* global foundry, game, Hooks, ui, CONST, console */
 
 /**
  * Chat- and hook-wiring surface extracted from `module/dcc.js`.
@@ -77,7 +77,12 @@ export async function onRenderChatMessageHTML (message, html, data) {
 
   if (game.user.isGM && message.getFlag('core', 'canPopout') !== true && !canPopoutWriteIssued.has(message)) {
     canPopoutWriteIssued.add(message)
-    message.setFlag('core', 'canPopout', true)
+    Promise.resolve(message.setFlag('core', 'canPopout', true))
+      .catch(err => {
+        // Un-issue so a later render can retry after a transient failure
+        canPopoutWriteIssued.delete(message)
+        console.warn('DCC | canPopout flag write failed', err)
+      })
   }
 
   // Enhanced attack card (client setting) — renders in place of the plain card
@@ -128,7 +133,11 @@ export async function onRenderChatMessageHTML (message, html, data) {
   if (emoteRolls === true) {
     if (game.user.isGM && message.getFlag('dcc', 'emoteRoll') !== true && !emoteRollWriteIssued.has(message)) {
       emoteRollWriteIssued.add(message)
-      message.setFlag('dcc', 'emoteRoll', true)
+      Promise.resolve(message.setFlag('dcc', 'emoteRoll', true))
+        .catch(err => {
+          emoteRollWriteIssued.delete(message)
+          console.warn('DCC | emoteRoll flag write failed', err)
+        })
     }
     chat.emoteAbilityRoll(message, html, data)
     chat.emoteApplyDamageRoll(message, html, data)

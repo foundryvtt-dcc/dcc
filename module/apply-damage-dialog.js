@@ -1,4 +1,4 @@
-/* global foundry, game */
+/* global foundry, game, ui, console */
 
 import { logAbilityChange } from './ability-score-log.js'
 
@@ -106,12 +106,19 @@ class ApplyDamageDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const luckSpend = parseInt(formData.object.luckSpend) || 0
     const luckActor = this.options.luckActor
     if (luckSpend > 0 && luckActor) {
-      await logAbilityChange(luckActor, {
-        ability: 'lck',
-        change: -luckSpend,
-        type: 'luckSpend',
-        source: this.title
-      }, { announce: true })
+      // The spend is bookkeeping on the roller — a failure there must not
+      // block applying the (already edited) amount to the targets
+      try {
+        await logAbilityChange(luckActor, {
+          ability: 'lck',
+          change: -luckSpend,
+          type: 'luckSpend',
+          source: this.title
+        }, { announce: true })
+      } catch (err) {
+        console.error('DCC | apply-time Luck spend failed', err)
+        ui.notifications.warn(game.i18n.format('DCC.ApplyDamageLuckSpendFailed', { name: luckActor.name }))
+      }
     }
 
     if (amount !== 0) {

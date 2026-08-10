@@ -145,8 +145,11 @@ function applyChatCardDamage (roll, multiplier, event) {
 
   if (wantsModifierDialog(event)) {
     // The roller (the damage message's speaker) is who a post-roll Luck spend
-    // would come from; fall back to the user's character for speakerless rolls
-    const luckActor = (message?.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null) ?? game.user?.character ?? null
+    // would come from; fall back to the user's character for speakerless
+    // rolls. Only offer actors this user can update — a spend against an
+    // unowned actor would just be rejected at apply time.
+    const speakerActor = (message?.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null) ?? game.user?.character ?? null
+    const luckActor = speakerActor?.isOwner ? speakerActor : null
     new ApplyDamageDialog({ amount: Number(amount), multiplier, targets, luckActor }).render(true)
     return Promise.resolve()
   }

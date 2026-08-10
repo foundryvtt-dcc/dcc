@@ -133,6 +133,7 @@
   "DCC.Apply": "Anwenden",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
   "DCC.ApplyDamageNoRoll": "Kein Schadenswurf gefunden. Würfle zuerst den Schaden.",
+  "DCC.ApplyDamageLuckSpendFailed": "Glück konnte für {name} nicht ausgegeben werden — der Schaden wurde trotzdem angewendet.",
   "DCC.ApplyDamageSpendLuck": "Glück ausgeben ({name}: {luck})",
   "DCC.ApplyDamageSpendLuckHint": "Zieht dem Würfelnden Glück ab und vermerkt es im Attributsprotokoll. Passe den Wert oben entsprechend der Regelung an deinem Tisch an.",
   "DCC.ApplyDamageTo": "Anwenden auf: {targets}",

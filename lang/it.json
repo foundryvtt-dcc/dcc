@@ -133,6 +133,7 @@
   "DCC.Apply": "Applica",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
   "DCC.ApplyDamageNoRoll": "Nessun tiro per i danni trovato. Tira prima per i danni.",
+  "DCC.ApplyDamageLuckSpendFailed": "Impossibile spendere Fortuna per {name} — il danno è stato comunque applicato.",
   "DCC.ApplyDamageSpendLuck": "Spendi Fortuna ({name}: {luck})",
   "DCC.ApplyDamageSpendLuckHint": "Sottrae Fortuna a chi ha tirato e la registra nel registro delle caratteristiche. Regola la quantità sopra secondo la decisione del tuo tavolo.",
   "DCC.ApplyDamageTo": "Applica a: {targets}",
