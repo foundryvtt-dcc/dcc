@@ -428,6 +428,48 @@ test.describe('Roll requests', () => {
     }
   })
 
+  test('a single-character card is muted for a viewer who does not own it (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      await openDialog(page, [setup.targetTokenId])
+      await page.selectOption('#dcc-roll-request-check', 'check:agl')
+      await clickInPage(page.locator('#dcc-roll-request-dialog button[type="submit"]'))
+      await pollForMessage(page, 'rollRequest', true)
+
+      const view = await page.evaluate(async ({ actorId }) => {
+        const message = game.messages.contents.findLast(m => m.getFlag('dcc', 'rollRequest') === true)
+        const actor = game.actors.get(actorId)
+        Object.defineProperty(actor, 'isOwner', { get: () => false, configurable: true })
+        try {
+          const holder = document.createElement('div')
+          holder.style.display = 'none'
+          document.body.appendChild(holder)
+          holder.appendChild(await message.renderHTML())
+          await new Promise(resolve => setTimeout(resolve, 100))
+          const card = holder.querySelector('.dcc-roll-request')
+          const result = {
+            isList: !!card.querySelector('.dcc-roll-request-list'),
+            theirs: !!card.querySelector('.dcc-roll-request-theirs'),
+            hasLink: !!card.querySelector('a[data-action="dccRoll"]'),
+            mutedText: card.querySelector('.dcc-roll-request-muted')?.textContent?.trim() ?? null
+          }
+          holder.remove()
+          return result
+        } finally {
+          delete actor.isOwner
+        }
+      }, setup)
+
+      // The one-line card gets the same treatment as a row list
+      expect(view.isList).toBe(false)
+      expect(view.theirs).toBe(true)
+      expect(view.hasLink).toBe(false)
+      expect(view.mutedText).toMatch(/Agility Check/)
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
   test('a skill only one selected character has is requested from that character alone (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {

@@ -432,7 +432,7 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /** Open the dialog (sidebar tool entry point). */
-  static show () {
+  static async show () {
     if (!getRequestableActors().length) {
       return ui.notifications.warn(game.i18n.localize('DCC.RequestRollNoActorsWarning'))
     }
@@ -440,9 +440,13 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     // its DOM id (and its slot in `foundry.applications.instances`). Only
     // a *rendered* instance counts — one already closing (submit closes
     // the form) still holds the registry slot, and raising that would
-    // leave the GM with a dialog that vanishes a moment later.
+    // leave the GM with a dialog that vanishes a moment later. Let that
+    // close finish before constructing: the new app would take over the
+    // registry slot, and the closing app's own cleanup would then evict
+    // the new one from it.
     const open = foundry.applications.instances.get('dcc-roll-request-dialog')
     if (open?.rendered) return open.bringToFront()
+    if (open) await open.close()
     return new RollRequestDialog().render({ force: true })
   }
 }

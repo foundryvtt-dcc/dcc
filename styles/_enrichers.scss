@@ -75,14 +75,16 @@
   }
 
   // The viewer's own characters — the rows they can actually roll (#914).
-  .dcc-roll-request-mine {
+  // Only in a list: a single-character card has nothing to pick out of.
+  .dcc-roll-request-row.dcc-roll-request-mine {
     background: rgb(255 100 0 / 8%);
     border-radius: 3px;
   }
 
   // Someone else's character: the name still shows who else was asked,
   // but the link is replaced by plain text so there is nothing to click.
-  .dcc-roll-request-theirs {
+  .dcc-roll-request-theirs,
+  &.dcc-roll-request-theirs {
     .dcc-roll-request-name,
     .dcc-roll-request-muted {
       color: var(--system-text-muted-color);

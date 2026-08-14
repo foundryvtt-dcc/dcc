@@ -391,32 +391,48 @@ export function onRenderRollLink (element) {
 }
 
 /**
- * Per-viewer trimming of a multi-character roll-request card (#914).
+ * Per-viewer trimming of a roll-request card (#914).
  *
- * Such a card carries one actor-targeted link per requested character,
- * but only that character's owner may roll it — so a player scanning a
- * list of identical-looking links has to find their own row before
- * anything happens. Chat content is enriched per client, so instead each
- * viewer is left with only the links they can actually use: on a request
- * card, a link for a character this user does not own becomes plain
- * muted text. A player owning several of the requested characters keeps
- * a live link for *each* of them, and GMs (who own every actor) keep the
- * whole list clickable so they can still roll on a player's behalf.
+ * A request card carries one actor-targeted link per requested
+ * character, but only that character's owner may roll it — so a player
+ * scanning a list of identical-looking links has to find their own row
+ * before anything happens. Chat content is enriched per client, so
+ * instead each viewer is left with only the links they can actually use:
+ * on a request card, a link for a character this user does not own
+ * becomes plain muted text. A player owning several of the requested
+ * characters keeps a live link for *each* of them, and GMs (who own
+ * every actor) keep the whole list clickable so they can still roll on a
+ * player's behalf.
+ *
+ * Trimming is deliberately conservative — it only fires for an
+ * actor-targeted link inside a request card whose uuid resolves to a
+ * real actor document. An untargeted card (the GM chat-bubble request,
+ * which rolls for whoever clicks it) and a uuid that resolves to
+ * something without ownership (a compendium index entry, a token on a
+ * scene this client has not loaded) both keep their live link: killing a
+ * roll its owner could have made is far worse than leaving a link that
+ * warns.
  *
  * @param {HTMLElement} anchor  A `dccRoll` anchor about to be wired
  * @returns {boolean} true when the link was muted, so skip wiring it
  */
 export function muteUnownedRequestLink (anchor) {
   try {
-    const row = anchor.closest('.dcc-roll-request-row')
-    if (!row || !anchor.dataset.actorUuid) return false
+    if (!anchor.closest('.dcc-roll-request') || !anchor.dataset.actorUuid) return false
     const resolved = fromUuidSync(anchor.dataset.actorUuid)
     const actor = resolved?.actor ?? resolved
-    if (actor?.isOwner) {
-      row.classList.add('dcc-roll-request-mine')
+    if (typeof actor?.isOwner !== 'boolean') return false
+
+    // A single-character request renders as one centred link paragraph
+    // rather than a row list, so mark whichever wrapper it landed in.
+    const target = anchor.closest('.dcc-roll-request-row') ??
+      anchor.closest('.dcc-roll-request-link') ??
+      anchor.closest('.dcc-roll-request')
+    if (actor.isOwner) {
+      target.classList.add('dcc-roll-request-mine')
       return false
     }
-    row.classList.add('dcc-roll-request-theirs')
+    target.classList.add('dcc-roll-request-theirs')
     const muted = document.createElement('span')
     muted.className = 'dcc-roll-request-muted'
     muted.textContent = anchor.textContent.trim()

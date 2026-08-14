@@ -9,8 +9,11 @@
     </label>
     <div class="roll-request-actor-list" id="dcc-roll-request-actors">
       {{#each actors}}
-        <label class="roll-request-actor">
-          <input type="checkbox" name="actorIds" value="{{this.id}}" {{#if this.selected}}checked{{/if}}>
+        {{! Unique ids so ApplicationV2 restores focus to the box that was
+            toggled — a shared `name` would send it back to the first one. }}
+        <label class="roll-request-actor" for="dcc-roll-request-actor-{{this.id}}">
+          <input type="checkbox" name="actorIds" id="dcc-roll-request-actor-{{this.id}}"
+                 value="{{this.id}}" {{#if this.selected}}checked{{/if}}>
           {{this.name}}
         </label>
       {{/each}}

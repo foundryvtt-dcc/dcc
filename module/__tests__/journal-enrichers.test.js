@@ -18,6 +18,7 @@ import {
   buildEnricherHtml,
   escapeHtml,
   handleEnricherRequestClick,
+  muteUnownedRequestLink,
   handleEnricherRollClick,
   normalizeAbilityKey,
   normalizeSaveKey,
@@ -301,6 +302,106 @@ describe('escapeHtml', () => {
   test('escapes markup-significant characters', () => {
     expect(escapeHtml('<a href="x">&</a>')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;')
     expect(escapeHtml(null)).toBe('')
+  })
+
+  test('escapes apostrophes, so a single-quoted attribute cannot be broken out of', () => {
+    expect(escapeHtml("Ol' Bess")).toBe('Ol&#x27; Bess')
+  })
+})
+
+/**
+ * `muteUnownedRequestLink` needs only six DOM calls, so stub them rather
+ * than pull in jsdom: the branch that matters is the fail-open one, and
+ * a mis-trimmed card silently costs a player a roll they should be able
+ * to make. The rendered result is covered end-to-end by
+ * `browser-tests/e2e/roll-request.spec.js`.
+ */
+function stubRequestLink ({ uuid = 'Actor.a1', card = true, wrapper = 'row' } = {}) {
+  const replacedWith = []
+  const target = { classes: [], classList: { add (name) { target.classes.push(name) } } }
+  const group = { replaceWith: (node) => replacedWith.push(node) }
+  const anchor = {
+    dataset: uuid ? { actorUuid: uuid } : {},
+    textContent: '  DC 10 Agility Check  ',
+    replaceWith: (node) => replacedWith.push(node),
+    closest: (selector) => {
+      if (selector === '.dcc-roll-request') return card ? { classList: { add () {} } } : null
+      if (selector === '.dcc-roll-request-row') return wrapper === 'row' ? target : null
+      if (selector === '.dcc-roll-request-link') return wrapper === 'link' ? target : null
+      if (selector === '.dcc-enricher-group') return group
+      return null
+    }
+  }
+  return { anchor, target, replacedWith }
+}
+
+describe('muteUnownedRequestLink', () => {
+  beforeEach(() => {
+    globalThis.document = { createElement: () => ({ className: '', textContent: '' }) }
+    globalThis.fromUuidSync = vi.fn()
+  })
+
+  afterEach(() => {
+    delete globalThis.document
+    delete globalThis.fromUuidSync
+  })
+
+  test("another player's row is replaced with muted text and left unwired", () => {
+    globalThis.fromUuidSync.mockReturnValue({ isOwner: false })
+    const { anchor, target, replacedWith } = stubRequestLink()
+    expect(muteUnownedRequestLink(anchor)).toBe(true)
+    expect(target.classes).toEqual(['dcc-roll-request-theirs'])
+    expect(replacedWith).toHaveLength(1)
+    expect(replacedWith[0].textContent).toBe('DC 10 Agility Check')
+    expect(replacedWith[0].className).toBe('dcc-roll-request-muted')
+  })
+
+  test('an owned row keeps its link and is marked as the viewer\'s own', () => {
+    globalThis.fromUuidSync.mockReturnValue({ isOwner: true })
+    const { anchor, target, replacedWith } = stubRequestLink()
+    expect(muteUnownedRequestLink(anchor)).toBe(false)
+    expect(target.classes).toEqual(['dcc-roll-request-mine'])
+    expect(replacedWith).toHaveLength(0)
+  })
+
+  test('a single-character card marks its link paragraph instead of a row', () => {
+    globalThis.fromUuidSync.mockReturnValue({ isOwner: false })
+    const { anchor, target } = stubRequestLink({ wrapper: 'link' })
+    expect(muteUnownedRequestLink(anchor)).toBe(true)
+    expect(target.classes).toEqual(['dcc-roll-request-theirs'])
+  })
+
+  test('a token uuid is unwrapped to its actor', () => {
+    globalThis.fromUuidSync.mockReturnValue({ actor: { isOwner: true } })
+    const { anchor, target } = stubRequestLink({ uuid: 'Scene.s1.Token.t1' })
+    expect(muteUnownedRequestLink(anchor)).toBe(false)
+    expect(target.classes).toEqual(['dcc-roll-request-mine'])
+  })
+
+  test('leaves the link live when it is not on a request card or has no target actor', () => {
+    globalThis.fromUuidSync.mockReturnValue({ isOwner: false })
+    expect(muteUnownedRequestLink(stubRequestLink({ card: false }).anchor)).toBe(false)
+    expect(muteUnownedRequestLink(stubRequestLink({ uuid: '' }).anchor)).toBe(false)
+    expect(globalThis.fromUuidSync).not.toHaveBeenCalled()
+  })
+
+  test('leaves the link live when the uuid resolves to something without ownership', () => {
+    // A compendium index entry or a token on a scene this client has not
+    // loaded — muting here would kill a roll its owner could have made.
+    for (const resolved of [null, undefined, { name: 'index entry, no isOwner' }]) {
+      globalThis.fromUuidSync.mockReturnValue(resolved)
+      const { anchor, target, replacedWith } = stubRequestLink()
+      expect(muteUnownedRequestLink(anchor)).toBe(false)
+      expect(target.classes).toEqual([])
+      expect(replacedWith).toHaveLength(0)
+    }
+  })
+
+  test('a throwing lookup fails open rather than killing the link', () => {
+    globalThis.fromUuidSync.mockImplementation(() => { throw new Error('boom') })
+    const { anchor, replacedWith } = stubRequestLink()
+    expect(muteUnownedRequestLink(anchor)).toBe(false)
+    expect(replacedWith).toHaveLength(0)
   })
 })
 
