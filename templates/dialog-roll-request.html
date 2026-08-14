@@ -27,6 +27,13 @@
         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
       {{/each}}
     </optgroup>
+    {{#if checks.saves.length}}
+      <optgroup label="{{localize 'DCC.Saves'}}">
+        {{#each checks.saves}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </optgroup>
+    {{/if}}
     {{#if checks.skills.length}}
       <optgroup label="{{localize 'DCC.Skills'}}">
         {{#each checks.skills}}

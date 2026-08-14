@@ -691,6 +691,7 @@
   "DCC.Scar10": "Gnarled scar on the leg",
   "DCC.SameAlignment": "Same",
   "DCC.Save": "Save",
+  "DCC.Saves": "Saves",
   "DCC.SaveDC": "DC {dc}",
   "DCC.SaveFailure": "Failure",
   "DCC.SaveSuccess": "Success",

@@ -32,7 +32,7 @@ vi.mock('../dcc-roll.js', () => ({ default: { name: 'DCCRoll' } }))
 vi.mock('../config.js', () => ({ default: { ASCII: '<ascii>', diceTypes: ['d3', 'd4', 'd5'] } }))
 vi.mock('../dice-chain.js', () => ({ default: { name: 'DiceChain' } }))
 vi.mock('../fleeting-luck.js', () => ({ default: { name: 'FleetingLuck' } }))
-vi.mock('../roll-request.mjs', () => ({ default: { name: 'RollRequestDialog' } }))
+vi.mock('../roll-request.mjs', () => ({ default: { name: 'RollRequestDialog' }, postRollRequest: vi.fn() }))
 vi.mock('../spell-duel.js', () => ({ default: { name: 'SpellDuel' } }))
 vi.mock('../spell-result.js', () => ({ default: { name: 'SpellResult' } }))
 vi.mock('../table-result.js', () => ({ default: { name: 'TableResult' } }))
@@ -226,7 +226,7 @@ describe('assembleGameDccNamespace', () => {
     assembleGameDccNamespace()
     const keys = Object.keys(globalThis.game.dcc)
     for (const expected of [
-      'DCCActor', 'DCCRoll', 'DiceChain', 'FleetingLuck', 'RollRequestDialog', 'SpellDuel', 'SpellResult', 'TableResult',
+      'DCCActor', 'DCCRoll', 'DiceChain', 'FleetingLuck', 'RollRequestDialog', 'postRollRequest', 'SpellDuel', 'SpellResult', 'TableResult',
       'getSkillTable', 'processSpellCheck', 'getActiveVariant',
       'registerActorSheet', 'registerClassDefaults', 'registerClassMixin',
       'registerClassProgression', 'registerClassProgressions', 'registerClassStartingItems',

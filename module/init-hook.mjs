@@ -31,7 +31,7 @@ import DCCRoll from './dcc-roll.js'
 import DCC from './config.js'
 import DiceChain from './dice-chain.js'
 import FleetingLuck from './fleeting-luck.js'
-import RollRequestDialog from './roll-request.mjs'
+import RollRequestDialog, { postRollRequest } from './roll-request.mjs'
 import SpellDuel from './spell-duel.js'
 import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
@@ -232,6 +232,9 @@ export function assembleGameDccNamespace () {
     DiceChain,
     FleetingLuck,
     RollRequestDialog,
+    // Post a roll-request card without the dialog — the entry point for
+    // Scene Region scripts and macros. See docs/user-guide/Roll-Requests.md.
+    postRollRequest,
     SpellDuel,
     SpellResult,
     TableResult,

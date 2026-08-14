@@ -6,11 +6,13 @@
  * The DCC sidebar tab offers GMs a "Request Roll" tool that opens
  * {@link RollRequestDialog}: tick one, several, or all player characters
  * (defaulting to the controlled PC tokens' actors), pick a check —
- * abilities first, then the selected characters' class skills
- * (`system.skills`) and custom skill items — and optionally set a DC.
+ * abilities first, then saving throws, then the selected characters'
+ * class skills (`system.skills`) and custom skill items — and
+ * optionally set a DC.
  * Submitting posts a single chat card built on the roll-link enricher
  * infrastructure (#794/#852): the card body carries one raw
- * `[[/check ...]]` / `[[/skill ...]]` per requested character with an
+ * `[[/check ...]]` / `[[/save ...]]` / `[[/skill ...]]` per requested
+ * character with an
  * `actor=<uuid>` option, chat content is re-enriched per client at
  * render, and clicking a link rolls for exactly that character
  * (ownership-gated in `handleEnricherRollClick`). With a DC set, the
@@ -81,15 +83,19 @@ export function actorHasSkill (actor, key) {
 
 /**
  * Assemble the check options for the selected actors: the six abilities
- * first, then the union of their skills — built-in class skill slots
- * (`system.skills`, e.g. thief skills) followed by custom skill items
- * from the skills tab. Values are namespaced (`check:agl` /
- * `skill:sneakSilently` / `skill:Nature Lore`) so the submit handler can
- * dispatch on type.
+ * first, then the three saving throws, then the union of their skills —
+ * built-in class skill slots (`system.skills`, e.g. thief skills)
+ * followed by custom skill items from the skills tab. Values are
+ * namespaced (`check:agl` / `save:ref` / `skill:sneakSilently` /
+ * `skill:Nature Lore`) so the submit handler can dispatch on type.
+ *
+ * Abilities and saves are the same for everyone, so only the skills
+ * depend on who is selected.
  *
  * @param {Actor[]|Actor|null} actors  The selected actors (a lone actor
- *   or null/empty is accepted; no actors yields abilities only)
+ *   or null/empty is accepted; no actors yields abilities and saves only)
  * @returns {{abilities: Array<{value: string, label: string}>,
+ *            saves: Array<{value: string, label: string}>,
  *            skills: Array<{value: string, label: string}>}}
  */
 export function buildCheckOptions (actors) {
@@ -98,6 +104,12 @@ export function buildCheckOptions (actors) {
   const abilities = Object.entries(CONFIG.DCC?.abilities ?? {}).map(([key, label]) => ({
     value: `check:${key}`,
     label: `${game.i18n.localize(label)}${checkSuffix}`
+  }))
+
+  const saveSuffix = ` ${game.i18n.localize('DCC.Save')}`
+  const saves = Object.entries(CONFIG.DCC?.saves ?? {}).map(([key, label]) => ({
+    value: `save:${key}`,
+    label: `${game.i18n.localize(label)}${saveSuffix}`
   }))
 
   // Built-in slots for every selected actor first, then their items, so
@@ -122,7 +134,7 @@ export function buildCheckOptions (actors) {
     }
   }
 
-  return { abilities, skills }
+  return { abilities, saves, skills }
 }
 
 /**
@@ -147,8 +159,9 @@ function localizeSkillLabel (id, skill) {
  * (brackets, braces, quotes) are stripped.
  *
  * @param {Object} params
- * @param {string} params.type       'check' | 'skill'
- * @param {string} params.key        Ability key, skill slot id, or skill item name
+ * @param {string} params.type       'check' | 'save' | 'skill'
+ * @param {string} params.key        Ability key, save key, skill slot id,
+ *   or skill item name
  * @param {number|null} [params.dc]  Optional DC
  * @param {string} [params.actorUuid]  Target actor uuid
  * @param {boolean|null} [params.rollUnder]  Explicit roll-under override
@@ -171,7 +184,7 @@ export function buildRollRequestSource ({ type, key, dc = null, actorUuid = '', 
  * The enricher source for one actor's copy of a requested check, with the
  * per-actor DC and label adjustments applied.
  * @param {Actor} actor    The actor being asked to roll
- * @param {string} type    'check' | 'skill'
+ * @param {string} type    'check' | 'save' | 'skill'
  * @param {string} key     Ability key, skill slot id, or skill item name
  * @param {number|null} dc The requested DC (may be dropped for this actor)
  * @returns {string}
@@ -194,6 +207,7 @@ function buildActorRequestSource (actor, type, key, dc) {
 
   // Built-in skill ids and item names have no actor-independent label
   // the enricher could resolve, so pass the label we showed the GM.
+  // Abilities and saves it can label on its own.
   let label = ''
   if (type === 'skill') {
     const skillName = slot
@@ -246,7 +260,8 @@ export function buildRollRequestContent (entries) {
  * @param {Object} params
  * @param {Actor} [params.actor]     A single actor being asked to roll
  * @param {Actor[]} [params.actors]  Several actors being asked to roll
- * @param {string} params.checkValue Namespaced check ('check:agl' / 'skill:...')
+ * @param {string} params.checkValue Namespaced check ('check:agl' /
+ *   'save:ref' / 'skill:...')
  * @param {number|string|null} [params.dc]  Optional DC
  * @returns {Promise<ChatMessage|null>} null when no actor could be asked
  */
@@ -254,7 +269,7 @@ export async function postRollRequest ({ actor = null, actors = null, checkValue
   const separator = String(checkValue).indexOf(':')
   const type = String(checkValue).slice(0, separator)
   const key = String(checkValue).slice(separator + 1)
-  if (separator < 1 || !key || !['check', 'skill'].includes(type)) {
+  if (separator < 1 || !key || !['check', 'save', 'skill'].includes(type)) {
     throw new Error(`DCC | postRollRequest: invalid checkValue "${checkValue}"`)
   }
   const targets = (actors ?? (actor ? [actor] : [])).filter(target => target)
@@ -361,7 +376,8 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     // the new selection dropped falls back to the first option, so clear
     // the stale value rather than resurrect it on a later re-render.
     let stillOffered = false
-    for (const option of [...context.checks.abilities, ...context.checks.skills]) {
+    const allOptions = [...context.checks.abilities, ...context.checks.saves, ...context.checks.skills]
+    for (const option of allOptions) {
       option.selected = option.value === this.#check
       stillOffered ||= option.selected
     }

@@ -29,6 +29,10 @@ const I18N = {
   'DCC.AbilityPer': 'Personality',
   'DCC.AbilityInt': 'Intelligence',
   'DCC.AbilityLck': 'Luck',
+  'DCC.Save': 'Save',
+  'DCC.SavesReflex': 'Reflex',
+  'DCC.SavesFortitude': 'Fortitude',
+  'DCC.SavesWill': 'Will',
   'DCC.SneakSilently': 'Sneak Silently',
   'DCC.RequestRollText': 'Judge asks {actor} to roll:',
   'DCC.RequestRollTextMultiple': 'Judge asks these characters to roll:',
@@ -65,6 +69,11 @@ beforeEach(() => {
         per: 'DCC.AbilityPer',
         int: 'DCC.AbilityInt',
         lck: 'DCC.AbilityLck'
+      },
+      saves: {
+        ref: 'DCC.SavesReflex',
+        frt: 'DCC.SavesFortitude',
+        wil: 'DCC.SavesWill'
       },
       skillTables: { divineAid: 'divineAidTable' }
     }
@@ -202,9 +211,18 @@ describe('buildCheckOptions', () => {
     ])
   })
 
-  test('an empty selection yields abilities but no skills', () => {
+  test('an empty selection yields abilities and saves but no skills', () => {
     expect(buildCheckOptions([]).skills).toEqual([])
     expect(buildCheckOptions([]).abilities).toHaveLength(6)
+    expect(buildCheckOptions([]).saves).toHaveLength(3)
+  })
+
+  test('the three saves are offered regardless of who is selected', () => {
+    expect(buildCheckOptions(null).saves).toEqual([
+      { value: 'save:ref', label: 'Reflex Save' },
+      { value: 'save:frt', label: 'Fortitude Save' },
+      { value: 'save:wil', label: 'Will Save' }
+    ])
   })
 })
 
@@ -380,9 +398,28 @@ describe('postRollRequest', () => {
     expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
   })
 
+  test('a saving throw request carries the DC and no custom label', async () => {
+    // The enricher resolves save labels itself, unlike skills
+    await postRollRequest({ actor: mockActor(), checkValue: 'save:ref', dc: 15 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/save ref 15 actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('}{')
+    expect(payload.content).not.toContain('rollUnder')
+  })
+
+  test('saves are asked of every selected character — no skill filtering', async () => {
+    const withSkills = mockActor({ itemTypes: { skill: [{ name: 'Nature Lore' }] } })
+    const plain = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [withSkills, plain], checkValue: 'save:wil' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/save wil actor=Actor.actor1]]')
+    expect(payload.content).toContain('[[/save wil actor=Actor.actor2]]')
+    expect(globalThis.ui.notifications.warn).not.toHaveBeenCalled()
+  })
+
   test('a malformed checkValue throws instead of posting a broken link', async () => {
     await expect(postRollRequest({ actor: mockActor(), checkValue: 'garbage' })).rejects.toThrow(/invalid checkValue/)
-    await expect(postRollRequest({ actor: mockActor(), checkValue: 'save:ref' })).rejects.toThrow(/invalid checkValue/)
+    await expect(postRollRequest({ actor: mockActor(), checkValue: 'attack:melee' })).rejects.toThrow(/invalid checkValue/)
     expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
   })
 })

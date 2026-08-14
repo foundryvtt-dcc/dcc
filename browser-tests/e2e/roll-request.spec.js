@@ -85,6 +85,7 @@ async function cleanup (page, setup) {
     await game.users.get(playerId)?.delete()
     const strays = game.messages.contents.filter(m =>
       m.getFlag('dcc', 'rollRequest') ||
+      /Reflex save/i.test(m.flavor ?? '') ||
       ['AbilityCheck', 'SkillCheck'].includes(m.getFlag('dcc', 'RollType')))
     for (const message of strays) await message.delete().catch(() => {})
   }, setup)
@@ -193,7 +194,9 @@ test.describe('Roll requests', () => {
         ['check:str', 'check:agl', 'check:sta', 'check:per', 'check:int', 'check:lck']
       )
       expect(groups[0].options[1].label).toBe('Agility Check')
-      const skillValues = groups[1].options.map(o => o.value)
+      expect(groups[1].options.map(o => o.value)).toEqual(['save:ref', 'save:frt', 'save:wil'])
+      expect(groups[1].options[0].label).toBe('Reflex Save')
+      const skillValues = groups[2].options.map(o => o.value)
       // Base Player body skill + the custom skill item from the skills tab
       expect(skillValues).toContain('skill:detectSecretDoors')
       expect(skillValues).toContain('skill:Nature Lore')
@@ -227,6 +230,36 @@ test.describe('Roll requests', () => {
       expect(ability.ability).toBe('agl')
       expect(ability.flavor).toContain('DC 10')
       expect(ability.flavor).toMatch(/Success|Failure/)
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('a saving throw request posts a card whose link rolls the save with the DC (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      await openDialog(page, [setup.targetTokenId])
+      await page.selectOption('#dcc-roll-request-check', 'save:ref')
+      await page.fill('#dcc-roll-request-dc', '15')
+      await clickInPage(page.locator('#dcc-roll-request-dialog button[type="submit"]'))
+
+      await pollForMessage(page, 'rollRequest', true)
+      const cardLink = await clickRequestCardLink(
+        page, `[data-roll-type="save"][data-key="ref"][data-actor-uuid="Actor.${setup.actorId}"]`)
+      await expect(cardLink).toHaveText(/DC 15 Reflex Save/)
+
+      // Save cards carry no RollType flag, so match on the flavor line
+      await expect.poll(() => page.evaluate(() => {
+        const message = game.messages.contents.findLast(m => /Reflex save/i.test(m.flavor ?? ''))
+        return message ? { alias: message.speaker.alias, flavor: message.flavor } : null
+      }), { timeout: 10000 }).not.toBeNull()
+      const save = await page.evaluate(() => {
+        const message = game.messages.contents.findLast(m => /Reflex save/i.test(m.flavor ?? ''))
+        return { alias: message.speaker.alias, flavor: message.flavor }
+      })
+      expect(save.alias).toBe('DCC Request Target')
+      expect(save.flavor).toContain('DC 15')
+      expect(save.flavor).toMatch(/Success|Failure/)
     } finally {
       await cleanup(page, setup)
     }
@@ -515,6 +548,52 @@ test.describe('Roll requests', () => {
       expect(view.theirs).toBe(true)
       expect(view.hasLink).toBe(false)
       expect(view.mutedText).toMatch(/Agility Check/)
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('the documented Scene Region recipes run against the real APIs (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      // Executes the exact snippet bodies from
+      // docs/user-guide/Roll-Requests.md against the shapes Foundry hands
+      // an Execute Script behavior: `event.data.token` is a TokenDocument
+      // and `region.tokens` is a Set. A doc recipe that throws is worse
+      // than no recipe.
+      const result = await page.evaluate(async ({ sceneId, targetTokenId, allyTokenId }) => {
+        const scene = game.scenes.get(sceneId)
+        const event = { data: { token: scene.tokens.get(targetTokenId) }, user: game.user }
+        const region = { tokens: new Set([scene.tokens.get(targetTokenId), scene.tokens.get(allyTokenId)]) }
+
+        // Recipe 1 — ask the entering character
+        const single = await (async () => {
+          if (!game.users.activeGM?.isSelf) return null
+          const actor = event.data?.token?.actor
+          if (actor?.type !== 'Player') return null
+          return game.dcc.postRollRequest({ actor, checkValue: 'save:ref', dc: 15 })
+        })()
+
+        // Recipe 2 — ask everyone currently inside the region
+        const group = await (async () => {
+          if (!game.users.activeGM?.isSelf) return null
+          const actors = [...region.tokens].map(t => t.actor).filter(a => a?.type === 'Player')
+          if (!actors.length) return null
+          return game.dcc.postRollRequest({ actors, checkValue: 'save:ref', dc: 15 })
+        })()
+
+        return {
+          exposed: typeof game.dcc.postRollRequest,
+          singleContent: single?.content ?? null,
+          groupContent: group?.content ?? null
+        }
+      }, setup)
+
+      expect(result.exposed).toBe('function')
+      expect(result.singleContent).toContain(`[[/save ref 15 actor=Actor.${setup.actorId}]]`)
+      expect(result.groupContent).toContain(`[[/save ref 15 actor=Actor.${setup.actorId}]]`)
+      expect(result.groupContent).toContain(`[[/save ref 15 actor=Actor.${setup.allyId}]]`)
+      expect(result.groupContent).toContain('dcc-roll-request-list')
     } finally {
       await cleanup(page, setup)
     }

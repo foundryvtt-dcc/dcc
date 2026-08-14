@@ -691,6 +691,7 @@
   "DCC.Scar10": "腿上的瘤状伤疤",
   "DCC.SameAlignment": "相同",
   "DCC.Save": "豁免",
+  "DCC.Saves": "豁免检定",
   "DCC.SaveDC": "DC {dc}",
   "DCC.SaveFailure": "失败",
   "DCC.SaveSuccess": "成功",
