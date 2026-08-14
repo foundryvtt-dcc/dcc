@@ -60,8 +60,9 @@
     align-items: baseline;
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 6px;
-    padding: 4px 2px;
+    gap: 3px 8px;
+    line-height: 1.5;
+    padding: 8px 4px;
 
     + .dcc-roll-request-row {
       border-top: 1px solid var(--system-border-muted-color);
