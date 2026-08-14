@@ -21,6 +21,12 @@
  * of them have can still be requested — the card only lists the ones who
  * actually have it, and the GM is told who was skipped.
  *
+ * Because chat is enriched per client, each viewer only keeps the links
+ * they can use: `muteUnownedRequestLink` turns another player's row into
+ * plain text, so a player with one PC has exactly one thing to click and
+ * a player owning several requested PCs gets a link for each. GMs own
+ * every actor, so their copy of the card stays fully clickable.
+ *
  * The actor/check/source helpers are pure(ish) and exported for the unit
  * tests; the dialog itself is covered by the Playwright spec
  * `browser-tests/e2e/roll-request.spec.js`.
@@ -245,8 +251,11 @@ export async function postRollRequest ({ actor = null, actors = null, checkValue
     throw new Error(`DCC | postRollRequest: invalid checkValue "${checkValue}"`)
   }
   const targets = (actors ?? (actor ? [actor] : [])).filter(target => target)
+  // The enricher config only accepts digits, so a negative DC would be
+  // dropped from the link while still showing up in the label — promising
+  // a verdict the roll cannot produce. Treat it as no DC at all.
   const parsedDc = parseInt(dc)
-  const dcValue = Number.isFinite(parsedDc) ? parsedDc : null
+  const dcValue = Number.isFinite(parsedDc) && parsedDc >= 0 ? parsedDc : null
 
   const entries = []
   const skipped = []
@@ -296,7 +305,10 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
   /** @inheritDoc */
   static PARTS = {
     form: {
-      template: 'systems/dcc/templates/dialog-roll-request.html'
+      template: 'systems/dcc/templates/dialog-roll-request.html',
+      // A large party scrolls the character list — let ApplicationV2
+      // restore the offset when a selection change re-renders the part.
+      scrollable: ['.roll-request-actor-list']
     }
   }
 
@@ -333,12 +345,18 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     }))
     context.hasActors = actors.length > 0
     context.allSelected = actors.length > 0 && ids.size === actors.length
+    context.canSubmit = ids.size > 0
     context.checks = buildCheckOptions(actors.filter(actor => ids.has(actor.id)))
     // Keep the previous check selected across re-renders when the new
-    // selection still offers it (ability checks always survive).
+    // selection still offers it (ability checks always survive). A skill
+    // the new selection dropped falls back to the first option, so clear
+    // the stale value rather than resurrect it on a later re-render.
+    let stillOffered = false
     for (const option of [...context.checks.abilities, ...context.checks.skills]) {
       option.selected = option.value === this.#check
+      stillOffered ||= option.selected
     }
+    if (!stillOffered) this.#check = ''
     context.dc = this.#dc
     this.#skillSignature = context.checks.skills.map(option => option.value).join('|')
     return context
@@ -371,11 +389,15 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
    */
   #onSelectionChange (boxes) {
     this.#actorIds = new Set(boxes.filter(box => box.checked).map(box => box.value))
+    // Nothing ticked is a dead submit — block it here rather than let the
+    // form close on a warning and throw away the check and DC.
+    const submit = this.element.querySelector('button[type="submit"]')
+    if (submit) submit.disabled = !this.#actorIds.size
     const selected = getRequestableActors().filter(actor => this.#actorIds.has(actor.id))
     const signature = buildCheckOptions(selected).skills.map(option => option.value).join('|')
     if (signature === this.#skillSignature) return
     this.#stashFields()
-    this.render()
+    this.render().catch(err => console.error('DCC | Roll request re-render failed', err))
   }
 
   /** Preserve the check and DC fields across a re-render. */
@@ -412,6 +434,10 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     if (!getRequestableActors().length) {
       return ui.notifications.warn(game.i18n.localize('DCC.RequestRollNoActorsWarning'))
     }
+    // A second click must raise the open dialog, not spawn a twin sharing
+    // its DOM id (and its slot in `foundry.applications.instances`).
+    const open = foundry.applications.instances.get('dcc-roll-request-dialog')
+    if (open) return open.bringToFront()
     return new RollRequestDialog().render({ force: true })
   }
 }

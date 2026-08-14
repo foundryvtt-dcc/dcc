@@ -32,7 +32,7 @@ const I18N = {
   'DCC.SneakSilently': 'Sneak Silently',
   'DCC.RequestRollText': '{user} asks {actor} to roll:',
   'DCC.RequestRollTextMultiple': '{user} asks these characters to roll:',
-  'DCC.RequestRollSkillMissingWarning': '{actors} do not have that skill, so no roll was requested for them.'
+  'DCC.RequestRollSkillMissingWarning': 'No roll was requested for {actors} — that skill is not on their sheet.'
 }
 
 let original
@@ -346,8 +346,24 @@ describe('postRollRequest', () => {
     expect(payload.content).toContain('actor=Actor.actor1')
     expect(payload.content).not.toContain('actor=Actor.actor2')
     expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith(
-      'Anya do not have that skill, so no roll was requested for them.'
+      'No roll was requested for Anya — that skill is not on their sheet.'
     )
+  })
+
+  test('hostile actor names are HTML-escaped into the group card', async () => {
+    const evil = mockActor({ name: '<img src=x onerror="alert(1)">' })
+    const anya = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [evil, anya], checkValue: 'check:agl' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).not.toContain('<img')
+    expect(payload.content).toContain('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;')
+  })
+
+  test('a negative DC is dropped rather than shown on a link that ignores it', async () => {
+    await postRollRequest({ actor: mockActor(), checkValue: 'check:agl', dc: -5 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/check agl actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('-5')
   })
 
   test('no actor left to ask posts nothing', async () => {

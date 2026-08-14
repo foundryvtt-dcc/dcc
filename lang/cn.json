@@ -11,7 +11,7 @@
   "DCC.RequestRollDCHint": "可选",
   "DCC.RequestRollNoActorsWarning": "没有可请求检定的玩家角色。",
   "DCC.RequestRollNoSelectionWarning": "请至少选择一名要请求检定的角色。",
-  "DCC.RequestRollSkillMissingWarning": "{actors} 没有该技能，因此未向其请求检定。",
+  "DCC.RequestRollSkillMissingWarning": "未向 {actors} 请求检定——其角色卡上没有该技能。",
   "DCC.RequestRollText": "{user} 请求 {actor} 进行检定：",
   "DCC.RequestRollTextMultiple": "{user} 请求这些角色进行检定：",
   "DCC.RequestRollTitle": "请求检定",

@@ -1,6 +1,7 @@
 <section class="roll-request-form grid-container grid-row-gap-8 grid-col-gap-8 grid-align-center p-8">
-  <label class="grid-col-span-4 roll-request-characters-label" for="dcc-roll-request-all">{{localize "DCC.RequestRollCharacters"}}</label>
-  <div class="grid-col-span-8 roll-request-actors">
+  <span class="grid-col-span-4 roll-request-characters-label"
+        id="dcc-roll-request-characters-label">{{localize "DCC.RequestRollCharacters"}}</span>
+  <div class="grid-col-span-8 roll-request-actors" role="group" aria-labelledby="dcc-roll-request-characters-label">
     <label class="roll-request-all">
       <input type="checkbox" name="allActors" id="dcc-roll-request-all"
              {{#if allSelected}}checked{{/if}} {{#unless hasActors}}disabled{{/unless}}>
@@ -36,7 +37,7 @@
   <input class="grid-col-span-8" type="number" name="dc" id="dcc-roll-request-dc" value="{{dc}}"
          min="0" step="1" placeholder="{{localize 'DCC.RequestRollDCHint'}}">
 
-  <button class="grid-col-span-12" type="submit" {{#unless hasActors}}disabled{{/unless}}>
+  <button class="grid-col-span-12" type="submit" {{#unless canSubmit}}disabled{{/unless}}>
     <i class="fas fa-dice-d20" inert></i> {{localize "DCC.RequestRoll"}}
   </button>
 </section>

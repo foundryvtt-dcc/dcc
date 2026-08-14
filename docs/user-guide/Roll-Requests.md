@@ -5,7 +5,7 @@ As Judge you can ask one character, several characters, or the whole party for a
 ## Requesting a roll
 
 1. Open the **DCC tab** in the right-hand sidebar (the DCC logo) and click **Request Roll**. If you have PC tokens selected on the scene, those characters are preselected.
-2. Tick the **Characters** you want to roll — one, several, or **All Players** to ask everyone at once.
+2. Tick the **Characters** you want to roll — one, several, or **All Players** to ask everyone at once. Selecting several PC tokens on the scene before you open the dialog ticks all of them for you.
 3. Pick the **Check** — the six ability checks come first, followed by the selected characters' class skills (e.g. Thief skills) and any custom skills from their Skills tabs.
 4. Optionally enter a **DC**.
 5. Click **Request Roll**.
@@ -16,7 +16,7 @@ A card is posted to chat naming the character and showing a roll link, e.g. *"Ju
 
 The player who owns a character clicks that character's link on the chat card and the check rolls exactly as if they had clicked it on their sheet — the roll modifier dialog (Ctrl/Cmd-click), action dice, and all other roll behavior apply. If a DC was set, the result card shows the DC and whether the roll **succeeded or failed**.
 
-Only owners of the requested character can trigger that character's roll (the GM also can, since GMs own every actor). Anyone else clicking the link gets a permission warning.
+Each player only gets a clickable link for **their own** characters. On a card asking several characters, the rows for everyone else's characters are shown as plain grey text, so there is no hunting for the right link and nothing to click by mistake. A player who owns more than one of the requested characters gets a live link for each of them, and you (the Judge) keep every row clickable so you can still roll on a player's behalf.
 
 ## Notes
 

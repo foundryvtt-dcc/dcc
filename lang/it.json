@@ -11,7 +11,7 @@
   "DCC.RequestRollDCHint": "Facoltativo",
   "DCC.RequestRollNoActorsWarning": "Nessun personaggio giocante disponibile a cui richiedere un tiro.",
   "DCC.RequestRollNoSelectionWarning": "Seleziona almeno un personaggio a cui richiedere un tiro.",
-  "DCC.RequestRollSkillMissingWarning": "{actors} non possiedono quella abilità, quindi non è stato richiesto alcun tiro per loro.",
+  "DCC.RequestRollSkillMissingWarning": "Nessun tiro è stato richiesto per {actors}: quella abilità non è sulla sua scheda.",
   "DCC.RequestRollText": "{user} chiede a {actor} di effettuare un tiro:",
   "DCC.RequestRollTextMultiple": "{user} chiede a questi personaggi di effettuare un tiro:",
   "DCC.RequestRollTitle": "Richiedi un tiro",

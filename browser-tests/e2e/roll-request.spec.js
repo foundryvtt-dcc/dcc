@@ -16,10 +16,10 @@ const test = createSessionTest()
 
 /**
  * Create two controllable Players — one with a custom skill item — and
- * control only the first one's token.
+ * control the first one's token (or both, with `{ controlBoth: true }`).
  */
-async function setupActors (page) {
-  return page.evaluate(async () => {
+async function setupActors (page, { controlBoth = false } = {}) {
+  return page.evaluate(async ({ controlBoth }) => {
     if (!game.canvas?.ready || !game.canvas?.scene) {
       const newScene = await Scene.create({ name: 'DCC Roll Request Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
       await newScene.view()
@@ -44,8 +44,11 @@ async function setupActors (page) {
       { name: 'A', actorId: ally.id, actorLink: true, x: 900, y: 700, width: 1, height: 1 }
     ])
     const deadline = Date.now() + 3000
-    while (Date.now() < deadline && !game.canvas.tokens.get(tokens[0].id)) await new Promise(resolve => setTimeout(resolve, 50))
+    while (Date.now() < deadline && tokens.some(token => !game.canvas.tokens.get(token.id))) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
     game.canvas.tokens.get(tokens[0].id).control({ releaseOthers: true })
+    if (controlBoth) game.canvas.tokens.get(tokens[1].id).control({ releaseOthers: false })
 
     return {
       actorId: target.id,
@@ -53,7 +56,7 @@ async function setupActors (page) {
       tokenIds: tokens.map(token => token.id),
       sceneId: scene.id
     }
-  })
+  }, { controlBoth })
 }
 
 async function cleanup (page, setup) {
@@ -279,6 +282,97 @@ test.describe('Roll requests', () => {
       for (const actorId of [setup.actorId, setup.allyId]) {
         await expect(card.locator(`a[data-action="dccRoll"][data-actor-uuid="Actor.${actorId}"]`)).toHaveCount(1)
       }
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('controlling several PC tokens preselects all of them (#914)', async ({ page }) => {
+    const setup = await setupActors(page, { controlBoth: true })
+    try {
+      await openDialog(page)
+      await expect(actorCheckbox(page, setup.actorId)).toBeChecked()
+      await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('unticking every character disables Request Roll instead of losing the form (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      await openDialog(page)
+      const submit = page.locator('#dcc-roll-request-dialog button[type="submit"]')
+      await expect(submit).toBeEnabled()
+
+      // Unticking the only ticked character also drops its custom skill
+      // from the union, so this exercises the re-render path
+      await clickInPage(actorCheckbox(page, setup.actorId))
+      await expect(submit).toBeDisabled()
+
+      // Ticking a character back re-enables it without a re-render
+      await clickInPage(actorCheckbox(page, setup.allyId))
+      await expect(submit).toBeEnabled()
+      await expect(page.locator('#dcc-roll-request-dialog')).toBeVisible()
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('a request card only keeps live links for characters the viewer owns (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      await openDialog(page)
+      await clickInPage(actorCheckbox(page, setup.allyId))
+      await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
+      await page.selectOption('#dcc-roll-request-check', 'check:agl')
+      await clickInPage(page.locator('#dcc-roll-request-dialog button[type="submit"]'))
+      await pollForMessage(page, 'rollRequest', true)
+
+      // Render the card twice off-screen: once as its owner (the GM owns
+      // every actor, and a player owning several requested characters
+      // sees the same thing), once with one character made un-owned.
+      const views = await page.evaluate(async ({ allyId }) => {
+        const message = game.messages.contents.findLast(m => m.getFlag('dcc', 'rollRequest') === true)
+        const ally = game.actors.get(allyId)
+
+        async function renderRows () {
+          const holder = document.createElement('div')
+          holder.style.display = 'none'
+          document.body.appendChild(holder)
+          holder.appendChild(await message.renderHTML())
+          // `<enriched-content>` wires (and trims) on connection
+          await new Promise(resolve => setTimeout(resolve, 100))
+          const rows = [...holder.querySelectorAll('.dcc-roll-request-row')].map(row => ({
+            name: row.querySelector('.dcc-roll-request-name')?.textContent?.trim(),
+            mine: row.classList.contains('dcc-roll-request-mine'),
+            theirs: row.classList.contains('dcc-roll-request-theirs'),
+            hasLink: !!row.querySelector('a[data-action="dccRoll"]'),
+            mutedText: row.querySelector('.dcc-roll-request-muted')?.textContent?.trim() ?? null
+          }))
+          holder.remove()
+          return rows
+        }
+
+        const owned = await renderRows()
+        Object.defineProperty(ally, 'isOwner', { get: () => false, configurable: true })
+        try {
+          return { owned, partial: await renderRows() }
+        } finally {
+          delete ally.isOwner
+        }
+      }, setup)
+
+      // Owning both requested characters keeps a live link for each
+      expect(views.owned).toHaveLength(2)
+      expect(views.owned.every(row => row.mine && row.hasLink)).toBe(true)
+
+      // With one character un-owned, only the owned row stays clickable
+      const ally = views.partial.find(row => row.name === 'DCC Request Ally')
+      const target = views.partial.find(row => row.name === 'DCC Request Target')
+      expect(ally).toMatchObject({ theirs: true, mine: false, hasLink: false })
+      expect(ally.mutedText).toMatch(/Agility Check/)
+      expect(target).toMatchObject({ mine: true, theirs: false, hasLink: true })
     } finally {
       await cleanup(page, setup)
     }

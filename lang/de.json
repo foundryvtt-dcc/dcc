@@ -11,7 +11,7 @@
   "DCC.RequestRollDCHint": "Optional",
   "DCC.RequestRollNoActorsWarning": "Es sind keine Spielercharaktere verfügbar, von denen ein Wurf angefordert werden kann.",
   "DCC.RequestRollNoSelectionWarning": "Wähle mindestens einen Charakter aus, von dem ein Wurf angefordert werden soll.",
-  "DCC.RequestRollSkillMissingWarning": "{actors} besitzen diese Fertigkeit nicht, daher wurde für sie kein Wurf angefordert.",
+  "DCC.RequestRollSkillMissingWarning": "Für {actors} wurde kein Wurf angefordert — diese Fertigkeit steht nicht auf dem Bogen.",
   "DCC.RequestRollText": "{user} bittet {actor} um einen Wurf:",
   "DCC.RequestRollTextMultiple": "{user} bittet diese Charaktere um einen Wurf:",
   "DCC.RequestRollTitle": "Wurf anfordern",

@@ -346,7 +346,7 @@
   "DCC.RequestRollDCHint": "Facultatif",
   "DCC.RequestRollNoActorsWarning": "Aucun personnage joueur disponible pour demander un jet.",
   "DCC.RequestRollNoSelectionWarning": "Sélectionnez au moins un personnage à qui demander un jet.",
-  "DCC.RequestRollSkillMissingWarning": "{actors} ne possèdent pas cette compétence ; aucun jet ne leur a été demandé.",
+  "DCC.RequestRollSkillMissingWarning": "Aucun jet n’a été demandé pour {actors} — cette compétence ne figure pas sur sa feuille.",
   "DCC.RequestRollText": "{user} demande à {actor} de faire un jet :",
   "DCC.RequestRollTextMultiple": "{user} demande à ces personnages de faire un jet :",
   "DCC.RequestRollTitle": "Demander un jet",

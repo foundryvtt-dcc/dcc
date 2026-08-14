@@ -61,11 +61,31 @@
     display: flex;
     flex-wrap: wrap;
     gap: 2px 6px;
-    padding: 1px 0;
+    padding: 4px 2px;
+
+    + .dcc-roll-request-row {
+      border-top: 1px solid var(--system-border-muted-color);
+    }
   }
 
   .dcc-roll-request-name {
     flex: none;
     font-weight: bold;
+  }
+
+  // The viewer's own characters — the rows they can actually roll (#914).
+  .dcc-roll-request-mine {
+    background: rgb(255 100 0 / 8%);
+    border-radius: 3px;
+  }
+
+  // Someone else's character: the name still shows who else was asked,
+  // but the link is replaced by plain text so there is nothing to click.
+  .dcc-roll-request-theirs {
+    .dcc-roll-request-name,
+    .dcc-roll-request-muted {
+      color: var(--system-text-muted-color);
+      font-weight: normal;
+    }
   }
 }

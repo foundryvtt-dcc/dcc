@@ -3650,11 +3650,23 @@ a.inline-roll {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 6px;
-  padding: 1px 0;
+  padding: 4px 2px;
+}
+.dcc-roll-request .dcc-roll-request-row + .dcc-roll-request-row {
+  border-top: 1px solid var(--system-border-muted-color);
 }
 .dcc-roll-request .dcc-roll-request-name {
   flex: none;
   font-weight: bold;
+}
+.dcc-roll-request .dcc-roll-request-mine {
+  background: rgba(255, 100, 0, 0.08);
+  border-radius: 3px;
+}
+.dcc-roll-request .dcc-roll-request-theirs .dcc-roll-request-name,
+.dcc-roll-request .dcc-roll-request-theirs .dcc-roll-request-muted {
+  color: var(--system-text-muted-color);
+  font-weight: normal;
 }
 
 /*# sourceMappingURL=dcc.css.map */

@@ -11,7 +11,7 @@
   "DCC.RequestRollDCHint": "Opcjonalnie",
   "DCC.RequestRollNoActorsWarning": "Brak dostępnych postaci graczy, od których można poprosić o rzut.",
   "DCC.RequestRollNoSelectionWarning": "Wybierz co najmniej jedną postać, od której chcesz poprosić o rzut.",
-  "DCC.RequestRollSkillMissingWarning": "{actors} nie posiadają tej umiejętności, więc nie poproszono ich o rzut.",
+  "DCC.RequestRollSkillMissingWarning": "Nie poproszono o rzut dla {actors} — tej umiejętności nie ma na karcie postaci.",
   "DCC.RequestRollText": "{user} prosi {actor} o rzut:",
   "DCC.RequestRollTextMultiple": "{user} prosi te postacie o rzut:",
   "DCC.RequestRollTitle": "Poproś o rzut",

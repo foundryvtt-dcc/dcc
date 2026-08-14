@@ -11,7 +11,7 @@
   "DCC.RequestRollDCHint": "Opcional",
   "DCC.RequestRollNoActorsWarning": "No hay personajes jugadores disponibles a los que solicitar una tirada.",
   "DCC.RequestRollNoSelectionWarning": "Selecciona al menos un personaje al que solicitar una tirada.",
-  "DCC.RequestRollSkillMissingWarning": "{actors} no tienen esa habilidad, así que no se les ha solicitado ninguna tirada.",
+  "DCC.RequestRollSkillMissingWarning": "No se ha solicitado ninguna tirada a {actors}: esa habilidad no está en su hoja.",
   "DCC.RequestRollText": "{user} pide a {actor} que haga una tirada:",
   "DCC.RequestRollTextMultiple": "{user} pide a estos personajes que hagan una tirada:",
   "DCC.RequestRollTitle": "Solicitar una tirada",
