@@ -15,11 +15,12 @@ const { expect, createSessionTest } = require('./fixtures')
 const test = createSessionTest()
 
 /**
- * Create two controllable Players — one with a custom skill item — and
- * control the first one's token (or both, with `{ controlBoth: true }`).
+ * Create two controllable Players — one with a custom skill item — plus a
+ * token for each. Which tokens are *controlled* is decided by
+ * {@link openDialog}, right before the dialog reads them.
  */
-async function setupActors (page, { controlBoth = false } = {}) {
-  return page.evaluate(async ({ controlBoth }) => {
+async function setupActors (page) {
+  return page.evaluate(async () => {
     if (!game.canvas?.ready || !game.canvas?.scene) {
       const newScene = await Scene.create({ name: 'DCC Roll Request Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
       await newScene.view()
@@ -43,20 +44,25 @@ async function setupActors (page, { controlBoth = false } = {}) {
       { name: 'T', actorId: target.id, actorLink: true, x: 700, y: 700, width: 1, height: 1 },
       { name: 'A', actorId: ally.id, actorLink: true, x: 900, y: 700, width: 1, height: 1 }
     ])
-    const deadline = Date.now() + 3000
+    const deadline = Date.now() + 5000
     while (Date.now() < deadline && tokens.some(token => !game.canvas.tokens.get(token.id))) {
       await new Promise(resolve => setTimeout(resolve, 50))
     }
-    game.canvas.tokens.get(tokens[0].id).control({ releaseOthers: true })
-    if (controlBoth) game.canvas.tokens.get(tokens[1].id).control({ releaseOthers: false })
 
+    // `createEmbeddedDocuments` does not promise to return documents in
+    // the order they were requested, so key the tokens by their actor
+    // rather than by position — picking `tokens[0]` controlled the wrong
+    // character about half the time.
+    const tokenFor = (actor) => tokens.find(token => token.actorId === actor.id).id
     return {
       actorId: target.id,
       allyId: ally.id,
+      targetTokenId: tokenFor(target),
+      allyTokenId: tokenFor(ally),
       tokenIds: tokens.map(token => token.id),
       sceneId: scene.id
     }
-  }, { controlBoth })
+  })
 }
 
 async function cleanup (page, setup) {
@@ -75,15 +81,38 @@ async function cleanup (page, setup) {
   }, setup)
 }
 
-/** Open the DCC sidebar tab and launch the Request Roll dialog. */
-async function openDialog (page) {
+/**
+ * Control `tokenIds` (none by default) and launch the Request Roll dialog
+ * from the DCC sidebar tab.
+ *
+ * The control step lives here, not in `setupActors`: pending canvas work
+ * from actor/token creation (or the previous test's cleanup) can drop
+ * control after the fact, and the dialog reads `canvas.tokens.controlled`
+ * to decide what to preselect. Confirm control and click the tool in one
+ * evaluate, with no awaits in between, so nothing can land between them.
+ */
+async function openDialog (page, tokenIds = []) {
   await page.evaluate(() => {
     ui.sidebar.expand()
     ui.sidebar.changeTab('dcc', 'primary')
   })
-  // In-page click: floating windows can overlap the sidebar and hang a
-  // real pointer click in Playwright's actionability check.
-  await page.locator('#sidebar button[data-tool="requestRoll"]').evaluate((el) => el.click())
+  await page.evaluate(async ({ tokenIds }) => {
+    let controlled = []
+    const deadline = Date.now() + 5000
+    while (Date.now() < deadline) {
+      game.canvas.tokens.releaseAll()
+      for (const id of tokenIds) game.canvas.tokens.get(id)?.control({ releaseOthers: false })
+      controlled = game.canvas.tokens.controlled.map(token => token.id)
+      if (tokenIds.every(id => controlled.includes(id)) && controlled.length === tokenIds.length) break
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    if (controlled.length !== tokenIds.length || !tokenIds.every(id => controlled.includes(id))) {
+      throw new Error(`Token control never settled: wanted ${tokenIds}, got ${controlled}`)
+    }
+    // In-page click: floating windows can overlap the sidebar and hang a
+    // real pointer click in Playwright's actionability check.
+    document.querySelector('#sidebar button[data-tool="requestRoll"]').click()
+  }, { tokenIds })
   await page.waitForSelector('#dcc-roll-request-dialog', { timeout: 10000 })
 }
 
@@ -110,7 +139,15 @@ function pollForMessage (page, flagKey, flagValue) {
   }, { flagKey, flagValue }), { timeout: 10000 }).not.toBeNull()
 }
 
-/** Reveal the chat log and click the last actor-targeted roll link. */
+/**
+ * Reveal the chat log and click the last actor-targeted roll link.
+ *
+ * Always pin `selector` to the requested actor's uuid: the card's
+ * ChatMessage exists before its DOM lands (creation is fire-and-forget),
+ * so an unpinned `.last()` can resolve against the previous card while
+ * this one is still rendering. With the uuid in the selector the
+ * `toBeVisible()` retry waits for the right link instead.
+ */
 async function clickRequestCardLink (page, selector) {
   await page.evaluate(() => {
     ui.sidebar.changeTab('chat', 'primary')
@@ -128,7 +165,7 @@ test.describe('Roll requests', () => {
   test('sidebar tool opens the dialog preselecting the controlled PC; abilities come before skills', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
 
       // Controlled PC token's actor is ticked, the uncontrolled one is not
       await expect(actorCheckbox(page, setup.actorId)).toBeChecked()
@@ -160,17 +197,16 @@ test.describe('Roll requests', () => {
   test('an ability check request posts a card whose link rolls for the target actor with the DC result', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       await page.selectOption('#dcc-roll-request-check', 'check:agl')
       await page.fill('#dcc-roll-request-dc', '10')
       await clickInPage(page.locator('#dcc-roll-request-dialog button[type="submit"]'))
 
       // Request card posts with the actor-targeted enricher link
       await pollForMessage(page, 'rollRequest', true)
-      const cardLink = await clickRequestCardLink(page, '[data-roll-type="check"][data-key="agl"]')
+      const cardLink = await clickRequestCardLink(
+        page, `[data-roll-type="check"][data-key="agl"][data-actor-uuid="Actor.${setup.actorId}"]`)
       await expect(cardLink).toHaveText(/DC 10 Agility Check/)
-      const actorUuid = await cardLink.getAttribute('data-actor-uuid')
-      expect(actorUuid).toBe(`Actor.${setup.actorId}`)
 
       // The roll lands for the requested actor and shows the DC verdict
       await pollForMessage(page, 'RollType', 'AbilityCheck')
@@ -190,13 +226,14 @@ test.describe('Roll requests', () => {
   test('a multi-word custom skill request round-trips through the quoted enricher link', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       await page.selectOption('#dcc-roll-request-check', 'skill:Nature Lore')
       await page.fill('#dcc-roll-request-dc', '12')
       await clickInPage(page.locator('#dcc-roll-request-dialog button[type="submit"]'))
 
       await pollForMessage(page, 'rollRequest', true)
-      const cardLink = await clickRequestCardLink(page, '[data-roll-type="skill"]')
+      const cardLink = await clickRequestCardLink(
+        page, `[data-roll-type="skill"][data-actor-uuid="Actor.${setup.actorId}"]`)
       await expect(cardLink).toHaveText(/DC 12 Nature Lore Check/)
       expect(await cardLink.getAttribute('data-key')).toBe('Nature Lore')
 
@@ -217,7 +254,7 @@ test.describe('Roll requests', () => {
   test('requesting from two characters posts one card with a working link each (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       // Add the uncontrolled ally to the controlled target
       await clickInPage(actorCheckbox(page, setup.allyId))
       await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
@@ -258,7 +295,7 @@ test.describe('Roll requests', () => {
   test('the All Players toggle ticks every character and requests a roll from each (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       await clickInPage(page.locator('#dcc-roll-request-all'))
 
       // The toggle may swap in a wider skill union (re-render), so poll
@@ -288,11 +325,24 @@ test.describe('Roll requests', () => {
   })
 
   test('controlling several PC tokens preselects all of them (#914)', async ({ page }) => {
-    const setup = await setupActors(page, { controlBoth: true })
+    const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId, setup.allyTokenId])
       await expect(actorCheckbox(page, setup.actorId)).toBeChecked()
       await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
+    } finally {
+      await cleanup(page, setup)
+    }
+  })
+
+  test('with no PC token controlled the dialog opens with nothing ticked (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    try {
+      await openDialog(page, [])
+      await expect(actorCheckbox(page, setup.actorId)).not.toBeChecked()
+      await expect(actorCheckbox(page, setup.allyId)).not.toBeChecked()
+      await expect(page.locator('#dcc-roll-request-all')).not.toBeChecked()
+      await expect(page.locator('#dcc-roll-request-dialog button[type="submit"]')).toBeDisabled()
     } finally {
       await cleanup(page, setup)
     }
@@ -301,7 +351,7 @@ test.describe('Roll requests', () => {
   test('unticking every character disables Request Roll instead of losing the form (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       const submit = page.locator('#dcc-roll-request-dialog button[type="submit"]')
       await expect(submit).toBeEnabled()
 
@@ -322,7 +372,7 @@ test.describe('Roll requests', () => {
   test('a request card only keeps live links for characters the viewer owns (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       await clickInPage(actorCheckbox(page, setup.allyId))
       await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
       await page.selectOption('#dcc-roll-request-check', 'check:agl')
@@ -381,7 +431,7 @@ test.describe('Roll requests', () => {
   test('a skill only one selected character has is requested from that character alone (#914)', async ({ page }) => {
     const setup = await setupActors(page)
     try {
-      await openDialog(page)
+      await openDialog(page, [setup.targetTokenId])
       await clickInPage(actorCheckbox(page, setup.allyId))
       await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
       // The union offers Nature Lore even though only the target has it

@@ -212,7 +212,7 @@ export function buildRollRequestContent (entries) {
   if (entries.length === 1) {
     const { actor, source } = entries[0]
     return '<div class="dcc-roll-request">' +
-      `<p>${escapeHtml(game.i18n.format('DCC.RequestRollText', { user: game.user.name, actor: actor.name }))}</p>` +
+      `<p>${escapeHtml(game.i18n.format('DCC.RequestRollText', { actor: actor.name }))}</p>` +
       `<p class="dcc-roll-request-link">${escapeHtml(source)}</p>` +
       '</div>'
   }
@@ -222,7 +222,7 @@ export function buildRollRequestContent (entries) {
     `<span class="dcc-roll-request-link">${escapeHtml(source)}</span>` +
     '</li>').join('')
   return '<div class="dcc-roll-request">' +
-    `<p>${escapeHtml(game.i18n.format('DCC.RequestRollTextMultiple', { user: game.user.name }))}</p>` +
+    `<p>${escapeHtml(game.i18n.localize('DCC.RequestRollTextMultiple'))}</p>` +
     `<ul class="dcc-roll-request-list">${rows}</ul>` +
     '</div>'
 }
@@ -329,10 +329,12 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
     const context = await super._prepareContext(options)
     const actors = getRequestableActors()
     if (this.#actorIds === null) {
-      const defaults = getDefaultRequestActors().map(actor => actor.id)
-      // No controlled PC token — preselect the first character so the
-      // dialog opens ready to submit, as the single-select version did.
-      this.#actorIds = new Set(defaults.length ? defaults : [actors[0]?.id].filter(id => id))
+      // Controlled PC tokens preselect their actors. With none
+      // controlled the dialog opens with nothing ticked (and submit
+      // disabled) rather than guessing a character: the single-select
+      // version had to default to *someone*, but silently requesting a
+      // roll from an arbitrary PC is worse than one extra click.
+      this.#actorIds = new Set(getDefaultRequestActors().map(actor => actor.id))
     }
     // Drop ids for characters deleted while the dialog was open
     const ids = new Set(actors.filter(actor => this.#actorIds.has(actor.id)).map(actor => actor.id))
@@ -435,9 +437,12 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
       return ui.notifications.warn(game.i18n.localize('DCC.RequestRollNoActorsWarning'))
     }
     // A second click must raise the open dialog, not spawn a twin sharing
-    // its DOM id (and its slot in `foundry.applications.instances`).
+    // its DOM id (and its slot in `foundry.applications.instances`). Only
+    // a *rendered* instance counts — one already closing (submit closes
+    // the form) still holds the registry slot, and raising that would
+    // leave the GM with a dialog that vanishes a moment later.
     const open = foundry.applications.instances.get('dcc-roll-request-dialog')
-    if (open) return open.bringToFront()
+    if (open?.rendered) return open.bringToFront()
     return new RollRequestDialog().render({ force: true })
   }
 }

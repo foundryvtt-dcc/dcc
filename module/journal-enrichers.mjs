@@ -347,7 +347,7 @@ export async function handleEnricherRequestClick (anchor) {
   const source = anchor.dataset.source
   if (!source) return
   const content = '<div class="dcc-roll-request">' +
-    `<p>${escapeHtml(game.i18n.format('DCC.EnricherRequestText', { user: game.user.name }))}</p>` +
+    `<p>${escapeHtml(game.i18n.localize('DCC.EnricherRequestText'))}</p>` +
     `<p class="dcc-roll-request-link">${escapeHtml(source)}</p>` +
     '</div>'
   return ChatMessage.create({

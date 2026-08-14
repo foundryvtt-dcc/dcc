@@ -38,7 +38,7 @@ const I18N = {
   'DCC.SavesFortitude': 'Fortitude',
   'DCC.SavesWill': 'Will',
   'DCC.EnricherRequestRoll': 'Request this roll in chat',
-  'DCC.EnricherRequestText': '{user} requests a roll:',
+  'DCC.EnricherRequestText': 'Judge requests a roll:',
   'DCC.EnricherNoActorWarning': 'Select a token or assign a character to your user before clicking a roll link.',
   'DCC.EnricherActorMissingWarning': 'The actor for this roll link could not be found.',
   'DCC.EnricherNotOwnerWarning': 'You do not have permission to roll for {actor}.'
@@ -415,7 +415,7 @@ describe('handleEnricherRequestClick', () => {
     expect(globalThis.ChatMessage.create).toHaveBeenCalledTimes(1)
     const payload = globalThis.ChatMessage.create.mock.calls[0][0]
     expect(payload.content).toContain('[[/save ref 15]]{resist}')
-    expect(payload.content).toContain('Tester requests a roll:')
+    expect(payload.content).toContain('Judge requests a roll:')
     expect(payload.flags.dcc.rollRequest).toBe(true)
   })
 

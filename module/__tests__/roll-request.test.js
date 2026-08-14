@@ -30,8 +30,8 @@ const I18N = {
   'DCC.AbilityInt': 'Intelligence',
   'DCC.AbilityLck': 'Luck',
   'DCC.SneakSilently': 'Sneak Silently',
-  'DCC.RequestRollText': '{user} asks {actor} to roll:',
-  'DCC.RequestRollTextMultiple': '{user} asks these characters to roll:',
+  'DCC.RequestRollText': 'Judge asks {actor} to roll:',
+  'DCC.RequestRollTextMultiple': 'Judge asks these characters to roll:',
   'DCC.RequestRollSkillMissingWarning': 'No roll was requested for {actors} — that skill is not on their sheet.'
 }
 

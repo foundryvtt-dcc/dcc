@@ -5,7 +5,7 @@ As Judge you can ask one character, several characters, or the whole party for a
 ## Requesting a roll
 
 1. Open the **DCC tab** in the right-hand sidebar (the DCC logo) and click **Request Roll**. If you have PC tokens selected on the scene, those characters are preselected.
-2. Tick the **Characters** you want to roll — one, several, or **All Players** to ask everyone at once. Selecting several PC tokens on the scene before you open the dialog ticks all of them for you.
+2. Tick the **Characters** you want to roll — one, several, or **All Players** to ask everyone at once. Selecting PC tokens on the scene before you open the dialog ticks all of them for you; with no tokens selected the dialog opens with nothing ticked and **Request Roll** stays disabled until you pick someone.
 3. Pick the **Check** — the six ability checks come first, followed by the selected characters' class skills (e.g. Thief skills) and any custom skills from their Skills tabs.
 4. Optionally enter a **DC**.
 5. Click **Request Roll**.
