@@ -20,6 +20,7 @@ Each player only gets a clickable link for **their own** characters. On a card a
 
 ## Notes
 
+* Only characters a player owns are listed — a roll request is a question put to a player, so retired PCs and Judge-authored Player actors with no owner are left out. Assign a player as **Owner** on a character's ownership tab to make it requestable.
 * Skills are pooled across the characters you tick, so you can request a skill only some of them have — the card only lists the characters who actually have it, and you are told who was left out.
 * A Luck check requested *without* a DC keeps its normal roll-under behavior. Requesting a Luck check *with* a DC turns it into a roll-high check against that DC.
 * Table-driven skills (Divine Aid, Turn Unholy, Lay on Hands) resolve on their result table, so any DC entered for them is ignored.

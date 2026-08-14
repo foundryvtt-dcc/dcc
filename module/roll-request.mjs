@@ -37,13 +37,20 @@ import { skillDisplayName, escapeHtml } from './journal-enrichers.mjs'
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
- * The player characters a roll can be requested from: all world actors
- * of type Player, sorted by name.
+ * The player characters a roll can be requested from: world actors of
+ * type Player that some non-GM user owns, sorted by name.
+ *
+ * Ownership is the filter because a roll request is a question put to a
+ * *player* — nobody but the GM could ever answer a link targeting a PC
+ * with no player owner, so retired characters and GM-authored Player
+ * actors would otherwise pad the list and quietly ride along with the
+ * All Players toggle.
+ *
  * @returns {Actor[]}
  */
 export function getRequestableActors () {
   return (game.actors ?? [])
-    .filter(actor => actor.type === 'Player')
+    .filter(actor => actor.type === 'Player' && actor.hasPlayerOwner)
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -433,6 +440,12 @@ export class RollRequestDialog extends HandlebarsApplicationMixin(ApplicationV2)
 
   /** Open the dialog (sidebar tool entry point). */
   static async show () {
+    // The sidebar tool is GM-only, but this is also the public macro
+    // entry point (`game.dcc.RollRequestDialog.show()`) — and the card it
+    // posts is worded as coming from the Judge.
+    if (!game.user?.isGM) {
+      return ui.notifications.warn(game.i18n.localize('DCC.RequestRollGMOnlyWarning'))
+    }
     if (!getRequestableActors().length) {
       return ui.notifications.warn(game.i18n.localize('DCC.RequestRollNoActorsWarning'))
     }

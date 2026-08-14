@@ -27,9 +27,15 @@ async function setupActors (page) {
     }
     const scene = game.canvas.scene
 
+    // The dialog only lists Player actors a non-GM user owns, so the
+    // fixture needs a real player to own them.
+    const player = await User.create({ name: 'DCC Request Player', role: CONST.USER_ROLES.PLAYER })
+    const ownership = { [player.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER }
+
     const target = await Actor.create({
       name: 'DCC Request Target',
       type: 'Player',
+      ownership,
       system: { abilities: { agl: { value: 14 } } },
       prototypeToken: { actorLink: true },
       items: [{ name: 'Nature Lore', type: 'skill' }]
@@ -37,6 +43,7 @@ async function setupActors (page) {
     const ally = await Actor.create({
       name: 'DCC Request Ally',
       type: 'Player',
+      ownership,
       system: { abilities: { agl: { value: 12 } } },
       prototypeToken: { actorLink: true }
     })
@@ -57,6 +64,7 @@ async function setupActors (page) {
     return {
       actorId: target.id,
       allyId: ally.id,
+      playerId: player.id,
       targetTokenId: tokenFor(target),
       allyTokenId: tokenFor(ally),
       tokenIds: tokens.map(token => token.id),
@@ -66,7 +74,7 @@ async function setupActors (page) {
 }
 
 async function cleanup (page, setup) {
-  await page.evaluate(async ({ actorId, allyId, tokenIds, sceneId }) => {
+  await page.evaluate(async ({ actorId, allyId, playerId, tokenIds, sceneId }) => {
     game.canvas.tokens.releaseAll()
     for (const app of foundry.applications.instances.values()) {
       if (app.id === 'dcc-roll-request-dialog') await app.close().catch(() => {})
@@ -74,6 +82,7 @@ async function cleanup (page, setup) {
     await game.scenes.get(sceneId)?.deleteEmbeddedDocuments('Token', tokenIds)
     await game.actors.get(actorId)?.delete()
     await game.actors.get(allyId)?.delete()
+    await game.users.get(playerId)?.delete()
     const strays = game.messages.contents.filter(m =>
       m.getFlag('dcc', 'rollRequest') ||
       ['AbilityCheck', 'SkillCheck'].includes(m.getFlag('dcc', 'RollType')))
@@ -333,6 +342,47 @@ test.describe('Roll requests', () => {
     } finally {
       await cleanup(page, setup)
     }
+  })
+
+  test('a Player nobody owns is not offered, not even by All Players (#914)', async ({ page }) => {
+    const setup = await setupActors(page)
+    let orphanId = null
+    try {
+      // A retired / GM-authored PC: only the GM could ever answer a link
+      // targeting it, so it has no business in a roll request
+      orphanId = await page.evaluate(async () =>
+        (await Actor.create({ name: 'DCC Request Orphan', type: 'Player' })).id)
+
+      await openDialog(page, [setup.targetTokenId])
+      await expect(actorCheckbox(page, setup.actorId)).toBeVisible()
+      await expect(actorCheckbox(page, orphanId)).toHaveCount(0)
+
+      await clickInPage(page.locator('#dcc-roll-request-all'))
+      await expect(actorCheckbox(page, setup.actorId)).toBeChecked()
+      await expect(actorCheckbox(page, setup.allyId)).toBeChecked()
+      await expect(actorCheckbox(page, orphanId)).toHaveCount(0)
+    } finally {
+      if (orphanId) await page.evaluate(async (id) => { await game.actors.get(id)?.delete() }, orphanId)
+      await cleanup(page, setup)
+    }
+  })
+
+  test('a non-GM cannot open the dialog through the macro entry point (#914)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const warnings = []
+      const realWarn = ui.notifications.warn
+      ui.notifications.warn = (message) => { warnings.push(message); return 0 }
+      Object.defineProperty(game.user, 'isGM', { get: () => false, configurable: true })
+      try {
+        await game.dcc.RollRequestDialog.show()
+        return { warnings, opened: !!document.querySelector('#dcc-roll-request-dialog') }
+      } finally {
+        delete game.user.isGM
+        ui.notifications.warn = realWarn
+      }
+    })
+    expect(result.opened).toBe(false)
+    expect(result.warnings.join(' ')).toMatch(/Only the Judge can request a roll/)
   })
 
   test('with no PC token controlled the dialog opens with nothing ticked (#914)', async ({ page }) => {

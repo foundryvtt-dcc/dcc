@@ -89,6 +89,7 @@ function mockActor (overrides = {}) {
     uuid: 'Actor.actor1',
     name: 'Torvald',
     type: 'Player',
+    hasPlayerOwner: true,
     system: { skills: {} },
     itemTypes: { skill: [] },
     ...overrides
@@ -102,6 +103,13 @@ describe('getRequestableActors', () => {
     const anya = mockActor({ id: 'a', name: 'Anya' })
     globalThis.game.actors = [npc, zed, anya]
     expect(getRequestableActors()).toEqual([anya, zed])
+  })
+
+  test('a Player with no player owner is left out — only the GM could answer it', () => {
+    const retired = mockActor({ id: 'r', name: 'Retired', hasPlayerOwner: false })
+    const active = mockActor({ id: 'p', name: 'Active' })
+    globalThis.game.actors = [retired, active]
+    expect(getRequestableActors()).toEqual([active])
   })
 })
 
