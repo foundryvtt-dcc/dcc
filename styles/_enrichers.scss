@@ -41,8 +41,31 @@
 }
 
 .dcc-roll-request {
-  .dcc-roll-request-link {
+  p.dcc-roll-request-link {
     text-align: center;
     margin: 0.3em 0;
+  }
+
+  // Multi-character requests (#914): one row per character, name on the
+  // left and that character's roll link on the right.
+  .dcc-roll-request-list {
+    list-style: none;
+    margin: 0.3em 0 0 0;
+    padding: 0;
+  }
+
+  // Wrap the link onto its own line in a narrow chat sidebar rather than
+  // hyphenating the character's name down the middle.
+  .dcc-roll-request-row {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    padding: 1px 0;
+  }
+
+  .dcc-roll-request-name {
+    flex: none;
+    font-weight: bold;
   }
 }

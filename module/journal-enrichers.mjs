@@ -368,16 +368,16 @@ export function onRenderRollLink (element) {
   // accumulates duplicate listeners (which would double-roll).
   if (element.dataset.dccWired) return
   element.dataset.dccWired = 'true'
-  const rollAnchor = element.querySelector('[data-action="dccRoll"]')
-  if (rollAnchor) {
+  // Core wraps each match in its own element, but a multi-link request
+  // card (#914) is cheap to make robust — wire every anchor we find.
+  for (const rollAnchor of element.querySelectorAll('[data-action="dccRoll"]')) {
     rollAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRollClick(event.currentTarget)
         .catch(err => console.error('DCC | Enricher roll click failed', err))
     })
   }
-  const requestAnchor = element.querySelector('[data-action="dccRequest"]')
-  if (requestAnchor) {
+  for (const requestAnchor of element.querySelectorAll('[data-action="dccRequest"]')) {
     requestAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRequestClick(event.currentTarget)

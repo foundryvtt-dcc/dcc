@@ -2597,6 +2597,43 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Roll Request Dialog                       */
+/* ----------------------------------------- */
+.dcc.roll-request .roll-request-characters-label {
+  align-self: start;
+  padding-top: 3px;
+}
+.dcc.roll-request .roll-request-actors {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dcc.roll-request .roll-request-all {
+  font-weight: bold;
+}
+.dcc.roll-request .roll-request-actor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 3px 0 3px 12px;
+  border-left: 1px solid var(--system-border-muted-color);
+}
+.dcc.roll-request label.roll-request-all,
+.dcc.roll-request label.roll-request-actor {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 5px;
+}
+.dcc.roll-request label.roll-request-all input[type=checkbox],
+.dcc.roll-request label.roll-request-actor input[type=checkbox] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* ----------------------------------------- */
 /*  Actor Sheet
   /* ----------------------------------------- */
 .dcc .character .character-grid {
@@ -3599,9 +3636,25 @@ a.inline-roll {
   margin-right: 0;
 }
 
-.dcc-roll-request .dcc-roll-request-link {
+.dcc-roll-request p.dcc-roll-request-link {
   text-align: center;
   margin: 0.3em 0;
+}
+.dcc-roll-request .dcc-roll-request-list {
+  list-style: none;
+  margin: 0.3em 0 0 0;
+  padding: 0;
+}
+.dcc-roll-request .dcc-roll-request-row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  padding: 1px 0;
+}
+.dcc-roll-request .dcc-roll-request-name {
+  flex: none;
+  font-weight: bold;
 }
 
 /*# sourceMappingURL=dcc.css.map */

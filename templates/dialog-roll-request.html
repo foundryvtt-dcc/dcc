@@ -1,10 +1,20 @@
 <section class="roll-request-form grid-container grid-row-gap-8 grid-col-gap-8 grid-align-center p-8">
-  <label class="grid-col-span-4" for="dcc-roll-request-actor">{{localize "DCC.RequestRollCharacter"}}</label>
-  <select class="grid-col-span-8" name="actorId" id="dcc-roll-request-actor">
-    {{#each actors}}
-      <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
-    {{/each}}
-  </select>
+  <label class="grid-col-span-4 roll-request-characters-label" for="dcc-roll-request-all">{{localize "DCC.RequestRollCharacters"}}</label>
+  <div class="grid-col-span-8 roll-request-actors">
+    <label class="roll-request-all">
+      <input type="checkbox" name="allActors" id="dcc-roll-request-all"
+             {{#if allSelected}}checked{{/if}} {{#unless hasActors}}disabled{{/unless}}>
+      {{localize "DCC.RequestRollAll"}}
+    </label>
+    <div class="roll-request-actor-list" id="dcc-roll-request-actors">
+      {{#each actors}}
+        <label class="roll-request-actor">
+          <input type="checkbox" name="actorIds" value="{{this.id}}" {{#if this.selected}}checked{{/if}}>
+          {{this.name}}
+        </label>
+      {{/each}}
+    </div>
+  </div>
 
   <label class="grid-col-span-4" for="dcc-roll-request-check">{{localize "DCC.RequestRollCheck"}}</label>
   <select class="grid-col-span-8" name="check" id="dcc-roll-request-check">
