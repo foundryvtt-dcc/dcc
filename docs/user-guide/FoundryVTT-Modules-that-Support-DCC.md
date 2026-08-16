@@ -17,5 +17,6 @@ Here is a list of FoundryVTT modules that support DCC!
 * [Torch](https://github.com/League-of-Foundry-Developers/Torch) (Lets you have a switch on the token HUD to turn on/off light)
 * [REDY: Reactive Dynamic Token Rings](https://foundryvtt.com/packages/pf2e-reactive-token-ring) (Allows Dynamic Token Rings to Respond to Actions)
 * [DCC Crawl! Sheets](https://foundryvtt.com/packages/dcc-crawl-classes)
+* [DCC Custom Class Sheet](https://foundryvtt.com/packages/dcc-custom-class-sheet) (Character sheet for homebrew and custom classes, with a Class Builder wizard for creating them)
 * [Hubris Sheets](https://foundryvtt.com/packages/dcc-hubris-classes)
 * [MCC Sheets](https://foundryvtt.com/packages/mcc-classes)
