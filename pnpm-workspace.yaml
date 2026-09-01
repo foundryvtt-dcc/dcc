@@ -3,6 +3,13 @@
 # via the shared content-addressable store).
 packages:
   - 'browser-tests/e2e'
+# Wait at least 7 days after publish before installing new package versions,
+# reducing exposure to malicious or unstable releases.
+minimumReleaseAge: 10080
+# Prevent transitive dependencies from being installed from untrusted sources.
+blockExoticSubdeps: true
+# Prevent malicious package updates from downgrading security settings.
+trustPolicy: no-downgrade
 # Native build scripts pnpm may run (everything else stays sandboxed):
 # classic-level backs e2e-env's world-settings edits, @parcel/watcher backs
 # file watching.
