@@ -58,8 +58,22 @@ jobs:
         run: |
           pnpm audit || true
           pnpm audit --fix || true
-          # Realize any new overrides into the lockfile
-          pnpm install --no-frozen-lockfile
+          # Realize any new overrides into the lockfile.
+          #
+          # --config.minimumReleaseAge=0 deliberately suspends the 7-day
+          # supply-chain quarantine from pnpm-workspace.yaml for this one
+          # install. The quarantine is unconditional — pnpm has no notion of
+          # "this is a security fix, let it through" — so without the bypass a
+          # freshly published fix would be refused with
+          # ERR_PNPM_NO_MATURE_MATCHING_VERSION and this job could never
+          # produce a PR for exactly the advisories that matter most.
+          #
+          # Suspending it here is safe because a human reviews the resulting
+          # PR. It is NOT safe to copy this flag into run-tests.yml or a local
+          # workflow: that is where the quarantine does its real work.
+          # (Env vars and --minimum-release-age do not work; only
+          # --config.<key> is honoured.)
+          pnpm install --no-frozen-lockfile --config.minimumReleaseAge=0
 
       - name: Check for changes
         id: changes
@@ -92,6 +106,15 @@ jobs:
             package.json, which pin the affected transitive versions
             permanently. When the upstream dependency ships a release that
             makes an override redundant, remove the override in a follow-up.
+
+            **Review note:** if the fix pulls in a version published less
+            than 7 days ago, CI on this PR will fail with
+            `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` — the lockfile is
+            re-verified against the quarantine on every install. That failure
+            is a prompt, not a bug: decide whether the fresh release is worth
+            taking, and if so add the exact `package@version` to
+            `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` in this PR,
+            then remove that entry once the version ages past a week.
 
             The unit test suite (`pnpm test`) passed against the updated
             dependencies before this PR was opened. See the workflow run for
