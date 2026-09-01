@@ -1,5 +1,5 @@
 /**
- * Unit coverage for the GM roll-request helpers (issue #855).
+ * Unit coverage for the GM roll-request helpers (issues #855, #914).
  *
  * The actor/check/source helpers and the chat-card poster are exported
  * as pure(ish) functions; the assertions stub `game` / `CONFIG` /
@@ -13,9 +13,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
 import {
+  actorHasSkill,
   buildCheckOptions,
   buildRollRequestSource,
-  getDefaultRequestActor,
+  getDefaultRequestActors,
   getRequestableActors,
   postRollRequest
 } from '../roll-request.mjs'
@@ -28,8 +29,14 @@ const I18N = {
   'DCC.AbilityPer': 'Personality',
   'DCC.AbilityInt': 'Intelligence',
   'DCC.AbilityLck': 'Luck',
+  'DCC.Save': 'Save',
+  'DCC.SavesReflex': 'Reflex',
+  'DCC.SavesFortitude': 'Fortitude',
+  'DCC.SavesWill': 'Will',
   'DCC.SneakSilently': 'Sneak Silently',
-  'DCC.RequestRollText': '{user} asks {actor} to roll:'
+  'DCC.RequestRollText': 'Judge asks {actor} to roll:',
+  'DCC.RequestRollTextMultiple': 'Judge asks these characters to roll:',
+  'DCC.RequestRollSkillMissingWarning': 'No roll was requested for {actors} — that skill is not on their sheet.'
 }
 
 let original
@@ -39,7 +46,8 @@ beforeEach(() => {
     game: globalThis.game,
     CONFIG: globalThis.CONFIG,
     canvas: globalThis.canvas,
-    ChatMessage: globalThis.ChatMessage
+    ChatMessage: globalThis.ChatMessage,
+    ui: globalThis.ui
   }
   globalThis.game = {
     i18n: {
@@ -62,11 +70,17 @@ beforeEach(() => {
         int: 'DCC.AbilityInt',
         lck: 'DCC.AbilityLck'
       },
+      saves: {
+        ref: 'DCC.SavesReflex',
+        frt: 'DCC.SavesFortitude',
+        wil: 'DCC.SavesWill'
+      },
       skillTables: { divineAid: 'divineAidTable' }
     }
   }
   globalThis.canvas = { tokens: { controlled: [] } }
   globalThis.ChatMessage = { create: vi.fn().mockResolvedValue({ id: 'msg' }) }
+  globalThis.ui = { notifications: { warn: vi.fn() } }
 })
 
 afterEach(() => {
@@ -74,6 +88,7 @@ afterEach(() => {
   globalThis.CONFIG = original.CONFIG
   globalThis.canvas = original.canvas
   globalThis.ChatMessage = original.ChatMessage
+  globalThis.ui = original.ui
   vi.restoreAllMocks()
 })
 
@@ -83,6 +98,7 @@ function mockActor (overrides = {}) {
     uuid: 'Actor.actor1',
     name: 'Torvald',
     type: 'Player',
+    hasPlayerOwner: true,
     system: { skills: {} },
     itemTypes: { skill: [] },
     ...overrides
@@ -97,19 +113,39 @@ describe('getRequestableActors', () => {
     globalThis.game.actors = [npc, zed, anya]
     expect(getRequestableActors()).toEqual([anya, zed])
   })
+
+  test('a Player with no player owner is left out — only the GM could answer it', () => {
+    const retired = mockActor({ id: 'r', name: 'Retired', hasPlayerOwner: false })
+    const active = mockActor({ id: 'p', name: 'Active' })
+    globalThis.game.actors = [retired, active]
+    expect(getRequestableActors()).toEqual([active])
+  })
 })
 
-describe('getDefaultRequestActor', () => {
-  test('first controlled PC token wins', () => {
+describe('getDefaultRequestActors', () => {
+  test('every controlled PC token, deduplicated, NPCs excluded', () => {
     const npc = mockActor({ type: 'NPC' })
     const pc = mockActor()
-    globalThis.canvas.tokens.controlled = [{ actor: npc }, { actor: pc }]
-    expect(getDefaultRequestActor()).toBe(pc)
+    const other = mockActor({ id: 'actor2', name: 'Anya' })
+    globalThis.canvas.tokens.controlled = [{ actor: npc }, { actor: pc }, { actor: other }, { actor: pc }]
+    expect(getDefaultRequestActors()).toEqual([pc, other])
   })
 
-  test('null when nothing suitable is controlled', () => {
+  test('empty when nothing suitable is controlled', () => {
     globalThis.canvas.tokens.controlled = [{ actor: null }]
-    expect(getDefaultRequestActor()).toBeNull()
+    expect(getDefaultRequestActors()).toEqual([])
+  })
+})
+
+describe('actorHasSkill', () => {
+  test('true for a built-in slot and for a skill item, false otherwise', () => {
+    const actor = mockActor({
+      system: { skills: { sneakSilently: { label: 'DCC.SneakSilently' } } },
+      itemTypes: { skill: [{ name: 'Nature Lore' }] }
+    })
+    expect(actorHasSkill(actor, 'sneakSilently')).toBe(true)
+    expect(actorHasSkill(actor, 'Nature Lore')).toBe(true)
+    expect(actorHasSkill(actor, 'findTrap')).toBe(false)
   })
 })
 
@@ -155,6 +191,38 @@ describe('buildCheckOptions', () => {
     const { abilities, skills } = buildCheckOptions(null)
     expect(abilities).toHaveLength(6)
     expect(skills).toEqual([])
+  })
+
+  test('several actors union their skills, slots before items, no duplicates', () => {
+    const thief = mockActor({
+      system: { skills: { sneakSilently: { label: 'DCC.SneakSilently' } } },
+      itemTypes: { skill: [{ name: 'Nature Lore' }] }
+    })
+    const elf = mockActor({
+      id: 'actor2',
+      system: { skills: { findTrap: { label: 'DCC.NoSuchKey' } } },
+      itemTypes: { skill: [{ name: 'Nature Lore' }, { name: 'Heraldry' }] }
+    })
+    expect(buildCheckOptions([thief, elf]).skills).toEqual([
+      { value: 'skill:sneakSilently', label: 'Sneak Silently' },
+      { value: 'skill:findTrap', label: 'Find Trap' },
+      { value: 'skill:Nature Lore', label: 'Nature Lore' },
+      { value: 'skill:Heraldry', label: 'Heraldry' }
+    ])
+  })
+
+  test('an empty selection yields abilities and saves but no skills', () => {
+    expect(buildCheckOptions([]).skills).toEqual([])
+    expect(buildCheckOptions([]).abilities).toHaveLength(6)
+    expect(buildCheckOptions([]).saves).toHaveLength(3)
+  })
+
+  test('the three saves are offered regardless of who is selected', () => {
+    expect(buildCheckOptions(null).saves).toEqual([
+      { value: 'save:ref', label: 'Reflex Save' },
+      { value: 'save:frt', label: 'Fortitude Save' },
+      { value: 'save:wil', label: 'Will Save' }
+    ])
   })
 })
 
@@ -257,9 +325,101 @@ describe('postRollRequest', () => {
     expect(payload.content).not.toContain('12')
   })
 
+  test('several actors share one card, each with their own targeted link', async () => {
+    const torvald = mockActor()
+    const anya = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [torvald, anya], checkValue: 'check:agl', dc: '10' })
+    expect(globalThis.ChatMessage.create).toHaveBeenCalledTimes(1)
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('Judge asks these characters to roll:')
+    expect(payload.content).toContain('[[/check agl 10 actor=Actor.actor1]]')
+    expect(payload.content).toContain('[[/check agl 10 actor=Actor.actor2]]')
+    expect(payload.content).toContain('>Torvald<')
+    expect(payload.content).toContain('>Anya<')
+    expect(payload.flags.dcc.rollRequest).toBe(true)
+  })
+
+  test('a single-actor `actors` array still posts the one-line card', async () => {
+    await postRollRequest({ actors: [mockActor()], checkValue: 'check:agl' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('Judge asks Torvald to roll:')
+    expect(payload.content).not.toContain('dcc-roll-request-list')
+  })
+
+  test('per-actor DC handling applies within one group card', async () => {
+    const table = mockActor({
+      system: { skills: { divineAid: { label: 'DCC.DivineAid' } } }
+    })
+    const plain = mockActor({
+      id: 'actor2',
+      uuid: 'Actor.actor2',
+      name: 'Anya',
+      system: { skills: { divineAid: { label: 'DCC.DivineAid' } } }
+    })
+    globalThis.CONFIG.DCC.skillTables = {}
+    plain.system.skills.divineAid.useDisapprovalRange = true
+    await postRollRequest({ actors: [table, plain], checkValue: 'skill:divineAid', dc: 12 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/skill divineAid 12 actor=Actor.actor1]]')
+    expect(payload.content).toContain('[[/skill divineAid actor=Actor.actor2]]')
+  })
+
+  test('actors without the requested skill are dropped from the card and reported', async () => {
+    const knows = mockActor({ itemTypes: { skill: [{ name: 'Nature Lore' }] } })
+    const doesNot = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [knows, doesNot], checkValue: 'skill:Nature Lore' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('actor=Actor.actor1')
+    expect(payload.content).not.toContain('actor=Actor.actor2')
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith(
+      'No roll was requested for Anya — that skill is not on their sheet.'
+    )
+  })
+
+  test('hostile actor names are HTML-escaped into the group card', async () => {
+    const evil = mockActor({ name: '<img src=x onerror="alert(1)">' })
+    const anya = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [evil, anya], checkValue: 'check:agl' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).not.toContain('<img')
+    expect(payload.content).toContain('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;')
+  })
+
+  test('a negative DC is dropped rather than shown on a link that ignores it', async () => {
+    await postRollRequest({ actor: mockActor(), checkValue: 'check:agl', dc: -5 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/check agl actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('-5')
+  })
+
+  test('no actor left to ask posts nothing', async () => {
+    const result = await postRollRequest({ actors: [mockActor()], checkValue: 'skill:Nature Lore' })
+    expect(result).toBeNull()
+    expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
+  })
+
+  test('a saving throw request carries the DC and no custom label', async () => {
+    // The enricher resolves save labels itself, unlike skills
+    await postRollRequest({ actor: mockActor(), checkValue: 'save:ref', dc: 15 })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/save ref 15 actor=Actor.actor1]]')
+    expect(payload.content).not.toContain('}{')
+    expect(payload.content).not.toContain('rollUnder')
+  })
+
+  test('saves are asked of every selected character — no skill filtering', async () => {
+    const withSkills = mockActor({ itemTypes: { skill: [{ name: 'Nature Lore' }] } })
+    const plain = mockActor({ id: 'actor2', uuid: 'Actor.actor2', name: 'Anya' })
+    await postRollRequest({ actors: [withSkills, plain], checkValue: 'save:wil' })
+    const payload = globalThis.ChatMessage.create.mock.calls[0][0]
+    expect(payload.content).toContain('[[/save wil actor=Actor.actor1]]')
+    expect(payload.content).toContain('[[/save wil actor=Actor.actor2]]')
+    expect(globalThis.ui.notifications.warn).not.toHaveBeenCalled()
+  })
+
   test('a malformed checkValue throws instead of posting a broken link', async () => {
     await expect(postRollRequest({ actor: mockActor(), checkValue: 'garbage' })).rejects.toThrow(/invalid checkValue/)
-    await expect(postRollRequest({ actor: mockActor(), checkValue: 'save:ref' })).rejects.toThrow(/invalid checkValue/)
+    await expect(postRollRequest({ actor: mockActor(), checkValue: 'attack:melee' })).rejects.toThrow(/invalid checkValue/)
     expect(globalThis.ChatMessage.create).not.toHaveBeenCalled()
   })
 })

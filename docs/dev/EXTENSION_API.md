@@ -143,6 +143,7 @@ Set in `module/dcc.js:108–121`.
 |---|---|---|
 | `game.dcc.DCCActor` | class | No external references found; Foundry reaches the document class through `CONFIG.Actor.documentClass`. XCC replaces that globally anyway — it doesn't use `game.dcc.DCCActor`. |
 | `game.dcc.RollRequestDialog` | class | No external references (added with issue #855; exposed for macros — `game.dcc.RollRequestDialog.show()`). |
+| `game.dcc.postRollRequest` | function | No external references (added with issue #914; exposed so Scene Region scripts and macros can post a roll-request card without opening the dialog — `game.dcc.postRollRequest({ actors, checkValue: 'save:ref', dc: 15 })`). |
 | `game.dcc.SpellDuel` | class | No external references. |
 | `game.dcc.SpellResult` | class | No external references. |
 | `game.dcc.TableResult` | class | No external references. |

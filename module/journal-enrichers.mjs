@@ -1,4 +1,4 @@
-/* global game, canvas, ui, CONFIG, ChatMessage, document, fromUuid */
+/* global game, canvas, ui, CONFIG, ChatMessage, document, fromUuid, fromUuidSync */
 
 /**
  * Clickable roll links in journals, item descriptions, and chat (issue #794).
@@ -137,6 +137,7 @@ export function escapeHtml (value) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
 }
 
 /**
@@ -346,7 +347,7 @@ export async function handleEnricherRequestClick (anchor) {
   const source = anchor.dataset.source
   if (!source) return
   const content = '<div class="dcc-roll-request">' +
-    `<p>${escapeHtml(game.i18n.format('DCC.EnricherRequestText', { user: game.user.name }))}</p>` +
+    `<p>${escapeHtml(game.i18n.localize('DCC.EnricherRequestText'))}</p>` +
     `<p class="dcc-roll-request-link">${escapeHtml(source)}</p>` +
     '</div>'
   return ChatMessage.create({
@@ -363,26 +364,85 @@ export async function handleEnricherRequestClick (anchor) {
  * @param {HTMLElement} element  The wrapping enriched-content element
  */
 export function onRenderRollLink (element) {
-  // `connectedCallback` fires again if the element is detached and
-  // reattached (popouts, DOM-moving modules) — guard so a node never
-  // accumulates duplicate listeners (which would double-roll).
-  if (element.dataset.dccWired) return
-  element.dataset.dccWired = 'true'
-  const rollAnchor = element.querySelector('[data-action="dccRoll"]')
-  if (rollAnchor) {
+  // Core wraps each match in its own element, but a multi-link request
+  // card (#914) is cheap to make robust — wire every anchor we find, and
+  // guard per anchor: `connectedCallback` fires again if the element is
+  // detached and reattached (popouts, DOM-moving modules), and a node
+  // must never accumulate duplicate listeners (which would double-roll).
+  for (const rollAnchor of element.querySelectorAll('[data-action="dccRoll"]')) {
+    if (rollAnchor.dataset.dccWired) continue
+    if (muteUnownedRequestLink(rollAnchor)) continue
+    rollAnchor.dataset.dccWired = 'true'
     rollAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRollClick(event.currentTarget)
         .catch(err => console.error('DCC | Enricher roll click failed', err))
     })
   }
-  const requestAnchor = element.querySelector('[data-action="dccRequest"]')
-  if (requestAnchor) {
+  for (const requestAnchor of element.querySelectorAll('[data-action="dccRequest"]')) {
+    if (requestAnchor.dataset.dccWired) continue
+    requestAnchor.dataset.dccWired = 'true'
     requestAnchor.addEventListener('click', (event) => {
       event.preventDefault()
       handleEnricherRequestClick(event.currentTarget)
         .catch(err => console.error('DCC | Enricher roll request failed', err))
     })
+  }
+}
+
+/**
+ * Per-viewer trimming of a roll-request card (#914).
+ *
+ * A request card carries one actor-targeted link per requested
+ * character, but only that character's owner may roll it — so a player
+ * scanning a list of identical-looking links has to find their own row
+ * before anything happens. Chat content is enriched per client, so
+ * instead each viewer is left with only the links they can actually use:
+ * on a request card, a link for a character this user does not own
+ * becomes plain muted text. A player owning several of the requested
+ * characters keeps a live link for *each* of them, and GMs (who own
+ * every actor) keep the whole list clickable so they can still roll on a
+ * player's behalf.
+ *
+ * Trimming is deliberately conservative — it only fires for an
+ * actor-targeted link inside a request card whose uuid resolves to a
+ * real actor document. An untargeted card (the GM chat-bubble request,
+ * which rolls for whoever clicks it) and a uuid that resolves to
+ * something without ownership (a compendium index entry, a token on a
+ * scene this client has not loaded) both keep their live link: killing a
+ * roll its owner could have made is far worse than leaving a link that
+ * warns.
+ *
+ * @param {HTMLElement} anchor  A `dccRoll` anchor about to be wired
+ * @returns {boolean} true when the link was muted, so skip wiring it
+ */
+export function muteUnownedRequestLink (anchor) {
+  try {
+    if (!anchor.closest('.dcc-roll-request') || !anchor.dataset.actorUuid) return false
+    const resolved = fromUuidSync(anchor.dataset.actorUuid)
+    const actor = resolved?.actor ?? resolved
+    if (typeof actor?.isOwner !== 'boolean') return false
+
+    // A single-character request renders as one centred link paragraph
+    // rather than a row list, so mark whichever wrapper it landed in.
+    const target = anchor.closest('.dcc-roll-request-row') ??
+      anchor.closest('.dcc-roll-request-link') ??
+      anchor.closest('.dcc-roll-request')
+    if (actor.isOwner) {
+      target.classList.add('dcc-roll-request-mine')
+      return false
+    }
+    target.classList.add('dcc-roll-request-theirs')
+    const muted = document.createElement('span')
+    muted.className = 'dcc-roll-request-muted'
+    muted.textContent = anchor.textContent.trim()
+    ;(anchor.closest('.dcc-enricher-group') ?? anchor).replaceWith(muted)
+    return true
+  } catch (err) {
+    // A card that fails to trim is still usable — the ownership check in
+    // `resolveTargetedEnricherActor` gates the roll either way.
+    console.error('DCC | Roll request ownership trim failed', err)
+    return false
   }
 }
 
