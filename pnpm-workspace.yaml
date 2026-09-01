@@ -3,6 +3,42 @@
 # via the shared content-addressable store).
 packages:
   - 'browser-tests/e2e'
+# Supply-chain quarantine: refuse to resolve a dependency version until it has
+# been public for seven days (10080 minutes). The threat this addresses is a
+# maintainer's npm account being compromised and a malicious release being
+# published — those are typically caught and yanked within hours to days, so
+# simply waiting is a cheap and effective defence.
+#
+# What this actually protects: a blind `pnpm update` or `pnpm add`. Without it,
+# either command will happily pull in a release published minutes ago. With it,
+# resolution fails loudly:
+#
+#   ERR_PNPM_NO_MATURE_MATCHING_VERSION
+#   eslint@10.9.1 was published at <date>, within the minimumReleaseAge cutoff
+#
+# Note this is checked two ways: new resolutions are refused as above, AND the
+# whole committed lockfile is re-verified on every install. Setting
+# minimumReleaseAge auto-enables minimumReleaseAgeStrict; setting it to false
+# does not disable the lockfile check.
+#
+# When a security fix is genuinely urgent: a fix published less than a week ago
+# will be refused, and a Dependabot security PR carrying one will fail CI with
+# ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION. That is a prompt to make a conscious
+# call, not a bug. To accept it, add the exact package@version to
+# minimumReleaseAgeExclude below, then drop the entry once the version ages
+# past a week. (audit-fix.yml suspends the quarantine for its own install via
+# --config.minimumReleaseAge=0 so it can still open the PR; do not copy that
+# flag into run-tests.yml or local workflows.)
+#
+# The @moonloch/dcc-core-lib exclusion is permanent and load-bearing: we
+# publish that package ourselves and vendor each fresh release into
+# module/vendor/dcc-core-lib immediately after a lib PR merges (see the
+# sync-core-lib skill). Quarantining our own releases would stall that sync for
+# a week every time while buying nothing — the risk here is a third party's
+# account being compromised, not ours.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@moonloch/dcc-core-lib'
 # Native build scripts pnpm may run (everything else stays sandboxed):
 # classic-level backs e2e-env's world-settings edits, @parcel/watcher backs
 # file watching.
