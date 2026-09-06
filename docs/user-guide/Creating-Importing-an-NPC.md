@@ -33,3 +33,27 @@ To increase the crit range for an NPC, you can change their crit range on each a
 ![NPC Crit Range Edit](images/npc_crit_range_edit.png)
 
 Click on the pencil next to the attack, and then adjust the crit range.
+
+## NPC Weapon Action Dice
+
+By default every attack on an NPC rolls the NPC's action die (the **Action
+Dice** box on the sheet, or the first die of a list like `2d20` or
+`1d20,1d14`). If one attack should use a different die — say a creature with a
+`1d20` main attack and a `1d14` off-hand attack — set it on that attack:
+
+1. Click the pencil next to the attack to open its weapon sheet.
+2. In the **To Hit** box, enter the die in the **Action Die Override** field
+   (for example `1d14`).
+3. Leave the field blank on any attack that should keep using the NPC's
+   default action die.
+
+The override replaces the action die for that attack only. It also wins over
+any Dice Chain Active Effect on the NPC's action die, so use it for a fixed
+die rather than a temporary penalty.
+
+If you use the [Multiple Action Dice](Multiple-Action-Dice.md) tracking
+setting, there is another option: set the NPC's action dice to `1d20,1d14` in
+the `</>` Config menu, and the first attack of the round spends the `1d20`
+while the second automatically rolls the `1d14`. The two approaches work
+together — an attack that rolls an overridden `1d14` is matched to the ready
+`1d14` slot.
