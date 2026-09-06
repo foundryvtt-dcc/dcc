@@ -450,3 +450,48 @@
     text-align: center;
   }
 }
+
+/* ----------------------------------------- */
+/*  Roll Request Dialog                       */
+/* ----------------------------------------- */
+
+// The dialog carries `dcc` and `roll-request` on the same root element
+.dcc.roll-request {
+  .roll-request-characters-label {
+    align-self: start;
+    padding-top: 3px;
+  }
+
+  .roll-request-actors {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .roll-request-all {
+    font-weight: bold;
+  }
+
+  .roll-request-actor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 3px 0 3px 12px;
+    border-left: 1px solid var(--system-border-muted-color);
+  }
+
+  label.roll-request-all,
+  label.roll-request-actor {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 5px;
+
+    input[type='checkbox'] {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+  }
+}
