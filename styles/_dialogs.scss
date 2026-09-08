@@ -38,6 +38,30 @@
     }
   }
 
+  // Stamina modifier threshold hit point adjustment (#921) — full width
+  // under the term columns, matching the ability score log dialog's row
+  .spellburn-adjust-hp-row {
+    font-size: 13px;
+    margin-left: 2px;
+
+    &.hidden {
+      display: none;
+    }
+
+    label {
+      align-items: flex-start;
+      display: flex;
+      font-family: var(--system-data-font), serif;
+      gap: 6px;
+    }
+
+    input[type='checkbox'] {
+      flex: 0 0 auto;
+      margin: 2px 0 0;
+      width: auto;
+    }
+  }
+
   .button-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(0, 1fr));

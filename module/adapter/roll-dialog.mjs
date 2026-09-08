@@ -60,7 +60,7 @@ import { isRollCancellation } from '../roll-cancellation.mjs'
  *                                             `@`-substitutions.
  * @param {string}        [options.title]      Dialog window title.
  * @param {string}        [options.rollLabel]  Submit button label.
- * @param {{str: number, agl: number, sta: number}} [options.spellburn]
+ * @param {{str: number, agl: number, sta: number, level: number}} [options.spellburn]
  *                                             Current ability values
  *                                             for the casting actor.
  *                                             When set, the dialog
@@ -75,7 +75,7 @@ import { isRollCancellation } from '../roll-cancellation.mjs'
  *   modifierTotal: number,
  *   formula: string,
  *   roll: Roll,
- *   spellburn: {str: number, agl: number, sta: number} | null
+ *   spellburn: {str: number, agl: number, sta: number, adjustHP: boolean} | null
  * } | null>}
  *   Returns `null` if the user cancelled (closed without submitting).
  *   Otherwise returns the user's final action die (e.g. `'1d20'`,
@@ -97,7 +97,8 @@ export async function promptRollModifierDialog (terms, options = {}) {
     spellburnCapture = {
       str: originalStr,
       agl: originalAgl,
-      sta: originalSta
+      sta: originalSta,
+      adjustHP: false
     }
 
     const spellburnTerm = {
@@ -106,6 +107,8 @@ export async function promptRollModifierDialog (terms, options = {}) {
       str: originalStr,
       agl: originalAgl,
       sta: originalSta,
+      // Scales the Stamina modifier threshold hit point adjustment (#921)
+      level: Number(sb.level) || 0,
       callback: (_formula, term) => {
         // `term.str/agl/sta` hold the final (post-burn) ability values
         // after the user clicks the dialog's +/- buttons. The dialog
@@ -113,6 +116,11 @@ export async function promptRollModifierDialog (terms, options = {}) {
         spellburnCapture.str = Number(term.str) || 0
         spellburnCapture.agl = Number(term.agl) || 0
         spellburnCapture.sta = Number(term.sta) || 0
+        // `term.adjustHP` tracks the "also adjust hit points" checkbox.
+        // It stays checked even while the row is hidden, which is
+        // harmless: `logSpellburn` recomputes the delta and a burn that
+        // crosses no threshold yields 0.
+        spellburnCapture.adjustHP = term.adjustHP !== false
       }
     }
 
@@ -145,7 +153,8 @@ export async function promptRollModifierDialog (terms, options = {}) {
     const burn = {
       str: Math.max(0, (Number(sb.str) || 0) - spellburnCapture.str),
       agl: Math.max(0, (Number(sb.agl) || 0) - spellburnCapture.agl),
-      sta: Math.max(0, (Number(sb.sta) || 0) - spellburnCapture.sta)
+      sta: Math.max(0, (Number(sb.sta) || 0) - spellburnCapture.sta),
+      adjustHP: spellburnCapture.adjustHP
     }
     spellburnResult = burn
     // Subtract the spellburn formula contribution from `modifierTotal`.

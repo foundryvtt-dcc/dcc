@@ -2253,6 +2253,24 @@ a.inline-roll {
 .dcc-roll-modifier .formula-row .term-controls {
   margin: 8px 1px 0 0;
 }
+.dcc-roll-modifier .spellburn-adjust-hp-row {
+  font-size: 13px;
+  margin-left: 2px;
+}
+.dcc-roll-modifier .spellburn-adjust-hp-row.hidden {
+  display: none;
+}
+.dcc-roll-modifier .spellburn-adjust-hp-row label {
+  align-items: flex-start;
+  display: flex;
+  font-family: var(--system-data-font), serif;
+  gap: 6px;
+}
+.dcc-roll-modifier .spellburn-adjust-hp-row input[type=checkbox] {
+  flex: 0 0 auto;
+  margin: 2px 0 0;
+  width: auto;
+}
 .dcc-roll-modifier .button-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));

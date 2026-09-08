@@ -1,6 +1,7 @@
 /* global Die, OperatorTerm, Roll, game, foundry */
 
 import { RollCancelledError } from './roll-cancellation.mjs'
+import { staminaHpDeltaForLevel } from './ability-score-log.js'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -27,6 +28,15 @@ function _prependSign (formula) {
     return '+' + formula
   }
   return formula
+}
+
+/**
+ * Render a number with an explicit sign, for modifier display
+ * @param value {number}
+ * @return {string}
+ */
+function _signed (value) {
+  return value > 0 ? `+${value}` : `${value}`
 }
 
 /**
@@ -115,6 +125,12 @@ function DCCCheckPenaltyTerm (options) {
  * @return {Object}
  */
 function DCCSpellburnTerm (options) {
+  // The hit point row is opt-in via `level` (#921). Dependent modules build
+  // their own Spellburn terms with a bespoke apply callback (XCC's class
+  // sheets, for one) and never see the `adjustHP` flag, so offering them a
+  // checkbox that silently does nothing would be worse than not offering it.
+  const level = parseInt(options.level)
+  const hpAdjustable = !isNaN(level)
   return [{
     type: 'Spellburn',
     label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
@@ -123,6 +139,17 @@ function DCCSpellburnTerm (options) {
     str: options.str,
     agl: options.agl,
     sta: options.sta,
+    // `staStart` is the pre-burn score; `sta` above is mutated in place as
+    // the player clicks the +/- buttons, so the preview needs the original to
+    // compare against. `level` scales the delta (ΔHP = Δmod × max(1, level)).
+    staStart: options.sta,
+    level: hpAdjustable ? level : 0,
+    // `hpAdjustable` is the template's cue to render the row at all. Mirrors
+    // the Ability Score Log dialog: it only becomes visible once the pending
+    // burn actually crosses a threshold, and is checked by default there, so
+    // the checkbox starts checked here too
+    hpAdjustable,
+    adjustHP: hpAdjustable,
     callback: options.callback
   }]
 }
@@ -294,6 +321,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       modifyBonus: RollModifierDialog.#modifyBonus,
       applyPreset: RollModifierDialog.#applyPreset,
       modifySpellburn: RollModifierDialog.#modifySpellburn,
+      spellburnAdjustHP: RollModifierDialog.#spellburnAdjustHP,
       resetTerm: RollModifierDialog.#resetTerm,
       checkboxChange: RollModifierDialog.#checkboxChange
     }
@@ -620,7 +648,57 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       formField.value = termFormula
       statField.value = newStat
       this.terms[index][stat] = newStat
+      if (stat === 'sta') {
+        this._updateSpellburnHpRow(index)
+      }
     }
+  }
+
+  /**
+   * Toggle the Stamina hit point adjustment for a spellburn term
+   *
+   * The term object is what the submit callback reads, so the checkbox state
+   * is mirrored onto it as it changes rather than scraped from the DOM later.
+   * @this {RollModifierDialog}
+   * @param {Event} event - The originating change event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #spellburnAdjustHP (event, target) {
+    const term = this.getTermByIndex(target.dataset.term)
+    if (term) {
+      term.adjustHP = target.checked
+    }
+  }
+
+  /**
+   * Refresh the "also adjust hit points" row for a spellburn term (#921)
+   *
+   * Mirrors the Ability Score Log dialog: the row is only shown when the
+   * pending Stamina burn actually crosses an ability modifier threshold, and
+   * it restates the delta with the same wording (DCC.AbilityLogAdjustHP).
+   * Hidden rows leave the checkbox alone - `logSpellburn` recomputes the delta
+   * on apply, so a stale checked box on a burn that crosses nothing is a no-op.
+   * @param {string|number} index - The term index
+   * @private
+   */
+  _updateSpellburnHpRow (index) {
+    const row = this.element?.querySelector(`.spellburn-adjust-hp-row[data-term="${index}"]`)
+    if (!row) return
+    const term = this.getTermByIndex(index)
+    const { hpChange, oldMod, newMod } = staminaHpDeltaForLevel(term.level, term.staStart, term.sta)
+    if (hpChange) {
+      const label = row.querySelector('.adjust-hp-label')
+      if (label) {
+        label.textContent = game.i18n.format('DCC.AbilityLogAdjustHP', {
+          hpChange: _signed(hpChange),
+          oldMod: _signed(oldMod),
+          newMod: _signed(newMod),
+          level: Math.max(1, term.level)
+        })
+      }
+    }
+    row.classList.toggle('hidden', !hpChange)
   }
 
   /**

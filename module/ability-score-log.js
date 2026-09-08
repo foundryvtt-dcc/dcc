@@ -104,14 +104,48 @@ export function requiresNote (type) {
  * @returns {Object}          {hpChange, oldMod, newMod}
  */
 export function staminaHpDelta (actor, oldValue, newValue) {
+  return staminaHpDeltaForLevel(actor.system.details?.level?.value, oldValue, newValue)
+}
+
+/**
+ * The same ΔHP arithmetic keyed off a bare level rather than an actor
+ *
+ * The roll modifier dialog previews a spellburn's hit point cost while the
+ * player is still clicking the Sta +/- buttons (#921) - it holds the level
+ * the term was built with, not the actor document, so the formula lives here
+ * once and both callers share it.
+ * @param {number|string} level   The character's level
+ * @param {number} oldValue       Stamina value before the change
+ * @param {number} newValue       Stamina value after the change
+ * @returns {Object}              {hpChange, oldMod, newMod}
+ */
+export function staminaHpDeltaForLevel (level, oldValue, newValue) {
   const oldMod = CONFIG.DCC.abilityModifiers[oldValue] || 0
   const newMod = CONFIG.DCC.abilityModifiers[newValue] || 0
-  const level = parseInt(actor.system.details?.level?.value) || 0
   return {
-    hpChange: (newMod - oldMod) * Math.max(1, level),
+    hpChange: (newMod - oldMod) * Math.max(1, parseInt(level) || 0),
     oldMod,
     newMod
   }
+}
+
+/**
+ * Fold a Stamina-threshold hit point adjustment into a pending actor update
+ *
+ * Both endpoints move: current HP tracks the change so a burn hurts (or a
+ * restored point heals) immediately, and max HP follows so the character's
+ * ceiling matches their Stamina modifier. Max never drops below max(1, level)
+ * - a level-1 character can lose Stamina without their maximum going to 0.
+ * @param {Object} actor      The actor being updated
+ * @param {Object} update     The update object being assembled (mutated)
+ * @param {number} hpChange   Signed hit point delta
+ */
+function applyHpChange (actor, update, hpChange) {
+  const hp = actor.system.attributes.hp
+  const level = parseInt(actor.system.details?.level?.value) || 0
+  const minMax = Math.max(1, level)
+  update['system.attributes.hp.value'] = Math.max(0, (parseInt(hp.value) || 0) + hpChange)
+  update['system.attributes.hp.max'] = Math.max(minMax, (parseInt(hp.max) || 0) + hpChange)
 }
 
 /**
@@ -258,11 +292,7 @@ export async function logAbilityChange (actor, entryData, { announce = true } = 
   }
 
   if (entry.hpChange) {
-    const hp = actor.system.attributes.hp
-    const level = parseInt(actor.system.details?.level?.value) || 0
-    const minMax = Math.max(1, level)
-    update['system.attributes.hp.value'] = Math.max(0, (parseInt(hp.value) || 0) + entry.hpChange)
-    update['system.attributes.hp.max'] = Math.max(minMax, (parseInt(hp.max) || 0) + entry.hpChange)
+    applyHpChange(actor, update, entry.hpChange)
   }
 
   update['system.abilityLog'] = [...(actor.system.abilityLog ?? []), entry]
@@ -284,28 +314,53 @@ export async function logAbilityChange (actor, entryData, { announce = true } = 
  * value actually changed are written (and logged); when the setting is
  * disabled the same value-only update is applied with no log entries.
  *
- * @param {Object} actor    The actor burning ability points
- * @param {Object} burned   {str, agl, sta} - new values after the burn
- * @param {string} source   Spell or patron name for the log entries
+ * When `adjustHP` is set the Stamina leg also carries the modifier-threshold
+ * hit point cost (#921) - the same ΔHP the Ability Score Log dialog offers for
+ * a manual Stamina loss. It is opt-in from the spellburn dialog's checkbox and
+ * independent of the log setting: with logging off the hit points still move,
+ * there is simply no entry to heal them back from.
+ *
+ * @param {Object} actor      The actor burning ability points
+ * @param {Object} burned     {str, agl, sta} - new values after the burn
+ * @param {string} source     Spell or patron name for the log entries
+ * @param {Object} options    {adjustHP} - apply the Stamina ΔHP alongside
  * @returns {Promise}
  */
-export async function logSpellburn (actor, burned, source = '') {
+export async function logSpellburn (actor, burned, source = '', { adjustHP = false } = {}) {
   const enabled = abilityScoreLogEnabled()
   const update = {}
   const entries = []
+  let hpChange = 0
 
   for (const abilityId of ['str', 'agl', 'sta']) {
     const newValue = parseInt(burned[abilityId])
     if (isNaN(newValue)) continue
-    const change = newValue - (parseInt(actor.system.abilities[abilityId]?.value) || 0)
+    const currentValue = parseInt(actor.system.abilities[abilityId]?.value) || 0
+    const change = newValue - currentValue
     if (!change) continue
     update[`system.abilities.${abilityId}.value`] = newValue
+    if (adjustHP && abilityId === 'sta') {
+      hpChange = staminaHpDelta(actor, currentValue, newValue).hpChange
+    }
     if (enabled) {
-      entries.push(buildLogEntry(actor, { ability: abilityId, change, type: 'spellburn', source, newValue }))
+      entries.push(buildLogEntry(actor, {
+        ability: abilityId,
+        change,
+        type: 'spellburn',
+        source,
+        newValue,
+        // Only the Stamina entry owns the HP delta, so healing that entry
+        // back is what restores the hit points
+        hpChange: abilityId === 'sta' ? hpChange : 0
+      }))
     }
   }
 
   if (Object.keys(update).length === 0) return
+
+  if (hpChange) {
+    applyHpChange(actor, update, hpChange)
+  }
 
   if (!enabled) {
     return actor.update(update)

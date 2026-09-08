@@ -4,6 +4,20 @@
       {{> (lookup . 'partial') }}
     {{/each}}
   </div>
+  {{!-- Stamina modifier threshold hit point adjustment (#921). Rendered
+        outside .formula-row: that grid flows by column with three fixed rows,
+        so a fourth child of the spellburn partial would land in the next
+        term's column. Shown/hidden and labelled from _updateSpellburnHpRow. --}}
+  {{#each terms}}
+    {{#if hpAdjustable}}
+      <div class="spellburn-adjust-hp-row hidden" data-term="{{index}}">
+        <label>
+          <input type="checkbox" data-action="spellburnAdjustHP" data-term="{{index}}" name="spellburn-adjust-hp-{{index}}" checked/>
+          <span class="adjust-hp-label"></span>
+        </label>
+      </div>
+    {{/if}}
+  {{/each}}
   {{#if damageTerms}}
     <div class="formula-row damage-row">
       {{#each damageTerms}}

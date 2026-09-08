@@ -893,6 +893,47 @@ test('createSpellEvents onSpellburnApplied subtracts burn amounts from physical 
   })
 })
 
+test('createSpellEvents onSpellburnApplied honours the dialog HP opt-in for Stamina (#921)', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: {
+      abilities: { str: { value: 14 }, agl: { value: 12 }, sta: { value: 13 } },
+      attributes: { hp: { value: 8, max: 10 } },
+      details: { level: { value: 2 } }
+    }
+  }
+  // The lib's SpellburnCommitment carries only amounts, so the checkbox
+  // state rides in on createSpellEvents.
+  const events = createSpellEvents({ actor, spellItem: null, adjustSpellburnHP: true })
+
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 2 })
+
+  expect(actor.update).toHaveBeenCalledWith({
+    'system.abilities.sta.value': 11,
+    'system.attributes.hp.value': 6,
+    'system.attributes.hp.max': 8
+  })
+})
+
+test('createSpellEvents onSpellburnApplied leaves hit points alone without the opt-in (#921)', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: {
+      abilities: { str: { value: 14 }, agl: { value: 12 }, sta: { value: 13 } },
+      attributes: { hp: { value: 8, max: 10 } },
+      details: { level: { value: 2 } }
+    }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 2 })
+
+  expect(actor.update).toHaveBeenCalledWith({ 'system.abilities.sta.value': 11 })
+})
+
 test('createSpellEvents onSpellburnApplied allows burning a physical ability to 0 (DCC RAW, lethal)', () => {
   const actor = {
     update: vi.fn(),
@@ -1614,7 +1655,8 @@ test('wizard cast with showModifierDialog prompts the unified dialog and forward
   expect(Array.isArray(termsArg)).toBe(true)
   expect(termsArg[0]).toMatchObject({ type: 'Die' })
   expect(termsArg.some((t) => t.type === 'Compound')).toBe(true)
-  expect(optsArg.spellburn).toEqual({ str: 14, agl: 12, sta: 13 })
+  // `level` scales the Stamina modifier threshold HP preview (#921)
+  expect(optsArg.spellburn).toEqual({ str: 14, agl: 12, sta: 13, level: 1 })
 
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
   // The prompted commitment reaches the onSpellburnApplied bridge:
