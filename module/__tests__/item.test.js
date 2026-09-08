@@ -1,6 +1,14 @@
 import { describe, beforeEach, afterEach, test, expect, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item.js'
+import { logSpellburn } from '../ability-score-log.js'
+
+// Spellburn application is exercised on its own in ability-score-log.test.js;
+// here we only assert what the item cast path hands it (#921)
+vi.mock('../ability-score-log.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  logSpellburn: vi.fn()
+}))
 
 // Mock the dice-chain module
 vi.mock('../dice-chain.js', () => ({
@@ -1239,6 +1247,56 @@ describe('DCCItem Tests', () => {
       expect(spellburnTerm.str).toBe(14)
       expect(spellburnTerm.agl).toBe(12)
       expect(spellburnTerm.sta).toBe(13)
+    })
+
+    // #921 — this is the path the character sheet's cast button uses, and it
+    // builds its own Spellburn term. Without `level` the roll modifier dialog
+    // suppresses the "also adjust hit points" row entirely (that is the gate
+    // that keeps the checkbox away from modules with their own apply
+    // callback), so the sheet cast silently lost the feature.
+    test('spellburn term carries the caster level so the HP row is offered (#921)', async () => {
+      spell.actor.system.details = { level: { value: 4 } }
+      await spell.rollSpellCheck('int')
+
+      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+      expect(spellburnTerm.level).toBe(4)
+    })
+
+    test('a caster with no level recorded still offers the row, floored at 1 (#921)', async () => {
+      await spell.rollSpellCheck('int')
+
+      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+      // 0 is a number, so the dialog's `hpAdjustable` gate still passes -
+      // only an absent `level` suppresses the row
+      expect(spellburnTerm.level).toBe(0)
+    })
+
+    test('the callback forwards the HP checkbox to logSpellburn (#921)', async () => {
+      await spell.rollSpellCheck('int')
+
+      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+
+      logSpellburn.mockClear()
+      spellburnTerm.callback('+2', { str: 14, agl: 12, sta: 11, adjustHP: true })
+      expect(logSpellburn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ sta: 11 }),
+        expect.anything(),
+        { adjustHP: true }
+      )
+
+      // Unticked in the dialog -> the burn still applies, hit points do not
+      logSpellburn.mockClear()
+      spellburnTerm.callback('+2', { str: 14, agl: 12, sta: 11, adjustHP: false })
+      expect(logSpellburn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        { adjustHP: false }
+      )
     })
 
     // Multiple action dice on the item-level cast path (#857). This is the

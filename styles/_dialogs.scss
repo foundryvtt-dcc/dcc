@@ -48,16 +48,20 @@
       display: none;
     }
 
+    // Single line in this dialog (unlike the narrow ability score log column,
+    // where the same label wraps), so the box centers against the text rather
+    // than hanging off the first line
     label {
-      align-items: flex-start;
+      align-items: center;
       display: flex;
       font-family: var(--system-data-font), serif;
       gap: 6px;
+      line-height: 1.2;
     }
 
     input[type='checkbox'] {
       flex: 0 0 auto;
-      margin: 2px 0 0;
+      margin: 0;
       width: auto;
     }
   }

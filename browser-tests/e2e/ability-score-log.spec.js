@@ -350,6 +350,78 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     expect(after.hpChange).toBe(0)
   })
 
+  // The two tests above drive `actor.rollSpellCheck` (the adapter path). The
+  // character sheet's cast button goes through `DCCItem.rollSpellCheck`, which
+  // builds its OWN Spellburn term — that path shipped without the HP row and
+  // no spec caught it (#921). This casts the way a player actually does.
+  test('casting from the sheet button offers the HP row too (#921)', async ({ page }) => {
+    await page.evaluate(async () => {
+      for (const a of game.actors.filter(a => a.name.startsWith('ASL '))) await a.delete()
+      const actor = await Actor.create({
+        name: 'ASL Sheet Caster',
+        type: 'Player',
+        system: {
+          abilities: { sta: { value: 16, max: 16 } },
+          attributes: { hp: { value: 10, max: 10 } },
+          details: { level: { value: 2 } }
+        }
+      })
+      await actor.createEmbeddedDocuments('Item', [{
+        name: 'ASL-Sheet-Spell',
+        type: 'spell',
+        system: {
+          level: 1,
+          config: { castingMode: 'wizard', inheritCheckPenalty: true },
+          spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+          results: { table: '', collection: '' },
+          lost: false
+        }
+      }])
+      actor.sheet.render(true)
+    })
+    await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
+    await page.waitForTimeout(2500)
+    await page.evaluate(() => {
+      const app = [...foundry.applications.instances.values()]
+        .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
+      app?.changeTab?.('clericSpells', 'sheet')
+    })
+    await page.waitForTimeout(1000)
+
+    // Meta-click the cast button — `fillRollOptions` reads ctrlKey || metaKey
+    // to toggle the modifier dialog
+    await page.locator('.dcc.actor.sheet [data-action="rollSpellCheck"].spell-item-button')
+      .first().click({ modifiers: ['Meta'] })
+    await page.waitForSelector('.dcc-roll-modifier', { timeout: 10000 })
+
+    const hpRow = page.locator('.dcc-roll-modifier .spellburn-adjust-hp-row')
+    await expect(hpRow).toHaveCount(1)
+    await expect(hpRow).toBeHidden()
+
+    // Sta 16 -> 15 crosses +2 -> +1: 1 step x level 2 = 2 hit points
+    await page.locator('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="sta"][data-mod="+1"]')
+      .click()
+    await expect(hpRow).toBeVisible()
+    await expect(hpRow).toContainText('-2')
+
+    await page.locator('.dcc-roll-modifier button[type="submit"]').click()
+    await page.waitForTimeout(2000)
+
+    const after = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Sheet Caster')
+      return {
+        sta: actor.system.abilities.sta.value,
+        hp: actor.system.attributes.hp.value,
+        hpMax: actor.system.attributes.hp.max,
+        log: (actor.system.abilityLog ?? []).map(e => ({ ability: e.ability, hpChange: e.hpChange }))
+      }
+    })
+    expect(after.sta).toBe(15)
+    expect(after.hp).toBe(8)
+    expect(after.hpMax).toBe(8)
+    expect(after.log).toEqual([{ ability: 'sta', hpChange: -2 }])
+  })
+
   test('physical stats default to Ability Damage for non-casters (issue #860)', async ({ page }) => {
     // A Warrior cannot spellburn, so Str should preselect ability damage
     await page.evaluate(async () => {

@@ -2261,14 +2261,15 @@ a.inline-roll {
   display: none;
 }
 .dcc-roll-modifier .spellburn-adjust-hp-row label {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   font-family: var(--system-data-font), serif;
   gap: 6px;
+  line-height: 1.2;
 }
 .dcc-roll-modifier .spellburn-adjust-hp-row input[type=checkbox] {
   flex: 0 0 auto;
-  margin: 2px 0 0;
+  margin: 0;
   width: auto;
 }
 .dcc-roll-modifier .button-row {

@@ -208,12 +208,19 @@ export const SpellItemMixin = (Base) => class extends Base {
         str: sbStr,
         agl: sbAgl,
         sta: sbSta,
+        // Scales the Stamina modifier threshold hit point adjustment (#921).
+        // Supplying it is what makes the dialog offer the checkbox at all.
+        level: parseInt(actor.system.details?.level?.value) || 0,
         callback: (formula, term) => {
           // Record the points burned (original minus the dialog's reduced
           // values), then apply the spellburn (logged in the ability score
           // log when enabled).
           spellburnTotal = (sbStr - term.str) + (sbAgl - term.agl) + (sbSta - term.sta)
-          logSpellburn(actor, term, this.name)
+          // `term.adjustHP` is the dialog's "also adjust hit points" checkbox,
+          // checked by default once the burn crosses a Stamina modifier
+          // threshold. A stale `true` on a burn that crosses nothing is a
+          // no-op — `logSpellburn` recomputes the delta.
+          logSpellburn(actor, term, this.name, { adjustHP: term.adjustHP === true })
         }
       })
     }
