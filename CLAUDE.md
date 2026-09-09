@@ -102,6 +102,17 @@ rule. They apply only to the scoped context described.
   standalone `Update version.txt` commit on `main` at release time (the
   `/release` flow).
 
+## Project Claude skills
+
+All project skills live in `.claude/skills/<name>/SKILL.md` (there is no
+`.claude/commands/` directory — `/pr` moved to a skill in #925).
+
+| Skill | Use |
+|-------|-----|
+| `/pr` | Open or update a PR: branch verify, i18n sync, checks, E2E gate, dependent-module check, commit, push, review, auto-fix. No version bump. |
+| `/release` | Merge, bump `version.txt` on `main` as its own commit, and hand off the draft release. |
+| `/sync-core-lib` | Sync `module/vendor/dcc-core-lib/` after an upstream lib PR merges, then remove temporary adapter workarounds. |
+
 ## Documentation
 
 ### Developer Guides
