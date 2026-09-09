@@ -893,6 +893,7 @@
   "DCC.Spellcasting": "Spellcasting",
   "DCC.SpellcastingLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ#spell-checks]{Spellcasting}",
   "DCC.Spellburn": "Spellburn",
+  "DCC.SpellburnApplyFailed": "Spellburn could not be applied — adjust ability scores and hit points manually.",
   "DCC.SpellburnCommit": "Cast",
   "DCC.SpellburnDialogPrompt": "Burn Strength, Agility, or Stamina points to boost this spell check. Each point burned adds +1 to the roll.",
   "DCC.SpellburnDialogTitle": "Spellburn",

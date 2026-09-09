@@ -17,7 +17,8 @@ import {
   logAbilityChange,
   logSpellburn,
   requiresNote,
-  staminaHpDelta
+  staminaHpDelta,
+  staminaHpDeltaForLevel
 } from '../ability-score-log.js'
 
 /**
@@ -210,6 +211,157 @@ describe('logSpellburn', () => {
     const actor = makeActor()
     await logSpellburn(actor, { str: 12, agl: 14, sta: 13 }, 'Magic Missile')
     expect(actor.update).not.toHaveBeenCalled()
+  })
+
+  test('leaves hit points alone unless adjustHP is asked for (#921)', async () => {
+    const actor = makeActor()
+    await logSpellburn(actor, { str: 12, agl: 14, sta: 11 }, 'Magic Missile')
+
+    const [update] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toBeUndefined()
+    expect(update['system.attributes.hp.max']).toBeUndefined()
+    expect(update['system.abilityLog'][0].hpChange).toEqual(0)
+  })
+
+  test('adjustHP applies the Stamina threshold ΔHP and records it on the Stamina entry (#921)', async () => {
+    const actor = makeActor()
+    // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
+    await logSpellburn(actor, { str: 10, agl: 14, sta: 11 }, 'Magic Missile', { adjustHP: true })
+
+    expect(actor.update).toHaveBeenCalledTimes(1)
+    const [update, options] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toEqual(6) // 8 - 2
+    expect(update['system.attributes.hp.max']).toEqual(8) // 10 - 2
+    expect(options).toEqual({ dcc: { abilityLogged: true } })
+
+    const log = update['system.abilityLog']
+    // Only the Stamina entry owns the HP delta, so healing it back is what
+    // restores the hit points
+    expect(log[0]).toMatchObject({ ability: 'str', hpChange: 0 })
+    expect(log[1]).toMatchObject({ ability: 'sta', hpChange: -2 })
+  })
+
+  test('adjustHP is a no-op when the burn crosses no modifier threshold (#921)', async () => {
+    const actor = makeActor()
+    actor.system.abilities.sta.value = 12
+    // sta 12 -> 11 stays inside the same modifier band (9-12 is all mod 0)
+    await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
+
+    const [update] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toBeUndefined()
+    expect(update['system.attributes.hp.max']).toBeUndefined()
+    expect(update['system.abilityLog'][0].hpChange).toEqual(0)
+  })
+
+  test('adjustHP still moves hit points with the log setting off (#921)', async () => {
+    setLogEnabled(false)
+    const actor = makeActor()
+    await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
+
+    const [update, options] = actor.update.mock.calls[0]
+    expect(update).toEqual({
+      'system.abilities.sta.value': 11,
+      'system.attributes.hp.value': 6,
+      'system.attributes.hp.max': 8
+    })
+    // No log entry written, so nothing to heal the hit points back from
+    expect(update['system.abilityLog']).toBeUndefined()
+    expect(options).toBeUndefined()
+  })
+
+  test('records only the hit points actually lost when the character cannot afford them (#921)', async () => {
+    // Clamping the endpoints independently used to record the full computed
+    // loss while applying less, so healing handed back more than was taken
+    const actor = makeActor()
+    actor.system.details.level.value = 5
+    actor.system.attributes.hp = { value: 3, max: 20 }
+    // sta 13 (mod +1) -> 8 (mod -1): Δmod = -2, level 5 -> -10 computed
+    await logSpellburn(actor, { sta: 8 }, 'Magic Missile', { adjustHP: true })
+
+    const [update] = actor.update.mock.calls[0]
+    // Only 3 hit points were there to lose, so that is what moves - and both
+    // endpoints move together so the round trip stays exact
+    expect(update['system.attributes.hp.value']).toEqual(0)
+    expect(update['system.attributes.hp.max']).toEqual(17)
+    expect(update['system.abilityLog'][0].hpChange).toEqual(-3)
+  })
+
+  test('a clamped burn heals back to exactly where it started (#921)', async () => {
+    const actor = makeActor()
+    actor.system.details.level.value = 5
+    actor.system.attributes.hp = { value: 3, max: 20 }
+    await logSpellburn(actor, { sta: 8 }, 'Magic Missile', { adjustHP: true })
+    const [burnUpdate] = actor.update.mock.calls[0]
+
+    actor.system.abilities.sta.value = 8
+    actor.system.attributes.hp = { value: 0, max: 17 }
+    actor.system.abilityLog = burnUpdate['system.abilityLog']
+    actor.update.mockClear()
+
+    await healAbilityLogEntry(actor, actor.system.abilityLog[0].id, { healAll: true })
+    const [healUpdate] = actor.update.mock.calls[0]
+    expect(healUpdate['system.abilities.sta.value']).toEqual(13)
+    // Back to 3/20 - never more than was taken
+    expect(healUpdate['system.attributes.hp.value']).toEqual(3)
+    expect(healUpdate['system.attributes.hp.max']).toEqual(20)
+  })
+
+  test('an out-of-table Stamina score clamps instead of reading as modifier 0 (#921)', async () => {
+    // CONFIG.DCC.abilityModifiers spans 0-24; a raw `[score] || 0` lookup made
+    // a burn from 25 compute a POSITIVE ΔHP, granting hit points for burning
+    const actor = makeActor()
+    actor.system.abilities.sta = { value: 25, max: 25 }
+    actor.system.details.level.value = 3
+
+    expect(staminaHpDeltaForLevel(3, 25, 23).hpChange).toBeLessThanOrEqual(0)
+
+    await logSpellburn(actor, { sta: 23 }, 'Magic Missile', { adjustHP: true })
+    const [update] = actor.update.mock.calls[0]
+    const hpChange = update['system.abilityLog'][0].hpChange
+    expect(hpChange).toBeLessThanOrEqual(0)
+    expect(update['system.attributes.hp.value'] ?? 8).toBeLessThanOrEqual(8)
+  })
+
+  test('announces the hit point cost even with the log setting off (#921)', async () => {
+    // No entry means no Heal button, so the chat card is the only record the
+    // player gets - a silent hit point drop is worse than no log
+    setLogEnabled(false)
+    const actor = makeActor()
+    await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
+
+    expect(actor.update).toHaveBeenCalledTimes(1)
+    const [update] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toEqual(6)
+    expect(update['system.abilityLog']).toBeUndefined()
+    expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalled()
+  })
+
+  test('stays silent with the log off when no hit points moved (#921)', async () => {
+    setLogEnabled(false)
+    const actor = makeActor()
+    await logSpellburn(actor, { str: 10 }, 'Magic Missile', { adjustHP: true })
+    expect(global.CONFIG.ChatMessage.documentClass.create).not.toHaveBeenCalled()
+  })
+
+  test('healing the spellburn entry restores the hit points it cost (#921)', async () => {
+    const actor = makeActor()
+    await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
+    const [burnUpdate] = actor.update.mock.calls[0]
+
+    // Re-seed the actor with the post-burn state the update would have written
+    actor.system.abilities.sta.value = 11
+    actor.system.attributes.hp = { value: 6, max: 8 }
+    actor.system.abilityLog = burnUpdate['system.abilityLog']
+    actor.update.mockClear()
+
+    const entry = actor.system.abilityLog[0]
+    const healed = await healAbilityLogEntry(actor, entry.id, { healAll: true })
+
+    const [healUpdate] = actor.update.mock.calls[0]
+    expect(healUpdate['system.abilities.sta.value']).toEqual(13)
+    expect(healUpdate['system.attributes.hp.value']).toEqual(8)
+    expect(healUpdate['system.attributes.hp.max']).toEqual(10)
+    expect(healed.hpChange).toEqual(0)
   })
 })
 
@@ -470,6 +622,13 @@ describe('staminaHpDelta', () => {
   test('no threshold crossing means no HP change', () => {
     const actor = makeActor()
     expect(staminaHpDelta(actor, 12, 10).hpChange).toEqual(0)
+  })
+
+  test('the bare-level form the spellburn dialog previews with matches (#921)', () => {
+    // The roll modifier dialog has the term's level, not the actor document
+    expect(staminaHpDeltaForLevel(3, 13, 8)).toEqual({ hpChange: -6, oldMod: 1, newMod: -1 })
+    expect(staminaHpDeltaForLevel(0, 13, 11).hpChange).toEqual(-1)
+    expect(staminaHpDeltaForLevel(2, 12, 10).hpChange).toEqual(0)
   })
 })
 

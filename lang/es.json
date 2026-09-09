@@ -893,6 +893,7 @@
   "DCC.Spellcasting": "Lanzamiento de Hechizos",
   "DCC.SpellcastingLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ#spell-checks]{Lanzamiento de Hechizos}",
   "DCC.Spellburn": "Quema de Hechizo",
+  "DCC.SpellburnApplyFailed": "No se pudo aplicar la quema de conjuro: ajusta manualmente las características y los puntos de golpe.",
   "DCC.SpellburnCommit": "Lanzar",
   "DCC.SpellburnDialogPrompt": "Quema puntos de Fuerza, Agilidad o Resistencia para potenciar esta tirada de hechizo. Cada punto quemado añade +1 al lanzamiento.",
   "DCC.SpellburnDialogTitle": "Quema de Hechizo",

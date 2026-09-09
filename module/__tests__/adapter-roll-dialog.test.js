@@ -173,7 +173,7 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
     }))
 
     const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
-      spellburn: { str: 14, agl: 12, sta: 13 }
+      spellburn: { str: 14, agl: 12, sta: 13, level: 3 }
     })
 
     expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
@@ -183,13 +183,14 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
       type: 'Spellburn',
       str: 14,
       agl: 12,
-      sta: 13
+      sta: 13,
+      level: 3
     })
     expect(typeof termsArg[1].callback).toBe('function')
 
     // No callback fired → spellburn capture stays at the original
-    // values → burn computed as zeros.
-    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0 })
+    // values → burn computed as zeros, and the HP opt-in stays false.
+    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0, adjustHP: false })
   })
 
   test('returns the chosen burn amounts and subtracts them from modifierTotal', async () => {
@@ -200,7 +201,7 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
       // burning 1 str and 2 sta (14→13, 13→11) and adding the resulting
       // `+3` to the rolled formula.
       const spellburnTerm = terms[terms.length - 1]
-      spellburnTerm.callback('+3', { str: 13, agl: 12, sta: 11 })
+      spellburnTerm.callback('+3', { str: 13, agl: 12, sta: 11, adjustHP: true })
       return {
         formula: '1d20+5+3',
         terms: [
@@ -217,7 +218,7 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
       spellburn: { str: 14, agl: 12, sta: 13 }
     })
 
-    expect(result.spellburn).toEqual({ str: 1, agl: 0, sta: 2 })
+    expect(result.spellburn).toEqual({ str: 1, agl: 0, sta: 2, adjustHP: true })
     // Raw modifierTotal would be 5 + 3 = 8; subtracting the 3 of
     // spellburn contribution yields 5 (the spell-check bonus the user
     // didn't change).
@@ -251,7 +252,7 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
     global.dccRollCreateRollMock.mockClear()
     global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
       const spellburnTerm = terms[terms.length - 1]
-      spellburnTerm.callback('+0', { str: 16, agl: 12, sta: 13 }) // str went UP
+      spellburnTerm.callback('+0', { str: 16, agl: 12, sta: 13, adjustHP: false }) // str went UP
       return {
         formula: '1d20',
         terms: [{ class: 'Die', formula: '1d20' }]
@@ -261,6 +262,30 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
     const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
       spellburn: { str: 14, agl: 12, sta: 13 }
     })
-    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0 })
+    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0, adjustHP: false })
+  })
+
+  test('carries the "also adjust hit points" opt-out back to the caller (#921)', async () => {
+    // The dialog's checkbox is checked by default, so the term arrives with
+    // `adjustHP: true` unless the player unticks it. An explicit `false`
+    // must survive the round trip — that is the whole opt-out.
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+      const spellburnTerm = terms[terms.length - 1]
+      spellburnTerm.callback('+2', { str: 14, agl: 12, sta: 11, adjustHP: false })
+      return {
+        formula: '1d20+2',
+        terms: [
+          { class: 'Die', formula: '1d20' },
+          { class: 'OperatorTerm', operator: '+' },
+          { class: 'NumericTerm', number: 2 }
+        ]
+      }
+    })
+
+    const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
+      spellburn: { str: 14, agl: 12, sta: 13, level: 2 }
+    })
+    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 2, adjustHP: false })
   })
 })

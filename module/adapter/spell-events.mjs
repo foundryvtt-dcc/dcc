@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, game */
+/* global ChatMessage, CONFIG, CONST, game, ui */
 
 import { logSpellburn } from '../ability-score-log.js'
 
@@ -48,10 +48,14 @@ import { logSpellburn } from '../ability-score-log.js'
  *   by `onDisapprovalIncreased` to update `system.class.disapproval`
  *   and by future sessions for patron taint / spellburn side effects.
  * @param {Object} params.spellItem - The spell item being cast.
+ * @param {boolean} [params.adjustSpellburnHP] - The roll modifier dialog's
+ *   "also adjust hit points" choice for a Stamina burn (#921). The lib's
+ *   `SpellburnCommitment` carries only burn amounts, so the flag is passed
+ *   in alongside rather than read off the event payload.
  * @returns {Object} Partial `SpellEvents` — only handlers wired for
  *   this session are attached.
  */
-export function createSpellEvents ({ actor, spellItem }) {
+export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false }) {
   const events = {}
 
   if (spellItem) {
@@ -155,8 +159,11 @@ export function createSpellEvents ({ actor, spellItem }) {
       }
 
       if (anyBurn) {
-        Promise.resolve(logSpellburn(actor, burned, spellItem?.name ?? '')).catch((err) => {
+        Promise.resolve(logSpellburn(actor, burned, spellItem?.name ?? '', { adjustHP: adjustSpellburnHP })).catch((err) => {
           console.error('[DCC adapter] onSpellburnApplied: spellburn update rejected', { actor: actor?.name, burned, err })
+          // The spell check card already claims the burn was paid - a
+          // console-only failure leaves the sheet silently disagreeing with it
+          ui.notifications?.error?.(game.i18n.localize('DCC.SpellburnApplyFailed'))
         })
       }
     }

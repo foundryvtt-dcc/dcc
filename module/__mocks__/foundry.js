@@ -1445,7 +1445,8 @@ class Localization {
       'DCC.SkillCheckUnknownSkillWarning': 'Cannot roll a skill check for unknown skill: {skill}',
       'DCC.WeaponThrownName': '{weapon} (thrown)',
       'DCC.AbilityLogRecoveryLuckRegen': 'Regenerates {level} point(s) per night, up to natural maximum',
-      'DCC.AbilityLogRecoveryRest': "Heals 1 point per night's rest, 2 per day of bed rest"
+      'DCC.AbilityLogRecoveryRest': "Heals 1 point per night's rest, 2 per day of bed rest",
+      'DCC.AbilityLogAdjustHP': 'Also adjust hit points by {hpChange} (Stamina modifier {oldMod} → {newMod}, level {level})'
     }
   }
 

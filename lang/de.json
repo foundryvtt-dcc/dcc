@@ -893,6 +893,7 @@
   "DCC.Spellcasting": "Zauberwürfe",
   "DCC.SpellcastingLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ#spell-checks]{Zauberwürfe}",
   "DCC.Spellburn": "Zauberbrand",
+  "DCC.SpellburnApplyFailed": "Zauberbrand konnte nicht angewendet werden — Attributswerte und Trefferpunkte bitte manuell anpassen.",
   "DCC.SpellburnCommit": "Zaubern",
   "DCC.SpellburnDialogPrompt": "Opfere Stärke-, Geschicklichkeits- oder Ausdauerpunkte, um diesen Zauberwurf zu verstärken. Jeder geopferte Punkt erhöht den Wurf um +1.",
   "DCC.SpellburnDialogTitle": "Zauberbrand",

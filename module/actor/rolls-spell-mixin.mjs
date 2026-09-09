@@ -340,7 +340,9 @@ export const RollsSpellMixin = (Base) => class extends Base {
       promptOptions.spellburn = {
         str: parseInt(this.system.abilities?.str?.value) || 0,
         agl: parseInt(this.system.abilities?.agl?.value) || 0,
-        sta: parseInt(this.system.abilities?.sta?.value) || 0
+        sta: parseInt(this.system.abilities?.sta?.value) || 0,
+        // Scales the Stamina modifier threshold hit point preview (#921)
+        level: parseInt(this.system.details?.level?.value) || 0
       }
     }
 
@@ -675,7 +677,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
         str: Math.max(0, this.system.abilities.str.value - (burn.str || 0)),
         agl: Math.max(0, this.system.abilities.agl.value - (burn.agl || 0)),
         sta: Math.max(0, this.system.abilities.sta.value - (burn.sta || 0))
-      }, flavorBase)
+      }, flavorBase, { adjustHP: options.spellburn?.adjustHP === true })
     }
 
     const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
@@ -800,7 +802,13 @@ export const RollsSpellMixin = (Base) => class extends Base {
    */
   async _castViaCalculateSpellCheck (args, spellItem, options) {
     const { character, input, profile } = args
-    const events = createSpellEvents({ actor: this, spellItem })
+    const events = createSpellEvents({
+      actor: this,
+      spellItem,
+      // The lib's SpellburnCommitment carries only the burn amounts, so the
+      // dialog's "also adjust hit points" choice (#921) rides along here
+      adjustSpellburnHP: options.spellburn?.adjustHP === true
+    })
 
     // `suppressPatronTaint` opt-out: clear the lib's patron-spell flag so
     // its RAW creeping-chance pipeline is skipped for this cast (mirrors the
