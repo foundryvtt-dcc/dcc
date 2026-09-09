@@ -1,6 +1,6 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
-import { logSpellburn } from '../ability-score-log.js'
+import { buildSpellburnTerm } from '../spellburn.mjs'
 import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import {
@@ -197,40 +197,15 @@ export const SpellItemMixin = (Base) => class extends Base {
     // Track the total points burned so the result handler can surface it via
     // the `dcc.afterSpellCheckResult` payload — MCC glowburn IS spellburn, and
     // its patron manifestation keys off the amount burned.
+    // The term (and its apply) belongs to `module/spellburn.mjs`, which every
+    // spellburn entry point shares — see issue #923 for why this used to be
+    // built inline here.
     let spellburnTotal = 0
     if (castingMode !== 'cleric') {
-      const sbStr = actor.system.abilities.str.value
-      const sbAgl = actor.system.abilities.agl.value
-      const sbSta = actor.system.abilities.sta.value
-      terms.push({
-        type: 'Spellburn',
-        formula: '+0',
-        str: sbStr,
-        agl: sbAgl,
-        sta: sbSta,
-        // Scales the Stamina modifier threshold hit point PREVIEW (#921) - the
-        // applied amount is recomputed from the actor by `logSpellburn`.
-        // Supplying it is what makes the dialog offer the checkbox at all.
-        level: parseInt(actor.system.details?.level?.value) || 0,
-        callback: (formula, term) => {
-          // Record the points burned (original minus the dialog's reduced
-          // values), then apply the spellburn (logged in the ability score
-          // log when enabled).
-          spellburnTotal = (sbStr - term.str) + (sbAgl - term.agl) + (sbSta - term.sta)
-          // `term.adjustHP` is the dialog's "also adjust hit points" checkbox,
-          // checked by default once the burn crosses a Stamina modifier
-          // threshold. A stale `true` on a burn that crosses nothing is a
-          // no-op — `logSpellburn` recomputes the delta.
-          // The term callback is synchronous, so this cannot be awaited - but
-          // the chat card is about to claim the burn was paid, so a rejected
-          // update has to reach the player rather than the console alone
-          Promise.resolve(logSpellburn(actor, term, this.name, { adjustHP: term.adjustHP === true }))
-            .catch((err) => {
-              console.error('[DCC] spellburn apply rejected', { actor: actor?.name, spell: this.name, err })
-              ui.notifications.error(game.i18n.localize('DCC.SpellburnApplyFailed'))
-            })
-        }
-      })
+      terms.push(buildSpellburnTerm(actor, {
+        source: this.name,
+        onBurn: (total) => { spellburnTotal = total }
+      }))
     }
 
     // Roll the spell check. `false` is the cancel signal for callers that

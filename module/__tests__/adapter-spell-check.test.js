@@ -943,6 +943,19 @@ test('createSpellEvents onSpellburnApplied subtracts burn amounts from physical 
   })
 })
 
+test('createSpellEvents onSpellburnApplied does not touch the actor for an all-zero commitment', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: { abilities: { str: { value: 14 }, agl: { value: 12 }, sta: { value: 13 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 0 })
+
+  expect(actor.update).not.toHaveBeenCalled()
+})
+
 test('createSpellEvents onSpellburnApplied honours the dialog HP opt-in for Stamina (#921)', () => {
   const actor = {
     update: vi.fn(),

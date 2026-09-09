@@ -416,13 +416,94 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
         sta: actor.system.abilities.sta.value,
         hp: actor.system.attributes.hp.value,
         hpMax: actor.system.attributes.hp.max,
-        log: (actor.system.abilityLog ?? []).map(e => ({ ability: e.ability, hpChange: e.hpChange }))
+        log: (actor.system.abilityLog ?? []).map(e => ({
+          ability: e.ability, hpChange: e.hpChange, type: e.type, source: e.source
+        }))
       }
     })
     expect(after.sta).toBe(15)
     expect(after.hp).toBe(8)
     expect(after.hpMax).toBe(8)
-    expect(after.log).toEqual([{ ability: 'sta', hpChange: -2 }])
+    // #923 — the entry has to be typed and sourced to the spell, not just
+    // present. A burn that writes the ability values without logging (what
+    // XCC's copy of this term does) produces no chat card and no Heal
+    // button, and would still satisfy an ability-value-only assertion.
+    expect(after.log).toEqual([{
+      ability: 'sta', hpChange: -2, type: 'spellburn', source: 'ASL-Sheet-Spell'
+    }])
+  })
+
+  // #923 — the plain, no-threshold-crossing burn from the sheet's cast
+  // button: the shape a player hits most often, and the one where a
+  // divergent implementation is silent (values change, nothing is logged).
+  test('a sheet cast logs the burn against the spell even with no HP cost (#923)', async ({ page }) => {
+    await page.evaluate(async () => {
+      for (const a of game.actors.filter(a => a.name.startsWith('ASL '))) await a.delete()
+      const actor = await Actor.create({
+        name: 'ASL Sheet Logger',
+        type: 'Player',
+        system: {
+          abilities: { str: { value: 14, max: 14 } },
+          attributes: { hp: { value: 10, max: 10 } },
+          details: { level: { value: 2 } }
+        }
+      })
+      await actor.createEmbeddedDocuments('Item', [{
+        name: 'ASL-Logged-Spell',
+        type: 'spell',
+        system: {
+          level: 1,
+          config: { castingMode: 'wizard', inheritCheckPenalty: true },
+          spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+          results: { table: '', collection: '' },
+          lost: false
+        }
+      }])
+      actor.sheet.render(true)
+    })
+    await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
+    await page.waitForTimeout(2500)
+    await page.evaluate(() => {
+      const app = [...foundry.applications.instances.values()]
+        .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
+      app?.changeTab?.('clericSpells', 'sheet')
+    })
+    await page.waitForTimeout(1000)
+
+    await page.locator('.dcc.actor.sheet [data-action="rollSpellCheck"].spell-item-button')
+      .first().click({ modifiers: ['Meta'] })
+    await page.waitForSelector('.dcc-roll-modifier', { timeout: 10000 })
+
+    // Burn 2 Strength. Str never carries an HP cost, so this isolates the
+    // logging from the #921 hit point row.
+    for (let i = 0; i < 2; i++) {
+      await page.locator('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="str"][data-mod="+1"]')
+        .click()
+      await page.waitForTimeout(150)
+    }
+    await page.locator('.dcc-roll-modifier button[type="submit"]').click()
+    await page.waitForTimeout(2000)
+
+    const after = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Sheet Logger')
+      return {
+        str: actor.system.abilities.str.value,
+        hp: actor.system.attributes.hp.value,
+        log: (actor.system.abilityLog ?? []).map(e => ({
+          ability: e.ability, change: e.change, type: e.type, source: e.source, hpChange: e.hpChange
+        })),
+        // The log entry is what gives the player a Heal button; the chat
+        // card is what tells them the burn happened at all.
+        burnCards: game.messages.contents
+          .filter(m => (m.content ?? '').includes('ASL-Logged-Spell')).length
+      }
+    })
+    expect(after.str).toBe(12)
+    expect(after.hp).toBe(10)
+    expect(after.log).toEqual([{
+      ability: 'str', change: -2, type: 'spellburn', source: 'ASL-Logged-Spell', hpChange: 0
+    }])
+    expect(after.burnCards).toBeGreaterThan(0)
   })
 
   test('physical stats default to Ability Damage for non-casters (issue #860)', async ({ page }) => {

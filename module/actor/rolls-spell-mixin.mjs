@@ -8,7 +8,7 @@ import {
   rollMercurialMagic as libRollMercurialMagic,
   evaluateRoll as libEvaluateRoll
 } from '../vendor/dcc-core-lib/index.js'
-import { logSpellburn } from '../ability-score-log.js'
+import { applySpellburn, scoresFromBurnAmounts, spellburnDescriptor } from '../spellburn.mjs'
 import { renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
@@ -337,13 +337,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
     }
 
     if (spellburnEligible) {
-      promptOptions.spellburn = {
-        str: parseInt(this.system.abilities?.str?.value) || 0,
-        agl: parseInt(this.system.abilities?.agl?.value) || 0,
-        sta: parseInt(this.system.abilities?.sta?.value) || 0,
-        // Scales the Stamina modifier threshold hit point preview (#921)
-        level: parseInt(this.system.details?.level?.value) || 0
-      }
+      // Pre-burn scores + caster level, from the shared spellburn helper
+      // (#923). The level scales the Stamina modifier threshold hit point
+      // preview (#921).
+      promptOptions.spellburn = spellburnDescriptor(this)
     }
 
     return promptRollModifierDialog(terms, promptOptions)
@@ -662,22 +659,16 @@ export const RollsSpellMixin = (Base) => class extends Base {
       (options.checkLabel ? game.i18n.localize(options.checkLabel) : game.i18n.localize('DCC.SpellCheck'))
 
     // Spellburn applied via the lib's event in item-bound routes; for
-    // naked we just deduct here since there's no `createSpellEvents`
-    // wiring (no spellItem to mutate). Clamped at 0, not 1: per DCC RAW a
-    // physical ability may be burned all the way to 0 (Stamina to 0 is
-    // lethal). This matches the pre-adapter `DCCSpellburnTerm` callback
-    // semantics (the legacy `#modifySpellburn` dialog permitted a
-    // resulting score of 0) and the item-bound `onSpellburnApplied` bridge
-    // in `adapter/spell-events.mjs`. `logSpellburn` takes post-burn
-    // SCORES (the lib input carries burn AMOUNTS) and records typed
-    // entries in the ability score log when the world setting is on.
+    // naked we deduct here since there's no `createSpellEvents` wiring (no
+    // spellItem to mutate). The lib input carries burn AMOUNTS; the shared
+    // helper converts them to post-burn SCORES and owns the apply (#923).
     if (input.spellburn) {
-      const burn = input.spellburn
-      await logSpellburn(this, {
-        str: Math.max(0, this.system.abilities.str.value - (burn.str || 0)),
-        agl: Math.max(0, this.system.abilities.agl.value - (burn.agl || 0)),
-        sta: Math.max(0, this.system.abilities.sta.value - (burn.sta || 0))
-      }, flavorBase, { adjustHP: options.spellburn?.adjustHP === true })
+      await applySpellburn(
+        this,
+        scoresFromBurnAmounts(this, input.spellburn),
+        flavorBase,
+        { adjustHP: options.spellburn?.adjustHP === true }
+      )
     }
 
     const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined

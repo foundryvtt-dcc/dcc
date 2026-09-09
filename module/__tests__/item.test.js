@@ -1299,6 +1299,59 @@ describe('DCCItem Tests', () => {
       )
     })
 
+    // #923 — the sheet cast path builds its Spellburn term through the
+    // shared helper, so these two tests pin the wiring BETWEEN the layers:
+    // which source the burn is logged against, and whether the total
+    // survives the trip to the result payload. Both were mutation-testing
+    // survivors — the helper's own tests and the term-shape tests above
+    // both stayed green with the wiring severed.
+    test('the burn is logged against the spell being cast (#923)', async () => {
+      await spell.rollSpellCheck('int')
+
+      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+
+      logSpellburn.mockClear()
+      spellburnTerm.callback('+2', { str: 12, agl: 12, sta: 13, adjustHP: false })
+
+      // Without the spell name the ability score log entry (and its chat
+      // card) can't say what the points were spent on.
+      expect(logSpellburn).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        'magic missile',
+        expect.anything()
+      )
+    })
+
+    test('the points burned in the dialog reach the spell-check result payload (#923)', async () => {
+      // MCC glowburn IS spellburn, and its patron manifestation keys off the
+      // amount burned — so the total has to survive the trip from the dialog
+      // callback out through `processSpellCheck` to `dcc.afterSpellCheckResult`.
+      global.game.dcc.DCCRoll.createRoll = vi.fn((terms) => {
+        // Stand in for the player committing 3 points of Strength.
+        const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+        spellburnTerm.callback('+3', { str: 11, agl: 12, sta: 13, adjustHP: false })
+        return { evaluate: vi.fn(), dice: [{ options: {}, faces: 20 }] }
+      })
+
+      await spell.rollSpellCheck('int')
+
+      expect(global.game.dcc.processSpellCheck).toHaveBeenCalledWith(
+        actor,
+        expect.objectContaining({ spellburn: 3 })
+      )
+    })
+
+    test('a cast with no burn reports 0 to the result payload (#923)', async () => {
+      await spell.rollSpellCheck('int')
+
+      expect(global.game.dcc.processSpellCheck).toHaveBeenCalledWith(
+        actor,
+        expect.objectContaining({ spellburn: 0 })
+      )
+    })
+
     // Multiple action dice on the item-level cast path (#857). This is the
     // entry point the character sheet uses for an owned spell, and it had no
     // action-die integration at all: every cast rolled `spellCheck.die` (always

@@ -1,6 +1,6 @@
-/* global ChatMessage, CONFIG, CONST, game, ui */
+/* global ChatMessage, CONFIG, CONST, game */
 
-import { logSpellburn } from '../ability-score-log.js'
+import { applySpellburn, scoresFromBurnAmounts } from '../spellburn.mjs'
 
 /**
  * Foundry-flavored implementation of the lib's `SpellEvents` callback
@@ -118,54 +118,31 @@ export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false
     }
 
     /**
-     * Lib reports spellburn was applied for this cast. Mirror the
-     * legacy roll-modifier `Spellburn` term callback
-     * (`module/item.js:329-336`): for each physical ability, subtract
-     * the burn from `system.abilities.<id>.value`, clamped at 0. Per DCC
-     * RAW spellburn has no floor of 1 — a physical ability may be burned
-     * all the way to 0, and burning Stamina to 0 is lethal (an intentional
-     * rules feature). The legacy `#modifySpellburn` dialog already permits
-     * a resulting score of 0 (`newStat >= 0`), so the input side is
-     * already floor-0-consistent; this matches it on the write side. The
-     * `Math.max(0, …)` guards only against a malformed oversized burn, not
-     * against reaching 0. (Mirrors dcc-core-lib@0.11.0, which moved its own
-     * spellburn floor from 1 to 0 — moonloch/dcc-core-lib#8 — though that
-     * lib utility is not in the cast path; the persisted-score floor is the
-     * adapter's responsibility since the lib never writes to the actor.)
+     * Lib reports spellburn was applied for this cast. The lib passes a
+     * `SpellburnCommitment` ({ str, agl, sta }) of burn AMOUNTS and never
+     * writes to the actor, so the bridge converts to post-burn scores and
+     * persists them — both via `module/spellburn.mjs`, the single owner of
+     * that conversion and of the `logSpellburn` call (#923). The floor is 0,
+     * not 1: per DCC RAW a physical ability may be burned all the way to 0.
+     *
      * NPC actors bail (consistent with the disapproval handler and the
      * legacy spellburn-dialog flow, which is PC-only in practice).
-     *
-     * The lib passes the `SpellburnCommitment` ({ str, agl, sta })
-     * directly — these are burn AMOUNTS, not post-burn scores. The
-     * bridge converts them to post-burn scores here.
      */
     events.onSpellburnApplied = (burn) => {
       if (actor.isNPC) return
       if (!burn) return
 
-      // `logSpellburn` takes post-burn SCORES for all three physical
-      // abilities (unburned abilities keep their current value, which is
-      // a no-op on the write side and produces no log entry). It applies
-      // the same single actor.update as before and additionally records
-      // typed entries in the ability score log when the world setting is
-      // enabled.
-      const burned = {}
-      let anyBurn = false
-      for (const abilityId of ['str', 'agl', 'sta']) {
-        const amount = Number(burn[abilityId]) || 0
-        const current = Number(actor.system?.abilities?.[abilityId]?.value) || 0
-        burned[abilityId] = amount > 0 ? Math.max(0, current - amount) : current
-        if (amount > 0) anyBurn = true
-      }
-
-      if (anyBurn) {
-        Promise.resolve(logSpellburn(actor, burned, spellItem?.name ?? '', { adjustHP: adjustSpellburnHP })).catch((err) => {
-          console.error('[DCC adapter] onSpellburnApplied: spellburn update rejected', { actor: actor?.name, burned, err })
-          // The spell check card already claims the burn was paid - a
-          // console-only failure leaves the sheet silently disagreeing with it
-          ui.notifications?.error?.(game.i18n.localize('DCC.SpellburnApplyFailed'))
-        })
-      }
+      // The burn -> post-burn-score conversion and the apply (with its
+      // failure notification) belong to the shared spellburn helper, which
+      // every entry point goes through — see issue #923. An all-zero
+      // commitment needs no guard here: `logSpellburn` writes nothing when
+      // no score actually changes.
+      applySpellburn(
+        actor,
+        scoresFromBurnAmounts(actor, burn),
+        spellItem?.name ?? '',
+        { adjustHP: adjustSpellburnHP }
+      )
     }
 
     /**

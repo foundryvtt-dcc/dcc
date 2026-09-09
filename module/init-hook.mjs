@@ -51,6 +51,7 @@ import { DeathClockTracker, registerDeathClockTracker } from './death-clock-trac
 import { registerTokenVision } from './token-vision.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
+import { applySpellburn, buildSpellburnTerm } from './spellburn.mjs'
 import { getSkillTable } from './table-loading.mjs'
 import { attachMightyDeedListeners, buildMightyDeedPrompt } from './chat.js'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
@@ -245,6 +246,12 @@ export function assembleGameDccNamespace () {
     attachMightyDeedListeners,
     buildMightyDeedPrompt,
     logAbilityChange, // Exported for dependent modules (MCC glowburn, etc.)
+    // Spellburn — the supported way for a dependent module to build the
+    // Roll Modifier dialog's Spellburn term and apply the result, so its
+    // burn logs, chats and heals exactly like a core cast (#923).
+    // See docs/dev/EXTENSION_API.md.
+    buildSpellburnTerm,
+    applySpellburn,
     processSpellCheck,
     getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md

@@ -1,6 +1,7 @@
 /* global foundry, game */
 
 import { isRollCancellation } from '../roll-cancellation.mjs'
+import { spellburnTermFromDescriptor } from '../spellburn.mjs'
 
 /**
  * Adapter-side roll-modifier dialog.
@@ -90,48 +91,26 @@ export async function promptRollModifierDialog (terms, options = {}) {
 
   if (options.spellburn && typeof options.spellburn === 'object') {
     const sb = options.spellburn
-    const originalStr = Number(sb.str) || 0
-    const originalAgl = Number(sb.agl) || 0
-    const originalSta = Number(sb.sta) || 0
 
+    // Pre-burn scores stand in until the dialog submits: a cancelled or
+    // untouched dialog reports "nothing burned" rather than a zeroed
+    // commitment. The term itself comes from the shared spellburn helper
+    // (#923) — this path captures the commitment instead of applying it,
+    // because the lib's `onSpellburnApplied` event owns the write on the
+    // adapter route (see `adapter/spell-events.mjs`).
     spellburnCapture = {
-      str: originalStr,
-      agl: originalAgl,
-      sta: originalSta,
+      str: Number(sb.str) || 0,
+      agl: Number(sb.agl) || 0,
+      sta: Number(sb.sta) || 0,
       adjustHP: false
     }
 
-    const spellburnTerm = {
-      type: 'Spellburn',
-      formula: '+0',
-      str: originalStr,
-      agl: originalAgl,
-      sta: originalSta,
-      // Scales the Stamina modifier threshold hit point PREVIEW (#921) - the
-      // applied amount is recomputed from the actor by `logSpellburn`.
-      // Passed through only when the caller actually supplied a finite level:
-      // `Number(x) || 0` would turn an absent level into 0, which is a number,
-      // defeating the `isNaN` gate in `DCCSpellburnTerm` that keeps the
-      // checkbox away from callers who never wired it up.
-      level: Number.isFinite(Number(sb.level)) && sb.level !== null && sb.level !== ''
-        ? Number(sb.level)
-        : undefined,
-      callback: (_formula, term) => {
-        // `term.str/agl/sta` hold the final (post-burn) ability values
-        // after the user clicks the dialog's +/- buttons. The dialog
-        // mutates them in `#modifySpellburn` (see roll-modifier.js).
-        spellburnCapture.str = Number(term.str) || 0
-        spellburnCapture.agl = Number(term.agl) || 0
-        spellburnCapture.sta = Number(term.sta) || 0
-        // `term.adjustHP` tracks the "also adjust hit points" checkbox.
-        // It stays checked even while the row is hidden, which is harmless:
-        // `logSpellburn` recomputes the delta and a burn that crosses no
-        // threshold yields 0. Fail closed on anything but an explicit true -
-        // a term that was never offered a checkbox must not silently opt in,
-        // and this matches the other three apply sites.
-        spellburnCapture.adjustHP = term.adjustHP === true
-      }
-    }
+    const spellburnTerm = spellburnTermFromDescriptor(sb, (commitment) => {
+      spellburnCapture.str = commitment.str
+      spellburnCapture.agl = commitment.agl
+      spellburnCapture.sta = commitment.sta
+      spellburnCapture.adjustHP = commitment.adjustHP
+    })
 
     effectiveTerms = [...terms, spellburnTerm]
   }
