@@ -3408,3 +3408,59 @@ test('#923 the item\'s own authored bonus still wins over a class override', asy
 
   findSpy.mockRestore()
 })
+
+test('#923 the drawn table row reaches the dcc.afterSpellCheckResult payload', async () => {
+  // `processSpellCheck` passed the drawn `TableResult` to listeners as
+  // `result`. The adapter terminals had no table, so they always passed null —
+  // fine while only macros reached them, a payload regression once the sheet
+  // cast routed here. Now that the row is drawn adapter-side it rides along.
+  const originalTables = game.tables
+  const { table } = makeResultsTable('Magic Missile')
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ results: { table: 'Magic Missile', collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call).toBeDefined()
+  expect(call[2].result).not.toBeNull()
+  expect(call[2].result[0].text).toContain('row for')
+
+  callAllSpy.mockRestore()
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 a cast with no results table still reports a null result to listeners', async () => {
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call[2].result).toBeNull()
+
+  callAllSpy.mockRestore()
+  findSpy.mockRestore()
+})

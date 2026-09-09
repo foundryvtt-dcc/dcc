@@ -823,7 +823,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     }
 
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
-    await renderSpellCheck({
+    const { tableResult } = await renderSpellCheck({
       actor: this,
       spellItem,
       flavor,
@@ -842,6 +842,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       foundryRoll,
       result,
       spellItem,
+      tableResult,
       castingMode: 'generic',
       spellburn: sumSpellburn(input.spellburn)
     })
@@ -1088,7 +1089,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // rather than a bare roll (#923). Also decides where the mercurial effect
     // is shown — see the mercurial block below.
     const resultsTable = await loadSpellResultsTable(spellItem)
-    await renderSpellCheck({
+    const { tableResult } = await renderSpellCheck({
       actor: this,
       spellItem,
       flavor,
@@ -1160,6 +1161,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       foundryRoll,
       result,
       spellItem,
+      tableResult,
       castingMode: profile?.type,
       suppressPatronTaint: !!options.suppressPatronTaint,
       spellburn: sumSpellburn(input.spellburn)
@@ -1370,20 +1372,23 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * @private
    */
   _applySpellCheckModifiers (input, spellItem, options, libAutoTotal) {
+    const fromDialog = typeof options.dialogModifierTotal === 'number'
     const mods = []
 
-    const flatTotal = typeof options.dialogModifierTotal === 'number'
+    const flatTotal = fromDialog
       ? options.dialogModifierTotal
       : this._authoredSpellCheckTotal(spellItem)
     if (typeof flatTotal === 'number' && flatTotal !== libAutoTotal) {
       mods.push({
-        source: 'dialog-modifier',
+        source: fromDialog ? 'dialog-modifier' : 'authored-spell-check',
         value: flatTotal - libAutoTotal,
-        label: game.i18n.localize('DCC.RollModifierTitle')
+        label: game.i18n.localize(fromDialog ? 'DCC.RollModifierTitle' : 'DCC.SpellCheck')
       })
     }
 
-    if (typeof options.dialogModifierTotal !== 'number') {
+    // The dialog builds these as real terms, so its total already carries
+    // them; only a no-dialog cast needs them folded in.
+    if (!fromDialog) {
       mods.push(...this._spellItemModifiers(spellItem))
     }
 
@@ -1393,27 +1398,29 @@ export const RollsSpellMixin = (Base) => class extends Base {
   }
 
   /**
-   * The spell item's own authored spell-check bonus — the flat total that
-   * REPLACES the caster's level + ability modifier, rather than adding to it.
+   * The authored spell-check bonus for this cast — the flat total that
+   * REPLACES the caster's level + ability modifier rather than adding to it.
+   * Two sources, in priority order:
    *
-   * A spell opts into this with `config.inheritSpellCheck: false`, which is
-   * exactly the shape `DCCItem.castSpell` builds for a magic item casting at
-   * its own fixed spell check. The lib computes level + ability from the
-   * character and never reads the item, so without this a wand rolled the
-   * caster's own bonus (#923).
+   *   - the spell's own `spellCheck.value` when it opts out of inheriting
+   *     (`config.inheritSpellCheck: false`) — exactly the shape
+   *     `DCCItem.castSpell` builds for a magic item casting at its own fixed
+   *     spell check;
+   *   - otherwise the actor's class-wide `spellCheckOverride`.
    *
-   * Returns `null` when the spell inherits (the overwhelmingly common case),
+   * The lib computes level + ability from the character and never reads
+   * either, so without this a wand rolled the caster's own bonus and a cleric
+   * with an override rolled their raw natural (#923).
+   *
+   * Returns `null` when neither applies (the overwhelmingly common case),
    * leaving the lib's own arithmetic untouched.
    *
    * @returns {number|null}
    * @private
    */
   _authoredSpellCheckTotal (spellItem) {
-    // An item that opts out of inheriting keeps its own authored value
-    // regardless of the class; otherwise the actor's class-wide override (if
-    // any) is the whole bonus. `_castNakedViaAdapter` already applied the
-    // latter rule — the item-bound terminals did not, so a cleric with an
-    // override rolled their raw natural (#874's spec caught it).
+    // `_castNakedViaAdapter` already applied the class-override rule; the
+    // item-bound terminals did not, which is what #874's spec caught.
     const raw = spellItem?.system?.config?.inheritSpellCheck === false
       ? spellItem?.system?.spellCheck?.value
       : this.system.class?.spellCheckOverride

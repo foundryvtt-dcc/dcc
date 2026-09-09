@@ -599,7 +599,11 @@ export async function renderSkillCheck ({
  *   configures one (`loadSpellResultsTable`). Present ⇒ the card is the full
  *   spell-result card carrying the drawn row; absent ⇒ the bare roll plus the
  *   naked-cast verdict, which is all this renderer used to emit (#923).
- * @returns {Promise<ChatMessage>} The created ChatMessage.
+ * @returns {Promise<{message: ChatMessage, tableResult: Array|null}>} The
+ *   created ChatMessage plus the row drawn from the results table (null when
+ *   the spell configures none). Callers forward `tableResult` to
+ *   `dcc.afterSpellCheckResult`, whose `result` field the legacy
+ *   `processSpellCheck` populated with exactly that row.
  */
 export async function renderSpellCheck ({
   actor,
@@ -620,6 +624,7 @@ export async function renderSpellCheck ({
   if (rollTable) {
     return renderSpellResultTable({ actor, spellItem, flavor, result, foundryRoll, rollTable, actionDiceChatLine })
   }
+
   const flags = {
     'dcc.RollType': 'SpellCheck',
     'dcc.isSpellCheck': true,
@@ -679,7 +684,7 @@ export async function renderSpellCheck ({
 
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })
 
-  return ChatMessage.create(messageData)
+  return { message: await ChatMessage.create(messageData), tableResult: null }
 }
 
 /**
@@ -719,7 +724,7 @@ async function renderSpellResultTable ({ actor, spellItem, flavor, result, found
     drawn = rollTable.getResultsForRoll(foundryRoll.total)
   }
 
-  return game.dcc.SpellResult.addChatMessage(foundryRoll, rollTable, drawn, {
+  const message = await game.dcc.SpellResult.addChatMessage(foundryRoll, rollTable, drawn, {
     crit,
     fumble,
     disapprovalFailure,
@@ -730,6 +735,8 @@ async function renderSpellResultTable ({ actor, spellItem, flavor, result, found
     // spell — see `DCCItem.castSpell`) still speaks as the caster.
     messageData: { flavor, speaker: ChatMessage.getSpeaker({ actor }) }
   })
+
+  return { message, tableResult: drawn }
 }
 
 /**
