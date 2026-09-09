@@ -873,14 +873,16 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // casts (they already flavor with the item name).
     if (dataset.checkLabel) options.checkLabel = dataset.checkLabel
     if (dataset.itemId) {
-      // Roll through a spell item
+      // Roll through a spell item. Handed to the actor's dispatcher as a
+      // document rather than rolled on the item, so the sheet's cast button —
+      // the way players actually cast — takes the same path as every other
+      // roll and any future spell-check feature lands on it once (#923).
       const item = this.actor.items.find(i => i.id === dataset.itemId)
-      const ability = dataset.ability || ''
-      await item.rollSpellCheck(ability, options)
-    } else {
-      // Roll a raw spell check for the actor
-      await this.options.document.rollSpellCheck(options)
+      if (!item) return
+      options.abilityId = dataset.ability || ''
+      options.spellItem = item
     }
+    await this.options.document.rollSpellCheck(options)
   }
 
   /**

@@ -2854,8 +2854,15 @@ test('#923 a crit adds the caster level to the lookup total and to the rolled fo
   expect(roll._formula).toContain('+ 3')
 })
 
-test('#923 a spell with no configured results table still renders the plain roll', async () => {
+test('#923 a spell with no configured results table renders the no-table verdict card', async () => {
+  // BEHAVIOR CHANGE: the legacy `DCCItem.rollSpellCheck` rolled, then warned
+  // `DCC.NoSpellResultsTableWarning` and posted nothing at all. Now that the
+  // sheet's cast button routes through the dispatcher, a table-less spell gets
+  // the same pass/fail/crit/fumble verdict card a naked class-level spell
+  // check already got, instead of a warning and no card. `DCCItem.castSpell`
+  // still pre-checks the table before spending a charge.
   rollToMessageMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
   const spellResult = installSpellResultSpy()
 
   // noinspection JSCheckFunctionSignatures
@@ -2871,6 +2878,7 @@ test('#923 a spell with no configured results table still renders the plain roll
 
   expect(spellResult.addChatMessage).not.toHaveBeenCalled()
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
 
   spellResult.restore()
   findSpy.mockRestore()
@@ -3019,5 +3027,384 @@ test('#923 a spell with no results table still posts its mercurial effect separa
   expect(mercurialMessages).toHaveLength(1)
 
   spellResult.restore()
+  findSpy.mockRestore()
+})
+
+// ---- #923 — side effects the legacy `processSpellCheck` owned ----
+//
+// Routing the character sheet's cast button onto the dispatcher means the
+// adapter has to carry everything the legacy item path did. These two were
+// missing and are invisible in a roll-only assertion: the spells tab stops
+// showing the last result, and a cleric's disapproval-range roll stops being
+// painted red on the card.
+
+test('#923 the cast records its total on the spell item for the spells tab', async () => {
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  spellItem.id = 'spell-1'
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellItem.update).toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.lastResult': expect.any(Number) })
+  )
+
+  findSpy.mockRestore()
+})
+
+test('#923 the spell-check die carries the disapproval range so the card can highlight it', async () => {
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 4
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  const built = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      built.push(this)
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  try {
+    await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // `chat.js` paints a die total at or below `lowerThreshold` red. Without
+  // this the legacy sheet cast's disapproval highlight silently disappears.
+  expect(built[0].dice[0].options.dcc).toEqual({ lowerThreshold: 4 })
+
+  findSpy.mockRestore()
+})
+
+// ---- #923 — the modifier dialog on generic-castingMode casts ----
+//
+// The adapter only opened the roll modifier dialog for wizard / cleric
+// castingMode. The legacy `DCCItem.rollSpellCheck` opened it for ANY casting
+// mode, because it just passed `options.showModifierDialog` to
+// `DCCRoll.createRoll`. Generic is what `DCCItem.castSpell` forces for a magic
+// item's attached spell, so a meta-clicked wand cast would have silently lost
+// its dialog — and with it the spellburn term — once the sheet moved onto the
+// dispatcher.
+
+test('#923 a generic-castingMode cast opens the modifier dialog', async () => {
+  rollToMessageMock.mockClear()
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 0, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
+  // Spellburn is offered: the legacy term was gated on `castingMode !== 'cleric'`.
+  const promptOptions = promptRollModifierDialog.mock.calls[0][1]
+  expect(promptOptions.spellburn).toMatchObject({ level: expect.any(Number) })
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast does not tick the check penalty by default', async () => {
+  // Legacy: `apply: castingMode === 'wizard'`. An armor check penalty is a
+  // wizard-spell concept; a wand does not pay it.
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 0, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  const terms = promptRollModifierDialog.mock.calls[0][0]
+  expect(terms.find(t => t.type === 'CheckPenalty').apply).toBe(false)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a cancelled dialog returns false so no charge is spent', async () => {
+  // `DCCItem.castSpell` spends a charge per cast attempt and keys off `false`
+  // to decline for a cast that never happened (#867).
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue(null)
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const result = await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  expect(result).toBe(false)
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast applies the spellburn committed in the dialog', async () => {
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({
+    actionDie: '1d20',
+    modifierTotal: 0,
+    spellburn: { str: 2, agl: 0, sta: 0, adjustHP: false }
+  })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actorUpdateMock.mockClear()
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  // The generic branch passes no lib events, so — like the naked route — it
+  // has to apply the burn itself or the dialog's commitment vanishes.
+  expect(actorUpdateMock).toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.abilities.str.value': 12 })
+  )
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast folds the dialog modifier into the roll', async () => {
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 7, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  const formulas = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      formulas.push(String(formula))
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  try {
+    await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // The player's flat total drives the roll: without this the dialog's
+  // modifier was silently dropped on the generic path.
+  const flat = formulas[0].split('+').slice(1).reduce((sum, p) => sum + (parseInt(p.trim()) || 0), 0)
+  expect(flat).toBe(7)
+
+  findSpy.mockRestore()
+})
+
+// ---- #923 — per-spell modifiers on a cast with no dialog ----
+//
+// The legacy term list carried three things the lib input did not: the armor /
+// spell check penalty, the spell's `otherBonus`, and an authored spell-check
+// value when the item opts out of inheriting the caster's. They reached the
+// adapter only through `_promptSpellCheckDialog`, so a PLAIN click on the
+// sheet's cast button — the common case — silently dropped all three once the
+// sheet routed through the dispatcher. An armored wizard would stop paying
+// their check penalty on every cast.
+
+/** Roll formulas the adapter built, in order. */
+function recordFormulas (fn) {
+  const OriginalRoll = globalThis.Roll
+  const formulas = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      formulas.push(String(formula))
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  return fn().finally(() => { globalThis.Roll = OriginalRoll }).then(() => formulas)
+}
+
+/** Signed flat total of every numeric term after the die. */
+function flatTotalOf (formula) {
+  const parts = String(formula).match(/[+-]\s*\d+/g) ?? []
+  return parts.reduce((sum, p) => sum + parseInt(p.replace(/\s+/g, '')), 0)
+}
+
+test('#923 a wizard cast with no dialog still pays the armor check penalty', async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.attributes.ac.checkPenalty = '-4'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const withPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  actor.system.attributes.ac.checkPenalty = '0'
+  const withoutPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(withPenalty[0])).toBe(flatTotalOf(withoutPenalty[0]) - 4)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast does NOT pay the check penalty (legacy parity)', async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.attributes.ac.checkPenalty = '-4'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const withPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  actor.system.attributes.ac.checkPenalty = '0'
+  const withoutPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(withPenalty[0])).toBe(flatTotalOf(withoutPenalty[0]))
+
+  findSpy.mockRestore()
+})
+
+test("#923 a cast with no dialog includes the spell's own otherBonus", async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const plainItem = makeWizardSpellItem()
+  const bonusItem = makeWizardSpellItem({
+    spellCheck: { die: '1d20', value: '+0', penalty: '-0', otherBonus: '+3' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(plainItem)
+
+  const plain = await recordFormulas(() => actor.rollSpellCheck({ spellItem: plainItem }))
+  const bonused = await recordFormulas(() => actor.rollSpellCheck({ spellItem: bonusItem }))
+
+  expect(flatTotalOf(bonused[0])).toBe(flatTotalOf(plain[0]) + 3)
+
+  findSpy.mockRestore()
+})
+
+test('#923 an authored spell check replaces the caster\'s own level + ability modifier', async () => {
+  // `DCCItem.castSpell` builds exactly this shape for a magic item that casts
+  // at its own fixed spell check: `inheritSpellCheck: false` plus an authored
+  // `spellCheck.value`. The lib otherwise computes level + ability and ignores
+  // the item entirely, so a wand would roll the caster's bonus instead of its
+  // own.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 5
+
+  const spellItem = makeGenericSpellItem({
+    config: { castingMode: 'generic', inheritCheckPenalty: true, inheritSpellCheck: false },
+    spellCheck: { die: '1d20', value: '+2', penalty: '-0' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  // +2 flat — not +5 (level) plus the caster's ability modifier.
+  expect(flatTotalOf(formulas[0])).toBe(2)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a class spellCheckOverride replaces the lib arithmetic on an item cast', async () => {
+  // `system.class.spellCheckOverride` replaces level + ability as the whole
+  // spell-check bonus (`derived-stats-mixin.mjs:155` mirrors it onto
+  // `class.spellCheck`, which the item inherits). `_castNakedViaAdapter`
+  // already honored it; the item-bound terminals did not, so a cleric with an
+  // override rolled their raw natural once the sheet routed here — caught by
+  // `cleric-disapproval-failure.spec.js` (#874), which expects 4 + 8 = 12.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.details.level.value = 3
+  actor.system.class.spellCheckOverride = '+8'
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(formulas[0])).toBe(8)
+
+  findSpy.mockRestore()
+})
+
+test('#923 the item\'s own authored bonus still wins over a class override', async () => {
+  // `inheritSpellCheck: false` means the item keeps its own value regardless
+  // of the class — the shape `DCCItem.castSpell` builds for a wand.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.spellCheckOverride = '+8'
+
+  const spellItem = makeGenericSpellItem({
+    config: { castingMode: 'generic', inheritCheckPenalty: true, inheritSpellCheck: false },
+    spellCheck: { die: '1d20', value: '+2', penalty: '-0' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(formulas[0])).toBe(2)
+
   findSpy.mockRestore()
 })

@@ -39,6 +39,9 @@ const MEMBERS = [
   '_castViaCastSpell',
   '_castViaCalculateSpellCheck',
   '_rollMercurialIfNeeded',
+  '_annotateSpellCheckRoll',
+  '_recordSpellLastResult',
+  '_applySpellCheckModifiers',
   '_buildSpellCheckFlavor'
 ]
 

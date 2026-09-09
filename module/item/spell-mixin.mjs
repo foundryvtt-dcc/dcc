@@ -1,16 +1,7 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
-import { buildSpellburnTerm } from '../spellburn.mjs'
 import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
-import {
-  planActionDie,
-  actionDicePresetsFromPlan,
-  reconcilePlannedActionDie,
-  spendPlannedActionDie,
-  formatActionDiceChatLine,
-  slotRollFormula
-} from '../action-dice-tracker.mjs'
 
 /**
  * Determine the die formula to roll for a manifestation table.
@@ -61,20 +52,23 @@ const MAX_MERCURIAL_SPECIAL_DEPTH = 5
  * templates' `data-action="rollSpellCheck"`/`rollManifestation`/
  * `rollMercurialMagic`) call these off a live item and need no change.
  *
- * Adapter reach: these methods delegate to the adapter through the GLOBAL
- * `game.dcc.*` namespace (`game.dcc.DCCRoll.createRoll`,
- * `game.dcc.processSpellCheck`), NOT via direct adapter-module imports, so the
- * mixin reaches them exactly as the class body did. They carry no
- * `logDispatch` of their own — the dispatch-logged spell-check *routing* lives
- * on the actor side (`DCCActor._rollSpellCheckViaAdapter`); this item-level path
- * is the spell-sheet / macro entry point that builds terms and hands off to
- * `processSpellCheck`. The module dependencies are `../ability-score-log.js`
- * (`logSpellburn`); the `../utilities.js` helpers `ensurePlus` (luck-modifier
+ * #923 reduced `rollSpellCheck` here to a forwarder onto
+ * `DCCActor.rollSpellCheck`. It used to build its own term list, roll, resolve
+ * the results table and call `game.dcc.processSpellCheck` — a second
+ * implementation of the whole cast, which is how #921 landed on the dispatcher
+ * and not on the character sheet's cast button. Casting behavior now lives in
+ * one place; what remains here is the manifestation / mercurial-magic rolling
+ * that belongs to the item.
+ *
+ * Adapter reach: the remaining methods delegate through the GLOBAL `game.dcc.*`
+ * namespace (`game.dcc.DCCRoll.createRoll`), NOT via direct adapter-module
+ * imports, so the mixin reaches them exactly as the class body did. They carry
+ * no `logDispatch` of their own — the dispatch-logged spell-check *routing*
+ * lives on the actor side (`DCCActor._rollSpellCheckViaAdapter`). The module
+ * dependencies are the `../utilities.js` helpers `ensurePlus` (luck-modifier
  * term), `getMercurialSpecial` (roll-again expansion, #339), and
  * `getNameCandidates` / `findPackEntryByName` (Babele-aware table resolution,
- * #799); and `../action-dice-tracker.mjs` for the multiple-action-dice budget
- * (#857) — the same direct import the six other roll paths use, and not an
- * adapter module.
+ * #799), plus `../roll-cancellation.mjs`.
  *
  * @param {typeof Item} Base - the document class to extend (production: a
  *   `CurrencyItemMixin(ContainerItemMixin(Item))`; unit tests: a stub).
@@ -82,197 +76,32 @@ const MAX_MERCURIAL_SPECIAL_DEPTH = 5
  */
 export const SpellItemMixin = (Base) => class extends Base {
   /**
-   * Roll a Spell Check using this item
-   * @param {String} abilityId    The ability used for this spell
-   * @param options
+   * Roll a Spell Check using this item.
+   *
+   * Thin forwarder onto the actor's spell-check dispatcher (#923). This used
+   * to build its own term list, roll, resolve the results table and call
+   * `game.dcc.processSpellCheck` — a second, near-duplicate implementation of
+   * everything `DCCActor.rollSpellCheck` does. Keeping the two in step was
+   * manual and it did not work: #921 shipped complete on the dispatcher and
+   * entirely missing here, because the character sheet's cast button came
+   * through this method and nothing else did.
+   *
+   * The item is handed over as `options.spellItem` rather than by name, so a
+   * spell the actor does not own still resolves — `DCCItem.castSpell` rolls an
+   * ephemeral copy of a magic item's attached spell.
+   *
+   * @param {String} abilityId  The ability used for this spell
+   * @param {Object} options
+   * @returns {Promise<Roll|false|undefined>} `false` when the roll modifier
+   *   dialog was cancelled, so `castSpell` can decline to spend its charge.
    */
   async rollSpellCheck (abilityId = '', options = {}) {
     if (this.type !== 'spell') { return }
 
     const actor = this.actor || this.parent
+    if (!actor) { return }
 
-    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') {
-      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
-        actor: actor.name,
-        spell: this.name
-      }))
-    }
-
-    const ability = actor.system.abilities[abilityId] || {}
-    ability.label = CONFIG.DCC.abilities[abilityId]
-    const spell = this.name
-    options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
-
-    // Multiple action dice (#834) — this is the sheet/macro entry point for an
-    // owned spell, so it owns the same plan → override → reconcile → spend
-    // cycle the weapon and check paths run. Without it a caster's second cast
-    // in a round silently re-rolled `spellCheck.die`, which
-    // `DCCItem.prepareBaseData` derives via `getSingleActionDie` — i.e. always
-    // the FIRST action die — and never spent a slot, so the tracker pips never
-    // advanced either (#857).
-    //
-    // Only an extra die (slot index > 0) overrides the spell's own die, so the
-    // first cast of a round stays byte-identical; `planActionDie` returns null
-    // off-path (setting off / not in combat / no budget), which leaves the
-    // whole block inert. A spells-only die IS eligible here — that is the
-    // canonical wizard "cast with the second action die" case.
-    // The slot only replaces a die that WAS derived from the action die.
-    // `DCCItem.prepareBaseData` composes `spellCheck.die`: it reads the action
-    // die only when `config.inheritActionDie` is set, and a class's
-    // `spellCheckOverrideDie` wins over it. Either of those is a deliberate
-    // authoring choice, so stepping to another slot must not silently discard it
-    // — the same "re-apply relative to the chosen base die, don't discard it"
-    // rule #834 established for the two-weapon penalty.
-    let die = this.system.spellCheck.die
-    const dieFollowsActionDie = !!this.system.config.inheritActionDie &&
-      !actor.system.class?.spellCheckOverrideDie
-    let actionDicePlan = planActionDie(actor, 'spell')
-    if (dieFollowsActionDie && actionDicePlan?.choice && actionDicePlan.choice.index > 0) {
-      die = slotRollFormula(actionDicePlan.choice.slot)
-    }
-    // The die the roll uses with no player intervention — passed to the
-    // reconcile below so landing on it is never mistaken for a slot choice.
-    const defaultActionDieFaces = parseInt(String(die).match(/d(\d+)/)?.[1] || '') || null
-    // Slot-aware presets (#834 §3) so the modifier dialog is a real action-die
-    // chooser. Null when there is only one slot (or off-path), in which case
-    // the Die term carries no presets exactly as before.
-    const actionDicePresets = actionDicePlan
-      ? actionDicePresetsFromPlan(actionDicePlan, { action: 'spell' })
-      : null
-
-    let bonus = this.system.spellCheck.value.toString()
-
-    // Consolidate the spell check value so that the modifier dialog is not too wide
-    // Unless people are using variables, in which case the DCC roll parser needs to deal with those
-    if (bonus.includes('@')) {
-      bonus = Roll.safeEval(bonus)
-    }
-
-    // Calculate check penalty if relevant
-    let checkPenalty
-    if (this.system.config.inheritCheckPenalty) {
-      checkPenalty = parseInt(actor.system.attributes.ac.checkPenalty || '0')
-    } else {
-      checkPenalty = parseInt(this.system.spellCheck.penalty || '0')
-    }
-
-    // Determine the casting mode
-    const castingMode = this.system.config.castingMode || 'wizard'
-
-    // Collate terms for the roll
-    const terms = [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: die,
-        // Only on-path with two or more slots; absent otherwise, so the dialog
-        // renders the plain die field it always has. No untrained 1d10 here —
-        // that is an attack/skill concept, not a spell-check one.
-        ...(actionDicePresets?.length ? { presets: actionDicePresets } : {})
-      },
-      {
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
-        formula: bonus
-      },
-      {
-        type: 'CheckPenalty',
-        formula: checkPenalty,
-        apply: castingMode === 'wizard' // Idol magic does not incur a checkPenalty
-      }
-    ]
-
-    // Add spell-specific other bonus if present
-    const otherBonus = this.system.spellCheck.otherBonus
-    if (otherBonus) {
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.SpellOtherBonus'),
-        formula: otherBonus
-      })
-    }
-
-    // Clerics cannot spellburn.
-    // Track the total points burned so the result handler can surface it via
-    // the `dcc.afterSpellCheckResult` payload — MCC glowburn IS spellburn, and
-    // its patron manifestation keys off the amount burned.
-    // The term (and its apply) belongs to `module/spellburn.mjs`, which every
-    // spellburn entry point shares — see issue #923 for why this used to be
-    // built inline here.
-    let spellburnTotal = 0
-    if (castingMode !== 'cleric') {
-      terms.push(buildSpellburnTerm(actor, {
-        source: this.name,
-        onBurn: (total) => { spellburnTotal = total }
-      }))
-    }
-
-    // Roll the spell check. `false` is the cancel signal for callers that
-    // must not commit a cost for a cast that never happened — see
-    // `DCCItem.castSpell`, which spends a charge per cast attempt. Every
-    // other exit returns undefined (or a notification), never `false`.
-    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options))
-    if (!roll) return false // Dialog cancelled — no spell check, no spellburn
-    await roll.evaluate()
-
-    if (roll.dice.length > 0) {
-      roll.dice[0].options.dcc = {
-        lowerThreshold: actor.system.class.disapproval
-      }
-    }
-
-    // Lookup the appropriate table
-    const resultsRef = this.system.results
-    if (!resultsRef.table) {
-      return ui.notifications.warn(game.i18n.localize('DCC.NoSpellResultsTableWarning'))
-    }
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table.replace('RollTable.', '')
-    let resultsTable
-    // If a collection is specified then check the appropriate pack for the spell
-    if (resultsRef.collection) {
-      const pack = game.packs.get(resultsRef.collection)
-      if (pack) {
-        const entry = pack.index.find(predicate)
-        resultsTable = await pack.getDocument(entry._id)
-      }
-    }
-    // Otherwise fall back to searching the world
-    if (!resultsTable) {
-      resultsTable = game.tables.contents.find(predicate)
-    }
-
-    let flavor = spell
-    if (ability.label) {
-      flavor += ` (${game.i18n.localize(ability.label)})`
-    }
-
-    // The player may have picked a different slot in the modifier dialog, so
-    // re-point the plan at the die actually rolled before spending it, then
-    // spend (the tracker pip flips on the flag write). Null plan ⇒ off-path ⇒
-    // empty line, and the card renders exactly as it does today. Deliberately
-    // after the no-results-table bail-out above: that path posts nothing at all,
-    // so — as before this change — it must cost nothing either.
-    actionDicePlan = reconcilePlannedActionDie(actionDicePlan, roll.dice?.[0]?.faces, {
-      action: 'spell',
-      defaultFaces: defaultActionDieFaces
-    })
-    const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
-
-    // Tell the system to handle the spell check result
-    await game.dcc.processSpellCheck(actor, {
-      rollTable: resultsTable,
-      roll,
-      item: this,
-      flavor,
-      manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
-      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
-      forceCrit: options.forceCrit,
-      forceFumble: options.forceFumble,
-      suppressPatronTaint: options.suppressPatronTaint,
-      spellburn: spellburnTotal,
-      actionDiceChatLine
-    })
+    return actor.rollSpellCheck({ ...options, spellItem: this, abilityId })
   }
 
   /**

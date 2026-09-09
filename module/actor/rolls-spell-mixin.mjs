@@ -107,7 +107,17 @@ export const RollsSpellMixin = (Base) => class extends Base {
     }
 
     let spellItem = null
-    if (options.spell) {
+    if (options.spellItem) {
+      // The caller handed the document straight over — the character sheet's
+      // cast button and `DCCItem.rollSpellCheck` (#923). Load-bearing for
+      // `DCCItem.castSpell`, which rolls an EPHEMERAL copy of a magic item's
+      // attached spell that the actor does not own: a name lookup in
+      // `this.items` could never find it.
+      if (options.spellItem.type !== 'spell') {
+        return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
+      }
+      spellItem = options.spellItem
+    } else if (options.spell) {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
         if (item.type === 'spell') {
@@ -138,7 +148,19 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // the primary die (#857).
     const actionDicePlan = planActionDie(this, 'spell')
     options._actionDicePlan = actionDicePlan
-    if (actionDicePlan?.choice && actionDicePlan.choice.index > 0 && !options.actionDieOverride) {
+    // The slot only replaces a die that WAS derived from the action die.
+    // `DCCItem.prepareBaseData` composes `spellCheck.die`: it reads the action
+    // die only when `config.inheritActionDie` is set, and a class's
+    // `spellCheckOverrideDie` wins over it. Either of those is a deliberate
+    // authoring choice, so stepping to another slot must not silently discard
+    // it — the same "re-apply relative to the chosen base die, don't discard
+    // it" rule #834 established for the two-weapon penalty. A naked cast has
+    // no item to consult, so only the class override guards it. (#857; this
+    // guard came over from `DCCItem.rollSpellCheck` when the sheet's cast
+    // button moved onto this dispatcher — see #923.)
+    const dieFollowsActionDie = !this.system.class?.spellCheckOverrideDie &&
+      (spellItem ? !!spellItem.system?.config?.inheritActionDie : true)
+    if (dieFollowsActionDie && actionDicePlan?.choice && actionDicePlan.choice.index > 0 && !options.actionDieOverride) {
       options.actionDieOverride = slotRollFormula(actionDicePlan.choice.slot)
     }
     // Slot-aware presets for the dialog (#834 §3); null when there is only one
@@ -315,7 +337,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
       terms.push({
         type: 'CheckPenalty',
         formula: checkPenalty,
-        apply: castingMode === 'wizard' || castingMode === 'generic'
+        // Legacy parity (`DCCItem.rollSpellCheck`): only a wizard-castingMode
+        // cast pays the armor check penalty by default. Idol magic skips the
+        // term entirely (`isIdolMagic`); a generic cast — a wand, say — gets
+        // the term unticked so the player can still opt in.
+        apply: castingMode === 'wizard'
       })
     }
 
@@ -411,17 +437,27 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // both Spellburn and CheckPenalty per RAW. The dispatch log
     // already fired above so a cancel still leaves a traceable adapter
     // path in the log.
-    if ((castingMode === 'wizard' || castingMode === 'cleric') &&
-        options.showModifierDialog && !options.spellburn && !this.isNPC) {
+    // Every casting mode, not just wizard / cleric: the legacy
+    // `DCCItem.rollSpellCheck` handed `showModifierDialog` straight to
+    // `DCCRoll.createRoll`, so a generic-castingMode spell got the dialog too
+    // — and generic is what `DCCItem.castSpell` forces for a magic item's
+    // attached spell. Gating it here would have silently dropped the dialog
+    // (and its spellburn term) from every wand cast once the character
+    // sheet's cast button moved onto this dispatcher (#923).
+    if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
       const isCleric = castingMode === 'cleric' || dispatch.castingModeOverride === 'cleric'
       const prompt = await this._promptSpellCheckDialog(spellItem, {
-        castingMode: isCleric ? 'cleric' : 'wizard',
+        castingMode: isCleric ? 'cleric' : castingMode,
         isIdolMagic: isCleric,
         spellburnEligible: !isCleric,
         actionDie: options.actionDieOverride || '',
         actionDicePresets: options._actionDicePresets || null
       })
-      if (prompt === null) return
+      // `false` is the cancel signal for callers that must not commit a cost
+      // for a cast that never happened — see `DCCItem.castSpell`, which spends
+      // a charge per cast attempt. Every other exit returns a Roll, undefined,
+      // or a notification, never `false`.
+      if (prompt === null) return false
       this._applySpellCheckDialogToOptions(prompt, options)
     }
 
@@ -526,7 +562,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
         actionDie: options.actionDieOverride || '',
         actionDicePresets: options._actionDicePresets || null
       })
-      if (prompt === null) return
+      // `false` is the cancel signal — see the item-bound route above.
+      if (prompt === null) return false
       this._applySpellCheckDialogToOptions(prompt, options)
     }
 
@@ -677,6 +714,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       flavor += ` (${game.i18n.localize(abilityLabel)})`
     }
 
+    this._annotateSpellCheckRoll(foundryRoll)
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     await renderSpellCheck({
       actor: this,
@@ -733,6 +771,27 @@ export const RollsSpellMixin = (Base) => class extends Base {
       input.actionDie = normalizeLibDie(options.actionDieOverride)
     }
 
+    // The dialog reaches this branch now that it is offered for every casting
+    // mode (#923), so its total — plus the per-spell modifiers a no-dialog
+    // cast would otherwise lose — have to be folded in here. `castSpell` takes
+    // the lib's auto-additive level + ability straight off the input.
+    this._applySpellCheckModifiers(
+      input,
+      spellItem,
+      options,
+      (Number(input.casterLevel) || 0) + (Number(input.abilityModifier) || 0)
+    )
+
+    if (options.spellburn && typeof options.spellburn === 'object') {
+      const burn = options.spellburn
+      const str = Number(burn.str) || 0
+      const agl = Number(burn.agl) || 0
+      const sta = Number(burn.sta) || 0
+      if (str > 0 || agl > 0 || sta > 0) {
+        input.spellburn = { str, agl, sta }
+      }
+    }
+
     const plan = libCastSpell(input, { mode: 'formula' })
 
     const foundryRoll = new Roll(plan.formula)
@@ -749,7 +808,20 @@ export const RollsSpellMixin = (Base) => class extends Base {
       roller: () => natural
     })
 
+    this._annotateSpellCheckRoll(foundryRoll)
     const flavor = this._buildSpellCheckFlavor(spellItem, options)
+
+    // This branch passes the lib no events, so — like the naked route — it
+    // applies the burn itself; otherwise the dialog's commitment vanishes.
+    if (input.spellburn) {
+      await applySpellburn(
+        this,
+        scoresFromBurnAmounts(this, input.spellburn),
+        spellItem?.name ?? '',
+        { adjustHP: options.spellburn?.adjustHP === true }
+      )
+    }
+
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     await renderSpellCheck({
       actor: this,
@@ -762,6 +834,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       // row rather than a bare roll (#923).
       rollTable: await loadSpellResultsTable(spellItem)
     })
+    this._recordSpellLastResult(spellItem, foundryRoll)
 
     // Post-result seam parity (see `processSpellCheck`). Generic-mode casts
     // carry no patron taint, so `suppressPatronTaint` is moot here.
@@ -826,22 +899,18 @@ export const RollsSpellMixin = (Base) => class extends Base {
     if (options.actionDieOverride) {
       input.actionDie = normalizeLibDie(options.actionDieOverride)
     }
-    if (typeof options.dialogModifierTotal === 'number') {
+    // Dialog total + per-spell modifiers (#923). Here the lib's auto-additive
+    // level + ability come off the `character`, not the input — the lib
+    // re-derives them inside `buildSpellCastInput`.
+    {
       const casterLevel = character.classInfo?.level ?? 0
-      const abilityId = profile.spellCheckAbility
-      const abilityScore = character.state?.abilities?.[abilityId]?.current ?? 10
-      const libAutoTotal = casterLevel + libGetAbilityModifier(abilityScore)
-      const netSituational = options.dialogModifierTotal - libAutoTotal
-      if (netSituational !== 0) {
-        input.situationalModifiers = [
-          ...(input.situationalModifiers ?? []),
-          {
-            source: 'dialog-modifier',
-            value: netSituational,
-            label: game.i18n.localize('DCC.RollModifierTitle')
-          }
-        ]
-      }
+      const abilityScore = character.state?.abilities?.[profile.spellCheckAbility]?.current ?? 10
+      this._applySpellCheckModifiers(
+        input,
+        spellItem,
+        options,
+        casterLevel + libGetAbilityModifier(abilityScore)
+      )
     }
 
     // Cleric path needs a disapproval table so the lib's
@@ -1012,6 +1081,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
     }
 
+    this._annotateSpellCheckRoll(foundryRoll)
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
     // The spell's own results table, so the card carries the drawn effect row
@@ -1027,6 +1097,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       actionDiceChatLine,
       rollTable: resultsTable
     })
+    this._recordSpellLastResult(spellItem, foundryRoll)
 
     // Post the disapproval roll chat after the main spell-check chat,
     // mirroring the legacy ordering: spell check, then disapproval roll.
@@ -1214,6 +1285,183 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * Build the chat flavor line shared by both adapter branches.
    * @private
    */
+  /**
+   * Side effects the legacy `processSpellCheck` applied to every cast, carried
+   * over when the character sheet's cast button moved onto this dispatcher
+   * (#923). Both are invisible to a roll-only assertion and both are visible
+   * to a player:
+   *
+   *   - the die carries the caster's disapproval range as `lowerThreshold`, so
+   *     `chat.js` paints a natural inside that range red on the card;
+   *   - the spell item records the check total, which the cleric spells tab
+   *     shows beside each spell.
+   *
+   * The item write is fire-and-forget with a catch: `DCCItem.castSpell` rolls
+   * an ephemeral, unowned copy of a magic item's attached spell, and a
+   * rejected update there must not take the cast down with it. Skill items
+   * update their own `lastResult` on the skill path, so they are skipped here
+   * exactly as the legacy path skipped them.
+   * @private
+   */
+  /**
+   * The per-spell modifiers the legacy `DCCItem.rollSpellCheck` term list
+   * carried into every cast, folded into the lib input for casts that never
+   * open the roll modifier dialog (#923).
+   *
+   * The dialog builds these as real terms and their sum arrives as
+   * `options.dialogModifierTotal`, so this runs only when there was no dialog
+   * — a plain click on the sheet's cast button, or a macro. Without it an
+   * armored wizard silently stopped paying their check penalty, and a spell's
+   * `otherBonus` never reached the roll.
+   *
+   * @param {Object} spellItem
+   * @returns {Array<{source: string, value: number, label: string}>}
+   * @private
+   */
+  _spellItemModifiers (spellItem) {
+    const mods = []
+    if (!spellItem) return mods
+
+    // Legacy parity: the armor / spell check penalty applies by default only
+    // on a wizard-castingMode cast. Idol magic doesn't pay it in any form and
+    // a generic cast (a wand) doesn't either.
+    if (spellItem.system?.config?.castingMode === 'wizard') {
+      const penalty = spellItem.system?.config?.inheritCheckPenalty
+        ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
+        : parseInt(spellItem.system?.spellCheck?.penalty || '0')
+      if (penalty) {
+        mods.push({
+          source: 'check-penalty',
+          value: penalty,
+          label: game.i18n.localize('DCC.CheckPenalty')
+        })
+      }
+    }
+
+    const otherBonus = parseInt(spellItem.system?.spellCheck?.otherBonus || '0')
+    if (otherBonus) {
+      mods.push({
+        source: 'spell-other-bonus',
+        value: otherBonus,
+        label: game.i18n.localize('DCC.SpellOtherBonus')
+      })
+    }
+
+    return mods
+  }
+
+  /**
+   * Fold every non-lib modifier into the lib input for one cast (#923).
+   *
+   * Two independent pieces, both of which the legacy `DCCItem.rollSpellCheck`
+   * term list carried and the adapter dropped:
+   *
+   *   - A FLAT total that REPLACES the lib's auto-additive level + ability —
+   *     the roll modifier dialog's total when a dialog ran, otherwise the
+   *     spell's (or the class's) authored spell-check bonus. Applied as the
+   *     net against `libAutoTotal` so the rolled total matches the legacy
+   *     "trust this total" contract without double-counting.
+   *   - The per-spell ADDITIVE modifiers (armor check penalty, `otherBonus`),
+   *     skipped when a dialog ran because its total already carries them.
+   *
+   * `libAutoTotal` differs per terminal — `castSpell` takes level + ability off
+   * the input, `calculateSpellCheck` off the character — so the caller supplies
+   * it rather than this reaching for either shape.
+   * @private
+   */
+  _applySpellCheckModifiers (input, spellItem, options, libAutoTotal) {
+    const mods = []
+
+    const flatTotal = typeof options.dialogModifierTotal === 'number'
+      ? options.dialogModifierTotal
+      : this._authoredSpellCheckTotal(spellItem)
+    if (typeof flatTotal === 'number' && flatTotal !== libAutoTotal) {
+      mods.push({
+        source: 'dialog-modifier',
+        value: flatTotal - libAutoTotal,
+        label: game.i18n.localize('DCC.RollModifierTitle')
+      })
+    }
+
+    if (typeof options.dialogModifierTotal !== 'number') {
+      mods.push(...this._spellItemModifiers(spellItem))
+    }
+
+    if (mods.length) {
+      input.situationalModifiers = [...(input.situationalModifiers ?? []), ...mods]
+    }
+  }
+
+  /**
+   * The spell item's own authored spell-check bonus — the flat total that
+   * REPLACES the caster's level + ability modifier, rather than adding to it.
+   *
+   * A spell opts into this with `config.inheritSpellCheck: false`, which is
+   * exactly the shape `DCCItem.castSpell` builds for a magic item casting at
+   * its own fixed spell check. The lib computes level + ability from the
+   * character and never reads the item, so without this a wand rolled the
+   * caster's own bonus (#923).
+   *
+   * Returns `null` when the spell inherits (the overwhelmingly common case),
+   * leaving the lib's own arithmetic untouched.
+   *
+   * @returns {number|null}
+   * @private
+   */
+  _authoredSpellCheckTotal (spellItem) {
+    // An item that opts out of inheriting keeps its own authored value
+    // regardless of the class; otherwise the actor's class-wide override (if
+    // any) is the whole bonus. `_castNakedViaAdapter` already applied the
+    // latter rule — the item-bound terminals did not, so a cleric with an
+    // override rolled their raw natural (#874's spec caught it).
+    const raw = spellItem?.system?.config?.inheritSpellCheck === false
+      ? spellItem?.system?.spellCheck?.value
+      : this.system.class?.spellCheckOverride
+    if (raw === undefined || raw === null || raw === '') return null
+    const text = String(raw)
+    // `@`-substituted formulas are consolidated the way the dialog does it;
+    // an unparseable one falls back to a plain integer read.
+    if (text.includes('@')) {
+      try {
+        return Number(Roll.safeEval(text)) || 0
+      } catch {
+        return parseInt(text) || 0
+      }
+    }
+    return parseInt(text) || 0
+  }
+
+  _annotateSpellCheckRoll (foundryRoll) {
+    if (foundryRoll?.dice?.length > 0) {
+      foundryRoll.dice[0].options.dcc = {
+        lowerThreshold: this.system.class?.disapproval
+      }
+    }
+  }
+
+  /**
+   * Record the check total on the spell item — the value the cleric spells tab
+   * renders beside each spell. Carried over from `processSpellCheck` when the
+   * character sheet's cast button moved onto this dispatcher (#923).
+   *
+   * Called AFTER the card renders, matching the legacy ordering: a critical
+   * adds the caster level to the roll during the result-table lookup, and the
+   * recorded total has to include that bump.
+   *
+   * Fire-and-forget with a catch — `DCCItem.castSpell` rolls an ephemeral,
+   * unowned copy of a magic item's attached spell, and a rejected update there
+   * must not take the cast down with it. Skill items update their own
+   * `lastResult` on the skill path, so they are skipped exactly as the legacy
+   * path skipped them.
+   * @private
+   */
+  _recordSpellLastResult (spellItem, foundryRoll) {
+    if (!spellItem?.id || spellItem.type === 'skill') return
+    Promise.resolve(spellItem.update({ 'system.lastResult': foundryRoll.total })).catch((err) => {
+      console.error('[DCC adapter] lastResult update rejected', { spell: spellItem?.name, err })
+    })
+  }
+
   _buildSpellCheckFlavor (spellItem, options, profile) {
     const abilityId = options.abilityId || profile?.spellCheckAbility
     const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined

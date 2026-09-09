@@ -1639,6 +1639,129 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { mode: 'naked' })
     })
 
+    // ── #923: the character sheet's cast button ─────────────────────
+    //
+    // The sheet used to call `item.rollSpellCheck(ability, options)`
+    // (`actor-sheet.js:879`), a second implementation of the whole cast that
+    // bypassed the dispatcher entirely — the single most common cast in the
+    // game was the one path the adapter never saw. These two pin the new
+    // routing AND the thing that made it safe: the drawn results-table row,
+    // which the adapter did not render at all before this change.
+    test('the sheet cast button routes an owned spell through the adapter (#923)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P923 Sheet Caster',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard', spellCheckAbility: 'int' },
+            details: { level: { value: 1 } }
+          }
+        })
+        await RollTable.create({
+          name: 'P923 Results',
+          formula: '1d20',
+          results: [
+            { type: CONST.TABLE_RESULT_TYPES.TEXT, range: [1, 11], description: 'p923 failure row', weight: 1 },
+            { type: CONST.TABLE_RESULT_TYPES.TEXT, range: [12, 40], description: 'p923 success row', weight: 1 }
+          ]
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P923-Sheet-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            results: { table: 'P923 Results', collection: '' },
+            lost: false
+          }
+        }])
+        actor.sheet.render(true)
+      })
+      await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
+      await page.waitForTimeout(2500)
+
+      await page.evaluate(() => {
+        window.__p923Before = new Set(game.messages.contents.map(m => m.id))
+      })
+      await page.evaluate(() => {
+        const app = [...foundry.applications.instances.values()]
+          .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
+        app?.changeTab?.('clericSpells', 'sheet')
+      })
+      await page.waitForTimeout(1000)
+
+      // A plain click on the sheet's cast button — no modifier dialog.
+      await page.evaluate(() => {
+        document.querySelector('.dcc.actor.sheet [data-action="rollSpellCheck"].spell-item-button').click()
+      })
+
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P923-Sheet-Spell', mode: 'wizard' })
+
+      // The card carries the drawn row. Before #923 the adapter emitted a bare
+      // roll with no spell effect text at all, which is exactly why routing
+      // the sheet here would have been a regression. Only messages created
+      // after the click count — earlier specs leave spell cards behind.
+      const content = await page.evaluate(async () => {
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse()
+            .find(m => !window.__p923Before.has(m.id) && m.getFlag('dcc', 'SpellCheck'))
+          if (msg) return msg.content
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return ''
+      })
+      expect(content).toMatch(/p923 (failure|success) row/)
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P923 Sheet Caster')?.delete()
+        await game.tables.getName('P923 Results')?.delete()
+      })
+    })
+
+    test('the sheet cast records the total on the spell for the spells tab (#923)', async ({ page }) => {
+      // `processSpellCheck` wrote `system.lastResult` on every cast and the
+      // cleric spells tab renders it beside each spell. The adapter never did;
+      // without carrying it over, routing the sheet here would have silently
+      // frozen that display.
+      const lastResult = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P923 LastResult Caster',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard', spellCheckAbility: 'int' },
+            details: { sheetClass: 'Wizard' }
+          }
+        })
+        const [spell] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'P923-LastResult-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            results: { table: '', collection: '' },
+            lost: false
+          }
+        }])
+        await spell.rollSpellCheck('int')
+
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          const value = actor.items.get(spell.id)?.system?.lastResult
+          if (value !== undefined && value !== '' && value !== '0') break
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        const value = actor.items.get(spell.id)?.system?.lastResult
+        await actor.delete()
+        return value
+      })
+
+      expect(Number(lastResult)).toBeGreaterThan(0)
+    })
+
     test('naked spell check honors options.checkLabel as the chat flavor (SPELL_CHECK_LABEL_OVERRIDE)', async ({ page }) => {
       // A raw (no-item) spell check can carry a label override so a
       // class/module relabels the chat flavor (e.g. MCC's "Mutation

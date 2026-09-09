@@ -1,14 +1,6 @@
-import { describe, beforeEach, afterEach, test, expect, vi } from 'vitest'
+import { describe, beforeEach, test, expect, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item.js'
-import { logSpellburn } from '../ability-score-log.js'
-
-// Spellburn application is exercised on its own in ability-score-log.test.js;
-// here we only assert what the item cast path hands it (#921)
-vi.mock('../ability-score-log.js', async (importOriginal) => ({
-  ...(await importOriginal()),
-  logSpellburn: vi.fn()
-}))
 
 // Mock the dice-chain module
 vi.mock('../dice-chain.js', () => ({
@@ -1180,355 +1172,58 @@ describe('DCCItem Tests', () => {
       spell.actor = actor
     })
 
-    test('should prevent casting lost spells when automation enabled', async () => {
-      spell.system.lost = true
+    // #923 — this method used to be a second, near-duplicate implementation of
+    // the whole cast (terms, roll, results-table lookup, `processSpellCheck`).
+    // It is now a forwarder onto the actor's dispatcher, so the behavior it
+    // used to own is asserted where it now lives:
+    //   - action-dice budget + die selection: actor-spell-action-dice.test.js
+    //   - spellburn term + apply: spellburn.test.js, adapter-spell-check.test.js
+    //   - results-table rendering: adapter-spell-check.test.js
+    // What is left here is the forwarding contract itself.
+    test('forwards the spell item and ability to the actor dispatcher', async () => {
+      actor.rollSpellCheck = vi.fn()
 
-      const result = await spell.rollSpellCheck('int')
+      await spell.rollSpellCheck('int', { showModifierDialog: true })
 
-      expect(global.ui.notifications.warn).toHaveBeenCalled()
-      expect(result).toBeUndefined()
+      expect(actor.rollSpellCheck).toHaveBeenCalledWith({
+        showModifierDialog: true,
+        spellItem: spell,
+        abilityId: 'int'
+      })
     })
 
-    test('should allow casting lost spells when automation disabled', async () => {
-      global.game.settings.get.mockReturnValue(false)
-      spell.system.lost = true
+    test('hands over the document, not the name — an unowned spell still casts', async () => {
+      // `DCCItem.castSpell` rolls an EPHEMERAL copy of a magic item's attached
+      // spell that the actor does not own, so a name lookup would miss it.
+      actor.rollSpellCheck = vi.fn()
 
       await spell.rollSpellCheck('int')
 
-      expect(global.game.dcc.DCCRoll.createRoll).toHaveBeenCalled()
+      expect(actor.rollSpellCheck.mock.calls[0][0].spellItem).toBe(spell)
+      expect(actor.rollSpellCheck.mock.calls[0][0].spell).toBeUndefined()
     })
 
-    test('should handle missing spell results table', async () => {
-      spell.system.results.table = ''
+    test('passes the dispatcher result straight back, including the cancel signal', async () => {
+      // `castSpell` keys off `false` to decline spending a charge for a cast
+      // that never happened (#867).
+      actor.rollSpellCheck = vi.fn().mockResolvedValue(false)
 
-      await spell.rollSpellCheck('int')
-
-      expect(global.ui.notifications.warn).toHaveBeenCalledWith('DCC.NoSpellResultsTableWarning')
+      expect(await spell.rollSpellCheck('int')).toBe(false)
     })
 
-    test('should handle spell casting for clerics without spellburn', async () => {
-      spell.system.config.castingMode = 'cleric'
-      actor.type = 'Player'
-      actor.system.class.spellCheckAbility = 'per'
+    test('does nothing for a non-spell item', async () => {
+      actor.rollSpellCheck = vi.fn()
+      spell.type = 'weapon'
 
-      await spell.rollSpellCheck('per')
-
-      expect(global.game.dcc.DCCRoll.createRoll).toHaveBeenCalled()
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-      expect(spellburnTerm).toBeUndefined()
+      expect(await spell.rollSpellCheck('int')).toBeUndefined()
+      expect(actor.rollSpellCheck).not.toHaveBeenCalled()
     })
 
-    test('should handle spell casting with stamina ability', async () => {
-      actor.type = 'Player'
-      actor.system.class.spellCheckAbility = 'sta'
+    test('does nothing for a spell with no actor', async () => {
+      spell.actor = null
+      spell.parent = null
 
-      await spell.rollSpellCheck('sta')
-
-      expect(global.game.dcc.DCCRoll.createRoll).toHaveBeenCalled()
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      // Should have the standard spell check terms
-      const dieTerm = terms.find(term => term.type === 'Die')
-      expect(dieTerm).toBeDefined()
-      // Should have spell check compound term (combines level + ability mod)
-      const spellCheckTerm = terms.find(term => term.type === 'Compound')
-      expect(spellCheckTerm).toBeDefined()
-      // Should include spellburn for wizard-style casting
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-      expect(spellburnTerm).toBeDefined()
-    })
-
-    test('should include spellburn for wizard spells', async () => {
-      await spell.rollSpellCheck('int')
-
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-      expect(spellburnTerm).toBeDefined()
-      expect(spellburnTerm.str).toBe(14)
-      expect(spellburnTerm.agl).toBe(12)
-      expect(spellburnTerm.sta).toBe(13)
-    })
-
-    // #921 — this is the path the character sheet's cast button uses, and it
-    // builds its own Spellburn term. Without `level` the roll modifier dialog
-    // suppresses the "also adjust hit points" row entirely (that is the gate
-    // that keeps the checkbox away from modules with their own apply
-    // callback), so the sheet cast silently lost the feature.
-    test('spellburn term carries the caster level so the HP row is offered (#921)', async () => {
-      spell.actor.system.details = { level: { value: 4 } }
-      await spell.rollSpellCheck('int')
-
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-      expect(spellburnTerm.level).toBe(4)
-    })
-
-    test('a caster with no level recorded still offers the row, floored at 1 (#921)', async () => {
-      await spell.rollSpellCheck('int')
-
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-      // 0 is a number, so the dialog's `hpAdjustable` gate still passes -
-      // only an absent `level` suppresses the row
-      expect(spellburnTerm.level).toBe(0)
-    })
-
-    test('the callback forwards the HP checkbox to logSpellburn (#921)', async () => {
-      await spell.rollSpellCheck('int')
-
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-
-      logSpellburn.mockClear()
-      spellburnTerm.callback('+2', { str: 14, agl: 12, sta: 11, adjustHP: true })
-      expect(logSpellburn).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ sta: 11 }),
-        expect.anything(),
-        { adjustHP: true }
-      )
-
-      // Unticked in the dialog -> the burn still applies, hit points do not
-      logSpellburn.mockClear()
-      spellburnTerm.callback('+2', { str: 14, agl: 12, sta: 11, adjustHP: false })
-      expect(logSpellburn).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        { adjustHP: false }
-      )
-    })
-
-    // #923 — the sheet cast path builds its Spellburn term through the
-    // shared helper, so these two tests pin the wiring BETWEEN the layers:
-    // which source the burn is logged against, and whether the total
-    // survives the trip to the result payload. Both were mutation-testing
-    // survivors — the helper's own tests and the term-shape tests above
-    // both stayed green with the wiring severed.
-    test('the burn is logged against the spell being cast (#923)', async () => {
-      await spell.rollSpellCheck('int')
-
-      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-
-      logSpellburn.mockClear()
-      spellburnTerm.callback('+2', { str: 12, agl: 12, sta: 13, adjustHP: false })
-
-      // Without the spell name the ability score log entry (and its chat
-      // card) can't say what the points were spent on.
-      expect(logSpellburn).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        'magic missile',
-        expect.anything()
-      )
-    })
-
-    test('the points burned in the dialog reach the spell-check result payload (#923)', async () => {
-      // MCC glowburn IS spellburn, and its patron manifestation keys off the
-      // amount burned — so the total has to survive the trip from the dialog
-      // callback out through `processSpellCheck` to `dcc.afterSpellCheckResult`.
-      global.game.dcc.DCCRoll.createRoll = vi.fn((terms) => {
-        // Stand in for the player committing 3 points of Strength.
-        const spellburnTerm = terms.find(term => term.type === 'Spellburn')
-        spellburnTerm.callback('+3', { str: 11, agl: 12, sta: 13, adjustHP: false })
-        return { evaluate: vi.fn(), dice: [{ options: {}, faces: 20 }] }
-      })
-
-      await spell.rollSpellCheck('int')
-
-      expect(global.game.dcc.processSpellCheck).toHaveBeenCalledWith(
-        actor,
-        expect.objectContaining({ spellburn: 3 })
-      )
-    })
-
-    test('a cast with no burn reports 0 to the result payload (#923)', async () => {
-      await spell.rollSpellCheck('int')
-
-      expect(global.game.dcc.processSpellCheck).toHaveBeenCalledWith(
-        actor,
-        expect.objectContaining({ spellburn: 0 })
-      )
-    })
-
-    // Multiple action dice on the item-level cast path (#857). This is the
-    // entry point the character sheet uses for an owned spell, and it had no
-    // action-die integration at all: every cast rolled `spellCheck.die` (always
-    // the FIRST action die, via getSingleActionDie) and spent no slot, so a
-    // wizard's second spell in a round never dropped to its second action die.
-    describe('multiple action dice (#857)', () => {
-      let combatant
-
-      // A level-5 wizard: 1d20 (any) + a spells-only 1d14.
-      const wizardSlots = () => [
-        { slot: 0, die: 'd20', modifier: 0, use: 'any' },
-        { slot: 1, die: 'd14', modifier: 0, use: 'spell' }
-      ]
-
-      // `spent` is the stored per-round state; null ⇒ fresh round.
-      const enterCombat = (spent = null, { round = 3, list = wizardSlots() } = {}) => {
-        actor.id = 'wiz1'
-        combatant = {
-          actor: { id: 'wiz1', system: { attributes: { actionDice: { list } } }, isOwner: true },
-          isOwner: true,
-          getFlag: (scope, key) => (scope === 'dcc' && key === 'actionDice'
-            ? (spent ? { round, spent } : undefined)
-            : undefined),
-          setFlag: vi.fn(async () => {})
-        }
-        global.game.combat = { round, combatants: [combatant] }
-      }
-
-      const dieTerm = () => global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
-        .find(term => term.type === 'Die')
-
-      beforeEach(() => {
-        global.game.user = { isGM: true }
-        global.game.settings.get = vi.fn((module, key) => {
-          if (module !== 'dcc') return false
-          if (key === 'automateWizardSpellLoss') return true
-          // The multiple-action-dice master switch plus in-combat tracking.
-          if (key === 'multipleActionDice' || key === 'trackActionDiceInCombat') return true
-          return false
-        })
-      })
-
-      afterEach(() => {
-        delete global.game.combat
-        delete global.game.user
-      })
-
-      test("the round's first cast uses the spell's own die and spends slot 0", async () => {
-        enterCombat()
-
-        await spell.rollSpellCheck('int')
-
-        expect(dieTerm().formula).toBe('1d20')
-        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
-          round: 3,
-          spent: [true, false]
-        }))
-      })
-
-      test("the second cast drops to the wizard's spells-only second action die", async () => {
-        enterCombat([true, false])
-
-        await spell.rollSpellCheck('int')
-
-        // The bug: this rolled 1d20 again, because `spellCheck.die` only ever
-        // carries the first action die.
-        expect(dieTerm().formula).toBe('1d14')
-        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
-          round: 3,
-          spent: [true, true]
-        }))
-      })
-
-      test('the "Action N of M" line reaches the chat card', async () => {
-        enterCombat([true, false])
-
-        await spell.rollSpellCheck('int')
-
-        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
-        expect(spellData.actionDiceChatLine).toBe('DCC.ActionDiceChatLine formatted')
-      })
-
-      test('a third cast is over budget — no die is spent and the line says so', async () => {
-        enterCombat([true, true])
-
-        await spell.rollSpellCheck('int')
-
-        // Nothing left to spend, so the die falls back to the spell's own and
-        // the state is never rewritten; the card carries the over-budget line.
-        expect(dieTerm().formula).toBe('1d20')
-        expect(combatant.setFlag).not.toHaveBeenCalled()
-        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
-        expect(spellData.actionDiceChatLine).toBe('DCC.ActionDiceChatLineOverBudget formatted')
-      })
-
-      test('the modifier dialog is offered one preset per eligible slot', async () => {
-        enterCombat()
-
-        await spell.rollSpellCheck('int')
-
-        // Both slots are unspent and both take a spell, so both are offered —
-        // and no untrained 1d10 (that is an attack/skill concept).
-        expect(dieTerm().presets.map(p => p.formula)).toEqual(['1d20', '1d14'])
-      })
-
-      test('a die chosen in the dialog re-points the spend to that slot', async () => {
-        enterCombat()
-        // The player overrode the auto-picked 1d20 with slot 1's 1d14.
-        global.game.dcc.DCCRoll.createRoll = vi.fn(() => ({
-          evaluate: vi.fn(),
-          dice: [{ options: {}, faces: 14 }]
-        }))
-
-        await spell.rollSpellCheck('int')
-
-        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
-          spent: [false, true]
-        }))
-      })
-
-      test('off-path (setting disabled) the cast is unchanged and spends nothing', async () => {
-        enterCombat([true, false])
-        global.game.settings.get = vi.fn((module, key) =>
-          module === 'dcc' && key === 'automateWizardSpellLoss')
-
-        await spell.rollSpellCheck('int')
-
-        expect(dieTerm().formula).toBe('1d20')
-        expect(dieTerm().presets).toBeUndefined()
-        expect(combatant.setFlag).not.toHaveBeenCalled()
-        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
-        expect(spellData.actionDiceChatLine).toBe('')
-      })
-
-      test('a spell that opts out of inheritActionDie keeps its own die', async () => {
-        enterCombat([true, false])
-        spell.system.config.inheritActionDie = false
-        spell.system.spellCheck.die = '1d24'
-
-        await spell.rollSpellCheck('int')
-
-        // The authored die is a deliberate choice; the slot must not discard it.
-        expect(dieTerm().formula).toBe('1d24')
-        // The action is still taken, so the slot is still spent.
-        expect(combatant.setFlag).toHaveBeenCalledWith('dcc', 'actionDice', expect.objectContaining({
-          spent: [true, true]
-        }))
-      })
-
-      test('a class spellCheckOverrideDie survives the slot step-down', async () => {
-        enterCombat([true, false])
-        actor.system.class.spellCheckOverrideDie = '1d30'
-        spell.system.spellCheck.die = '1d30'
-
-        await spell.rollSpellCheck('int')
-
-        expect(dieTerm().formula).toBe('1d30')
-      })
-
-      test('a spell with no results table posts nothing, so it costs nothing', async () => {
-        enterCombat()
-        spell.system.results.table = ''
-
-        await spell.rollSpellCheck('int')
-
-        expect(global.ui.notifications.warn).toHaveBeenCalledWith('DCC.NoSpellResultsTableWarning')
-        expect(combatant.setFlag).not.toHaveBeenCalled()
-      })
-
-      test('out of combat there is no budget, so the cast is unchanged', async () => {
-        // Master setting on, but no active combat ⇒ planActionDie returns null.
-        await spell.rollSpellCheck('int')
-
-        expect(dieTerm().formula).toBe('1d20')
-        const spellData = global.game.dcc.processSpellCheck.mock.calls[0][1]
-        expect(spellData.actionDiceChatLine).toBe('')
-      })
+      expect(await spell.rollSpellCheck('int')).toBeUndefined()
     })
   })
 
