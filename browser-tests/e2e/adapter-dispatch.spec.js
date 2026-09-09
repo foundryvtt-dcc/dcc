@@ -1176,26 +1176,30 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.mercurial.description).toContain('(80)')
     })
 
-    test('failed wizard cast fires onSpellLost → spell item system.lost becomes true (Phase 7 session 29)', async ({ page }) => {
+    test('a failed wizard cast loses the spell when automation is on (Phase 7 session 29, #923)', async ({ page }) => {
       // PR #720 test-coverage gap: `onSpellLost` was tested as a direct
       // callback (adapter-spell-check.test.js) but never verified to fire
       // during a REAL adapter cast.
       //
-      // Forcing a deterministic spell-loss: the adapter builds no per-spell
-      // result table (`results: []`), so the lib uses its default tier ladder
-      // where total <= 1 → tier 'lost' (cast.js:130). We make the total <= 1
-      // for EVERY die outcome. `spellCheck.die` is a DiceField, so it must be
-      // a valid chain die (`1d1` would be coerced to the 1d20 default) — use
-      // `1d3` (natural 1-3). With INT 3 (modifier -3) and level 1 the
-      // wizard's spell-check total is natural + level + intMod = natural - 2
-      // ∈ {-1, 0, 1}, all <= 1 → tier 'lost'. (A natural 1 additionally forces
-      // a fumble with total → 1, cast.js:252 — still 'lost'.) `spellLost` →
-      // the adapter's `createSpellEvents.onSpellLost` runs
-      // `spellItem.update({ system.lost: true })`. (`createSpellEvents` wires
-      // only onSpellLost / disapproval / spellburn / patronTaint; with no
-      // patron and no spellburn, onSpellLost is the only handler that fires.)
-      // The update is fire-and-forget (the lib doesn't await it), so poll the
-      // item for the flag rather than reading it immediately.
+      // #923: spell loss is no longer the lib's `onSpellLost` bridge. DCC RAW
+      // is a THRESHOLD — a check under `10 + level * 2` fails, and a failed
+      // cast costs a wizard the spell — so `_applySpellFailureAutomation`
+      // applies it through `actor.loseSpell`, gated on
+      // `automateWizardSpellLoss` exactly as `processSpellCheck` was. The
+      // setting defaults to FALSE, so this test has to turn it on.
+      //
+      // Deterministic failure: `spellCheck.die` is a DiceField and must be a
+      // valid chain die (`1d1` coerces to 1d20), so use `1d3`. With INT 3
+      // (modifier -3) and level 1 the total is natural + level + intMod
+      // ∈ {-1, 0, 1} — under the level-1 threshold of 12 on every outcome.
+      // `loseSpell` marks the item and posts an emote; the write is
+      // fire-and-forget, so poll for the flag.
+      const priorLossSetting = await page.evaluate(async () => {
+        const prev = game.settings.get('dcc', 'automateWizardSpellLoss')
+        await game.settings.set('dcc', 'automateWizardSpellLoss', true)
+        return prev
+      })
+
       const result = await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 SpellLost Wizard',
@@ -1225,8 +1229,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         try {
           await actor.rollSpellCheck({ spell: 'P1-Lost-Spell' })
 
-          // onSpellLost → spellItem.update(...) is fire-and-forget (the lib
-          // doesn't await it), so poll the item for the flag up to ~3s.
+          // `loseSpell`'s item update is not awaited by the cast, so poll the
+          // item for the flag up to ~3s.
           for (let i = 0; i < 60; i++) {
             if (actor.items.getName('P1-Lost-Spell')?.system?.lost === true) { lostAfter = true; break }
             await new Promise(resolve => setTimeout(resolve, 50))
@@ -1239,13 +1243,15 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         return { lostBefore, lostAfter }
       })
 
-      // Confirm the cast routed through the adapter — onSpellLost lives in
-      // createSpellEvents (adapter), not the legacy actor.loseSpell path.
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-Lost-Spell', mode: 'wizard' })
 
+      await page.evaluate(async (prev) => {
+        await game.settings.set('dcc', 'automateWizardSpellLoss', prev)
+      }, priorLossSetting)
+
       expect(result.lostBefore).toBe(false)
-      expect(result.lostAfter, 'onSpellLost should flip the spell item system.lost to true after a failed wizard cast').toBe(true)
+      expect(result.lostAfter, 'a failed wizard cast should flip system.lost to true').toBe(true)
     })
 
     test('wizard-castingMode spell item on a patron-bound wizard → adapter (session 4)', async ({ page }) => {
@@ -2442,16 +2448,25 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       }
     })
 
-    test('wizard cast on a lost spell with automateWizardSpellLoss off → probe surfaces lib error, no mutations', async ({ page }) => {
-      // Reachable-from-Foundry error-path coverage for the pass-2
-      // probe. With `automateWizardSpellLoss` off the adapter's
-      // pre-check lets the cast continue into the lib; the lib's
-      // `buildSpellCastInput` then returns `{ error: 'Spell "X" is
-      // lost for the day' }` inside `calculateSpellCheck`. The probe
-      // pass catches this BEFORE `onSpellburnApplied` would have
-      // deducted the str/sta commitment — the whole point of the
-      // probe/commit split. ui.notifications.warn fires with the
-      // lib's error string, no chat posts, ability scores unchanged.
+    test('a manually-lost spell still casts with automateWizardSpellLoss off (#923)', async ({ page }) => {
+      // INVERTED by #923. This used to assert that the lib refused the cast:
+      // `buildSpellbookEntry` marked the entry lost unconditionally, so
+      // `calculateSpellCheck` returned `{ error: 'Spell "X" is lost for the
+      // day' }` and the probe pass surfaced it. Two problems with that as a
+      // contract, both invisible while only macros reached this path:
+      //
+      //   - the message is a RAW ENGLISH lib string shown to the user, an
+      //     i18n violation the system's own warning would never make;
+      //   - the sheets expose a MANUAL Lost checkbox, and with automation off
+      //     `processSpellCheck` cast the spell anyway. Refusing it took a
+      //     judgement call away from the GM who deliberately turned the
+      //     automation off.
+      //
+      // The lib entry's `lost` flag is now gated on the setting, so with
+      // automation off the cast proceeds normally and the spellburn commits.
+      // (The probe/commit split still has forced-error coverage in
+      // adapter-spell-check.test.js, which mocks `calculateSpellCheck` into
+      // the error path directly.)
       const priorSetting = await page.evaluate(async () => {
         const prev = game.settings.get('dcc', 'automateWizardSpellLoss')
         await game.settings.set('dcc', 'automateWizardSpellLoss', false)
@@ -2497,17 +2512,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           })
         })
 
-        // Allow any async side effects to settle — we WANT to confirm
-        // none actually fire, so give them time to misbehave if the
-        // probe/commit split regresses.
         await page.waitForTimeout(300)
 
-        // No spell-check chat posted (probe returned error before
-        // renderSpellCheck ran).
+        // The cast went ahead: a spell-check card posted.
         const after = await page.evaluate(() => game.messages.size)
-        expect(after).toBe(before)
+        expect(after).toBeGreaterThan(before)
 
-        // Ability scores unchanged — onSpellburnApplied never fired.
+        // ...and the spellburn commitment was actually paid (str 14 -> 12,
+        // sta 13 -> 12), which the old refusal path skipped entirely.
         const { str, agl, sta } = await page.evaluate(() => {
           const actor = game.actors.getName('P1 Spell LostProbe')
           return {
@@ -2516,9 +2528,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
             sta: actor.system.abilities.sta.value
           }
         })
-        expect(str).toBe(14)
+        expect(str).toBe(12)
         expect(agl).toBe(12)
-        expect(sta).toBe(13)
+        expect(sta).toBe(12)
       } finally {
         await page.evaluate(async (prev) => {
           await game.settings.set('dcc', 'automateWizardSpellLoss', prev)
