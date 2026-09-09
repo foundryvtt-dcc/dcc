@@ -16,6 +16,7 @@
   "DCC.RequestRollText": "Der Spielleiter bittet {actor} um einen Wurf:",
   "DCC.RequestRollTextMultiple": "Der Spielleiter bittet diese Charaktere um einen Wurf:",
   "DCC.RequestRollTitle": "Wurf anfordern",
+  "DCC.RollModifierDialogFailed": "Der Wurfmodifikator-Dialog konnte nicht geöffnet werden – Details in der Konsole.",
   "TYPES.Actor.Party": "Party",
   "TYPES.Actor.Player": "SC",
   "TYPES.Actor.NPC": "NSC",

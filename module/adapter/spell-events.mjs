@@ -71,6 +71,12 @@ export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false
      * instead of silently creating a chat-vs-item divergence.
      */
     events.onSpellLost = (_result) => {
+      // Legacy parity: `processSpellCheck` gated spell loss on this setting,
+      // which defaults to FALSE. The bridge consulted nothing, so once the
+      // character sheet's cast button routed through the adapter (#923) every
+      // default-configured world silently gained spell-loss automation.
+      if (!game.settings?.get?.('dcc', 'automateWizardSpellLoss')) return
+
       Promise.resolve(spellItem.update({ 'system.lost': true })).catch((err) => {
         console.error('[DCC adapter] onSpellLost: spellItem.update rejected', { spell: spellItem?.name, err })
       })
@@ -94,6 +100,9 @@ export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false
       // Mirror legacy `applyDisapproval` (`actor.js:2789`) — NPC
       // actors bail before updating or posting chat.
       if (actor.isNPC) return
+      // Same setting gate as spell loss above (#923): `processSpellCheck`
+      // required `automateClericDisapproval`, which defaults to FALSE.
+      if (!game.settings?.get?.('dcc', 'automateClericDisapproval')) return
 
       Promise.resolve(actor.update({ 'system.class.disapproval': newRange })).catch((err) => {
         console.error('[DCC adapter] onDisapprovalIncreased: actor.update rejected', { actor: actor?.name, newRange, err })

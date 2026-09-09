@@ -792,6 +792,26 @@ export const RollsSpellMixin = (Base) => class extends Base {
       }
     }
 
+    // `syntheticGenericProfile` sets `canSpellburn: false`, and the lib gates
+    // its own burn modifier on that flag (`cast.js:50`) — so without this the
+    // player pays the ability cost (and the #921 Stamina hit point cost) for
+    // no change to the roll at all. The legacy term list put the burn straight
+    // into the Foundry formula, and the dialog offers the term for every
+    // non-cleric casting mode, so the bonus has to land here (#923).
+    if (input.spellburn && !input.casterProfile?.canSpellburn) {
+      const burnTotal = sumSpellburn(input.spellburn)
+      if (burnTotal > 0) {
+        input.situationalModifiers = [
+          ...(input.situationalModifiers ?? []),
+          {
+            source: 'spellburn',
+            value: burnTotal,
+            label: game.i18n.localize('DCC.RollModifierSpellburnTerm')
+          }
+        ]
+      }
+    }
+
     const plan = libCastSpell(input, { mode: 'formula' })
 
     const foundryRoll = new Roll(plan.formula)
@@ -844,6 +864,9 @@ export const RollsSpellMixin = (Base) => class extends Base {
       spellItem,
       tableResult,
       castingMode: 'generic',
+      // `DCCItem.castSpell` sets this for every magic-item cast; omitting it
+      // reported `false` to listeners that key off it (#923).
+      suppressPatronTaint: !!options.suppressPatronTaint,
       spellburn: sumSpellburn(input.spellburn)
     })
 
@@ -1110,7 +1133,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // doesn't await the callback). So the emote's landing position
     // relative to these two messages is not deterministic; treat it as
     // "around the same time," not strictly last.
-    if (result.disapprovalResult) {
+    // Gated like the range bump in `spell-events.mjs`: legacy
+    // `processSpellCheck` drew the disapproval table only when
+    // `automateClericDisapproval` was on, and it defaults to FALSE (#923).
+    if (result.disapprovalResult && game.settings.get('dcc', 'automateClericDisapproval')) {
       await renderDisapprovalRoll({
         actor: this,
         disapprovalResult: result.disapprovalResult
@@ -1284,27 +1310,55 @@ export const RollsSpellMixin = (Base) => class extends Base {
   }
 
   /**
-   * Build the chat flavor line shared by both adapter branches.
+   * Evaluate an authored bonus string to a number.
+   *
+   * These fields are authored formulas, not integers: `system.class.spellCheck`
+   * is built by string concatenation (`derived-stats-mixin.mjs`), so `'+1+2+1'`
+   * is a real shape that `parseInt` truncates to 1; and any of them may carry
+   * `@`-data (`'@details.level.value + 3'`). The legacy path handed the whole
+   * string to `DCCRoll` and let it evaluate, so both worked.
+   *
+   * `Roll.safeEval` evaluates arithmetic but does NOT substitute `@`-data —
+   * that is `replaceFormulaData` — so substitution comes first. Returns `null`
+   * rather than 0 when the string cannot be resolved: a 0 here is subtracted
+   * against the lib's auto-additive level + ability and would cancel the
+   * caster's whole bonus, which is #874's failure mode all over again.
+   *
+   * @param {*} raw
+   * @returns {number|null}
    * @private
    */
-  /**
-   * Side effects the legacy `processSpellCheck` applied to every cast, carried
-   * over when the character sheet's cast button moved onto this dispatcher
-   * (#923). Both are invisible to a roll-only assertion and both are visible
-   * to a player:
-   *
-   *   - the die carries the caster's disapproval range as `lowerThreshold`, so
-   *     `chat.js` paints a natural inside that range red on the card;
-   *   - the spell item records the check total, which the cleric spells tab
-   *     shows beside each spell.
-   *
-   * The item write is fire-and-forget with a catch: `DCCItem.castSpell` rolls
-   * an ephemeral, unowned copy of a magic item's attached spell, and a
-   * rejected update there must not take the cast down with it. Skill items
-   * update their own `lastResult` on the skill path, so they are skipped here
-   * exactly as the legacy path skipped them.
-   * @private
-   */
+  _evaluateBonusString (raw) {
+    if (raw === undefined || raw === null || raw === '') return null
+    let expression = String(raw).trim()
+    if (expression === '') return null
+
+    if (expression.includes('@')) {
+      try {
+        expression = Roll.replaceFormulaData(expression, this.getRollData(), { missing: '0' })
+      } catch {
+        return null
+      }
+    }
+
+    // These are additive chains (`'+1+2+1'`, `'-2'`, `'5 + 3'`), so sum the
+    // signed terms directly rather than leaning on `Roll.safeEval` — this is
+    // arithmetic the system can do itself, and doing so keeps the result
+    // independent of Foundry's evaluator being available.
+    const terms = expression.match(/[+-]?\s*\d+(?:\.\d+)?/g)
+    if (terms && expression.replace(/[+-]?\s*\d+(?:\.\d+)?/g, '').trim() === '') {
+      return terms.reduce((sum, term) => sum + Number(term.replace(/\s+/g, '')), 0)
+    }
+
+    // Anything else (parentheses, multiplication) goes to Foundry's evaluator.
+    try {
+      const value = Number(Roll.safeEval(expression))
+      return Number.isFinite(value) ? value : null
+    } catch {
+      return null
+    }
+  }
+
   /**
    * The per-spell modifiers the legacy `DCCItem.rollSpellCheck` term list
    * carried into every cast, folded into the lib input for casts that never
@@ -1328,9 +1382,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // on a wizard-castingMode cast. Idol magic doesn't pay it in any form and
     // a generic cast (a wand) doesn't either.
     if (spellItem.system?.config?.castingMode === 'wizard') {
-      const penalty = spellItem.system?.config?.inheritCheckPenalty
-        ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
-        : parseInt(spellItem.system?.spellCheck?.penalty || '0')
+      const penalty = this._evaluateBonusString(
+        spellItem.system?.config?.inheritCheckPenalty
+          ? this.system.attributes?.ac?.checkPenalty
+          : spellItem.system?.spellCheck?.penalty
+      )
       if (penalty) {
         mods.push({
           source: 'check-penalty',
@@ -1340,13 +1396,30 @@ export const RollsSpellMixin = (Base) => class extends Base {
       }
     }
 
-    const otherBonus = parseInt(spellItem.system?.spellCheck?.otherBonus || '0')
+    const otherBonus = this._evaluateBonusString(spellItem.system?.spellCheck?.otherBonus)
     if (otherBonus) {
       mods.push({
         source: 'spell-other-bonus',
         value: otherBonus,
         label: game.i18n.localize('DCC.SpellOtherBonus')
       })
+    }
+
+    // `system.class.spellCheckOtherMod` is folded into `class.spellCheck` by
+    // `derived-stats-mixin.mjs` and so rides the dialog's Compound term — but
+    // the lib contributes only level + ability, so a no-dialog cast dropped it
+    // entirely. `_castNakedViaAdapter` already handled it; the item terminals
+    // did not (#923). Skipped when an authored total already replaces the
+    // whole bonus, which by construction includes this.
+    if (this._authoredSpellCheckTotal(spellItem) === null) {
+      const otherMod = this._evaluateBonusString(this.system.class?.spellCheckOtherMod)
+      if (otherMod) {
+        mods.push({
+          source: 'spell-check-other-mod',
+          value: otherMod,
+          label: game.i18n.localize('DCC.SpellCheckOtherMod')
+        })
+      }
     }
 
     return mods
@@ -1424,18 +1497,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     const raw = spellItem?.system?.config?.inheritSpellCheck === false
       ? spellItem?.system?.spellCheck?.value
       : this.system.class?.spellCheckOverride
-    if (raw === undefined || raw === null || raw === '') return null
-    const text = String(raw)
-    // `@`-substituted formulas are consolidated the way the dialog does it;
-    // an unparseable one falls back to a plain integer read.
-    if (text.includes('@')) {
-      try {
-        return Number(Roll.safeEval(text)) || 0
-      } catch {
-        return parseInt(text) || 0
-      }
-    }
-    return parseInt(text) || 0
+    return this._evaluateBonusString(raw)
   }
 
   _annotateSpellCheckRoll (foundryRoll) {

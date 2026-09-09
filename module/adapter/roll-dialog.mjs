@@ -1,4 +1,4 @@
-/* global foundry, game */
+/* global console, foundry, game, ui */
 
 import { isRollCancellation } from '../roll-cancellation.mjs'
 import { spellburnTermFromDescriptor } from '../spellburn.mjs'
@@ -123,10 +123,13 @@ export async function promptRollModifierDialog (terms, options = {}) {
       rollLabel: options.rollLabel
     })
   } catch (err) {
-    // A cancel is the expected way out of the dialog (issue #867) — only
-    // an actual failure is worth a console warning.
+    // A cancel is the expected way out of the dialog (issue #867). Anything
+    // else is a real failure, and callers map `null` onto the cancel signal —
+    // `DCCItem.castSpell` reads it as "no cast, keep the charge" — so a broken
+    // dialog would otherwise be a click that silently does nothing at all.
     if (!isRollCancellation(err)) {
-      console.warn('[DCC adapter] promptRollModifierDialog: dialog threw', { err })
+      console.error('[DCC adapter] promptRollModifierDialog: dialog threw', { err })
+      ui.notifications?.error?.(game.i18n.localize('DCC.RollModifierDialogFailed'))
     }
     return null
   }

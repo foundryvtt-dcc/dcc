@@ -31,6 +31,21 @@ global.rollRenderMock = vi.fn((formula) => {
 global.rollSafeEvalMock = vi.fn((expression) => {
   return expression
 }).mockName('safeEval')
+
+/**
+ * `Roll.replaceFormulaData` — substitutes `@a.b.c` references from the roll
+ * data. Distinct from `safeEval`, which only evaluates arithmetic and leaves
+ * `@`-references alone (a distinction the system relies on).
+ */
+global.rollReplaceFormulaDataMock = vi.fn((formula, data = {}, { missing } = {}) => {
+  return String(formula).replace(/@([\w.]+)/g, (match, path) => {
+    const value = path.split('.').reduce((node, key) => (node == null ? undefined : node[key]), data)
+    if (value === undefined || value === null) {
+      return missing === undefined ? match : missing
+    }
+    return String(value)
+  })
+}).mockName('replaceFormulaData')
 global.rollValidateMock = vi.fn((formula) => {
   return true
 }).mockName('validate')
@@ -45,6 +60,7 @@ class RollMock {
   render = global.rollRenderMock
   roll = global.rollEvaluateMock
   static safeEval = global.rollSafeEvalMock
+  static replaceFormulaData = global.rollReplaceFormulaDataMock
 
   static validate () {
     return true

@@ -16,6 +16,7 @@
   "DCC.RequestRollText": "Il Giudice chiede a {actor} di effettuare un tiro:",
   "DCC.RequestRollTextMultiple": "Il Giudice chiede a questi personaggi di effettuare un tiro:",
   "DCC.RequestRollTitle": "Richiedi un tiro",
+  "DCC.RollModifierDialogFailed": "Impossibile aprire la finestra dei modificatori di tiro — vedi la console per i dettagli.",
   "TYPES.Actor.Party": "Party",
   "TYPES.Actor.Player": "Giocatore",
   "TYPES.Actor.NPC": "PNG",

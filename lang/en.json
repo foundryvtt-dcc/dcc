@@ -1,5 +1,6 @@
 {
   "ACTOR.TypeNPC": "NPC",
+  "DCC.RollModifierDialogFailed": "Could not open the roll modifier dialog — see the console for details.",
   "TYPES.Actor.Party": "Party",
   "TYPES.Actor.Player": "Player",
   "TYPES.Actor.NPC": "NPC",

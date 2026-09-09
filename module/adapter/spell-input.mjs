@@ -1,4 +1,4 @@
-/* global CONFIG, game */
+/* global CONFIG, console, game */
 
 /**
  * Foundry → dcc-core-lib spell input builders.
@@ -717,8 +717,15 @@ export async function loadSpellResultsTable (spellItem) {
     // Fall through to the world tables instead.
     const entry = pack?.index?.find(predicate)
     if (entry) {
-      const doc = await pack.getDocument(entry._id)
-      if (doc) return doc
+      try {
+        const doc = await pack.getDocument(entry._id)
+        if (doc) return doc
+      } catch (err) {
+        // Matches the other three loaders in this file: a corrupted entry or a
+        // permission / socket failure falls through to the world tables rather
+        // than throwing out of a cast whose dice are already rolled.
+        console.warn('DCC | Spell results table fetch failed; falling back to world tables', { table: resultsRef.table, err })
+      }
     }
   }
 
