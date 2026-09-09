@@ -677,3 +677,50 @@ export async function loadPatronTaintTable (actor) {
 
   return null
 }
+
+/**
+ * Resolve a spell item's configured results table — the RollTable whose row
+ * is the spell's actual effect.
+ *
+ * Mirrors the lookup `DCCItem.rollSpellCheck` performs (`module/item/spell-mixin.mjs`):
+ * an explicit compendium named by `system.results.collection` wins, falling
+ * back to the world tables, matching on either the table's name or the bare
+ * id from a `RollTable.<id>` reference.
+ *
+ * Returns the Foundry document, NOT a lib table: the adapter renders the row
+ * through `game.dcc.SpellResult.addChatMessage`, the same renderer the legacy
+ * path uses, so the card is identical whichever entry point cast the spell
+ * (#923). Feeding the table into the lib's `input.resultTable` instead would
+ * also change tier / spell-loss classification, which is a separate call.
+ *
+ * Deliberately unmemoized. The disapproval / mercurial / patron-taint loaders
+ * cache because they resolve one shared table per class; this resolves a
+ * different table per spell, and `getResultsForRoll` on an in-hand document
+ * is cheap.
+ *
+ * @param {Object} spellItem - The Foundry spell item being cast.
+ * @returns {Promise<Object|null>} The RollTable document, or null when the
+ *   spell configures no table or the configured one resolves nowhere (the
+ *   caller then renders the no-table card, matching legacy).
+ */
+export async function loadSpellResultsTable (spellItem) {
+  const resultsRef = spellItem?.system?.results
+  if (!resultsRef?.table) return null
+
+  const predicate = (t) =>
+    t.name === resultsRef.table || t._id === resultsRef.table.replace('RollTable.', '')
+
+  if (resultsRef.collection) {
+    const pack = game.packs?.get(resultsRef.collection)
+    // The legacy lookup dereferenced `entry._id` unguarded, so a spell
+    // pointing at a table its pack no longer carries threw out of the cast.
+    // Fall through to the world tables instead.
+    const entry = pack?.index?.find(predicate)
+    if (entry) {
+      const doc = await pack.getDocument(entry._id)
+      if (doc) return doc
+    }
+  }
+
+  return game.tables?.contents?.find(predicate) ?? null
+}

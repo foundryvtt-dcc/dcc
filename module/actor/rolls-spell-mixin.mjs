@@ -10,7 +10,7 @@ import {
 } from '../vendor/dcc-core-lib/index.js'
 import { applySpellburn, scoresFromBurnAmounts, spellburnDescriptor } from '../spellburn.mjs'
 import { renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from '../adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
@@ -757,7 +757,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
       flavor,
       result,
       foundryRoll,
-      actionDiceChatLine
+      actionDiceChatLine,
+      // The spell's own results table, so the card carries the drawn effect
+      // row rather than a bare roll (#923).
+      rollTable: await loadSpellResultsTable(spellItem)
     })
 
     // Post-result seam parity (see `processSpellCheck`). Generic-mode casts
@@ -1011,13 +1014,18 @@ export const RollsSpellMixin = (Base) => class extends Base {
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
     const actionDiceChatLine = await this._spendActionDiceLine(options, foundryRoll)
+    // The spell's own results table, so the card carries the drawn effect row
+    // rather than a bare roll (#923). Also decides where the mercurial effect
+    // is shown — see the mercurial block below.
+    const resultsTable = await loadSpellResultsTable(spellItem)
     await renderSpellCheck({
       actor: this,
       spellItem,
       flavor,
       result,
       foundryRoll,
-      actionDiceChatLine
+      actionDiceChatLine,
+      rollTable: resultsTable
     })
 
     // Post the disapproval roll chat after the main spell-check chat,
@@ -1045,7 +1053,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // awaitable through the lib. Legacy parity: the effect's
     // `displayOnCast` gate mirrors the item's `displayInChat` flag
     // (`DCCItem.rollSpellCheck:382`).
-    if (spellItem && result.mercurialEffect && result.mercurialEffect.displayOnCast !== false) {
+    // Skipped when the spell-result card rendered: `SpellResult.addChatMessage`
+    // reads `system.mercurialEffect` off the item and shows it inside that
+    // card (legacy parity), so posting here too would double it (#923).
+    if (!resultsTable && spellItem && result.mercurialEffect && result.mercurialEffect.displayOnCast !== false) {
       await renderMercurialEffect({
         actor: this,
         spellItem,

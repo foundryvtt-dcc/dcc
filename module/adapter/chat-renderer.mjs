@@ -1,4 +1,4 @@
-/* global ChatMessage, Roll, game */
+/* global ChatMessage, Roll, foundry, game */
 
 /**
  * Renders dcc-core-lib result objects into Foundry ChatMessages.
@@ -595,6 +595,10 @@ export async function renderSkillCheck ({
  *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
  *   not in combat) ⇒ byte-identical content; when present it rides under
  *   the rolled formula + breakdown + naked-cast verdict.
+ * @param {Object} [params.rollTable] - The spell's results RollTable, when it
+ *   configures one (`loadSpellResultsTable`). Present ⇒ the card is the full
+ *   spell-result card carrying the drawn row; absent ⇒ the bare roll plus the
+ *   naked-cast verdict, which is all this renderer used to emit (#923).
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSpellCheck ({
@@ -603,8 +607,19 @@ export async function renderSpellCheck ({
   flavor,
   result,
   foundryRoll,
-  actionDiceChatLine = ''
+  actionDiceChatLine = '',
+  rollTable = null
 }) {
+  // A spell with a results table renders through the same
+  // `SpellResult.addChatMessage` the legacy `processSpellCheck` path uses, so
+  // the card a player sees does not depend on which entry point cast the
+  // spell. Before #923 the adapter emitted a bare roll here and the spell's
+  // actual effect text never appeared — invisible while only macros reached
+  // this path, and a hard blocker on routing the sheet's cast button through
+  // the dispatcher.
+  if (rollTable) {
+    return renderSpellResultTable({ actor, spellItem, flavor, result, foundryRoll, rollTable, actionDiceChatLine })
+  }
   const flags = {
     'dcc.RollType': 'SpellCheck',
     'dcc.isSpellCheck': true,
@@ -665,6 +680,56 @@ export async function renderSpellCheck ({
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })
 
   return ChatMessage.create(messageData)
+}
+
+/**
+ * Render a spell check that has a results table, mirroring the row-lookup
+ * rules `processSpellCheck` applies (`module/spell-check-processor.mjs`):
+ *
+ *   - a fumble, or a cleric natural inside the disapproval range (#874),
+ *     draws row 1 regardless of the rolled total;
+ *   - a critical looks the row up at total + caster level, and the bump is
+ *     pushed onto the roll so the card shows the arithmetic it used;
+ *   - everything else draws on the rolled total.
+ *
+ * The crit/fumble/auto-fail flags come off the lib result rather than being
+ * re-derived here, so the row and the lib's own classification agree.
+ *
+ * Manifestation and mercurial effects are read off the item by
+ * `SpellResult.addChatMessage` itself and render inside this card — which is
+ * why the caller skips its separate mercurial chat message on this path.
+ * @private
+ */
+async function renderSpellResultTable ({ actor, spellItem, flavor, result, foundryRoll, rollTable, actionDiceChatLine }) {
+  const crit = !!result.critical
+  const fumble = !!result.fumble
+  const disapprovalFailure = !!result.disapprovalAutoFail
+
+  let drawn
+  if (fumble || disapprovalFailure) {
+    drawn = rollTable.getResultsForRoll(1)
+  } else if (crit) {
+    const level = parseInt(actor?.system?.details?.level?.value) || 0
+    drawn = rollTable.getResultsForRoll(foundryRoll.total + level)
+    foundryRoll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
+    foundryRoll.terms.push(new foundry.dice.terms.NumericTerm({ number: level }))
+    foundryRoll._formula += ` + ${level}`
+    foundryRoll._total += level
+  } else {
+    drawn = rollTable.getResultsForRoll(foundryRoll.total)
+  }
+
+  return game.dcc.SpellResult.addChatMessage(foundryRoll, rollTable, drawn, {
+    crit,
+    fumble,
+    disapprovalFailure,
+    item: spellItem,
+    actionDiceChatLine,
+    // `addChatMessage` defaults the speaker off `item.actor`; supply it
+    // explicitly so an unowned/ephemeral spell item (a magic item's attached
+    // spell — see `DCCItem.castSpell`) still speaks as the caster.
+    messageData: { flavor, speaker: ChatMessage.getSpeaker({ actor }) }
+  })
 }
 
 /**

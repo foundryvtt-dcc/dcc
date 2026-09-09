@@ -23,7 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
 import { clearAllTableCaches, disapprovalTableCache, mercurialMagicTableCache } from '../adapter/table-cache.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
@@ -2711,4 +2711,313 @@ test('loadMercurialMagicTable caches per resolved tableName — second call skip
 
   CONFIG.DCC.mercurialMagicTables = originalRegistry
   game.packs = originalGamePacks
+})
+
+// ---- #923 — the spell's results table renders on the adapter path ----
+//
+// The adapter's spell-check terminals rendered a bare roll: `buildSpellDefinition`
+// hardcodes `results: []` and nothing ever resolved `system.results.table`, so
+// `renderSpellCheck` emitted roll + modifier breakdown and no spell effect at
+// all. Only the legacy `DCCItem.rollSpellCheck` → `processSpellCheck` path drew
+// the row. That was invisible while the character sheet used the legacy path and
+// only macros (`macros.mjs:152`) reached the adapter — and it is a hard blocker
+// on routing the sheet's cast button through the dispatcher.
+//
+// These drive `actor.rollSpellCheck` (the adapter entry point) and assert the
+// row lands on the card through the same `SpellResult.addChatMessage` renderer
+// the legacy path uses, with the same fumble / crit lookup rules.
+
+/** Install a stub `game.dcc.SpellResult` and return the spy + a restore fn. */
+function installSpellResultSpy () {
+  const addChatMessage = vi.fn().mockResolvedValue(undefined)
+  const original = game.dcc.SpellResult
+  game.dcc.SpellResult = { addChatMessage }
+  return { addChatMessage, restore: () => { game.dcc.SpellResult = original } }
+}
+
+/** A world RollTable that records the totals it was asked to look up. */
+function makeResultsTable (name = 'Magic Missile') {
+  const lookups = []
+  return {
+    lookups,
+    table: {
+      id: 'results-table',
+      name,
+      description: '',
+      displayRoll: true,
+      getResultsForRoll: (total) => {
+        lookups.push(total)
+        return [{ text: `row for ${total}`, description: `row for ${total}` }]
+      }
+    }
+  }
+}
+
+/**
+ * Drive an adapter wizard cast against a world results table, forcing the
+ * natural roll so crit / fumble / ordinary outcomes are deterministic.
+ *
+ * The natural is what the lib classifies on (`natural === die faces` ⇒ crit,
+ * `=== 1` ⇒ fumble); `total` is what the row lookup uses. The Roll mock is
+ * subclassed rather than patched at the DiceTerm level — the mock has no
+ * DiceTerm — and `foundry.dice.terms` is stubbed for the crit branch's
+ * level-bump terms, matching `actor-skill-table-action-dice.test.js`.
+ */
+async function castWithResultsTable ({ natural = 10, total = 10, tableName = 'Magic Missile', level = 3 } = {}) {
+  const originalTables = game.tables
+  const { lookups, table } = makeResultsTable(tableName)
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+
+  const spellResult = installSpellResultSpy()
+
+  const OriginalRoll = globalThis.Roll
+  class ForcedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this._formula = typeof formula === 'string' ? formula : '1d20'
+      this.total = total
+      this._total = total
+      this.dice = [{ total: natural, results: [natural], options: {}, faces: 20 }]
+    }
+  }
+  ForcedRoll.safeEval = OriginalRoll.safeEval
+  ForcedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = ForcedRoll
+
+  const savedFoundry = globalThis.foundry
+  globalThis.foundry = {
+    ...savedFoundry,
+    dice: {
+      ...(savedFoundry?.dice || {}),
+      terms: {
+        OperatorTerm: class { constructor (o) { Object.assign(this, o) } },
+        NumericTerm: class { constructor (o) { Object.assign(this, o) } }
+      }
+    }
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = level
+
+  const spellItem = makeWizardSpellItem({ results: { table: tableName, collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  try {
+    await actor.rollSpellCheck({ spell: tableName })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    globalThis.foundry = savedFoundry
+  }
+
+  const call = spellResult.addChatMessage.mock.calls[0]
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+  return { call, lookups, addChatMessage: spellResult.addChatMessage, spellItem, actor }
+}
+
+test('#923 adapter renders the spell results table row through SpellResult', async () => {
+  rollToMessageMock.mockClear()
+  const { call, spellItem } = await castWithResultsTable({ natural: 10 })
+
+  expect(call).toBeDefined()
+  const [roll, rollTable, drawn, options] = call
+  expect(rollTable.name).toBe('Magic Missile')
+  expect(drawn[0].text).toContain('row for')
+  expect(options.item).toBe(spellItem)
+  expect(roll).toBeDefined()
+})
+
+test('#923 a fumble draws row 1 rather than the rolled total', async () => {
+  rollToMessageMock.mockClear()
+  // A high total with a natural 1: RAW says the fumble row wins.
+  const { call, lookups } = await castWithResultsTable({ natural: 1, total: 18 })
+
+  expect(lookups).toEqual([1])
+  expect(call[3].fumble).toBe(true)
+})
+
+test('#923 a crit adds the caster level to the lookup total and to the rolled formula', async () => {
+  rollToMessageMock.mockClear()
+  // Natural 20 on a d20 is a crit; the legacy path looks the row up at
+  // total + caster level and shows the bump on the card.
+  const { call, lookups } = await castWithResultsTable({ natural: 20, total: 24, level: 3 })
+
+  expect(call[3].crit).toBe(true)
+  expect(lookups).toEqual([27])
+  const roll = call[0]
+  expect(roll._total).toBe(27)
+  expect(roll._formula).toContain('+ 3')
+})
+
+test('#923 a spell with no configured results table still renders the plain roll', async () => {
+  rollToMessageMock.mockClear()
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+})
+
+test('#923 a configured table that resolves nowhere falls back to the plain roll', async () => {
+  rollToMessageMock.mockClear()
+  const originalTables = game.tables
+  game.tables = { contents: [], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ results: { table: 'Missing Table', collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Matches the legacy path: a name that resolves to nothing renders the
+  // no-table card rather than throwing or posting nothing.
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable prefers the configured compendium over world tables', async () => {
+  const originalPacks = game.packs
+  const originalTables = game.tables
+  const packTable = { id: 'pack-t', name: 'Magic Missile' }
+  game.packs = {
+    get: vi.fn().mockReturnValue({
+      index: [{ _id: 'pack-t', name: 'Magic Missile' }],
+      getDocument: vi.fn().mockResolvedValue(packTable)
+    })
+  }
+  game.tables = { contents: [{ id: 'world-t', name: 'Magic Missile' }] }
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: 'dcc-core-book.spells' }
+  })
+  expect(await loadSpellResultsTable(spellItem)).toBe(packTable)
+
+  game.packs = originalPacks
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable falls back to the world when the pack has no match', async () => {
+  const originalPacks = game.packs
+  const originalTables = game.tables
+  const worldTable = { id: 'world-t', name: 'Magic Missile' }
+  // A pack that is configured but doesn't carry the entry: the legacy
+  // lookup dereferenced `entry._id` unguarded and threw here.
+  game.packs = { get: vi.fn().mockReturnValue({ index: [], getDocument: vi.fn() }) }
+  game.tables = { contents: [worldTable] }
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: 'dcc-core-book.spells' }
+  })
+  expect(await loadSpellResultsTable(spellItem)).toBe(worldTable)
+
+  game.packs = originalPacks
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable returns null when no table is configured', async () => {
+  expect(await loadSpellResultsTable(makeWizardSpellItem())).toBeNull()
+  expect(await loadSpellResultsTable(null)).toBeNull()
+})
+
+test('#923 a spell with a results table shows its mercurial effect once, inside the card', async () => {
+  // `SpellResult.addChatMessage` reads `system.mercurialEffect` off the item
+  // and renders it inside the spell-result card (legacy parity), so the
+  // adapter's separate `renderMercurialEffect` message has to stand down or
+  // the player sees the effect twice.
+  rollToMessageMock.mockClear()
+  const originalTables = game.tables
+  const { table } = makeResultsTable('Magic Missile')
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: '' },
+    mercurialEffect: {
+      value: 42,
+      summary: 'Blue aura',
+      description: 'The spell is surrounded by a shimmering blue aura.',
+      displayInChat: true
+    }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).toHaveBeenCalledTimes(1)
+  const mercurialMessages = rollToMessageMock.mock.calls.filter(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialMessages).toHaveLength(0)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 a spell with no results table still posts its mercurial effect separately', async () => {
+  // The no-table card has nowhere to carry the effect, so the standalone
+  // message stays — this is the behavior the guard must not break.
+  rollToMessageMock.mockClear()
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    mercurialEffect: {
+      value: 42,
+      summary: 'Blue aura',
+      description: 'The spell is surrounded by a shimmering blue aura.',
+      displayInChat: true
+    }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  const mercurialMessages = rollToMessageMock.mock.calls.filter(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialMessages).toHaveLength(1)
+
+  spellResult.restore()
+  findSpy.mockRestore()
 })
