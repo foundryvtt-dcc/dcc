@@ -171,10 +171,12 @@ test('already-lost wizard spell + automateWizardSpellLoss on → warn + early re
   uiNotificationsWarnMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
-  gameSettingsGetMock.mockImplementationOnce((module, key) => {
-    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
-    return undefined
-  })
+  // `mockImplementationOnce` only covered the FIRST settings read, which
+  // `planActionDie` consumes — so this used to pass on the LIB's refusal
+  // (a raw English "Spell X is lost for the day"), not the dispatcher's
+  // localized pre-check. Make the setting genuinely on (#923).
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateWizardSpellLoss')
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -188,10 +190,13 @@ test('already-lost wizard spell + automateWizardSpellLoss on → warn + early re
   await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  // The localized key, not the lib's English string.
+  expect(uiNotificationsWarnMock).toHaveBeenCalledWith(expect.stringContaining('SpellLostWarning'))
   // Neither the adapter nor the legacy path continued with the cast.
   expect(rollToMessageMock).not.toHaveBeenCalled()
   expect(itemSpy).not.toHaveBeenCalled()
 
+  gameSettingsGetMock.mockReset()
   itemSpy.mockRestore()
   findSpy.mockRestore()
 })
@@ -869,21 +874,14 @@ test('rollSkillCheck routes turnUnholy via adapter skill-table path (D4 skill-ta
   expect(rollToMessageMock).toHaveBeenCalled()
 })
 
-test('createSpellEvents onSpellLost bridges to spellItem.update({ system.lost: true })', () => {
-  // `automateWizardSpellLoss` defaults to FALSE, so the bridge only writes
-  // when a world has opted in (#923) — enable it for this behavior.
-  gameSettingsGetMock.mockImplementation((module, key) =>
-    module === 'dcc' && key === 'automateWizardSpellLoss')
-  const actor = {}
-  const spellItem = { update: vi.fn() }
-  const events = createSpellEvents({ actor, spellItem })
+test('createSpellEvents no longer bridges onSpellLost — loseSpell owns it (#923)', () => {
+  // The bridge fired only when the lib's tier came back 'lost' (a natural 1,
+  // with no result table fed to the lib) and wrote the flag silently.
+  // `_applySpellFailureAutomation` now applies the RAW threshold rule through
+  // `actor.loseSpell`, which also posts the "spell lost" emote.
+  const events = createSpellEvents({ actor: {}, spellItem: { update: vi.fn() } })
 
-  expect(typeof events.onSpellLost).toBe('function')
-  events.onSpellLost({ spellLost: true })
-
-  expect(spellItem.update).toHaveBeenCalledTimes(1)
-  expect(spellItem.update).toHaveBeenCalledWith({ 'system.lost': true })
-  gameSettingsGetMock.mockReset()
+  expect(events.onSpellLost).toBeUndefined()
 })
 
 test('createSpellEvents without spellItem does not wire onSpellLost (naked path)', () => {
@@ -3476,26 +3474,6 @@ test('#923 a cast with no results table still reports a null result to listeners
 
 // ---- #923 review: parity gaps against the legacy orchestrator ----
 
-test('#923 spell loss respects automateWizardSpellLoss (default OFF)', () => {
-  // `processSpellCheck` gated `actor.loseSpell(item)` on the setting, which
-  // defaults to FALSE — so before #923 a sheet cast on a default-configured
-  // world lost no spells. The event bridge consulted no setting, so routing
-  // the sheet here silently turned automation on for every default install.
-  const spellItem = makeWizardSpellItem()
-  gameSettingsGetMock.mockImplementation(() => false)
-  const off = createSpellEvents({ actor: { isNPC: false, system: { abilities: {} } }, spellItem })
-  off.onSpellLost({})
-  expect(spellItem.update).not.toHaveBeenCalled()
-
-  gameSettingsGetMock.mockImplementation((module, key) =>
-    module === 'dcc' && key === 'automateWizardSpellLoss')
-  const on = createSpellEvents({ actor: { isNPC: false, system: { abilities: {} } }, spellItem })
-  on.onSpellLost({})
-  expect(spellItem.update).toHaveBeenCalledWith({ 'system.lost': true })
-
-  gameSettingsGetMock.mockReset()
-})
-
 test('#923 disapproval respects automateClericDisapproval (default OFF)', () => {
   const actor = { isNPC: false, update: vi.fn(), system: { abilities: {} } }
 
@@ -3685,4 +3663,219 @@ test('#923 the disapproval table draw respects automateClericDisapproval', async
 
   expect(await cast(false)).toBe(0)
   expect(await cast(true)).toBeGreaterThan(0)
+})
+
+// ---- #923 audit: legacy failure automation ----
+//
+// DCC RAW is a THRESHOLD rule: a check under 10 + level*2 fails, and a failed
+// cast costs a wizard the spell / a cleric a point of disapproval. The lib
+// classifies tiers from its DEFAULT ladder because the adapter deliberately
+// never sets `input.resultTable`, so `result.spellLost` only fires on a forced
+// total of 1 — i.e. a natural 1. Driving the automation off the lib tier meant
+// a wizard failing at 9 kept the spell and a cleric failing at 9 gained no
+// disapproval at all.
+
+/** Cast a wizard spell at a chosen total with spell-loss automation on. */
+async function castWizardAtTotal (total, { automate = true } = {}) {
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateWizardSpellLoss' && automate)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  const loseSpellSpy = vi.spyOn(actor, 'loseSpell').mockResolvedValue(undefined)
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = total
+      this._total = total
+      this._formula = String(formula)
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+  }
+
+  findSpy.mockRestore()
+  return loseSpellSpy
+}
+
+test('#923 a wizard who fails the threshold loses the spell, not just on a natural 1', async () => {
+  // A level-1 spell needs 12. Rolling 9 is a plain failure — legacy lost the
+  // spell here; the lib tier ladder called it 'failure', not 'lost'.
+  const lost = await castWizardAtTotal(9)
+  expect(lost).toHaveBeenCalledTimes(1)
+})
+
+test('#923 a wizard who makes the threshold keeps the spell', async () => {
+  const lost = await castWizardAtTotal(14)
+  expect(lost).not.toHaveBeenCalled()
+})
+
+test('#923 spell loss on a failed threshold still respects the automation setting', async () => {
+  const lost = await castWizardAtTotal(9, { automate: false })
+  expect(lost).not.toHaveBeenCalled()
+})
+
+test('#923 a cleric who fails the threshold gains a point of disapproval', async () => {
+  // Legacy applied +1 disapproval for ANY failed cleric check. The adapter
+  // only bumped via the lib event, which fires on an in-range natural.
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 9
+      this._total = 9
+      this._formula = String(formula)
+      // Natural 10 — outside the disapproval range, so the lib bumps nothing.
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+  }
+
+  expect(applySpy).toHaveBeenCalledTimes(1)
+  findSpy.mockRestore()
+})
+
+test('#923 a table-less item cast still shows a pass/fail verdict', async () => {
+  // `buildNakedSpellResultHtml` was gated on `!spellItem`, so a spell with no
+  // results table produced a card with the roll and a modifier breakdown and
+  // NO success/failure text at all — worse than the warning it replaced.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.spellResult']).toBeTruthy()
+  expect(messageData.content).toContain(messageData.flags['dcc.spellResult'])
+
+  findSpy.mockRestore()
+})
+
+test('#923 a manually-flagged lost spell still casts when automation is off', async () => {
+  // The sheets expose a manual Lost checkbox. `buildSpellbookEntry` marked the
+  // lib entry lost unconditionally, so the lib refused the cast with a RAW
+  // ENGLISH string ('Spell "X" is lost for the day') — an untranslated message
+  // reaching users, and a cast legacy allowed with automation off.
+  rollToMessageMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  gameSettingsGetMock.mockImplementation(() => false)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ lost: true })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
+
+  gameSettingsGetMock.mockReset()
+  findSpy.mockRestore()
+})
+
+test('#923 an in-range cleric natural bumps disapproval exactly once', async () => {
+  // The lib raises the range itself through `onDisapprovalIncreased` when the
+  // natural is in range. Legacy applied exactly ONE point per failed cast, so
+  // adding `applyDisapproval` unconditionally on top would double it.
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+  actorUpdateMock.mockClear()
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  // Natural 1 — inside any disapproval range, and what the lib's
+  // `calculateDisapprovalIncrease` keys off. (forceFumble can't be used here:
+  // the Roll mock has no `terms[0].results` for it to mutate.)
+  const OriginalRoll = globalThis.Roll
+  class FumbleRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 1
+      this._total = 1
+      this._formula = String(formula)
+      this.dice = [{ total: 1, results: [1], options: {}, faces: 20 }]
+    }
+  }
+  FumbleRoll.safeEval = OriginalRoll.safeEval
+  FumbleRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FumbleRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FumbleRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // The lib's event owns the bump for this cast; the threshold rule must not
+  // add a second one.
+  expect(applySpy).not.toHaveBeenCalled()
+  const rangeWrites = actorUpdateMock.mock.calls.filter(([data]) =>
+    data && 'system.class.disapproval' in data
+  )
+  expect(rangeWrites).toHaveLength(1)
+
+  gameSettingsGetMock.mockReset()
+  findSpy.mockRestore()
 })

@@ -58,30 +58,13 @@ import { applySpellburn, scoresFromBurnAmounts } from '../spellburn.mjs'
 export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false }) {
   const events = {}
 
-  if (spellItem) {
-    /**
-     * Lib reports the cast marked the spell as lost. Mirror it on the
-     * Foundry item so the spell card and the wizard sheet's "lost" UI
-     * update. Replaces the `actor.loseSpell(item)` side effect that
-     * `processSpellCheck` performs on the legacy path.
-     *
-     * Fire-and-forget: the lib's callback protocol doesn't await the
-     * returned promise. Attach a `.catch` so a rejection (permission
-     * error, validation failure in a `preUpdateItem` hook) is logged
-     * instead of silently creating a chat-vs-item divergence.
-     */
-    events.onSpellLost = (_result) => {
-      // Legacy parity: `processSpellCheck` gated spell loss on this setting,
-      // which defaults to FALSE. The bridge consulted nothing, so once the
-      // character sheet's cast button routed through the adapter (#923) every
-      // default-configured world silently gained spell-loss automation.
-      if (!game.settings?.get?.('dcc', 'automateWizardSpellLoss')) return
-
-      Promise.resolve(spellItem.update({ 'system.lost': true })).catch((err) => {
-        console.error('[DCC adapter] onSpellLost: spellItem.update rejected', { spell: spellItem?.name, err })
-      })
-    }
-  }
+  // Wizard spell loss is NOT bridged here. `processSpellCheck` lost the spell
+  // on any failed check (the RAW `10 + level × 2` threshold) and announced it
+  // via `actor.loseSpell`, which posts a "spell lost" emote as well as setting
+  // the flag. This bridge fired only when the lib's tier came back `'lost'` —
+  // which, with no result table fed to the lib, means a natural 1 — and wrote
+  // the flag silently. `_applySpellFailureAutomation` in
+  // `actor/rolls-spell-mixin.mjs` owns it now (#923).
 
   if (actor) {
     /**

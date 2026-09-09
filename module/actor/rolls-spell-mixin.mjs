@@ -1162,6 +1162,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
       })
     }
 
+    await this._applySpellFailureAutomation({ spellItem, foundryRoll, result, profile })
+
     // D3a (2026-04-24) — persist the lib's per-cast patron-taint chance
     // update. The lib runs the RAW creeping-chance check + result-table
     // detection inside `calculateSpellCheck`; when the check ran this
@@ -1307,6 +1309,45 @@ export const RollsSpellMixin = (Base) => class extends Base {
       { action: 'spell', defaultFaces: options?._actionDiceDefaultFaces ?? null }
     )
     return formatActionDiceChatLine(await spendPlannedActionDie(plan))
+  }
+
+  /**
+   * DCC RAW failure automation, restored from `processSpellCheck` (#923).
+   *
+   * The rule is a THRESHOLD: a check under `10 + spell level × 2` fails, and a
+   * failed cast costs a wizard the spell or a cleric a point of disapproval.
+   *
+   * The lib cannot be the source of truth for this here. It classifies tiers
+   * from its DEFAULT ladder because the adapter deliberately never sets
+   * `input.resultTable` (see `loadSpellResultsTable` — the table drives the
+   * card, not the lib's classification), so `result.spellLost` is reachable
+   * only through the forced `total = 1` of a natural 1. Driving the automation
+   * off the lib tier meant a wizard failing at 9 kept the spell and a cleric
+   * failing at 9 gained no disapproval at all.
+   *
+   * `loseSpell` / `applyDisapproval` are the system's own methods, so the
+   * "spell lost" emote and the disapproval chat come back with them — the
+   * event bridge only ever wrote the flag.
+   * @private
+   */
+  async _applySpellFailureAutomation ({ spellItem, foundryRoll, result, profile }) {
+    // Items without a level (spell-like skills) are treated as level 1,
+    // matching `processSpellCheck`.
+    const level = Number(spellItem?.system?.level ?? 1) || 1
+    const success = foundryRoll.total >= (10 + level * 2) && !result.disapprovalAutoFail
+    if (success) return
+
+    if (profile?.type === 'cleric') {
+      if (!game.settings.get('dcc', 'automateClericDisapproval')) return
+      // An in-range natural already raised the range through the lib's
+      // `onDisapprovalIncreased`; legacy applied exactly one point per failed
+      // cast, so a second here would double it.
+      if (!(result.disapprovalIncrease > 0)) await this.applyDisapproval()
+      return
+    }
+
+    if (!game.settings.get('dcc', 'automateWizardSpellLoss')) return
+    await this.loseSpell(spellItem)
   }
 
   /**

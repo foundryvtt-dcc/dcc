@@ -151,7 +151,13 @@ function readMercurialEffect (spellItem) {
 export function buildSpellbookEntry (spellItem, spellId) {
   const entry = {
     spellId,
-    lost: !!spellItem?.system?.lost
+    // Gated on the automation setting: the sheets expose a manual Lost
+    // checkbox, and with automation off `processSpellCheck` still cast the
+    // spell. Marking the lib entry lost unconditionally made the lib refuse
+    // the cast with a RAW ENGLISH error string — untranslated, and a cast
+    // legacy allowed (#923). The dispatcher's own pre-check already warns,
+    // localized, when the setting IS on.
+    lost: !!spellItem?.system?.lost && !!game.settings?.get?.('dcc', 'automateWizardSpellLoss')
   }
   const lastResult = Number(spellItem?.system?.lastResult)
   if (Number.isFinite(lastResult) && lastResult !== 0) {

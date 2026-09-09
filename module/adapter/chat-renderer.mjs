@@ -650,12 +650,12 @@ export async function renderSpellCheck ({
   // dispatchers use — EXCEPT the disapproval auto-failure banner (#874),
   // which explains a forced failure row and must show on item-bound
   // casts too (a macro-invoked cleric spell reads the same as the sheet).
-  let nakedHtml = null
-  if (!spellItem) {
-    nakedHtml = buildNakedSpellResultHtml(result)
-  } else if (result.disapprovalAutoFail) {
-    nakedHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
-  }
+  // This renderer only runs when the spell has NO results table (a table sends
+  // the cast to `renderSpellResultTable`), so the verdict is the only thing
+  // that tells the player what happened. It used to be gated on `!spellItem`,
+  // which left an item cast of a table-less spell showing the roll and a
+  // modifier breakdown and nothing else at all (#923).
+  const nakedHtml = buildNakedSpellResultHtml(result)
 
   const toMessagePayload = {
     speaker: ChatMessage.getSpeaker({ actor }),
