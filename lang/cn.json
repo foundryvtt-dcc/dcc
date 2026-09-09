@@ -16,6 +16,7 @@
   "DCC.RequestRollText": "裁判请求 {actor} 进行检定：",
   "DCC.RequestRollTextMultiple": "裁判请求这些角色进行检定：",
   "DCC.RequestRollTitle": "请求检定",
+  "DCC.RollModifierDialogFailed": "无法打开掷骰调整对话框——详情请查看控制台。",
   "TYPES.Actor.Party": "冒险团队",
   "TYPES.Actor.Player": "PC",
   "TYPES.Actor.NPC": "NPC",

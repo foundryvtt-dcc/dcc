@@ -222,14 +222,21 @@ actor has multiple dice.
 **What was MISSING until #857 (spell-check path, item entry point):**
 
 The section above covers `DCCActor.rollSpellCheck` — the *raw / class-level*
-entry point. Casting an **owned spell from the character sheet** goes through
+entry point. Casting an **owned spell from the character sheet** went through
 `DCCItem.rollSpellCheck` (`module/item/spell-mixin.mjs`) instead, and that path
 had no action-dice integration at all: it rolled `system.spellCheck.die` (which
 `prepareBaseData` derives with `getSingleActionDie`, i.e. always the FIRST action
 die) and spent no slot, so a caster's second spell in a round never stepped down
-and the pips never advanced. #857 gives it the same plan → override → presets →
-reconcile → spend cycle, and adds a probe driving two real casts by a wizard
+and the pips never advanced. #857 gave it the same plan → override → presets →
+reconcile → spend cycle, and added a probe driving two real casts by a wizard
 (rolled faces 20 → 14, pips `[true,false]` → `[true,true]`).
+
+**Update (#923, 2026-09-08):** that second entry point is gone.
+`DCCItem.rollSpellCheck` now forwards to `DCCActor.rollSpellCheck`, so the sheet
+cast and the raw/class-level cast share one plan → spend cycle. The two
+corrections below moved with it: the `inheritActionDie` /
+`spellCheckOverrideDie` guard now lives in `_rollSpellCheckDispatch`, and its
+coverage in `module/__tests__/actor-spell-action-dice.test.js`.
 
 Two related corrections in #857:
 

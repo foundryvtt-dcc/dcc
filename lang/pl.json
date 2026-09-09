@@ -16,6 +16,7 @@
   "DCC.RequestRollText": "Sędzia prosi {actor} o rzut:",
   "DCC.RequestRollTextMultiple": "Sędzia prosi te postacie o rzut:",
   "DCC.RequestRollTitle": "Poproś o rzut",
+  "DCC.RollModifierDialogFailed": "Nie można otworzyć okna modyfikatorów rzutu — szczegóły w konsoli.",
   "TYPES.Actor.Party": "Drużyna",
   "TYPES.Actor.Player": "Gracz",
   "TYPES.Actor.NPC": "BN",

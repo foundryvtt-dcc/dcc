@@ -4,10 +4,14 @@
  * `processSpellCheck` extracted from `module/dcc.js`.
  *
  * Stable extension surface — `game.dcc.processSpellCheck` is published
- * via the init hook in `module/dcc.js` and consumed by `DCCItem.rollSpellCheck`,
- * `DCCActor.rollSpellCheck`'s adapter-declined paths, and sibling content
- * modules. See `docs/dev/EXTENSION_API.md`'s Stable surface table
- * (permanent stable API, no deprecation path).
+ * via the init hook in `module/dcc.js`. See `docs/dev/EXTENSION_API.md`'s
+ * Stable surface table (permanent stable API, no deprecation path).
+ *
+ * #923 took the core spell-check path off it: `DCCItem.rollSpellCheck` is now a
+ * forwarder onto `DCCActor.rollSpellCheck`, whose adapter terminals render the
+ * results table themselves. The remaining in-system caller is the skill-table
+ * spell-check branch in `actor/rolls-skill-mixin.mjs`; sibling content modules
+ * (XCC's class sheets) still call it directly, which is why it stays.
  *
  * Originally a pure (byte-identical) extraction of the inline definition;
  * since extended with the explicit `castingMode` override (issue #375).

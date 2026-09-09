@@ -1,4 +1,4 @@
-/* global ChatMessage, Roll, game */
+/* global ChatMessage, Roll, foundry, game */
 
 /**
  * Renders dcc-core-lib result objects into Foundry ChatMessages.
@@ -595,7 +595,15 @@ export async function renderSkillCheck ({
  *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
  *   not in combat) ⇒ byte-identical content; when present it rides under
  *   the rolled formula + breakdown + naked-cast verdict.
- * @returns {Promise<ChatMessage>} The created ChatMessage.
+ * @param {Object} [params.rollTable] - The spell's results RollTable, when it
+ *   configures one (`loadSpellResultsTable`). Present ⇒ the card is the full
+ *   spell-result card carrying the drawn row; absent ⇒ the bare roll plus the
+ *   naked-cast verdict, which is all this renderer used to emit (#923).
+ * @returns {Promise<{message: ChatMessage, tableResult: Array|null}>} The
+ *   created ChatMessage plus the row drawn from the results table (null when
+ *   the spell configures none). Callers forward `tableResult` to
+ *   `dcc.afterSpellCheckResult`, whose `result` field the legacy
+ *   `processSpellCheck` populated with exactly that row.
  */
 export async function renderSpellCheck ({
   actor,
@@ -603,8 +611,20 @@ export async function renderSpellCheck ({
   flavor,
   result,
   foundryRoll,
-  actionDiceChatLine = ''
+  actionDiceChatLine = '',
+  rollTable = null
 }) {
+  // A spell with a results table renders through the same
+  // `SpellResult.addChatMessage` the legacy `processSpellCheck` path uses, so
+  // the card a player sees does not depend on which entry point cast the
+  // spell. Before #923 the adapter emitted a bare roll here and the spell's
+  // actual effect text never appeared — invisible while only macros reached
+  // this path, and a hard blocker on routing the sheet's cast button through
+  // the dispatcher.
+  if (rollTable) {
+    return renderSpellResultTable({ actor, spellItem, flavor, result, foundryRoll, rollTable, actionDiceChatLine })
+  }
+
   const flags = {
     'dcc.RollType': 'SpellCheck',
     'dcc.isSpellCheck': true,
@@ -630,12 +650,12 @@ export async function renderSpellCheck ({
   // dispatchers use — EXCEPT the disapproval auto-failure banner (#874),
   // which explains a forced failure row and must show on item-bound
   // casts too (a macro-invoked cleric spell reads the same as the sheet).
-  let nakedHtml = null
-  if (!spellItem) {
-    nakedHtml = buildNakedSpellResultHtml(result)
-  } else if (result.disapprovalAutoFail) {
-    nakedHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckDisapprovalFailure')}</p>`
-  }
+  // This renderer only runs when the spell has NO results table (a table sends
+  // the cast to `renderSpellResultTable`), so the verdict is the only thing
+  // that tells the player what happened. It used to be gated on `!spellItem`,
+  // which left an item cast of a table-less spell showing the roll and a
+  // modifier breakdown and nothing else at all (#923).
+  const nakedHtml = buildNakedSpellResultHtml(result)
 
   const toMessagePayload = {
     speaker: ChatMessage.getSpeaker({ actor }),
@@ -664,7 +684,59 @@ export async function renderSpellCheck ({
 
   const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })
 
-  return ChatMessage.create(messageData)
+  return { message: await ChatMessage.create(messageData), tableResult: null }
+}
+
+/**
+ * Render a spell check that has a results table, mirroring the row-lookup
+ * rules `processSpellCheck` applies (`module/spell-check-processor.mjs`):
+ *
+ *   - a fumble, or a cleric natural inside the disapproval range (#874),
+ *     draws row 1 regardless of the rolled total;
+ *   - a critical looks the row up at total + caster level, and the bump is
+ *     pushed onto the roll so the card shows the arithmetic it used;
+ *   - everything else draws on the rolled total.
+ *
+ * The crit/fumble/auto-fail flags come off the lib result rather than being
+ * re-derived here, so the row and the lib's own classification agree.
+ *
+ * Manifestation and mercurial effects are read off the item by
+ * `SpellResult.addChatMessage` itself and render inside this card — which is
+ * why the caller skips its separate mercurial chat message on this path.
+ * @private
+ */
+async function renderSpellResultTable ({ actor, spellItem, flavor, result, foundryRoll, rollTable, actionDiceChatLine }) {
+  const crit = !!result.critical
+  const fumble = !!result.fumble
+  const disapprovalFailure = !!result.disapprovalAutoFail
+
+  let drawn
+  if (fumble || disapprovalFailure) {
+    drawn = rollTable.getResultsForRoll(1)
+  } else if (crit) {
+    const level = parseInt(actor?.system?.details?.level?.value) || 0
+    drawn = rollTable.getResultsForRoll(foundryRoll.total + level)
+    foundryRoll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
+    foundryRoll.terms.push(new foundry.dice.terms.NumericTerm({ number: level }))
+    foundryRoll._formula += ` + ${level}`
+    foundryRoll._total += level
+  } else {
+    drawn = rollTable.getResultsForRoll(foundryRoll.total)
+  }
+
+  const message = await game.dcc.SpellResult.addChatMessage(foundryRoll, rollTable, drawn, {
+    crit,
+    fumble,
+    disapprovalFailure,
+    item: spellItem,
+    actionDiceChatLine,
+    // `addChatMessage` defaults the speaker off `item.actor`; supply it
+    // explicitly so an unowned/ephemeral spell item (a magic item's attached
+    // spell — see `DCCItem.castSpell`) still speaks as the caster.
+    messageData: { flavor, speaker: ChatMessage.getSpeaker({ actor }) }
+  })
+
+  return { message, tableResult: drawn }
 }
 
 /**

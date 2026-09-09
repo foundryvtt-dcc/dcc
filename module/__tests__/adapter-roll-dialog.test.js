@@ -15,6 +15,7 @@
 
 import { expect, test, describe, vi } from 'vitest'
 import '../__mocks__/foundry.js'
+import { RollCancelledError } from '../roll-cancellation.mjs'
 import {
   parseRollIntoDieAndModifier,
   promptRollModifierDialog
@@ -134,18 +135,40 @@ describe('promptRollModifierDialog', () => {
     expect(result).toBeNull()
   })
 
-  test('returns null when DCCRoll.createRoll throws', async () => {
+  test('a genuine dialog failure is logged AND surfaced to the player', async () => {
+    // Callers map `null` onto the cancel signal — `DCCItem.castSpell` reads it
+    // as "no cast, keep the charge" — so a broken dialog that only warned to
+    // the console was a click that silently did nothing (#923 review).
     global.dccRollCreateRollMock.mockClear()
     global.dccRollCreateRollMock.mockImplementationOnce(() => {
       throw new Error('boom')
     })
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    global.ui.notifications.error.mockClear()
 
     const result = await promptRollModifierDialog([], {})
     expect(result).toBeNull()
-    expect(warnSpy).toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalled()
+    expect(global.ui.notifications.error)
+      .toHaveBeenCalledWith(game.i18n.localize('DCC.RollModifierDialogFailed'))
 
-    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+  })
+
+  test('a user cancel stays quiet — no console error, no notification', async () => {
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce(() => {
+      throw new RollCancelledError()
+    })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    global.ui.notifications.error.mockClear()
+
+    const result = await promptRollModifierDialog([], {})
+    expect(result).toBeNull()
+    expect(errorSpy).not.toHaveBeenCalled()
+    expect(global.ui.notifications.error).not.toHaveBeenCalled()
+
+    errorSpy.mockRestore()
   })
 
   test('defaults rollData to {} when omitted', async () => {

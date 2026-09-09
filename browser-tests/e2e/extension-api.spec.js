@@ -746,9 +746,10 @@ test.describe('DCC Extension API', () => {
     // Phase 7 session 4: the ~200-line processSpellCheck function was
     // moved out of `module/dcc.js` into `module/spell-check-processor.mjs`.
     // It remains published on `game.dcc.processSpellCheck` (Stable
-    // extension surface per `docs/dev/EXTENSION_API.md`) and is consumed
-    // by `DCCItem.rollSpellCheck` + the adapter-declined paths in
-    // `DCCActor.rollSpellCheck`.
+    // extension surface per `docs/dev/EXTENSION_API.md`). #923 took the core
+    // spell-check path off it — `DCCItem.rollSpellCheck` now forwards to the
+    // dispatcher — so this probe calls it directly, the way the remaining
+    // consumers (the skill-table branch, XCC's class sheets) do.
     //
     // End-to-end probe: stand up a temporary Player, fire a deterministic
     // d20 roll through `processSpellCheck` (no item, no rollTable so we

@@ -23,7 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
 import { clearAllTableCaches, disapprovalTableCache, mercurialMagicTableCache } from '../adapter/table-cache.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
@@ -171,10 +171,12 @@ test('already-lost wizard spell + automateWizardSpellLoss on → warn + early re
   uiNotificationsWarnMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
-  gameSettingsGetMock.mockImplementationOnce((module, key) => {
-    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
-    return undefined
-  })
+  // `mockImplementationOnce` only covered the FIRST settings read, which
+  // `planActionDie` consumes — so this used to pass on the LIB's refusal
+  // (a raw English "Spell X is lost for the day"), not the dispatcher's
+  // localized pre-check. Make the setting genuinely on (#923).
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateWizardSpellLoss')
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -188,10 +190,13 @@ test('already-lost wizard spell + automateWizardSpellLoss on → warn + early re
   await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  // The localized key, not the lib's English string.
+  expect(uiNotificationsWarnMock).toHaveBeenCalledWith(expect.stringContaining('SpellLostWarning'))
   // Neither the adapter nor the legacy path continued with the cast.
   expect(rollToMessageMock).not.toHaveBeenCalled()
   expect(itemSpy).not.toHaveBeenCalled()
 
+  gameSettingsGetMock.mockReset()
   itemSpy.mockRestore()
   findSpy.mockRestore()
 })
@@ -869,16 +874,14 @@ test('rollSkillCheck routes turnUnholy via adapter skill-table path (D4 skill-ta
   expect(rollToMessageMock).toHaveBeenCalled()
 })
 
-test('createSpellEvents onSpellLost bridges to spellItem.update({ system.lost: true })', () => {
-  const actor = {}
-  const spellItem = { update: vi.fn() }
-  const events = createSpellEvents({ actor, spellItem })
+test('createSpellEvents no longer bridges onSpellLost — loseSpell owns it (#923)', () => {
+  // The bridge fired only when the lib's tier came back 'lost' (a natural 1,
+  // with no result table fed to the lib) and wrote the flag silently.
+  // `_applySpellFailureAutomation` now applies the RAW threshold rule through
+  // `actor.loseSpell`, which also posts the "spell lost" emote.
+  const events = createSpellEvents({ actor: {}, spellItem: { update: vi.fn() } })
 
-  expect(typeof events.onSpellLost).toBe('function')
-  events.onSpellLost({ spellLost: true })
-
-  expect(spellItem.update).toHaveBeenCalledTimes(1)
-  expect(spellItem.update).toHaveBeenCalledWith({ 'system.lost': true })
+  expect(events.onSpellLost).toBeUndefined()
 })
 
 test('createSpellEvents without spellItem does not wire onSpellLost (naked path)', () => {
@@ -888,6 +891,9 @@ test('createSpellEvents without spellItem does not wire onSpellLost (naked path)
 
 test('createSpellEvents onDisapprovalIncreased updates system.class.disapproval', () => {
   actorUpdateMock.mockClear()
+  // `automateClericDisapproval` also defaults to FALSE (#923).
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
   const actor = {
     update: vi.fn(),
     isNPC: false
@@ -898,6 +904,7 @@ test('createSpellEvents onDisapprovalIncreased updates system.class.disapproval'
   events.onDisapprovalIncreased({ newDisapprovalRange: 2 }, 2)
 
   expect(actor.update).toHaveBeenCalledWith({ 'system.class.disapproval': 2 })
+  gameSettingsGetMock.mockReset()
 })
 
 test('createSpellEvents onDisapprovalIncreased bails early for NPC actors (mirrors applyDisapproval)', () => {
@@ -941,6 +948,19 @@ test('createSpellEvents onSpellburnApplied subtracts burn amounts from physical 
     'system.abilities.str.value': 12,
     'system.abilities.sta.value': 10
   })
+})
+
+test('createSpellEvents onSpellburnApplied does not touch the actor for an all-zero commitment', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: { abilities: { str: { value: 14 }, agl: { value: 12 }, sta: { value: 13 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 0 })
+
+  expect(actor.update).not.toHaveBeenCalled()
 })
 
 test('createSpellEvents onSpellburnApplied honours the dialog HP opt-in for Stamina (#921)', () => {
@@ -2698,4 +2718,1164 @@ test('loadMercurialMagicTable caches per resolved tableName — second call skip
 
   CONFIG.DCC.mercurialMagicTables = originalRegistry
   game.packs = originalGamePacks
+})
+
+// ---- #923 — the spell's results table renders on the adapter path ----
+//
+// The adapter's spell-check terminals rendered a bare roll: `buildSpellDefinition`
+// hardcodes `results: []` and nothing ever resolved `system.results.table`, so
+// `renderSpellCheck` emitted roll + modifier breakdown and no spell effect at
+// all. Only the legacy `DCCItem.rollSpellCheck` → `processSpellCheck` path drew
+// the row. That was invisible while the character sheet used the legacy path and
+// only macros (`macros.mjs:152`) reached the adapter — and it is a hard blocker
+// on routing the sheet's cast button through the dispatcher.
+//
+// These drive `actor.rollSpellCheck` (the adapter entry point) and assert the
+// row lands on the card through the same `SpellResult.addChatMessage` renderer
+// the legacy path uses, with the same fumble / crit lookup rules.
+
+/** Install a stub `game.dcc.SpellResult` and return the spy + a restore fn. */
+function installSpellResultSpy () {
+  const addChatMessage = vi.fn().mockResolvedValue(undefined)
+  const original = game.dcc.SpellResult
+  game.dcc.SpellResult = { addChatMessage }
+  return { addChatMessage, restore: () => { game.dcc.SpellResult = original } }
+}
+
+/** A world RollTable that records the totals it was asked to look up. */
+function makeResultsTable (name = 'Magic Missile') {
+  const lookups = []
+  return {
+    lookups,
+    table: {
+      id: 'results-table',
+      name,
+      description: '',
+      displayRoll: true,
+      getResultsForRoll: (total) => {
+        lookups.push(total)
+        return [{ text: `row for ${total}`, description: `row for ${total}` }]
+      }
+    }
+  }
+}
+
+/**
+ * Drive an adapter wizard cast against a world results table, forcing the
+ * natural roll so crit / fumble / ordinary outcomes are deterministic.
+ *
+ * The natural is what the lib classifies on (`natural === die faces` ⇒ crit,
+ * `=== 1` ⇒ fumble); `total` is what the row lookup uses. The Roll mock is
+ * subclassed rather than patched at the DiceTerm level — the mock has no
+ * DiceTerm — and `foundry.dice.terms` is stubbed for the crit branch's
+ * level-bump terms, matching `actor-skill-table-action-dice.test.js`.
+ */
+async function castWithResultsTable ({ natural = 10, total = 10, tableName = 'Magic Missile', level = 3 } = {}) {
+  const originalTables = game.tables
+  const { lookups, table } = makeResultsTable(tableName)
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+
+  const spellResult = installSpellResultSpy()
+
+  const OriginalRoll = globalThis.Roll
+  class ForcedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this._formula = typeof formula === 'string' ? formula : '1d20'
+      this.total = total
+      this._total = total
+      this.dice = [{ total: natural, results: [natural], options: {}, faces: 20 }]
+    }
+  }
+  ForcedRoll.safeEval = OriginalRoll.safeEval
+  ForcedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = ForcedRoll
+
+  const savedFoundry = globalThis.foundry
+  globalThis.foundry = {
+    ...savedFoundry,
+    dice: {
+      ...(savedFoundry?.dice || {}),
+      terms: {
+        OperatorTerm: class { constructor (o) { Object.assign(this, o) } },
+        NumericTerm: class { constructor (o) { Object.assign(this, o) } }
+      }
+    }
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = level
+
+  const spellItem = makeWizardSpellItem({ results: { table: tableName, collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  try {
+    await actor.rollSpellCheck({ spell: tableName })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    globalThis.foundry = savedFoundry
+  }
+
+  const call = spellResult.addChatMessage.mock.calls[0]
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+  return { call, lookups, addChatMessage: spellResult.addChatMessage, spellItem, actor }
+}
+
+test('#923 adapter renders the spell results table row through SpellResult', async () => {
+  rollToMessageMock.mockClear()
+  const { call, spellItem } = await castWithResultsTable({ natural: 10 })
+
+  expect(call).toBeDefined()
+  const [roll, rollTable, drawn, options] = call
+  expect(rollTable.name).toBe('Magic Missile')
+  expect(drawn[0].text).toContain('row for')
+  expect(options.item).toBe(spellItem)
+  expect(roll).toBeDefined()
+})
+
+test('#923 a fumble draws row 1 rather than the rolled total', async () => {
+  rollToMessageMock.mockClear()
+  // A high total with a natural 1: RAW says the fumble row wins.
+  const { call, lookups } = await castWithResultsTable({ natural: 1, total: 18 })
+
+  expect(lookups).toEqual([1])
+  expect(call[3].fumble).toBe(true)
+})
+
+test('#923 a crit adds the caster level to the lookup total and to the rolled formula', async () => {
+  rollToMessageMock.mockClear()
+  // Natural 20 on a d20 is a crit; the legacy path looks the row up at
+  // total + caster level and shows the bump on the card.
+  const { call, lookups } = await castWithResultsTable({ natural: 20, total: 24, level: 3 })
+
+  expect(call[3].crit).toBe(true)
+  expect(lookups).toEqual([27])
+  const roll = call[0]
+  expect(roll._total).toBe(27)
+  expect(roll._formula).toContain('+ 3')
+})
+
+test('#923 a spell with no configured results table renders the no-table verdict card', async () => {
+  // BEHAVIOR CHANGE: the legacy `DCCItem.rollSpellCheck` rolled, then warned
+  // `DCC.NoSpellResultsTableWarning` and posted nothing at all. Now that the
+  // sheet's cast button routes through the dispatcher, a table-less spell gets
+  // the same pass/fail/crit/fumble verdict card a naked class-level spell
+  // check already got, instead of a warning and no card. `DCCItem.castSpell`
+  // still pre-checks the table before spending a charge.
+  rollToMessageMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
+
+  spellResult.restore()
+  findSpy.mockRestore()
+})
+
+test('#923 a configured table that resolves nowhere falls back to the plain roll', async () => {
+  rollToMessageMock.mockClear()
+  const originalTables = game.tables
+  game.tables = { contents: [], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ results: { table: 'Missing Table', collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Matches the legacy path: a name that resolves to nothing renders the
+  // no-table card rather than throwing or posting nothing.
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable prefers the configured compendium over world tables', async () => {
+  const originalPacks = game.packs
+  const originalTables = game.tables
+  const packTable = { id: 'pack-t', name: 'Magic Missile' }
+  game.packs = {
+    get: vi.fn().mockReturnValue({
+      index: [{ _id: 'pack-t', name: 'Magic Missile' }],
+      getDocument: vi.fn().mockResolvedValue(packTable)
+    })
+  }
+  game.tables = { contents: [{ id: 'world-t', name: 'Magic Missile' }] }
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: 'dcc-core-book.spells' }
+  })
+  expect(await loadSpellResultsTable(spellItem)).toBe(packTable)
+
+  game.packs = originalPacks
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable falls back to the world when the pack has no match', async () => {
+  const originalPacks = game.packs
+  const originalTables = game.tables
+  const worldTable = { id: 'world-t', name: 'Magic Missile' }
+  // A pack that is configured but doesn't carry the entry: the legacy
+  // lookup dereferenced `entry._id` unguarded and threw here.
+  game.packs = { get: vi.fn().mockReturnValue({ index: [], getDocument: vi.fn() }) }
+  game.tables = { contents: [worldTable] }
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: 'dcc-core-book.spells' }
+  })
+  expect(await loadSpellResultsTable(spellItem)).toBe(worldTable)
+
+  game.packs = originalPacks
+  game.tables = originalTables
+})
+
+test('#923 loadSpellResultsTable returns null when no table is configured', async () => {
+  expect(await loadSpellResultsTable(makeWizardSpellItem())).toBeNull()
+  expect(await loadSpellResultsTable(null)).toBeNull()
+})
+
+test('#923 a spell with a results table shows its mercurial effect once, inside the card', async () => {
+  // `SpellResult.addChatMessage` reads `system.mercurialEffect` off the item
+  // and renders it inside the spell-result card (legacy parity), so the
+  // adapter's separate `renderMercurialEffect` message has to stand down or
+  // the player sees the effect twice.
+  rollToMessageMock.mockClear()
+  const originalTables = game.tables
+  const { table } = makeResultsTable('Magic Missile')
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    results: { table: 'Magic Missile', collection: '' },
+    mercurialEffect: {
+      value: 42,
+      summary: 'Blue aura',
+      description: 'The spell is surrounded by a shimmering blue aura.',
+      displayInChat: true
+    }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).toHaveBeenCalledTimes(1)
+  const mercurialMessages = rollToMessageMock.mock.calls.filter(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialMessages).toHaveLength(0)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 a spell with no results table still posts its mercurial effect separately', async () => {
+  // The no-table card has nowhere to carry the effect, so the standalone
+  // message stays — this is the behavior the guard must not break.
+  rollToMessageMock.mockClear()
+  const spellResult = installSpellResultSpy()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    mercurialEffect: {
+      value: 42,
+      summary: 'Blue aura',
+      description: 'The spell is surrounded by a shimmering blue aura.',
+      displayInChat: true
+    }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellResult.addChatMessage).not.toHaveBeenCalled()
+  const mercurialMessages = rollToMessageMock.mock.calls.filter(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialMessages).toHaveLength(1)
+
+  spellResult.restore()
+  findSpy.mockRestore()
+})
+
+// ---- #923 — side effects the legacy `processSpellCheck` owned ----
+//
+// Routing the character sheet's cast button onto the dispatcher means the
+// adapter has to carry everything the legacy item path did. These two were
+// missing and are invisible in a roll-only assertion: the spells tab stops
+// showing the last result, and a cleric's disapproval-range roll stops being
+// painted red on the card.
+
+test('#923 the cast records its total on the spell item for the spells tab', async () => {
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  spellItem.id = 'spell-1'
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(spellItem.update).toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.lastResult': expect.any(Number) })
+  )
+
+  findSpy.mockRestore()
+})
+
+test('#923 the spell-check die carries the disapproval range so the card can highlight it', async () => {
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 4
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  const built = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      built.push(this)
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  try {
+    await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // `chat.js` paints a die total at or below `lowerThreshold` red. Without
+  // this the legacy sheet cast's disapproval highlight silently disappears.
+  expect(built[0].dice[0].options.dcc).toEqual({ lowerThreshold: 4 })
+
+  findSpy.mockRestore()
+})
+
+// ---- #923 — the modifier dialog on generic-castingMode casts ----
+//
+// The adapter only opened the roll modifier dialog for wizard / cleric
+// castingMode. The legacy `DCCItem.rollSpellCheck` opened it for ANY casting
+// mode, because it just passed `options.showModifierDialog` to
+// `DCCRoll.createRoll`. Generic is what `DCCItem.castSpell` forces for a magic
+// item's attached spell, so a meta-clicked wand cast would have silently lost
+// its dialog — and with it the spellburn term — once the sheet moved onto the
+// dispatcher.
+
+test('#923 a generic-castingMode cast opens the modifier dialog', async () => {
+  rollToMessageMock.mockClear()
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 0, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
+  // Spellburn is offered: the legacy term was gated on `castingMode !== 'cleric'`.
+  const promptOptions = promptRollModifierDialog.mock.calls[0][1]
+  expect(promptOptions.spellburn).toMatchObject({ level: expect.any(Number) })
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast does not tick the check penalty by default', async () => {
+  // Legacy: `apply: castingMode === 'wizard'`. An armor check penalty is a
+  // wizard-spell concept; a wand does not pay it.
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 0, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  const terms = promptRollModifierDialog.mock.calls[0][0]
+  expect(terms.find(t => t.type === 'CheckPenalty').apply).toBe(false)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a cancelled dialog returns false so no charge is spent', async () => {
+  // `DCCItem.castSpell` spends a charge per cast attempt and keys off `false`
+  // to decline for a cast that never happened (#867).
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue(null)
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const result = await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  expect(result).toBe(false)
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast applies the spellburn committed in the dialog', async () => {
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({
+    actionDie: '1d20',
+    modifierTotal: 0,
+    spellburn: { str: 2, agl: 0, sta: 0, adjustHP: false }
+  })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actorUpdateMock.mockClear()
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+
+  // The generic branch passes no lib events, so — like the naked route — it
+  // has to apply the burn itself or the dialog's commitment vanishes.
+  expect(actorUpdateMock).toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.abilities.str.value': 12 })
+  )
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast folds the dialog modifier into the roll', async () => {
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 7, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  const formulas = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      formulas.push(String(formula))
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  try {
+    await actor.rollSpellCheck({ spellItem, showModifierDialog: true })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // The player's flat total drives the roll: without this the dialog's
+  // modifier was silently dropped on the generic path.
+  const flat = formulas[0].split('+').slice(1).reduce((sum, p) => sum + (parseInt(p.trim()) || 0), 0)
+  expect(flat).toBe(7)
+
+  findSpy.mockRestore()
+})
+
+// ---- #923 — per-spell modifiers on a cast with no dialog ----
+//
+// The legacy term list carried three things the lib input did not: the armor /
+// spell check penalty, the spell's `otherBonus`, and an authored spell-check
+// value when the item opts out of inheriting the caster's. They reached the
+// adapter only through `_promptSpellCheckDialog`, so a PLAIN click on the
+// sheet's cast button — the common case — silently dropped all three once the
+// sheet routed through the dispatcher. An armored wizard would stop paying
+// their check penalty on every cast.
+
+/** Roll formulas the adapter built, in order. */
+function recordFormulas (fn) {
+  const OriginalRoll = globalThis.Roll
+  const formulas = []
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      formulas.push(String(formula))
+    }
+  }
+  RecordingRoll.safeEval = OriginalRoll.safeEval
+  RecordingRoll.validate = OriginalRoll.validate
+  globalThis.Roll = RecordingRoll
+  return fn().finally(() => { globalThis.Roll = OriginalRoll }).then(() => formulas)
+}
+
+/** Signed flat total of every numeric term after the die. */
+function flatTotalOf (formula) {
+  const parts = String(formula).match(/[+-]\s*\d+/g) ?? []
+  return parts.reduce((sum, p) => sum + parseInt(p.replace(/\s+/g, '')), 0)
+}
+
+test('#923 a wizard cast with no dialog still pays the armor check penalty', async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.attributes.ac.checkPenalty = '-4'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const withPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  actor.system.attributes.ac.checkPenalty = '0'
+  const withoutPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(withPenalty[0])).toBe(flatTotalOf(withoutPenalty[0]) - 4)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast does NOT pay the check penalty (legacy parity)', async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.attributes.ac.checkPenalty = '-4'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const withPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  actor.system.attributes.ac.checkPenalty = '0'
+  const withoutPenalty = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(withPenalty[0])).toBe(flatTotalOf(withoutPenalty[0]))
+
+  findSpy.mockRestore()
+})
+
+test("#923 a cast with no dialog includes the spell's own otherBonus", async () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const plainItem = makeWizardSpellItem()
+  const bonusItem = makeWizardSpellItem({
+    spellCheck: { die: '1d20', value: '+0', penalty: '-0', otherBonus: '+3' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(plainItem)
+
+  const plain = await recordFormulas(() => actor.rollSpellCheck({ spellItem: plainItem }))
+  const bonused = await recordFormulas(() => actor.rollSpellCheck({ spellItem: bonusItem }))
+
+  expect(flatTotalOf(bonused[0])).toBe(flatTotalOf(plain[0]) + 3)
+
+  findSpy.mockRestore()
+})
+
+test('#923 an authored spell check replaces the caster\'s own level + ability modifier', async () => {
+  // `DCCItem.castSpell` builds exactly this shape for a magic item that casts
+  // at its own fixed spell check: `inheritSpellCheck: false` plus an authored
+  // `spellCheck.value`. The lib otherwise computes level + ability and ignores
+  // the item entirely, so a wand would roll the caster's bonus instead of its
+  // own.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 5
+
+  const spellItem = makeGenericSpellItem({
+    config: { castingMode: 'generic', inheritCheckPenalty: true, inheritSpellCheck: false },
+    spellCheck: { die: '1d20', value: '+2', penalty: '-0' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  // +2 flat — not +5 (level) plus the caster's ability modifier.
+  expect(flatTotalOf(formulas[0])).toBe(2)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a class spellCheckOverride replaces the lib arithmetic on an item cast', async () => {
+  // `system.class.spellCheckOverride` replaces level + ability as the whole
+  // spell-check bonus (`derived-stats-mixin.mjs:155` mirrors it onto
+  // `class.spellCheck`, which the item inherits). `_castNakedViaAdapter`
+  // already honored it; the item-bound terminals did not, so a cleric with an
+  // override rolled their raw natural once the sheet routed here — caught by
+  // `cleric-disapproval-failure.spec.js` (#874), which expects 4 + 8 = 12.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.details.level.value = 3
+  actor.system.class.spellCheckOverride = '+8'
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(formulas[0])).toBe(8)
+
+  findSpy.mockRestore()
+})
+
+test('#923 the item\'s own authored bonus still wins over a class override', async () => {
+  // `inheritSpellCheck: false` means the item keeps its own value regardless
+  // of the class — the shape `DCCItem.castSpell` builds for a wand.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.spellCheckOverride = '+8'
+
+  const spellItem = makeGenericSpellItem({
+    config: { castingMode: 'generic', inheritCheckPenalty: true, inheritSpellCheck: false },
+    spellCheck: { die: '1d20', value: '+2', penalty: '-0' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(formulas[0])).toBe(2)
+
+  findSpy.mockRestore()
+})
+
+test('#923 the drawn table row reaches the dcc.afterSpellCheckResult payload', async () => {
+  // `processSpellCheck` passed the drawn `TableResult` to listeners as
+  // `result`. The adapter terminals had no table, so they always passed null —
+  // fine while only macros reached them, a payload regression once the sheet
+  // cast routed here. Now that the row is drawn adapter-side it rides along.
+  const originalTables = game.tables
+  const { table } = makeResultsTable('Magic Missile')
+  game.tables = { contents: [table], getName: () => null, find: () => null }
+  const spellResult = installSpellResultSpy()
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ results: { table: 'Magic Missile', collection: '' } })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call).toBeDefined()
+  expect(call[2].result).not.toBeNull()
+  expect(call[2].result[0].text).toContain('row for')
+
+  callAllSpy.mockRestore()
+  spellResult.restore()
+  findSpy.mockRestore()
+  game.tables = originalTables
+})
+
+test('#923 a cast with no results table still reports a null result to listeners', async () => {
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call[2].result).toBeNull()
+
+  callAllSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+// ---- #923 review: parity gaps against the legacy orchestrator ----
+
+test('#923 disapproval respects automateClericDisapproval (default OFF)', () => {
+  const actor = { isNPC: false, update: vi.fn(), system: { abilities: {} } }
+
+  gameSettingsGetMock.mockImplementation(() => false)
+  createSpellEvents({ actor, spellItem: null }).onDisapprovalIncreased({}, 5)
+  expect(actor.update).not.toHaveBeenCalled()
+
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+  createSpellEvents({ actor, spellItem: null }).onDisapprovalIncreased({}, 5)
+  expect(actor.update).toHaveBeenCalledWith({ 'system.class.disapproval': 5 })
+
+  gameSettingsGetMock.mockReset()
+})
+
+test('#923 an @-formula spell check falls back to the lib arithmetic, not zero', async () => {
+  // `Roll.safeEval` does NOT substitute `@`-data (that is
+  // `replaceFormulaData`), so the old catch did `parseInt('@…') || 0` and
+  // returned 0 — which then cancelled the caster's whole level + ability via
+  // the net-vs-libAutoTotal subtraction. Exactly #874's failure mode.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 5
+  actor.system.class.spellCheckOverride = '@details.level.value + 3'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  // Resolved to 5 + 3 = 8. The bug returned 0, which subtracted the caster's
+  // level + ability right back out of the roll.
+  expect(flatTotalOf(formulas[0])).toBe(8)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a concatenated bonus string evaluates instead of truncating at the first term', async () => {
+  // `system.class.spellCheck` is built by string concatenation
+  // (`derived-stats-mixin.mjs`), so '+1+2+1' is a real shape. `parseInt` on it
+  // yields 1; the legacy path handed the whole string to DCCRoll to evaluate.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem({
+    config: { castingMode: 'generic', inheritCheckPenalty: true, inheritSpellCheck: false },
+    spellCheck: { die: '1d20', value: '+1+2+1', penalty: '-0' }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const formulas = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(formulas[0])).toBe(4)
+
+  findSpy.mockRestore()
+})
+
+test('#923 class spellCheckOtherMod reaches a no-dialog item cast', async () => {
+  // Folded into `system.class.spellCheck` by `derived-stats-mixin.mjs` and so
+  // carried by the dialog's Compound term — but the lib contributes only
+  // level + ability, so a no-dialog cast dropped it. `_castNakedViaAdapter`
+  // already handled it; the item terminals did not.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const without = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+  actor.system.class.spellCheckOtherMod = '+2'
+  const with2 = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+
+  expect(flatTotalOf(with2[0])).toBe(flatTotalOf(without[0]) + 2)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast that burns gets the spellburn bonus it paid for', async () => {
+  // `syntheticGenericProfile` has `canSpellburn: false`, and the lib gates the
+  // burn modifier on that flag (`cast.js:50`) — so once the dialog was offered
+  // for generic casts, a wand caster paid Str/Agl/Sta (and the #921 HP hit)
+  // for no change to the roll at all. The legacy term list put the burn
+  // straight into the formula.
+  promptRollModifierDialog.mockClear()
+  promptRollModifierDialog.mockResolvedValue({ actionDie: '1d20', modifierTotal: 0, spellburn: null })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const plain = await recordFormulas(() => actor.rollSpellCheck({ spellItem }))
+  const burned = await recordFormulas(() => actor.rollSpellCheck({
+    spellItem, spellburn: { str: 3, agl: 0, sta: 0 }
+  }))
+
+  expect(flatTotalOf(burned[0])).toBe(flatTotalOf(plain[0]) + 3)
+
+  findSpy.mockRestore()
+})
+
+test('#923 a generic cast reports suppressPatronTaint on the result hook', async () => {
+  // `DCCItem.castSpell` sets `suppressPatronTaint: true` for every magic-item
+  // cast; the generic terminal omitted it from the payload, so listeners saw
+  // false. The documented MCC use case keys off exactly this field.
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeGenericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem, suppressPatronTaint: true })
+
+  const call = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')
+  expect(call[2].suppressPatronTaint).toBe(true)
+
+  callAllSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('#923 the disapproval table draw respects automateClericDisapproval', async () => {
+  // Legacy `processSpellCheck` gated `actor.rollDisapproval` on the setting
+  // alongside the range bump. The adapter posted the draw unconditionally, so
+  // a default-configured world (the setting defaults to FALSE) started seeing
+  // disapproval cards on every low cleric roll once the sheet routed here.
+  const cast = async (automate) => {
+    gameSettingsGetMock.mockImplementation((module, key) => {
+      if (module !== 'dcc') return false
+      if (key === 'automateClericDisapproval') return automate
+      if (key === 'disapprovalPacks') return 'dcc-core-book.dcc-disapproval'
+      return false
+    })
+    const originalTables = game.tables
+    const disapprovalTable = {
+      id: 'dis',
+      name: 'P923 Disapproval',
+      results: [{ range: [1, 4], description: 'Smitten' }]
+    }
+    // `resolveDisapprovalTable` falls back to `game.tables.find`, and caches
+    // the resolved lib table per name — clear it so each half resolves fresh.
+    clearAllTableCaches()
+    game.tables = {
+      contents: [disapprovalTable],
+      getName: () => null,
+      find: (predicate) => ([disapprovalTable].find(predicate) ?? null)
+    }
+
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.class.patron = ''
+    actor.system.class.className = 'Cleric'
+    actor.system.details.sheetClass = 'Cleric'
+    actor.system.class.disapproval = 20 // any natural lands in range
+    actor.system.class.disapprovalTable = 'P923 Disapproval'
+
+    const spellItem = makeClericSpellItem()
+    const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+    rollToMessageMock.mockClear()
+
+    await actor.rollSpellCheck({ spellItem })
+
+    const disapprovalCards = rollToMessageMock.mock.calls.filter(([data]) =>
+      data?.flags?.['dcc.isDisapproval'] === true
+    ).length
+
+    findSpy.mockRestore()
+    game.tables = originalTables
+    gameSettingsGetMock.mockReset()
+    return disapprovalCards
+  }
+
+  expect(await cast(false)).toBe(0)
+  expect(await cast(true)).toBeGreaterThan(0)
+})
+
+// ---- #923 audit: legacy failure automation ----
+//
+// DCC RAW is a THRESHOLD rule: a check under 10 + level*2 fails, and a failed
+// cast costs a wizard the spell / a cleric a point of disapproval. The lib
+// classifies tiers from its DEFAULT ladder because the adapter deliberately
+// never sets `input.resultTable`, so `result.spellLost` only fires on a forced
+// total of 1 — i.e. a natural 1. Driving the automation off the lib tier meant
+// a wizard failing at 9 kept the spell and a cleric failing at 9 gained no
+// disapproval at all.
+
+/** Cast a wizard spell at a chosen total with spell-loss automation on. */
+async function castWizardAtTotal (total, { automate = true } = {}) {
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateWizardSpellLoss' && automate)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  const loseSpellSpy = vi.spyOn(actor, 'loseSpell').mockResolvedValue(undefined)
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = total
+      this._total = total
+      this._formula = String(formula)
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+  }
+
+  findSpy.mockRestore()
+  return loseSpellSpy
+}
+
+test('#923 a wizard who fails the threshold loses the spell, not just on a natural 1', async () => {
+  // A level-1 spell needs 12. Rolling 9 is a plain failure — legacy lost the
+  // spell here; the lib tier ladder called it 'failure', not 'lost'.
+  const lost = await castWizardAtTotal(9)
+  expect(lost).toHaveBeenCalledTimes(1)
+})
+
+test('#923 a wizard who makes the threshold keeps the spell', async () => {
+  const lost = await castWizardAtTotal(14)
+  expect(lost).not.toHaveBeenCalled()
+})
+
+test('#923 spell loss on a failed threshold still respects the automation setting', async () => {
+  const lost = await castWizardAtTotal(9, { automate: false })
+  expect(lost).not.toHaveBeenCalled()
+})
+
+test('#923 a cleric who fails the threshold gains a point of disapproval', async () => {
+  // Legacy applied +1 disapproval for ANY failed cleric check. The adapter
+  // only bumped via the lib event, which fires on an in-range natural.
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 9
+      this._total = 9
+      this._formula = String(formula)
+      // Natural 10 — outside the disapproval range, so the lib bumps nothing.
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+  }
+
+  expect(applySpy).toHaveBeenCalledTimes(1)
+  findSpy.mockRestore()
+})
+
+test('#923 a table-less item cast still shows a pass/fail verdict', async () => {
+  // `buildNakedSpellResultHtml` was gated on `!spellItem`, so a spell with no
+  // results table produced a card with the roll and a modifier breakdown and
+  // NO success/failure text at all — worse than the warning it replaced.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.spellResult']).toBeTruthy()
+  expect(messageData.content).toContain(messageData.flags['dcc.spellResult'])
+
+  findSpy.mockRestore()
+})
+
+test('#923 a manually-flagged lost spell still casts when automation is off', async () => {
+  // The sheets expose a manual Lost checkbox. `buildSpellbookEntry` marked the
+  // lib entry lost unconditionally, so the lib refused the cast with a RAW
+  // ENGLISH string ('Spell "X" is lost for the day') — an untranslated message
+  // reaching users, and a cast legacy allowed with automation off.
+  rollToMessageMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  gameSettingsGetMock.mockImplementation(() => false)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ lost: true })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spellItem })
+
+  expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
+
+  gameSettingsGetMock.mockReset()
+  findSpy.mockRestore()
+})
+
+test('#923 an in-range cleric natural bumps disapproval exactly once', async () => {
+  // The lib raises the range itself through `onDisapprovalIncreased` when the
+  // natural is in range. Legacy applied exactly ONE point per failed cast, so
+  // adding `applyDisapproval` unconditionally on top would double it.
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+  actorUpdateMock.mockClear()
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  // Natural 1 — inside any disapproval range, and what the lib's
+  // `calculateDisapprovalIncrease` keys off. (forceFumble can't be used here:
+  // the Roll mock has no `terms[0].results` for it to mutate.)
+  const OriginalRoll = globalThis.Roll
+  class FumbleRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 1
+      this._total = 1
+      this._formula = String(formula)
+      this.dice = [{ total: 1, results: [1], options: {}, faces: 20 }]
+    }
+  }
+  FumbleRoll.safeEval = OriginalRoll.safeEval
+  FumbleRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FumbleRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FumbleRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+  }
+
+  // The lib's event owns the bump for this cast; the threshold rule must not
+  // add a second one.
+  expect(applySpy).not.toHaveBeenCalled()
+  const rangeWrites = actorUpdateMock.mock.calls.filter(([data]) =>
+    data && 'system.class.disapproval' in data
+  )
+  expect(rangeWrites).toHaveLength(1)
+
+  gameSettingsGetMock.mockReset()
+  findSpy.mockRestore()
 })
