@@ -60,7 +60,7 @@ import { isRollCancellation } from '../roll-cancellation.mjs'
  *                                             `@`-substitutions.
  * @param {string}        [options.title]      Dialog window title.
  * @param {string}        [options.rollLabel]  Submit button label.
- * @param {{str: number, agl: number, sta: number, level: number}} [options.spellburn]
+ * @param {{str: number, agl: number, sta: number, level: (number|undefined)}} [options.spellburn]
  *                                             Current ability values
  *                                             for the casting actor.
  *                                             When set, the dialog
@@ -107,8 +107,15 @@ export async function promptRollModifierDialog (terms, options = {}) {
       str: originalStr,
       agl: originalAgl,
       sta: originalSta,
-      // Scales the Stamina modifier threshold hit point adjustment (#921)
-      level: Number(sb.level) || 0,
+      // Scales the Stamina modifier threshold hit point PREVIEW (#921) - the
+      // applied amount is recomputed from the actor by `logSpellburn`.
+      // Passed through only when the caller actually supplied a finite level:
+      // `Number(x) || 0` would turn an absent level into 0, which is a number,
+      // defeating the `isNaN` gate in `DCCSpellburnTerm` that keeps the
+      // checkbox away from callers who never wired it up.
+      level: Number.isFinite(Number(sb.level)) && sb.level !== null && sb.level !== ''
+        ? Number(sb.level)
+        : undefined,
       callback: (_formula, term) => {
         // `term.str/agl/sta` hold the final (post-burn) ability values
         // after the user clicks the dialog's +/- buttons. The dialog
@@ -117,10 +124,12 @@ export async function promptRollModifierDialog (terms, options = {}) {
         spellburnCapture.agl = Number(term.agl) || 0
         spellburnCapture.sta = Number(term.sta) || 0
         // `term.adjustHP` tracks the "also adjust hit points" checkbox.
-        // It stays checked even while the row is hidden, which is
-        // harmless: `logSpellburn` recomputes the delta and a burn that
-        // crosses no threshold yields 0.
-        spellburnCapture.adjustHP = term.adjustHP !== false
+        // It stays checked even while the row is hidden, which is harmless:
+        // `logSpellburn` recomputes the delta and a burn that crosses no
+        // threshold yields 0. Fail closed on anything but an explicit true -
+        // a term that was never offered a checkbox must not silently opt in,
+        // and this matches the other three apply sites.
+        spellburnCapture.adjustHP = term.adjustHP === true
       }
     }
 

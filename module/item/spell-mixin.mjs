@@ -208,7 +208,8 @@ export const SpellItemMixin = (Base) => class extends Base {
         str: sbStr,
         agl: sbAgl,
         sta: sbSta,
-        // Scales the Stamina modifier threshold hit point adjustment (#921).
+        // Scales the Stamina modifier threshold hit point PREVIEW (#921) - the
+        // applied amount is recomputed from the actor by `logSpellburn`.
         // Supplying it is what makes the dialog offer the checkbox at all.
         level: parseInt(actor.system.details?.level?.value) || 0,
         callback: (formula, term) => {
@@ -220,7 +221,14 @@ export const SpellItemMixin = (Base) => class extends Base {
           // checked by default once the burn crosses a Stamina modifier
           // threshold. A stale `true` on a burn that crosses nothing is a
           // no-op — `logSpellburn` recomputes the delta.
-          logSpellburn(actor, term, this.name, { adjustHP: term.adjustHP === true })
+          // The term callback is synchronous, so this cannot be awaited - but
+          // the chat card is about to claim the burn was paid, so a rejected
+          // update has to reach the player rather than the console alone
+          Promise.resolve(logSpellburn(actor, term, this.name, { adjustHP: term.adjustHP === true }))
+            .catch((err) => {
+              console.error('[DCC] spellburn apply rejected', { actor: actor?.name, spell: this.name, err })
+              ui.notifications.error(game.i18n.localize('DCC.SpellburnApplyFailed'))
+            })
         }
       })
     }

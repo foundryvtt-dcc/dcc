@@ -258,7 +258,10 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     const hpRow = page.locator('.dcc-roll-modifier .spellburn-adjust-hp-row')
     await openSpellburnDialog(page, 1)
 
-    // Sta 14 -> 13 stays inside the +1 band, so no HP row yet
+    // Sta 14 -> 13 stays inside the +1 band, so no HP row yet. Assert it
+    // EXISTS first - toBeHidden() also passes when the element is absent,
+    // which is the failure mode this feature already shipped with once
+    await expect(hpRow).toHaveCount(1)
     await expect(hpRow).toBeHidden()
 
     // Sta 13 -> 12 crosses +1 -> 0: 1 modifier step x level 2 = 2 hit points

@@ -184,7 +184,6 @@ describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
       str: 14,
       agl: 12,
       sta: 13,
-      // Scales the Stamina modifier threshold HP preview (#921)
       level: 3
     })
     expect(typeof termsArg[1].callback).toBe('function')

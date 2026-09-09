@@ -686,6 +686,56 @@ test('naked spell check spellburn may reduce a physical ability to 0 (floor-0, _
   itemSpy.mockRestore()
 })
 
+// #921 forwarding hops. Each layer of the hit point opt-in was unit-tested in
+// isolation, but the wiring BETWEEN them was not — which is exactly how the
+// feature shipped missing from the sheet cast path. Mutating either forwarding
+// expression to a hard `false` used to leave the whole suite green.
+test('naked spell check forwards the HP opt-in through to the actor update (#921)', async () => {
+  actorUpdateMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 2
+  actor.system.abilities.sta.value = 13
+  actor.system.attributes.hp.value = 8
+  actor.system.attributes.hp.max = 10
+
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 hit points
+  await actor.rollSpellCheck({ spellburn: { str: 0, agl: 0, sta: 2, adjustHP: true } })
+
+  expect(actorUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+    'system.abilities.sta.value': 11,
+    'system.attributes.hp.value': 6,
+    'system.attributes.hp.max': 8
+  }))
+
+  itemSpy.mockRestore()
+})
+
+test('naked spell check leaves hit points alone without the opt-in (#921)', async () => {
+  actorUpdateMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 2
+  actor.system.abilities.sta.value = 13
+  actor.system.attributes.hp.value = 8
+
+  await actor.rollSpellCheck({ spellburn: { str: 0, agl: 0, sta: 2 } })
+
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.abilities.sta.value': 11 })
+
+  itemSpy.mockRestore()
+})
+
 test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async () => {
   // Cleric naked check: actor's `sheetClass = 'Cleric'` selects the
   // cleric profile (no spellburn, idol-magic check, disapproval-
@@ -1655,7 +1705,6 @@ test('wizard cast with showModifierDialog prompts the unified dialog and forward
   expect(Array.isArray(termsArg)).toBe(true)
   expect(termsArg[0]).toMatchObject({ type: 'Die' })
   expect(termsArg.some((t) => t.type === 'Compound')).toBe(true)
-  // `level` scales the Stamina modifier threshold HP preview (#921)
   expect(optsArg.spellburn).toEqual({ str: 14, agl: 12, sta: 13, level: 1 })
 
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
@@ -1836,6 +1885,75 @@ test('spellburn committed on a class the lib does not know is HONORED, not silen
   )
   expect(strUpdate, 'expected a Strength deduction from the honored spellburn').toBeDefined()
   expect(strUpdate[0]['system.abilities.str.value']).toBe(9)
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+  updateSpy.mockRestore()
+})
+
+test('item-bound wizard cast forwards the HP opt-in through createSpellEvents (#921)', async () => {
+  // The third forwarding hop: dialog result -> options.spellburn.adjustHP ->
+  // createSpellEvents({adjustSpellburnHP}) -> onSpellburnApplied ->
+  // logSpellburn. Every layer had its own test; the wiring between them had
+  // none, and mutating `rolls-spell-mixin.mjs` to a hard `false` left the
+  // whole suite green.
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 2
+  actor.system.abilities.sta.value = 13
+  actor.system.attributes.hp.value = 8
+  actor.system.attributes.hp.max = 10
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const updateSpy = vi.spyOn(actor, 'update').mockResolvedValue(undefined)
+
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 hit points
+  await actor.rollSpellCheck({ spell: 'Magic Missile', spellburn: { str: 0, agl: 0, sta: 2, adjustHP: true } })
+
+  const burnUpdate = updateSpy.mock.calls.find(([data]) =>
+    data && Object.prototype.hasOwnProperty.call(data, 'system.abilities.sta.value')
+  )
+  expect(burnUpdate, 'expected a Stamina deduction from the spellburn').toBeDefined()
+  expect(burnUpdate[0]['system.abilities.sta.value']).toBe(11)
+  expect(burnUpdate[0]['system.attributes.hp.value']).toBe(6)
+  expect(burnUpdate[0]['system.attributes.hp.max']).toBe(8)
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+  updateSpy.mockRestore()
+})
+
+test('item-bound wizard cast leaves hit points alone without the opt-in (#921)', async () => {
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.details.level.value = 2
+  actor.system.abilities.sta.value = 13
+  actor.system.attributes.hp.value = 8
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const updateSpy = vi.spyOn(actor, 'update').mockResolvedValue(undefined)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile', spellburn: { str: 0, agl: 0, sta: 2 } })
+
+  const burnUpdate = updateSpy.mock.calls.find(([data]) =>
+    data && Object.prototype.hasOwnProperty.call(data, 'system.abilities.sta.value')
+  )
+  expect(burnUpdate[0]['system.attributes.hp.value']).toBeUndefined()
+  expect(burnUpdate[0]['system.attributes.hp.max']).toBeUndefined()
 
   itemSpy.mockRestore()
   findSpy.mockRestore()

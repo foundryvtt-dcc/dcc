@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, game */
+/* global ChatMessage, CONFIG, CONST, game, ui */
 
 import { logSpellburn } from '../ability-score-log.js'
 
@@ -161,6 +161,9 @@ export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false
       if (anyBurn) {
         Promise.resolve(logSpellburn(actor, burned, spellItem?.name ?? '', { adjustHP: adjustSpellburnHP })).catch((err) => {
           console.error('[DCC adapter] onSpellburnApplied: spellburn update rejected', { actor: actor?.name, burned, err })
+          // The spell check card already claims the burn was paid - a
+          // console-only failure leaves the sheet silently disagreeing with it
+          ui.notifications?.error?.(game.i18n.localize('DCC.SpellburnApplyFailed'))
         })
       }
     }

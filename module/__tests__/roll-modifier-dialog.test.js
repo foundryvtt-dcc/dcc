@@ -93,8 +93,13 @@ describe('_updateSpellburnHpRow', () => {
     }
   }
 
+  // Keyed on the selector rather than answering every query, so a rename in
+  // roll-modifier.js that drifts from dialog-roll-modifiers.html is caught
   const hpCtx = (term, row) => ({
-    element: { querySelector: () => row },
+    element: {
+      querySelector: (selector) =>
+        (selector === `.spellburn-adjust-hp-row[data-term="${term.index}"]` ? row : null)
+    },
     _terms: [term],
     getTermByIndex: proto.getTermByIndex
   })
@@ -102,7 +107,7 @@ describe('_updateSpellburnHpRow', () => {
   test('shows the row with the ΔHP wording when the burn crosses a threshold', () => {
     // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
     const row = makeRow()
-    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 2 }
+    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 2, hpAdjustable: true }
     proto._updateSpellburnHpRow.call(hpCtx(term, row), 0)
 
     expect(row.classList.contains('hidden')).toBe(false)
@@ -111,7 +116,7 @@ describe('_updateSpellburnHpRow', () => {
 
   test('hides the row again when the burn stays inside one modifier band', () => {
     const row = makeRow()
-    const term = { index: 0, type: 'Spellburn', staStart: 12, sta: 11, level: 2 }
+    const term = { index: 0, type: 'Spellburn', staStart: 12, sta: 11, level: 2, hpAdjustable: true }
     proto._updateSpellburnHpRow.call(hpCtx(term, row), 0)
 
     expect(row.classList.contains('hidden')).toBe(true)
@@ -119,7 +124,7 @@ describe('_updateSpellburnHpRow', () => {
 
   test('a level 0 character still loses a point per modifier step', () => {
     const row = makeRow()
-    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 0 }
+    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 0, hpAdjustable: true }
     proto._updateSpellburnHpRow.call(hpCtx(term, row), 0)
 
     expect(row.label.textContent).toContain('by -1')
@@ -129,6 +134,24 @@ describe('_updateSpellburnHpRow', () => {
   test('does nothing when the row is not in the DOM (non-spellburn dialogs)', () => {
     const ctx = { element: { querySelector: () => null }, _terms: [], getTermByIndex: proto.getTermByIndex }
     expect(() => proto._updateSpellburnHpRow.call(ctx, 0)).not.toThrow()
+  })
+
+  test('a term that never opted in is skipped without touching the DOM', () => {
+    // A term with no level gets no row; querying for one would be a bug
+    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 0, hpAdjustable: false }
+    const querySelector = vi.fn()
+    proto._updateSpellburnHpRow.call({ element: { querySelector }, _terms: [term], getTermByIndex: proto.getTermByIndex }, 0)
+    expect(querySelector).not.toHaveBeenCalled()
+  })
+
+  test('an adjustable term whose row is missing reports rather than failing silently', () => {
+    // This drift between template and term list is how the feature went
+    // missing on the sheet cast path (#921) - it must not be quiet
+    const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 2, hpAdjustable: true }
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    proto._updateSpellburnHpRow.call({ element: { querySelector: () => null }, _terms: [term], getTermByIndex: proto.getTermByIndex }, 0)
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
   })
 })
 
@@ -174,5 +197,44 @@ describe('Spellburn term hit point opt-in (#921)', () => {
 
   test('a term with no level (dependent modules with their own apply callback) does not', () => {
     expect(spellburnTerm()).toMatchObject({ hpAdjustable: false, adjustHP: false, level: 0 })
+  })
+})
+
+// The +/- buttons are the only thing that refreshes the preview, so the wire
+// from #modifySpellburn to _updateSpellburnHpRow is load-bearing: without it
+// the row never appears no matter how much Stamina is burned.
+describe('modifySpellburn refreshes the HP row', () => {
+  const action = RollModifierDialog.DEFAULT_OPTIONS.actions.modifySpellburn
+
+  const dialogCtx = (term, fields) => ({
+    element: { querySelector: (sel) => fields[sel] ?? null },
+    _terms: [term],
+    terms: [term],
+    getTermByIndex: proto.getTermByIndex,
+    _updateSpellburnHpRow: vi.fn()
+  })
+
+  const fieldsFor = (staValue) => ({
+    '#term-0': { value: '+0' },
+    '#sta': { value: String(staValue), dataset: { max: String(staValue) } },
+    '#str': { value: '12', dataset: { max: '12' } }
+  })
+
+  test('burning Stamina refreshes the row', async () => {
+    const term = { index: 0, type: 'Spellburn', staStart: 16, sta: 16, level: 2, hpAdjustable: true }
+    const ctx = dialogCtx(term, fieldsFor(16))
+    await action.call(ctx, new Event('click'), { dataset: { term: '0', mod: '+1', stat: 'sta' } })
+
+    expect(term.sta).toBe(15)
+    expect(ctx._updateSpellburnHpRow).toHaveBeenCalledWith('0')
+  })
+
+  test('burning Strength does not', async () => {
+    const term = { index: 0, type: 'Spellburn', staStart: 16, sta: 16, str: 12, level: 2, hpAdjustable: true }
+    const ctx = dialogCtx(term, fieldsFor(16))
+    await action.call(ctx, new Event('click'), { dataset: { term: '0', mod: '+1', stat: 'str' } })
+
+    expect(term.str).toBe(11)
+    expect(ctx._updateSpellburnHpRow).not.toHaveBeenCalled()
   })
 })

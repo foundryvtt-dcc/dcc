@@ -38,8 +38,9 @@
     }
   }
 
-  // Stamina modifier threshold hit point adjustment (#921) — full width
-  // under the term columns, matching the ability score log dialog's row
+  // Stamina modifier threshold hit point adjustment (#921) — full width under
+  // the term columns. Shares the ability score log row's 13px scale and its
+  // tightly scoped checkbox rules, but not its alignment (see below)
   .spellburn-adjust-hp-row {
     font-size: 13px;
     margin-left: 2px;
@@ -48,9 +49,10 @@
       display: none;
     }
 
-    // Single line in this dialog (unlike the narrow ability score log column,
-    // where the same label wraps), so the box centers against the text rather
-    // than hanging off the first line
+    // `center` rather than the ability score log's `flex-start`: that dialog's
+    // narrow column wraps this label over several lines, where aligning to the
+    // first line is right. Here the row spans the full dialog width and
+    // normally renders on one line, where centering reads correctly
     label {
       align-items: center;
       display: flex;

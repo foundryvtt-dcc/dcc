@@ -12,7 +12,7 @@
     {{#if hpAdjustable}}
       <div class="spellburn-adjust-hp-row hidden" data-term="{{index}}">
         <label>
-          <input type="checkbox" data-action="spellburnAdjustHP" data-term="{{index}}" name="spellburn-adjust-hp-{{index}}" checked/>
+          <input type="checkbox" data-action="spellburnAdjustHP" data-term="{{index}}" name="spellburn-adjust-hp-{{index}}" {{#if adjustHP}}checked{{/if}}/>
           <span class="adjust-hp-label"></span>
         </label>
       </div>

@@ -1,4 +1,4 @@
-/* global Die, OperatorTerm, Roll, game, foundry */
+/* global Die, OperatorTerm, Roll, game, foundry, ui */
 
 import { RollCancelledError } from './roll-cancellation.mjs'
 import { staminaHpDeltaForLevel } from './ability-score-log.js'
@@ -31,7 +31,10 @@ function _prependSign (formula) {
 }
 
 /**
- * Render a number with an explicit sign, for modifier display
+ * Render a number with a leading sign for modifier display
+ *
+ * Zero renders bare ("0", not "+0"), matching how the ability score log
+ * dialog writes the same modifiers.
  * @param value {number}
  * @return {string}
  */
@@ -127,7 +130,7 @@ function DCCCheckPenaltyTerm (options) {
 function DCCSpellburnTerm (options) {
   // The hit point row is opt-in via `level` (#921). Dependent modules build
   // their own Spellburn terms with a bespoke apply callback (XCC's class
-  // sheets, for one) and never see the `adjustHP` flag, so offering them a
+  // sheets, for one) and never read the `adjustHP` flag, so offering them a
   // checkbox that silently does nothing would be worse than not offering it.
   const level = parseInt(options.level)
   const hpAdjustable = !isNaN(level)
@@ -666,9 +669,15 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #spellburnAdjustHP (event, target) {
     const term = this.getTermByIndex(target.dataset.term)
-    if (term) {
-      term.adjustHP = target.checked
+    if (!term) {
+      // Failing quietly here would discard an explicit opt-OUT: `adjustHP`
+      // starts true, so a lost term means the box reads unchecked while the
+      // hit points still move
+      console.error('[DCC] spellburn hit point checkbox has no matching term', { index: target.dataset.term })
+      ui.notifications?.warn?.(game.i18n.localize('DCC.SpellburnApplyFailed'))
+      return
     }
+    term.adjustHP = target.checked
   }
 
   /**
@@ -677,15 +686,25 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    * Mirrors the Ability Score Log dialog: the row is only shown when the
    * pending Stamina burn actually crosses an ability modifier threshold, and
    * it restates the delta with the same wording (DCC.AbilityLogAdjustHP).
-   * Hidden rows leave the checkbox alone - `logSpellburn` recomputes the delta
-   * on apply, so a stale checked box on a burn that crosses nothing is a no-op.
+   * Hidden rows keep both their checkbox and their last label text - only
+   * visibility is toggled. That is safe because `logSpellburn` recomputes the
+   * delta on apply, so a stale checked box on a burn that crosses nothing
+   * applies nothing.
    * @param {string|number} index - The term index
+   * @returns {void}
    * @private
    */
   _updateSpellburnHpRow (index) {
-    const row = this.element?.querySelector(`.spellburn-adjust-hp-row[data-term="${index}"]`)
-    if (!row) return
     const term = this.getTermByIndex(index)
+    // No row is expected when the term never opted in - anything else is the
+    // template and the term list having drifted apart, which is exactly how
+    // this feature went missing on the sheet cast path (#921)
+    if (!term?.hpAdjustable) return
+    const row = this.element?.querySelector(`.spellburn-adjust-hp-row[data-term="${index}"]`)
+    if (!row) {
+      console.error('[DCC] spellburn term is hit point adjustable but its row is missing from the dialog', { index })
+      return
+    }
     const { hpChange, oldMod, newMod } = staminaHpDeltaForLevel(term.level, term.staStart, term.sta)
     if (hpChange) {
       const label = row.querySelector('.adjust-hp-label')
@@ -728,6 +747,22 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const index = target.dataset.term
     const formField = this.element.querySelector('#term-' + index)
     formField.value = this.getTermByIndex(index).formula
+  }
+
+  /**
+   * @override
+   * Re-render rebuilds the row from the template, so restore each spellburn
+   * term's live state (visibility + label) rather than leaving the freshly
+   * rendered default. `adjustHP` itself round-trips through the template's
+   * `checked` binding.
+   */
+  _onRender (context, options) {
+    super._onRender?.(context, options)
+    for (const term of this.terms ?? []) {
+      if (term.hpAdjustable) {
+        this._updateSpellburnHpRow(term.index)
+      }
+    }
   }
 
   /**

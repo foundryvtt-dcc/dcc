@@ -269,6 +269,80 @@ describe('logSpellburn', () => {
     expect(options).toBeUndefined()
   })
 
+  test('records only the hit points actually lost when the character cannot afford them (#921)', async () => {
+    // Clamping the endpoints independently used to record the full computed
+    // loss while applying less, so healing handed back more than was taken
+    const actor = makeActor()
+    actor.system.details.level.value = 5
+    actor.system.attributes.hp = { value: 3, max: 20 }
+    // sta 13 (mod +1) -> 8 (mod -1): Δmod = -2, level 5 -> -10 computed
+    await logSpellburn(actor, { sta: 8 }, 'Magic Missile', { adjustHP: true })
+
+    const [update] = actor.update.mock.calls[0]
+    // Only 3 hit points were there to lose, so that is what moves - and both
+    // endpoints move together so the round trip stays exact
+    expect(update['system.attributes.hp.value']).toEqual(0)
+    expect(update['system.attributes.hp.max']).toEqual(17)
+    expect(update['system.abilityLog'][0].hpChange).toEqual(-3)
+  })
+
+  test('a clamped burn heals back to exactly where it started (#921)', async () => {
+    const actor = makeActor()
+    actor.system.details.level.value = 5
+    actor.system.attributes.hp = { value: 3, max: 20 }
+    await logSpellburn(actor, { sta: 8 }, 'Magic Missile', { adjustHP: true })
+    const [burnUpdate] = actor.update.mock.calls[0]
+
+    actor.system.abilities.sta.value = 8
+    actor.system.attributes.hp = { value: 0, max: 17 }
+    actor.system.abilityLog = burnUpdate['system.abilityLog']
+    actor.update.mockClear()
+
+    await healAbilityLogEntry(actor, actor.system.abilityLog[0].id, { healAll: true })
+    const [healUpdate] = actor.update.mock.calls[0]
+    expect(healUpdate['system.abilities.sta.value']).toEqual(13)
+    // Back to 3/20 - never more than was taken
+    expect(healUpdate['system.attributes.hp.value']).toEqual(3)
+    expect(healUpdate['system.attributes.hp.max']).toEqual(20)
+  })
+
+  test('an out-of-table Stamina score clamps instead of reading as modifier 0 (#921)', async () => {
+    // CONFIG.DCC.abilityModifiers spans 0-24; a raw `[score] || 0` lookup made
+    // a burn from 25 compute a POSITIVE ΔHP, granting hit points for burning
+    const actor = makeActor()
+    actor.system.abilities.sta = { value: 25, max: 25 }
+    actor.system.details.level.value = 3
+
+    expect(staminaHpDeltaForLevel(3, 25, 23).hpChange).toBeLessThanOrEqual(0)
+
+    await logSpellburn(actor, { sta: 23 }, 'Magic Missile', { adjustHP: true })
+    const [update] = actor.update.mock.calls[0]
+    const hpChange = update['system.abilityLog'][0].hpChange
+    expect(hpChange).toBeLessThanOrEqual(0)
+    expect(update['system.attributes.hp.value'] ?? 8).toBeLessThanOrEqual(8)
+  })
+
+  test('announces the hit point cost even with the log setting off (#921)', async () => {
+    // No entry means no Heal button, so the chat card is the only record the
+    // player gets - a silent hit point drop is worse than no log
+    setLogEnabled(false)
+    const actor = makeActor()
+    await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
+
+    expect(actor.update).toHaveBeenCalledTimes(1)
+    const [update] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toEqual(6)
+    expect(update['system.abilityLog']).toBeUndefined()
+    expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalled()
+  })
+
+  test('stays silent with the log off when no hit points moved (#921)', async () => {
+    setLogEnabled(false)
+    const actor = makeActor()
+    await logSpellburn(actor, { str: 10 }, 'Magic Missile', { adjustHP: true })
+    expect(global.CONFIG.ChatMessage.documentClass.create).not.toHaveBeenCalled()
+  })
+
   test('healing the spellburn entry restores the hit points it cost (#921)', async () => {
     const actor = makeActor()
     await logSpellburn(actor, { sta: 11 }, 'Magic Missile', { adjustHP: true })
