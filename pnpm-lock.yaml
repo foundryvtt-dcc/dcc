@@ -21,8 +21,8 @@ importers:
         specifier: ^9.1.7
         version: 9.1.7
       sass:
-        specifier: ^1.103.1
-        version: 1.103.1
+        specifier: ^1.104.0
+        version: 1.104.0
       standard:
         specifier: ^17.1.2
         version: 17.1.2(supports-color@10.2.2)
@@ -34,7 +34,7 @@ importers:
         version: 13.0.0(postcss@8.5.25)(stylelint@17.14.1(supports-color@10.2.2))
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.103.1))
+        version: 4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.104.0))
 
   browser-tests/e2e:
     devDependencies:
@@ -1820,8 +1820,8 @@ packages:
     resolution: {integrity: sha512-x/+Cz4YrimQxQccJf5mKEbIa1NzeCRNI5Ecl/ekmlYaampdNLPalVyIcCZNNH3MvmqBugV5TMYZXv0ljslUlaw==}
     engines: {node: '>= 0.4'}
 
-  sass@1.103.1:
-    resolution: {integrity: sha512-9icZURbP51S6S0QGoyaeqk9uB06GNWxsFYWfH5RgpFgqK5FA8tJcM3AdVxrZEVJ7dz+L87nG95gBKf4VuaMHGw==}
+  sass@1.104.0:
+    resolution: {integrity: sha512-btHMApW2bgolvClhRW8AlQJzgI9lUB3pPSofBQQT+E46GWvf9o0TVQ13SYv5riWZVFyPN+JNz3TKW9XhBlc10w==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -2554,7 +2554,7 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.103.1))
+      vitest: 4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.104.0))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -2565,13 +2565,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.11(vite@8.1.5(sass@1.103.1))':
+  '@vitest/mocker@4.1.11(vite@8.1.5(sass@1.104.0))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.1.5(sass@1.103.1)
+      vite: 8.1.5(sass@1.104.0)
 
   '@vitest/pretty-format@4.1.10':
     dependencies:
@@ -4079,7 +4079,7 @@ snapshots:
       es-errors: 1.3.0
       is-regex: 1.2.1
 
-  sass@1.103.1:
+  sass@1.104.0:
     dependencies:
       chokidar: 5.0.0
       immutable: 5.1.9
@@ -4449,7 +4449,7 @@ snapshots:
 
   version-guard@1.1.3: {}
 
-  vite@8.1.5(sass@1.103.1):
+  vite@8.1.5(sass@1.104.0):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -4458,12 +4458,12 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
-      sass: 1.103.1
+      sass: 1.104.0
 
-  vitest@4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.103.1)):
+  vitest@4.1.11(@vitest/coverage-v8@4.1.10)(vite@8.1.5(sass@1.104.0)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@8.1.5(sass@1.103.1))
+      '@vitest/mocker': 4.1.11(vite@8.1.5(sass@1.104.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -4480,7 +4480,7 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.1.5(sass@1.103.1)
+      vite: 8.1.5(sass@1.104.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@vitest/coverage-v8': 4.1.10(vitest@4.1.11)
