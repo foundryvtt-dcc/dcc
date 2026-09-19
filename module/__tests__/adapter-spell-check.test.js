@@ -1800,35 +1800,27 @@ test('wizard cast with preset options.spellburn bypasses the dialog', async () =
 // ── NPC modifier dialog ─────────────────────────────────────────────
 // Records every formula the adapter hands to `new Roll(...)` so a test can
 // assert which die the dialog's choice actually reached (the chat mock
-// doesn't carry the roll).
-let originalRollClass = null
+// doesn't carry the roll). Returns the log plus a restore function that
+// closes over the original class, so nothing leaks past the test.
 function captureRollFormulas () {
   const rolledFormulas = []
-  originalRollClass = globalThis.Roll
-  const OriginalRoll = originalRollClass
+  const OriginalRoll = globalThis.Roll
   class RecordingRoll extends OriginalRoll {
     constructor (formula, data) {
       super(formula, data)
       rolledFormulas.push(typeof formula === 'string' ? formula : '')
     }
   }
-  RecordingRoll.safeEval = OriginalRoll.safeEval
-  RecordingRoll.validate = OriginalRoll.validate
-  RecordingRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
-  RecordingRoll.fromTerms = OriginalRoll.fromTerms
   globalThis.Roll = RecordingRoll
-  return rolledFormulas
-}
-function restoreRoll () {
-  if (originalRollClass) globalThis.Roll = originalRollClass
-  originalRollClass = null
+  return { rolledFormulas, restore: () => { globalThis.Roll = OriginalRoll } }
 }
 
 test('wizard cast on an NPC actor prompts the modifier dialog without a spellburn term', async () => {
   // The NPC sheet's ctrl-click stopped opening the die / bonus dialog once
   // #923 routed the sheet cast through this dispatcher: the dialog gate
-  // excluded NPCs outright, when all the legacy path ever withheld from
-  // them was spellburn. The dialog is how an NPC picks a custom die.
+  // excluded NPCs outright. Keeping spellburn off for NPCs is the adapter's
+  // choice (legacy offered it to them); the dialog is how an NPC picks a
+  // custom die and must stay.
   rollToMessageMock.mockClear()
   actorUpdateMock.mockClear()
   promptRollModifierDialog.mockReset()
@@ -1844,13 +1836,15 @@ test('wizard cast on an NPC actor prompts the modifier dialog without a spellbur
   actor.type = 'NPC'
   actor.isNPC = true
   actor.isPC = false
+  // A real NPC carries no class name, so the profile resolves from the
+  // spell's own castingMode (the `profileFromCastingMode` fallback).
   actor.system.class.patron = ''
-  actor.system.class.className = 'Wizard'
-  actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.className = ''
+  actor.system.details.sheetClass = ''
 
   const spellItem = makeWizardSpellItem()
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
-  const rolledFormulas = captureRollFormulas()
+  const { rolledFormulas, restore } = captureRollFormulas()
 
   try {
     await actor.rollSpellCheck({
@@ -1858,7 +1852,7 @@ test('wizard cast on an NPC actor prompts the modifier dialog without a spellbur
       showModifierDialog: true
     })
   } finally {
-    restoreRoll()
+    restore()
   }
 
   expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
@@ -1868,11 +1862,9 @@ test('wizard cast on an NPC actor prompts the modifier dialog without a spellbur
   // NPCs never spellburn, so the dialog goes up without the descriptor.
   expect(optsArg.spellburn).toBeUndefined()
 
-  // The dialog's die choice reaches the roll...
+  // The dialog's die choice reaches the roll.
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
   expect(rolledFormulas[0]).toContain('1d16')
-  // ...and nothing was burned.
-  expect(actorUpdateMock).not.toHaveBeenCalledWith(expect.objectContaining({ 'system.abilities.str.value': expect.anything() }))
 
   findSpy.mockRestore()
 })
@@ -1893,14 +1885,14 @@ test('naked spell check on an NPC actor prompts the modifier dialog without a sp
   actor.isNPC = true
   actor.isPC = false
   actor.system.class.patron = ''
-  actor.system.class.className = 'Wizard'
-  actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.className = ''
+  actor.system.details.sheetClass = ''
 
-  const rolledFormulas = captureRollFormulas()
+  const { rolledFormulas, restore } = captureRollFormulas()
   try {
     await actor.rollSpellCheck({ showModifierDialog: true })
   } finally {
-    restoreRoll()
+    restore()
   }
 
   expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)

@@ -1731,8 +1731,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // Discord report: on v14 an NPC's Spells tab lost ctrl+click, so there
       // was no way to cast with a custom die. The adapter's dialog gate
       // excluded NPCs outright — harmless while the sheet cast bypassed the
-      // dispatcher, a regression the moment #923 routed it here. The legacy
-      // path only ever withheld spellburn from NPCs, never the dialog.
+      // dispatcher, a regression the moment #923 routed it here. Spellburn
+      // stays off for NPCs by adapter-era choice; the dialog itself must not.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 NPC Sheet Caster',

@@ -444,13 +444,15 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // attached spell. Gating it here would have silently dropped the dialog
     // (and its spellburn term) from every wand cast once the character
     // sheet's cast button moved onto this dispatcher (#923).
-    // Every actor type, too: NPCs never spellburn, but that only drops the
-    // Spellburn term — the legacy `DCCRoll.createRoll` path still put the
-    // die / bonus dialog up for an NPC ctrl-click. This gate used to read
-    // `!this.isNPC`, which was harmless while the NPC sheet's cast button
-    // bypassed the dispatcher and became a regression the moment #923 routed
-    // it here: ctrl-click on an NPC's Spells tab silently rolled with no way
-    // to pick a custom die.
+    // Every actor type, too. The legacy `DCCRoll.createRoll` path put the
+    // dialog up for an NPC ctrl-click (Spellburn term and all — it never
+    // looked at the actor type). The adapter keeps spellburn off for NPCs,
+    // an adapter-era choice (the spellburn event bridge bails for them
+    // anyway), but that only drops the Spellburn term. This gate used to
+    // read `!this.isNPC`, which was harmless while the NPC sheet's cast
+    // button bypassed the dispatcher and became a regression the moment
+    // #923 routed it here: ctrl-click on an NPC's Spells tab silently rolled
+    // with no way to pick a custom die.
     if (options.showModifierDialog && !options.spellburn) {
       const isCleric = castingMode === 'cleric' || dispatch.castingModeOverride === 'cleric'
       const prompt = await this._promptSpellCheckDialog(spellItem, {
@@ -558,11 +560,12 @@ export const RollsSpellMixin = (Base) => class extends Base {
 
     // Q7-phase2 (session 27) — surface the unified modifier dialog
     // for naked checks too. Spellburn eligibility mirrors the
-    // wizard-item route (NPCs + idol-magic clerics skip — legacy
-    // never offered it to them). Idol-magic clerics and NPCs still get
-    // the dialog without Spellburn (and, for idol magic, without
-    // CheckPenalty) so they can override the die / Compound bonus — see
-    // the item-bound route above for why the NPC gate had to go.
+    // wizard-item route: idol-magic clerics skip it per RAW, NPCs by
+    // adapter-era choice (legacy offered it to any non-cleric, NPCs
+    // included). Idol-magic clerics and NPCs still get the dialog
+    // without Spellburn (and, for idol magic, without CheckPenalty) so
+    // they can override the die / Compound bonus — see the item-bound
+    // route above for why the NPC gate had to go.
     if (options.showModifierDialog && !options.spellburn) {
       const prompt = await this._promptSpellCheckDialog(null, {
         castingMode: isIdolMagic ? 'cleric' : 'wizard',
