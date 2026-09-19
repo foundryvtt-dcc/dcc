@@ -431,8 +431,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // session 1 / open question #6: wizard / cleric branches now show
     // Die / Compound / CheckPenalty / Spellburn / Other Bonus in one
     // dialog (same shape `DCCItem.rollSpellCheck` builds for the
-    // legacy path). NPCs and pre-committed burns skip the dialog
-    // (legacy parity). Wizard-castingMode spells route Spellburn
+    // legacy path). A pre-committed burn skips the dialog (legacy
+    // parity). Wizard-castingMode spells route Spellburn
     // through `input.spellburn`; cleric-castingMode (idol magic) drops
     // both Spellburn and CheckPenalty per RAW. The dispatch log
     // already fired above so a cancel still leaves a traceable adapter
@@ -444,12 +444,19 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // attached spell. Gating it here would have silently dropped the dialog
     // (and its spellburn term) from every wand cast once the character
     // sheet's cast button moved onto this dispatcher (#923).
-    if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
+    // Every actor type, too: NPCs never spellburn, but that only drops the
+    // Spellburn term — the legacy `DCCRoll.createRoll` path still put the
+    // die / bonus dialog up for an NPC ctrl-click. This gate used to read
+    // `!this.isNPC`, which was harmless while the NPC sheet's cast button
+    // bypassed the dispatcher and became a regression the moment #923 routed
+    // it here: ctrl-click on an NPC's Spells tab silently rolled with no way
+    // to pick a custom die.
+    if (options.showModifierDialog && !options.spellburn) {
       const isCleric = castingMode === 'cleric' || dispatch.castingModeOverride === 'cleric'
       const prompt = await this._promptSpellCheckDialog(spellItem, {
         castingMode: isCleric ? 'cleric' : castingMode,
         isIdolMagic: isCleric,
-        spellburnEligible: !isCleric,
+        spellburnEligible: !isCleric && !this.isNPC,
         actionDie: options.actionDieOverride || '',
         actionDicePresets: options._actionDicePresets || null
       })
@@ -519,9 +526,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
    *     situational modifiers.
    *   - Check penalty applies for non-cleric actors (Idol-magic
    *     clerics skip).
-   *   - Spellburn dialog prompts non-NPC non-cleric casters when
+   *   - The modifier dialog prompts every caster when
    *     `options.showModifierDialog` is set and no commitment is
-   *     pre-attached, mirroring the item-bound wizard adapter route.
+   *     pre-attached, mirroring the item-bound adapter route; only
+   *     non-NPC non-cleric casters get its Spellburn term.
    *   - Foundry rolls the d20; `applyForceCritToFoundryRoll` honors
    *     shift-click GM forceCrit.
    *   - Cleric disapproval mechanics fire through the existing
@@ -551,14 +559,15 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // Q7-phase2 (session 27) — surface the unified modifier dialog
     // for naked checks too. Spellburn eligibility mirrors the
     // wizard-item route (NPCs + idol-magic clerics skip — legacy
-    // never offered it to them). Idol-magic clerics still get the
-    // dialog without Spellburn / CheckPenalty so they can override
-    // the die / Compound bonus.
-    if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
+    // never offered it to them). Idol-magic clerics and NPCs still get
+    // the dialog without Spellburn (and, for idol magic, without
+    // CheckPenalty) so they can override the die / Compound bonus — see
+    // the item-bound route above for why the NPC gate had to go.
+    if (options.showModifierDialog && !options.spellburn) {
       const prompt = await this._promptSpellCheckDialog(null, {
         castingMode: isIdolMagic ? 'cleric' : 'wizard',
         isIdolMagic,
-        spellburnEligible: !isIdolMagic,
+        spellburnEligible: !isIdolMagic && !this.isNPC,
         actionDie: options.actionDieOverride || '',
         actionDicePresets: options._actionDicePresets || null
       })
