@@ -1727,6 +1727,85 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       })
     })
 
+    test('ctrl-click on the NPC sheet cast button opens the modifier dialog with no spellburn term', async ({ page }) => {
+      // Discord report: on v14 an NPC's Spells tab lost ctrl+click, so there
+      // was no way to cast with a custom die. The adapter's dialog gate
+      // excluded NPCs outright — harmless while the sheet cast bypassed the
+      // dispatcher, a regression the moment #923 routed it here. Spellburn
+      // stays off for NPCs by adapter-era choice; the dialog itself must not.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 NPC Sheet Caster',
+          type: 'NPC',
+          system: {
+            config: { showSpells: true },
+            class: { spellCheck: 2, spellCheckAbility: 'int' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-NPC-Sheet-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: false },
+            spellCheck: { die: '1d20', value: '+2', penalty: '-0' },
+            results: { table: '', collection: '' },
+            lost: false
+          }
+        }])
+        actor.sheet.render(true)
+      })
+      await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
+      await page.waitForTimeout(2500)
+      await page.evaluate(() => {
+        const app = [...foundry.applications.instances.values()]
+          .find(a => a.document?.name === 'P1 NPC Sheet Caster')
+        app?.changeTab?.('wizardSpells', 'sheet')
+      })
+      await page.waitForTimeout(1000)
+
+      await page.evaluate(() => {
+        window.__p1NpcBefore = new Set(game.messages.contents.map(m => m.id))
+      })
+
+      // Meta-click the cast button — `fillRollOptions` reads ctrlKey || metaKey
+      // to toggle the modifier dialog.
+      await page.locator('.dcc.actor.sheet [data-action="rollSpellCheck"].spell-item-button')
+        .first().click({ modifiers: ['Meta'] })
+      await page.waitForSelector('.dcc-roll-modifier', { timeout: 10000 })
+
+      // NPCs never spellburn, so the dialog carries no burn controls...
+      await expect(page.locator('.dcc-roll-modifier button[data-action="modifySpellburn"]')).toHaveCount(0)
+      // ...but it does offer the die. Step it down the chain: 1d20 → 1d16.
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier button[data-action="modifyDie"][data-term="0"][data-mod="-1"]').click()
+      })
+      await expect(page.locator('.dcc-roll-modifier input[name="term-0"]')).toHaveValue('1d16')
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      })
+
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-NPC-Sheet-Spell', mode: 'wizard' })
+
+      // The card rolled the die chosen in the dialog.
+      const formula = await page.evaluate(async () => {
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse()
+            .find(m => !window.__p1NpcBefore.has(m.id) && m.getFlag('dcc', 'SpellCheck'))
+          if (msg) return msg.rolls?.[0]?.formula ?? ''
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return ''
+      })
+      expect(formula).toContain('1d16')
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 NPC Sheet Caster')?.delete()
+      })
+    })
+
     test('the sheet cast records the total on the spell for the spells tab (#923)', async ({ page }) => {
       // `processSpellCheck` wrote `system.lastResult` on every cast and the
       // cleric spells tab renders it beside each spell. The adapter never did;

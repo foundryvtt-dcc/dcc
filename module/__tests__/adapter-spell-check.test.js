@@ -1797,9 +1797,87 @@ test('wizard cast with preset options.spellburn bypasses the dialog', async () =
   findSpy.mockRestore()
 })
 
-test('wizard cast on an NPC actor bypasses the modifier dialog', async () => {
+// ── NPC modifier dialog ─────────────────────────────────────────────
+// Records every formula the adapter hands to `new Roll(...)` so a test can
+// assert which die the dialog's choice actually reached (the chat mock
+// doesn't carry the roll). Returns the log plus a restore function that
+// closes over the original class, so nothing leaks past the test.
+function captureRollFormulas () {
+  const rolledFormulas = []
+  const OriginalRoll = globalThis.Roll
+  class RecordingRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      rolledFormulas.push(typeof formula === 'string' ? formula : '')
+    }
+  }
+  globalThis.Roll = RecordingRoll
+  return { rolledFormulas, restore: () => { globalThis.Roll = OriginalRoll } }
+}
+
+test('wizard cast on an NPC actor prompts the modifier dialog without a spellburn term', async () => {
+  // The NPC sheet's ctrl-click stopped opening the die / bonus dialog once
+  // #923 routed the sheet cast through this dispatcher: the dialog gate
+  // excluded NPCs outright. Keeping spellburn off for NPCs is the adapter's
+  // choice (legacy offered it to them); the dialog is how an NPC picks a
+  // custom die and must stay.
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  promptRollModifierDialog.mockReset()
+  promptRollModifierDialog.mockResolvedValue({
+    actionDie: '1d16',
+    modifierTotal: 3,
+    formula: '1d16+3',
+    roll: { formula: '1d16+3', terms: [] }
+  })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.type = 'NPC'
+  actor.isNPC = true
+  actor.isPC = false
+  // A real NPC carries no class name, so the profile resolves from the
+  // spell's own castingMode (the `profileFromCastingMode` fallback).
+  actor.system.class.patron = ''
+  actor.system.class.className = ''
+  actor.system.details.sheetClass = ''
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const { rolledFormulas, restore } = captureRollFormulas()
+
+  try {
+    await actor.rollSpellCheck({
+      spell: 'Magic Missile',
+      showModifierDialog: true
+    })
+  } finally {
+    restore()
+  }
+
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
+  const [termsArg, optsArg] = promptRollModifierDialog.mock.calls[0]
+  expect(termsArg[0]).toMatchObject({ type: 'Die' })
+  expect(termsArg.some((t) => t.type === 'Compound')).toBe(true)
+  // NPCs never spellburn, so the dialog goes up without the descriptor.
+  expect(optsArg.spellburn).toBeUndefined()
+
+  // The dialog's die choice reaches the roll.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(rolledFormulas[0]).toContain('1d16')
+
+  findSpy.mockRestore()
+})
+
+test('naked spell check on an NPC actor prompts the modifier dialog without a spellburn term', async () => {
   rollToMessageMock.mockClear()
   promptRollModifierDialog.mockReset()
+  promptRollModifierDialog.mockResolvedValue({
+    actionDie: '1d16',
+    modifierTotal: 0,
+    formula: '1d16',
+    roll: { formula: '1d16', terms: [] }
+  })
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -1807,21 +1885,23 @@ test('wizard cast on an NPC actor bypasses the modifier dialog', async () => {
   actor.isNPC = true
   actor.isPC = false
   actor.system.class.patron = ''
-  actor.system.class.className = 'Wizard'
-  actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.className = ''
+  actor.system.details.sheetClass = ''
 
-  const spellItem = makeWizardSpellItem()
-  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const { rolledFormulas, restore } = captureRollFormulas()
+  try {
+    await actor.rollSpellCheck({ showModifierDialog: true })
+  } finally {
+    restore()
+  }
 
-  await actor.rollSpellCheck({
-    spell: 'Magic Missile',
-    showModifierDialog: true
-  })
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
+  const [termsArg, optsArg] = promptRollModifierDialog.mock.calls[0]
+  expect(termsArg[0]).toMatchObject({ type: 'Die' })
+  expect(optsArg.spellburn).toBeUndefined()
 
-  expect(promptRollModifierDialog).not.toHaveBeenCalled()
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
-
-  findSpy.mockRestore()
+  expect(rolledFormulas[0]).toContain('1d16')
 })
 
 // ── dispatch-log reason codes for silent adapter→legacy fallbacks ─────────
