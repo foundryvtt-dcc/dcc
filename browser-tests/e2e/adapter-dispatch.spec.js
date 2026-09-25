@@ -1713,7 +1713,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         const deadline = Date.now() + 5000
         while (Date.now() < deadline) {
           const msg = game.messages.contents.slice().reverse()
-            .find(m => !window.__p923Before.has(m.id) && m.getFlag('dcc', 'SpellCheck'))
+            .find(m => !window.__p923Before.has(m.id) && m.getFlag('dcc', 'RollType') === 'SpellCheck')
           if (msg) return msg.content
           await new Promise(resolve => setTimeout(resolve, 50))
         }
@@ -1793,7 +1793,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         const deadline = Date.now() + 5000
         while (Date.now() < deadline) {
           const msg = game.messages.contents.slice().reverse()
-            .find(m => !window.__p1NpcBefore.has(m.id) && m.getFlag('dcc', 'SpellCheck'))
+            .find(m => !window.__p1NpcBefore.has(m.id) && m.getFlag('dcc', 'RollType') === 'SpellCheck')
           if (msg) return msg.rolls?.[0]?.formula ?? ''
           await new Promise(resolve => setTimeout(resolve, 50))
         }
