@@ -253,10 +253,13 @@ test('backstab auto-crit is a crit but not a natural crit (no Fleeting Luck)', a
   const actor = new DCCActor()
   actor.system.class.backstab = '+7'
 
+  // No target AC is passed, so the lib treats the attack as a hit and the
+  // backstab auto-crit applies regardless of the natural roll.
   let restoreRoll = withActionDieRoll(8, '1d20')
   let result
   try {
     result = await actor.rollToHit(makeSimpleWeapon(), { backstab: true })
+    expect(result.libResult.critSource).toBe('backstab-auto')
     expect(result.crit).toBe(true)
     expect(result.naturalCrit).toBe(false)
 
@@ -264,6 +267,7 @@ test('backstab auto-crit is a crit but not a natural crit (no Fleeting Luck)', a
     restoreRoll()
     restoreRoll = withActionDieRoll(20, '1d20')
     result = await actor.rollToHit(makeSimpleWeapon(), { backstab: true })
+    expect(result.libResult.critSource).toBe('natural-max')
     expect(result.crit).toBe(true)
     expect(result.naturalCrit).toBe(true)
   } finally {
