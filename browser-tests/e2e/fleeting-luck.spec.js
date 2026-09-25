@@ -90,25 +90,26 @@ test.describe('Automated Fleeting Luck die-size gate', () => {
   async function rollNaturalOneSkill (page, die) {
     return page.evaluate(async (skillDie) => {
       const priorAutomate = game.settings.get('dcc', 'automateFleetingLuck')
-      // The flag is written regardless of the setting; keep the GM hook from
-      // acting on it so the test never clears real luck in the world.
-      await game.settings.set('dcc', 'automateFleetingLuck', false)
-      const actor = await Actor.create({ name: `FL Gate ${skillDie}`, type: 'Player' })
-      await actor.createEmbeddedDocuments('Item', [{
-        name: `FL-Gate-Skill-${skillDie}`,
-        type: 'skill',
-        system: {
-          die: skillDie,
-          value: '+0',
-          config: { useDie: true, useAbility: false, useValue: true, useLevel: false, applyCheckPenalty: false }
-        }
-      }])
-      const before = new Set(game.messages.contents.map(m => m.id))
       // Foundry: Math.ceil((1 - u) * faces); u → 1 rolls a natural 1 on any die
       const origRandomUniform = CONFIG.Dice.randomUniform
-      CONFIG.Dice.randomUniform = () => 0.9999
+      let actor
       let effect
       try {
+        // The flag is written regardless of the setting; keep the GM hook from
+        // acting on it so the test never clears real luck in the world.
+        await game.settings.set('dcc', 'automateFleetingLuck', false)
+        actor = await Actor.create({ name: `FL Gate ${skillDie}`, type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: `FL-Gate-Skill-${skillDie}`,
+          type: 'skill',
+          system: {
+            die: skillDie,
+            value: '+0',
+            config: { useDie: true, useAbility: false, useValue: true, useLevel: false, applyCheckPenalty: false }
+          }
+        }])
+        const before = new Set(game.messages.contents.map(m => m.id))
+        CONFIG.Dice.randomUniform = () => 0.9999
         await actor.rollSkillCheck(`FL-Gate-Skill-${skillDie}`)
         const deadline = Date.now() + 5000
         while (Date.now() < deadline && effect === undefined) {
@@ -118,7 +119,7 @@ test.describe('Automated Fleeting Luck die-size gate', () => {
         }
       } finally {
         CONFIG.Dice.randomUniform = origRandomUniform
-        await actor.delete()
+        await actor?.delete()
         await game.settings.set('dcc', 'automateFleetingLuck', priorAutomate)
       }
       return effect

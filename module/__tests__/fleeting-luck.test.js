@@ -49,6 +49,12 @@ describe('updateFlags (natural 20 / natural 1 detection)', () => {
     }
   })
 
+  test('an explicit isFumble flag still loses luck on a small die (attack fumbles)', () => {
+    const flags = { 'dcc.isFumble': true }
+    FleetingLuck.updateFlags(flags, rollWith(1, 10))
+    expect(flags['dcc.FleetingLuckEffect']).toBe('Lose')
+  })
+
   test('a 20 only counts as a natural 20 on a d20', () => {
     const flags = {}
     FleetingLuck.updateFlags(flags, rollWith(20, 24))
