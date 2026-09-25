@@ -2820,7 +2820,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Backstab LibFlag').rollWeaponAttack(id, { backstab: true })
       }, weaponId)
 
-      const flag = await page.evaluate(async () => {
+      const card = await page.evaluate(async () => {
         const deadline = Date.now() + 3000
         while (Date.now() < deadline) {
           const msg = game.messages.contents
@@ -2831,7 +2831,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
               m.getFlag('dcc', 'isToHit') &&
               m.getFlag('dcc', 'libResult')
             )
-          if (msg) return msg.getFlag('dcc', 'libResult')
+          if (msg) {
+            return {
+              libResult: msg.getFlag('dcc', 'libResult'),
+              isCrit: msg.getFlag('dcc', 'isCrit'),
+              isNaturalCrit: msg.getFlag('dcc', 'isNaturalCrit'),
+              fleetingLuckEffect: msg.getFlag('dcc', 'FleetingLuckEffect') ?? null
+            }
+          }
           await new Promise(resolve => setTimeout(resolve, 50))
         }
         return null
@@ -2844,13 +2851,20 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
       })
 
-      expect(flag, 'backstab adapter-path attack must set dcc.libResult').not.toBeNull()
+      expect(card, 'backstab adapter-path attack must set dcc.libResult').not.toBeNull()
+      const flag = card.libResult
+      expect(flag).toBeDefined()
       expect(flag.natural).toBe(10)
       expect(flag.isCriticalThreat).toBe(true)
       expect(flag.critSource).toBe('backstab-auto')
       const backstabEntry = flag.bonuses.find(b => b.id === 'class:backstab')
       expect(backstabEntry, 'class:backstab RollBonus must surface on libResult.bonuses').toBeDefined()
       expect(backstabEntry.effect.value).toBe(7)
+      // A backstab auto-crit is a crit, but not a natural one — so it must
+      // not be flagged for automated Fleeting Luck.
+      expect(card.isCrit).toBe(true)
+      expect(card.isNaturalCrit).toBe(false)
+      expect(card.fleetingLuckEffect).toBeNull()
     })
 
     test('in-place mutation of an existing terms[N] flows through Foundry but is NOT captured on libResult (two-pass boundary, Phase 7 session 30)', async ({ page }) => {

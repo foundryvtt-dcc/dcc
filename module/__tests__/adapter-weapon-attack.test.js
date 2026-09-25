@@ -247,6 +247,31 @@ test('adapter path with backstab sets isBackstab + class:backstab RollBonus', as
   expect(backstabEntry.source).toEqual({ type: 'class', id: 'thief' })
 })
 
+test('backstab auto-crit is a crit but not a natural crit (no Fleeting Luck)', async () => {
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.backstab = '+7'
+
+  let restoreRoll = withActionDieRoll(8, '1d20')
+  let result
+  try {
+    result = await actor.rollToHit(makeSimpleWeapon(), { backstab: true })
+    expect(result.crit).toBe(true)
+    expect(result.naturalCrit).toBe(false)
+
+    // A backstab that also lands in the threat range is still natural.
+    restoreRoll()
+    restoreRoll = withActionDieRoll(20, '1d20')
+    result = await actor.rollToHit(makeSimpleWeapon(), { backstab: true })
+    expect(result.crit).toBe(true)
+    expect(result.naturalCrit).toBe(true)
+  } finally {
+    restoreRoll()
+    restore()
+  }
+})
+
 test('adapter path fires when options.showModifierDialog is set (session 13 / A6)', async () => {
   // A6: modifier-dialog case now routes via adapter with `damageTerms`
   // threaded into `DCCRoll.createRoll` so the dialog can modify both
