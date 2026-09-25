@@ -7,7 +7,9 @@ Fleeting Luck lives in the **DCC Tools** sidebar tab — click the DCC logo near
 
 ![](images/dcc-tools-tab.png)
 
-Fleeting Luck is automated by default and will clear all players' Fleeting Luck on a roll of a 1, or grant a point to that player on a roll of 20. GM users are ignored for automation purposes.
+Fleeting Luck is automated by default and will clear all players' Fleeting Luck on a natural 1, or grant a point to that player on a natural 20 or a critical hit. GM users are ignored for automation purposes.
+
+Only real checks count: a natural 1 must be rolled on a d14 or larger, and a natural 20 on a d20. Small dice rolled as skills (such as an Orc's rage die) never trigger Fleeting Luck, and a thief's backstab only grants luck when the attack roll is itself a natural critical.
 ## Player View
 ![](images/fleeting-luck-player.png)
 
