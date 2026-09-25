@@ -432,14 +432,19 @@ class FleetingLuck {
   static updateFlags (flags, roll) {
     if (!roll?.dice?.length) return
 
-    const d = roll.dice[0].values[0]
+    const die = roll.dice[0]
+    const d = die.values[0]
+    // Unknown die size is treated as a d20
+    const faces = die.faces ?? 20
 
-    // Natural 20 or natural 1
-    if (d === 20 || flags['dcc.isNaturalCrit']) {
+    // Natural 20 on a d20, or natural 1 on a d14 or larger. Smaller dice
+    // (e.g. the Orc's d3-d5 rage die, rolled as a skill) aren't checks, so a
+    // 1 on them must not wipe everyone's luck.
+    if ((faces === 20 && d === 20) || flags['dcc.isNaturalCrit']) {
       FleetingLuck.updateFlagsForCrit(flags)
     }
 
-    if (d === 1 || flags['dcc.isFumble']) {
+    if ((faces >= 14 && d === 1) || flags['dcc.isFumble']) {
       FleetingLuck.updateFlagsForFumble(flags)
     }
   }

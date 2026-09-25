@@ -7,7 +7,7 @@ import FleetingLuck from '../fleeting-luck.js'
 // spend balance math (notably the floor-at-zero clamp on take/spend).
 
 describe('updateFlags (natural 20 / natural 1 detection)', () => {
-  const rollWith = (natural) => ({ dice: [{ values: [natural] }] })
+  const rollWith = (natural, faces = 20) => ({ dice: [{ values: [natural], faces }] })
 
   test('a natural 20 sets the Gain effect', () => {
     const flags = {}
@@ -31,6 +31,34 @@ describe('updateFlags (natural 20 / natural 1 detection)', () => {
     const flags = {}
     FleetingLuck.updateFlags(flags, { dice: [] })
     expect(flags).toEqual({})
+  })
+
+  test('a natural 1 on a die smaller than d14 sets no effect (e.g. Orc rage die)', () => {
+    for (const faces of [3, 4, 5, 10, 12]) {
+      const flags = {}
+      FleetingLuck.updateFlags(flags, rollWith(1, faces))
+      expect(flags['dcc.FleetingLuckEffect'], `d${faces}`).toBeUndefined()
+    }
+  })
+
+  test('a natural 1 on a d14 or larger sets the Lose effect', () => {
+    for (const faces of [14, 16, 20, 24, 30]) {
+      const flags = {}
+      FleetingLuck.updateFlags(flags, rollWith(1, faces))
+      expect(flags['dcc.FleetingLuckEffect'], `d${faces}`).toBe('Lose')
+    }
+  })
+
+  test('an explicit isFumble flag still loses luck on a small die (attack fumbles)', () => {
+    const flags = { 'dcc.isFumble': true }
+    FleetingLuck.updateFlags(flags, rollWith(1, 10))
+    expect(flags['dcc.FleetingLuckEffect']).toBe('Lose')
+  })
+
+  test('a 20 only counts as a natural 20 on a d20', () => {
+    const flags = {}
+    FleetingLuck.updateFlags(flags, rollWith(20, 24))
+    expect(flags['dcc.FleetingLuckEffect']).toBeUndefined()
   })
 
   test('honors a pre-set isNaturalCrit / isFumble flag even without a nat 20/1', () => {
