@@ -714,8 +714,11 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     warnIfDivergent('rollToHit', attackRoll.total, libResult.total, { weapon: weapon?.name })
 
     const fumble = libResult.isFumble
-    const naturalCrit = libResult.isCriticalThreat
-    const crit = !fumble && naturalCrit
+    const crit = !fumble && libResult.isCriticalThreat
+    // A backstab hit auto-crits, but only a roll in the threat range is a
+    // natural crit — `dcc.isNaturalCrit` drives Fleeting Luck, which must
+    // not be awarded for backstab auto-crits (#530, #938).
+    const naturalCrit = crit && libResult.critSource !== 'backstab-auto'
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
 
