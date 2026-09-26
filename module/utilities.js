@@ -162,6 +162,33 @@ export function ensurePlus (value, includeZero = true) {
 }
 
 /**
+ * Replace the deed die in a damage formula with the value it rolled on the
+ * attack, so damage uses the same deed roll instead of rolling it again.
+ * Matches a signed deed die term whether it is written "+d4" (the weapon's
+ * stored damage) or "+1d4" (a formula that went through the roll modifier
+ * dialog, which Foundry writes with an explicit die count). A die without a
+ * leading sign is the weapon's own damage die and is left alone, even when it
+ * is the same size as the deed die (#527).
+ * The deed die follows the weapon die in the damage formula, so any signed
+ * dice of the same size inside the weapon die (e.g. "1d6+1d3") are skipped.
+ * @param {string} formula - damage formula, e.g. "1d6+d3+1"
+ * @param {string} deedDieFormula - the deed die that was rolled, e.g. "d3" or "1d3"
+ * @param {number|string} deedResult - what the deed die rolled, e.g. 2
+ * @param {string} [weaponDie] - the weapon's own damage die that leads the formula, e.g. "1d6+1d3"
+ * @return {string} - formula with the deed die replaced, e.g. "1d6+2+1"
+ */
+export function substituteDeedDieResult (formula, deedDieFormula, deedResult, weaponDie = '') {
+  const faces = String(deedDieFormula).match(/d(\d+)/)?.[1]
+  if (!faces) return formula
+  const deedDie = new RegExp(`([+-])(\\s*)1?d${faces}(?!\\d)`, 'g')
+  let skip = String(weaponDie || '').match(deedDie)?.length || 0
+  return formula.replace(deedDie, (match, sign, space) => {
+    if (skip-- !== 0) return match
+    return `${sign}${space}${deedResult}`
+  })
+}
+
+/**
  * Get the first die in a string expression
  * @param {string} value - value to extract first die from
  * @return {string} - first die expression or an empty string if none

@@ -20,7 +20,8 @@ import {
   getFumbleTableResult,
   getFumbleTableNameFromCritTableName,
   getNPCFumbleTableResult,
-  getTableFromPath
+  getTableFromPath,
+  substituteDeedDieResult
 } from '../utilities.js'
 import { clearAllTableCaches, critTableDocCache, critTableLinkCache } from '../adapter/table-cache.mjs'
 
@@ -104,6 +105,53 @@ describe('Utilities', () => {
     it('returns an empty string for empty input', () => {
       expect(formatMercurialDescriptionHTML('')).toBe('')
       expect(formatMercurialDescriptionHTML(undefined)).toBe('')
+    })
+  })
+
+  describe('substituteDeedDieResult', () => {
+    it('replaces the deed die in a stored weapon damage formula', () => {
+      expect(substituteDeedDieResult('1d6+d3', 'd3', 2)).toBe('1d6+2')
+      expect(substituteDeedDieResult('1d5+d3+1', 'd3', 3)).toBe('1d5+3+1')
+    })
+
+    it('replaces a deed die written with an explicit count by the roll modifier dialog', () => {
+      expect(substituteDeedDieResult('1d6+1d3', 'd3', 2)).toBe('1d6+2')
+      expect(substituteDeedDieResult('1d10 + 1d3', 'd3', 1)).toBe('1d10 + 1')
+    })
+
+    it('accepts the deed die formula with or without a count', () => {
+      expect(substituteDeedDieResult('1d8+d4+2', '1d4', 4)).toBe('1d8+4+2')
+      expect(substituteDeedDieResult('1d8+1d4+2', '1d4', 4)).toBe('1d8+4+2')
+    })
+
+    it('leaves the weapon die alone when it is the same size as the deed die (#527)', () => {
+      expect(substituteDeedDieResult('1d3+d3-1', 'd3', 3)).toBe('1d3+3-1')
+      expect(substituteDeedDieResult('1d3+1d3-1', 'd3', 3)).toBe('1d3+3-1')
+    })
+
+    it('does not match a larger die that starts with the same digits', () => {
+      expect(substituteDeedDieResult('1d6+d10+d3', 'd3', 2)).toBe('1d6+d10+2')
+      expect(substituteDeedDieResult('1d6+d30', 'd3', 2)).toBe('1d6+d30')
+    })
+
+    it('skips same-size signed dice that are part of the weapon die', () => {
+      expect(substituteDeedDieResult('1d6+1d3+d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+2+1')
+      expect(substituteDeedDieResult('1d6+1d3+1d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+2+1')
+      expect(substituteDeedDieResult('(1d6+1d3)*2+d3+1', 'd3', 2, '1d6+1d3')).toBe('(1d6+1d3)*2+2+1')
+    })
+
+    it('replaces only the deed die, not a later same-size weapon bonus die', () => {
+      expect(substituteDeedDieResult('1d8+d4+1+1d4', 'd4', 3, '1d8')).toBe('1d8+3+1+1d4')
+      expect(substituteDeedDieResult('1d8+1d4+1+1d4', 'd4', 3, '1d8')).toBe('1d8+3+1+1d4')
+    })
+
+    it('leaves the formula unchanged when only the weapon die has a matching die', () => {
+      expect(substituteDeedDieResult('1d6+1d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+1')
+    })
+
+    it('returns the formula unchanged without a deed die', () => {
+      expect(substituteDeedDieResult('1d8+2', 'd4', 3)).toBe('1d8+2')
+      expect(substituteDeedDieResult('1d8+d4', '', 3)).toBe('1d8+d4')
     })
   })
 

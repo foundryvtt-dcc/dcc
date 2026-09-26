@@ -1,6 +1,6 @@
 /* global CONFIG, game, Hooks, Roll, ChatMessage, ui, foundry */
 
-import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from '../utilities.js'
+import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls, substituteDeedDieResult } from '../utilities.js'
 import {
   makeAttackRoll as libMakeAttackRoll,
   rollDamage as libRollDamage,
@@ -163,12 +163,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Damage roll - use modified formula from roll modifier dialog if available
     let damageRollFormula = attackRollResult.weaponDamageFormula || weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      const rawDeedFormula = attackRollResult.deedDieFormula // e.g. "d4"
-      const deedBonusStringComponent = ensurePlus(rawDeedFormula) // e.g. "+d4", this is what's in the damage formula from warrior bonus
-      const deedNumericResult = attackRollResult.deedDieRollResult.toString() // e.g. "4"
-      // Determine sign from how deed was added to formula, then append numeric result
-      const replacementDeedValueString = (deedBonusStringComponent.startsWith('-') ? '-' : '+') + deedNumericResult // e.g. "+4"
-      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString)
+      // e.g. "1d8+d4" -> "1d8+4"; also handles "+1d4" from the roll modifier dialog.
+      // The formula leads with the weapon die unless a damage override replaced it.
+      const weaponDie = weapon.system?.config?.damageOverride ? '' : weapon.system?.damageWeapon
+      damageRollFormula = substituteDeedDieResult(damageRollFormula, attackRollResult.deedDieFormula, attackRollResult.deedDieRollResult, weaponDie)
 
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
