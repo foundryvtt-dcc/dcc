@@ -291,4 +291,70 @@ test.describe('Mighty Deeds E2E Tests', () => {
     expect(success.deedTables).toEqual([])
     expect(success.contentHasPrompt).toBe(false)
   })
+
+  // The roll modifier dialog rewrites the damage formula with explicit die
+  // counts ("+d4" -> "+1d4"). Damage must still reuse the attack's deed roll
+  // rather than rolling the deed die again — including when the weapon's own
+  // damage carries a signed die the same size as the deed die ("1d6+1d4").
+  test('damage reuses the attack deed roll after the roll modifier dialog', async ({ page }) => {
+    const previousAutomate = await page.evaluate(() => game.settings.get('dcc', 'automateDamageFumblesCrits'))
+    await page.evaluate(() => game.settings.set('dcc', 'automateDamageFumblesCrits', true))
+
+    try {
+      const ids = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'E2E Dialog Warrior',
+          type: 'Player',
+          system: {
+            details: { sheetClass: 'Warrior', attackBonus: '+d4' },
+            class: { className: 'Warrior' },
+            config: { attackBonusMode: 'autoPerAttack' }
+          }
+        })
+        const weapons = await actor.createEmbeddedDocuments('Item', [
+          { name: 'E2E Plain Sword', type: 'weapon', system: { actionDie: '1d20', toHit: '@ab', damageWeapon: '1d8', melee: true, equipped: true } },
+          { name: 'E2E Flame Sword', type: 'weapon', system: { actionDie: '1d20', toHit: '@ab', damageWeapon: '1d6+1d4', melee: true, equipped: true } }
+        ])
+        return { actorId: actor.id, weaponIds: weapons.map(w => w.id) }
+      })
+
+      // [weapon index, d4 dice that belong to the weapon's own damage]
+      for (const [index, weaponD4Count] of [[0, 0], [1, 1]]) {
+        const weaponId = ids.weaponIds[index]
+        const messagesBefore = await page.evaluate(() => game.messages.size)
+        await page.evaluate(({ actorId, weaponId }) => {
+          window.__deedDialogAttack = game.actors.get(actorId).rollWeaponAttack(weaponId, { showModifierDialog: true })
+        }, { actorId: ids.actorId, weaponId })
+
+        const rollBtn = page.locator('.dcc-roll-modifier button.roll').first()
+        await rollBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await rollBtn.click()
+
+        const result = await page.evaluate(async ({ messagesBefore }) => {
+          await window.__deedDialogAttack
+          const deadline = Date.now() + 5000
+          while (Date.now() < deadline && game.messages.size === messagesBefore) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          const msg = game.messages.contents.at(-1)
+          const damageRoll = msg?.rolls.find(r => r.options?.dcc?.isDamageRoll)
+          if (!damageRoll) return null
+          return {
+            deedDieRollResult: msg.system.deedDieRollResult,
+            damageFormula: damageRoll.formula,
+            damageD4Count: damageRoll.dice.filter(d => d.faces === 4).length
+          }
+        }, { messagesBefore })
+
+        expect(result, `attack with weapon ${index} posted a damage roll`).not.toBeNull()
+        expect(result.deedDieRollResult).toBeGreaterThanOrEqual(1)
+        // The deed die was substituted by its attack result, not rolled again;
+        // only the weapon's own d4s remain as dice in the damage roll.
+        expect(result.damageD4Count, `damage formula ${result.damageFormula}`).toBe(weaponD4Count)
+        expect(result.damageFormula).toMatch(new RegExp(`\\+\\s*${result.deedDieRollResult}(?!\\d)`))
+      }
+    } finally {
+      await page.evaluate((value) => game.settings.set('dcc', 'automateDamageFumblesCrits', value), previousAutomate)
+    }
+  })
 })

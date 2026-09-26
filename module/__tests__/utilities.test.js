@@ -134,6 +134,21 @@ describe('Utilities', () => {
       expect(substituteDeedDieResult('1d6+d30', 'd3', 2)).toBe('1d6+d30')
     })
 
+    it('skips same-size signed dice that are part of the weapon die', () => {
+      expect(substituteDeedDieResult('1d6+1d3+d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+2+1')
+      expect(substituteDeedDieResult('1d6+1d3+1d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+2+1')
+      expect(substituteDeedDieResult('(1d6+1d3)*2+d3+1', 'd3', 2, '1d6+1d3')).toBe('(1d6+1d3)*2+2+1')
+    })
+
+    it('replaces only the deed die, not a later same-size weapon bonus die', () => {
+      expect(substituteDeedDieResult('1d8+d4+1+1d4', 'd4', 3, '1d8')).toBe('1d8+3+1+1d4')
+      expect(substituteDeedDieResult('1d8+1d4+1+1d4', 'd4', 3, '1d8')).toBe('1d8+3+1+1d4')
+    })
+
+    it('leaves the formula unchanged when only the weapon die has a matching die', () => {
+      expect(substituteDeedDieResult('1d6+1d3+1', 'd3', 2, '1d6+1d3')).toBe('1d6+1d3+1')
+    })
+
     it('returns the formula unchanged without a deed die', () => {
       expect(substituteDeedDieResult('1d8+2', 'd4', 3)).toBe('1d8+2')
       expect(substituteDeedDieResult('1d8+d4', '', 3)).toBe('1d8+d4')
