@@ -9,14 +9,18 @@ Execute these steps in order:
 
 ## 1. Merge the PR
 
-- Check current branch: `git branch --show-current`
-- If on a feature branch, merge to main:
+- Identify the PR: use the number the user gave, or the PR for the current
+  branch (`gh pr view --json number -q .number`). If there is no PR to merge
+  (already on main), confirm with the user before proceeding.
+- Verify it is `OPEN` and `MERGEABLE` (`gh pr view <N> --json state,mergeable`).
+- **Squash-merge** — the repo's history is one squashed commit per PR, never
+  a merge commit:
   ```bash
-  gh pr merge --merge --delete-branch
+  gh pr merge <N> --squash --delete-branch
   git checkout main
   git pull
   ```
-- If already on main, confirm with user before proceeding
+- Delete the local copy of the branch if one exists (`git branch -D <branch>`).
 
 ## 2. Update version.txt — always its own commit on main
 
@@ -57,6 +61,15 @@ git log {previous_tag}..HEAD --oneline
 ```
 
 Use `gh release edit v{version} --notes-file -` to update.
+
+The workflow's auto-generated notes are the raw commit title plus a
+`— @handle`. **Always rewrite them** into the format above: a plain-English
+description of the user-visible change (no `fix:`/`feat:` prefix, no PR
+number), credited by the contributor's display name, not their handle:
+```bash
+gh api users/<login> -q .name   # e.g. blaze-sanecki → Blaze Sanecki
+```
+Fall back to the login if the account has no display name.
 
 ### Example Release Notes
 
