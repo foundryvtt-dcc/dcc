@@ -22,9 +22,9 @@ const STYLES = JSON.parse(fs.readFileSync(path.join(ROOT, 'system.json'), 'utf8'
 describe('system stylesheets', () => {
   test('every styles/*.css file is listed in system.json', () => {
     const listed = new Set(STYLES.map(s => s.src))
-    const unlisted = fs.readdirSync(path.join(ROOT, 'styles'))
+    const unlisted = fs.readdirSync(path.join(ROOT, 'styles'), { recursive: true })
       .filter(f => f.endsWith('.css'))
-      .map(f => `styles/${f}`)
+      .map(f => `styles/${f.split(path.sep).join('/')}`)
       .filter(f => !listed.has(f))
     expect(unlisted, 'Add these to the `styles` array in system.json (layer "system")').toEqual([])
   })
@@ -37,14 +37,18 @@ describe('system stylesheets', () => {
   test('no selector list has an empty entry', () => {
     const problems = []
     for (const { src } of STYLES) {
-      // Mask comments and strings (keeping line numbers) so prose and
-      // `content: ','` cannot trip the check. Strings become `x`, not blank,
-      // so a list like `Palatino, 'Palatino Linotype', serif` keeps its entry.
+      // Mask comments and strings in one pass (keeping line numbers) so prose,
+      // `content: ','` and a `/*` inside a string cannot trip the check.
+      // Strings become `x`, not blank, so a list like
+      // `Palatino, 'Palatino Linotype', serif` keeps its entry.
       const css = fs.readFileSync(path.join(ROOT, src), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
-        .replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g, m => m.replace(/[^\n]/g, 'x'))
-      for (const m of css.matchAll(/,\s*[{,]|[{};]\s*,/g)) {
-        problems.push(`${src}:${css.slice(0, m.index).split('\n').length}`)
+        .replace(/\/\*[\s\S]*?\*\/|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g,
+          m => m.replace(/[^\n]/g, m[0] === '/' ? ' ' : 'x'))
+      // A leading `}` lets a comma at the very start of the file match too;
+      // `,)` catches an empty entry inside `:not(.a, )` / `:is(.a, )`.
+      const text = '}' + css
+      for (const m of text.matchAll(/,\s*[{,)]|[{};(]\s*,/g)) {
+        problems.push(`${src}:${text.slice(0, m.index).split('\n').length}`)
       }
     }
     expect(problems, 'Empty selector-list entry — the browser drops the whole rule').toEqual([])

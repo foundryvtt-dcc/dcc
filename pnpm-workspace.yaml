@@ -40,8 +40,6 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@moonloch/dcc-core-lib'
 # Native build scripts pnpm may run (everything else stays sandboxed):
-# classic-level backs e2e-env's world-settings edits, @parcel/watcher backs
-# file watching.
+# classic-level backs e2e-env's world-settings edits.
 allowBuilds:
-  '@parcel/watcher': true
   classic-level: true

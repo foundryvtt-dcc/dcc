@@ -33,7 +33,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 
-const STYLES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'styles')
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 /**
  * Custom properties Foundry V14 declares on a scope that DCC selectors actually
@@ -53,15 +53,15 @@ const CORE_PROVIDED = [
 
 /** The stylesheets system.json loads, in load order. */
 const STYLESHEETS = JSON.parse(
-  fs.readFileSync(path.join(STYLES_DIR, '..', 'system.json'), 'utf8')
-).styles.map(({ src }) => path.basename(src))
+  fs.readFileSync(path.join(ROOT, 'system.json'), 'utf8')
+).styles.map(({ src }) => src)
 
 /**
  * Read a stylesheet with comments stripped: these files discuss variable names
  * in prose (why a name was dropped, what it used to hold), and a `var(--x)`
  * inside a comment is not a reference.
  */
-const read = (file) => fs.readFileSync(path.join(STYLES_DIR, file), 'utf8')
+const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, '')
 
 /** Every custom property DCC declares, across all stylesheets. */
