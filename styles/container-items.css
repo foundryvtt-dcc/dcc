@@ -24,7 +24,7 @@
     padding: 0 0 4px 32px;
     position: relative;
 
-    // Vertical connector line from the container icon down through contents
+    /* Vertical connector line from the container icon down through contents */
     &::before {
       content: '';
       position: absolute;

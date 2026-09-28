@@ -23,7 +23,7 @@
  * work:sync
  *   After a PR merges to main, every other active branch should absorb it:
  *   stops the env's server (todb must not run against open packs), merges
- *   origin/main, recompiles scss + packs, and restarts the server if it was
+ *   origin/main, recompiles packs, and restarts the server if it was
  *   running. Merge conflicts abort with the worktree left mid-merge for a
  *   human (or the worktree's Claude session) to resolve.
  *
@@ -175,7 +175,7 @@ Then implement it. Ground rules for this worktree:
 - Run the unit suite (pnpm test) and the affected Playwright specs (pnpm run e2e:env test <spec> — no \`--\` separator, pnpm forwards it literally and the spec filter gets lost) as you work; run the full e2e suite (pnpm run e2e:env test) before pushing anything touching attack/card/roll/sheet paths.
 - Commit and push on this branch per the standing authorizations in CLAUDE.md.
 - When the work is complete and green, use /pr to open a pull request. The PR body must reference "Fixes #${issue}".
-- If you merge origin/main into this branch mid-work, stop the env server first, then rerun \`pnpm run scss\` + \`pnpm run todb\` and restart it (or just run \`pnpm run work:sync ${issue}\` from the main checkout).`
+- If you merge origin/main into this branch mid-work, stop the env server first, then rerun \`pnpm run todb\` and restart it (or just run \`pnpm run work:sync ${issue}\` from the main checkout).`
 }
 
 async function cmdStart (flags) {
@@ -339,7 +339,7 @@ async function syncOne (worktree, branch) {
   } catch {
     throw new Error(`Merge conflict in ${worktree} — resolve and commit there, then restart its server with: pnpm run e2e:env up (it was stopped for the sync)`)
   }
-  execSync('pnpm run scss && pnpm run todb', { cwd: worktree, stdio: 'inherit' })
+  execSync('pnpm run todb', { cwd: worktree, stdio: 'inherit' })
   if (wasRunning) e2eEnv(worktree, 'up')
   console.log(`Synced ${branch}`)
 }

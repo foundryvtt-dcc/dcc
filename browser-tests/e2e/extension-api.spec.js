@@ -1208,47 +1208,60 @@ test.describe('DCC Extension API', () => {
     expect(result.contributedToolRendered).toBe(true)
   })
 
-  test('DCC compiled stylesheet survives the styles/dcc.scss split into 18 partials', async ({ page }) => {
-    // Phase 7 session 7: the ~2979-line `styles/dcc.scss` monolith is
-    // split into 18 focused partials (`_base.scss`, `_journal.scss`,
-    // `_armor.scss`, `_chat.scss`, `_weapons.scss`, `_class-sheets.scss`,
-    // `_party-sheet.scss`, `_hit-points-dialog.scss`, `_items.scss`,
-    // `_config-dialogs.scss`, `_skills.scss`, `_tabs.scss`,
-    // `_entity-link.scss`, `_dialogs.scss`, `_actor-sheet.scss`,
-    // `_effects.scss`, `_level-change-dialog.scss`,
-    // `_container-items.scss`). The new `dcc.scss` is a manifest of
-    // `@use 'partial-name'` directives in source order so the compiled
-    // `dcc.css` is byte-identical to the pre-split build.
-    //
-    // End-to-end probe: fetch the served `dcc.css` and assert it
-    // contains representative selectors from selected partials
-    // (proves the SCSS pipeline still produces functional output and
-    // is being served by Foundry).
+  test('DCC stylesheets listed in system.json are served, loaded and parsed', async ({ page }) => {
+    // #928: styles/ is plain nested CSS with no build step — system.json lists
+    // variables.css plus one partial per section (formerly `_*.scss` partials
+    // compiled into a single dcc.css). This probe proves every listed file is
+    // served, that Foundry actually attached it to the document, that the
+    // browser parsed rules out of it (a nesting-syntax regression would leave
+    // a sheet with no rules), and that representative selectors from the
+    // partials are present.
     const result = await page.evaluate(async () => {
-      const response = await fetch('/systems/dcc/styles/dcc.css')
-      const text = await response.text()
+      const manifest = await fetch('/systems/dcc/system.json').then(r => r.json())
+      const sources = manifest.styles.map(s => s.src)
+      const files = await Promise.all(sources.map(async src => {
+        const response = await fetch(`/systems/dcc/${src}`)
+        return { src, status: response.status, text: await response.text() }
+      }))
+
+      // Stylesheets reach the document either as <link> sheets or as
+      // @import rules inside a layer <style> — collect both.
+      const loaded = new Map()
+      const visit = sheet => {
+        if (sheet.href) loaded.set(new URL(sheet.href).pathname, sheet)
+        for (const rule of sheet.cssRules) {
+          if (rule instanceof CSSImportRule && rule.styleSheet) visit(rule.styleSheet)
+        }
+      }
+      for (const sheet of document.styleSheets) visit(sheet)
+
+      const text = files.map(f => f.text).join('\n')
       return {
-        status: response.status,
-        bytes: text.length,
+        count: sources.length,
+        notServed: files.filter(f => f.status !== 200).map(f => f.src),
+        notLoaded: sources.filter(src => !loaded.has(`/systems/dcc/${src}`)),
+        empty: sources.filter(src => !loaded.get(`/systems/dcc/${src}`)?.cssRules.length),
         // Selectors from selected partials — if any are missing, a
-        // partial was lost or the manifest is out of sync.
+        // partial was lost or dropped from system.json.
         hasGrid: text.includes('.grid-align-center'),
         hasJournal: text.includes('.journal-sheet'),
         hasChat: text.includes('.deed-result.critical'),
-        hasPartySheet: text.includes('.dcc .party-body'),
-        hasItems: text.includes('.dcc .equipment-bg'),
-        hasTabs: text.includes('.dcc.sheet .sheet-tabs'),
+        hasPartySheet: text.includes('.party-body'),
+        hasItems: text.includes('.equipment-bg'),
+        hasTabs: text.includes('.sheet-tabs'),
         hasRollModifier: text.includes('.dcc-roll-modifier'),
-        hasFleetingLuck: text.includes('.dcc .fleeting-luck'),
-        hasSpellDuel: text.includes('.dcc .spell-duel'),
-        hasContainerItems: text.includes('.dcc .container-sheet'),
-        // Sanity-check size — pre-split build was ~65KB; has grown with
-        // features since (~81KB after the #595 thrown shadow row).
-        sizeReasonable: text.length > 50000 && text.length < 100000
+        hasFleetingLuck: text.includes('.fleeting-luck'),
+        hasSpellDuel: text.includes('.spell-duel'),
+        hasContainerItems: text.includes('.container-sheet'),
+        // Sanity-check size — ~112KB of source (comments included) at #928.
+        sizeReasonable: text.length > 60000 && text.length < 250000
       }
     })
 
-    expect(result.status).toBe(200)
+    expect(result.count).toBeGreaterThan(20)
+    expect(result.notServed).toEqual([])
+    expect(result.notLoaded).toEqual([])
+    expect(result.empty).toEqual([])
     expect(result.hasGrid).toBe(true)
     expect(result.hasJournal).toBe(true)
     expect(result.hasChat).toBe(true)
@@ -1271,22 +1284,27 @@ test.describe('DCC Extension API', () => {
     // indicators); six are tab-overflow dropdown colors paired with
     // dark-theme overrides in `styles/variables.css`. The old
     // `body.theme-dark & .sheet-tabs ... .tabs-overflow-menu`
-    // override block in `_tabs.scss` is now redundant — the dark
+    // override block in `tabs.css` is now redundant — the dark
     // cascade flows through the variable overrides instead.
     //
     // This probe asserts the documented contract end-to-end:
-    //   1. The compiled `dcc.css` references the new vars in place
+    //   1. The system stylesheets reference the new vars in place
     //      of the prior hex literals (regression net for any future
     //      re-introduction).
     //   2. The redundant `body.theme-dark ... .tabs-overflow-menu`
-    //      block is gone from the compiled output.
+    //      block is gone from `tabs.css`.
     //   3. `getComputedStyle()` resolves each var to its documented
     //      light value via `:root`, and to its documented dark
     //      override value via a transient `.theme-dark` probe
     //      element (no live-theme flip required, so the test is
     //      robust to whatever theme the test user has selected).
     const result = await page.evaluate(async () => {
-      const css = await fetch('/systems/dcc/styles/dcc.css').then(r => r.text())
+      const manifest = await fetch('/systems/dcc/system.json').then(r => r.json())
+      const sheets = await Promise.all(manifest.styles
+        .filter(s => s.layer === 'system')
+        .map(s => fetch(`/systems/dcc/${s.src}`).then(r => r.text())))
+      const css = sheets.join('\n')
+      const tabsCss = await fetch('/systems/dcc/styles/tabs.css').then(r => r.text())
       // Probe element scoped under `.theme-dark` — descendants of an
       // element matching `.theme-dark` see the variable overrides.
       const probe = document.createElement('div')
@@ -1296,7 +1314,7 @@ test.describe('DCC Extension API', () => {
       const darkStyle = getComputedStyle(probe)
       const read = (style, varName) => style.getPropertyValue(varName).trim()
       const out = {
-        // (1) Compiled CSS references the new vars.
+        // (1) System stylesheets reference the new vars.
         hasRollableHoverVar: css.includes('color: var(--system-rollable-hover-color)'),
         hasDamageVar: css.includes('color: var(--system-damage-color)'),
         hasMutedVar: css.includes('color: var(--system-text-muted-color)'),
@@ -1305,7 +1323,7 @@ test.describe('DCC Extension API', () => {
         hasTwoWeaponSecondaryVar: css.includes('color: var(--system-two-weapon-secondary-color)'),
         hasTabOverflowBgVar: css.includes('background: var(--system-tab-overflow-background)'),
         // (2) Redundant body.theme-dark tabs-overflow block gone.
-        noDarkOverrideBlock: !css.includes('body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu'),
+        noDarkOverrideBlock: !tabsCss.includes('body.theme-dark'),
         // (3a) Theme-agnostic semantic vars — documented light defaults.
         mutedColorLight: read(lightStyle, '--system-text-muted-color'),
         damageColorLight: read(lightStyle, '--system-damage-color'),

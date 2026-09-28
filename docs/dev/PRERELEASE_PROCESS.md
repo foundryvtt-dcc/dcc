@@ -38,8 +38,7 @@ is ideal):
   the vendored lib at runtime. It is committed to the repo, so any build
   (from `main` or a branch) includes it — but always verify it's present
   in the zip (the build script below asserts this).
-- **Compiled assets are gitignored.** `styles/dcc.css` is committed but
-  may be stale — rebuild it. The LevelDB packs Foundry actually loads
+- **Compiled assets are gitignored.** The LevelDB packs Foundry actually loads
   (`packs/**/*.ldb`, `CURRENT`, `MANIFEST*`, `LOG*`) are gitignored; only
   the JSON sources (`packs/*/src/*.json`) are committed. You must
   `pnpm run todb` to compile them into the zip.
@@ -80,13 +79,12 @@ pkill -f "foundry-14/main.js"
 #    Confirm it's down:
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:30000 --max-time 3 || echo "down"
 
-# 2. Compile fresh CSS + LevelDB packs.
-pnpm run scss
+# 2. Compile fresh LevelDB packs.
 pnpm run todb
 
 # 3. Stage the working tree, excluding dev cruft (mirrors the official
 #    zip: files at root, no tests/docs/node_modules). Keeps module/vendor/
-#    and the compiled packs/CSS.
+#    and the compiled packs.
 STAGE=/tmp/dcc-rel
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 rsync -a \
@@ -121,7 +119,7 @@ console.log("patched", j.version, j.manifest);
 # 6. Sanity-check the zip BEFORE publishing.
 unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -qx 'system.json'                         && echo "OK system.json at root"
 unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -qx 'module/vendor/dcc-core-lib/index.js' && echo "OK vendored lib present"
-unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -qx 'styles/dcc.css'                       && echo "OK compiled css present"
+unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -qx 'styles/base.css'                      && echo "OK stylesheets present"
 unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -qE 'packs/.*\.ldb$'                        && echo "OK compiled packs present"
 [ "$(unzip -l /tmp/dcc.zip | awk '{print $4}' | grep -cE '__tests__|browser-tests|/docs/|node_modules')" = "0" ] && echo "OK no dev cruft"
 

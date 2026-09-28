@@ -142,7 +142,7 @@
     opacity: 40%;
   }
 
-  // Prosemirror richtext editor
+  /* Prosemirror richtext editor */
   .editor {
     background: rgba(0, 0, 0, 0.05);
     border: var(--system-frame-border);
@@ -346,15 +346,15 @@
     display: flex;
     flex-direction: column;
 
-    // Tabs should not grow/shrink
+    /* Tabs should not grow/shrink */
     .sheet-tabs {
       flex: 0 0 auto;
     }
 
-    // Tab content should take remaining space
+    /* Tab content should take remaining space */
     .tab {
       flex: 1 1 auto;
-      min-height: 0; // Allow shrinking below content size
+      min-height: 0; /* Allow shrinking below content size */
       overflow: auto;
     }
   }

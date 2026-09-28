@@ -7,18 +7,22 @@
     column-gap: 8px;
     display: grid;
     grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-    // Row sizing (issue #834): the name and combat-basics rows are capped at
-    // max-content — `auto` maxes would soak up any spare tab height (grid
-    // "stretch auto tracks"), and the combat-basics box would then spread
-    // its field rows apart to fill the stretch. Capped, the box hugs its
-    // content — growing only when the action-dice chips wrap to an extra
-    // line — and spare height settles at the bottom row instead.
+    /*
+     * Row sizing (issue #834): the name and combat-basics rows are capped at
+     * max-content — `auto` maxes would soak up any spare tab height (grid
+     * "stretch auto tracks"), and the combat-basics box would then spread
+     * its field rows apart to fill the stretch. Capped, the box hugs its
+     * content — growing only when the action-dice chips wrap to an extra
+     * line — and spare height settles at the bottom row instead.
+     */
     grid-template-rows: minmax(46px, max-content) minmax(114px, max-content) repeat(5, 59px 9px) minmax(59px, auto);
-    // min-height (not height): with a definite height the row maximums can
-    // never exceed the tab, so a combat-basics row whose action-dice chips
-    // wrap (a 10th-level warrior's three dice) would overflow onto the rows
-    // below instead of growing. Content-sized, the row grows, everything
-    // shifts down, and the tab scrolls.
+    /*
+     * min-height (not height): with a definite height the row maximums can
+     * never exceed the tab, so a combat-basics row whose action-dice chips
+     * wrap (a 10th-level warrior's three dice) would overflow onto the rows
+     * below instead of growing. Content-sized, the row grows, everything
+     * shifts down, and the tab scrolls.
+     */
     height: auto;
     min-height: 100%;
   }
@@ -28,9 +32,11 @@
     grid-template-rows: repeat(5, 68px);
     position: relative;
 
-    // Ability Score Log button - floats just above the top-right corner of
-    // the column (the corner itself is filled by the first score box) rather
-    // than adding a grid row
+    /*
+     * Ability Score Log button - floats just above the top-right corner of
+     * the column (the corner itself is filled by the first score box) rather
+     * than adding a grid row
+     */
     .ability-log-button {
       background: transparent;
       border: 0;
@@ -95,8 +101,10 @@
         width: 47px;
       }
 
-      // Effective score badge (#801): shown bottom-left when an otherMod
-      // Active Effect shifts the score away from the editable base value
+      /*
+       * Effective score badge (#801): shown bottom-left when an otherMod
+       * Active Effect shifts the score away from the editable base value
+       */
       .ability-effective-value {
         position: absolute;
         bottom: 1px;
@@ -147,8 +155,10 @@
       margin-bottom: 5px;
       width: 37px;
 
-      // Shrink the font for multi-digit AC/HP so the value stays inside the
-      // 37px box (three digits overflow at the base size).
+      /*
+       * Shrink the font for multi-digit AC/HP so the value stays inside the
+       * 37px box (three digits overflow at the base size).
+       */
       &[data-len='3'] {
         font-size: 20px;
       }
@@ -196,10 +206,12 @@
 
   .combat-basics {
     align-items: center;
-    // Content-sized, not stretched (issue #834): stretching to the grid row
-    // (whose height the AC/HP column also raises) padded the field rows and
-    // the space under the last row. min-height keeps the everyday two-die
-    // box at its usual height; a wrapped chip row grows it exactly one line.
+    /*
+     * Content-sized, not stretched (issue #834): stretching to the grid row
+     * (whose height the AC/HP column also raises) padded the field rows and
+     * the space under the last row. min-height keeps the everyday two-die
+     * box at its usual height; a wrapped chip row grows it exactly one line.
+     */
     align-self: start;
     min-height: 114px;
     border: var(--system-frame-border);
@@ -209,9 +221,11 @@
     font-size: 13px;
     grid-column-end: span 3;
     grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-    // auto (not 1fr) maxes: under the content-sized box, equal fr rows would
-    // all inflate to the tallest row (the wrapped chip cell). auto rows hug
-    // their own content; the min-height slack still spreads evenly.
+    /*
+     * auto (not 1fr) maxes: under the content-sized box, equal fr rows would
+     * all inflate to the tallest row (the wrapped chip cell). auto rows hug
+     * their own content; the min-height slack still spreads evenly.
+     */
     grid-template-rows: 19px repeat(4, minmax(20px, auto));
     margin: 0 0 8px 0;
     padding-bottom: 4px;
@@ -240,16 +254,18 @@
       border: 0;
     }
 
-    // Action-dice chip row (multiple-action-dice feature). Replaces the
-    // single action-die label + text box when the master setting is on and
-    // the actor has 2+ dice. The label and chips share the same two grid
-    // columns as the box they replace (Crit Die keeps its cells alongside);
-    // when the dice don't fit one line — a 10th-level warrior's
-    // `1d20+4, 1d20, 1d14` — only the chips
-    // cell WRAPS, the row grows, and the character-grid (min-height, not
-    // height) lets the whole box push the rows below it down (issue #834).
-    // Chip visuals live at the shared `.dcc` scope below.
-    // See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+    /*
+     * Action-dice chip row (multiple-action-dice feature). Replaces the
+     * single action-die label + text box when the master setting is on and
+     * the actor has 2+ dice. The label and chips share the same two grid
+     * columns as the box they replace (Crit Die keeps its cells alongside);
+     * when the dice don't fit one line — a 10th-level warrior's
+     * `1d20+4, 1d20, 1d14` — only the chips
+     * cell WRAPS, the row grows, and the character-grid (min-height, not
+     * height) lets the whole box push the rows below it down (issue #834).
+     * Chip visuals live at the shared `.dcc` scope below.
+     * See docs/dev/MULTIPLE_ACTION_DICE_DESIGN.md.
+     */
     .action-dice-row {
       grid-column: 1 / 3;
       display: flex;
@@ -393,9 +409,11 @@
       justify-self: center;
       align-self: center;
 
-      // The img carries fixed height/width="100px" attributes, so a
-      // non-square portrait was stretched to fill the square. Letterbox it
-      // within the box instead (mirrors the NPC portrait treatment).
+      /*
+       * The img carries fixed height/width="100px" attributes, so a
+       * non-square portrait was stretched to fill the square. Letterbox it
+       * within the box instead (mirrors the NPC portrait treatment).
+       */
       object-fit: contain;
     }
   }
@@ -469,19 +487,23 @@
   }
 }
 
-// Action-dice chips — shared by the PC and NPC sheets (the PC sheet wraps
-// them in `.action-dice-row`; the NPC sheet places label + chips as grid
-// cells directly). The chips WRAP within their cell — the surrounding grids
-// grow to hold the extra lines — and the in-combat state styling mirrors
-// the tracker pips.
+/*
+ * Action-dice chips — shared by the PC and NPC sheets (the PC sheet wraps
+ * them in `.action-dice-row`; the NPC sheet places label + chips as grid
+ * cells directly). The chips WRAP within their cell — the surrounding grids
+ * grow to hold the extra lines — and the in-combat state styling mirrors
+ * the tracker pips.
+ */
 .dcc .action-dice-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
   align-items: center;
   min-width: 0;
-  // Breathing room against the neighboring field rows, which hug their
-  // content since the box became content-sized (issue #834).
+  /*
+   * Breathing room against the neighboring field rows, which hug their
+   * content since the box became content-sized (issue #834).
+   */
   padding: 3px 0;
 
   .action-die-chip {
@@ -500,10 +522,12 @@
       font-style: italic;
     }
 
-    // Live combat state (issue #834 §2): a spent chip greys out, mirroring
-    // the tracker pips, and for the GM/owner the chip is clickable to
-    // toggle by hand. No extra glyph — a chip is exactly the same width in
-    // and out of combat, so the wrap never changes.
+    /*
+     * Live combat state (issue #834 §2): a spent chip greys out, mirroring
+     * the tracker pips, and for the GM/owner the chip is clickable to
+     * toggle by hand. No extra glyph — a chip is exactly the same width in
+     * and out of combat, so the wrap never changes.
+     */
     &.interactive {
       cursor: pointer;
     }
@@ -522,9 +546,11 @@
 .dcc {
   .npc-grid {
     display: grid;
-    // The combat-basics row can exceed 81px when the action-dice chips
-    // wrap (issue #834) — max-content lets it grow (the 1fr Special row
-    // gives the space back) instead of spilling over the box border.
+    /*
+     * The combat-basics row can exceed 81px when the action-dice chips
+     * wrap (issue #834) — max-content lets it grow (the 1fr Special row
+     * gives the space back) instead of spilling over the box border.
+     */
     grid-template-rows: 18px minmax(81px, max-content) 1fr minmax(40px, min-content) minmax(40px, min-content);
     min-height: 100%;
 
@@ -560,14 +586,18 @@
         border: 0;
         font-size: 22px;
 
-        // The default input height (17px) is shorter than the 22px line, so
-        // the tall digits were clipped top and bottom. Give them enough
-        // vertical room; the input is centred in the 50px shield row.
+        /*
+         * The default input height (17px) is shorter than the 22px line, so
+         * the tall digits were clipped top and bottom. Give them enough
+         * vertical room; the input is centred in the 50px shield row.
+         */
         height: 26px;
 
-        // Three-digit AC/HP (e.g. 200) still fit at 22px; only shrink the
-        // font once values reach four or more digits so they don't overflow
-        // the shield.
+        /*
+         * Three-digit AC/HP (e.g. 200) still fit at 22px; only shrink the
+         * font once values reach four or more digits so they don't overflow
+         * the shield.
+         */
         &[data-len='4'] {
           font-size: 18px;
         }
@@ -667,9 +697,11 @@
           margin-left: 5px;
           width: 20px;
 
-          // The save value carries a sign, so a double-digit modifier is
-          // three characters (e.g. +12) and overflows the 20px circle at the
-          // base size. Shrink the font to keep multi-digit saves inside.
+          /*
+           * The save value carries a sign, so a double-digit modifier is
+           * three characters (e.g. +12) and overflows the 20px circle at the
+           * base size. Shrink the font to keep multi-digit saves inside.
+           */
           &[data-len='3'] {
             font-size: 10px;
           }
@@ -715,7 +747,7 @@
 }
 
 
-// Welcome Dialog
+/* Welcome Dialog */
 .welcome-dialog {
   aside {
     display: grid;
@@ -736,7 +768,7 @@
   }
 }
 
-// Release Notes Chat Card
+/* Release Notes Chat Card */
 .dcc-release-notes-card {
   p {
     font-family: var(--system-heading-font), serif;
@@ -771,12 +803,14 @@
     }
   }
 
-  // `--chat-primary-color`, not `--system-primary-color` (#856): this card only
-  // ever renders as a chat message (module/release-notes.js), and Foundry stamps
-  // `theme-light` on `ol.chat-log`, so the sheet color resolves to the light #222
-  // in there whatever the active theme is — dark text on the dark chat
-  // background. The card root is `.dcc-release-notes-card`, not `.dcc`, so the
-  // `.chat-message .dcc` rule in _chat.scss does not reach it either.
+  /*
+   * `--chat-primary-color`, not `--system-primary-color` (#856): this card only
+   * ever renders as a chat message (module/release-notes.js), and Foundry stamps
+   * `theme-light` on `ol.chat-log`, so the sheet color resolves to the light #222
+   * in there whatever the active theme is — dark text on the dark chat
+   * background. The card root is `.dcc-release-notes-card`, not `.dcc`, so the
+   * `.chat-message .dcc` rule in chat.css does not reach it either.
+   */
   .dcc-release-message {
     color: var(--chat-primary-color);
     font-family: var(--system-data-font), serif;

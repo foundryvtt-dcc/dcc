@@ -296,7 +296,7 @@ card (speaker = the actor), matching the system's existing card styling:
 | `module/item.js` | log spellburn (`:343`) |
 | `module/dcc.js` | `preUpdateActor` fallback logger |
 | `lang/en.json` + translations | new `DCC.AbilityLog*` keys |
-| `styles/dcc.scss` | log dialog table, dimmed healed rows, log button |
+| `styles/ability-score-log.css` | log dialog table, dimmed healed rows, log button |
 
 ## Edge cases
 

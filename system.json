@@ -68,7 +68,103 @@
       "layer": "variables"
     },
     {
-      "src": "styles/dcc.css",
+      "src": "styles/grid.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/base.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/journal.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/armor.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/chat.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/weapons.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/class-sheets.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/party-sheet.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/hit-points-dialog.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/apply-damage-dialog.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/ability-score-log.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/items.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/config-dialogs.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/skills.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/tabs.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/entity-link.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/dialogs.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/actor-sheet.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/combat-tracker.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/effects.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/level-change-dialog.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/container-items.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/settings-menus.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/sidebar.css",
+      "layer": "system"
+    },
+    {
+      "src": "styles/enrichers.css",
       "layer": "system"
     }
   ],

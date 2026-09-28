@@ -95,7 +95,7 @@ summary if you concluded none was needed, and why.
 
 ## Step 6: Pre-Flight Checks
 
-Run `pnpm run check` (which runs `format`, `scss`, `test`, and `compare-lang`).
+Run `pnpm run check` (which runs `format`, `test`, and `compare-lang`).
 
 - If checks **fail**: **STOP** and report the failures clearly. Do not proceed until all checks pass.
 - If checks **pass**: proceed.
@@ -132,7 +132,7 @@ Notes:
   - Duplicate logic
   - Inconsistent code style
   - Hardcoded user-facing strings that should use `game.i18n.localize()`
-  - SCSS edited in `styles/dcc.scss` only — never `styles/dcc.css`
+  - New stylesheets under `styles/` are listed in `system.json`'s `styles` array (layer `system`) at the right source-order position
 3. Make simplifications that improve clarity without changing behavior.
 4. After simplification, re-run `pnpm run check`. If checks fail, revert those changes.
 

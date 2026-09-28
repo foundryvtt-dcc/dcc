@@ -154,7 +154,7 @@ body.theme-dark {
   --system-value-display-background-color: #17161e;
 
   /* Responsive-tabs overflow dropdown — dark-theme overrides matching
-     the previous body.theme-dark block in _tabs.scss. */
+     the previous body.theme-dark block in tabs.css. */
   --system-tab-overflow-background: #2a2a2a;
   --system-tab-overflow-border-color: #444;
   --system-tab-overflow-text-color: #ccc;

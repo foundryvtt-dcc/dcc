@@ -47,23 +47,23 @@
 
     > .grid-container {
       display: grid;
-      grid-template-rows: 1fr auto 0.6fr; // Top flexible, elf abilities fixed, corruption flexible
+      grid-template-rows: 1fr auto 0.6fr; /* Top flexible, elf abilities fixed, corruption flexible */
       min-height: 0;
       height: 100%;
       grid-row-gap: 0;
 
-      // Top section with spell check, familiar, patron - flexible
+      /* Top section with spell check, familiar, patron - flexible */
       > .grid-container:first-child {
         min-height: 0;
         overflow-y: auto;
       }
 
-      // Elf Abilities section - stays at natural height
+      /* Elf Abilities section - stays at natural height */
       > div:nth-child(2) {
-        // This will take its natural height (auto in grid)
+        /* This will take its natural height (auto in grid) */
       }
 
-      // Corruption section - flexible
+      /* Corruption section - flexible */
       > .corruption {
         display: grid;
         grid-template-rows: auto 1fr;
@@ -98,7 +98,7 @@
       height: 100%;
       grid-row-gap: 0;
 
-      // Corruption section
+      /* Corruption section */
       > .corruption {
         display: grid;
         grid-template-rows: auto 1fr;

@@ -89,7 +89,7 @@ Types: `ActionDieUse`, `ActionType`, `ActionDieSlot`, `ActionDiceState`,
   flag). PC (`actor-partial-pc-common.html`) and NPC
   (`actor-partial-npc-common.html`) templates swap the single text box for the
   chip row only when `showActionDiceChips`; otherwise the existing input
-  renders verbatim. Styling in `styles/_actor-sheet.scss` (`.action-dice-chips`
+  renders verbatim. Styling in `styles/actor-sheet.css` (`.action-dice-chips`
   / `.action-die-chip`). Covered by `actor-sheet-presentation.test.js` and
   `handlebars-helpers.test.js`.
 
