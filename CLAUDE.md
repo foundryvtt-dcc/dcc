@@ -13,14 +13,15 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 | `pnpm run e2e:env <up\|status\|reset\|down\|destroy\|test>` | Isolated per-worktree Foundry server for E2E (#893) |
 | `pnpm run work:<start\|list\|sync\|finish>` | Parallel-issue workflow: issue → worktree + env + Claude session (#893) |
 | `pnpm run format` | Format code (StandardJS + StyleLint) |
-| `pnpm run scss` | Compile SASS to CSS |
 | `pnpm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |
 | `pnpm run tojson` | Extract LevelDB → JSON packs |
 | `pnpm run compare-lang` | Check translation coverage |
 
 ## Critical Rules
 
-- **SCSS only**: Edit `styles/dcc.scss`, never `styles/dcc.css`
+- **Plain CSS, no build step**: `styles/*.css` is native nested CSS loaded
+  directly. A new stylesheet must be added to `system.json`'s `styles` array
+  (layer `system`) — order matters, later files win specificity ties
 - **i18n required**: All user text must use `game.i18n.localize()`
 - **Translate new keys**: When adding to language files, translate them
 - **Tests must pass**: All PRs require passing tests

@@ -19,9 +19,6 @@ pnpm test
 
 # Format code
 pnpm run format
-
-# Compile SCSS
-pnpm run scss
 ```
 
 ## Commands
@@ -39,12 +36,23 @@ use pnpm.
 
 ### Styles
 
-| Command | Description |
-|---------|-------------|
-| `pnpm run scss` | Compile SASS from `styles/dcc.scss` to `styles/dcc.css` |
-| `pnpm run scss-watch` | Watch and auto-compile SASS during development |
+There is no build step: `styles/*.css` is native nested CSS that Foundry
+loads directly, so edits show up on reload. Each file covers one section
+(`chat.css`, `actor-sheet.css`, `dialogs.css`, …) and is listed in
+`system.json`'s `styles` array:
 
-**Important**: Always edit `styles/dcc.scss`, never edit `dcc.css` directly!
+- `styles/variables.css` (layer `variables`) holds the `--system-*` theming
+  custom properties. Light values are scoped to `:root, .theme-light` and dark
+  values to `.theme-dark`, so a sheet whose per-sheet theme differs from the
+  interface theme re-establishes its own values locally instead of inheriting
+  the wrong theme from an ancestor.
+- Every other file is in layer `system`, in a deliberate order: rules in later
+  files win specificity ties. To add a section, create `styles/<name>.css` and
+  add it to `system.json` at the right position.
+
+Nesting follows the CSS spec, not Sass: `&-suffix` concatenation is not
+supported, and a nested rule's `&` behaves like `:is(<parent list>)`, taking
+the specificity of the most specific parent selector.
 
 ### Pack Management
 
@@ -73,7 +81,7 @@ environments" for the underlying `e2e:env` tool):
 |---------|-------------|
 | `pnpm run work:start <issue#>` | Issue → branch + worktree (in `$DCC_WORK_DIR`, default `~/FoundryVTT-Work`) → isolated Foundry env → Claude session with an issue-specific prompt. `--no-claude` to skip the session launch, `--branch` to override the derived name (keep an `<issue#>-` token in it, or `work:sync`/`work:finish` won't find the worktree), `--modules a,b` to extend the env's module set (written to the gitignored `browser-tests/e2e/test-environment.local.json`, e.g. for sibling-module compat work). |
 | `pnpm run work:list` | Board of active worktrees: issue, branch, dirty/clean, server URL + pid, PR state. |
-| `pnpm run work:sync <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile scss + packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
+| `pnpm run work:sync <issue#> \| --all` | After a PR merges: stop the env server, merge `origin/main`, recompile packs, restart. Merge conflicts stop with the worktree left mid-merge to resolve. Run it for every active worktree after each merge to `main`. |
 | `pnpm run work:finish <issue#>` | Teardown after the PR merges: destroy the env, remove worktree + local branch, drop the `in-progress` label. Refuses while dirty or unmerged (`--force` overrides). |
 
 Don't put a `--` separator before the issue number (`work:finish -- 904`):
@@ -91,9 +99,9 @@ live server as a duplicate `dcc` system.
 - ES modules (`type: "module"` in package.json)
 - No unused variables in catch blocks (use `catch` instead of `catch (e)`)
 
-### SCSS/CSS
-- **StyleLint** with SASS guidelines
-- Primary styles in `styles/dcc.scss`
+### CSS
+- **StyleLint** (`.stylelintrc.json`, rules adapted from the former Sass guidelines config)
+- One file per section under `styles/`, listed in `system.json`
 
 ### Pull Requests
 - All PRs must pass automated tests
@@ -117,7 +125,7 @@ dcc/
 │   ├── item.js       # DCCItem class
 │   └── ...
 ├── templates/        # Handlebars templates
-├── styles/           # SCSS/CSS styles
+├── styles/           # CSS styles (native nesting, no build)
 ├── lang/             # Translation files
 ├── packs/            # Compendium packs
 │   └── */src/*.json  # JSON source files

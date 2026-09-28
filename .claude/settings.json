@@ -36,8 +36,6 @@
       "Bash(pnpm run e2e:env *)",
       "Bash(pnpm run format)",
       "Bash(pnpm run format *)",
-      "Bash(pnpm run scss)",
-      "Bash(pnpm run scss *)",
       "Bash(pnpm run sync-core-lib)",
       "Bash(pnpm run test)",
       "Bash(pnpm run test:integration)",

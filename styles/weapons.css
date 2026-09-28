@@ -71,7 +71,7 @@
       margin: 1px 2px 0 0;
       position: relative;
 
-      // Use pseudo-element for background so we can control opacity independently
+      /* Use pseudo-element for background so we can control opacity independently */
       &::before {
         content: '';
         position: absolute;
@@ -86,12 +86,12 @@
         transition: opacity 0.2s ease;
       }
 
-      // Lower opacity of d20 background when two-weapon class is present
+      /* Lower opacity of d20 background when two-weapon class is present */
       &.has-two-weapon::before {
         opacity: 0.35;
       }
 
-      // Thrown shadow-row button: dim the d20 so the throw glyph reads (#595)
+      /* Thrown shadow-row button: dim the d20 so the throw glyph reads (#595) */
       &.has-thrown-overlay::before {
         opacity: 0.35;
       }
@@ -143,9 +143,11 @@
     }
   }
 
-  // Auto-generated thrown attack row under a versatile melee weapon (#595).
-  // Read-only companion to the item row above it — visually receded so it
-  // never reads as a second inventory entry.
+  /*
+   * Auto-generated thrown attack row under a versatile melee weapon (#595).
+   * Read-only companion to the item row above it — visually receded so it
+   * never reads as a second inventory entry.
+   */
   .weapon-shadow-row {
     margin-top: -3px;
 

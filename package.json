@@ -6,13 +6,12 @@
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",
+    "@stylistic/stylelint-plugin": "^5.2.0",
     "@vitest/coverage-v8": "^5.0.0",
     "classic-level": "^3.0.0",
     "husky": "^9.1.7",
-    "sass": "^1.104.1",
     "standard": "^17.1.2",
     "stylelint": "^17.15.0",
-    "stylelint-config-sass-guidelines": "^13.0.0",
     "vitest": "^5.0.0"
   },
   "directories": {
@@ -38,8 +37,8 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "check": "pnpm run format && pnpm run scss && pnpm run test && pnpm run compare-lang",
-    "format": "standard --fix && stylelint \"**/*.scss\" --fix",
+    "check": "pnpm run format && pnpm run test && pnpm run compare-lang",
+    "format": "standard --fix && stylelint \"styles/**/*.css\" --fix",
     "test": "vitest run module/",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
@@ -51,8 +50,6 @@
     "work:list": "node scripts/work.mjs list",
     "work:sync": "node scripts/work.mjs sync",
     "work:finish": "node scripts/work.mjs finish",
-    "scss": "sass styles/dcc.scss styles/dcc.css",
-    "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
     "tojson": "node module/extractPacks.js",
     "compare-lang": "node module/compare-lang-files.js lang/en.json lang/cn.json lang/de.json lang/es.json lang/fr.json lang/it.json lang/pl.json",

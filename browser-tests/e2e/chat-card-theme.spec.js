@@ -4,7 +4,7 @@ const { expect, createSessionTest } = require('./fixtures')
 /**
  * Chat-card text color across the light / dark themes (issue #856).
  *
- * `.dcc` (styles/_base.scss) colors card bodies with `--system-primary-color`,
+ * `.dcc` (styles/base.css) colors card bodies with `--system-primary-color`,
  * the SHEET color. Foundry stamps `theme-light` on `ol.chat-log`, which
  * re-establishes the light variable block from styles/variables.css for that
  * whole subtree — so inside the chat log `--system-primary-color` resolves to
@@ -14,7 +14,7 @@ const { expect, createSessionTest } = require('./fixtures')
  * inline roll inside the former (DCC strips Foundry's light chip background from
  * inline rolls, so their text sits straight on the card).
  *
- * `styles/_chat.scss` now points DCC card bodies, inline rolls and content links
+ * `styles/chat.css` now points DCC card bodies, inline rolls and content links
  * at `--chat-primary-color`, which variables.css defines on `body` precisely so
  * chat cards follow the app theme rather than the chat log's own stamp.
  *
@@ -131,7 +131,7 @@ test.describe('Chat card text color', () => {
           spellManifestation: read('.theme856-spell .manifestation'),
           spellMercurial: read('.theme856-spell .mercurial'),
           // 2. roll-link enrichers, colored `--system-primary-color` by
-          //    styles/_enrichers.scss with no background of their own;
+          //    styles/enrichers.css with no background of their own;
           enricherLink: read('.theme856-enricher a.dcc-enricher'),
           enricherIcon: read('.theme856-enricher a.dcc-enricher > i'),
           //    The text is `inherit`, so it follows the dark card — which only
@@ -334,7 +334,7 @@ test.describe('Chat card text color', () => {
 
     // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions
-    // in styles/_chat.scss a natural 20 would render as ordinary body text; and
+    // in styles/chat.css a natural 20 would render as ordinary body text; and
     // because it resolves to `inherit`, the anchor nested inside a crit WRAPPER
     // span picks up the span's green rather than being recolored.
     for (const theme of ['dark', 'light']) {

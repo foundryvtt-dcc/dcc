@@ -58,9 +58,11 @@
         padding: 6px;
         cursor: pointer;
 
-        // Fixed 90x90 box stretched non-square member portraits; letterbox
-        // them instead so the aspect ratio is preserved (mirrors the PC and
-        // NPC portrait treatment).
+        /*
+         * Fixed 90x90 box stretched non-square member portraits; letterbox
+         * them instead so the aspect ratio is preserved (mirrors the PC and
+         * NPC portrait treatment).
+         */
         object-fit: contain;
       }
     }

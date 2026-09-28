@@ -15,8 +15,8 @@
  * `body.game .app` — the AppV1 selector, and V14 has no AppV1 windows, so
  * `document.querySelectorAll('.app').length === 0` (#861).
  *
- * The test parses the compiled stylesheet (what the browser loads), plus
- * variables.css and the SCSS partials (see `referencesWithoutFallback`). A
+ * The test parses every stylesheet system.json loads (variables.css plus the
+ * nested-CSS partials — exactly what the browser gets). A
  * reference is safe when it either resolves to a DCC declaration or supplies a
  * fallback (`var(--x, #999)`), which renders predictably even when `--x` is
  * missing.
@@ -33,7 +33,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 
-const STYLES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'styles')
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 /**
  * Custom properties Foundry V14 declares on a scope that DCC selectors actually
@@ -51,56 +51,95 @@ const CORE_PROVIDED = [
   '--input-text-color'
 ]
 
-/**
- * Read a stylesheet with comments stripped. Both forms have to go: these files
- * discuss variable names in prose (why a name was dropped, what it used to
- * hold), and a `var(--x)` inside a comment is not a reference.
- */
-const read = (file) => fs.readFileSync(path.join(STYLES_DIR, file), 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, '') // CSS block comments
-  .replace(/^\s*\/\/.*$/gm, '') //     SCSS line comments
+/** The stylesheets system.json loads, in load order. */
+const STYLESHEETS = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'system.json'), 'utf8')
+).styles.map(({ src }) => src)
 
-/** Every custom property DCC declares, across the compiled sheet and variables. */
+/**
+ * Read a stylesheet with comments stripped and strings masked. Comments go
+ * because these files discuss variable names in prose (why a name was dropped,
+ * what it used to hold), and a `var(--x)` inside a comment is not a reference.
+ * Strings are masked (one pass with comments, so a `/*` inside a string is not
+ * a comment) because a quoted `;`, `{` or `}` — `content: ';'`, a data: URL —
+ * would otherwise throw off the block walker in `declarations`.
+ */
+const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\/|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g,
+    m => m[0] === '/' ? '' : `${m[0]}str${m[0]}`)
+
+/** Every custom property DCC declares, across all stylesheets. */
 function declaredProperties () {
-  const css = read('dcc.css') + read('variables.css')
+  const css = STYLESHEETS.map(read).join('\n')
   return new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map(m => m[1]))
+}
+
+/**
+ * Walk a (possibly nested) stylesheet and yield each declaration with the
+ * selector of the block it sits in. A flat `selector { decls }` regex is not
+ * enough: in nested CSS a block's own declarations can sit alongside nested
+ * rules, and the regex would read them as part of the child's selector.
+ */
+function * declarations (css) {
+  const selectors = []
+  let text = ''
+  for (const char of css) {
+    if (char === '{') {
+      selectors.push(text.replace(/\s+/g, ' ').trim())
+      text = ''
+    } else if (char === ';' || char === '}') {
+      if (text.trim()) yield { selector: selectors.at(-1) ?? '', declaration: text.trim() }
+      text = ''
+      if (char === '}') selectors.pop()
+    } else {
+      text += char
+    }
+  }
+}
+
+/**
+ * The `var()` references in one declaration value that supply no fallback.
+ *
+ * A reference inside another `var()`'s fallback degrades safely — if it is
+ * invalid, the outer fallback is simply unused — so each fallback is skipped
+ * up to its balancing `)`. References outside any fallback are all checked:
+ * `box-shadow: 0 0 var(--a, 1px) var(--typo)` still reports `--typo`.
+ */
+function * unguardedVars (value) {
+  const call = /var\(\s*(--[\w-]+)\s*([,)])/g
+  let use
+  while ((use = call.exec(value))) {
+    if (use[2] === ')') { yield use[1]; continue }
+    // Has a fallback: resume scanning after the call's closing paren.
+    let depth = 1
+    let i = call.lastIndex
+    for (; i < value.length && depth; i++) {
+      if (value[i] === '(') depth++
+      else if (value[i] === ')') depth--
+    }
+    call.lastIndex = i
+  }
 }
 
 /**
  * Every `var(--x)` reference that supplies NO fallback, mapped to the sites
  * using it (for a readable failure message).
  *
- * Scans variables.css and the SCSS partials as well as the compiled sheet.
- * variables.css matters because a custom property whose own value contains an
+ * Includes variables.css: a custom property whose own value contains an
  * invalid `var()` becomes guaranteed-invalid, taking every consumer with it —
- * one indirection away from the compiled output and therefore easy to miss. The
- * partials matter because dcc.css is a build artifact: without them a stale
- * compile would leave this test green while the shipped stylesheet is broken.
+ * one indirection away from the rules that use it and therefore easy to miss.
  */
 function referencesWithoutFallback () {
   const uses = new Map()
-  for (const file of ['dcc.css', 'variables.css', ...scssPartials()]) {
-    const css = read(file)
-    for (const rule of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-      const selector = rule[1].replace(/\s+/g, ' ').trim()
-      for (const declaration of rule[2].split(';')) {
-        // A nested `var(--a, var(--b))` degrades safely, so only the OUTERMOST
-        // reference of each declaration decides — take the first `var(` and
-        // check whether it supplies a comma before its closing paren.
-        for (const use of declaration.matchAll(/var\((--[\w-]+)\s*([,)])/g)) {
-          if (use[2] === ',') break // has a fallback — this declaration is safe
-          const site = `${file}: ${selector} { ${declaration.trim()} }`
-          uses.set(use[1], [...(uses.get(use[1]) || []), site])
-        }
+  for (const file of STYLESHEETS) {
+    for (const { selector, declaration } of declarations(read(file))) {
+      for (const name of unguardedVars(declaration)) {
+        const site = `${file}: ${selector} { ${declaration} }`
+        uses.set(name, [...(uses.get(name) || []), site])
       }
     }
   }
   return uses
-}
-
-/** The SCSS partials, so the guard checks source and not only the artifact. */
-function scssPartials () {
-  return fs.readdirSync(STYLES_DIR).filter(f => f.startsWith('_') && f.endsWith('.scss'))
 }
 
 describe('CSS custom properties', () => {

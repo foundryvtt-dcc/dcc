@@ -176,9 +176,9 @@ For items where the name is an `<input>` field (armor), add a small clickable ic
 
 #### 2d. Add CSS for clickable items
 
-In `styles/dcc.scss`, add hover/cursor styles for the new clickable elements:
+In `styles/items.css`, add hover/cursor styles for the new clickable elements:
 
-```scss
+```css
 .item .rollable {
   cursor: pointer;
   &:hover {

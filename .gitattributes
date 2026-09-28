@@ -36,9 +36,6 @@ packs/**/src/*.json export-ignore
 .stylelintrc export-ignore
 CLAUDE.md export-ignore
 
-# Auto-generated CSS File line-endings
-styles/dcc.css text eol=lf
-
 # Don't Mess with Line Endings
 * text=auto
 

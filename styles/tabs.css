@@ -208,7 +208,7 @@
   a[data-tab='clericSpells']::before,
   a[data-tab='spells']::before,
   a[data-tab='wizardSpells']::before,
-  a[data-tab='spell']::before, {
+  a[data-tab='spell']::before {
     content: '\f6b8';
   }
 
