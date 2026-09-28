@@ -349,4 +349,4 @@ card (speaker = the actor), matching the system's existing card styling:
 3. Edit dialog + sheet wiring (PC template)
 4. Log viewer dialog + Heal/delete
 5. Auto-logging in spellburn/luck-spend paths + fallback hook
-6. SCSS, E2E, dependent-module smoke check
+6. CSS, E2E, dependent-module smoke check

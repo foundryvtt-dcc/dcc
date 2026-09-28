@@ -57,12 +57,16 @@ const STYLESHEETS = JSON.parse(
 ).styles.map(({ src }) => src)
 
 /**
- * Read a stylesheet with comments stripped: these files discuss variable names
- * in prose (why a name was dropped, what it used to hold), and a `var(--x)`
- * inside a comment is not a reference.
+ * Read a stylesheet with comments stripped and strings masked. Comments go
+ * because these files discuss variable names in prose (why a name was dropped,
+ * what it used to hold), and a `var(--x)` inside a comment is not a reference.
+ * Strings are masked (one pass with comments, so a `/*` inside a string is not
+ * a comment) because a quoted `;`, `{` or `}` — `content: ';'`, a data: URL —
+ * would otherwise throw off the block walker in `declarations`.
  */
 const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\*[\s\S]*?\*\/|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g,
+    m => m[0] === '/' ? '' : `${m[0]}str${m[0]}`)
 
 /** Every custom property DCC declares, across all stylesheets. */
 function declaredProperties () {
@@ -94,6 +98,30 @@ function * declarations (css) {
 }
 
 /**
+ * The `var()` references in one declaration value that supply no fallback.
+ *
+ * A reference inside another `var()`'s fallback degrades safely — if it is
+ * invalid, the outer fallback is simply unused — so each fallback is skipped
+ * up to its balancing `)`. References outside any fallback are all checked:
+ * `box-shadow: 0 0 var(--a, 1px) var(--typo)` still reports `--typo`.
+ */
+function * unguardedVars (value) {
+  const call = /var\(\s*(--[\w-]+)\s*([,)])/g
+  let use
+  while ((use = call.exec(value))) {
+    if (use[2] === ')') { yield use[1]; continue }
+    // Has a fallback: resume scanning after the call's closing paren.
+    let depth = 1
+    let i = call.lastIndex
+    for (; i < value.length && depth; i++) {
+      if (value[i] === '(') depth++
+      else if (value[i] === ')') depth--
+    }
+    call.lastIndex = i
+  }
+}
+
+/**
  * Every `var(--x)` reference that supplies NO fallback, mapped to the sites
  * using it (for a readable failure message).
  *
@@ -105,13 +133,9 @@ function referencesWithoutFallback () {
   const uses = new Map()
   for (const file of STYLESHEETS) {
     for (const { selector, declaration } of declarations(read(file))) {
-      // A nested `var(--a, var(--b))` degrades safely, so only the OUTERMOST
-      // reference of each declaration decides — take the first `var(` and
-      // check whether it supplies a comma before its closing paren.
-      for (const use of declaration.matchAll(/var\((--[\w-]+)\s*([,)])/g)) {
-        if (use[2] === ',') break // has a fallback — this declaration is safe
+      for (const name of unguardedVars(declaration)) {
         const site = `${file}: ${selector} { ${declaration} }`
-        uses.set(use[1], [...(uses.get(use[1]) || []), site])
+        uses.set(name, [...(uses.get(name) || []), site])
       }
     }
   }
