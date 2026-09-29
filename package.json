@@ -6,7 +6,7 @@
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
     "@foundryvtt/foundryvtt-cli": "^3.0.4",
-    "@stylistic/stylelint-plugin": "^5.2.0",
+    "@stylistic/stylelint-plugin": "^5.3.0",
     "@vitest/coverage-v8": "^5.0.0",
     "classic-level": "^3.0.0",
     "husky": "^9.1.7",
