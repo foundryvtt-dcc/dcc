@@ -162,11 +162,15 @@ a.inline-roll {
  * chip — a 1.33:1 pairing the background was never meant to produce.
  *
  * Stripped in the dark theme only, so the light theme keeps the chip look it
- * has always had. Scoped to `.chat-message`, not the whole interface. The
+ * has always had. "Dark" is whichever theme the chat cards follow: the app
+ * theme on `body` by default, the interface theme on `#interface` under
+ * `chat-cards-use-ui-theme` (same split as the --chat-* tokens in
+ * variables.css). Scoped to `.chat-message`, not the whole interface. The
  * border stays core's: with the fill gone it is the link's only affordance
  * (#861), and its light value reads on the dark card.
  */
-body.theme-dark .chat-message {
+body.theme-dark:not(.chat-cards-use-ui-theme) .chat-message,
+body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   .inline-roll,
   .content-link {
     background: transparent;

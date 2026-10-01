@@ -743,9 +743,10 @@ test.describe('Chat card text color', () => {
    * With `chatCardsUseAppTheme` off, `chat-cards-use-ui-theme` on body makes the
    * card follow the INTERFACE theme. The crit/fumble accents must follow it too,
    * or a mixed scheme pairs one theme's accent with the other's card — app-dark /
-   * UI-light would put the light-green #7ddb63 on parchment.
+   * UI-light would put the light-green #7ddb63 on parchment. Same for the
+   * dark-theme chip strip on bare (non-`.dcc`) content links.
    */
-  test('crit/fumble accents follow the UI theme under chat-cards-use-ui-theme', async ({ page }) => {
+  test('crit/fumble accents and link chips follow the UI theme under chat-cards-use-ui-theme', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const out = {}
       const cfg = game.settings.get('core', 'uiConfig')
@@ -763,10 +764,12 @@ test.describe('Chat card text color', () => {
           const el = document.querySelector(`#chat [data-message-id="${msg.id}"] ${sel}`)
           return el ? getComputedStyle(el).color : null
         }
+        const link = document.querySelector(`#chat [data-message-id="${msg.id}"] .message-content > a.content-link`)
         return {
           interfaceClass: document.getElementById('interface')?.className,
           crit: read('.emote-alert.critical'),
-          fumble: read('.emote-alert.fumble')
+          fumble: read('.emote-alert.fumble'),
+          linkBackground: link ? getComputedStyle(link).backgroundColor : null
         }
       }
       try {
@@ -774,7 +777,9 @@ test.describe('Chat card text color', () => {
           content: '<div class="dcc chat-card theme948-ui-theme">' +
             '<p class="emote-alert critical">crit</p>' +
             '<p class="emote-alert fumble">fumble</p>' +
-            '</div>'
+            '</div>' +
+            // Outside the `.dcc` wrapper, which strips the chip in both themes.
+            '<a class="content-link">Probe Link</a>'
         })
         out.appDarkUiLight = await measure('dark', 'light')
         out.appLightUiDark = await measure('light', 'dark')
@@ -791,5 +796,9 @@ test.describe('Chat card text color', () => {
     expect(result.appDarkUiLight.fumble, debug).toBe(FUMBLE_RED_LIGHT)
     expect(result.appLightUiDark.crit, debug).toBe(CRIT_GREEN_DARK)
     expect(result.appLightUiDark.fumble, debug).toBe(FUMBLE_RED_DARK)
+    // Light card keeps core's chip; dark card strips it.
+    expect(result.appDarkUiLight.linkBackground, debug).toBeTruthy()
+    expect(result.appDarkUiLight.linkBackground, debug).not.toBe(TRANSPARENT)
+    expect(result.appLightUiDark.linkBackground, debug).toBe(TRANSPARENT)
   })
 })
