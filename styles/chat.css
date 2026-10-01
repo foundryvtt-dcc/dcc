@@ -15,24 +15,12 @@ a.inline-roll {
 }
 
 /*
- * Crit / fumble accent text. These declarations carried the literal
- * `green` / `red` keywords before they were swapped for tokens, which has two
- * problems:
- *
- * 1. Contrast: against the dark chat card background (#0b0a13) those keywords
- *    measure 3.84:1 (`green`) and 3.99:1 (`red`) — meaningful text ("SUCCESS"
- *    / "FUMBLE") below the WCAG 4.5:1 normal-text floor.
- * 2. Theme awareness: the values have to follow the theme rather than being
- *    one fixed pair, so they moved to the `--chat-critical-color` /
- *    `--chat-fumble-color` tokens in styles/variables.css. Those are `--chat-*`
- *    names rather than `--system-*` names deliberately: Foundry stamps
- *    `themed theme-light` on `ol.chat-log`, re-establishing the light variable
- *    block for the whole chat subtree (#856), so only names declared on `body`
- *    follow the app theme in chat — see the token block comment there.
- *
- * The light token values are the same `green`/`red` keywords, so the light
- * theme renders identically to before the change. The crit/fumble assertions in
- * browser-tests/e2e/chat-card-theme.spec.js pin both themes' values.
+ * Crit / fumble accent text. These were literal `green` / `red`, which don't
+ * follow the theme — `green` is 3.83:1 on the dark card, under the 4.5:1 text
+ * floor (#948). The `--chat-*` tokens in styles/variables.css keep the light
+ * theme's literals and give the dark theme lighter hues; they are `--chat-*`
+ * rather than `--system-*` because only names declared on `body` follow the
+ * theme inside the chat log (#856).
  */
 .deed-result.critical,
 .dice-roll .dice-total.critical,

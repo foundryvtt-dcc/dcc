@@ -50,6 +50,10 @@
      those controls had no danger cue. */
   --system-text-negative-color: #8b1a1a;
   --system-damage-color: #8b0000;
+  /* Crit / fumble accent text (issue #948). Mirrored by the --chat-* pair on
+     body.theme-light / body.theme-dark below, which is what chat cards use. */
+  --system-critical-color: green;
+  --system-fumble-color: red;
   /* Two border weights below --system-border-color (which frames boxes),
      replacing `--color-border-light-primary` / `--color-border-light-tertiary`
      (issue #861). Foundry V14 declares those only under `body.game .app`, the
@@ -100,15 +104,8 @@ body.theme-light {
   --chat-primary-color: #222;
   --chat-border-subtle-color: #b5b3a4;
   --chat-border-muted-color: #7a7971;
-  /* Crit / fumble accent text — the literal `green` / `red` keywords the
-     chat.css declarations carried before these tokens existed, so the light
-     theme renders identically to before the change. Those keywords measure
-     3.84:1 (`green`) and 3.99:1 (`red`) against the DARK card background,
-     which is what the dark values below fix; on parchment they are fine as
-     they are. Only names declared on `body` follow the app theme inside the
-     chat log (see the block comment above) — an `--system-*` name would
-     resolve to its light value inside chat in both themes, defeating the
-     point. */
+  /* Crit / fumble accent text (issue #948): the literal `green` / `red` the
+     chat.css declarations always carried, so the light theme is unchanged. */
   --chat-critical-color: green;
   --chat-fumble-color: red;
 }
@@ -118,14 +115,10 @@ body.theme-dark {
   --chat-primary-color: #d0beaa;
   --chat-border-subtle-color: #3d3c44;
   --chat-border-muted-color: #6b6a75;
-  /* Crit / fumble accent text on the #0b0a13 dark chat card. Both are real
-     text with meaning (crit / fumble results, spell-check mods, the enhanced
-     card's success/failure states), and the LIGHT theme's keywords — `green`
-     (#008000, measures 3.84:1 here) and `red` (#ff0000, 3.99:1) — sit under
-     the WCAG 4.5:1 normal-text floor on this background. #7ddb63 measures
-     11.4:1 and #ff7f7f 8.1:1, both well above it, and both stay recognizable
-     as the crit / fumble hues. The light block keeps the bare keyword
-     values. */
+  /* Crit / fumble accent text on #0b0a13 (issue #948). `green` measures
+     3.83:1 here, under the 4.5:1 text floor; `red` passes at 4.92:1 but reads
+     as a dim smear on near-black, so both get lighter hues: #7ddb63 is 11.4:1,
+     #ff7f7f 8.1:1. */
   --chat-critical-color: #7ddb63;
   --chat-fumble-color: #ff7f7f;
 }
@@ -170,6 +163,9 @@ body.theme-dark {
   --system-left-arrow-button-image: url('./images/left-arrow-grey.svg');
   --system-party-sheet-border: 2px solid var(--system-border-color);
   --system-primary-color: #d0beaa;
+  /* Same values as the body.theme-dark --chat-* accent pair (issue #948). */
+  --system-critical-color: #7ddb63;
+  --system-fumble-color: #ff7f7f;
   --system-right-arrow-button-image: url('./images/right-arrow-grey.svg');
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
@@ -195,13 +191,8 @@ body.theme-dark {
   --chat-primary-color: var(--system-primary-color);
   --chat-border-subtle-color: var(--system-border-subtle-color);
   --chat-border-muted-color: var(--system-border-muted-color);
-  /*
-   * The crit/fumble accents intentionally do NOT ride along here: no
-   * --system-* accent tokens exist for green/red to remap to, and inventing
-   * token surface this setting does not need is scope creep. The known
-   * consequence: under this setting, an app-light / UI-dark combination keeps
-   * the light `green`/`red` accents on a dark card (below the 4.5:1 floor
-   * there). If a --system-critical/fumble-color pair is ever introduced,
-   * remap them here.
-   */
+  /* Without these the accents would follow the app theme while the card
+     follows the UI theme: app-dark / UI-light would put #7ddb63 on parchment. */
+  --chat-critical-color: var(--system-critical-color);
+  --chat-fumble-color: var(--system-fumble-color);
 }

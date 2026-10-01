@@ -38,15 +38,9 @@ const BORDER_SUBTLE_LIGHT = 'rgb(181, 179, 164)' // #b5b3a4 — decorative divid
 const BORDER_SUBTLE_DARK = 'rgb(61, 60, 68)' //  #3d3c44
 const BORDER_MUTED_LIGHT = 'rgb(122, 121, 113)' // #7a7971 — must stay visible
 const BORDER_MUTED_DARK = 'rgb(107, 106, 117)' // #6b6a75
-/* Crit / fumble accents. The light values are the literal `green` / `red` the
- * declarations carried before the tokens existed, so the light theme renders
- * identically to before the change. The dark values are the
- * `--chat-critical-color` / `--chat-fumble-color` dark token values, chosen
- * for >= 4.5:1 contrast on the #0b0a13 dark chat background (the light
- * keywords measure 3.84:1 / 3.99:1 there — below the WCAG normal-text floor).
- * The constants differ per theme, so the token assertions are per-theme, and
- * the variables.css body.theme-light / body.theme-dark blocks are the source
- * of truth these constants mirror.
+/* Crit / fumble accents — mirror the `--chat-critical-color` /
+ * `--chat-fumble-color` values in styles/variables.css. Light keeps the literal
+ * `green` / `red`; dark uses lighter hues for the #0b0a13 card (#948).
  */
 const CRIT_GREEN_LIGHT = 'rgb(0, 128, 0)' // `green`
 const FUMBLE_RED_LIGHT = 'rgb(255, 0, 0)' // `red`
@@ -456,8 +450,7 @@ test.describe('Chat card text color', () => {
     // because it resolves to `inherit`, the anchor nested inside a crit WRAPPER
     // span picks up the span's green rather than being recolored. Light keeps
     // the literal green/red these declarations always had; dark gets the
-    // >=4.5:1-on-#0b0a13 token values (the light keywords measure 3.84:1 and
-    // 3.99:1 on that background).
+    // lighter token values (`green` is 3.83:1 on #0b0a13).
     for (const theme of ['dark', 'light']) {
       const crit = theme === 'dark' ? CRIT_GREEN_DARK : CRIT_GREEN_LIGHT
       const fumble = theme === 'dark' ? FUMBLE_RED_DARK : FUMBLE_RED_LIGHT
@@ -744,5 +737,59 @@ test.describe('Chat card text color', () => {
     // Zero contrast flags across every text node of the drawn table and the
     // probe card, against the dark chat background.
     expect(result.dark.flags, `contrast flags: ${JSON.stringify(result.dark.flags)}`).toEqual([])
+  })
+
+  /*
+   * With `chatCardsUseAppTheme` off, `chat-cards-use-ui-theme` on body makes the
+   * card follow the INTERFACE theme. The crit/fumble accents must follow it too,
+   * or a mixed scheme pairs one theme's accent with the other's card — app-dark /
+   * UI-light would put the light-green #7ddb63 on parchment.
+   */
+  test('crit/fumble accents follow the UI theme under chat-cards-use-ui-theme', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const out = {}
+      const cfg = game.settings.get('core', 'uiConfig')
+      globalThis.__dccSavedUiConfig = cfg
+      const hadClass = document.body.classList.contains('chat-cards-use-ui-theme')
+      document.body.classList.add('chat-cards-use-ui-theme')
+      let msg
+      const measure = async (applications, ui) => {
+        await game.settings.set('core', 'uiConfig', {
+          ...cfg,
+          colorScheme: { ...(cfg.colorScheme || {}), interface: ui, applications }
+        })
+        await new Promise(resolve => setTimeout(resolve, 800))
+        const read = (sel) => {
+          const el = document.querySelector(`#chat [data-message-id="${msg.id}"] ${sel}`)
+          return el ? getComputedStyle(el).color : null
+        }
+        return {
+          interfaceClass: document.getElementById('interface')?.className,
+          crit: read('.emote-alert.critical'),
+          fumble: read('.emote-alert.fumble')
+        }
+      }
+      try {
+        msg = await ChatMessage.create({
+          content: '<div class="dcc chat-card theme948-ui-theme">' +
+            '<p class="emote-alert critical">crit</p>' +
+            '<p class="emote-alert fumble">fumble</p>' +
+            '</div>'
+        })
+        out.appDarkUiLight = await measure('dark', 'light')
+        out.appLightUiDark = await measure('light', 'dark')
+      } finally {
+        if (!hadClass) document.body.classList.remove('chat-cards-use-ui-theme')
+        await msg?.delete().catch(() => {})
+        await game.settings.set('core', 'uiConfig', cfg)
+      }
+      return out
+    })
+
+    const debug = JSON.stringify(result)
+    expect(result.appDarkUiLight.crit, debug).toBe(CRIT_GREEN_LIGHT)
+    expect(result.appDarkUiLight.fumble, debug).toBe(FUMBLE_RED_LIGHT)
+    expect(result.appLightUiDark.crit, debug).toBe(CRIT_GREEN_DARK)
+    expect(result.appLightUiDark.fumble, debug).toBe(FUMBLE_RED_DARK)
   })
 })
