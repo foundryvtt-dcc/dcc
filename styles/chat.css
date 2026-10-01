@@ -14,18 +14,38 @@ a.inline-roll {
   background: transparent;
 }
 
+/*
+ * Crit / fumble accent text. These declarations carried the literal
+ * `green` / `red` keywords before they were swapped for tokens, which has two
+ * problems:
+ *
+ * 1. Contrast: against the dark chat card background (#0b0a13) those keywords
+ *    measure 3.84:1 (`green`) and 3.99:1 (`red`) — meaningful text ("SUCCESS"
+ *    / "FUMBLE") below the WCAG 4.5:1 normal-text floor.
+ * 2. Theme awareness: the values have to follow the theme rather than being
+ *    one fixed pair, so they moved to the `--chat-critical-color` /
+ *    `--chat-fumble-color` tokens in styles/variables.css. Those are `--chat-*`
+ *    names rather than `--system-*` names deliberately: Foundry stamps
+ *    `themed theme-light` on `ol.chat-log`, re-establishing the light variable
+ *    block for the whole chat subtree (#856), so only names declared on `body`
+ *    follow the app theme in chat — see the token block comment there.
+ *
+ * The light token values are the same `green`/`red` keywords, so the light
+ * theme renders identically to before the change. The crit/fumble assertions in
+ * browser-tests/e2e/chat-card-theme.spec.js pin both themes' values.
+ */
 .deed-result.critical,
 .dice-roll .dice-total.critical,
 .emote-alert.critical,
 .inline-roll.critical {
-  color: green;
+  color: var(--chat-critical-color);
   font-weight: 900;
 }
 
 .dice-roll .dice-total.fumble,
 .emote-alert.fumble,
 .inline-roll.fumble {
-  color: red;
+  color: var(--chat-fumble-color);
 }
 
 .emote-note {
@@ -128,13 +148,40 @@ a.inline-roll {
   font-family: var(--system-label-font), serif;
 
   .critical {
-    color: green;
+    color: var(--chat-critical-color);
     font-weight: 900;
   }
 
   .fumble {
-    color: red;
+    color: var(--chat-fumble-color);
     font-weight: 900;
+  }
+}
+
+/*
+ * Dark theme chip strip.
+ *
+ * Core (elements.custom) gives `.content-link` AND `.inline-roll` a light chip
+ * background: `--content-link-background`, which computes to #ddd inside the
+ * chat log, where the `theme-light` stamp (#856) re-establishes the light
+ * theme. `.chat-message a.inline-roll` strips that chip on roll ANCHORS in
+ * both themes, and `.dcc`-wrapped cards strip content links everywhere
+ * (see base.css and the `.table-draw` block further down). Two shapes escape
+ * both strips and so kept the #ddd chip: the crit span-wrapper that
+ * `module/chat.js` emits (`span.inline-roll.critical` — the existing rule only
+ * matches anchors, not spans), and bare `a.content-link`s on unwrapped cards.
+ * In the dark theme those rendered #d0beaa/#7ddb63 text on the light #ddd
+ * chip — a 1.33:1 pairing the background was never meant to produce.
+ *
+ * Stripped in the dark theme only, so the light theme keeps the chip look it
+ * has always had. Scoped to `.chat-message`, not the whole interface. The
+ * border stays core's: with the fill gone it is the link's only affordance
+ * (#861), and its light value reads on the dark card.
+ */
+body.theme-dark .chat-message {
+  .inline-roll,
+  .content-link {
+    background: transparent;
   }
 }
 
@@ -257,6 +304,27 @@ a.inline-roll {
   .table-draw {
     color: var(--chat-primary-color);
 
+    /*
+     * Headings inside a table-draw card — the description block and the
+     * results — have to carry the chat color too, not just the card body.
+     *
+     * Core's `@layer elements.typography` colors every h1-h6 with
+     * `--color-text-emphatic`, and inside the chat log that resolves to its
+     * near-black LIGHT value (#111) because Foundry stamps
+     * `themed theme-light` on `ol.chat-log` (#856) — that stamp re-establishes
+     * the light variable block for that whole subtree. A system-layer rule
+     * outranks core's element-layer rule regardless of specificity, which is
+     * what makes the table title ("Table 1-3: Occupation", an h2 inside the
+     * drawn table's description) resolve to `--chat-primary-color` instead of
+     * #111. h1 already carries the token in the spell-check card block below;
+     * h2-h6 appear wherever the description template (`<h2>…</h2>` and
+     * lower-ranked headings inside drawn table text) and enriched results use
+     * them.
+     */
+    :is(h1, h2, h3, h4, h5, h6) {
+      color: var(--chat-primary-color);
+    }
+
     .table-description {
       color: var(--chat-primary-color);
 
@@ -265,6 +333,27 @@ a.inline-roll {
         color: var(--chat-primary-color);
       }
     }
+  }
+
+  /*
+   * Bare h3s inside plain message content — the core-authored welcome /
+   * onboarding cards (`.nue`: "Getting Started", "Inviting Your Players").
+   * They are core DOM, not `.dcc` cards, so the card-body rules above don't
+   * reach them, and core's typography layer gives them #111/#222 inside the
+   * chat log under the `theme-light` stamp — 1.24:1 on the dark card,
+   * unreadable. Scoping this to `.chat-message .message-content` keeps the
+   * fix chat-only: a sheet or journal page keeps core's heading color. The
+   * selector is deliberately not narrowed to the welcome cards themselves —
+   * any h3 inside a chat message's content takes the chat theme's color, same
+   * as the rest of the card text does; nothing on a sheet or journal page is
+   * affected.
+   *
+   * Not in conflict with the issue-#778 rule in `.dcc-enhanced-card
+   * .card-header .flavor-text` — that one constrains font-size/line-height so
+   * the header doesn't balloon; this only assigns a color.
+   */
+  .message-content h3 {
+    color: var(--chat-primary-color);
   }
 }
 
@@ -350,12 +439,12 @@ a.inline-roll {
     }
 
     .critical {
-      color: green;
+      color: var(--chat-critical-color);
       font-weight: 900;
     }
 
     .fumble {
-      color: red;
+      color: var(--chat-fumble-color);
       font-weight: 900;
     }
   }
@@ -474,19 +563,23 @@ a.inline-roll {
     font-weight: 700;
 
     &.status-success {
-      color: green;
+      color: var(--chat-critical-color);
     }
 
     &.status-failure {
-      color: red;
+      color: var(--chat-fumble-color);
     }
 
     /*
-     * `&.status-info` — the neutral counterpart to the success/failure states
-     * above — intentionally has no rule: it keeps the `.roll-result` weight and
-     * takes the card's color. It previously set
-     * `color: var(--system-primrary-text)`, the same typo as `a.inline-roll`, so
-     * the variable never existed and the declaration was already `inherit`.
+     * The success/failure accents share the same two `--chat-critical-color` /
+     * `--chat-fumble-color` tokens as the `.critical`/`.fumble` text: same
+     * palette, and the literal green/red they carried measures below the
+     * 4.5:1 floor against the dark chat card. `&.status-info` — the neutral
+     * counterpart — intentionally has no rule to keep the `.roll-result`
+     * weight and take the card's color. It previously set
+     * `color: var(--system-primrary-text)`, the same typo as `a.inline-roll`,
+     * so the variable never existed and the declaration was already
+     * `inherit`.
      */
   }
 
