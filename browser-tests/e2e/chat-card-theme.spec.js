@@ -38,8 +38,126 @@ const BORDER_SUBTLE_LIGHT = 'rgb(181, 179, 164)' // #b5b3a4 — decorative divid
 const BORDER_SUBTLE_DARK = 'rgb(61, 60, 68)' //  #3d3c44
 const BORDER_MUTED_LIGHT = 'rgb(122, 121, 113)' // #7a7971 — must stay visible
 const BORDER_MUTED_DARK = 'rgb(107, 106, 117)' // #6b6a75
-const CRIT_GREEN = 'rgb(0, 128, 0)'
-const FUMBLE_RED = 'rgb(255, 0, 0)'
+/* Crit / fumble accents. The light values are the literal `green` / `red` the
+ * declarations carried before the tokens existed, so the light theme renders
+ * identically to before the change. The dark values are the
+ * `--chat-critical-color` / `--chat-fumble-color` dark token values, chosen
+ * for >= 4.5:1 contrast on the #0b0a13 dark chat background (the light
+ * keywords measure 3.84:1 / 3.99:1 there — below the WCAG normal-text floor).
+ * The constants differ per theme, so the token assertions are per-theme, and
+ * the variables.css body.theme-light / body.theme-dark blocks are the source
+ * of truth these constants mirror.
+ */
+const CRIT_GREEN_LIGHT = 'rgb(0, 128, 0)' // `green`
+const FUMBLE_RED_LIGHT = 'rgb(255, 0, 0)' // `red`
+const CRIT_GREEN_DARK = 'rgb(125, 219, 99)' // #7ddb63
+const FUMBLE_RED_DARK = 'rgb(255, 127, 127)' // #ff7f7f
+
+/**
+ * WCAG contrast audit over text nodes in the chat log (page-side).
+ *
+ * Walks every non-empty text node under each scope selector, resolves the
+ * SC 1.4.3 ratio between the node's computed color and the first OPAQUE
+ * background up the ancestor chain, and returns every node below the
+ * threshold: 4.5:1 for normal text, 3:1 for large text (>=24px, or the
+ * 18pt-bold equivalent 18.66px at weight >= 700).
+ *
+ * GOTCHAS baked into the callers:
+ * - The scoping MUST resolve inside `#chat ol.chat-log`. `#chat-notifications`
+ *   also contains an empty `ol.chat-log` that appears EARLIER in the DOM, so a
+ *   bare `document.querySelector('.chat-log')` picks that one and audits
+ *   nothing.
+ * - The light chat card background is a parchment IMAGE
+ *   (`url('/ui/parchment.jpg')`), not a backgroundColor, so the ancestor walk
+ *   finds none; a caller auditing light theme passes a fallback background
+ *   matching the light chat background (this audit runs on the dark theme in
+ *   this spec, where the card's backgroundColor is the token value).
+ * - Scopes are per-message `.message-content` roots: the header row (sender,
+ *   timestamp) is core metadata we deliberately do not own.
+ * - The audit re-asserts the dark uiConfig INSIDE its own evaluate and waits
+ *   out the re-render: Foundry applies uiConfig changes partially
+ *   asynchronously, and a late-landing restore from a previous turn-over has
+ *   been observed to flip the body BACK to `theme-light` in the gap between
+ *   two `page.evaluate` calls. It returns the body class it saw so the test
+ *   can assert the re-arm actually took.
+ */
+async function auditChatCardContrast (page, scopeSelectors, fallbackBg = 'rgb(11, 10, 19)') {
+  return page.evaluate(async ({ scopes, fallback }) => { // Re-assert the dark theme inside THIS evaluate — uiConfig changes land
+    // partially asynchronously, so this is NOT trusted to the preceding
+    // evaluate: a late-landing restore from an earlier step has been observed
+    // reverting the body to `theme-light` between two evaluates. One
+    // self-contained evaluate arms the theme, waits out the re-render, then
+    // walks the cards it can still see.
+    const cfg = game.settings.get('core', 'uiConfig')
+    await game.settings.set('core', 'uiConfig', {
+      ...cfg,
+      colorScheme: { ...(cfg.colorScheme || {}), interface: 'dark', applications: 'dark' }
+    })
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    const parseRgb = (value) => {
+      const m = /rgba?\(([^)]+)\)/.exec(value)
+      if (!m) return null
+      const parts = m[1].split(/[,\s/]+/).map(Number)
+      return { r: parts[0], g: parts[1], b: parts[2], a: Number.isFinite(parts[3]) ? parts[3] : 1 }
+    }
+    const channel = (v) => {
+      const s = v / 255
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+    }
+    const luminance = ({ r, g, b }) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    const ratio = (fg, bg) => {
+      const [hi, lo] = [luminance(fg), luminance(bg)].sort((x, y) => y - x)
+      return (hi + 0.05) / (lo + 0.05)
+    }
+    // First ancestor (including the node's own elements) with an opaque
+    // backgroundColor; otherwise the caller's fallback.
+    const effectiveBackground = (el) => {
+      let probe = el
+      while (probe && probe !== document.documentElement) {
+        const bg = parseRgb(getComputedStyle(probe).backgroundColor)
+        if (bg && bg.a === 1) return bg
+        probe = probe.parentElement
+      }
+      return parseRgb(fallback)
+    }
+    const flags = []
+    for (const scope of scopes) {
+      const root = document.querySelector(scope)
+      if (!root) { flags.push({ scope, error: 'scope not found' }); continue }
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+      while (walker.nextNode()) {
+        const node = walker.currentNode
+        const text = node.nodeValue.trim()
+        if (!text) continue
+        const parent = node.parentElement
+        if (!parent || /^(script|style)$/i.test(parent.tagName)) continue
+        // Invisible text cannot be read, so it cannot fail SC 1.4.3 (also skips
+        // transient toasts).
+        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility({ visibilityProperty: true })) continue
+        // MANUAL EXCLUSION: `.dice-tooltip` die rows (`.roll.die.d*`). Their
+        // d100 die faces measure 1.07:1 as black-on-dark — preexisting core
+        // die-graphic styling rather than chat-card text, tracked separately
+        // from the dark-card text fixes and deliberately NOT fixed in CSS
+        // here. Excluding the zone keeps that tracked-but-unfixed item out of
+        // this audit's scope; if it is ever fixed, remove this guard.
+        if (parent.closest('.dice-tooltip')) continue
+        const cs = getComputedStyle(parent)
+        const fg = parseRgb(cs.color)
+        const bg = effectiveBackground(parent)
+        if (!fg || !bg) continue
+        const fontSize = parseFloat(cs.fontSize)
+        const weight = parseInt(cs.fontWeight, 10) || 400
+        const large = fontSize >= 24 || (fontSize >= 18.66 && weight >= 700)
+        const threshold = large ? 3 : 4.5
+        const r = Math.round(ratio(fg, bg) * 100) / 100
+        if (r < threshold) {
+          flags.push({ scope, text: text.slice(0, 40), color: cs.color, background: `rgb(${bg.r}, ${bg.g}, ${bg.b})`, ratio: r, threshold, fontSize, weight })
+        }
+      }
+    }
+    return { flags, body: document.body.className }
+  }, { scopes: scopeSelectors, fallback: fallbackBg })
+}
 
 test.describe('Chat card text color', () => {
   // This spec flips the world-level `core.uiConfig` colorScheme, and the session
@@ -332,18 +450,299 @@ test.describe('Chat card text color', () => {
     expect(result.dark.weaponDescriptionBorder).toBe(`solid 1px ${BORDER_SUBTLE_DARK}`)
     expect(result.light.weaponDescriptionBorder).toBe(`solid 1px ${BORDER_SUBTLE_LIGHT}`)
 
-    // Crit / fumble stay green / red in BOTH themes. The inline-roll rule is more
+    // Crit / fumble accents follow the theme tokens. The inline-roll rule is more
     // specific than `.inline-roll.critical`, so without the `:not()` exclusions
     // in styles/chat.css a natural 20 would render as ordinary body text; and
     // because it resolves to `inherit`, the anchor nested inside a crit WRAPPER
-    // span picks up the span's green rather than being recolored.
+    // span picks up the span's green rather than being recolored. Light keeps
+    // the literal green/red these declarations always had; dark gets the
+    // >=4.5:1-on-#0b0a13 token values (the light keywords measure 3.84:1 and
+    // 3.99:1 on that background).
     for (const theme of ['dark', 'light']) {
-      expect(result[theme].critInlineRoll, `${theme} crit inline roll`).toBe(CRIT_GREEN)
-      expect(result[theme].fumbleInlineRoll, `${theme} fumble inline roll`).toBe(FUMBLE_RED)
-      expect(result[theme].critEmote, `${theme} crit emote`).toBe(CRIT_GREEN)
-      expect(result[theme].fumbleEmote, `${theme} fumble emote`).toBe(FUMBLE_RED)
-      expect(result[theme].critWrapperSpan, `${theme} crit wrapper span`).toBe(CRIT_GREEN)
-      expect(result[theme].critWrapperAnchor, `${theme} crit wrapper anchor`).toBe(CRIT_GREEN)
+      const crit = theme === 'dark' ? CRIT_GREEN_DARK : CRIT_GREEN_LIGHT
+      const fumble = theme === 'dark' ? FUMBLE_RED_DARK : FUMBLE_RED_LIGHT
+      expect(result[theme].critInlineRoll, `${theme} crit inline roll`).toBe(crit)
+      expect(result[theme].fumbleInlineRoll, `${theme} fumble inline roll`).toBe(fumble)
+      expect(result[theme].critEmote, `${theme} crit emote`).toBe(crit)
+      expect(result[theme].fumbleEmote, `${theme} fumble emote`).toBe(fumble)
+      expect(result[theme].critWrapperSpan, `${theme} crit wrapper span`).toBe(crit)
+      expect(result[theme].critWrapperAnchor, `${theme} crit wrapper anchor`).toBe(crit)
     }
+  })
+
+  /*
+   * The mechanism of #856 did not stop at card bodies: core's
+   * `@layer elements.typography` colors h1-h6 with `--color-text-emphatic`,
+   * which resolves to near-black (#111) inside the chat log under the
+   * `themed theme-light` stamp Foundry puts on `ol.chat-log`. So an h2 inside a
+   * table-draw description ("Table 1-3: Occupation") rendered #111-on-#0b0a13,
+   * ratio 1.04. Core-authored welcome cards (`.nue`, "Getting Started") h3s
+   * failed the same way.
+   *
+   * This test draws a real table from the compendium against the live chat log
+   * and, on the dark theme, also runs the full text-node contrast audit over
+   * the resulting messages (thresholds 4.5:1 / 3:1 large).
+   */
+  test('table-draw headings match the chat color and card text passes a WCAG audit', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const out = { dark: {}, light: {} }
+      const cfg = game.settings.get('core', 'uiConfig')
+      globalThis.__dccSavedUiConfig = cfg
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+      const setScheme = async (scheme) => {
+        await game.settings.set('core', 'uiConfig', {
+          ...cfg,
+          colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
+        })
+        await sleep(800)
+      }
+      const colors = (sel, tags) => {
+        // GOTCHA: each rendered message ALSO flash-renders as a toast in
+        // `#chat-notifications`, which sits EARLIER in the DOM carrying the
+        // same data-message-id — a bare `document.querySelector` would measure
+        // that transient toast copy (light-styled) instead of the sidebar
+        // card. Always resolve inside `#chat`.
+        const root = document.querySelector('#chat ' + sel)
+        if (!root) return null
+        const out_ = {}
+        for (const tag of tags) {
+          const el = root.querySelector(tag)
+          if (el) out_[tag] = getComputedStyle(el).color
+        }
+        return out_
+      }
+
+      /*
+       * The same card shapes the #856 test above covers — its duplication is
+       * deliberate: each test owns its create/delete lifecycle, and the dark
+       * audit here wants ALL card families inside one zero-flag assertion.
+       */
+      const createAuditMessages = async (actor) => {
+        const created = []
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: await foundry.applications.handlebars.renderTemplate(
+            'systems/dcc/templates/chat-card-ability-change.html',
+            { headline: 'Loses 1 Luck', reason: 'Luck spend', recovery: 'Permanent (Luck does not heal)', hpNote: '' }
+          ),
+          flags: { 'dcc.isAbilityScoreLog': true }
+        }))
+        const ffRoll = new Roll('1d100')
+        await ffRoll.evaluate()
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          flavor: 'Friendly Fire Check',
+          rolls: [ffRoll],
+          content: '<div class="dcc chat-card friendly-fire">' +
+            `<p>The missed shot was fired into a melee ${ffRoll.toAnchor().outerHTML}</p>` +
+            '</div>',
+          flags: { 'dcc.isFriendlyFire': true }
+        }))
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="dcc chat-card theme856-audit-extras">' +
+            '<span class="dcc-modifier-breakdown">Strength +1</span>' +
+            '<p><a class="inline-roll critical">20</a></p>' +
+            '<p><a class="inline-roll fumble">1</a></p>' +
+            '<p class="emote-alert critical">crit</p>' +
+            '<p class="emote-alert fumble">fumble</p>' +
+            '</div>'
+        }))
+        const bareRoll = new Roll('1d20')
+        await bareRoll.evaluate()
+        const bareAnchor = bareRoll.toAnchor().outerHTML
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          rolls: [bareRoll],
+          content: '<div class="theme856-audit-bare">' +
+            `<p>emote-style roll ${bareAnchor}</p>` +
+            '<a class="content-link">Some Actor</a>' +
+            `<span class="inline-roll inline-result critical">${bareAnchor}</span>` +
+            '</div>'
+        }))
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-audit-spell">' + await foundry.applications.handlebars.renderTemplate(
+            'systems/dcc/templates/chat-card-spell-result.html',
+            { manifestation: { description: 'A shimmering aura surrounds the caster' }, mercurial: { description: "The caster's hair turns white" }, results: [] }
+          ) + '</div>'
+        }))
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-audit-enricher"><p>[[/check str]]</p></div>'
+        }))
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="dcc-enhanced-card theme856-audit-borders">' +
+            '<div class="weapon-description">Longsword, 1d8</div>' +
+            '</div>'
+        }))
+        created.push(await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor }),
+          content: '<div class="theme856-audit-release">' + await foundry.applications.handlebars.renderTemplate(
+            'systems/dcc/templates/chat-card-release-notes.html',
+            { message: 'What is new in this release' }
+          ) + '</div>'
+        }))
+        return created
+      }
+
+      try {
+        // A throwaway actor for the card speakers — same shape the #856 test
+        // uses; nothing selects tokens by it.
+        const auditActor = await Actor.create({ name: 'ThemeAudit Probe', type: 'Player' })
+        const extraMsgs = await createAuditMessages(auditActor)
+        const docs = await game.packs.get('dcc-core-book.dcc-core-tables').getDocuments()
+        const table = docs.find((d) => d.name === 'Table 1-3: Occupation')
+        if (!table) throw new Error('Table 1-3: Occupation not found in dcc-core-book.dcc-core-tables')
+
+        await setScheme('dark')
+        const idsBefore = new Set(game.messages.contents.map((m) => m.id))
+        await table.draw()
+        await sleep(500)
+        const tableMsgId = game.messages.contents.map((m) => m.id).find((id) => !idsBefore.has(id))
+
+        // A probe card mirroring the spell-check card's number-mod block
+        // (`.spell-check-mod .critical/.fumble`) and a bare h3 like the core
+        // welcome/onboarding cards (`.nue` "Getting Started") carry. Hand-built
+        // rather than driving a real spell check (needs an actor + rolls); the
+        // selectors these styles key on are what matters.
+        const probeMsg = await ChatMessage.create({
+          content:
+          '<div class="table-draw dcc-theme-audit-probe">' +
+            '<div class="table-description"><h2>Probe Description</h2></div>' +
+            '<div class="spell-check-mod"><h4>+5</h4>' +
+            '<p class="critical">critical</p><p class="fumble">fumble</p></div>' +
+            '</div>'
+        })
+        const welcomeMsg = await ChatMessage.create({ content: '<h3>Getting Started</h3>' })
+        await sleep(500)
+        const probeMsgId = probeMsg.id
+        const welcomeMsgId = welcomeMsg.id
+
+        out.dark.tableHeadings = colors(`[data-message-id="${tableMsgId}"] .table-draw`, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        out.dark.probeHeadings = colors(`[data-message-id="${probeMsgId}"] .table-draw`, ['h2', 'h4'])
+        out.dark.spellModCrit = colors(`[data-message-id="${probeMsgId}"] .spell-check-mod`, ['.critical'])
+        out.dark.spellModFumble = colors(`[data-message-id="${probeMsgId}"] .spell-check-mod`, ['.fumble'])
+        out.dark.welcomeH3 = colors(`[data-message-id="${welcomeMsgId}"] .message-content`, ['h3'])
+        // Stash the audit scopes AND the ids to clean up: the Node-side
+        // `auditChatCardContrast` helper
+        // runs in a second evaluate AFTER this one returns, so the messages
+        // must still be in the log then — deletion is deferred to stage 2.
+        // Same `#chat-notifications` gotcha as `colors` above: scope the audit
+        // roots inside `#chat` so we walk the sidebar cards, not the transient
+        // toasts (which render light-styled on a black background and would
+        // fabricate flags).
+        globalThis.__dccAuditScopes = [
+          `#chat [data-message-id="${tableMsgId}"] .message-content`,
+          `#chat [data-message-id="${probeMsgId}"] .message-content`,
+          ...extraMsgs.map((m) => `#chat [data-message-id="${m.id}"] .message-content`)
+        ]
+        globalThis.__dccAuditMsgs = [tableMsgId, probeMsgId, welcomeMsgId, ...extraMsgs.map((m) => m.id)]
+        globalThis.__dccAuditActorId = auditActor.id
+
+        // Light theme: the same rendered cards must keep their pre-change
+        // colors — the token light values are the same literals, so this only
+        // changes if someone breaks the parity.
+        await setScheme('light')
+        out.light.tableHeadings = colors(`[data-message-id="${tableMsgId}"] .table-draw`, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        out.light.probeHeadings = colors(`[data-message-id="${probeMsgId}"] .table-draw`, ['h2', 'h4'])
+        out.light.spellModCrit = colors(`[data-message-id="${probeMsgId}"] .spell-check-mod`, ['.critical'])
+        out.light.spellModFumble = colors(`[data-message-id="${probeMsgId}"] .spell-check-mod`, ['.fumble'])
+        out.light.welcomeH3 = colors(`[data-message-id="${welcomeMsgId}"] .message-content`, ['h3'])
+
+        return out
+      } catch (err) {
+        // Failure cleanup. On success the Node side audits first and deletes
+        // the cards + actor in stage 2 (its try/finally); the suite afterEach
+        // restores the saved uiConfig either way. The ids were stashed for
+        // exactly this — id-recognized messages, no return-value shape
+        // dependence.
+        for (const id of globalThis.__dccAuditMsgs || []) {
+          const m = game.messages.get(id)
+          if (m) await m.delete().catch(() => {})
+        }
+        if (globalThis.__dccAuditActorId) await game.actors.get(globalThis.__dccAuditActorId)?.delete().catch(() => {})
+        delete globalThis.__dccAuditScopes
+        delete globalThis.__dccAuditMsgs
+        delete globalThis.__dccAuditActorId
+        await game.settings.set('core', 'uiConfig', cfg)
+        throw err
+      }
+    })
+
+    /*
+     * Stage 2 — the cards were kept alive for the audit. The audit delete step
+     * AND the Node-side audit itself live in a try/finally so the probe/table
+     * cards and the globalThis stashes cannot outlive this test if the audit
+     * evaluate rejects.
+     * Scope gotcha: this is under `#chat` — `#chat-notifications` also renders
+     * an (empty) `ol.chat-log` EARLIER in the DOM, and a bare `.chat-log`
+     * lookup would hit that one and audit nothing. The light chat card
+     * background is a parchment IMAGE rather than a backgroundColor, so when a
+     * light-theme audit is ever added here it must pass a parchment-toned
+     * fallback; this audit runs on the dark theme, whose fallback is the
+     * `--chat-background` token value #0b0a13. The audit re-asserts the dark
+     * scheme inside its own evaluate (see the helper comment — a late-landing
+     * restore from an earlier step has been observed flipping the body back to
+     * theme-light between evaluates).
+     */
+    try {
+      const scopes = await page.evaluate(() => globalThis.__dccAuditScopes)
+      const audit = await auditChatCardContrast(page, scopes)
+      result.dark.flags = audit.flags
+      result.dark.auditBody = audit.body
+    } finally {
+      await page.evaluate(async () => {
+        for (const id of globalThis.__dccAuditMsgs || []) {
+          const m = game.messages.get(id)
+          if (m) await m.delete().catch(() => {})
+        }
+        if (globalThis.__dccAuditActorId) {
+          await game.actors.get(globalThis.__dccAuditActorId)?.delete().catch(() => {})
+        }
+        delete globalThis.__dccAuditScopes
+        delete globalThis.__dccAuditMsgs
+        delete globalThis.__dccAuditActorId
+      }).catch(() => {})
+    }
+
+    // Assert the required headings actually rendered so the loops below cannot
+    // pass vacuously. The occupation table's card carries an h2 inside the
+    // description and NO h1 (drawn table cards are body text plus the
+    // description heading) — the probe card contributes the h4.
+    expect(result.dark.tableHeadings).not.toBeNull()
+    expect(result.dark.tableHeadings.h2, 'drawn table h2 rendered').toBeTruthy()
+    expect(result.dark.probeHeadings.h4, 'probe h4 rendered').toBeTruthy()
+    expect(result.light.tableHeadings.h2).toBeTruthy()
+    expect(result.light.probeHeadings.h4).toBeTruthy()
+    // The audit's own re-arm of the dark theme must have actually landed —
+    // otherwise its flags would audit an arbitrary theme and the pass is
+    // meaningless.
+    expect(result.dark.auditBody).toContain('theme-dark')
+
+    const chat = (theme, headings) => {
+      for (const [tag, color] of Object.entries(headings)) {
+        expect(color, `${theme} table-draw ${tag}`).toBe(theme === 'dark' ? DARK_TEXT : LIGHT_TEXT)
+      }
+    }
+    chat('dark', result.dark.tableHeadings)
+    chat('dark', result.dark.probeHeadings)
+    chat('light', result.light.tableHeadings)
+    chat('light', result.light.probeHeadings)
+
+    // Welcome-card style h3 follows the chat color in both themes.
+    expect(result.dark.welcomeH3.h3).toBe(DARK_TEXT)
+    expect(result.light.welcomeH3.h3).toBe(LIGHT_TEXT)
+
+    // The spell-check mod block's crit/fumble accents follow the tokens.
+    expect(result.dark.spellModCrit['.critical']).toBe(CRIT_GREEN_DARK)
+    expect(result.dark.spellModFumble['.fumble']).toBe(FUMBLE_RED_DARK)
+    expect(result.light.spellModCrit['.critical']).toBe(CRIT_GREEN_LIGHT)
+    expect(result.light.spellModFumble['.fumble']).toBe(FUMBLE_RED_LIGHT)
+
+    // Zero contrast flags across every text node of the drawn table and the
+    // probe card, against the dark chat background.
+    expect(result.dark.flags, `contrast flags: ${JSON.stringify(result.dark.flags)}`).toEqual([])
   })
 })

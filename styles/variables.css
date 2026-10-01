@@ -100,6 +100,17 @@ body.theme-light {
   --chat-primary-color: #222;
   --chat-border-subtle-color: #b5b3a4;
   --chat-border-muted-color: #7a7971;
+  /* Crit / fumble accent text — the literal `green` / `red` keywords the
+     chat.css declarations carried before these tokens existed, so the light
+     theme renders identically to before the change. Those keywords measure
+     3.84:1 (`green`) and 3.99:1 (`red`) against the DARK card background,
+     which is what the dark values below fix; on parchment they are fine as
+     they are. Only names declared on `body` follow the app theme inside the
+     chat log (see the block comment above) — an `--system-*` name would
+     resolve to its light value inside chat in both themes, defeating the
+     point. */
+  --chat-critical-color: green;
+  --chat-fumble-color: red;
 }
 
 body.theme-dark {
@@ -107,6 +118,16 @@ body.theme-dark {
   --chat-primary-color: #d0beaa;
   --chat-border-subtle-color: #3d3c44;
   --chat-border-muted-color: #6b6a75;
+  /* Crit / fumble accent text on the #0b0a13 dark chat card. Both are real
+     text with meaning (crit / fumble results, spell-check mods, the enhanced
+     card's success/failure states), and the LIGHT theme's keywords — `green`
+     (#008000, measures 3.84:1 here) and `red` (#ff0000, 3.99:1) — sit under
+     the WCAG 4.5:1 normal-text floor on this background. #7ddb63 measures
+     11.4:1 and #ff7f7f 8.1:1, both well above it, and both stay recognizable
+     as the crit / fumble hues. The light block keeps the bare keyword
+     values. */
+  --chat-critical-color: #7ddb63;
+  --chat-fumble-color: #ff7f7f;
 }
 
 /*Override for dark theme */
@@ -174,4 +195,13 @@ body.theme-dark {
   --chat-primary-color: var(--system-primary-color);
   --chat-border-subtle-color: var(--system-border-subtle-color);
   --chat-border-muted-color: var(--system-border-muted-color);
+  /*
+   * The crit/fumble accents intentionally do NOT ride along here: no
+   * --system-* accent tokens exist for green/red to remap to, and inventing
+   * token surface this setting does not need is scope creep. The known
+   * consequence: under this setting, an app-light / UI-dark combination keeps
+   * the light `green`/`red` accents on a dark card (below the 4.5:1 floor
+   * there). If a --system-critical/fumble-color pair is ever introduced,
+   * remap them here.
+   */
 }
