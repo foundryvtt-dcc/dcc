@@ -450,7 +450,7 @@
       white-space: nowrap;
 
       i {
-        color: var(--color-level-error, #b22);
+        color: var(--system-text-negative-color);
       }
     }
 
@@ -474,7 +474,7 @@
     }
 
     &.last-chance .value {
-      color: var(--color-level-error, #b22);
+      color: var(--system-text-negative-color);
       font-weight: bold;
     }
   }

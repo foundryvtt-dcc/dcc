@@ -49,6 +49,10 @@
      (issue #861), which V14 declares nowhere at all, under any selector, so
      those controls had no danger cue. */
   --system-text-negative-color: #8b1a1a;
+  /* Counterpart to --system-text-negative-color for gains and ready / success
+     states — replaces hardcoded greens and core's level-success color, which
+     DCC cannot rely on being declared where it is used. */
+  --system-text-positive-color: #1f5c2d;
   --system-damage-color: #8b0000;
   /* Crit / fumble accent text (issue #948). Mirrored by the --chat-* pair on
      body.theme-light / body.theme-dark below, which is what chat cards use. */
@@ -104,6 +108,7 @@ body.theme-light {
   --chat-primary-color: #222;
   --chat-border-subtle-color: #b5b3a4;
   --chat-border-muted-color: #7a7971;
+  --chat-text-muted-color: #666;
   /* Crit / fumble accent text (issue #948): the literal `green` / `red` the
      chat.css declarations always carried, so the light theme is unchanged. */
   --chat-critical-color: green;
@@ -115,6 +120,7 @@ body.theme-dark {
   --chat-primary-color: #d0beaa;
   --chat-border-subtle-color: #3d3c44;
   --chat-border-muted-color: #6b6a75;
+  --chat-text-muted-color: #8a8993;
   /* Crit / fumble accent text on #0b0a13 (issue #948). `green` measures
      3.83:1 here, under the 4.5:1 text floor; `red` passes at 4.92:1 but reads
      as a dim smear on near-black, so both get lighter hues: #7ddb63 is 11.4:1,
@@ -137,6 +143,7 @@ body.theme-dark {
      muted (light #666 is 4.6:1 on parchment) and a red that stays legible. */
   --system-text-muted-color: #8a8993;
   --system-text-negative-color: #ef8080;
+  --system-text-positive-color: #70c080;
   /* Quieter than --system-border-color (#525252, which frames boxes) so a
      separator stays a hairline against the near-black background rather than
      reading as a box edge. */
@@ -191,6 +198,7 @@ body.theme-dark {
   --chat-primary-color: var(--system-primary-color);
   --chat-border-subtle-color: var(--system-border-subtle-color);
   --chat-border-muted-color: var(--system-border-muted-color);
+  --chat-text-muted-color: var(--system-text-muted-color);
   /* Without these the accents would follow the app theme while the card
      follows the UI theme: app-dark / UI-light would put #7ddb63 on parchment. */
   --chat-critical-color: var(--system-critical-color);

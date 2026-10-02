@@ -46,6 +46,8 @@ const CRIT_GREEN_LIGHT = 'rgb(0, 128, 0)' // `green`
 const FUMBLE_RED_LIGHT = 'rgb(255, 0, 0)' // `red`
 const CRIT_GREEN_DARK = 'rgb(125, 219, 99)' // #7ddb63
 const FUMBLE_RED_DARK = 'rgb(255, 127, 127)' // #ff7f7f
+const MUTED_TEXT_LIGHT = 'rgb(102, 102, 102)' // #666
+const MUTED_TEXT_DARK = 'rgb(138, 137, 147)' // #8a8993
 
 /**
  * WCAG contrast audit over text nodes in the chat log (page-side).
@@ -737,6 +739,67 @@ test.describe('Chat card text color', () => {
     // Zero contrast flags across every text node of the drawn table and the
     // probe card, against the dark chat background.
     expect(result.dark.flags, `contrast flags: ${JSON.stringify(result.dark.flags)}`).toEqual([])
+  })
+
+  /*
+   * #948 follow-ups that use the sheet tokens/literals outside chat.css: the
+   * roll-request card's muted "someone else's character" rows and dividers
+   * (enrichers.css), and the enhanced attack card's hit/miss edge.
+   */
+  test('roll-request muted rows and attack hit/miss edge follow the chat theme', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const out = {}
+      const cfg = game.settings.get('core', 'uiConfig')
+      globalThis.__dccSavedUiConfig = cfg
+      const msgs = []
+      const q = (msg, sel) => document.querySelector(`#chat [data-message-id="${msg.id}"] ${sel}`)
+      const measure = async (scheme) => {
+        await game.settings.set('core', 'uiConfig', {
+          ...cfg,
+          colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
+        })
+        await new Promise(resolve => setTimeout(resolve, 800))
+        const [request, hit, miss] = msgs
+        const cs = (el) => el ? getComputedStyle(el) : null
+        return {
+          theirsName: cs(q(request, '.dcc-roll-request-theirs .dcc-roll-request-name'))?.color ?? null,
+          theirsMuted: cs(q(request, '.dcc-roll-request-muted'))?.color ?? null,
+          divider: cs(q(request, '.dcc-roll-request-row + .dcc-roll-request-row'))?.borderTopColor ?? null,
+          hitEdge: cs(q(hit, '.dcc-enhanced-card'))?.borderLeftColor ?? null,
+          missEdge: cs(q(miss, '.dcc-enhanced-card'))?.borderLeftColor ?? null
+        }
+      }
+      try {
+        // Hand-built with the classes journal-enrichers.mjs adds for a
+        // character the viewer does not own; no enricher text, so the
+        // markup renders as-is.
+        msgs.push(await ChatMessage.create({
+          content: '<div class="dcc-roll-request"><ul class="dcc-roll-request-list">' +
+            '<li class="dcc-roll-request-row"><span class="dcc-roll-request-name">Mine</span><span>link</span></li>' +
+            '<li class="dcc-roll-request-row dcc-roll-request-theirs"><span class="dcc-roll-request-name">Theirs</span>' +
+            '<span class="dcc-roll-request-muted">Strength check</span></li>' +
+            '</ul></div>'
+        }))
+        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-hit">hit</div>' }))
+        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-miss">miss</div>' }))
+        out.dark = await measure('dark')
+        out.light = await measure('light')
+      } finally {
+        for (const m of msgs) await m.delete().catch(() => {})
+        await game.settings.set('core', 'uiConfig', cfg)
+      }
+      return out
+    })
+
+    const debug = JSON.stringify(result)
+    for (const theme of ['dark', 'light']) {
+      const muted = theme === 'dark' ? MUTED_TEXT_DARK : MUTED_TEXT_LIGHT
+      expect(result[theme].theirsName, `${theme} ${debug}`).toBe(muted)
+      expect(result[theme].theirsMuted, `${theme} ${debug}`).toBe(muted)
+      expect(result[theme].divider, `${theme} ${debug}`).toBe(theme === 'dark' ? BORDER_MUTED_DARK : BORDER_MUTED_LIGHT)
+      expect(result[theme].hitEdge, `${theme} ${debug}`).toBe(theme === 'dark' ? CRIT_GREEN_DARK : CRIT_GREEN_LIGHT)
+      expect(result[theme].missEdge, `${theme} ${debug}`).toBe(theme === 'dark' ? FUMBLE_RED_DARK : FUMBLE_RED_LIGHT)
+    }
   })
 
   /*

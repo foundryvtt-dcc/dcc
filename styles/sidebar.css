@@ -54,7 +54,10 @@
       line-height: 1;
 
       &:hover {
-        color: var(--color-text-hyperlink, #ff6400);
+        /* Not `--color-text-hyperlink`: V14 declares it only under
+           `body.game .app` (docs/dev/V14.md), so the #ff6400 fallback always
+           won, which is low-contrast on the light sidebar. */
+        color: var(--system-primary-color);
       }
     }
   }

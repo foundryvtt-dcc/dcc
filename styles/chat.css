@@ -271,6 +271,26 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   }
 
   /*
+   * Same for the roll-request card (#914, #948): enrichers.css gives the row
+   * dividers and the other players' muted names the SHEET tokens, which resolve
+   * light inside the chat log — #666 names on the dark card. Nested under
+   * `.chat-message` so these outrank the enrichers.css rules, which load later.
+   */
+  .dcc-roll-request {
+    .dcc-roll-request-row + .dcc-roll-request-row {
+      border-top-color: var(--chat-border-muted-color);
+    }
+
+    .dcc-roll-request-theirs,
+    &.dcc-roll-request-theirs {
+      .dcc-roll-request-name,
+      .dcc-roll-request-muted {
+        color: var(--chat-text-muted-color);
+      }
+    }
+  }
+
+  /*
    * Any DCC card body inside a chat message (#856).
    *
    * `.dcc` (styles/base.css) sets `color: var(--system-primary-color)` — the
@@ -483,11 +503,11 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   padding-left: 6px;
 
   &.attack-hit {
-    border-left-color: green;
+    border-left-color: var(--chat-critical-color);
   }
 
   &.attack-miss {
-    border-left-color: red;
+    border-left-color: var(--chat-fumble-color);
   }
 
   .card-header {

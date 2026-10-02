@@ -182,12 +182,12 @@
     }
 
     .loss {
-      color: #7a1f1f;
+      color: var(--system-text-negative-color);
       font-weight: bold;
     }
 
     .gain {
-      color: #1f5c2d;
+      color: var(--system-text-positive-color);
       font-weight: bold;
     }
 
@@ -209,7 +209,7 @@
     }
 
     .delete-entry {
-      color: #7a1f1f;
+      color: var(--system-text-negative-color);
       cursor: pointer;
       opacity: 0.55;
 
