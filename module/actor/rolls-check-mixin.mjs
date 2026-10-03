@@ -15,6 +15,15 @@ import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 /**
+ * Rolls that carry the armor check penalty note (#951): Strength and
+ * Agility checks (RAW: "climb, jump, balance, swim, move silently, and
+ * other such physical activities", Table 3-3 p. 72) and, as a judge's
+ * call, Reflex saves. Ability ids and save ids don't overlap, so one set
+ * serves both.
+ */
+const CHECK_PENALTY_ROLL_IDS = new Set(['str', 'agl', 'ref'])
+
+/**
  * Ability/luck/initiative/hit-dice/saving-throw dispatch mixin for
  * {@link DCCActor}.
  *
@@ -129,12 +138,10 @@ export const RollsCheckMixin = (Base) => class extends Base {
     // build the "Action N of M" chat line. Null plan ⇒ off-path, no line.
     const actionDiceChatLine = formatActionDiceChatLine(await spendPlannedActionDie(actionDicePlan))
 
-    // Non-zero armor check penalty (str/agl) display (legacy-decom
-    // step 3). The penalty is NOT applied to the result — the lib roll
-    // is clean — so we show the would-be total as a secondary roll the
-    // chat handler (`emoteAbilityRoll`) renders as the "If check penalty
-    // applies, total is X" note, reproducing the legacy contract.
-    const checkPenaltyRoll = await this._buildCheckPenaltyAltRoll(abilityId, foundryRoll.total)
+    // Non-zero armor check penalty (str/agl). The penalty is NOT applied
+    // to the result — the lib roll is clean — so the renderer shows the
+    // would-be total as a "With check penalty (−X): Y" note (#951).
+    const checkPenalty = this._buildCheckPenaltyNote(abilityId, foundryRoll.total)
 
     return renderAbilityCheck({
       actor: this,
@@ -142,47 +149,82 @@ export const RollsCheckMixin = (Base) => class extends Base {
       abilityLabel,
       result,
       foundryRoll,
-      checkPenaltyRoll,
+      checkPenalty,
       actionDiceChatLine,
       options
     })
   }
 
   /**
-   * Build the secondary "would-be total" Roll for a non-zero armor
-   * check penalty on a str/agl ability check (legacy-decom step 3).
+   * Build the armor check penalty note data for a Str/Agl ability check
+   * or a Reflex save (#951).
    *
-   * DCC shows the armor check penalty on Str/Agl ability checks as an
-   * informational alternative total ("If check penalty applies, total
-   * is X") rather than applying it to the result — the GM decides per
-   * check whether the penalty bites. This reproduces the former legacy
-   * ability-check behaviour: a bare Roll wrapping `mainTotal + penalty`,
-   * surfaced via `checkPenaltyRollIndex` and rendered by
-   * `emoteAbilityRoll` (module/chat.js).
+   * The penalty is informational rather than applied: the rules limit it
+   * to physical activities (climb, jump, balance, swim, move silently),
+   * so the judge decides per roll whether it bites. The renderer shows
+   * the would-be total as "With check penalty (−X): Y".
    *
-   * Returns null (no note) when the penalty doesn't apply: a non-str/agl
-   * ability, check-penalty computation disabled, a zero penalty, or
-   * (dialog path) the user already toggled the penalty into the roll.
+   * The value comes from `attributes.ac.checkPenalty` whether it was
+   * computed from equipped armor (`config.computeCheckPenalty`) or
+   * entered by hand. That flag only controls how the value is derived,
+   * matching skill and spell checks, which read the field directly.
    *
-   * @param {string} abilityId   The ability id (e.g. 'str').
-   * @param {number} mainTotal   The clean rolled total to add the
-   *                             penalty to.
+   * Returns null (no note) for a roll id outside str/agl/ref, a zero
+   * penalty, or when the user already toggled the penalty into the
+   * roll on the modifier dialog.
+   *
+   * @param {string} rollId      Ability id ('str', 'agl') or save id
+   *                             ('ref').
+   * @param {number} mainTotal   The clean rolled total.
    * @param {Object} [opts]
-   * @param {boolean} [opts.alreadyApplied]  When true the penalty was
-   *                             already folded into the roll (dialog
-   *                             path) so no alternative is shown.
-   * @returns {Promise<Roll|null>}
+   * @param {boolean} [opts.alreadyApplied]  The penalty is already in
+   *                             the roll (dialog path).
+   * @returns {{penalty: number, total: number}|null}
    * @private
    */
-  async _buildCheckPenaltyAltRoll (abilityId, mainTotal, { alreadyApplied = false } = {}) {
+  _buildCheckPenaltyNote (rollId, mainTotal, { alreadyApplied = false } = {}) {
     if (alreadyApplied) return null
-    if (abilityId !== 'str' && abilityId !== 'agl') return null
-    if (!this.system.config?.computeCheckPenalty) return null
-    const penalty = parseInt(this.system.attributes?.ac?.checkPenalty || 0)
+    if (!CHECK_PENALTY_ROLL_IDS.has(rollId)) return null
+    const penalty = this._getCheckPenalty()
     if (!penalty) return null
-    const altRoll = new Roll((mainTotal + penalty).toString())
-    await altRoll.evaluate()
-    return altRoll
+    return { penalty, total: mainTotal + penalty }
+  }
+
+  /**
+   * The actor's armor check penalty as an integer (0 when unset).
+   * @returns {number}
+   * @private
+   */
+  _getCheckPenalty () {
+    return parseInt(this.system.attributes?.ac?.checkPenalty || 0) || 0
+  }
+
+  /**
+   * The modifier-dialog CheckPenalty term (off by default) for a roll
+   * that carries the check penalty note, or null for any other roll.
+   * @param {string} rollId  Ability id or save id.
+   * @returns {Object|null}
+   * @private
+   */
+  _checkPenaltyDialogTerm (rollId) {
+    if (!CHECK_PENALTY_ROLL_IDS.has(rollId)) return null
+    return {
+      type: 'CheckPenalty',
+      formula: ensurePlus(this._getCheckPenalty()),
+      apply: false
+    }
+  }
+
+  /**
+   * Whether the user toggled the CheckPenalty term on in the modifier
+   * dialog, detected from the submitted formula as the legacy path did.
+   * @param {string} formula  The dialog's submitted formula.
+   * @returns {boolean}
+   * @private
+   */
+  _checkPenaltyInFormula (formula) {
+    const penalty = this._getCheckPenalty()
+    return penalty !== 0 && formula.includes(ensurePlus(penalty))
   }
 
   /**
@@ -237,13 +279,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
         formula: ensurePlus(abilityMod)
       }
     ]
-    if (this.system.config?.computeCheckPenalty && (abilityId === 'str' || abilityId === 'agl')) {
-      terms.push({
-        type: 'CheckPenalty',
-        formula: ensurePlus(this.system.attributes.ac.checkPenalty || '0'),
-        apply: false
-      })
-    }
+    const checkPenaltyTerm = this._checkPenaltyDialogTerm(abilityId)
+    if (checkPenaltyTerm) terms.push(checkPenaltyTerm)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
@@ -295,18 +332,12 @@ export const RollsCheckMixin = (Base) => class extends Base {
       modifiers
     })
 
-    // Non-zero check-penalty note (legacy-decom step 3). If the user
-    // toggled the CheckPenalty term on, the penalty is already in the
-    // dialog roll's formula (and thus in the lib total) — show no
-    // alternative. Otherwise surface the would-be total, mirroring the
-    // legacy `roll.formula.includes(ensurePlus(checkPenalty))` check.
-    const penalty = parseInt(this.system.attributes?.ac?.checkPenalty || 0)
-    const penaltyApplied = penalty !== 0 && prompt.formula.includes(ensurePlus(penalty))
-    const checkPenaltyRoll = await this._buildCheckPenaltyAltRoll(
-      abilityId,
-      foundryRoll.total,
-      { alreadyApplied: penaltyApplied }
-    )
+    // Non-zero check-penalty note. If the user toggled the CheckPenalty
+    // term on, the penalty is already in the dialog roll's formula (and
+    // thus in the lib total), so no note is shown.
+    const checkPenalty = this._buildCheckPenaltyNote(abilityId, foundryRoll.total, {
+      alreadyApplied: this._checkPenaltyInFormula(prompt.formula)
+    })
 
     // Spend the planned die (reached only after a non-cancelled dialog) and
     // build the "Action N of M" line. Null plan ⇒ off-path, no line.
@@ -318,7 +349,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
       abilityLabel,
       result,
       foundryRoll,
-      checkPenaltyRoll,
+      checkPenalty,
       actionDiceChatLine,
       options
     })
@@ -772,12 +803,18 @@ export const RollsCheckMixin = (Base) => class extends Base {
       roller: () => natural
     })
 
+    // Reflex saves show the armor check penalty note like Str/Agl checks
+    // (#951). Not RAW, which limits the penalty to checks, so it is
+    // shown, never applied: the judge decides.
+    const checkPenalty = this._buildCheckPenaltyNote(saveId, foundryRoll.total)
+
     await renderSavingThrow({
       actor: this,
       saveId,
       saveLabel,
       result,
       foundryRoll,
+      checkPenalty,
       options
     })
 
@@ -814,6 +851,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
         formula: ensurePlus(save.value)
       }
     ]
+    const checkPenaltyTerm = this._checkPenaltyDialogTerm(saveId)
+    if (checkPenaltyTerm) terms.push(checkPenaltyTerm)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
@@ -864,12 +903,17 @@ export const RollsCheckMixin = (Base) => class extends Base {
       modifiers
     })
 
+    const checkPenalty = this._buildCheckPenaltyNote(saveId, foundryRoll.total, {
+      alreadyApplied: this._checkPenaltyInFormula(prompt.formula)
+    })
+
     await renderSavingThrow({
       actor: this,
       saveId,
       saveLabel,
       result,
       foundryRoll,
+      checkPenalty,
       options
     })
 

@@ -1,7 +1,8 @@
 # Armor Check Penalty: Investigation (#951)
 
-Status: **investigation only, no code changes yet.** Decisions are needed on
-the open questions at the end before a fix branch is cut.
+Status: **resolved on `feat/951-compute-check-penalty-creates-random`.**
+See [Resolution](#resolution) at the end. The analysis below describes the
+code before the fix.
 
 ## The report
 
@@ -126,3 +127,35 @@ check:
   applies" and for any chat-card assertions on the note's anchor markup.
 - Add coverage for a manual penalty with the flag off (claim 2) and for the new
   note wording (claim 1).
+
+## Resolution
+
+Rules check against the core book text (`dcc-core-book`, Chapter 3 "Check
+penalty" and Table 3-3, p. 72):
+
+- The armor values in the compendium match Table 3-3 exactly. The computed
+  number was never wrong.
+- RAW applies the penalty to "checks to climb, jump, balance, swim, move
+  silently, and other such physical activities", and to wizard and elf spell
+  checks (not cleric). Neither the Saving Throws rules nor any class text
+  applies it to saves.
+
+The "random number" in claim 1 had a second cause the code reading missed.
+The alt-total was attached to the message as a bare `rolls[1]`. With emote
+mode off, Foundry renders every roll on a message (`ChatMessage#renderHTML`),
+so card mode showed an unlabeled second roll whose value changed every time.
+
+What changed:
+
+1. **Labeled note, no fake roll.** The would-be total now rides on the
+   `dcc.checkPenalty` flag (`{penalty, total}`) and renders as plain text,
+   *"With check penalty (-4): 11"* (`DCC.CheckPenaltyNote`), in both card mode
+   (`chat-renderer.mjs`, `checkPenaltyNoteHtml`) and emote mode (`chat.js`).
+   `system.checkPenaltyRollIndex` is always `null` on new messages. The emote
+   handlers still read it to show the note on pre-#951 messages.
+2. **The flag only controls how the value is derived.** Ability checks use
+   `ac.checkPenalty` whether it was computed or typed in, matching skills and
+   spells. The hint text says so in every language.
+3. **Reflex saves get the same note** (shown, never applied), as a judge's
+   call rather than RAW. The modifier dialog offers the CheckPenalty term on
+   Reflex too. Fortitude and Will are unaffected.

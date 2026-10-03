@@ -22,7 +22,11 @@ The Deed Die itself is set via the **Attack Bonus** field on the Character tab o
 
 **Show Swim/Fly Speeds** will add separate swim and fly speed fields to the character sheet. These are independent of the main speed calculation and allow you to track different movement speeds for characters with special abilities like swimming or flying.
 
-**Compute Check Penalty** will auto-calculate the character's armor check penalty from their armor. Alternatively a static check penalty can be provided in the field below. The check penalty will be applied to any spells cast that are marked as Wizard spells (it does not apply to Cleric spells) and to thief skills. The check penalty can be added or removed from relevant rolls if ctrl (or command) is held to display the Roll Modifier dialog when making the roll.
+**Compute Check Penalty** will auto-calculate the character's armor check penalty from their armor. When it is off, the value entered in the Check Penalty field is used instead. Either way, the check penalty is applied to any spells cast that are marked as Wizard spells (it does not apply to Cleric spells) and to thief skills.
+
+Strength and Agility checks and Reflex saves don't apply the penalty automatically. The rules apply it only to physical activities such as climbing, jumping, balancing, swimming, and moving silently, so the judge decides each time. The chat card instead adds a note with the total if the penalty applies, for example *With check penalty (-4): 11*. Applying it to Reflex saves at all is a judge's call; the rules only name checks.
+
+The check penalty can be added or removed from relevant rolls if ctrl (or command) is held to display the Roll Modifier dialog when making the roll.
 
 **Show Backstab** adds the backstab function for Thieves, or custom classes/characters where backstabs are allowed.
 

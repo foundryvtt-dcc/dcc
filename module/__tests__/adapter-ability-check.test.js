@@ -284,76 +284,89 @@ test('adapter path returns undefined when the ability-check dialog is cancelled'
   expect(rollToMessageMock).not.toHaveBeenCalled()
 })
 
-// Legacy-decom step 3: a non-zero armor check penalty on a str/agl
-// ability check now renders adapter-side. The penalty is NOT applied to
-// the roll — instead the would-be total is pushed as a secondary roll
-// (`rolls[1]`) flagged via `system.checkPenaltyRollIndex`, which
-// `emoteAbilityRoll` (module/chat.js) renders as the "If check penalty
-// applies, total is X" note. Reproduces the legacy contract exactly.
-test('non-zero armor check penalty (str) emits the alternative-total roll via the adapter', async () => {
+// Armor check penalty note (#951): a non-zero penalty on a str/agl
+// ability check is NOT applied to the roll. The would-be total rides on
+// the `dcc.checkPenalty` flag and renders as a labeled plain-text note
+// ("With check penalty (-2): 8") in the card body; emote mode renders the
+// same note from the flag (module/chat.js). No bare secondary roll is
+// attached any more, so card mode no longer shows an unlabeled number.
+const PENALTY_NOTE_HTML = '<p class="dcc-check-penalty-note">With check penalty (-2): 8</p>'
+
+/**
+ * Roll a check with the given armor check penalty, restoring the actor
+ * afterwards. Returns the toMessage data and the created message data.
+ */
+async function rollWithPenalty (penalty, roll, { computeCheckPenalty = true } = {}) {
   rollToMessageMock.mockClear()
   global.dccRollCreateRollMock.mockClear()
   const created = []
   const chatMessageCreateSpy = vi
     .spyOn(ChatMessage, 'create')
     .mockImplementation(d => { created.push(d); return d })
-
   // Real Foundry's toMessage({create:false}) returns the message data
   // with rolls: [primaryRoll]; the mock returns undefined, so synthesize
-  // the shape the adapter pushes the secondary roll onto. `this` is the
-  // primary Foundry Roll the renderer called toMessage on.
+  // it. `this` is the primary Foundry Roll the renderer called it on.
   rollToMessageMock.mockImplementationOnce(function (data) {
     return { ...data, rolls: [this] }
   })
-
-  actor.system.attributes.ac.checkPenalty = -2
+  const savedCompute = actor.system.config.computeCheckPenalty
+  actor.system.attributes.ac.checkPenalty = penalty
+  actor.system.config.computeCheckPenalty = computeCheckPenalty
   try {
-    await actor.rollAbilityCheck('str')
+    await roll()
   } finally {
     actor.system.attributes.ac.checkPenalty = 0
+    actor.system.config.computeCheckPenalty = savedCompute
+    chatMessageCreateSpy.mockRestore()
   }
+  return { messageData: rollToMessageMock.mock.calls[0]?.[0], created: created[0] }
+}
+
+test('non-zero armor check penalty (str) shows the labeled check penalty note', async () => {
+  const { messageData, created } = await rollWithPenalty(-2, () => actor.rollAbilityCheck('str'))
 
   // Adapter path — the legacy DCCRoll.createRoll term-builder is dead.
   expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(0)
 
-  // The message flags the secondary roll at index 1.
-  const [messageData] = rollToMessageMock.mock.calls[0]
-  expect(messageData.system.checkPenaltyRollIndex).toBe(1)
+  // The mock Roll hardcodes `total = 10`: 10 + (-2) = 8.
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  expect(messageData.content).toContain(PENALTY_NOTE_HTML)
 
-  // The created message carries the alt-total roll as rolls[1]. The mock
-  // Roll hardcodes `total = 10`, so assert the FORMULA the adapter built:
-  // primary total (10) + penalty (-2) = 8.
-  const finalData = created[0]
-  expect(finalData.rolls).toHaveLength(2)
-  expect(finalData.rolls[1].formula).toBe('8')
-
-  chatMessageCreateSpy.mockRestore()
-})
-
-test('non-zero check penalty on a non-str/agl ability shows no alternative-total note', async () => {
-  rollToMessageMock.mockClear()
-
-  // lck is not str/agl — the armor check penalty never applies, so no
-  // secondary roll even with a penalty present.
-  actor.system.attributes.ac.checkPenalty = -2
-  try {
-    await actor.rollAbilityCheck('lck')
-  } finally {
-    actor.system.attributes.ac.checkPenalty = 0
-  }
-
-  const [messageData] = rollToMessageMock.mock.calls[0]
+  // No bare secondary roll: the message carries only the check roll.
   expect(messageData.system.checkPenaltyRollIndex).toBeNull()
+  expect(created.rolls).toHaveLength(1)
 })
 
-test('dialog path with the check penalty left unapplied shows the alternative-total note', async () => {
-  rollToMessageMock.mockClear()
-  global.dccRollCreateRollMock.mockClear()
-  const created = []
-  const chatMessageCreateSpy = vi
-    .spyOn(ChatMessage, 'create')
-    .mockImplementation(d => { created.push(d); return d })
+test('agl check also shows the check penalty note', async () => {
+  const { messageData } = await rollWithPenalty(-2, () => actor.rollAbilityCheck('agl'))
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  expect(messageData.content).toContain(PENALTY_NOTE_HTML)
+})
 
+test('a hand-entered penalty shows the note with Compute Check Penalty off (#951)', async () => {
+  const { messageData } = await rollWithPenalty(
+    -2,
+    () => actor.rollAbilityCheck('str'),
+    { computeCheckPenalty: false }
+  )
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  expect(messageData.content).toContain(PENALTY_NOTE_HTML)
+})
+
+test('zero check penalty shows no note', async () => {
+  const { messageData } = await rollWithPenalty(0, () => actor.rollAbilityCheck('str'))
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+  expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
+})
+
+test('non-zero check penalty on a non-str/agl ability shows no note', async () => {
+  // lck is not str/agl — the armor check penalty never applies.
+  const { messageData } = await rollWithPenalty(-2, () => actor.rollAbilityCheck('lck'))
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+  expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
+})
+
+test('dialog path with the check penalty left unapplied shows the note', async () => {
   // User submits the dialog WITHOUT toggling the -2 check penalty on:
   // the resulting formula omits the penalty (only str mod -1 applies).
   global.dccRollCreateRollMock.mockImplementationOnce(() => ({
@@ -368,37 +381,41 @@ test('dialog path with the check penalty left unapplied shows the alternative-to
     ],
     _evaluated: true
   }))
+  const { messageData } = await rollWithPenalty(
+    -2,
+    () => actor.rollAbilityCheck('str', { showModifierDialog: true })
+  )
 
-  rollToMessageMock.mockImplementationOnce(function (data) {
-    return { ...data, rolls: [this] }
-  })
-
-  actor.system.attributes.ac.checkPenalty = -2
-  try {
-    await actor.rollAbilityCheck('str', { showModifierDialog: true })
-  } finally {
-    actor.system.attributes.ac.checkPenalty = 0
-  }
-
-  // The dialog offered the check-penalty toggle.
+  // The dialog offered the check-penalty toggle, off by default.
   const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
-  expect(termsArg.some(t => t.type === 'CheckPenalty' && t.formula === '-2')).toBe(true)
+  expect(termsArg.some(t => t.type === 'CheckPenalty' && t.formula === '-2' && t.apply === false)).toBe(true)
 
-  // Penalty not applied → alternative-total note shown (rolls[1] = 8).
-  const [messageData] = rollToMessageMock.mock.calls[0]
-  expect(messageData.system.checkPenaltyRollIndex).toBe(1)
-  expect(created[0].rolls[1].formula).toBe('8')
-
-  chatMessageCreateSpy.mockRestore()
+  // Penalty not applied → note shown (mock lib roll total 10 + -2 = 8).
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  expect(messageData.content).toContain(PENALTY_NOTE_HTML)
 })
 
-test('dialog path with the check penalty applied shows no alternative-total note', async () => {
-  rollToMessageMock.mockClear()
-  global.dccRollCreateRollMock.mockClear()
+test('dialog path offers the check penalty term with Compute Check Penalty off', async () => {
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20-1',
+    total: 9,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+    _evaluated: true
+  }))
+  await rollWithPenalty(
+    -2,
+    () => actor.rollAbilityCheck('str', { showModifierDialog: true }),
+    { computeCheckPenalty: false }
+  )
+  const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
+  expect(termsArg.some(t => t.type === 'CheckPenalty' && t.formula === '-2')).toBe(true)
+})
 
+test('dialog path with the check penalty applied shows no note', async () => {
   // User toggled the -2 penalty ON: it appears in the dialog roll's
-  // formula, so the lib total already includes it and no alternative is
-  // shown (mirrors the legacy `formula.includes(penalty)` check).
+  // formula, so the lib total already includes it and no note is shown.
   global.dccRollCreateRollMock.mockImplementationOnce(() => ({
     formula: '1d20-1-2',
     total: 7,
@@ -413,14 +430,10 @@ test('dialog path with the check penalty applied shows no alternative-total note
     ],
     _evaluated: true
   }))
-
-  actor.system.attributes.ac.checkPenalty = -2
-  try {
-    await actor.rollAbilityCheck('str', { showModifierDialog: true })
-  } finally {
-    actor.system.attributes.ac.checkPenalty = 0
-  }
-
-  const [messageData] = rollToMessageMock.mock.calls[0]
-  expect(messageData.system.checkPenaltyRollIndex).toBeNull()
+  const { messageData } = await rollWithPenalty(
+    -2,
+    () => actor.rollAbilityCheck('str', { showModifierDialog: true })
+  )
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+  expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
 })

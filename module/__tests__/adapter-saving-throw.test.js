@@ -213,3 +213,97 @@ test('adapter formula does not double-count ability mod into save bonus', async 
   // `1d20 + 1` after evaluation. Strip whitespace for a stable assertion.
   expect(result.formula.replace(/\s/g, '')).toBe('1d20+1')
 })
+
+// Armor check penalty note on Reflex saves (#951). Not RAW (the rules
+// limit the penalty to checks), so it is shown, never applied: the
+// would-be total rides on the `dcc.checkPenalty` flag and renders as a
+// labeled note, exactly like Str/Agl ability checks.
+const PENALTY_NOTE_HTML = '<p class="dcc-check-penalty-note">With check penalty (-2): 8</p>'
+
+async function saveWithPenalty (penalty, roll, { computeCheckPenalty = true } = {}) {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+  const savedCompute = actor.system.config.computeCheckPenalty
+  actor.system.attributes.ac.checkPenalty = penalty
+  actor.system.config.computeCheckPenalty = computeCheckPenalty
+  try {
+    await roll()
+  } finally {
+    actor.system.attributes.ac.checkPenalty = 0
+    actor.system.config.computeCheckPenalty = savedCompute
+  }
+  return rollToMessageMock.mock.calls[0]?.[0]
+}
+
+test('Reflex save with a non-zero check penalty shows the labeled note, unapplied', async () => {
+  const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref'))
+
+  // The mock Roll hardcodes `total = 10`: 10 + (-2) = 8.
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  expect(messageData.content).toContain(PENALTY_NOTE_HTML)
+
+  // Shown, not applied: no check-penalty modifier reaches the lib.
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult.modifiers.some(m => /penalty/i.test(m.origin?.id ?? ''))).toBe(false)
+})
+
+test('Reflex save shows a hand-entered penalty with Compute Check Penalty off', async () => {
+  const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref'), { computeCheckPenalty: false })
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+})
+
+test('Fortitude and Will saves never show the check penalty note', async () => {
+  for (const saveId of ['frt', 'wil']) {
+    const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow(saveId))
+    expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+    expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
+  }
+})
+
+test('Reflex save with zero check penalty shows no note', async () => {
+  const messageData = await saveWithPenalty(0, () => actor.rollSavingThrow('ref'))
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+})
+
+test('Reflex save dialog offers the check penalty term and notes it when left off', async () => {
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20+0',
+    total: 10,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+    _evaluated: true
+  }))
+  const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref', { showModifierDialog: true }))
+
+  const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
+  expect(termsArg.some(t => t.type === 'CheckPenalty' && t.formula === '-2' && t.apply === false)).toBe(true)
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+})
+
+test('Reflex save dialog with the check penalty applied shows no note', async () => {
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20+0-2',
+    total: 8,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+    _evaluated: true
+  }))
+  const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref', { showModifierDialog: true }))
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+})
+
+test('Will save dialog offers no check penalty term', async () => {
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d20+2',
+    total: 12,
+    dice: [{ results: [10], total: 10, options: {} }],
+    options: { dcc: {} },
+    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+    _evaluated: true
+  }))
+  await saveWithPenalty(-2, () => actor.rollSavingThrow('wil', { showModifierDialog: true }))
+  const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
+  expect(termsArg.some(t => t.type === 'CheckPenalty')).toBe(false)
+})
