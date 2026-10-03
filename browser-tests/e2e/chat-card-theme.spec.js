@@ -744,9 +744,10 @@ test.describe('Chat card text color', () => {
   /*
    * #948 follow-ups that use the sheet tokens/literals outside chat.css: the
    * roll-request card's muted "someone else's character" rows and dividers
-   * (enrichers.css), and the enhanced attack card's hit/miss edge.
+   * (enrichers.css), and the enhanced attack card's hit/miss edge and
+   * success/failure result text.
    */
-  test('roll-request muted rows and attack hit/miss edge follow the chat theme', async ({ page }) => {
+  test('roll-request muted rows and attack hit/miss accents follow the chat theme', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const out = {}
       const cfg = game.settings.get('core', 'uiConfig')
@@ -766,7 +767,9 @@ test.describe('Chat card text color', () => {
           theirsMuted: cs(q(request, '.dcc-roll-request-muted'))?.color ?? null,
           divider: cs(q(request, '.dcc-roll-request-row + .dcc-roll-request-row'))?.borderTopColor ?? null,
           hitEdge: cs(q(hit, '.dcc-enhanced-card'))?.borderLeftColor ?? null,
-          missEdge: cs(q(miss, '.dcc-enhanced-card'))?.borderLeftColor ?? null
+          missEdge: cs(q(miss, '.dcc-enhanced-card'))?.borderLeftColor ?? null,
+          successText: cs(q(hit, '.roll-result.status-success'))?.color ?? null,
+          failureText: cs(q(miss, '.roll-result.status-failure'))?.color ?? null
         }
       }
       try {
@@ -780,8 +783,8 @@ test.describe('Chat card text color', () => {
             '<span class="dcc-roll-request-muted">Strength check</span></li>' +
             '</ul></div>'
         }))
-        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-hit">hit</div>' }))
-        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-miss">miss</div>' }))
+        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-hit"><div class="roll-result status-success">hit</div></div>' }))
+        msgs.push(await ChatMessage.create({ content: '<div class="dcc-enhanced-card attack-miss"><div class="roll-result status-failure">miss</div></div>' }))
         out.dark = await measure('dark')
         out.light = await measure('light')
       } finally {
@@ -799,6 +802,8 @@ test.describe('Chat card text color', () => {
       expect(result[theme].divider, `${theme} ${debug}`).toBe(theme === 'dark' ? BORDER_MUTED_DARK : BORDER_MUTED_LIGHT)
       expect(result[theme].hitEdge, `${theme} ${debug}`).toBe(theme === 'dark' ? CRIT_GREEN_DARK : CRIT_GREEN_LIGHT)
       expect(result[theme].missEdge, `${theme} ${debug}`).toBe(theme === 'dark' ? FUMBLE_RED_DARK : FUMBLE_RED_LIGHT)
+      expect(result[theme].successText, `${theme} ${debug}`).toBe(theme === 'dark' ? CRIT_GREEN_DARK : CRIT_GREEN_LIGHT)
+      expect(result[theme].failureText, `${theme} ${debug}`).toBe(theme === 'dark' ? FUMBLE_RED_DARK : FUMBLE_RED_LIGHT)
     }
   })
 
