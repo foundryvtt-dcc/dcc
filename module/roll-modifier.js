@@ -118,7 +118,8 @@ function DCCCheckPenaltyTerm (options) {
     partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
     formula: options.apply ? formula : '-0',
     checkedFormula: formula,
-    startsChecked: options.apply
+    startsChecked: options.apply,
+    callback: options.callback
   }]
 }
 

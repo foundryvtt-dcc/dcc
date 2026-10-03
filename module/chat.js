@@ -3,6 +3,7 @@
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog } from './utilities.js'
 import ApplyDamageDialog from './apply-damage-dialog.js'
+import { checkPenaltyNoteHtml } from './adapter/chat-renderer.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -185,6 +186,25 @@ export const enforceMinimumDamage = function (message, html) {
 }
 
 /**
+ * The armor check penalty note data for an ability check or save message
+ * (#951): the `dcc.checkPenalty` flag, or for messages created before #951,
+ * derived from the bare alt-total roll they carried at
+ * `system.checkPenaltyRollIndex`.
+ * @param {ChatMessage} message
+ * @returns {{penalty: number, total: number}|null}
+ */
+function getCheckPenaltyNoteData (message) {
+  const flagged = message.getFlag('dcc', 'checkPenalty')
+  if (flagged) return flagged
+  const index = message.system?.checkPenaltyRollIndex
+  if (index === null || index === undefined) return null
+  const altRoll = message.rolls?.[index]
+  const mainRoll = message.rolls?.[0]
+  if (!altRoll || !mainRoll) return null
+  return { penalty: altRoll.total - mainRoll.total, total: altRoll.total }
+}
+
+/**
  * Change attack rolls into emotes
  * @param message
  * @param html
@@ -193,17 +213,7 @@ export const enforceMinimumDamage = function (message, html) {
 export const emoteAbilityRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isAbilityCheck')) return
 
-  let checkPenaltyNote = ''
-  if (message.system?.checkPenaltyRollIndex !== null && message.system?.checkPenaltyRollIndex !== undefined) {
-    const checkPenaltyRoll = message.rolls[message.system.checkPenaltyRollIndex]
-    if (checkPenaltyRoll) {
-      const checkPenaltyRollHTML = checkPenaltyRoll.toAnchor().outerHTML
-      const formattedNote = game.i18n.format('DCC.AbilityCheckPenaltyNote', { total: checkPenaltyRollHTML })
-      if (formattedNote) {
-        checkPenaltyNote = ' ' + formattedNote
-      }
-    }
-  }
+  const checkPenaltyNote = checkPenaltyNoteHtml(getCheckPenaltyNoteData(message))
 
   const abilityRollEmote = game.i18n.format(
     'DCC.RolledAbilityEmote',
@@ -620,7 +630,7 @@ export const emoteSavingThrowRoll = function (message, html, data) {
       type: message.flavor,
       saveInlineRollHTML: message.rolls[0].toAnchor('Roll Save').outerHTML
     }
-  )
+  ) + checkPenaltyNoteHtml(getCheckPenaltyNoteData(message))
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
     messageContent.innerHTML = saveRollEmote

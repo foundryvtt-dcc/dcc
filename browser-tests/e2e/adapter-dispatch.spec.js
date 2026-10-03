@@ -19,6 +19,74 @@ const test = createSessionTest({
 })
 
 /**
+ * Armor check penalty note (#951): find the newest message from `alias`
+ * carrying `kindFlag` (isAbilityCheck / isSave), then render it off-screen
+ * in both chat modes (emote and card, toggling the client `emoteRolls`
+ * setting) so specs can assert the labeled note the user actually sees.
+ * Polls because ChatMessage.create is fire-and-forget.
+ */
+async function readCheckPenaltyCard (page, alias, kindFlag) {
+  return page.evaluate(async ({ alias, kindFlag }) => {
+    const deadline = Date.now() + 5000
+    let msg = null
+    while (!msg && Date.now() < deadline) {
+      msg = game.messages.contents.findLast(m => m.speaker?.alias === alias && m.getFlag('dcc', kindFlag))
+      if (!msg) await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    if (!msg) return null
+
+    async function renderNote (emoteRolls) {
+      const saved = game.settings.get('dcc', 'emoteRolls')
+      await game.settings.set('dcc', 'emoteRolls', emoteRolls)
+      try {
+        const el = await msg.renderHTML()
+        return {
+          note: el.querySelector('.dcc-check-penalty-note')?.textContent?.trim() ?? null,
+          noteCount: el.querySelectorAll('.dcc-check-penalty-note').length,
+          text: el.querySelector('.message-content')?.textContent ?? ''
+        }
+      } finally {
+        await game.settings.set('dcc', 'emoteRolls', saved)
+      }
+    }
+
+    return {
+      flag: msg.getFlag('dcc', 'checkPenalty') ?? null,
+      rollTotals: msg.rolls.map(r => r.total),
+      checkPenaltyRollIndex: msg.system?.checkPenaltyRollIndex ?? null,
+      emote: await renderNote(true),
+      card: await renderNote(false)
+    }
+  }, { alias, kindFlag })
+}
+
+/**
+ * Create a Player wearing armor with the given check penalty. With
+ * `computeCheckPenalty` off, the penalty is instead typed into the sheet
+ * field (the armor still exists, but its value is ignored).
+ * Returns the actor's resulting `ac.checkPenalty`.
+ */
+async function makeArmoredPlayer (page, name, { armorPenalty = '-4', computeCheckPenalty = true, manualPenalty } = {}) {
+  return page.evaluate(async ({ name, armorPenalty, computeCheckPenalty, manualPenalty }) => {
+    const existing = game.actors.getName(name)
+    if (existing) await existing.delete()
+    const actor = await Actor.create({ name, type: 'Player' })
+    await actor.createEmbeddedDocuments('Item', [{
+      name: `${name} Plate`,
+      type: 'armor',
+      system: { equipped: true, checkPenalty: armorPenalty }
+    }])
+    if (!computeCheckPenalty) {
+      await actor.update({
+        'system.config.computeCheckPenalty': false,
+        'system.attributes.ac.checkPenalty': manualPenalty
+      })
+    }
+    return Number(actor.system.attributes.ac.checkPenalty)
+  }, { name, armorPenalty, computeCheckPenalty, manualPenalty })
+}
+
+/**
  * Adapter-dispatch validation — the permanent roll/check/save regression net.
  *
  * For every roll the adapter handles (ability check, save, skill check,
@@ -341,27 +409,15 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(card.content.match(/class="dcc-modifier-breakdown"/g)).toHaveLength(1)
     })
 
-    // Phase 7 session 23 (legacy-decom step 3): a non-zero armor check
-    // penalty on a str/agl ability check now renders adapter-side. The
-    // penalty is NOT applied to the roll — the would-be total is pushed
-    // as a secondary roll (rolls[1]) flagged via
-    // `system.checkPenaltyRollIndex`, which `emoteAbilityRoll`
-    // (module/chat.js) renders as the "If check penalty applies, total is
-    // X" note. This was the last gate keeping `_rollAbilityCheckLegacy`
-    // reachable; it is the branch only the legacy path previously covered.
-    test('non-zero armor check penalty (str) emits the alt-total roll via the adapter', async ({ page }) => {
-      const penalty = await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'P1 Ability CheckPenalty', type: 'Player' })
-        await actor.createEmbeddedDocuments('Item', [{
-          name: 'P1 Heavy Plate',
-          type: 'armor',
-          system: { equipped: true, checkPenalty: '-4' }
-        }])
-        // prepareData recomputes ac.checkPenalty from equipped armor
-        // (computeCheckPenalty defaults on for a Player).
-        return actor.system.attributes.ac.checkPenalty
-      })
-      expect(Number(penalty), 'equipped armor must yield a non-zero check penalty').not.toBe(0)
+    // Armor check penalty note (#951). A non-zero penalty on a str/agl
+    // check is NOT applied to the roll: the would-be total rides on the
+    // `dcc.checkPenalty` flag and renders as a labeled plain-text note,
+    // "With check penalty (-4): N", in both emote and card mode. Before
+    // #951 it was a bare secondary roll (rolls[1]) that card mode showed
+    // as an unlabeled number.
+    test('non-zero armor check penalty (str) shows the labeled note via the adapter', async ({ page }) => {
+      const penalty = await makeArmoredPlayer(page, 'P1 Ability CheckPenalty')
+      expect(penalty, 'equipped armor must yield the computed check penalty').toBe(-4)
 
       await page.evaluate(async () => {
         await game.actors.getName('P1 Ability CheckPenalty').rollAbilityCheck('str')
@@ -370,39 +426,130 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollAbilityCheck')
       assertPath(line, 'adapter', { abilityId: 'str' })
 
-      const card = await page.evaluate(async () => {
-        const deadline = Date.now() + 3000
-        while (Date.now() < deadline) {
-          const msg = game.messages.contents
-            .slice()
-            .reverse()
-            .find(m =>
-              m.speaker?.alias === 'P1 Ability CheckPenalty' &&
-              m.getFlag('dcc', 'isAbilityCheck')
-            )
-          if (msg) {
-            return {
-              checkPenaltyRollIndex: msg.system?.checkPenaltyRollIndex ?? null,
-              rollTotals: msg.rolls.map(r => r.total)
-            }
-          }
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-        return null
+      const card = await readCheckPenaltyCard(page, 'P1 Ability CheckPenalty', 'isAbilityCheck')
+      expect(card, 'ability-check adapter path must post a chat message').not.toBeNull()
+
+      // Informational only: one clean roll, no bare alt-total roll.
+      expect(card.rollTotals).toHaveLength(1)
+      expect(card.checkPenaltyRollIndex).toBeNull()
+      expect(card.flag).toEqual({ penalty: -4, total: card.rollTotals[0] - 4 })
+
+      const expected = `With check penalty (-4): ${card.rollTotals[0] - 4}`
+      expect(card.emote.note).toBe(expected)
+      expect(card.card.note).toBe(expected)
+      expect(card.card.noteCount).toBe(1)
+      expect(card.emote.text).not.toContain('If check penalty applies')
+    })
+
+    test('hand-entered check penalty shows the note with Compute Check Penalty off', async ({ page }) => {
+      const penalty = await makeArmoredPlayer(page, 'P1 Ability ManualPenalty', {
+        computeCheckPenalty: false,
+        manualPenalty: '-3'
+      })
+      expect(penalty, 'the hand-entered value must survive prepareData').toBe(-3)
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Ability ManualPenalty').rollAbilityCheck('agl')
       })
 
-      expect(card, 'ability-check adapter path must post a chat message').not.toBeNull()
-      // The penalty is informational — the primary roll (rolls[0]) is
-      // clean; the secondary roll (rolls[1]) carries the would-be total.
-      expect(card.checkPenaltyRollIndex).toBe(1)
-      expect(card.rollTotals).toHaveLength(2)
-      expect(card.rollTotals[1]).toBe(card.rollTotals[0] + Number(penalty))
+      const card = await readCheckPenaltyCard(page, 'P1 Ability ManualPenalty', 'isAbilityCheck')
+      expect(card).not.toBeNull()
+      expect(card.flag).toEqual({ penalty: -3, total: card.rollTotals[0] - 3 })
+      expect(card.card.note).toBe(`With check penalty (-3): ${card.rollTotals[0] - 3}`)
+    })
+
+    test('check penalty is not noted on a non-physical ability check', async ({ page }) => {
+      await makeArmoredPlayer(page, 'P1 Ability PenaltyInt')
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Ability PenaltyInt').rollAbilityCheck('int')
+      })
+      const card = await readCheckPenaltyCard(page, 'P1 Ability PenaltyInt', 'isAbilityCheck')
+      expect(card).not.toBeNull()
+      expect(card.flag).toBeNull()
+      expect(card.emote.noteCount).toBe(0)
+      expect(card.card.noteCount).toBe(0)
     })
   })
 
   // ── rollSavingThrow ─────────────────────────────────────────────────
 
   test.describe('rollSavingThrow', () => {
+    // Armor check penalty note on Reflex saves (#951). Not RAW (the rules
+    // limit the penalty to checks), so it is shown, never applied, with the
+    // same labeled note Str/Agl checks get. Fortitude and Will never show it.
+    test('Reflex save shows the labeled check penalty note, unapplied', async ({ page }) => {
+      await makeArmoredPlayer(page, 'P1 Save CheckPenalty')
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Save CheckPenalty').rollSavingThrow('ref')
+      })
+      const line = await waitForAdapterLog('rollSavingThrow')
+      assertPath(line, 'adapter', { saveId: 'ref' })
+
+      const card = await readCheckPenaltyCard(page, 'P1 Save CheckPenalty', 'isSave')
+      expect(card, 'save adapter path must post a chat message').not.toBeNull()
+      expect(card.rollTotals).toHaveLength(1)
+      expect(card.flag).toEqual({ penalty: -4, total: card.rollTotals[0] - 4 })
+
+      const expected = `With check penalty (-4): ${card.rollTotals[0] - 4}`
+      expect(card.emote.note).toBe(expected)
+      expect(card.card.note).toBe(expected)
+    })
+
+    // The modifier dialog reports whether the CheckPenalty toggle was on
+    // through the term callback. A Reflex save equal to the penalty is the
+    // case a formula substring check got wrong: `1d20-1` reads as "penalty
+    // applied" whether or not it was.
+    async function rollReflexThroughDialog (page, name, { checkPenalty }) {
+      const reflex = await page.evaluate(async ({ name }) => {
+        const existing = game.actors.getName(name)
+        if (existing) await existing.delete()
+        const actor = await Actor.create({ name, type: 'Player' })
+        await actor.update({ 'system.abilities.agl.value': 5, 'system.config.computeCheckPenalty': false })
+        const reflex = Number(actor.system.saves.ref.value)
+        await actor.update({ 'system.attributes.ac.checkPenalty': String(reflex) })
+        actor.rollSavingThrow('ref', { showModifierDialog: true })
+        return reflex
+      }, { name })
+      expect(reflex, 'Agility 5 must give a negative Reflex save').toBeLessThan(0)
+
+      await page.waitForSelector('.dcc-roll-modifier #check-penalty', { timeout: 10000 })
+      await page.evaluate((checkPenalty) => {
+        const box = document.querySelector('.dcc-roll-modifier #check-penalty')
+        if (box.checked !== checkPenalty) box.click()
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      }, checkPenalty)
+      await page.waitForSelector('.dcc-roll-modifier', { state: 'detached', timeout: 10000 })
+      return reflex
+    }
+
+    test('Reflex save dialog keeps the note when the save equals the unapplied penalty', async ({ page }) => {
+      const reflex = await rollReflexThroughDialog(page, 'P1 Save DialogPenaltyOff', { checkPenalty: false })
+      const card = await readCheckPenaltyCard(page, 'P1 Save DialogPenaltyOff', 'isSave')
+      expect(card, 'save dialog must post a chat message').not.toBeNull()
+      expect(card.flag).toEqual({ penalty: reflex, total: card.rollTotals[0] + reflex })
+      expect(card.card.note).toBe(`With check penalty (${reflex}): ${card.rollTotals[0] + reflex}`)
+    })
+
+    test('Reflex save dialog with the penalty toggled on shows no note', async ({ page }) => {
+      await rollReflexThroughDialog(page, 'P1 Save DialogPenaltyOn', { checkPenalty: true })
+      const card = await readCheckPenaltyCard(page, 'P1 Save DialogPenaltyOn', 'isSave')
+      expect(card, 'save dialog must post a chat message').not.toBeNull()
+      expect(card.flag).toBeNull()
+      expect(card.card.noteCount).toBe(0)
+    })
+
+    test('Fortitude save never shows the check penalty note', async ({ page }) => {
+      await makeArmoredPlayer(page, 'P1 Save FortPenalty')
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Save FortPenalty').rollSavingThrow('frt')
+      })
+      const card = await readCheckPenaltyCard(page, 'P1 Save FortPenalty', 'isSave')
+      expect(card).not.toBeNull()
+      expect(card.flag).toBeNull()
+      expect(card.emote.noteCount).toBe(0)
+      expect(card.card.noteCount).toBe(0)
+    })
+
     test('default options → adapter', async ({ page }) => {
       await makePlayer(page, 'P1 Save Default')
       await page.evaluate(async () => {

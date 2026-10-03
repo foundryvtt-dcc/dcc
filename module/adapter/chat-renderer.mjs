@@ -100,6 +100,25 @@ export function actionDiceLineHtml (line) {
 }
 
 /**
+ * The armor check penalty note as an HTML fragment, or `''` when there is
+ * no note (#951). Plain text that names the penalty, e.g. "With check
+ * penalty (-2): 11", rather than roll styling, since the alternative total
+ * is not a roll. Shared by the renderers (card mode) and the emote
+ * handlers in module/chat.js.
+ *
+ * @param {{penalty: number, total: number}|null|undefined} checkPenalty
+ * @returns {string}
+ */
+export function checkPenaltyNoteHtml (checkPenalty) {
+  if (!checkPenalty) return ''
+  const penalty = signedNumber(checkPenalty.penalty)
+  const total = Number(checkPenalty.total)
+  if (penalty === null || !Number.isFinite(total)) return ''
+  const text = game.i18n.format('DCC.CheckPenaltyNote', { penalty, total })
+  return `<p class="dcc-check-penalty-note">${escapeHtml(text)}</p>`
+}
+
+/**
  * Format a number as a signed string for the breakdown (`+3`, `-1`,
  * `+0`). Returns `null` for a non-finite input so the caller can skip
  * the row rather than render `+NaN`.
@@ -249,12 +268,11 @@ export function dcResultSuffix (total, options = {}) {
  * @param {Object} params.result - The lib's SkillCheckResult
  * @param {Roll} params.foundryRoll - The Foundry Roll instance that
  *   produced the dice. Attached to the ChatMessage for DSN / breakdown.
- * @param {Roll} [params.checkPenaltyRoll] - Optional secondary Roll
- *   wrapping the would-be total if the armor check penalty applied
- *   (str/agl). When present it is pushed onto `messageData.rolls` and
- *   flagged via `system.checkPenaltyRollIndex` so `emoteAbilityRoll`
- *   (module/chat.js) renders the "If check penalty applies, total is X"
- *   note. The penalty is informational — it is NOT in the primary roll.
+ * @param {{penalty: number, total: number}} [params.checkPenalty] - The
+ *   armor check penalty note data (str/agl, #951). Stored on the
+ *   `dcc.checkPenalty` flag and rendered as a "With check penalty (−X): Y"
+ *   note (card body here, `emoteAbilityRoll` in emote mode). The penalty
+ *   is informational — it is NOT in the roll.
  * @param {string} [params.actionDiceChatLine] - Multiple-action-dice
  *   "Action N of M" line (Phase 3). Empty on the off-path (setting off /
  *   not in combat), in which case the content is byte-identical to before;
@@ -270,7 +288,7 @@ export async function renderAbilityCheck ({
   abilityLabel,
   result,
   foundryRoll,
-  checkPenaltyRoll = null,
+  checkPenalty = null,
   actionDiceChatLine = '',
   options = {}
 }) {
@@ -289,6 +307,9 @@ export async function renderAbilityCheck ({
   if (abilityId === 'str' || abilityId === 'agl') {
     flags.checkPenaltyCouldApply = true
   }
+  if (checkPenalty) {
+    flags['dcc.checkPenalty'] = checkPenalty
+  }
 
   applyFleetingLuck(flags, foundryRoll)
 
@@ -297,9 +318,9 @@ export async function renderAbilityCheck ({
     flavor,
     flags,
     system: {
-      // The penalty alt-total roll is pushed below as rolls[1]; the
-      // primary roll is rolls[0].
-      checkPenaltyRollIndex: checkPenaltyRoll ? 1 : null
+      // Messages before #951 carried the penalty alt-total as a bare
+      // rolls[1]; it now rides on the `dcc.checkPenalty` flag instead.
+      checkPenaltyRollIndex: null
     }
   }
 
@@ -308,19 +329,17 @@ export async function renderAbilityCheck ({
     game.i18n.localize('DCC.ModifierBreakdown')
   )
   const actionDiceHtml = actionDiceLineHtml(actionDiceChatLine)
-  // Manual render when a breakdown or the multiple-action-dice line needs to
-  // ride under the rolled formula; off-path (neither present) leaves `content`
-  // unset so `toMessage` builds the default body byte-identically.
-  if (breakdownHtml || actionDiceHtml) {
+  const penaltyHtml = checkPenaltyNoteHtml(checkPenalty)
+  // Manual render when a breakdown, the multiple-action-dice line, or the
+  // check penalty note needs to ride under the rolled formula; off-path (none
+  // present) leaves `content` unset so `toMessage` builds the default body
+  // byte-identically.
+  if (breakdownHtml || actionDiceHtml || penaltyHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessageData.content = `${rollHTML}${breakdownHtml}${actionDiceHtml}`
+    toMessageData.content = `${rollHTML}${breakdownHtml}${actionDiceHtml}${penaltyHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
-
-  if (checkPenaltyRoll) {
-    messageData.rolls.push(checkPenaltyRoll)
-  }
 
   return ChatMessage.create(messageData)
 }
@@ -422,6 +441,10 @@ export async function renderAbilityCheckRollUnder ({
  * @param {string} params.saveLabel - Localized label e.g. 'Fortitude'
  * @param {Object} params.result - The lib's SkillCheckResult
  * @param {Roll} params.foundryRoll - The Foundry Roll instance.
+ * @param {{penalty: number, total: number}} [params.checkPenalty] - The
+ *   armor check penalty note data (Reflex only, #951). Stored on the
+ *   `dcc.checkPenalty` flag and rendered as a "With check penalty (−X): Y"
+ *   note; informational, NOT in the roll.
  * @param {Object} [params.options] - Original call options. Supports
  *   `dc` / `showDc` for the DC suffix the legacy path rendered.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
@@ -432,6 +455,7 @@ export async function renderSavingThrow ({
   saveLabel,
   result,
   foundryRoll,
+  checkPenalty = null,
   options = {}
 }) {
   const flavor = `${saveLabel} ${game.i18n.localize('DCC.Save')}` +
@@ -442,6 +466,9 @@ export async function renderSavingThrow ({
     'dcc.Save': saveId,
     'dcc.isSave': true,
     'dcc.libResult': buildLibResultFlag(result, { skillId: result.skillId })
+  }
+  if (checkPenalty) {
+    flags['dcc.checkPenalty'] = checkPenalty
   }
 
   applyFleetingLuck(flags, foundryRoll)
@@ -456,9 +483,10 @@ export async function renderSavingThrow ({
     result.modifiers,
     game.i18n.localize('DCC.ModifierBreakdown')
   )
-  if (breakdownHtml) {
+  const penaltyHtml = checkPenaltyNoteHtml(checkPenalty)
+  if (breakdownHtml || penaltyHtml) {
     const rollHTML = await foundryRoll.render()
-    toMessageData.content = `${rollHTML}${breakdownHtml}`
+    toMessageData.content = `${rollHTML}${breakdownHtml}${penaltyHtml}`
   }
 
   const messageData = await foundryRoll.toMessage(toMessageData, { create: false })

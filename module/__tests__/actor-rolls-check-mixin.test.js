@@ -11,7 +11,9 @@ import { RollsCheckMixin } from '../actor/rolls-check-mixin.mjs'
 const MEMBERS = [
   'rollAbilityCheck',
   '_rollAbilityCheckViaAdapter',
-  '_buildCheckPenaltyAltRoll',
+  '_buildCheckPenaltyNote',
+  '_getCheckPenalty',
+  '_checkPenaltyDialogTerm',
   '_rollAbilityCheckWithDialog',
   '_rollLuckCheckViaAdapter',
   'getInitiativeRoll',

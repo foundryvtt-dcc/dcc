@@ -15,7 +15,7 @@ vi.mock('../apply-damage-dialog.js', () => ({
   })
 }))
 
-const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions } = await import('../chat.js')
+const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions, emoteAbilityRoll, emoteSavingThrowRoll } = await import('../chat.js')
 const { getCritTableResult } = await import('../utilities.js')
 const { default: ApplyDamageDialog } = await import('../apply-damage-dialog.js')
 
@@ -355,5 +355,77 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
       expect(ApplyDamageDialog).not.toHaveBeenCalled()
       expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
     })
+  })
+})
+
+describe('check penalty note in emote mode (#951)', () => {
+  const NOTE = '<p class="dcc-check-penalty-note">With check penalty (-2): 8</p>'
+
+  function makeAnchorRoll (total) {
+    return { total, toAnchor: () => ({ outerHTML: `<a class="inline-roll">${total}</a>` }) }
+  }
+
+  function makeMessage ({ flags = {}, rolls = [makeAnchorRoll(10)], system = {} } = {}) {
+    return {
+      rolls,
+      isContentVisible: true,
+      flavor: 'Strength Check',
+      system,
+      getFlag: (scope, key) => flags[key]
+    }
+  }
+
+  function makeEmoteHtml () {
+    const html = makeHtml('')
+    const query = html.querySelector
+    html.querySelector = selector => (selector === 'header' ? null : query(selector))
+    return html
+  }
+
+  it('appends the labeled note to an ability check emote from the flag', () => {
+    const html = makeEmoteHtml()
+    emoteAbilityRoll(
+      makeMessage({ flags: { isAbilityCheck: true, checkPenalty: { penalty: -2, total: 8 } } }),
+      html,
+      { alias: 'Hero' }
+    )
+    expect(html.messageContent.innerHTML).toContain(NOTE)
+    expect(html.messageContent.innerHTML).not.toContain('If check penalty applies')
+  })
+
+  it('derives the note for a pre-#951 message carrying the alt-total as rolls[1]', () => {
+    const html = makeEmoteHtml()
+    emoteAbilityRoll(
+      makeMessage({
+        flags: { isAbilityCheck: true },
+        rolls: [makeAnchorRoll(10), makeAnchorRoll(8)],
+        system: { checkPenaltyRollIndex: 1 }
+      }),
+      html,
+      { alias: 'Hero' }
+    )
+    expect(html.messageContent.innerHTML).toContain(NOTE)
+  })
+
+  it('shows no note on an ability check without a penalty', () => {
+    const html = makeEmoteHtml()
+    emoteAbilityRoll(makeMessage({ flags: { isAbilityCheck: true } }), html, { alias: 'Hero' })
+    expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
+  })
+
+  it('appends the labeled note to a Reflex save emote from the flag', () => {
+    const html = makeEmoteHtml()
+    emoteSavingThrowRoll(
+      makeMessage({ flags: { isSave: true, checkPenalty: { penalty: -2, total: 8 } } }),
+      html,
+      { alias: 'Hero' }
+    )
+    expect(html.messageContent.innerHTML).toContain(NOTE)
+  })
+
+  it('shows no note on a save without a penalty', () => {
+    const html = makeEmoteHtml()
+    emoteSavingThrowRoll(makeMessage({ flags: { isSave: true } }), html, { alias: 'Hero' })
+    expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
   })
 })
