@@ -202,29 +202,28 @@ export const RollsCheckMixin = (Base) => class extends Base {
   /**
    * The modifier-dialog CheckPenalty term (off by default) for a roll
    * that carries the check penalty note, or null for any other roll.
+   *
+   * The dialog reports each term's submitted value through `callback`,
+   * so `state.applied` says whether the penalty went into the roll. A
+   * substring match on the submitted formula can't tell: a Reflex save
+   * of -1 with a -1 penalty gives `1d20-1` either way.
+   *
    * @param {string} rollId  Ability id or save id.
-   * @returns {Object|null}
+   * @returns {{term: Object, state: {applied: boolean}}|null}
    * @private
    */
   _checkPenaltyDialogTerm (rollId) {
     if (!CHECK_PENALTY_ROLL_IDS.has(rollId)) return null
-    return {
+    const state = { applied: false }
+    const term = {
       type: 'CheckPenalty',
       formula: ensurePlus(this._getCheckPenalty()),
-      apply: false
+      apply: false,
+      // Unchecked the term submits '+0'; checked (or hand-edited) it
+      // submits the penalty, which is then part of the roll.
+      callback: formula => { state.applied = (parseInt(formula) || 0) !== 0 }
     }
-  }
-
-  /**
-   * Whether the user toggled the CheckPenalty term on in the modifier
-   * dialog, detected from the submitted formula as the legacy path did.
-   * @param {string} formula  The dialog's submitted formula.
-   * @returns {boolean}
-   * @private
-   */
-  _checkPenaltyInFormula (formula) {
-    const penalty = this._getCheckPenalty()
-    return penalty !== 0 && formula.includes(ensurePlus(penalty))
+    return { term, state }
   }
 
   /**
@@ -280,7 +279,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
       }
     ]
     const checkPenaltyTerm = this._checkPenaltyDialogTerm(abilityId)
-    if (checkPenaltyTerm) terms.push(checkPenaltyTerm)
+    if (checkPenaltyTerm) terms.push(checkPenaltyTerm.term)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
@@ -333,10 +332,10 @@ export const RollsCheckMixin = (Base) => class extends Base {
     })
 
     // Non-zero check-penalty note. If the user toggled the CheckPenalty
-    // term on, the penalty is already in the dialog roll's formula (and
-    // thus in the lib total), so no note is shown.
+    // term on, the penalty is already in the dialog roll (and thus in the
+    // lib total), so no note is shown.
     const checkPenalty = this._buildCheckPenaltyNote(abilityId, foundryRoll.total, {
-      alreadyApplied: this._checkPenaltyInFormula(prompt.formula)
+      alreadyApplied: checkPenaltyTerm?.state.applied
     })
 
     // Spend the planned die (reached only after a non-cancelled dialog) and
@@ -852,7 +851,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
       }
     ]
     const checkPenaltyTerm = this._checkPenaltyDialogTerm(saveId)
-    if (checkPenaltyTerm) terms.push(checkPenaltyTerm)
+    if (checkPenaltyTerm) terms.push(checkPenaltyTerm.term)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
@@ -904,7 +903,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
     })
 
     const checkPenalty = this._buildCheckPenaltyNote(saveId, foundryRoll.total, {
-      alreadyApplied: this._checkPenaltyInFormula(prompt.formula)
+      alreadyApplied: checkPenaltyTerm?.state.applied
     })
 
     await renderSavingThrow({

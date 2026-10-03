@@ -366,21 +366,33 @@ test('non-zero check penalty on a non-str/agl ability shows no note', async () =
   expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
 })
 
+/**
+ * The real dialog reports each term's submitted value through its
+ * callback; the mock must too, or the adapter can't tell whether the
+ * CheckPenalty toggle was on. '+0' is an unchecked toggle.
+ */
+function submitCheckPenalty (terms, value) {
+  terms.find(t => t.type === 'CheckPenalty')?.callback?.(value)
+}
+
 test('dialog path with the check penalty left unapplied shows the note', async () => {
   // User submits the dialog WITHOUT toggling the -2 check penalty on:
   // the resulting formula omits the penalty (only str mod -1 applies).
-  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
-    formula: '1d20-1',
-    total: 9,
-    dice: [{ results: [10], total: 10, options: {} }],
-    options: { dcc: {} },
-    terms: [
-      { class: 'Die', formula: '1d20', number: 1, faces: 20 },
-      { class: 'OperatorTerm', operator: '-' },
-      { class: 'NumericTerm', number: 1 }
-    ],
-    _evaluated: true
-  }))
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '+0')
+    return {
+      formula: '1d20-1',
+      total: 9,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d20', number: 1, faces: 20 },
+        { class: 'OperatorTerm', operator: '-' },
+        { class: 'NumericTerm', number: 1 }
+      ],
+      _evaluated: true
+    }
+  })
   const { messageData } = await rollWithPenalty(
     -2,
     () => actor.rollAbilityCheck('str', { showModifierDialog: true })
@@ -414,26 +426,51 @@ test('dialog path offers the check penalty term with Compute Check Penalty off',
 })
 
 test('dialog path with the check penalty applied shows no note', async () => {
-  // User toggled the -2 penalty ON: it appears in the dialog roll's
-  // formula, so the lib total already includes it and no note is shown.
-  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
-    formula: '1d20-1-2',
-    total: 7,
-    dice: [{ results: [10], total: 10, options: {} }],
-    options: { dcc: {} },
-    terms: [
-      { class: 'Die', formula: '1d20', number: 1, faces: 20 },
-      { class: 'OperatorTerm', operator: '-' },
-      { class: 'NumericTerm', number: 1 },
-      { class: 'OperatorTerm', operator: '-' },
-      { class: 'NumericTerm', number: 2 }
-    ],
-    _evaluated: true
-  }))
+  // User toggled the -2 penalty ON: the dialog reports it through the
+  // term callback, the lib total already includes it, and no note shows.
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '-2')
+    return {
+      formula: '1d20-1-2',
+      total: 7,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d20', number: 1, faces: 20 },
+        { class: 'OperatorTerm', operator: '-' },
+        { class: 'NumericTerm', number: 1 },
+        { class: 'OperatorTerm', operator: '-' },
+        { class: 'NumericTerm', number: 2 }
+      ],
+      _evaluated: true
+    }
+  })
   const { messageData } = await rollWithPenalty(
     -2,
     () => actor.rollAbilityCheck('str', { showModifierDialog: true })
   )
   expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
   expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
+})
+
+test('dialog path keeps the note when the ability modifier equals the penalty', async () => {
+  // Regression: the old check matched the penalty's text in the formula.
+  // Str mod -1 with a -1 penalty left unchecked gives `1d20-1`, which
+  // contains "-1", so the note was wrongly dropped.
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '+0')
+    return {
+      formula: '1d20-1',
+      total: 9,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+      _evaluated: true
+    }
+  })
+  const { messageData } = await rollWithPenalty(
+    -1,
+    () => actor.rollAbilityCheck('str', { showModifierDialog: true })
+  )
+  expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -1, total: 9 })
 })

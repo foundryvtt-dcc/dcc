@@ -27,7 +27,7 @@ const test = createSessionTest({
  */
 async function readCheckPenaltyCard (page, alias, kindFlag) {
   return page.evaluate(async ({ alias, kindFlag }) => {
-    const deadline = Date.now() + 3000
+    const deadline = Date.now() + 5000
     let msg = null
     while (!msg && Date.now() < deadline) {
       msg = game.messages.contents.findLast(m => m.speaker?.alias === alias && m.getFlag('dcc', kindFlag))
@@ -493,6 +493,49 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const expected = `With check penalty (-4): ${card.rollTotals[0] - 4}`
       expect(card.emote.note).toBe(expected)
       expect(card.card.note).toBe(expected)
+    })
+
+    // The modifier dialog reports whether the CheckPenalty toggle was on
+    // through the term callback. A Reflex save equal to the penalty is the
+    // case a formula substring check got wrong: `1d20-1` reads as "penalty
+    // applied" whether or not it was.
+    async function rollReflexThroughDialog (page, name, { checkPenalty }) {
+      const reflex = await page.evaluate(async ({ name }) => {
+        const existing = game.actors.getName(name)
+        if (existing) await existing.delete()
+        const actor = await Actor.create({ name, type: 'Player' })
+        await actor.update({ 'system.abilities.agl.value': 5, 'system.config.computeCheckPenalty': false })
+        const reflex = Number(actor.system.saves.ref.value)
+        await actor.update({ 'system.attributes.ac.checkPenalty': String(reflex) })
+        actor.rollSavingThrow('ref', { showModifierDialog: true })
+        return reflex
+      }, { name })
+      expect(reflex, 'Agility 5 must give a negative Reflex save').toBeLessThan(0)
+
+      await page.waitForSelector('.dcc-roll-modifier #check-penalty', { timeout: 10000 })
+      await page.evaluate((checkPenalty) => {
+        const box = document.querySelector('.dcc-roll-modifier #check-penalty')
+        if (box.checked !== checkPenalty) box.click()
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      }, checkPenalty)
+      await page.waitForSelector('.dcc-roll-modifier', { state: 'detached', timeout: 10000 })
+      return reflex
+    }
+
+    test('Reflex save dialog keeps the note when the save equals the unapplied penalty', async ({ page }) => {
+      const reflex = await rollReflexThroughDialog(page, 'P1 Save DialogPenaltyOff', { checkPenalty: false })
+      const card = await readCheckPenaltyCard(page, 'P1 Save DialogPenaltyOff', 'isSave')
+      expect(card, 'save dialog must post a chat message').not.toBeNull()
+      expect(card.flag).toEqual({ penalty: reflex, total: card.rollTotals[0] + reflex })
+      expect(card.card.note).toBe(`With check penalty (${reflex}): ${card.rollTotals[0] + reflex}`)
+    })
+
+    test('Reflex save dialog with the penalty toggled on shows no note', async ({ page }) => {
+      await rollReflexThroughDialog(page, 'P1 Save DialogPenaltyOn', { checkPenalty: true })
+      const card = await readCheckPenaltyCard(page, 'P1 Save DialogPenaltyOn', 'isSave')
+      expect(card, 'save dialog must post a chat message').not.toBeNull()
+      expect(card.flag).toBeNull()
+      expect(card.card.noteCount).toBe(0)
     })
 
     test('Fortitude save never shows the check penalty note', async ({ page }) => {

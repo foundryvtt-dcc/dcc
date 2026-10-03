@@ -14,7 +14,6 @@ const MEMBERS = [
   '_buildCheckPenaltyNote',
   '_getCheckPenalty',
   '_checkPenaltyDialogTerm',
-  '_checkPenaltyInFormula',
   '_rollAbilityCheckWithDialog',
   '_rollLuckCheckViaAdapter',
   'getInitiativeRoll',

@@ -265,15 +265,23 @@ test('Reflex save with zero check penalty shows no note', async () => {
   expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
 })
 
+/** Mirror the real dialog: report the CheckPenalty term's submitted value. */
+function submitCheckPenalty (terms, value) {
+  terms.find(t => t.type === 'CheckPenalty')?.callback?.(value)
+}
+
 test('Reflex save dialog offers the check penalty term and notes it when left off', async () => {
-  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
-    formula: '1d20+0',
-    total: 10,
-    dice: [{ results: [10], total: 10, options: {} }],
-    options: { dcc: {} },
-    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
-    _evaluated: true
-  }))
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '+0')
+    return {
+      formula: '1d20+0',
+      total: 10,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+      _evaluated: true
+    }
+  })
   const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref', { showModifierDialog: true }))
 
   const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
@@ -282,14 +290,17 @@ test('Reflex save dialog offers the check penalty term and notes it when left of
 })
 
 test('Reflex save dialog with the check penalty applied shows no note', async () => {
-  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
-    formula: '1d20+0-2',
-    total: 8,
-    dice: [{ results: [10], total: 10, options: {} }],
-    options: { dcc: {} },
-    terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
-    _evaluated: true
-  }))
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '-2')
+    return {
+      formula: '1d20+0-2',
+      total: 8,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+      _evaluated: true
+    }
+  })
   const messageData = await saveWithPenalty(-2, () => actor.rollSavingThrow('ref', { showModifierDialog: true }))
   expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
 })
@@ -306,4 +317,30 @@ test('Will save dialog offers no check penalty term', async () => {
   await saveWithPenalty(-2, () => actor.rollSavingThrow('wil', { showModifierDialog: true }))
   const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
   expect(termsArg.some(t => t.type === 'CheckPenalty')).toBe(false)
+})
+
+test('Reflex save dialog keeps the note when the save value equals the penalty', async () => {
+  // Regression: Reflex -1 with a -1 penalty left unchecked gives `1d20-1`,
+  // which the old formula substring check mistook for an applied penalty.
+  const savedRef = actor.system.saves.ref.value
+  actor.system.saves.ref.value = -1
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '+0')
+    return {
+      formula: '1d20-1',
+      total: 9,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [{ class: 'Die', formula: '1d20', number: 1, faces: 20 }],
+      _evaluated: true
+    }
+  })
+  try {
+    const messageData = await saveWithPenalty(-1, () => actor.rollSavingThrow('ref', { showModifierDialog: true }))
+    const termsArg = global.dccRollCreateRollMock.mock.calls[0][0]
+    expect(termsArg.some(t => t.type === 'Modifier' && t.formula === '-1')).toBe(true)
+    expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -1, total: 9 })
+  } finally {
+    actor.system.saves.ref.value = savedRef
+  }
 })
