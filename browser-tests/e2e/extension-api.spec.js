@@ -1318,6 +1318,9 @@ test.describe('DCC Extension API', () => {
         hasRollableHoverVar: css.includes('color: var(--system-rollable-hover-color)'),
         hasDamageVar: css.includes('color: var(--system-damage-color)'),
         hasMutedVar: css.includes('color: var(--system-text-muted-color)'),
+        hasPositiveVar: css.includes('color: var(--system-text-positive-color)'),
+        // Issue #948: core's `--color-level-*` / `--color-text-hyperlink` replaced.
+        noCoreLevelVars: !css.includes('--color-level-') && !/var\(--color-text-hyperlink/.test(css),
         hasFlatButtonBorderVar: css.includes('border: 2px groove var(--system-flat-button-border-color)'),
         hasTwoWeaponPrimaryVar: css.includes('color: var(--system-two-weapon-primary-color)'),
         hasTwoWeaponSecondaryVar: css.includes('color: var(--system-two-weapon-secondary-color)'),
@@ -1353,6 +1356,8 @@ test.describe('DCC Extension API', () => {
         mutedColorDark: read(darkStyle, '--system-text-muted-color'),
         negativeColorLight: read(lightStyle, '--system-text-negative-color'),
         negativeColorDark: read(darkStyle, '--system-text-negative-color'),
+        positiveColorLight: read(lightStyle, '--system-text-positive-color'),
+        positiveColorDark: read(darkStyle, '--system-text-positive-color'),
         borderSubtleLight: read(lightStyle, '--system-border-subtle-color'),
         borderSubtleDark: read(darkStyle, '--system-border-subtle-color'),
         borderMutedLight: read(lightStyle, '--system-border-muted-color'),
@@ -1369,6 +1374,8 @@ test.describe('DCC Extension API', () => {
     expect(result.hasRollableHoverVar).toBe(true)
     expect(result.hasDamageVar).toBe(true)
     expect(result.hasMutedVar).toBe(true)
+    expect(result.hasPositiveVar).toBe(true)
+    expect(result.noCoreLevelVars).toBe(true)
     expect(result.hasFlatButtonBorderVar).toBe(true)
     expect(result.hasTwoWeaponPrimaryVar).toBe(true)
     expect(result.hasTwoWeaponSecondaryVar).toBe(true)
@@ -1401,6 +1408,8 @@ test.describe('DCC Extension API', () => {
     expect(result.mutedColorDark).toBe('#8a8993')
     expect(result.negativeColorLight).toBe('#8b1a1a')
     expect(result.negativeColorDark).toBe('#ef8080')
+    expect(result.positiveColorLight).toBe('#1f5c2d')
+    expect(result.positiveColorDark).toBe('#70c080')
     expect(result.borderSubtleLight).toBe('#b5b3a4')
     expect(result.borderSubtleDark).toBe('#3d3c44')
     expect(result.borderMutedLight).toBe('#7a7971')
