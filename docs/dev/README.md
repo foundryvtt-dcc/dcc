@@ -35,6 +35,7 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | [Pre-Release Process](PRERELEASE_PROCESS.md) | Foundry-installable test builds off a feature branch (not `main`) |
 | [LevelDB Workflow](LEVELDB_WORKFLOW.md) | Detailed pack workflow |
 | [Module Conversion](MODULE_CONVERSION.md) | End-to-end guide for converting an adventure module |
+| [Check Penalty Investigation](CHECK_PENALTY_INVESTIGATION.md) | #951: how the armor check penalty flows through checks/skills/spells/saves, and open decisions |
 
 ## User Documentation
 
