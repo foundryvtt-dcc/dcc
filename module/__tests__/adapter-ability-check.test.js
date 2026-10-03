@@ -453,6 +453,34 @@ test('dialog path with the check penalty applied shows no note', async () => {
   expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
 })
 
+test('dialog path counts a hand-edited penalty expression as applied', async () => {
+  // User rewrote the term as '-(2)': parseInt would read that as 0, but
+  // it is in the roll, so no note (which would double-count it) shows.
+  global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+    submitCheckPenalty(terms, '-(2)')
+    return {
+      formula: '1d20-1-2',
+      total: 7,
+      dice: [{ results: [10], total: 10, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d20', number: 1, faces: 20 },
+        { class: 'OperatorTerm', operator: '-' },
+        { class: 'NumericTerm', number: 1 },
+        { class: 'OperatorTerm', operator: '-' },
+        { class: 'NumericTerm', number: 2 }
+      ],
+      _evaluated: true
+    }
+  })
+  const { messageData } = await rollWithPenalty(
+    -2,
+    () => actor.rollAbilityCheck('str', { showModifierDialog: true })
+  )
+  expect(messageData.flags['dcc.checkPenalty']).toBeUndefined()
+  expect(messageData.content ?? '').not.toContain('dcc-check-penalty-note')
+})
+
 test('dialog path keeps the note when the ability modifier equals the penalty', async () => {
   // Regression: the old check matched the penalty's text in the formula.
   // Str mod -1 with a -1 penalty left unchecked gives `1d20-1`, which

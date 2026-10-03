@@ -219,9 +219,9 @@ export const RollsCheckMixin = (Base) => class extends Base {
       type: 'CheckPenalty',
       formula: ensurePlus(this._getCheckPenalty()),
       apply: false,
-      // Unchecked the term submits '+0'; checked (or hand-edited) it
-      // submits the penalty, which is then part of the roll.
-      callback: formula => { state.applied = (parseInt(formula) || 0) !== 0 }
+      // Unchecked the term submits '+0' (or '-0'); anything else — the
+      // penalty, or a hand-edited expression like '-(2)' — is in the roll.
+      callback: formula => { state.applied = !/^[+-]?0$/.test(String(formula).trim()) }
     }
     return { term, state }
   }
@@ -230,12 +230,11 @@ export const RollsCheckMixin = (Base) => class extends Base {
    * Roll-modifier-dialog branch of the ability-check adapter path
    * (legacy-decom step 2). The dialog term list mirrors the former
    * legacy ability-check builder (action die + ability modifier, plus a
-   * check-penalty toggle for str/agl when penalties are computed). Since
-   * step 3 the penalty may be non-zero here: if the user toggles it on
-   * it folds into `modifierTotal` and applies to the roll; if left off,
-   * the would-be total is shown as the alternative note (matching the
-   * non-dialog path), detected via the same `formula.includes(penalty)`
-   * check the former legacy path used.
+   * check-penalty toggle for str/agl from `_checkPenaltyDialogTerm`). If
+   * the user toggles the penalty on it folds into `modifierTotal` and
+   * applies to the roll; if left off, the labeled check-penalty note is
+   * shown (matching the non-dialog path). The term's callback reports
+   * which, via `state.applied`.
    *
    * On submit, the user's chosen die overrides the lib definition and
    * the per-source modifier list collapses to a single flat total — the
