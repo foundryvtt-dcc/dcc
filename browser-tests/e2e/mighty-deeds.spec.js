@@ -315,12 +315,14 @@ test.describe('Mighty Deeds E2E Tests', () => {
           { name: 'E2E Plain Sword', type: 'weapon', system: { actionDie: '1d20', toHit: '@ab', damageWeapon: '1d8', melee: true, equipped: true } },
           { name: 'E2E Flame Sword', type: 'weapon', system: { actionDie: '1d20', toHit: '@ab', damageWeapon: '1d6+1d4', melee: true, equipped: true } }
         ])
-        return { actorId: actor.id, weaponIds: weapons.map(w => w.id) }
+        // Keyed by name: createEmbeddedDocuments does not guarantee the
+        // returned array matches the input order.
+        return { actorId: actor.id, weaponIds: Object.fromEntries(weapons.map(w => [w.name, w.id])) }
       })
 
-      // [weapon index, d4 dice that belong to the weapon's own damage]
-      for (const [index, weaponD4Count] of [[0, 0], [1, 1]]) {
-        const weaponId = ids.weaponIds[index]
+      // [weapon name, d4 dice that belong to the weapon's own damage]
+      for (const [weaponName, weaponD4Count] of [['E2E Plain Sword', 0], ['E2E Flame Sword', 1]]) {
+        const weaponId = ids.weaponIds[weaponName]
         const messagesBefore = await page.evaluate(() => game.messages.size)
         await page.evaluate(({ actorId, weaponId }) => {
           window.__deedDialogAttack = game.actors.get(actorId).rollWeaponAttack(weaponId, { showModifierDialog: true })
@@ -346,11 +348,11 @@ test.describe('Mighty Deeds E2E Tests', () => {
           }
         }, { messagesBefore })
 
-        expect(result, `attack with weapon ${index} posted a damage roll`).not.toBeNull()
+        expect(result, `attack with ${weaponName} posted a damage roll`).not.toBeNull()
         expect(result.deedDieRollResult).toBeGreaterThanOrEqual(1)
         // The deed die was substituted by its attack result, not rolled again;
         // only the weapon's own d4s remain as dice in the damage roll.
-        expect(result.damageD4Count, `damage formula ${result.damageFormula}`).toBe(weaponD4Count)
+        expect(result.damageD4Count, `${weaponName} damage formula ${result.damageFormula}`).toBe(weaponD4Count)
         expect(result.damageFormula).toMatch(new RegExp(`\\+\\s*${result.deedDieRollResult}(?!\\d)`))
       }
     } finally {
