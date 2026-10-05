@@ -44,8 +44,18 @@ describe('attackHitsTarget', () => {
   test('a fumble always misses', () => {
     expect(attackHitsTarget({ fumble: true, crit: false, hitsAc: 30 }, targetActor(10))).toBe(false)
   })
-  test('a crit always hits', () => {
-    expect(attackHitsTarget({ fumble: false, crit: true, hitsAc: 1 }, targetActor(99))).toBe(true)
+  test('a crit that misses the AC is a miss (#978)', () => {
+    expect(attackHitsTarget({ fumble: false, crit: true, hitsAc: 1 }, targetActor(99))).toBe(false)
+  })
+  test('a natural max always hits', () => {
+    expect(attackHitsTarget({ fumble: false, crit: true, autoHit: true, hitsAc: 1 }, targetActor(99))).toBe(true)
+  })
+  test("the lib's verdict wins when rollToHit had the target's AC", () => {
+    expect(attackHitsTarget({ fumble: false, hitsTarget: true, hitsAc: 1 }, targetActor(99))).toBe(true)
+    expect(attackHitsTarget({ fumble: false, hitsTarget: false, hitsAc: 30 }, targetActor(10))).toBe(false)
+  })
+  test('a fumble misses even with a hit verdict', () => {
+    expect(attackHitsTarget({ fumble: true, hitsTarget: true, hitsAc: 30 }, targetActor(10))).toBe(false)
   })
   test('a normal attack hits when the total meets the target AC', () => {
     expect(attackHitsTarget({ fumble: false, crit: false, hitsAc: 15 }, targetActor(15))).toBe(true)

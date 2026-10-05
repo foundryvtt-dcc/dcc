@@ -35,6 +35,9 @@
     </li></ol>
   </div>
 {{/if}}
+{{#if message.system.critNeedsHitNote}}
+  <div class="pt-8 crit-needs-hit-note"><em>{{message.system.critNeedsHitNote}}</em></div>
+{{/if}}
 {{#if message.system.critTableLookupHint}}
   <div class="pt-8 crit-lookup-hint"><em>{{message.system.critTableLookupHint}}</em></div>
 {{/if}}

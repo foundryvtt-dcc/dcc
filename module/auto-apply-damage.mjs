@@ -34,16 +34,20 @@ export async function applyDamageViaGM (actorUuid, amount) {
 }
 
 /**
- * Whether the attack hit the target: a fumble always misses, a crit always
- * hits, otherwise the attack total (`hitsAc`) must meet the target's AC.
+ * Whether the attack hit the target. `rollToHit` already asked the lib when the
+ * primary target's AC was readable (`hitsTarget`); otherwise a fumble always
+ * misses, a natural max always hits, and the attack total (`hitsAc`) must meet
+ * the target's AC. A crit is not an automatic hit (#978): a threat-range roll
+ * or a backstab that misses is a miss.
  *
- * @param {object} attackRollResult - result from `rollToHit` (crit/fumble/hitsAc)
+ * @param {object} attackRollResult - result from `rollToHit` (fumble/autoHit/hitsAc/hitsTarget)
  * @param {Actor} targetActor - the targeted token's actor
  * @returns {boolean}
  */
 export function attackHitsTarget (attackRollResult, targetActor) {
   if (!attackRollResult || attackRollResult.fumble) return false
-  if (attackRollResult.crit) return true
+  if (typeof attackRollResult.hitsTarget === 'boolean') return attackRollResult.hitsTarget
+  if (attackRollResult.autoHit) return true
   const ac = parseInt(targetActor?.system?.attributes?.ac?.value)
   return Number.isFinite(ac) && attackRollResult.hitsAc >= ac
 }

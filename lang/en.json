@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "Misses",
   "DCC.AttackHitsCritNoTarget": "Critical hit!",
   "DCC.AttackHitsAC": "Hits AC {ac}",
+  "DCC.CritNeedsHitNote": "Only a crit if this attack hits.",
   "DCC.RollsDamageWith": "Rolling damage with {weapon}",
   "DCC.SocketNoGMWarning": "No Gamemaster is connected, so this action could not be completed. A GM must be online.",
   "DCC.SettingAutoApplyDamage": "Auto-apply damage to target",

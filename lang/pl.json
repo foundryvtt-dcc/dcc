@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "Chybia",
   "DCC.AttackHitsCritNoTarget": "Trafienie krytyczne!",
   "DCC.AttackHitsAC": "Trafia KP {ac}",
+  "DCC.CritNeedsHitNote": "Trafienie krytyczne tylko wtedy, gdy ten atak trafi.",
   "DCC.RollsDamageWith": "Rzut na obrażenia za pomocą {weapon}",
   "DCC.SocketNoGMWarning": "Żaden Mistrz Gry nie jest połączony, więc nie udało się wykonać tej akcji. MG musi być online.",
   "DCC.SettingAutoApplyDamage": "Automatycznie zadawaj obrażenia celowi",

@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "未命中",
   "DCC.AttackHitsCritNoTarget": "重击！",
   "DCC.AttackHitsAC": "命中 AC {ac}",
+  "DCC.CritNeedsHitNote": "仅在此次攻击命中时才算重击。",
   "DCC.RollsDamageWith": "使用 {weapon} 掷伤害",
   "DCC.SocketNoGMWarning": "没有连接的游戏主持人，因此无法完成此操作。必须有一名 GM 在线。",
   "DCC.SettingAutoApplyDamage": "自动对目标施加伤害",

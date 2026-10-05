@@ -318,6 +318,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       'dcc.isFumble': attackRollResult.fumble,
       'dcc.isCrit': attackRollResult.crit,
       'dcc.isNaturalCrit': attackRollResult.naturalCrit,
+      'dcc.critNeedsHit': !!attackRollResult.critNeedsHit,
       'dcc.isMelee': weapon.system?.melee
     }
     // Hit/miss vs the selected target, computed here while the targets are in
@@ -375,6 +376,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         critResult,
         critTableLookupHint,
         critRollTotal,
+        critNeedsHitNote: attackRollResult.critNeedsHit ? game.i18n.localize('DCC.CritNeedsHitNote') : '',
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
@@ -685,18 +687,20 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       deedDieRoll._evaluated = true
       deedSucceed = deedTotal > 2
     }
-    let rollerIdx = 0
     // Throw on over-consumption rather than silently feeding 0 — a future
     // lib that adds a third internal roll would otherwise silently get a
     // nat-1 (deterministic fumble) and `warnIfDivergent` might miss it
     // if the totals coincidentally agree.
-    const sequencedRoller = () => {
-      if (rollerIdx >= naturals.length) {
-        throw new Error(`[DCC adapter] sequencedRoller exhausted: lib requested ${rollerIdx + 1} rolls, ${naturals.length} natural(s) available (weapon=${weapon?.name})`)
+    const makeSequencedRoller = () => {
+      let rollerIdx = 0
+      return () => {
+        if (rollerIdx >= naturals.length) {
+          throw new Error(`[DCC adapter] sequencedRoller exhausted: lib requested ${rollerIdx + 1} rolls, ${naturals.length} natural(s) available (weapon=${weapon?.name})`)
+        }
+        return naturals[rollerIdx++]
       }
-      return naturals[rollerIdx++]
     }
-    const libResult = libMakeAttackRoll(attackInput, sequencedRoller)
+    let libResult = libMakeAttackRoll(attackInput, makeSequencedRoller())
 
     // `hookTermsToBonuses` silently drops dice-bearing hook terms
     // (documented in `attack-input.mjs`), so divergence here is
@@ -706,12 +710,40 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // regression shows up immediately.
     warnIfDivergent('rollToHit', attackRoll.total, libResult.total, { weapon: weapon?.name })
 
+    // Hit vs the primary target's AC (#978). The lib only lets a threat-range
+    // roll or a backstab crit when the attack hits, and it can only judge
+    // that with `targetAC`. The Foundry total is authoritative — it carries
+    // roll-dialog edits and dice-bearing hook terms the lib never sees — so
+    // any gap is folded in as a bonus before the lib compares against AC.
+    const targetAC = parseInt(options.targets?.first?.()?.actor?.system?.attributes?.ac?.value)
+    if (Number.isFinite(targetAC)) {
+      const gap = attackRoll.total - libResult.total
+      if (gap !== 0) {
+        attackInput.bonuses = [...(attackInput.bonuses || []), {
+          id: 'roll:unmodeled',
+          label: game.i18n.localize('DCC.Bonus'),
+          source: { type: 'other', name: 'roll' },
+          category: 'circumstance',
+          effect: { type: 'modifier', value: gap }
+        }]
+      }
+      attackInput.targetAC = targetAC
+      libResult = libMakeAttackRoll(attackInput, makeSequencedRoller())
+    }
+
     const fumble = libResult.isFumble
     const crit = !fumble && libResult.isCriticalThreat
+    // A natural max on the die always hits, whatever the AC.
+    const autoHit = d20RollResult === actionDieFaces
+    // With no target AC the lib can't confirm a threat-range or backstab
+    // crit, so the crit still rolls but the card notes that it only counts
+    // if the attack hits.
+    const critNeedsHit = crit && libResult.isHit === undefined && !autoHit
     // A backstab hit auto-crits, but only a roll in the threat range is a
     // natural crit — `dcc.isNaturalCrit` drives Fleeting Luck, which must
-    // not be awarded for backstab auto-crits (#530, #938).
-    const naturalCrit = crit && libResult.critSource !== 'backstab-auto'
+    // not be awarded for backstab auto-crits (#530, #938) or for a crit
+    // that isn't confirmed yet (#978).
+    const naturalCrit = crit && libResult.critSource !== 'backstab-auto' && !critNeedsHit
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
 
@@ -721,10 +753,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       deedDieRollResult,
       deedDieRoll,
       deedSucceed,
+      autoHit,
       crit,
+      critNeedsHit,
       formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
       fumble,
       hitsAc: attackRoll.total,
+      hitsTarget: libResult.isHit,
       naturalCrit,
       roll: attackRoll,
       rolled: true,
