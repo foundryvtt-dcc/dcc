@@ -142,6 +142,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       for (const app of foundry.applications.instances.values()) {
         if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
+      // A dialog closed mid-render (fireAndForget's Escape at ~150ms) can
+      // reach state CLOSED with its element still attached; later
+      // document-level queries then hit the dead form (#958). Drop them.
+      document.querySelectorAll('.application.roll-modifier').forEach(el => {
+        if (!foundry.applications.instances.get(el.id)?.rendered) el.remove()
+      })
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
       // Purge accumulated chat messages from prior tests so `find(m => …)`
       // scans don't grow O(N) with suite size — Foundry doesn't prune
@@ -170,6 +176,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       for (const app of foundry.applications.instances.values()) {
         if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
+      // A dialog closed mid-render (fireAndForget's Escape at ~150ms) can
+      // reach state CLOSED with its element still attached; later
+      // document-level queries then hit the dead form (#958). Drop them.
+      document.querySelectorAll('.application.roll-modifier').forEach(el => {
+        if (!foundry.applications.instances.get(el.id)?.rendered) el.remove()
+      })
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
     }).catch(() => {})
   })
@@ -499,26 +511,46 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     // through the term callback. A Reflex save equal to the penalty is the
     // case a formula substring check got wrong: `1d20-1` reads as "penalty
     // applied" whether or not it was.
+    //
+    // Drives the dialog *this* roll opened (a new app instance), never a bare
+    // document query: an earlier fireAndForget dialog can linger in the DOM
+    // after it closed (state CLOSED, element still attached), and
+    // `document.querySelector('.dcc-roll-modifier …')` used to hit that
+    // stale Strength Check first, submit it, and leave this one open (#958).
     async function rollReflexThroughDialog (page, name, { checkPenalty }) {
-      const reflex = await page.evaluate(async ({ name }) => {
+      const { reflex, submitted } = await page.evaluate(async ({ name, checkPenalty }) => {
+        const isRollModifier = app => app?.options?.classes?.includes('roll-modifier')
         const existing = game.actors.getName(name)
         if (existing) await existing.delete()
         const actor = await Actor.create({ name, type: 'Player' })
         await actor.update({ 'system.abilities.agl.value': 5, 'system.config.computeCheckPenalty': false })
         const reflex = Number(actor.system.saves.ref.value)
         await actor.update({ 'system.attributes.ac.checkPenalty': String(reflex) })
-        actor.rollSavingThrow('ref', { showModifierDialog: true })
-        return reflex
-      }, { name })
-      expect(reflex, 'Agility 5 must give a negative Reflex save').toBeLessThan(0)
 
-      await page.waitForSelector('.dcc-roll-modifier #check-penalty', { timeout: 10000 })
-      await page.evaluate((checkPenalty) => {
-        const box = document.querySelector('.dcc-roll-modifier #check-penalty')
+        const before = new Set(foundry.applications.instances.keys())
+        actor.rollSavingThrow('ref', { showModifierDialog: true })
+
+        const waitFor = async (fn, timeoutMs = 10000) => {
+          const deadline = Date.now() + timeoutMs
+          while (Date.now() < deadline) {
+            const value = fn()
+            if (value) return value
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        }
+        const app = await waitFor(() => [...foundry.applications.instances.values()]
+          .find(a => !before.has(a.id) && isRollModifier(a) && a.rendered && a.element?.querySelector('#check-penalty')))
+        if (!app) return { reflex, submitted: false }
+
+        const box = app.element.querySelector('#check-penalty')
         if (box.checked !== checkPenalty) box.click()
-        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
-      }, checkPenalty)
-      await page.waitForSelector('.dcc-roll-modifier', { state: 'detached', timeout: 10000 })
+        app.element.querySelector('button[type="submit"]').click()
+        const closed = await waitFor(() => !app.element?.isConnected)
+        return { reflex, submitted: Boolean(closed) }
+      }, { name, checkPenalty })
+      expect(reflex, 'Agility 5 must give a negative Reflex save').toBeLessThan(0)
+      expect(submitted, 'the Reflex save dialog must open and close on submit').toBe(true)
       return reflex
     }
 
