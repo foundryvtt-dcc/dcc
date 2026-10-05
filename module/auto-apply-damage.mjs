@@ -24,6 +24,9 @@ import { executeAsGM, registerSocketHandler } from './socket.mjs'
 export const APPLY_DAMAGE_ACTION = 'dcc.applyDamage'
 export const APPLY_CARD_DAMAGE_ACTION = 'dcc.applyCardDamage'
 
+/** Card ids whose damage the GM is applying right now (see the handler). */
+const cardsApplying = new Set()
+
 /**
  * Apply damage to an actor through the GM (the active GM runs the
  * `actor.applyDamage`). Shared by the auto-apply-damage and friendly-fire
@@ -159,9 +162,10 @@ export function attachManualDamageAutoApply (message, html) {
 /**
  * GM-side handler: apply a card's manual damage once. Hardened against a
  * crafted payload — the target comes from the card's own flags (never the
- * payload), the card must still await damage, and the requester must be a GM
- * or own the card. The applied flag is written before the damage so a second
- * request can't apply it twice.
+ * payload), the card must still await damage, and the requester (the sender
+ * Foundry stamps on the socket message) must be a GM or own the card. A card
+ * is claimed in `cardsApplying` before any await and flagged applied before
+ * the damage lands, so a second request can't apply it twice.
  *
  * @param {{messageId: string, amount: number}} payload
  * @param {string} [userId] requesting user id (client-supplied; verified here)
@@ -172,8 +176,17 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
   const sender = userId ? game.users?.get(userId) : null
   if (!sender) return
   if (!sender.isGM && !message.testUserPermission?.(sender, 'OWNER')) return
-  await message.setFlag('dcc', 'damageApplied', true)
-  await applyDamageHandler({ actorUuid: message.getFlag('dcc', 'targetUuid'), amount })
+  // Claim the card synchronously: the flag write below is a server round trip,
+  // and a second request (a double-click) arriving during it would still see
+  // the card awaiting damage.
+  if (cardsApplying.has(messageId)) return
+  cardsApplying.add(messageId)
+  try {
+    await message.setFlag('dcc', 'damageApplied', true)
+    await applyDamageHandler({ actorUuid: message.getFlag('dcc', 'targetUuid'), amount })
+  } finally {
+    cardsApplying.delete(messageId)
+  }
 }
 
 /** GM-side socket handler: resolve the target and apply the damage. */

@@ -193,6 +193,26 @@ describe('manual damage from an attack card (#992)', () => {
     expect(applyDamage).toHaveBeenCalledTimes(1) // never twice
   })
 
+  test('two requests racing the flag write apply the damage once', async () => {
+    const card = makeCard({}, { testUserPermission: vi.fn(() => true) })
+    // The flag write is a server round trip: the card doesn't read as applied
+    // until it resolves.
+    let release
+    card.setFlag = vi.fn(() => new Promise(resolve => { release = resolve }))
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    globalThis.game.messages = { get: () => card }
+    globalThis.game.users = { get: () => ({ isGM: false }) }
+    const handler = cardHandler()
+
+    const first = handler({ messageId: 'card1', amount: 5 }, 'player')
+    const second = handler({ messageId: 'card1', amount: 5 }, 'player')
+    release()
+    await Promise.all([first, second])
+
+    expect(applyDamage).toHaveBeenCalledTimes(1)
+  })
+
   test('the GM handler refuses a requester who does not own the card', async () => {
     const card = makeCard()
     const applyDamage = vi.fn()

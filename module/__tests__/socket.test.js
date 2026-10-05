@@ -62,7 +62,7 @@ describe('executeAsGM', () => {
 
     await executeAsGM('emit-player', { dmg: 3 })
 
-    expect(globalThis.game.socket.emit).toHaveBeenCalledWith(DCC_SOCKET, { action: 'emit-player', payload: { dmg: 3 }, userId: 'player' })
+    expect(globalThis.game.socket.emit).toHaveBeenCalledWith(DCC_SOCKET, { action: 'emit-player', payload: { dmg: 3 } }) // the server stamps the sender
     expect(handler).not.toHaveBeenCalled()
   })
 
@@ -86,9 +86,19 @@ describe('onSocketMessage', () => {
     const handler = vi.fn()
     registerSocketHandler('incoming', handler)
 
-    await onSocketMessage({ action: 'incoming', payload: { a: 1 }, userId: 'player' })
+    await onSocketMessage({ action: 'incoming', payload: { a: 1 } }, 'player')
 
     expect(handler).toHaveBeenCalledWith({ a: 1 }, 'player') // sender id forwarded to the handler
+  })
+
+  test('a userId written into the envelope is ignored in favor of the server-stamped sender', async () => {
+    setClient('activeGM')
+    const handler = vi.fn()
+    registerSocketHandler('forged', handler)
+
+    await onSocketMessage({ action: 'forged', payload: {}, userId: 'gm' }, 'player')
+
+    expect(handler).toHaveBeenCalledWith({}, 'player')
   })
 
   test('non-active-GM clients ignore incoming messages', async () => {

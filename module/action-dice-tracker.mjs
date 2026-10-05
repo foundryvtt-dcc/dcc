@@ -75,18 +75,18 @@ async function writeActionDiceState (combatant, state) {
 /**
  * GM-side socket handler for {@link WRITE_ACTION_DICE}: resolve the combatant and
  * write the requested state, but only after confirming the requesting user owns
- * the combatant's actor (the `userId` is a client claim — see socket.mjs — so it
- * is paired with this ownership check; a player can only spend their own dice).
+ * the combatant's actor (the `userId` is the sender Foundry's server stamps on the
+ * socket message — see socket.mjs — and is paired with this ownership check; a
+ * player can only spend their own dice).
  * @param {{combatantUuid:string, state:object}} payload
- * @param {string} userId - the requesting user's id (from the socket envelope)
+ * @param {string} userId - the requesting user's id (server-stamped sender)
  * @returns {Promise<void>}
  */
 export async function writeActionDiceHandler ({ combatantUuid, state }, userId) {
   if (!combatantUuid || !state || typeof state.round !== 'number' || !Array.isArray(state.spent)) return
   const combatant = await fromUuid(combatantUuid)
   if (!combatant) return
-  // Fail closed: `userId` is a client claim (see socket.mjs), so an
-  // unresolvable user or an actor-less combatant must be REJECTED, not allowed
+  // Fail closed: an unresolvable user or an actor-less combatant must be REJECTED, not allowed
   // through. Only a writer that resolves to a real user owning the combatant's
   // actor may set the per-round state.
   const user = game.users?.get(userId)
