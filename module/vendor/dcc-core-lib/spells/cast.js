@@ -183,17 +183,28 @@ export function checkDisapproval(natural, disapprovalRange) {
     return natural <= disapprovalRange;
 }
 /**
- * Calculate disapproval increase based on result
+ * Calculate the disapproval-range increase this cast causes.
+ *
+ * DCC RAW (core rulebook, cleric magic): "Each failed spell check increases
+ * the chance of disapproval" by one, and "any natural roll within that range
+ * automatically fails". So a natural inside the range (natural 1 included)
+ * is a failed check and raises the range by exactly 1.
+ *
+ * Only in-range naturals are counted here. A check that fails on its total
+ * (outside the range) also raises the range under RAW, but whether a total
+ * fails depends on the spell's result table, so that increase is left to
+ * the caller.
+ *
+ * @param natural - The natural spell-check roll
+ * @param profile - The caster profile
+ * @param disapprovalRange - Current disapproval range. When omitted, only a
+ *   natural 1 counts (the range is always at least 1).
  */
-export function calculateDisapprovalIncrease(natural, profile) {
-    if (!profile.usesDisapproval) {
+export function calculateDisapprovalIncrease(natural, profile, disapprovalRange = 1) {
+    if (!profile.usesDisapproval || natural === undefined) {
         return 0;
     }
-    // Natural 1 increases disapproval range
-    if (natural === 1) {
-        return 1;
-    }
-    return 0;
+    return natural <= Math.max(1, disapprovalRange) ? 1 : 0;
 }
 // =============================================================================
 // Main Spell Casting Function
@@ -288,7 +299,7 @@ export function castSpell(input, options = {}, events) {
     const corruptionTriggered = !options.skipCorruption &&
         triggersCorruption(resultEntry, natural, input.casterProfile);
     // Calculate disapproval increase
-    const disapprovalIncrease = calculateDisapprovalIncrease(natural, input.casterProfile);
+    const disapprovalIncrease = calculateDisapprovalIncrease(natural, input.casterProfile, input.disapprovalRange);
     let newDisapprovalRange;
     if (input.casterProfile.usesDisapproval && input.disapprovalRange !== undefined) {
         newDisapprovalRange = input.disapprovalRange + disapprovalIncrease;

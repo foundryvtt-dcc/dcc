@@ -518,6 +518,76 @@ describe("calculateSpellCheck", () => {
         expect(result.disapprovalResult).toBeDefined();
         expect(result.newDisapprovalRange).toBe(3); // Increased from 2
     });
+    describe("disapproval roll and range increase", () => {
+        function clericWith(range, luck) {
+            const cleric = createTestCleric();
+            if (cleric.state.classState?.cleric) {
+                cleric.state.classState.cleric.disapprovalRange = range;
+            }
+            cleric.state.abilities.lck.current = luck;
+            return cleric;
+        }
+        // Natural comes from the d20; disapproval dice total is fixed per call.
+        function rollerFor(natural, diceTotal, seen = []) {
+            return (formula) => {
+                if (formula !== undefined && /^\d+d4$/.test(formula)) {
+                    seen.push(formula);
+                    return diceTotal;
+                }
+                return natural;
+            };
+        }
+        it("rolls (natural)d4 minus the cleric's Luck modifier", () => {
+            const seen = [];
+            const result = calculateSpellCheck(clericWith(3, 16), // Luck 16 → +2
+            { spell: clericSpell, resultTable: mockSpellResultTable, disapprovalTable: mockDisapprovalTable }, { roller: rollerFor(3, 9, seen) });
+            expect(seen).toEqual(["3d4"]);
+            expect(result.disapprovalResult?.formula).toBe("3d4");
+            expect(result.disapprovalResult?.luckModifier).toBe(2);
+            expect(result.disapprovalResult?.roll).toBe(7);
+            expect(result.disapprovalResult?.description).toBe("Moderate penance required.");
+        });
+        it("uses the Luck left after Luck burned on the check", () => {
+            const result = calculateSpellCheck(clericWith(2, 16), {
+                spell: clericSpell,
+                resultTable: mockSpellResultTable,
+                disapprovalTable: mockDisapprovalTable,
+                luckBurn: 3, // 16 → 13 → +1
+            }, { roller: rollerFor(2, 6) });
+            expect(result.disapprovalResult?.luckModifier).toBe(1);
+            expect(result.disapprovalResult?.roll).toBe(5);
+        });
+        it("raises the range once and fires one event for an in-range natural above 1", () => {
+            // Regression: castSpell ignored naturals above 1 while
+            // handleClericDisapproval raised the range again, so callers saw
+            // disapprovalIncrease 0 alongside a raised range.
+            const increases = [];
+            const result = calculateSpellCheck(clericWith(3, 10), { spell: clericSpell, resultTable: mockSpellResultTable, disapprovalTable: mockDisapprovalTable }, { roller: rollerFor(2, 5) }, { onDisapprovalIncreased: (_r, newRange) => increases.push(newRange) });
+            expect(increases).toEqual([4]);
+            expect(result.disapprovalIncrease).toBe(1);
+            expect(result.newDisapprovalRange).toBe(4);
+        });
+        it("fires the increase event once on a natural 1", () => {
+            // Regression: castSpell and handleClericDisapproval both fired it.
+            const increases = [];
+            calculateSpellCheck(clericWith(2, 10), { spell: clericSpell, resultTable: mockSpellResultTable, disapprovalTable: mockDisapprovalTable }, { roller: rollerFor(1, 3) }, { onDisapprovalIncreased: (_r, newRange) => increases.push(newRange) });
+            expect(increases).toEqual([3]);
+        });
+        it("raises the range even when no disapproval table is loaded", () => {
+            const increases = [];
+            const result = calculateSpellCheck(clericWith(3, 10), { spell: clericSpell, resultTable: mockSpellResultTable }, { roller: rollerFor(2, 5) }, { onDisapprovalIncreased: (_r, newRange) => increases.push(newRange) });
+            expect(result.disapprovalResult).toBeUndefined();
+            expect(result.disapprovalIncrease).toBe(1);
+            expect(increases).toEqual([4]);
+        });
+        it("does not raise the range for a natural outside it", () => {
+            const increases = [];
+            const result = calculateSpellCheck(clericWith(3, 10), { spell: clericSpell, resultTable: mockSpellResultTable, disapprovalTable: mockDisapprovalTable }, { roller: rollerFor(4, 5) }, { onDisapprovalIncreased: (_r, newRange) => increases.push(newRange) });
+            expect(result.disapprovalResult).toBeUndefined();
+            expect(result.disapprovalIncrease).toBe(0);
+            expect(increases).toEqual([]);
+        });
+    });
     it("auto-fails a natural roll inside the disapproval range despite a successful total (dcc#874)", () => {
         // DCC RAW: "any natural roll within that range automatically fails ...
         // even though a roll of 13 would normally mean success on 1st-level
@@ -532,7 +602,7 @@ describe("calculateSpellCheck", () => {
             resultTable: mockSpellResultTable,
             disapprovalTable: mockDisapprovalTable,
         }, {
-            roller: (formula) => (formula === "1d4" ? 2 : 12),
+            roller: (formula) => (formula === "12d4" ? 2 : 12),
         });
         expect(result.disapprovalAutoFail).toBe(true);
         expect(result.fumble).toBe(false);
@@ -565,7 +635,7 @@ describe("calculateSpellCheck", () => {
             resultTable: mockSpellResultTable,
             disapprovalTable: mockDisapprovalTable,
         }, {
-            roller: (formula) => (formula === "1d4" ? 2 : 20),
+            roller: (formula) => (formula === "20d4" ? 2 : 20),
         });
         expect(result.critical).toBe(false);
         expect(result.disapprovalAutoFail).toBe(true);

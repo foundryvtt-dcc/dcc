@@ -39,9 +39,24 @@ export declare function triggersCorruption(entry: SpellResultEntry | TieredEntry
  */
 export declare function checkDisapproval(natural: number, disapprovalRange: number): boolean;
 /**
- * Calculate disapproval increase based on result
+ * Calculate the disapproval-range increase this cast causes.
+ *
+ * DCC RAW (core rulebook, cleric magic): "Each failed spell check increases
+ * the chance of disapproval" by one, and "any natural roll within that range
+ * automatically fails". So a natural inside the range (natural 1 included)
+ * is a failed check and raises the range by exactly 1.
+ *
+ * Only in-range naturals are counted here. A check that fails on its total
+ * (outside the range) also raises the range under RAW, but whether a total
+ * fails depends on the spell's result table, so that increase is left to
+ * the caller.
+ *
+ * @param natural - The natural spell-check roll
+ * @param profile - The caster profile
+ * @param disapprovalRange - Current disapproval range. When omitted, only a
+ *   natural 1 counts (the range is always at least 1).
  */
-export declare function calculateDisapprovalIncrease(natural: number | undefined, profile: CasterProfile): number;
+export declare function calculateDisapprovalIncrease(natural: number | undefined, profile: CasterProfile, disapprovalRange?: number): number;
 /**
  * Cast a spell, performing the spell check and determining results.
  *

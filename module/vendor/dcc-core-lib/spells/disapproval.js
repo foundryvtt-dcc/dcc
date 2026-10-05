@@ -58,35 +58,47 @@ export function resetDisapprovalRange() {
 /**
  * Default random number generator for disapproval rolls
  */
-function defaultRoller(faces) {
-    return Math.floor(Math.random() * faces) + 1;
+function defaultRoller(count, faces) {
+    let total = 0;
+    for (let i = 0; i < count; i++) {
+        total += Math.floor(Math.random() * faces) + 1;
+    }
+    return total;
 }
 /**
  * Roll for disapproval effect.
  *
- * In DCC, the disapproval roll is typically:
- * 1d4 × current disapproval range
+ * DCC RAW (core rulebook, Table 5-7): the cleric rolls 1d4 for every point
+ * of the natural spell-check roll (a natural 1 rolls 1d4, a natural 4 inside
+ * the range rolls 4d4), and the roll is reduced by the cleric's Luck
+ * modifier. The disapproval range itself only decides *whether* disapproval
+ * happens; it does not scale the roll.
  *
- * @param disapprovalRange - Current disapproval range
+ * A Luck modifier can push the roll below 1. The table starts at 1, so the
+ * lookup clamps to 1 (the mildest result); `roll` keeps the unclamped value
+ * so callers can show the arithmetic.
+ *
+ * @param naturalRoll - The natural d20 roll that triggered disapproval
+ * @param disapprovalRange - Current disapproval range (reported only)
  * @param disapprovalTable - Table to look up the result
- * @param options - Roll options
+ * @param luckModifier - The cleric's Luck modifier (default 0)
+ * @param options - Roll options. A custom roller receives "Nd4".
  * @returns The disapproval result
  */
-export function rollDisapproval(disapprovalRange, disapprovalTable, options = {}) {
-    // Roll 1d4
-    let baseRoll;
-    if (options.roller) {
-        baseRoll = options.roller("1d4");
-    }
-    else {
-        baseRoll = defaultRoller(4);
-    }
-    // Multiply by disapproval range
-    const roll = baseRoll * disapprovalRange;
-    // Look up result
-    const tableResult = lookupSimple(disapprovalTable, roll);
+export function rollDisapproval(naturalRoll, disapprovalRange, disapprovalTable, luckModifier = 0, options = {}) {
+    const diceCount = Math.max(1, Math.floor(naturalRoll));
+    const formula = `${String(diceCount)}d4`;
+    const diceTotal = options.roller
+        ? options.roller(formula)
+        : defaultRoller(diceCount, 4);
+    const roll = diceTotal - luckModifier;
+    const tableResult = lookupSimple(disapprovalTable, Math.max(1, roll));
     const result = {
         roll,
+        formula,
+        diceCount,
+        naturalRoll,
+        luckModifier,
         description: tableResult?.text ?? `Disapproval (roll ${String(roll)})`,
         disapprovalRange,
     };
@@ -109,14 +121,15 @@ export function rollDisapproval(disapprovalRange, disapprovalTable, options = {}
  * @param natural - The natural die roll from the spell check
  * @param disapprovalRange - Current disapproval range
  * @param disapprovalTable - Table to look up the result
+ * @param luckModifier - The cleric's Luck modifier (default 0)
  * @param options - Roll options
  * @returns DisapprovalResult if triggered, undefined otherwise
  */
-export function checkAndRollDisapproval(natural, disapprovalRange, disapprovalTable, options = {}) {
+export function checkAndRollDisapproval(natural, disapprovalRange, disapprovalTable, luckModifier = 0, options = {}) {
     if (!rollTriggersDisapproval(natural, disapprovalRange)) {
         return undefined;
     }
-    return rollDisapproval(disapprovalRange, disapprovalTable, options);
+    return rollDisapproval(natural, disapprovalRange, disapprovalTable, luckModifier, options);
 }
 /**
  * Get the severity level of a disapproval roll.
@@ -136,11 +149,18 @@ export function getDisapprovalSeverity(roll) {
 /**
  * Calculate the expected disapproval severity for a given range.
  * Useful for warning players about high disapproval ranges.
+ *
+ * Any natural roll from 1 to the range triggers disapproval, and the roll is
+ * (natural)d4 − Luck modifier, so the best case is a natural 1 rolling a 1
+ * and the worst case is a natural equal to the range rolling all 4s.
+ * The average assumes each triggering natural is equally likely.
  */
-export function getExpectedSeverity(disapprovalRange) {
-    const minRoll = disapprovalRange; // Roll of 1 × range
-    const maxRoll = disapprovalRange * 4; // Roll of 4 × range
-    const avgRoll = Math.floor(disapprovalRange * 2.5); // Average of 2.5 × range
+export function getExpectedSeverity(disapprovalRange, luckModifier = 0) {
+    const range = Math.max(1, Math.floor(disapprovalRange));
+    const minRoll = Math.max(1, 1 - luckModifier);
+    const maxRoll = Math.max(1, range * 4 - luckModifier);
+    // Mean natural over 1..range is (range + 1) / 2; each d4 averages 2.5.
+    const avgRoll = Math.max(1, Math.floor(((range + 1) / 2) * 2.5 - luckModifier));
     return {
         minimum: getDisapprovalSeverity(minRoll),
         maximum: getDisapprovalSeverity(maxRoll),
