@@ -3780,6 +3780,91 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(flag.isCriticalThreat).toBe(false)
     })
 
+    // Rolls one live attack with the action die bumped by a hook and the
+    // dice pinned, then reads back that attack's card. Setup and cleanup run
+    // in one evaluate with try/finally, so a throwing roll can't leave the
+    // pinned dice, the hook, or a changed world setting behind for later
+    // specs.
+    async function rollBumpedAttack (page, { name, bumpTo, uniform, strict }) {
+      return page.evaluate(async ({ name, bumpTo, uniform, strict }) => {
+        const prevStrict = game.settings.get('dcc', 'strictCriticalHits')
+        const origRandomUniform = CONFIG.Dice.randomUniform
+        let hook = null
+        let actor = null
+        try {
+          if (strict !== undefined) await game.settings.set('dcc', 'strictCriticalHits', strict)
+          await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+          actor = await Actor.create({ name, type: 'Player' })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: `${name} Weapon`,
+            type: 'weapon',
+            system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d6', melee: true, equipped: true }
+          }])
+          hook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
+            if (a?.name === name) terms[0].formula = bumpTo
+          })
+          CONFIG.Dice.randomUniform = () => uniform
+          // Cards from earlier runs share the speaker alias; only read ours.
+          const before = new Set(game.messages.contents.map(m => m.id))
+          await actor.rollWeaponAttack(actor.items.getName(`${name} Weapon`).id)
+
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            const msg = game.messages.contents.slice().reverse().find(m =>
+              !before.has(m.id) &&
+              m.speaker?.alias === name &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult'))
+            if (msg) {
+              return {
+                lib: msg.getFlag('dcc', 'libResult'),
+                upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
+              }
+            }
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+          if (hook !== null) Hooks.off('dcc.modifyAttackRollTerms', hook)
+          await game.settings.set('dcc', 'strictCriticalHits', prevStrict)
+          await actor?.delete()
+        }
+      }, { name, bumpTo, uniform, strict })
+    }
+
+    test('a hook-bumped long-range d16 crits only on 16, not 12–16 (#977)', async ({ page }) => {
+      // The long-range penalty (weapon-range.mjs / dcc-qol) rewrites
+      // terms[0] from 1d20 to 1d16. rollToHit used to scale critRange 20 →
+      // 16 itself and then hand 16 to the lib, which scaled it again to 12,
+      // so a natural 12 on the long-range d16 critted.
+      // ceil((1 - 0.26) * 16) = 12 — inside the double-scaled 12–16 range.
+      const out = await rollBumpedAttack(page, { name: 'P977 Long Range', bumpTo: '1d16', uniform: 0.26 })
+
+      expect(out, 'long-range attack must set dcc.libResult').not.toBeNull()
+      expect(out.lib.die).toBe('d16')
+      expect(out.lib.natural).toBe(12)
+      expect(out.lib.isCriticalThreat).toBe(false)
+      // The chat highlight threshold is the once-scaled 16.
+      expect(out.upperThreshold).toBe(16)
+    })
+
+    test('strict crits default on; off keeps the literal 20–24 range on a d24 (#977)', async ({ page }) => {
+      const strictDefault = await page.evaluate(() =>
+        game.settings.settings.get('dcc.strictCriticalHits').default)
+      expect(strictDefault).toBe(true)
+
+      // ceil((1 - 0.19) * 24) = 20 — a crit only under the literal range.
+      const out = await rollBumpedAttack(page, { name: 'P977 Literal Crit', bumpTo: '1d24', uniform: 0.19, strict: false })
+
+      expect(out, 'literal-range attack must set dcc.libResult').not.toBeNull()
+      expect(out.lib.die).toBe('d24')
+      expect(out.lib.natural).toBe(20)
+      expect(out.lib.isCriticalThreat).toBe(true)
+      expect(out.lib.critSource).toBe('threat-range')
+      expect(out.upperThreshold).toBe(20)
+    })
+
     test('automate off → adapter (session 12 / A5)', async ({ page }) => {
       // A5: `automateDamageFumblesCrits` gates the downstream damage /
       // crit / fumble chain inside `rollWeaponAttack`, not the attack

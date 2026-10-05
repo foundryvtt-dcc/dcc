@@ -59,7 +59,7 @@ function withAutomate (enabled) {
   const original = gameSettingsGetMock.getMockImplementation()
   gameSettingsGetMock.mockImplementation((module, key) => {
     if (module === 'dcc' && key === 'automateDamageFumblesCrits') return enabled
-    if (module === 'dcc' && key === 'strictCriticalHits') return false
+    if (module === 'dcc' && key === 'strictCriticalHits') return true
     if (module === 'dcc' && key === 'checkWeaponEquipment') return false
     return original ? original(module, key) : undefined
   })

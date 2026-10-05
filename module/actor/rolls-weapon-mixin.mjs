@@ -6,7 +6,8 @@ import {
   rollDamage as libRollDamage,
   rollCritical as libRollCritical,
   rollFumble as libRollFumble,
-  getMonsterFumbleDie
+  getMonsterFumbleDie,
+  adjustThreatRange as libAdjustThreatRange
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
@@ -607,40 +608,34 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     }
     await attackRoll.evaluate()
 
-    const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
-    if (strictCrits) {
-      const originalDieMatch = die.match(/(\d+)d(\d+)/)
-      const adjustedDieMatch = attackRoll.formula.match(/(\d+)d(\d+)/)
-      if (originalDieMatch && adjustedDieMatch) {
-        const originalDieSize = parseInt(originalDieMatch[2])
-        const adjustedDieSize = parseInt(adjustedDieMatch[2])
-        if (originalDieSize !== adjustedDieSize) {
-          critRange = game.dcc.DiceChain.calculateProportionalCritRange(critRange, originalDieSize, adjustedDieSize)
-        }
-      }
-    } else {
-      critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
-    }
-
     const d20RollResult = attackRoll.dice[0].total
-    attackRoll.dice[0].options.dcc = { upperThreshold: critRange }
 
     const attackInput = buildAttackInput(this, weapon, actorActionDice)
-    // Keep the lib on the same die Foundry rolled when the multiple-action-dice
-    // override picked an extra die (buildAttackInput otherwise prefers the
-    // weapon's first-die `actionDie`), so crit/fumble classification and the
-    // lib total match the evaluated Roll.
-    if (options._actionDieFormula) {
-      attackInput.actionDie = normalizeLibDie(options._actionDieFormula)
+    // The lib owns crit-range scaling (#977). Hand it the weapon's
+    // d20-relative threat range unchanged plus the die Foundry actually
+    // rolled — which differs from `die` when the multiple-action-dice
+    // override picked an extra die, the roll dialog changed it, or a
+    // `dcc.modifyAttackRollTerms` hook bumped `terms[0]` (dcc-qol / the
+    // long-range penalty, d20 → d16). Scaling here as well double-scaled
+    // the range: crit 20 on a long-range d16 came out as 12–16.
+    const rolledFaces = attackRoll.dice[0].faces || parseInt(attackRoll.dice[0].formula?.match(/d(\d+)/)?.[1] || '')
+    attackInput.actionDie = rolledFaces ? `d${rolledFaces}` : normalizeLibDie(options._actionDieFormula || terms[0]?.formula || die)
+    const actionDieFaces = parseInt(attackInput.actionDie.slice(1))
+    // Crit-on-max-die two-weapon rules are a natural roll on the die in
+    // play, so they follow a changed die to its max face.
+    if (attackInput.threatRangeIsNatural) critRange = actionDieFaces
+    // Strict crits (the default) keep the lib's "top N faces" scaling. With
+    // them off the range keeps its number — crit 20 on a d24 is 20–24 —
+    // capped at the rolled die's max face so a smaller die can still crit.
+    // Ranges above 20 are the two-weapon "cannot crit" sentinels; leave them.
+    if (!attackInput.threatRangeIsNatural && critRange <= 20 &&
+        !game.settings.get('dcc', 'strictCriticalHits')) {
+      critRange = Math.min(critRange, actionDieFaces)
+      attackInput.threatRangeIsNatural = true
     }
     attackInput.threatRange = critRange
-    // Reflect in-place mutations of the action-die term (e.g. dcc-qol's
-    // long-range `DiceChain.bumpDie` rewriting `terms[0].formula` from
-    // 1d20 to 1d16). Without this the lib's `actionDie` stays on the
-    // pre-hook die while the Foundry Roll evaluates on the bumped one.
-    const dieAfterHook = terms[0]?.formula
-    if (dieAfterHook && dieAfterHook !== die) {
-      attackInput.actionDie = normalizeLibDie(dieAfterHook)
+    attackRoll.dice[0].options.dcc = {
+      upperThreshold: attackInput.threatRangeIsNatural ? critRange : libAdjustThreatRange(critRange, actionDieFaces)
     }
     const bonuses = []
     if (options.backstab) {

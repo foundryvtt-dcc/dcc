@@ -104,7 +104,7 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Chat Cards Use App Theme** makes chat cards follow the core application light/dark theme setting instead of the interface theme (per player).
 
-**Strict Critical Hit Rules** when enabled, makes critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24. This setting follows strict RAW interpretation of how critical hits work with the dice chain.
+**Strict Critical Hit Rules** (on by default) makes critical hit ranges scale with the die rolled. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24. This follows the strict RAW interpretation of how critical hits work with the dice chain. When it is off, the crit range keeps its number instead: crit on 20 with a d24 crits on 20-24, and on a die smaller than your crit range (a long-range d16, say) you crit only on its highest face.
 
 **Coin Weight (coins per pound)** sets how many coins equal one pound of weight for encumbrance. Default is 10 (B/X style). Set to 0 to disable coin weight entirely.
 
