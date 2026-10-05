@@ -2979,10 +2979,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         }
       })
 
-      expect(result.attack).toContain('P1 Emote Verb VERB-ATTACK with their P1-EmoteDagger')
-      expect(result.backstab).toContain('P1 Emote Verb VERB-BACKSTAB with their P1-EmoteDagger')
-      expect(result.attack).not.toMatch(/\battacks\b/)
-      expect(result.backstab).not.toMatch(/\bbackstabs\b/)
+      expect(result.attack).not.toBeNull()
+      expect(result.backstab).not.toBeNull()
+      // Only the leading sentence: crit/fumble table text later in the card
+      // could legitimately contain the English words.
+      expect(result.attack).toContain('P1 Emote Verb VERB-ATTACK')
+      expect(result.backstab).toContain('P1 Emote Verb VERB-BACKSTAB')
+      expect(result.attack.split('P1-EmoteDagger')[0]).not.toMatch(/\battacks\b/)
+      expect(result.backstab.split('P1-EmoteDagger')[0]).not.toMatch(/\bbackstabs\b/)
     })
 
     test('options.backstab populates libResult with auto-crit + class:backstab bonus', async ({ page }) => {
