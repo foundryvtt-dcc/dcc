@@ -176,6 +176,91 @@ describe("Lay on Hands", () => {
             expect(result.diceCount).toBe(3);
             expect(result.hpHealed).toBe(18);
         });
+        describe("keep-highest healing dice mode (house rule)", () => {
+            it("rolls every granted die and keeps the highest up to the HD cap", () => {
+                // Check total 15 → same column = 3 dice; warrior HD 1 → keep 1 of 3 d12s.
+                const roller = vi
+                    .fn()
+                    .mockReturnValueOnce(10) // spell check d20
+                    .mockReturnValueOnce(4)
+                    .mockReturnValueOnce(11)
+                    .mockReturnValueOnce(7);
+                const result = layOnHands({
+                    level: 3,
+                    personality: 16,
+                    alignment: "same",
+                    target: TARGET_WARRIOR_1,
+                    healingDiceMode: "keep-highest",
+                }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller });
+                expect(result.rawDiceCount).toBe(3);
+                expect(result.diceCount).toBe(1);
+                expect(result.healingRolls).toEqual([4, 11, 7]);
+                expect(result.keptHealingRolls).toEqual([11]);
+                expect(result.hpHealed).toBe(11);
+                expect(roller).toHaveBeenCalledWith("1d12");
+            });
+            it("keeps multiple dice when the target's HD allows", () => {
+                // Check total 22 → same column = 5 dice; thief HD 3 → keep 3 of 5 d6s.
+                const roller = vi
+                    .fn()
+                    .mockReturnValueOnce(17) // spell check d20 (17 + 3 + 2 = 22)
+                    .mockReturnValueOnce(2)
+                    .mockReturnValueOnce(6)
+                    .mockReturnValueOnce(1)
+                    .mockReturnValueOnce(5)
+                    .mockReturnValueOnce(3);
+                const result = layOnHands({
+                    level: 3,
+                    personality: 16,
+                    alignment: "same",
+                    target: TARGET_THIEF_3,
+                    healingDiceMode: "keep-highest",
+                }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller });
+                expect(result.rawDiceCount).toBe(5);
+                expect(result.diceCount).toBe(3);
+                expect(result.healingRolls).toEqual([2, 6, 1, 5, 3]);
+                expect(result.keptHealingRolls).toEqual([6, 5, 3]);
+                expect(result.hpHealed).toBe(14);
+            });
+            it("keeps every die when the grant is under the HD cap", () => {
+                // Check total 13 → adjacent column = 2 dice; thief HD 3 → keep both.
+                const roller = vi
+                    .fn()
+                    .mockReturnValueOnce(8) // spell check d20 (8 + 3 + 2 = 13)
+                    .mockReturnValueOnce(3)
+                    .mockReturnValueOnce(4);
+                const result = layOnHands({
+                    level: 3,
+                    personality: 16,
+                    alignment: "adjacent",
+                    target: TARGET_THIEF_3,
+                    healingDiceMode: "keep-highest",
+                }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller });
+                expect(result.diceCount).toBe(2);
+                expect(result.keptHealingRolls).toEqual([4, 3]);
+                expect(result.hpHealed).toBe(7);
+            });
+            it("does not affect condition healing", () => {
+                const roller = vi.fn().mockReturnValue(10);
+                const result = layOnHands({
+                    level: 3,
+                    personality: 16,
+                    alignment: "same",
+                    target: TARGET_WARRIOR_1,
+                    healingCondition: "disease",
+                    healingDiceMode: "keep-highest",
+                }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller });
+                expect(result.condition).toEqual({ id: "disease", cured: true, threshold: 2 });
+                expect(result.hpHealed).toBeUndefined();
+                expect(result.healingRolls).toBeUndefined();
+                expect(roller).toHaveBeenCalledTimes(1);
+            });
+        });
+        it("raw mode does not report individual healing dice", () => {
+            const result = layOnHands({ level: 3, personality: 16, alignment: "same", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            expect(result.healingRolls).toBeUndefined();
+            expect(result.keptHealingRolls).toBeUndefined();
+        });
         it("heals a condition without HP when threshold is met", () => {
             const result = layOnHands({
                 level: 3,
@@ -200,18 +285,6 @@ describe("Lay on Hands", () => {
             expect(result.rawDiceCount).toBe(1);
             expect(result.condition).toEqual({ id: "blindness", cured: false, threshold: 4 });
         });
-        it("applies self-healing penalty to the check (judge discretion)", () => {
-            const result = layOnHands({
-                level: 3,
-                personality: 16,
-                alignment: "same",
-                target: TARGET_THIEF_3,
-                healingSelf: true,
-            }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // d20=10, level=3, PER 16 (+2), self-heal -4 → total = 11
-            expect(result.check.total).toBe(11);
-            expect(result.check.modifiers.some((m) => m.origin.id === "self-healing")).toBe(true);
-        });
         it("applies luck burn to the check", () => {
             const result = layOnHands({
                 level: 1,
@@ -230,10 +303,6 @@ describe("Lay on Hands", () => {
             expect(getLayOnHandsModifier(3, 16)).toBe(5); // 3 + 2
             expect(getLayOnHandsModifier(5, 10)).toBe(5); // 5 + 0
             expect(getLayOnHandsModifier(1, 8)).toBe(0); // 1 + (-1)
-        });
-        it("includes self-healing penalty", () => {
-            expect(getLayOnHandsModifier(3, 16, true)).toBe(1); // 3 + 2 - 4
-            expect(getLayOnHandsModifier(5, 10, true)).toBe(1); // 5 + 0 - 4
         });
     });
     describe("getLayOnHandsDie", () => {

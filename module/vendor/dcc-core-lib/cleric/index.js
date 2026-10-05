@@ -18,7 +18,7 @@
  *
  * // Lay on Hands
  * const healResult = layOnHands(
- *   { level: 3, personality: 16, healingSelf: false },
+ *   { level: 3, personality: 16, alignment: "same", target: { hitDie: "d6", hitDice: 3 } },
  *   layOnHandsTable
  * );
  *

@@ -12,7 +12,9 @@
  *   3. (check total, alignment) → dice count.
  *   4. If healing HP: roll `diceCount × target.hitDie`, but the dice count is
  *      capped at `min(diceCount, target.hitDice)`. Dice type matches the
- *      subject's hit die.
+ *      subject's hit die. Under the optional "keep-highest" house rule
+ *      (`healingDiceMode`), every granted die is rolled and only the highest
+ *      `min(diceCount, target.hitDice)` are kept.
  *   5. If healing a condition: no cap; if dice count ≥ threshold, condition
  *      is cured (no "overflow" HP).
  *   6. Natural 1 triggers disapproval (handled by the caller via the
@@ -28,6 +30,7 @@ export interface LayOnHandsTarget {
     /** Target's hit dice or class level. Caps the dice count when healing HP. */
     hitDice: number;
 }
+export type LayOnHandsHealingDiceMode = "raw" | "keep-highest";
 export interface LayOnHandsInput {
     /** Cleric level */
     level: number;
@@ -48,8 +51,13 @@ export interface LayOnHandsInput {
     luck?: number | undefined;
     /** Luck points burned on this check */
     luckBurn?: number | undefined;
-    /** Judge-discretion self-healing penalty (common house rule: -4) */
-    healingSelf?: boolean | undefined;
+    /**
+     * How HP healing dice are rolled. "raw" (default) rolls only the capped
+     * dice. "keep-highest" (house rule) rolls every die the table grants and
+     * keeps the highest `min(rawDiceCount, target.hitDice)`. Ignored for
+     * condition healing.
+     */
+    healingDiceMode?: LayOnHandsHealingDiceMode | undefined;
     /** Extra situational modifiers on the spell check (NOT alignment) */
     situationalModifiers?: RollModifier[] | undefined;
 }
@@ -64,6 +72,14 @@ export interface LayOnHandsResult {
     diceCount: number;
     /** HP restored (only when healing HP, not conditions) */
     hpHealed?: number | undefined;
+    /**
+     * Individual healing die results, in roll order ("keep-highest" mode only:
+     * all `rawDiceCount` dice are rolled one at a time so the kept ones can be
+     * chosen). The kept dice are `keptHealingRolls`.
+     */
+    healingRolls?: number[] | undefined;
+    /** The dice that counted toward `hpHealed` ("keep-highest" mode only), highest first */
+    keptHealingRolls?: number[] | undefined;
     /** If condition healing was requested, the id, and whether it was cured */
     condition?: {
         id: string;
@@ -83,5 +99,5 @@ export declare function layOnHands(input: LayOnHandsInput, table: LayOnHandsTabl
  * Note: alignment is NOT a roll modifier (RAW); it only affects the result
  * lookup.
  */
-export declare function getLayOnHandsModifier(level: number, personality: number, healingSelf?: boolean): number;
+export declare function getLayOnHandsModifier(level: number, personality: number): number;
 export declare function getLayOnHandsDie(): DieType;
