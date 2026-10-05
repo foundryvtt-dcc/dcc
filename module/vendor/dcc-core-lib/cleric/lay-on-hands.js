@@ -12,7 +12,9 @@
  *   3. (check total, alignment) → dice count.
  *   4. If healing HP: roll `diceCount × target.hitDie`, but the dice count is
  *      capped at `min(diceCount, target.hitDice)`. Dice type matches the
- *      subject's hit die.
+ *      subject's hit die. Under the optional "keep-highest" house rule
+ *      (`healingDiceMode`), every granted die is rolled and only the highest
+ *      `min(diceCount, target.hitDice)` are kept.
  *   5. If healing a condition: no cap; if dice count ≥ threshold, condition
  *      is cured (no "overflow" HP).
  *   6. Natural 1 triggers disapproval (handled by the caller via the
@@ -45,13 +47,6 @@ export const LAY_ON_HANDS_SKILL = {
 export function layOnHands(input, table, options = {}) {
     // Build situational modifiers — NO alignment modifier here (RAW).
     const modifiers = [...(input.situationalModifiers ?? [])];
-    if (input.healingSelf) {
-        modifiers.push({
-            kind: "add",
-            value: -4,
-            origin: { category: "situational", id: "self-healing", label: "Healing self" },
-        });
-    }
     const checkInput = {
         skill: LAY_ON_HANDS_SKILL,
         abilities: { per: input.personality },
@@ -101,12 +96,26 @@ export function layOnHands(input, table, options = {}) {
     const capped = Math.min(rawDiceCount, input.target.hitDice);
     result.diceCount = capped;
     if (capped > 0) {
-        const formula = `${String(capped)}${input.target.hitDie}`;
         const rollOpt = { mode: "evaluate" };
         if (options.roller !== undefined)
             rollOpt.roller = options.roller;
-        const heal = evaluateRoll(formula, rollOpt);
-        result.hpHealed = heal.total ?? 0;
+        if (input.healingDiceMode === "keep-highest") {
+            // Roll each die singly — a custom roller only reports totals, so this
+            // is the only way to see the individual results to keep.
+            const rolls = [];
+            for (let i = 0; i < rawDiceCount; i++) {
+                rolls.push(evaluateRoll(`1${input.target.hitDie}`, rollOpt).total ?? 0);
+            }
+            const kept = [...rolls].sort((a, b) => b - a).slice(0, capped);
+            result.healingRolls = rolls;
+            result.keptHealingRolls = kept;
+            result.hpHealed = kept.reduce((sum, r) => sum + r, 0);
+        }
+        else {
+            const formula = `${String(capped)}${input.target.hitDie}`;
+            const heal = evaluateRoll(formula, rollOpt);
+            result.hpHealed = heal.total ?? 0;
+        }
     }
     else {
         result.hpHealed = 0;
@@ -121,11 +130,8 @@ export function layOnHands(input, table, options = {}) {
  * Note: alignment is NOT a roll modifier (RAW); it only affects the result
  * lookup.
  */
-export function getLayOnHandsModifier(level, personality, healingSelf = false) {
-    let mod = level + getAbilityModifier(personality);
-    if (healingSelf)
-        mod -= 4;
-    return mod;
+export function getLayOnHandsModifier(level, personality) {
+    return level + getAbilityModifier(personality);
 }
 export function getLayOnHandsDie() {
     return "d20";

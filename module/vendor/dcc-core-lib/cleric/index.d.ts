@@ -18,7 +18,7 @@
  *
  * // Lay on Hands
  * const healResult = layOnHands(
- *   { level: 3, personality: 16, healingSelf: false },
+ *   { level: 3, personality: 16, alignment: "same", target: { hitDie: "d6", hitDice: 3 } },
  *   layOnHandsTable
  * );
  *
@@ -32,6 +32,6 @@
 export { turnUnholy, getTurnUnholyModifier, getTurnUnholyDie, resolveHDExpression, calculateAverageHD, TURN_UNHOLY_SKILL, } from "./turn-unholy.js";
 export type { TurnUnholyInput, TurnUnholyResult, TurnEffect, TurnEffectType, } from "./turn-unholy.js";
 export { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
-export type { LayOnHandsInput, LayOnHandsResult, LayOnHandsTarget, } from "./lay-on-hands.js";
+export type { LayOnHandsHealingDiceMode, LayOnHandsInput, LayOnHandsResult, LayOnHandsTarget, } from "./lay-on-hands.js";
 export { divineAid, getDivineAidModifier, getDivineAidDie, getMinimumCheckForSpellLevel, estimateAidSpellLevel, describePotentialAid, DIVINE_AID_SKILL, } from "./divine-aid.js";
 export type { DivineAidInput, DivineAidResult, DivineAidEffect, DivineAidEffectType, AidRequestType, } from "./divine-aid.js";
