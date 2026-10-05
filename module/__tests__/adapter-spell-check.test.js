@@ -3745,6 +3745,37 @@ test('#923 the disapproval table draw respects automateClericDisapproval', async
   expect(await cast(true)).toBeGreaterThan(0)
 })
 
+test('#961 a cleric cast rolls disapproval through actor.rollDisapproval with the natural', async () => {
+  // Every disapproval caller shares the lib-backed `rollDisapproval`; the
+  // spell path used to roll its own 1d4 inside the lib cast instead.
+  const cast = async (disapproval) => {
+    gameSettingsGetMock.mockImplementation((module, key) =>
+      module === 'dcc' && key === 'automateClericDisapproval')
+
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.class.patron = ''
+    actor.system.class.className = 'Cleric'
+    actor.system.details.sheetClass = 'Cleric'
+    actor.system.class.disapproval = disapproval
+
+    const spellItem = makeClericSpellItem()
+    const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+    const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(null)
+
+    await actor.rollSpellCheck({ spellItem })
+
+    const calls = rollDisapprovalSpy.mock.calls
+    findSpy.mockRestore()
+    gameSettingsGetMock.mockReset()
+    return calls
+  }
+
+  // The mocked spell-check roll is a natural 10.
+  expect(await cast(10)).toEqual([[10]])
+  expect(await cast(9)).toEqual([])
+})
+
 // ---- #923 audit: legacy failure automation ----
 //
 // DCC RAW is a THRESHOLD rule: a check under 10 + level*2 fails, and a failed

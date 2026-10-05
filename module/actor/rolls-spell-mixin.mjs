@@ -6,10 +6,11 @@ import {
   getCasterProfile as libGetCasterProfile,
   getAbilityModifier as libGetAbilityModifier,
   rollMercurialMagic as libRollMercurialMagic,
-  evaluateRoll as libEvaluateRoll
+  evaluateRoll as libEvaluateRoll,
+  rollTriggersDisapproval
 } from '../vendor/dcc-core-lib/index.js'
 import { applySpellburn, scoresFromBurnAmounts, spellburnDescriptor } from '../spellburn.mjs'
-import { renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
+import { renderSpellCheck, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
@@ -892,15 +893,13 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * in `spell-events.mjs` bridge lib events to Foundry side effects:
    * `onSpellLost` → `item.update({system.lost: true})`,
    * `onDisapprovalIncreased` → `actor.update({system.class.disapproval:
-   * newRange})` + gain chat. The disapproval sub-roll chat is posted
-   * here (the lib doesn't pass `disapprovalResult` to the callback).
+   * newRange})` + gain chat. The disapproval roll itself goes through
+   * `this.rollDisapproval` after the cast, the lib-backed path every
+   * disapproval caller shares (#961).
    *
    * Two-pass formula/evaluate pattern. The pass-2 roller is
    * formula-dispatching: returns the pre-rolled spell-check natural
-   * for the action-die formula, and a pre-rolled 1d4 for the
-   * disapproval sub-roll (only when cleric + natural is inside the
-   * range — the lib's `handleClericDisapproval` is the only sub-roll
-   * path today).
+   * for the action-die formula, plus the patron-taint sub-rolls.
    * @private
    */
   async _castViaCalculateSpellCheck (args, spellItem, options) {
@@ -949,21 +948,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
       )
     }
 
-    // Cleric path needs a disapproval table so the lib's
-    // `handleClericDisapproval` runs the full table draw (lib skips
-    // the draw if the table is missing — matching legacy behavior
-    // when no table is configured).
-    if (profile?.type === 'cleric') {
-      const disapprovalTable = await loadDisapprovalTable(this)
-      if (disapprovalTable) {
-        input.disapprovalTable = disapprovalTable
-      } else {
-        // Telemetry for a silent adapter degradation: the cleric cast
-        // continues through the lib, but `handleClericDisapproval` skips
-        // the sub-roll because no table is plumbed in. Matches legacy
-        // behavior when no table is configured — but previously invisible.
-        logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
-      }
+    // The disapproval table is deliberately not passed to the cast: the
+    // roll goes through `this.rollDisapproval` after the cast (below), the
+    // same lib-backed path every other caller uses (#961). The lib cast
+    // still owns the auto-failure and the in-range range increase.
+    if (profile?.type === 'cleric' && !(await loadDisapprovalTable(this))) {
+      // Telemetry for a silent degradation: with no table configured the
+      // disapproval roll is posted without a result entry.
+      logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
     }
 
     // Wizard / elf path — if the spell item doesn't yet carry a
@@ -1034,21 +1026,6 @@ export const RollsSpellMixin = (Base) => class extends Base {
       options
     )
 
-    // Pre-roll the disapproval 1d4 via Foundry so the pass-2 roller
-    // has a value to hand back when the lib calls `options.roller('1d4')`
-    // inside `rollDisapproval`. Only needed when cleric + natural is
-    // in the disapproval range; avoids a spurious d4 roll otherwise.
-    let disapprovalD4 = null
-    if (
-      profile?.type === 'cleric' &&
-      input.disapprovalTable &&
-      natural <= (character.state.classState?.cleric?.disapprovalRange ?? 0)
-    ) {
-      const d4Roll = new Roll('1d4')
-      await d4Roll.evaluate()
-      disapprovalD4 = d4Roll.total
-    }
-
     // D3a — pre-roll the patron-taint 1d100 for the lib's creeping-chance
     // check. Only fired when this cast qualifies for the check (patron-
     // bound wizard/elf casting a patron-related spell); avoids a spurious
@@ -1081,11 +1058,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // / `onSpellLost` / `onDisapprovalIncreased` / `onPatronTaint` mutate
     // actor+item state. Only when the probe is clean do we replay with
     // the real events wired — the roller is deterministic (pre-rolled
-    // natural, disapproval d4, creeping-chance d100, and manifestation
+    // natural, creeping-chance d100, and manifestation
     // d6), so both passes return identical results and no sub-roll is
     // consumed twice.
     const roller = (formula) => {
-      if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
       if (formula === '1d100' && patronTaintD100 !== null) return patronTaintD100
       if (formula === '1d6' && patronTaintD6 !== null) return patronTaintD6
       return natural
@@ -1135,11 +1111,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
     })
     this._recordSpellLastResult(spellItem, foundryRoll)
 
-    // Post the disapproval roll chat after the main spell-check chat,
-    // mirroring the legacy ordering: spell check, then disapproval roll.
-    // Both are awaited here, so their relative order IS guaranteed. The
-    // "gained-range" EMOTE is NOT part of that guarantee — it's emitted
-    // by the `onDisapprovalIncreased` callback inside pass 2 above
+    // Post the disapproval roll after the main spell-check chat, mirroring
+    // the legacy ordering: spell check, then disapproval roll. Both are
+    // awaited here, so their relative order IS guaranteed. The
+    // "gained-range" EMOTE is NOT part of that guarantee — it's emitted by
+    // the `onDisapprovalIncreased` callback inside pass 2 above
     // (`libCalculateSpellCheck(..., events)`), and that callback creates
     // its ChatMessage fire-and-forget (see `spell-events.mjs` — the lib
     // doesn't await the callback). So the emote's landing position
@@ -1148,11 +1124,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // Gated like the range bump in `spell-events.mjs`: legacy
     // `processSpellCheck` drew the disapproval table only when
     // `automateClericDisapproval` was on, and it defaults to FALSE (#923).
-    if (result.disapprovalResult && game.settings.get('dcc', 'automateClericDisapproval')) {
-      await renderDisapprovalRoll({
-        actor: this,
-        disapprovalResult: result.disapprovalResult
-      })
+    // `rollDisapproval` is the shared lib-backed roll (#961).
+    if (
+      profile?.usesDisapproval &&
+      result.natural !== undefined &&
+      rollTriggersDisapproval(result.natural, character.state.classState?.cleric?.disapprovalRange ?? 1) &&
+      game.settings.get('dcc', 'automateClericDisapproval')
+    ) {
+      await this.rollDisapproval(result.natural)
     }
 
     // Session 5 — mercurial display chat. Rendered directly from

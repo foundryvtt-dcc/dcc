@@ -22,11 +22,13 @@
  * `game.dcc.FleetingLuck` rather than importing those modules directly,
  * mirroring how `module/actor.js`'s spell-check paths already invoke
  * them; keeps the init-time `game.dcc` registration order unchanged.
- * (`actionDiceLineHtml` is the one direct import — a pure string formatter
- * with no init-time side effects, so it carries no ordering risk.)
+ * (`actionDiceLineHtml` and the lib's `rollTriggersDisapproval` are the
+ * direct imports — pure functions with no init-time side effects, so they
+ * carry no ordering risk.)
  */
 
 import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
+import { rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
 
 /**
  * Handle the results of a spell check cast through any mechanism.
@@ -184,7 +186,7 @@ export async function processSpellCheck (actor, spellData) {
     // agree with it. Natural 1 stays a fumble; a would-be crit inside the
     // range is still an automatic failure.
     const disapprovalRange = parseInt(actor.system.class?.disapproval, 10) || 1
-    const disapprovalFailure = castingMode === 'cleric' && !fumble && naturalRoll <= disapprovalRange
+    const disapprovalFailure = castingMode === 'cleric' && !fumble && rollTriggersDisapproval(naturalRoll, disapprovalRange)
     if (disapprovalFailure) {
       crit = false
     }
@@ -288,7 +290,7 @@ export async function processSpellCheck (actor, spellData) {
       const automate = game.settings.get('dcc', 'automateClericDisapproval')
 
       // Check if our natural roll was inside the disapproval range
-      if (automate && naturalRoll <= disapprovalRange) {
+      if (automate && rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
         // Trigger disapproval
         await actor.rollDisapproval(naturalRoll)
 

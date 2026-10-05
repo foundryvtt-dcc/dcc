@@ -1,7 +1,7 @@
 /* global game, CONFIG, Roll, ChatMessage, ui, foundry */
 
 import { ensurePlus } from '../utilities.js'
-import { rollCheck as libRollCheck } from '../vendor/dcc-core-lib/index.js'
+import { rollCheck as libRollCheck, rollTriggersDisapproval } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
 import { renderSkillCheck, actionDiceLineHtml } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
@@ -488,7 +488,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // skill-table checks ARE spell checks per RAW, so the same rule applies:
     // failure row, banner, no crit. Natural 1 stays a fumble.
     const disapprovalRange = parseInt(this.system.class?.disapproval, 10) || 1
-    const disapprovalFailure = castingMode === 'cleric' && !fumble && naturalRoll <= disapprovalRange
+    const disapprovalFailure = castingMode === 'cleric' && !fumble && rollTriggersDisapproval(naturalRoll, disapprovalRange)
     if (disapprovalFailure) {
       crit = false
     }
@@ -591,7 +591,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
         // A natural roll inside the disapproval range triggers disapproval
         // (nat 1 fumbles land here too — 1 is always inside the range)
-        if (naturalRoll <= disapprovalRange) {
+        if (rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
           await this.rollDisapproval(naturalRoll)
           success = false
         }

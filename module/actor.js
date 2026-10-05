@@ -10,7 +10,8 @@ import { RollsSpellMixin } from './actor/rolls-spell-mixin.mjs'
 import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
-import { parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
 
@@ -495,7 +496,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
     const speaker = ChatMessage.getSpeaker({ actor: this })
     // Calculate new disapproval
-    const newRange = Math.min(this.system.class.disapproval + amount, 20)
+    const newRange = increaseDisapprovalRange(Number(this.system.class.disapproval) || 1, amount)
 
     // Apply the new disapproval range. The update MUST be awaited: a failed
     // Divine Aid applies disapproval twice in a row (+1 for the failed check,
@@ -524,7 +525,15 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
   /**
    * Prompt and roll for disapproval
+   *
+   * The single disapproval roll for every caller (issue #961): spell casts,
+   * skill-table checks, `processSpellCheck`, and the sheet button / macro.
+   * Foundry rolls `(natural)d4 − Luck modifier` (through the roll-modifier
+   * dialog when the natural roll is unknown); the lib resolves the result
+   * and table entry.
    * @param {Number} naturalRoll   Optional - the natural roll for the last spell check
+   * @returns {Promise<Object|null|undefined>} The lib `DisapprovalResult`,
+   *   null with no table configured, undefined when the dialog is cancelled
    */
   async rollDisapproval (naturalRoll) {
     // Generate a formula, placeholder if the natural roll is not known
@@ -547,7 +556,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     // If we know the formula just roll it
-    await this._onRollDisapproval(terms, options)
+    return this._onRollDisapproval(terms, options)
   }
 
   /**
@@ -561,50 +570,9 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
       if (!roll) { return }
+      if (!roll._evaluated) await roll.evaluate()
 
-      // Lookup the disapproval table if available
-      let disapprovalTable = null
-      for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
-        const disapprovalTableName = this.system.class.disapprovalTable
-        if (disapprovalPackName && disapprovalTableName) {
-          const pack = game.packs.get(disapprovalPackName)
-          if (pack) {
-            const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
-            if (entry) {
-              disapprovalTable = await pack.getDocument(entry._id)
-            }
-          }
-        }
-      }
-
-      // If not found in compendium packs, try the local world tables
-      if (!disapprovalTable) {
-        const disapprovalTableName = this.system.class.disapprovalTable
-        if (disapprovalTableName) {
-          // Extract just the table name from the full path if needed
-          // e.g., "dcc-core-book.dcc-core-disapproval.Disapproval" -> "Disapproval"
-          const tableName = disapprovalTableName.includes('.')
-            ? disapprovalTableName.split('.').pop()
-            : disapprovalTableName
-
-          // Search for a table in the world with a matching name
-          disapprovalTable = game.tables.find((entity) => entity.name === tableName)
-        }
-      }
-
-      // Draw from the table if found, otherwise display the roll
-      if (disapprovalTable) {
-        disapprovalTable.draw({ roll, displayChat: true })
-      } else {
-        // Fall back to displaying just the roll
-        roll.toMessage({
-          speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor: game.i18n.localize('DCC.DisapprovalRoll'),
-          flags: {
-            'dcc.RollType': 'Disapproval'
-          }
-        })
-      }
+      return await resolveDisapprovalRoll({ actor: this, roll })
     } catch (err) {
       // `if (err)` used to be the cancel guard, back when the dialog
       // rejected with a bare `null` (issue #867). Closing the disapproval
