@@ -119,10 +119,16 @@ describe('buildEnhancedCardData', () => {
     expect(data.suppressDamage).toBe(true)
   })
 
-  test('crit always allows damage even with the hits flag unset', async () => {
+  test('a crit that misses its target suppresses damage like any miss (#978)', async () => {
     const msg = makeMessage({ isToHit: true, hasTarget: true, hitsTarget: false, isCrit: true })
     const data = await buildEnhancedCardData(msg, pcActor, weapon)
-    expect(data.suppressDamage).toBe(false)
+    expect(data.suppressDamage).toBe(true)
+  })
+
+  test('carries the "only a crit if this hits" note (#978)', async () => {
+    const msg = makeMessage({ isToHit: true, isCrit: true }, { critNeedsHitNote: 'Only a crit if this attack hits.' })
+    const data = await buildEnhancedCardData(msg, pcActor, weapon)
+    expect(data.critNeedsHitNote).toBe('Only a crit if this attack hits.')
   })
 
   test('compact format uses the die anchor for diceHTML', async () => {

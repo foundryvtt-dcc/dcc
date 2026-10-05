@@ -18,7 +18,7 @@
  *     `dcc.libResult` chat flags.
  */
 
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
@@ -1263,4 +1263,107 @@ test('#977: a d30 scales to the top faces when strict, keeps the number when not
   expect(literal19.crit).toBe(true)
   const literal18 = await rollToHitWith({ faces: 30, natural: 18, weaponOverrides: warrior, strict: false })
   expect(literal18.crit).toBe(false)
+})
+
+describe('target AC confirms the crit (#978)', () => {
+  const targetWithAC = (ac) => ({ first: () => ({ actor: { system: { attributes: { ac: { value: ac } } } } }) })
+
+  test('a threat-range roll that misses the target is a plain miss', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 19, weaponOverrides: { critRange: 19 }, options: { targets: targetWithAC(25) } })
+    expect(result.hitsTarget).toBe(false)
+    expect(result.crit).toBe(false)
+    expect(result.naturalCrit).toBe(false)
+    expect(result.critNeedsHit).toBe(false)
+  })
+
+  test('a threat-range roll that hits the target is a confirmed crit', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 19, weaponOverrides: { critRange: 19 }, options: { targets: targetWithAC(15) } })
+    expect(result.hitsTarget).toBe(true)
+    expect(result.crit).toBe(true)
+    expect(result.naturalCrit).toBe(true)
+    expect(result.critNeedsHit).toBe(false)
+  })
+
+  test('the hit test uses the Foundry total, not a lib total missing dialog edits', async () => {
+    // The mocked roll totals the natural alone (19, as if the dialog dropped
+    // the +2); the lib's own total would add the weapon's +2 and reach 21.
+    // Against AC 20 the card's 19 misses, so the crit must not land.
+    const result = await rollToHitWith({ faces: 20, natural: 19, weaponOverrides: { critRange: 19 }, options: { targets: targetWithAC(20) } })
+    expect(result.hitsAc).toBe(19)
+    expect(result.libResult.total).toBe(19)
+    expect(result.hitsTarget).toBe(false)
+    expect(result.crit).toBe(false)
+  })
+
+  test('with no target a threat-range crit still rolls but needs the hit', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 19, weaponOverrides: { critRange: 19 } })
+    expect(result.hitsTarget).toBeUndefined()
+    expect(result.crit).toBe(true)
+    expect(result.critNeedsHit).toBe(true)
+    expect(result.naturalCrit).toBe(false)
+  })
+
+  test('a natural max is a confirmed crit with or without a target', async () => {
+    const noTarget = await rollToHitWith({ faces: 20, natural: 20 })
+    expect(noTarget.critNeedsHit).toBe(false)
+    expect(noTarget.naturalCrit).toBe(true)
+    const vsHighAC = await rollToHitWith({ faces: 20, natural: 20, options: { targets: targetWithAC(40) } })
+    expect(vsHighAC.hitsTarget).toBe(true)
+    expect(vsHighAC.crit).toBe(true)
+  })
+
+  test('a natural max on a reduced die auto-hits', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, options: { targets: targetWithAC(40) } })
+    expect(result.autoHit).toBe(true)
+    expect(result.hitsTarget).toBe(true)
+  })
+
+  test('a backstab that misses does not auto-crit', async () => {
+    const miss = await rollToHitWith({ faces: 20, natural: 5, options: { backstab: true, targets: targetWithAC(25) } })
+    expect(miss.crit).toBe(false)
+    const hit = await rollToHitWith({ faces: 20, natural: 15, options: { backstab: true, targets: targetWithAC(10) } })
+    expect(hit.crit).toBe(true)
+    expect(hit.libResult.critSource).toBe('backstab-auto')
+  })
+
+  test('a backstab with no target needs the hit', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 5, options: { backstab: true } })
+    expect(result.crit).toBe(true)
+    expect(result.critNeedsHit).toBe(true)
+  })
+
+  test('a card total above the lib total turns a miss into a confirmed crit', async () => {
+    // e.g. a hook adds +1d4 the lib never sees: the mocked roll totals the
+    // natural (15) while the lib's own total applies the weapon's -5 (10).
+    // Against AC 14 the card's 15 hits, so the threat-range 15 crits.
+    const result = await rollToHitWith({ faces: 20, natural: 15, weaponOverrides: { toHit: '-5', critRange: 15 }, options: { targets: targetWithAC(14) } })
+    expect(result.hitsAc).toBe(15)
+    expect(result.libResult.total).toBe(15)
+    expect(result.hitsTarget).toBe(true)
+    expect(result.crit).toBe(true)
+    expect(result.critNeedsHit).toBe(false)
+  })
+
+  test("a target whose AC can't be read is treated like no target", async () => {
+    const unreadable = { first: () => ({ actor: { system: { attributes: { ac: { value: '' } } } } }) }
+    const result = await rollToHitWith({ faces: 20, natural: 19, weaponOverrides: { critRange: 19 }, options: { targets: unreadable } })
+    expect(result.hitsTarget).toBeUndefined()
+    expect(result.crit).toBe(true)
+    expect(result.critNeedsHit).toBe(true)
+  })
+
+  test('strict crits off: a literal-range 20 on a d24 that misses is not a crit', async () => {
+    const miss = await rollToHitWith({ faces: 24, natural: 20, bumpTo: '1d24', strict: false, options: { targets: targetWithAC(40) } })
+    expect(miss.hitsTarget).toBe(false)
+    expect(miss.crit).toBe(false)
+    const hit = await rollToHitWith({ faces: 24, natural: 20, bumpTo: '1d24', strict: false, options: { targets: targetWithAC(10) } })
+    expect(hit.hitsTarget).toBe(true)
+    expect(hit.crit).toBe(true)
+  })
+
+  test('a fumble misses whatever the AC', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 1, options: { targets: targetWithAC(1) } })
+    expect(result.fumble).toBe(true)
+    expect(result.hitsTarget).toBe(false)
+  })
 })

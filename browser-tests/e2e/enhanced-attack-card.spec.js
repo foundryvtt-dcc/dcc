@@ -74,8 +74,7 @@ test.describe('Enhanced attack cards', () => {
     expect(result.isHitBanner).toBe(true) // AC 1 + toHit +10 always hits
     expect(result.hasTargetFlag).toBe(true)
     expect(result.hitsTargetFlag).toBe(true)
-    // A crit shows the Crit button instead of (well, alongside) damage; on a
-    // normal hit the Roll Damage button must be present.
-    if (!result.crit) expect(result.hasDamageButton).toBe(true)
+    // A hit — crit or not — always offers Roll Damage.
+    expect(result.hasDamageButton).toBe(true)
   })
 })

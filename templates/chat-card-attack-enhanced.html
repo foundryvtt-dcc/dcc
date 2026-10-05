@@ -51,7 +51,7 @@
           <div class="roll-result status-failure">{{localize "DCC.AttackMisses"}} {{targetName}}.</div>
         {{/if}}
       {{else}}
-        <div class="roll-result status-info">{{#if isCrit}}{{localize "DCC.AttackHitsCritNoTarget"}}{{else}}{{localize "DCC.AttackHitsAC" ac=hitsAc}}{{/if}}</div>
+        <div class="roll-result status-info">{{#if isCrit}}{{#if critNeedsHitNote}}{{localize "DCC.AttackHitsAC" ac=hitsAc}}{{else}}{{localize "DCC.AttackHitsCritNoTarget"}}{{/if}}{{else}}{{localize "DCC.AttackHitsAC" ac=hitsAc}}{{/if}}</div>
       {{/if}}
     </div>
   {{/if}}
@@ -75,6 +75,10 @@
       {{/if}}
     {{/if}}
   </div>
+
+  {{#if critNeedsHitNote}}
+    <div class="pt-8 centered crit-needs-hit-note"><em>{{critNeedsHitNote}}</em></div>
+  {{/if}}
 
   {{!-- Automated rolled results (mirrors the plain card so TableResult nav works) --}}
   {{#if automated}}

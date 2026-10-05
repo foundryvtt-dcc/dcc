@@ -39,7 +39,7 @@ Click **Add** to add a Melee Weapon. You can quick-edit it on the Equipment tab,
 
 This dialog looks intimidating, as it provides a lot of options to let you override regular values for specific weapons and custom character classes. But for most basic weapons and characters, you will not need to use this dialog, especially if you are dragging in items from the Compendium.
 
-Thieves (or character sheets with Backstab enabled) are given an extra button next to their weapons for backstabs, which use the extra backstab damage if enabled and automatically roll a crit.
+Thieves (or character sheets with Backstab enabled) are given an extra button next to their weapons for backstabs, which use the extra backstab damage if enabled and automatically roll a crit when the attack hits.
 
 Unchecking the **Melee** checkbox indicates **Ranged** weapon which will be sorted sorted into its own section of the inventory, and range field will be shown instead of the notes summary.
 
@@ -47,7 +47,9 @@ Fields are provided to set the value of the weapon in Platinum, Electrum, Gold, 
 
 The **Config** option in the title bar menu of the sheet (the three vertical dots) provides access to further customization, including disabling auto-calculations.
 
-For a Warrior you can also set some options in the class tab. **Critical Threat Range** will make you crit on 19s, or 18s, or whatever you set it to.
+For a Warrior you can also set some options in the class tab. **Critical Threat Range** will make you crit on 19s, or 18s, or whatever you set it to — as long as the attack hits.
+
+With a target selected, the system checks the attack against the target's AC: a roll in the threat range (or a backstab) that misses is just a miss. With no target selected, the crit is still rolled, and the chat card notes that it only counts if the attack hits. A natural roll of the die's highest face always hits.
 
 **Lucky Weapon** is not automated, it's just a notes field.
 

@@ -322,6 +322,9 @@ export const emoteAttackRoll = function (message, html) {
           </li></ol>
         </div>`
     }
+    if (message.system.critNeedsHitNote) {
+      crit += `<p class="emote-note crit-needs-hit-note"><em>${message.system.critNeedsHitNote}</em></p>`
+    }
   }
 
   let fumble = ''

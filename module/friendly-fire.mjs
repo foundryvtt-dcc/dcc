@@ -110,7 +110,8 @@ export async function maybeFriendlyFire (actor, options, attackRollResult, weapo
     if (!targetDoc || !attackerDoc) return
 
     // Only a *missed* shot can stray into the melee (a fumble counts as a miss).
-    if (attackHitsTarget(attackRollResult, targetDoc.actor)) return
+    // An unreadable target AC means the miss can't be known, so no stray shot.
+    if (attackHitsTarget(attackRollResult, targetDoc.actor) !== false) return
 
     const allies = getAlliesInMeleeWithTarget(targetDoc, attackerDoc)
     if (allies.length === 0) return // nothing to fire into
