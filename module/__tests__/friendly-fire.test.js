@@ -128,6 +128,12 @@ describe('maybeFriendlyFire gates', () => {
     expect(ChatMessage.create).not.toHaveBeenCalled()
   })
 
+  test("does nothing when the target's AC is unreadable (hit unknown, #978)", async () => {
+    attackHitsTarget.mockReturnValue(undefined)
+    await maybeFriendlyFire(actor, {}, { hitsAc: 5 }, rangedWeapon)
+    expect(ChatMessage.create).not.toHaveBeenCalled()
+  })
+
   test('does nothing when no ally is engaged with the target', async () => {
     getAlliesInMeleeWithTarget.mockReturnValue([])
     await maybeFriendlyFire(actor, {}, {}, rangedWeapon)

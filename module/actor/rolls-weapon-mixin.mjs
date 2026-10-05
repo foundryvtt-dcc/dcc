@@ -324,11 +324,14 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Hit/miss vs the selected target, computed here while the targets are in
     // hand (they're stripped from system data before create). Read back by the
     // enhanced attack card's hit/miss banner.
+    // A target whose AC can't be read gets no verdict, so the card falls back
+    // to its no-target wording — matching the unconfirmed-crit note (#978).
     const primaryTarget = options.targets?.first?.()
     const primaryTargetActor = primaryTarget?.actor
-    if (primaryTargetActor) {
+    const hitsTarget = primaryTargetActor ? attackHitsTarget(attackRollResult, primaryTargetActor) : undefined
+    if (hitsTarget !== undefined) {
       flags['dcc.hasTarget'] = true
-      flags['dcc.hitsTarget'] = attackHitsTarget(attackRollResult, primaryTargetActor)
+      flags['dcc.hitsTarget'] = hitsTarget
       flags['dcc.targetName'] = primaryTarget?.name ?? primaryTargetActor.name ?? ''
     }
     if (attackRollResult.libResult) {

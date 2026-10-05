@@ -61,8 +61,13 @@ describe('attackHitsTarget', () => {
     expect(attackHitsTarget({ fumble: false, crit: false, hitsAc: 15 }, targetActor(15))).toBe(true)
     expect(attackHitsTarget({ fumble: false, crit: false, hitsAc: 14 }, targetActor(15))).toBe(false)
   })
-  test('no usable target AC → no hit', () => {
-    expect(attackHitsTarget({ fumble: false, crit: false, hitsAc: 99 }, { system: {} })).toBe(false)
+  test('no usable target AC → hit unknown (undefined), not a miss', () => {
+    expect(attackHitsTarget({ fumble: false, crit: false, hitsAc: 99 }, { system: {} })).toBeUndefined()
+    expect(attackHitsTarget({ fumble: false, crit: true, hitsAc: 99 }, { system: { attributes: { ac: { value: '' } } } })).toBeUndefined()
+  })
+  test('a fumble or natural max still decides the hit when the AC is unreadable', () => {
+    expect(attackHitsTarget({ fumble: true, hitsAc: 99 }, { system: {} })).toBe(false)
+    expect(attackHitsTarget({ fumble: false, autoHit: true, hitsAc: 1 }, { system: {} })).toBe(true)
   })
 })
 

@@ -10,8 +10,8 @@ const { expect, createSessionTest } = require('./fixtures')
  */
 const test = createSessionTest()
 
-async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC = null, backstab = false }) {
-  return page.evaluate(async ({ name, uniform, critRange, targetAC, backstab }) => {
+async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC = null, backstab = false, enhanced = false }) {
+  return page.evaluate(async ({ name, uniform, critRange, targetAC, backstab, enhanced }) => {
     if (!game.canvas?.ready || !game.canvas?.scene) {
       const scene = await Scene.create({ name: 'DCC Crit Confirm Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
       await scene.view()
@@ -19,6 +19,7 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
     const scene = game.canvas.scene
     const prevAutomate = game.settings.get('dcc', 'automateDamageFumblesCrits')
     const prevAutoApply = game.settings.get('dcc', 'autoApplyDamage')
+    const prevEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
     const origRandomUniform = CONFIG.Dice.randomUniform
     let actor = null
     let target = null
@@ -26,6 +27,7 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
     try {
       await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
       await game.settings.set('dcc', 'autoApplyDamage', true)
+      await game.settings.set('dcc', 'enhancedAttackCards', enhanced)
       actor = await Actor.create({ name, type: 'Player', system: { class: { backstab: '+0' }, details: { critRange } } })
       const [weapon] = await actor.createEmbeddedDocuments('Item', [{
         name: `${name} Weapon`,
@@ -54,7 +56,18 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
         if (msg) {
           // Auto-apply is fire-and-forget through the GM socket; give it a beat.
           await new Promise(resolve => setTimeout(resolve, 500))
+          let card = null
+          if (enhanced) {
+            const cardDeadline = Date.now() + 3000
+            while (Date.now() < cardDeadline && !card) {
+              card = document.querySelector(`.message[data-message-id="${msg.id}"] .dcc-enhanced-card`)
+              if (!card) await new Promise(resolve => setTimeout(resolve, 50))
+            }
+          }
           return {
+            hasEnhancedCard: !!card,
+            enhancedNote: card?.querySelector('.crit-needs-hit-note')?.textContent.trim() ?? null,
+            enhancedBanner: card?.querySelector('.roll-result')?.textContent.trim() ?? null,
             natural: msg.getFlag('dcc', 'libResult')?.natural,
             isCrit: !!msg.getFlag('dcc', 'isCrit'),
             critNeedsHit: !!msg.getFlag('dcc', 'critNeedsHit'),
@@ -77,10 +90,11 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
       }
       await game.settings.set('dcc', 'automateDamageFumblesCrits', prevAutomate)
       await game.settings.set('dcc', 'autoApplyDamage', prevAutoApply)
+      await game.settings.set('dcc', 'enhancedAttackCards', prevEnhanced)
       await target?.delete()
       await actor?.delete()
     }
-  }, { name, uniform, critRange, targetAC, backstab })
+  }, { name, uniform, critRange, targetAC, backstab, enhanced })
 }
 
 test.describe('Crits need the attack to hit (#978)', () => {
@@ -104,6 +118,7 @@ test.describe('Crits need the attack to hit (#978)', () => {
     expect(out.critNeedsHit).toBe(false)
     expect(out.hasNote).toBe(false)
     expect(out.hasCritRoll).toBe(true)
+    expect(out.targetHp).toBeLessThan(30) // damage auto-applied on the hit
   })
 
   test('with no target the crit rolls with an "only a crit if this hits" note', async ({ page }) => {
@@ -114,6 +129,20 @@ test.describe('Crits need the attack to hit (#978)', () => {
     expect(out.critNeedsHit).toBe(true)
     expect(out.hasNote).toBe(true)
     expect(out.hasCritRoll).toBe(true)
+  })
+
+  test('the enhanced card shows the note and "Hits AC", not "Critical hit!", with no target', async ({ page }) => {
+    const out = await rollPinnedAttack(page, { name: 'P978 Enhanced', uniform: 0.07, critRange: 19, enhanced: true })
+    expect(out, 'attack card must be posted').not.toBeNull()
+    expect(out.hasEnhancedCard).toBe(true)
+    const [note, hitsAc, critHit] = await page.evaluate(() => [
+      game.i18n.localize('DCC.CritNeedsHitNote'),
+      game.i18n.format('DCC.AttackHitsAC', { ac: 19 }),
+      game.i18n.localize('DCC.AttackHitsCritNoTarget')
+    ])
+    expect(out.enhancedNote).toBe(note)
+    expect(out.enhancedBanner).toBe(hitsAc)
+    expect(out.enhancedBanner).not.toBe(critHit)
   })
 
   test('a backstab that misses the target does not auto-crit', async ({ page }) => {

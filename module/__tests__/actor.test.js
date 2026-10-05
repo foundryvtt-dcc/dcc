@@ -5,7 +5,7 @@
  * Mocks for DCCItem Class are found in __mocks__/item.js
  **/
 
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item'
 
@@ -1940,6 +1940,61 @@ test('rollWeaponAttack without thrown option leaves a thrown-capable weapon on t
   } finally {
     actor.items.find = originalFind
   }
+})
+
+describe('rollWeaponAttack crit-needs-hit card output (#978)', () => {
+  const weapon = { name: 'Blade', system: { toHit: '+0', damage: '1d6', actionDie: '1d20', equipped: true, melee: true } }
+  const fakeRoll = () => ({ options: {}, dice: [{ faces: 20 }], render: async () => '' })
+
+  async function dispatchWith (rollResult, targets) {
+    const originalFind = actor.items.find
+    const originalRollToHit = actor.rollToHit
+    const originalRollCritical = actor._rollCritical
+    const originalTargets = game.user.targets
+    actor.items.find = vi.fn().mockReturnValue(weapon)
+    // The crit table lookup needs compendium packs; the card flags don't.
+    actor._rollCritical = vi.fn(async () => ({ critPrompt: 'Critical', critInlineRoll: '' }))
+    actor.rollToHit = vi.fn(async () => ({ roll: fakeRoll(), fumble: false, hitsAc: 19, ...rollResult }))
+    game.user.targets = targets
+    ChatMessage.data = undefined
+    try {
+      await actor.rollWeaponAttack('blade')
+      return ChatMessage.data
+    } finally {
+      actor.items.find = originalFind
+      actor.rollToHit = originalRollToHit
+      actor._rollCritical = originalRollCritical
+      game.user.targets = originalTargets
+    }
+  }
+
+  test('an unconfirmed crit flags critNeedsHit, adds the note, and is not a natural crit', async () => {
+    const data = await dispatchWith({ crit: true, critNeedsHit: true, naturalCrit: false }, new Set())
+    expect(data.flags['dcc.critNeedsHit']).toBe(true)
+    expect(data.flags['dcc.isNaturalCrit']).toBe(false)
+    expect(data.flags['dcc.hasTarget']).toBeUndefined()
+    expect(data.system.critNeedsHitNote).toBe(game.i18n.localize('DCC.CritNeedsHitNote'))
+  })
+
+  test('a confirmed crit carries no note', async () => {
+    const data = await dispatchWith({ crit: true, critNeedsHit: false, naturalCrit: true }, new Set())
+    expect(data.flags['dcc.critNeedsHit']).toBe(false)
+    expect(data.system.critNeedsHitNote).toBe('')
+  })
+
+  test("a target whose AC can't be read sets no hit/miss verdict", async () => {
+    const targets = { first: () => ({ name: 'Tgt', actor: { name: 'Tgt', system: { attributes: { ac: { value: '' } } } } }) }
+    const data = await dispatchWith({ crit: true, critNeedsHit: true }, targets)
+    expect(data.flags['dcc.hasTarget']).toBeUndefined()
+    expect(data.flags['dcc.hitsTarget']).toBeUndefined()
+  })
+
+  test("a readable target AC records the lib's verdict", async () => {
+    const targets = { first: () => ({ name: 'Tgt', actor: { name: 'Tgt', system: { attributes: { ac: { value: 25 } } } } }) }
+    const data = await dispatchWith({ crit: false, hitsTarget: false }, targets)
+    expect(data.flags['dcc.hasTarget']).toBe(true)
+    expect(data.flags['dcc.hitsTarget']).toBe(false)
+  })
 })
 
 test('rollWeaponAttack with invalid weapon id warns user', async () => {
