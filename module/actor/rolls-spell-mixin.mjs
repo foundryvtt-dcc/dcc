@@ -744,11 +744,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // hit) increment the disapproval range via `applyDisapproval`.
     if (isIdolMagic && game.settings.get('dcc', 'automateClericDisapproval')) {
       const disapprovalRange = parseInt(this.system.class?.disapproval || 1, 10) || 1
-      const inRange = natural <= disapprovalRange
+      const inRange = rollTriggersDisapproval(natural, disapprovalRange)
       const successTiers = ['success', 'success-minor', 'success-major', 'success-critical']
       const success = result.tier && successTiers.includes(result.tier)
       if (inRange) {
-        await this.rollDisapproval(natural)
+        await this.rollDisapproval(natural, { disapprovalRange })
       }
       if (!success) {
         await this.applyDisapproval()
@@ -952,11 +952,6 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // roll goes through `this.rollDisapproval` after the cast (below), the
     // same lib-backed path every other caller uses (#961). The lib cast
     // still owns the auto-failure and the in-range range increase.
-    if (profile?.type === 'cleric' && !(await loadDisapprovalTable(this))) {
-      // Telemetry for a silent degradation: with no table configured the
-      // disapproval roll is posted without a result entry.
-      logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
-    }
 
     // Wizard / elf path — if the spell item doesn't yet carry a
     // rolled mercurial effect, pre-roll one via the lib's
@@ -1125,13 +1120,21 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // `processSpellCheck` drew the disapproval table only when
     // `automateClericDisapproval` was on, and it defaults to FALSE (#923).
     // `rollDisapproval` is the shared lib-backed roll (#961).
+    // The range is the pre-cast snapshot the lib checked against; the
+    // actor's own range may already have been raised by the cast.
+    const castDisapprovalRange = character.state.classState?.cleric?.disapprovalRange ?? 1
     if (
       profile?.usesDisapproval &&
       result.natural !== undefined &&
-      rollTriggersDisapproval(result.natural, character.state.classState?.cleric?.disapprovalRange ?? 1) &&
+      rollTriggersDisapproval(result.natural, castDisapprovalRange) &&
       game.settings.get('dcc', 'automateClericDisapproval')
     ) {
-      await this.rollDisapproval(result.natural)
+      if (!(await loadDisapprovalTable(this))) {
+        // Telemetry for a silent degradation: with no table configured the
+        // disapproval roll is posted without a result entry.
+        logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
+      }
+      await this.rollDisapproval(result.natural, { disapprovalRange: castDisapprovalRange })
     }
 
     // Session 5 — mercurial display chat. Rendered directly from

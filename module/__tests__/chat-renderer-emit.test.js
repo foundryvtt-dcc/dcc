@@ -124,7 +124,7 @@ describe('renderDisapprovalRoll', () => {
     }
     await renderDisapprovalRoll({
       actor,
-      disapprovalResult: { roll: 7, description: 'Row 7', disapprovalRange: 3, formula: '3d4', luckModifier: 2 },
+      disapprovalResult: { roll: 7, description: 'Row 7', disapprovalRange: 3, formula: '3d4', luckModifier: 2, matched: true },
       roll
     })
     expect(rollFormulas).toEqual([]) // no stand-in d1 roll built
@@ -134,8 +134,21 @@ describe('renderDisapprovalRoll', () => {
       description: 'Row 7',
       disapprovalRange: 3,
       formula: '3d4',
+      matched: true,
       luckModifier: 2
     })
+  })
+
+  test('a table miss posts the bare label (no English fallback text)', async () => {
+    const roll = { toMessage: async (data) => data }
+    await renderDisapprovalRoll({
+      actor,
+      disapprovalResult: { roll: 31, description: '', disapprovalRange: 10, matched: false },
+      roll
+    })
+    const data = createdMessageData()
+    expect(data.flavor).toBe('DCC.DisapprovalRoll')
+    expect(data.flags['dcc.libDisapproval'].matched).toBe(false)
   })
 
   test('with no table result the roll is posted bare, without lib flags', async () => {

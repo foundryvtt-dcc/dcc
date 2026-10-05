@@ -292,7 +292,7 @@ export async function processSpellCheck (actor, spellData) {
       // Check if our natural roll was inside the disapproval range
       if (automate && rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
         // Trigger disapproval
-        await actor.rollDisapproval(naturalRoll)
+        await actor.rollDisapproval(naturalRoll, { disapprovalRange })
 
         // This is an automatic failure!
         success = false

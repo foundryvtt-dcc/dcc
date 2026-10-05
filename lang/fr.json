@@ -486,6 +486,7 @@
   "DCC.LevelUpHint": "Changer de niveau",
   "DCC.LevelTooltip": "Cliquez sur 'Niveau' pour changer le niveau de votre personnage si le Module du Livre de Base est installé",
   "DCC.LuckDie": "Dé de chance",
+  "DCC.LuckModifier": "Modificateur de Chance",
   "DCC.LuckSpend": "Dépenser {luckSpend} Chance",
   "DCC.Lucky": "Chanceux",
   "DCC.LuckyBonus": "Bonus Chanceux",

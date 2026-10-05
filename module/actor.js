@@ -532,10 +532,15 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    * dialog when the natural roll is unknown); the lib resolves the result
    * and table entry.
    * @param {Number} naturalRoll   Optional - the natural roll for the last spell check
+   * @param {Object} [options]
+   * @param {Number} [options.disapprovalRange] The range the check was made
+   *   against, recorded on the card. Defaults to the actor's current range;
+   *   callers that just raised it pass the pre-roll value.
    * @returns {Promise<Object|null|undefined>} The lib `DisapprovalResult`,
    *   null with no table configured, undefined when the dialog is cancelled
+   *   or the roll fails
    */
-  async rollDisapproval (naturalRoll) {
+  async rollDisapproval (naturalRoll, { disapprovalRange } = {}) {
     // Generate a formula, placeholder if the natural roll is not known
     const terms = [
       {
@@ -544,7 +549,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       },
       {
         type: 'Modifier',
-        label: 'Luck Modifier',
+        label: game.i18n.localize('DCC.LuckModifier'),
         formula: -this.system.abilities.lck.mod
       }
     ]
@@ -556,7 +561,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     // If we know the formula just roll it
-    return this._onRollDisapproval(terms, options)
+    return this._onRollDisapproval(terms, options, disapprovalRange)
   }
 
   /**
@@ -564,22 +569,26 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    * @private
    * @param terms
    * @param options
+   * @param {Number} [disapprovalRange] Range to record on the card
    */
-  async _onRollDisapproval (terms, options = {}) {
+  async _onRollDisapproval (terms, options = {}, disapprovalRange) {
     try {
       const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
       if (!roll) { return }
       if (!roll._evaluated) await roll.evaluate()
 
-      return await resolveDisapprovalRoll({ actor: this, roll })
+      return await resolveDisapprovalRoll({ actor: this, roll, disapprovalRange })
     } catch (err) {
       // `if (err)` used to be the cancel guard, back when the dialog
       // rejected with a bare `null` (issue #867). Closing the disapproval
       // dialog must stay silent — warning here would just relocate the
       // spurious error #867 removed.
       if (isRollCancellation(err)) { return }
-      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning'))
+      // Covers the table load and chat post too, not just a bad formula —
+      // log the real cause so it isn't hidden behind the formula warning.
+      console.error('DCC | rollDisapproval failed', { actor: this.name, err })
+      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula: terms[0]?.formula ?? '' }))
     }
   }
 

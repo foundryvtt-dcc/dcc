@@ -906,8 +906,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #rollDisapproval (event, target) {
     event.preventDefault()
-    const options = DCCActorSheet.fillRollOptions(event)
-    this.options.document.rollDisapproval(undefined, options)
+    // No natural roll: `rollDisapproval` always opens the modifier dialog,
+    // and force-crit / fumble don't apply, so no roll options are passed.
+    this.options.document.rollDisapproval()
   }
 
   /**

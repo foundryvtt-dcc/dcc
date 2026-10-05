@@ -843,6 +843,7 @@ export async function renderDisapprovalRoll ({ actor, disapprovalResult, roll })
       description,
       disapprovalRange: disapprovalResult.disapprovalRange,
       ...(disapprovalResult.formula !== undefined && { formula: disapprovalResult.formula }),
+      ...(disapprovalResult.matched !== undefined && { matched: disapprovalResult.matched }),
       ...(disapprovalResult.luckModifier !== undefined && { luckModifier: disapprovalResult.luckModifier })
     }
   }

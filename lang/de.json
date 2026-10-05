@@ -499,6 +499,7 @@
   "DCC.LevelNeutral": "Neutral",
   "DCC.LevelChaotic": "Chaotisch",
   "DCC.LuckDie": "Glückswürfel",
+  "DCC.LuckModifier": "Glücksmodifikator",
   "DCC.LuckSpend": "Gab {luckSpend} Glück aus.",
   "DCC.Lucky": "Glücksbringer",
   "DCC.LuckyBonus": "Glücksbonus",

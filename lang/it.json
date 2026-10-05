@@ -499,6 +499,7 @@
   "DCC.LevelNeutral": "Neutrale",
   "DCC.LevelChaotic": "Caotico",
   "DCC.LuckDie": "Dado Fortuna",
+  "DCC.LuckModifier": "Modificatore di Fortuna",
   "DCC.LuckSpend": "Speso {luckSpend} Fortuna",
   "DCC.Lucky": "Fortunato",
   "DCC.LuckyBonus": "Mod. Fortuna",

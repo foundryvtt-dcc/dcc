@@ -382,7 +382,7 @@ describe('processSpellCheck — cleric disapproval auto-failure (#874)', () => {
 
     await processSpellCheck(actor, { roll, rollTable, item: makeClericItem() })
 
-    expect(actor.rollDisapproval).toHaveBeenCalledWith(4)
+    expect(actor.rollDisapproval).toHaveBeenCalledWith(4, { disapprovalRange: 4 })
     expect(actor.applyDisapproval).toHaveBeenCalled()
   })
 })
@@ -455,7 +455,7 @@ describe('processSpellCheck — casting-mode side effects', () => {
 
     await processSpellCheck(actor, { roll, item })
 
-    expect(rollDisapproval).toHaveBeenCalledWith(1)
+    expect(rollDisapproval).toHaveBeenCalledWith(1, { disapprovalRange: 2 })
     // After disapproval, success forced to false → applyDisapproval also called.
     expect(applyDisapproval).toHaveBeenCalled()
   })
@@ -501,7 +501,7 @@ describe('processSpellCheck — casting-mode side effects', () => {
 
     await processSpellCheck(actor, { roll })
 
-    expect(rollDisapproval).toHaveBeenCalledWith(2)
+    expect(rollDisapproval).toHaveBeenCalledWith(2, { disapprovalRange: 3 })
   })
 })
 

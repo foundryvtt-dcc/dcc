@@ -994,7 +994,7 @@ test('rollDisapproval creates proper terms', async () => {
       },
       {
         type: 'Modifier',
-        label: 'Luck Modifier',
+        label: 'LuckModifier', // localize mock strips the DCC. prefix
         formula: -3 // Negative luck mod
       }
     ],
@@ -1454,7 +1454,7 @@ test('rollSkillCheck rolls disapproval when a built-in cleric ability lands in t
   try {
     await actor.rollSkillCheck('turnUnholy')
 
-    expect(rollDisapprovalSpy).toHaveBeenCalledWith(3)
+    expect(rollDisapprovalSpy).toHaveBeenCalledWith(3, { disapprovalRange: 5 })
     // The in-range natural is an automatic failure, so a point of
     // disapproval applies on top of the disapproval roll.
     expect(actorUpdateMock).toHaveBeenCalledWith({
@@ -1998,13 +1998,36 @@ test('rollDisapproval with specific dice count', async () => {
       },
       {
         type: 'Modifier',
-        label: 'Luck Modifier',
+        label: 'LuckModifier', // localize mock strips the DCC. prefix
         formula: -actor.system.abilities.lck.mod // Negative of luck mod
       }
     ],
     actor.getRollData(),
     {}
   )
+})
+
+test('rollDisapproval logs and warns when the roll fails, and stays silent on cancel (#961)', async () => {
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  try {
+    uiNotificationsWarnMock.mockClear()
+    dccRollCreateRollMock.mockImplementationOnce(() => { throw new Error('table load failed') })
+
+    expect(await actor.rollDisapproval(3)).toBeUndefined()
+    expect(errorSpy).toHaveBeenCalledWith('DCC | rollDisapproval failed', expect.objectContaining({ err: expect.any(Error) }))
+    expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+
+    // Closing the roll-modifier dialog is a cancellation, not an error.
+    errorSpy.mockClear()
+    uiNotificationsWarnMock.mockClear()
+    dccRollCreateRollMock.mockImplementationOnce(() => { throw Object.assign(new Error('cancelled'), { isRollCancellation: true }) })
+
+    expect(await actor.rollDisapproval()).toBeUndefined()
+    expect(errorSpy).not.toHaveBeenCalled()
+    expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
+  } finally {
+    errorSpy.mockRestore()
+  }
 })
 
 test('rollDisapproval with no natural roll forces dialog', async () => {

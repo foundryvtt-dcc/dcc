@@ -38,25 +38,28 @@ export function readDisapprovalRoll (roll) {
 /**
  * Resolve an evaluated disapproval roll through the lib and post it to chat.
  *
- * With no disapproval table configured, the roll is posted on its own (no
- * result text), as before.
+ * With no disapproval table configured, or a roll past the table's last
+ * row (the lib reports `matched: false` with an empty description), the
+ * roll is posted without result text.
  *
  * @param {Object} params
  * @param {Object} params.actor - The cleric DCCActor.
  * @param {Roll} params.roll - The evaluated `Nd4 − Luck` Foundry Roll.
+ * @param {number} [params.disapprovalRange] - The range the triggering check
+ *   was made against. Defaults to the actor's current range, which a spell
+ *   cast may already have raised.
  * @returns {Promise<Object|null>} The lib `DisapprovalResult`, or null when
  *   no table is configured.
  */
-export async function resolveDisapprovalRoll ({ actor, roll }) {
+export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange }) {
   const { diceCount, diceTotal, luckModifier } = readDisapprovalRoll(roll)
   const table = await loadDisapprovalTable(actor)
 
   let disapprovalResult = null
   if (table) {
-    const disapprovalRange = Number(actor.system?.class?.disapproval) || 1
     disapprovalResult = libRollDisapproval(
       diceCount,
-      disapprovalRange,
+      Number(disapprovalRange ?? actor.system?.class?.disapproval) || 1,
       table,
       luckModifier,
       { roller: () => diceTotal }

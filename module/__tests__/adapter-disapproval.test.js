@@ -56,6 +56,14 @@ describe('readDisapprovalRoll', () => {
       .toEqual({ diceCount: 2, diceTotal: 5, luckModifier: -1 })
   })
 
+  test('a dialog-edited formula with several dice terms sums every die', () => {
+    const roll = {
+      dice: [{ number: 2, total: 5 }, { number: 1, total: 3 }],
+      total: 7 // 2d4 + 1d4 − 1
+    }
+    expect(readDisapprovalRoll(roll)).toEqual({ diceCount: 2, diceTotal: 8, luckModifier: 1 })
+  })
+
   test('a formula with no dice treats the whole total as the adjustment', () => {
     expect(readDisapprovalRoll({ dice: [], total: 4 }))
       .toEqual({ diceCount: 1, diceTotal: 0, luckModifier: -4 })
@@ -94,6 +102,41 @@ describe('resolveDisapprovalRoll', () => {
 
     expect(result.roll).toBe(-1)
     expect(result.description).toBe('Row 1')
+  })
+
+  test('the lib total equals the Foundry total for an edited formula', async () => {
+    loadDisapprovalTable.mockResolvedValue(table)
+    const roll = { dice: [{ number: 2, total: 5 }, { number: 1, total: 3 }], total: 7 }
+
+    const result = await resolveDisapprovalRoll({ actor: cleric(), roll })
+
+    expect(result.roll).toBe(roll.total)
+  })
+
+  test('a roll past the last row reports a miss with no English fallback text', async () => {
+    loadDisapprovalTable.mockResolvedValue(table)
+
+    const result = await resolveDisapprovalRoll({
+      actor: cleric(10),
+      roll: fakeRoll({ count: 10, diceTotal: 31 })
+    })
+
+    expect(result.roll).toBe(31)
+    expect(result.matched).toBe(false)
+    expect(result.description).toBe('')
+  })
+
+  test('records the range passed by the caller over the actor\'s current range', async () => {
+    loadDisapprovalTable.mockResolvedValue(table)
+
+    // The cast already raised the actor to 4; the check was against 3.
+    const result = await resolveDisapprovalRoll({
+      actor: cleric(4),
+      roll: fakeRoll({ count: 2, diceTotal: 5 }),
+      disapprovalRange: 3
+    })
+
+    expect(result.disapprovalRange).toBe(3)
   })
 
   test('with no table configured the roll is posted without a result', async () => {

@@ -592,7 +592,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
         // A natural roll inside the disapproval range triggers disapproval
         // (nat 1 fumbles land here too — 1 is always inside the range)
         if (rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
-          await this.rollDisapproval(naturalRoll)
+          await this.rollDisapproval(naturalRoll, { disapprovalRange })
           success = false
         }
         if (!success) {
