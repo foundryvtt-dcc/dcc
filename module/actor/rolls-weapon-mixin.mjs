@@ -333,6 +333,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       flags['dcc.hasTarget'] = true
       flags['dcc.hitsTarget'] = hitsTarget
       flags['dcc.targetName'] = primaryTarget?.name ?? primaryTargetActor.name ?? ''
+      // Lets a later manual damage roll find the target to auto-apply to (#992).
+      if (primaryTargetActor.uuid) flags['dcc.targetUuid'] = primaryTargetActor.uuid
     }
     if (attackRollResult.libResult) {
       flags['dcc.libResult'] = attackRollResult.libResult

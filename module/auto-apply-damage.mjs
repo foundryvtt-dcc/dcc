@@ -1,4 +1,4 @@
-/* global game, fromUuid, console */
+/* global game, fromUuid, console, foundry, ChatMessage, Roll */
 
 /**
  * Auto-apply weapon damage to a targeted token (DCC QoL integration).
@@ -9,14 +9,20 @@
  * socket: the active GM performs the `actor.applyDamage`. Gated by
  * `qolHandlingCombat` so dcc-qol drives it while that module is active.
  *
- * Triggered from the weapon-attack dispatch (the automated inline-damage path)
- * which fires exactly once per attack, so no de-duplication flag is needed.
+ * Two triggers:
+ * - Automated damage: the weapon-attack dispatch applies the rolled damage once,
+ *   right after the attack.
+ * - Manual damage (#992): with automation off, the card's Roll Damage button
+ *   (enhanced card) or inline damage roll (plain / emote card) applies the roll
+ *   when it lands. The card records the hit verdict and the target's UUID at
+ *   attack time; the GM marks it `dcc.damageApplied` so it applies only once.
  */
 
 import { qolHandlingCombat } from './integrations.mjs'
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
 
 export const APPLY_DAMAGE_ACTION = 'dcc.applyDamage'
+export const APPLY_CARD_DAMAGE_ACTION = 'dcc.applyCardDamage'
 
 /**
  * Apply damage to an actor through the GM (the active GM runs the
@@ -79,6 +85,97 @@ export async function autoApplyAttackDamage (options, attackRollResult, damageRo
   }
 }
 
+/**
+ * Whether an attack card's manual damage roll should be applied to its target:
+ * auto-apply is on, dcc-qol isn't driving, the attack hit a known target, and
+ * the card hasn't had damage applied yet.
+ *
+ * @param {ChatMessage} message - the attack card
+ * @returns {boolean}
+ */
+export function cardAwaitsDamage (message) {
+  try {
+    if (qolHandlingCombat()) return false
+    if (!game.settings.get('dcc', 'autoApplyDamage')) return false
+    const flag = (key) => message?.getFlag?.('dcc', key)
+    return !!flag('isToHit') && flag('hitsTarget') === true && !!flag('targetUuid') && !flag('damageApplied')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Apply a manual damage roll from an attack card to the card's target, through
+ * the GM. No-op unless `cardAwaitsDamage`. Damage has a minimum of 1, matching
+ * the automated roll. Errors are logged, never thrown.
+ *
+ * @param {ChatMessage} message - the attack card the damage was rolled from
+ * @param {number} total - the damage roll's total
+ * @returns {Promise<void>}
+ */
+export async function applyCardDamage (message, total) {
+  try {
+    if (!cardAwaitsDamage(message) || !Number.isFinite(total)) return
+    await executeAsGM(APPLY_CARD_DAMAGE_ACTION, { messageId: message.id, amount: Math.max(1, total) })
+  } catch (err) {
+    console.error('DCC | auto-apply card damage failed', err)
+  }
+}
+
+/**
+ * Roll a plain / emote attack card's inline damage roll the way Foundry's
+ * inline-roll click does, then apply it to the card's target.
+ */
+async function rollInlineDamage (message, anchor) {
+  const speaker = ChatMessage.getSpeaker()
+  const actor = ChatMessage.getSpeakerActor(speaker)
+  const roll = Roll.create(anchor.dataset.formula, actor ? actor.getRollData() : {})
+  const messageMode = foundry.dice.Roll._mapLegacyRollMode?.(anchor.dataset.mode)
+  await roll.toMessage({ flavor: anchor.dataset.flavor, speaker }, messageMode ? { messageMode } : {})
+  await applyCardDamage(message, roll.total)
+}
+
+/**
+ * On a plain or emote attack card awaiting manual damage, take over the click
+ * on its inline damage roll (`[[/r … # Damage]]`) so the roll is applied to the
+ * target as well as posted. Any other inline roll, or a card that isn't
+ * awaiting damage, keeps Foundry's default handling.
+ *
+ * @param {ChatMessage} message - the attack card
+ * @param {HTMLElement} html - the rendered message element
+ */
+export function attachManualDamageAutoApply (message, html) {
+  if (!html?.addEventListener || !cardAwaitsDamage(message)) return
+  html.addEventListener('click', (event) => {
+    const anchor = event.target?.closest?.('a.inline-roll')
+    if (!anchor || anchor.classList.contains('inline-result') || anchor.dataset.flavor !== 'Damage') return
+    if (!cardAwaitsDamage(message)) return
+    event.preventDefault()
+    event.stopPropagation()
+    rollInlineDamage(message, anchor).catch(err => console.error('DCC | inline damage roll failed', err))
+  }, { capture: true })
+}
+
+/**
+ * GM-side handler: apply a card's manual damage once. Hardened against a
+ * crafted payload — the target comes from the card's own flags (never the
+ * payload), the card must still await damage, and the requester must be a GM
+ * or own the card. The applied flag is written before the damage so a second
+ * request can't apply it twice.
+ *
+ * @param {{messageId: string, amount: number}} payload
+ * @param {string} [userId] requesting user id (client-supplied; verified here)
+ */
+async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
+  const message = game.messages?.get(messageId)
+  if (!message || !cardAwaitsDamage(message) || !(amount > 0)) return
+  const sender = userId ? game.users?.get(userId) : null
+  if (!sender) return
+  if (!sender.isGM && !message.testUserPermission?.(sender, 'OWNER')) return
+  await message.setFlag('dcc', 'damageApplied', true)
+  await applyDamageHandler({ actorUuid: message.getFlag('dcc', 'targetUuid'), amount })
+}
+
 /** GM-side socket handler: resolve the target and apply the damage. */
 async function applyDamageHandler ({ actorUuid, amount }) {
   const doc = await fromUuid(actorUuid)
@@ -87,7 +184,8 @@ async function applyDamageHandler ({ actorUuid, amount }) {
   await actor.applyDamage(amount, 1)
 }
 
-/** Register the GM-side apply-damage socket handler. Call once at ready. */
+/** Register the GM-side apply-damage socket handlers. Call once at ready. */
 export function registerAutoApplyDamageHandler () {
   registerSocketHandler(APPLY_DAMAGE_ACTION, applyDamageHandler)
+  registerSocketHandler(APPLY_CARD_DAMAGE_ACTION, applyCardDamageHandler)
 }

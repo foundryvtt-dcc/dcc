@@ -1990,10 +1990,12 @@ describe('rollWeaponAttack crit-needs-hit card output (#978)', () => {
   })
 
   test("a readable target AC records the lib's verdict", async () => {
-    const targets = { first: () => ({ name: 'Tgt', actor: { name: 'Tgt', system: { attributes: { ac: { value: 25 } } } } }) }
+    const targets = { first: () => ({ name: 'Tgt', actor: { name: 'Tgt', uuid: 'Scene.s.Token.t.Actor.a', system: { attributes: { ac: { value: 25 } } } } }) }
     const data = await dispatchWith({ crit: false, hitsTarget: false }, targets)
     expect(data.flags['dcc.hasTarget']).toBe(true)
     expect(data.flags['dcc.hitsTarget']).toBe(false)
+    // Recorded so a later manual damage roll can find the target (#992).
+    expect(data.flags['dcc.targetUuid']).toBe('Scene.s.Token.t.Actor.a')
   })
 })
 
