@@ -58,7 +58,7 @@ function withAutomate (enabled) {
   const original = gameSettingsGetMock.getMockImplementation()
   gameSettingsGetMock.mockImplementation((module, key) => {
     if (module === 'dcc' && key === 'automateDamageFumblesCrits') return enabled
-    if (module === 'dcc' && key === 'strictCriticalHits') return false
+    if (module === 'dcc' && key === 'strictCriticalHits') return true
     if (module === 'dcc' && key === 'checkWeaponEquipment') return false
     return original ? original(module, key) : undefined
   })
@@ -1120,7 +1120,7 @@ test('buildAttackInput omits deedDie for plain numeric toHits', () => {
 // to the die actually rolled; rollToHit must not pre-scale it
 // ============================================================================
 
-async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null }) {
+async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null, strict = true }) {
   const originalCall = Hooks.call
   Hooks.call = (hook, terms) => {
     if (hook === 'dcc.modifyAttackRollTerms' && bumpTo) terms[0].formula = bumpTo
@@ -1128,6 +1128,9 @@ async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = n
   }
   const restoreRoll = withActionDieRoll(natural, `1d${faces}`)
   const restore = withAutomate(true)
+  const automateGet = gameSettingsGetMock.getMockImplementation()
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'strictCriticalHits' ? strict : automateGet(module, key))
   try {
     // noinspection JSCheckFunctionSignatures
     const actor = new DCCActor()
@@ -1179,4 +1182,29 @@ test('#977: a crit-on-max-die two-weapon range follows a changed die to its max 
 
   const twenty = await rollToHitWith({ faces: 20, natural: 20, weaponOverrides })
   expect(twenty.crit).toBe(true)
+})
+
+test('#977: with strict crits off, a d24 keeps the literal 20–24 range', async () => {
+  const twenty = await rollToHitWith({ faces: 24, natural: 20, strict: false })
+  expect(twenty.crit).toBe(true)
+  expect(twenty.libResult.critSource).toBe('threat-range')
+  expect(twenty.roll.dice[0].options.dcc.upperThreshold).toBe(20)
+
+  const nineteen = await rollToHitWith({ faces: 24, natural: 19, strict: false })
+  expect(nineteen.crit).toBe(false)
+})
+
+test('#977: with strict crits off, a smaller die crits only on its max face', async () => {
+  const warrior = { critRange: 19 }
+  const fifteen = await rollToHitWith({ faces: 16, natural: 15, bumpTo: '1d16', weaponOverrides: warrior, strict: false })
+  expect(fifteen.crit).toBe(false)
+  expect(fifteen.roll.dice[0].options.dcc.upperThreshold).toBe(16)
+
+  const sixteen = await rollToHitWith({ faces: 16, natural: 16, bumpTo: '1d16', weaponOverrides: warrior, strict: false })
+  expect(sixteen.crit).toBe(true)
+})
+
+test('#977: with strict crits off, a two-weapon "cannot crit" range still cannot crit', async () => {
+  const offHand = await rollToHitWith({ faces: 16, natural: 16, weaponOverrides: { actionDie: '1d16', critRange: 51 }, strict: false })
+  expect(offHand.crit).toBe(false)
 })

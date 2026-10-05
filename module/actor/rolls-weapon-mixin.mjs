@@ -623,6 +623,15 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // Crit-on-max-die two-weapon rules are a natural roll on the die in
     // play, so they follow a changed die to its max face.
     if (attackInput.threatRangeIsNatural && rolledFaces) critRange = rolledFaces
+    // Strict crits (the default) keep the lib's "top N faces" scaling. With
+    // them off the range keeps its number — crit 20 on a d24 is 20–24 —
+    // capped at the rolled die's max face so a smaller die can still crit.
+    // Ranges above 20 are the two-weapon "cannot crit" sentinels; leave them.
+    if (!attackInput.threatRangeIsNatural && critRange <= 20 && rolledFaces &&
+        !game.settings.get('dcc', 'strictCriticalHits')) {
+      critRange = Math.min(critRange, rolledFaces)
+      attackInput.threatRangeIsNatural = true
+    }
     attackInput.threatRange = critRange
     const actionDieFaces = parseInt(attackInput.actionDie.slice(1))
     attackRoll.dice[0].options.dcc = {

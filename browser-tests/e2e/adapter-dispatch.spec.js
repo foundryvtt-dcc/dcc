@@ -3841,6 +3841,66 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(out.upperThreshold).toBe(16)
     })
 
+    test('strict crits default on; off keeps the literal 20–24 range on a d24 (#977)', async ({ page }) => {
+      await page.evaluate(async () => {
+        globalThis.__p977sPrev = game.settings.get('dcc', 'strictCriticalHits')
+        await game.settings.set('dcc', 'strictCriticalHits', false)
+        const actor = await Actor.create({ name: 'P977 Literal Crit', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P977-Sword',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d8', melee: true, equipped: true }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__p977sHook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
+          if (a?.name === 'P977 Literal Crit') terms[0].formula = '1d24'
+        })
+        // ceil((1 - 0.19) * 24) = 20 — a crit only under the literal range.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.19
+        globalThis.__p977sBefore = new Set(game.messages.contents.map(m => m.id))
+      })
+      await page.evaluate(async () => {
+        const actor = game.actors.getName('P977 Literal Crit')
+        await actor.rollWeaponAttack(actor.items.getName('P977-Sword').id)
+      })
+
+      const out = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse().find(m =>
+            !globalThis.__p977sBefore.has(m.id) &&
+            m.speaker?.alias === 'P977 Literal Crit' &&
+            m.getFlag('dcc', 'isToHit') &&
+            m.getFlag('dcc', 'libResult'))
+          if (msg) {
+            return {
+              lib: msg.getFlag('dcc', 'libResult'),
+              upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      const strictDefault = await page.evaluate(async () => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+        Hooks.off('dcc.modifyAttackRollTerms', globalThis.__p977sHook)
+        await game.settings.set('dcc', 'strictCriticalHits', globalThis.__p977sPrev)
+        await game.actors.getName('P977 Literal Crit')?.delete()
+        return game.settings.settings.get('dcc.strictCriticalHits').default
+      })
+
+      expect(strictDefault).toBe(true)
+      expect(out, 'literal-range attack must set dcc.libResult').not.toBeNull()
+      expect(out.lib.die).toBe('d24')
+      expect(out.lib.natural).toBe(20)
+      expect(out.lib.isCriticalThreat).toBe(true)
+      expect(out.lib.critSource).toBe('threat-range')
+      expect(out.upperThreshold).toBe(20)
+    })
+
     test('automate off → adapter (session 12 / A5)', async ({ page }) => {
       // A5: `automateDamageFumblesCrits` gates the downstream damage /
       // crit / fumble chain inside `rollWeaponAttack`, not the attack

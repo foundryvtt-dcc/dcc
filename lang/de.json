@@ -945,7 +945,7 @@
   "DCC.SettingSpellSideEffectsCompendium": "Zauber-Nebeneffekte-Kompendium",
   "DCC.SettingSpellSideEffectsCompendiumHint": "Das Zauber-Nebeneffekte-Kompendium enthält die Tabellen für Zaubermanifestationen und Verderbnisse",
   "DCC.SettingStrictCriticalHits": "Strenge kritische Treffer-Regeln",
-  "DCC.SettingStrictCriticalHitsHint": "Wenn aktiviert, skalieren kritische Treffer-Bereiche proportional mit Würfelgrößenänderungen. Zum Beispiel, wenn du normalerweise bei 20 kritisch triffst und einen W24 würfelst, triffst du nur bei 24 kritisch. Wenn du normalerweise bei 18-20 kritisch triffst und einen W24 würfelst, triffst du bei 22-24 kritisch.",
+  "DCC.SettingStrictCriticalHitsHint": "Wenn aktiviert (Standard), skalieren kritische Treffer-Bereiche mit dem geworfenen Würfel. Zum Beispiel: Wenn du normalerweise bei 20 kritisch triffst und einen W24 wirfst, triffst du nur bei 24 kritisch; bei normalerweise 18-20 bei 22-24. Wenn deaktiviert, behält der Bereich seine Zahl: Kritisch bei 20 mit einem W24 trifft bei 20-24 kritisch, und bei einem Würfel, der kleiner als dein Bereich ist, triffst du nur mit seiner höchsten Augenzahl kritisch.",
   "DCC.SettingCoinWeight": "Münzgewicht (Münzen pro Pfund)",
   "DCC.SettingCoinWeightHint": "Legt fest, wie viele Münzen einem Pfund Gewicht für die Belastung entsprechen. Standard ist 10 (B/X-Stil). Auf 0 setzen, um das Münzgewicht zu deaktivieren.",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "Das 'Zauber-Nebeneffekte-Kompendium' wurde nicht gefunden, du musst entweder eines erstellen oder das Grundregelbuch-Modul aktivieren",

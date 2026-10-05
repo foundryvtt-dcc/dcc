@@ -694,7 +694,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingStrictCriticalHitsHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
