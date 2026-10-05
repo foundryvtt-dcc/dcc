@@ -10,7 +10,8 @@ import { RollsSpellMixin } from './actor/rolls-spell-mixin.mjs'
 import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
-import { parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
 
@@ -495,7 +496,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
     const speaker = ChatMessage.getSpeaker({ actor: this })
     // Calculate new disapproval
-    const newRange = Math.min(this.system.class.disapproval + amount, 20)
+    const newRange = increaseDisapprovalRange(Number(this.system.class.disapproval) || 1, amount)
 
     // Apply the new disapproval range. The update MUST be awaited: a failed
     // Divine Aid applies disapproval twice in a row (+1 for the failed check,
@@ -524,9 +525,22 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
   /**
    * Prompt and roll for disapproval
+   *
+   * The single disapproval roll for every caller (issue #961): spell casts,
+   * skill-table checks, `processSpellCheck`, and the sheet button / macro.
+   * Foundry rolls `(natural)d4 − Luck modifier` (through the roll-modifier
+   * dialog when the natural roll is unknown); the lib resolves the result
+   * and table entry.
    * @param {Number} naturalRoll   Optional - the natural roll for the last spell check
+   * @param {Object} [options]
+   * @param {Number} [options.disapprovalRange] The range the check was made
+   *   against, recorded on the card. Defaults to the actor's current range;
+   *   callers that just raised it pass the pre-roll value.
+   * @returns {Promise<Object|null|undefined>} The lib `DisapprovalResult`,
+   *   null with no table configured, undefined when the dialog is cancelled
+   *   or the roll fails
    */
-  async rollDisapproval (naturalRoll) {
+  async rollDisapproval (naturalRoll, { disapprovalRange } = {}) {
     // Generate a formula, placeholder if the natural roll is not known
     const terms = [
       {
@@ -535,7 +549,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       },
       {
         type: 'Modifier',
-        label: 'Luck Modifier',
+        label: game.i18n.localize('DCC.LuckModifier'),
         formula: -this.system.abilities.lck.mod
       }
     ]
@@ -547,7 +561,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     // If we know the formula just roll it
-    await this._onRollDisapproval(terms, options)
+    return this._onRollDisapproval(terms, options, disapprovalRange)
   }
 
   /**
@@ -555,63 +569,26 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    * @private
    * @param terms
    * @param options
+   * @param {Number} [disapprovalRange] Range to record on the card
    */
-  async _onRollDisapproval (terms, options = {}) {
+  async _onRollDisapproval (terms, options = {}, disapprovalRange) {
     try {
       const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
       if (!roll) { return }
+      if (!roll._evaluated) await roll.evaluate()
 
-      // Lookup the disapproval table if available
-      let disapprovalTable = null
-      for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
-        const disapprovalTableName = this.system.class.disapprovalTable
-        if (disapprovalPackName && disapprovalTableName) {
-          const pack = game.packs.get(disapprovalPackName)
-          if (pack) {
-            const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
-            if (entry) {
-              disapprovalTable = await pack.getDocument(entry._id)
-            }
-          }
-        }
-      }
-
-      // If not found in compendium packs, try the local world tables
-      if (!disapprovalTable) {
-        const disapprovalTableName = this.system.class.disapprovalTable
-        if (disapprovalTableName) {
-          // Extract just the table name from the full path if needed
-          // e.g., "dcc-core-book.dcc-core-disapproval.Disapproval" -> "Disapproval"
-          const tableName = disapprovalTableName.includes('.')
-            ? disapprovalTableName.split('.').pop()
-            : disapprovalTableName
-
-          // Search for a table in the world with a matching name
-          disapprovalTable = game.tables.find((entity) => entity.name === tableName)
-        }
-      }
-
-      // Draw from the table if found, otherwise display the roll
-      if (disapprovalTable) {
-        disapprovalTable.draw({ roll, displayChat: true })
-      } else {
-        // Fall back to displaying just the roll
-        roll.toMessage({
-          speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor: game.i18n.localize('DCC.DisapprovalRoll'),
-          flags: {
-            'dcc.RollType': 'Disapproval'
-          }
-        })
-      }
+      return await resolveDisapprovalRoll({ actor: this, roll, disapprovalRange })
     } catch (err) {
       // `if (err)` used to be the cancel guard, back when the dialog
       // rejected with a bare `null` (issue #867). Closing the disapproval
       // dialog must stay silent — warning here would just relocate the
       // spurious error #867 removed.
       if (isRollCancellation(err)) { return }
-      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning'))
+      // Covers the table load and chat post too, not just a bad formula —
+      // log the real cause so it isn't hidden behind the formula warning.
+      console.error('DCC | rollDisapproval failed', { actor: this.name, err })
+      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula: terms[0]?.formula ?? '' }))
     }
   }
 

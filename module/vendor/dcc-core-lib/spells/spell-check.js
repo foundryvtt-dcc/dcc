@@ -14,7 +14,7 @@ import { castSpell, getCasterProfile } from "./cast.js";
 import { findSpellEntry, markSpellLost } from "./spellbook.js";
 import { rollSpellFumble, fumbleRequiresCorruption } from "./fumble.js";
 import { rollCorruption, determineCorruptionTier } from "./corruption.js";
-import { checkAndRollDisapproval, rollTriggersDisapproval, increaseDisapprovalRange } from "./disapproval.js";
+import { checkAndRollDisapproval } from "./disapproval.js";
 import { applyPatronTaintAcquisition, effectTriggersTaint, isPatronCast, rollPatronTaintChanceCheck, } from "./patron-taint-check.js";
 // =============================================================================
 // Character State Extraction
@@ -66,6 +66,16 @@ export function getLuckMultiplier(character) {
  */
 export function getDisapprovalRange(character) {
     return character.state.classState?.cleric?.disapprovalRange ?? 1;
+}
+/**
+ * The Luck modifier a disapproval roll is reduced by: the cleric's current
+ * Luck, after any Luck burned on this check.
+ */
+function getDisapprovalLuckModifier(castInput) {
+    if (castInput.luck === undefined) {
+        return 0;
+    }
+    return getAbilityModifier(Math.max(0, castInput.luck - (castInput.luckBurn ?? 0)));
 }
 /**
  * Get patron ID for wizard/elf
@@ -254,7 +264,7 @@ export function calculateSpellCheck(character, input, options = {}, events) {
     if (profile.usesDisapproval &&
         baseResult.natural !== undefined &&
         castInput.disapprovalRange !== undefined) {
-        const disapproval = handleClericDisapproval(baseResult.natural, castInput.disapprovalRange, input.disapprovalTable, options, events, result);
+        const disapproval = handleClericDisapproval(baseResult.natural, castInput.disapprovalRange, input.disapprovalTable, getDisapprovalLuckModifier(castInput), options);
         if (disapproval) {
             result.disapprovalResult = disapproval;
         }
@@ -348,24 +358,19 @@ function handleCorruption(spellLevel, corruptionTable, options, events, result) 
     return corruptionResult;
 }
 /**
- * Handle disapproval for cleric
+ * Roll on the disapproval table for a cleric whose natural roll fell in the
+ * disapproval range.
+ *
+ * The range increase is not handled here: `castSpell` already counts an
+ * in-range natural as one point (`disapprovalIncrease`, `newDisapprovalRange`
+ * and `onDisapprovalIncreased`). Raising it here as well applied the point
+ * twice and fired the event twice.
  */
-function handleClericDisapproval(natural, disapprovalRange, disapprovalTable, options, events, result) {
-    // Check if natural roll triggers disapproval
-    if (!rollTriggersDisapproval(natural, disapprovalRange)) {
+function handleClericDisapproval(natural, disapprovalRange, disapprovalTable, luckModifier, options) {
+    if (!disapprovalTable) {
         return undefined;
     }
-    // Roll disapproval if table is provided
-    if (disapprovalTable) {
-        const disapprovalResult = checkAndRollDisapproval(natural, disapprovalRange, disapprovalTable, options);
-        if (disapprovalResult) {
-            // Update the new disapproval range in result
-            result.newDisapprovalRange = increaseDisapprovalRange(disapprovalRange);
-            events?.onDisapprovalIncreased?.(result, result.newDisapprovalRange);
-            return disapprovalResult;
-        }
-    }
-    return undefined;
+    return checkAndRollDisapproval(natural, disapprovalRange, disapprovalTable, luckModifier, options);
 }
 // =============================================================================
 // Utility Functions
@@ -444,7 +449,7 @@ export function getSpellCheckSummary(result) {
         parts.push(`Corruption: ${result.corruptionResult.description}`);
     }
     // Disapproval
-    if (result.disapprovalResult) {
+    if (result.disapprovalResult?.matched) {
         parts.push(`Disapproval: ${result.disapprovalResult.description}`);
     }
     // Fumble effect

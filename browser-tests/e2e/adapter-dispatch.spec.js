@@ -2462,15 +2462,17 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     })
 
     test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async ({ page }) => {
-      // Cleric actor with `disapproval: 1` but no `disapprovalTable`
-      // set — adapter path continues (not legacy) but silently skips
-      // the disapproval sub-roll. The reason log is the telemetry.
+      // Cleric actor with no `disapprovalTable` set — adapter path
+      // continues (not legacy) and posts the disapproval roll without a
+      // result. The reason log is the telemetry, emitted only when a
+      // disapproval roll actually happens: automation on, natural in range
+      // (range 20 catches every natural).
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Spell NoDisapproval',
           type: 'Player',
           system: {
-            class: { className: 'Cleric', disapproval: 1 },
+            class: { className: 'Cleric', disapproval: 20 },
             details: { sheetClass: 'Cleric' }
           }
         })
@@ -2485,7 +2487,13 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         }])
       })
       await page.evaluate(async () => {
-        await game.actors.getName('P1 Spell NoDisapproval').rollSpellCheck({ spell: 'P1-NoDisapproval-Spell' })
+        const prior = game.settings.get('dcc', 'automateClericDisapproval')
+        await game.settings.set('dcc', 'automateClericDisapproval', true)
+        try {
+          await game.actors.getName('P1 Spell NoDisapproval').rollSpellCheck({ spell: 'P1-NoDisapproval-Spell' })
+        } finally {
+          await game.settings.set('dcc', 'automateClericDisapproval', prior)
+        }
       })
 
       // The first rollSpellCheck log is the adapter dispatch; the

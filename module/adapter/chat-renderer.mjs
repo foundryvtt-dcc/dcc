@@ -801,51 +801,58 @@ function buildNakedSpellResultHtml (result) {
 }
 
 /**
- * Render a cleric disapproval roll as a Foundry ChatMessage. Mirrors
- * the legacy `_onRollDisapproval` chat (`actor.js:2852`) for the
- * table-found branch: one message carrying the 1d4 sub-roll + the
- * drawn table entry's description.
+ * Render a cleric disapproval roll as a Foundry ChatMessage: the roll plus
+ * the drawn Table 5-7 entry as the flavor.
  *
- * The lib has already rolled (via the caster's sync roller, which the
- * adapter primes with a Foundry-evaluated 1d4 value — see
- * `_castViaCalculateSpellCheck`). This function builds a deterministic
- * `Roll` for the `disapprovalResult.roll` total so Foundry can render
- * it, then attaches the table text as the chat flavor.
+ * `roll` is the evaluated Foundry `Nd4 − Luck` Roll from
+ * `DCCActor.rollDisapproval` (issue #961), posted as-is so the card and
+ * Dice So Nice show the real dice. Without one, a deterministic
+ * `${total}d1` Roll stands in for the lib's total.
+ *
+ * `disapprovalResult` is the lib's `DisapprovalResult`, or null when no
+ * disapproval table is configured — the roll is then posted on its own.
  *
  * @param {Object} params
- * @param {Object} params.actor - The DCCActor that cast.
- * @param {Object} params.disapprovalResult - The lib's
+ * @param {Object} params.actor - The cleric DCCActor.
+ * @param {Object|null} params.disapprovalResult - The lib's
  *   `DisapprovalResult` (from `spells/disapproval.js`).
+ * @param {Roll} [params.roll] - The evaluated Foundry disapproval Roll.
  * @returns {Promise<ChatMessage>}
  */
-export async function renderDisapprovalRoll ({ actor, disapprovalResult }) {
-  const total = Number(disapprovalResult?.roll) || 0
+export async function renderDisapprovalRoll ({ actor, disapprovalResult, roll }) {
   const description = disapprovalResult?.description || ''
 
-  // Build a deterministic Roll that evaluates to the lib's rolled
-  // value. `${total}d1` always totals `total` regardless of dice.
-  // The flavor carries the description so chat displays the drawn
-  // table entry like the legacy `RollTable.draw` path.
-  const roll = new Roll(`${Math.max(1, total)}d1`)
-  await roll.evaluate()
+  let chatRoll = roll
+  if (!chatRoll) {
+    const total = Number(disapprovalResult?.roll) || 0
+    chatRoll = new Roll(`${Math.max(1, total)}d1`)
+    await chatRoll.evaluate()
+  }
 
   const flavor = [game.i18n.localize('DCC.DisapprovalRoll'), description]
     .filter(Boolean)
     .join(' — ')
 
-  const messageData = await roll.toMessage(
+  const flags = {
+    'dcc.RollType': 'Disapproval',
+    'dcc.isDisapproval': true
+  }
+  if (disapprovalResult) {
+    flags['dcc.libDisapproval'] = {
+      roll: disapprovalResult.roll,
+      description,
+      disapprovalRange: disapprovalResult.disapprovalRange,
+      ...(disapprovalResult.formula !== undefined && { formula: disapprovalResult.formula }),
+      ...(disapprovalResult.matched !== undefined && { matched: disapprovalResult.matched }),
+      ...(disapprovalResult.luckModifier !== undefined && { luckModifier: disapprovalResult.luckModifier })
+    }
+  }
+
+  const messageData = await chatRoll.toMessage(
     {
       speaker: ChatMessage.getSpeaker({ actor }),
       flavor,
-      flags: {
-        'dcc.RollType': 'Disapproval',
-        'dcc.isDisapproval': true,
-        'dcc.libDisapproval': {
-          roll: disapprovalResult?.roll,
-          description,
-          disapprovalRange: disapprovalResult?.disapprovalRange
-        }
-      }
+      flags
     },
     { create: false }
   )

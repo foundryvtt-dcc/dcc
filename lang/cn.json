@@ -499,6 +499,7 @@
   "DCC.LevelNeutral": "中立",
   "DCC.LevelChaotic": "混乱",
   "DCC.LuckDie": "幸运骰",
+  "DCC.LuckModifier": "幸运调整值",
   "DCC.LuckSpend": "花费 {luckSpend} 幸运",
   "DCC.Lucky": "幸运",
   "DCC.LuckyBonus": "幸运奖励",

@@ -114,6 +114,52 @@ describe('renderDisapprovalRoll', () => {
     })
   })
 
+  test('posts the real Foundry roll when one is supplied (#961)', async () => {
+    const posted = []
+    const roll = {
+      async toMessage (data, opts) {
+        posted.push(opts)
+        return data
+      }
+    }
+    await renderDisapprovalRoll({
+      actor,
+      disapprovalResult: { roll: 7, description: 'Row 7', disapprovalRange: 3, formula: '3d4', luckModifier: 2, matched: true },
+      roll
+    })
+    expect(rollFormulas).toEqual([]) // no stand-in d1 roll built
+    expect(posted).toEqual([{ create: false }])
+    expect(createdMessageData().flags['dcc.libDisapproval']).toEqual({
+      roll: 7,
+      description: 'Row 7',
+      disapprovalRange: 3,
+      formula: '3d4',
+      matched: true,
+      luckModifier: 2
+    })
+  })
+
+  test('a table miss posts the bare label (no English fallback text)', async () => {
+    const roll = { toMessage: async (data) => data }
+    await renderDisapprovalRoll({
+      actor,
+      disapprovalResult: { roll: 31, description: '', disapprovalRange: 10, matched: false },
+      roll
+    })
+    const data = createdMessageData()
+    expect(data.flavor).toBe('DCC.DisapprovalRoll')
+    expect(data.flags['dcc.libDisapproval'].matched).toBe(false)
+  })
+
+  test('with no table result the roll is posted bare, without lib flags', async () => {
+    const roll = { toMessage: async (data) => data }
+    await renderDisapprovalRoll({ actor, disapprovalResult: null, roll })
+    const data = createdMessageData()
+    expect(data.flavor).toBe('DCC.DisapprovalRoll')
+    expect(data.flags['dcc.isDisapproval']).toBe(true)
+    expect(data.flags['dcc.libDisapproval']).toBeUndefined()
+  })
+
   test('clamps a zero / missing roll to a 1d1 formula (never 0d1)', async () => {
     await renderDisapprovalRoll({ actor, disapprovalResult: { roll: 0 } })
     expect(rollFormulas).toEqual(['1d1'])

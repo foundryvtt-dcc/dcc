@@ -51,6 +51,8 @@ You can create custom disapproval tables specific to your world or deity. The sy
 
 **Why these ranges?** The disapproval roll formula is `(natural spell check roll)d4 - luck modifier`. For example, if you rolled a natural 3 on your spell check with -1 luck, the disapproval roll is `3d4 - (-1)` = `3d4 + 1`, which can range from 4 to 13. Using wide ranges like -500 to 500 ensures all possible results are covered.
 
+A total below 1 (possible with a high Luck modifier) is treated as 1, so a first result covering 1 is enough at the low end. A total above your last result's range finds no result, so keep the wide upper range.
+
 ### Step 2: Select the Table on Your Cleric
 
 1. Open your Cleric's character sheet

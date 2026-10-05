@@ -49,9 +49,29 @@ export declare function resetDisapprovalRange(): number;
  * Result of rolling on the disapproval table
  */
 export interface DisapprovalResult {
-    /** The roll result (1d4 multiplied by disapproval range, typically) */
+    /**
+     * The disapproval roll: (natural)d4 minus the cleric's Luck modifier.
+     * Not clamped — may be below 1 when Luck is high. The table lookup
+     * clamps to row 1 (see `rollDisapproval`).
+     */
     roll: number;
-    /** Description of the disapproval effect */
+    /** The dice expression rolled, e.g. "3d4" */
+    formula: string;
+    /** Number of d4s rolled (equals the triggering natural roll) */
+    diceCount: number;
+    /** The natural spell-check roll that triggered disapproval */
+    naturalRoll: number;
+    /** The cleric's Luck modifier (subtracted from the dice total) */
+    luckModifier: number;
+    /**
+     * Whether the table had a row for the roll. False when the roll is above
+     * the table's last row (a high natural can roll up to 80).
+     */
+    matched: boolean;
+    /**
+     * Description of the disapproval effect: the matched row's text, or ""
+     * when no row matched (consumers render their own localized fallback).
+     */
     description: string;
     /** Duration of the effect (if applicable) */
     duration?: string;
@@ -63,15 +83,24 @@ export interface DisapprovalResult {
 /**
  * Roll for disapproval effect.
  *
- * In DCC, the disapproval roll is typically:
- * 1d4 × current disapproval range
+ * DCC RAW (core rulebook, Table 5-7): the cleric rolls 1d4 for every point
+ * of the natural spell-check roll (a natural 1 rolls 1d4, a natural 4 inside
+ * the range rolls 4d4), and the roll is reduced by the cleric's Luck
+ * modifier. The disapproval range itself only decides *whether* disapproval
+ * happens; it does not scale the roll.
  *
- * @param disapprovalRange - Current disapproval range
+ * A Luck modifier can push the roll below 1. The table starts at 1, so the
+ * lookup clamps to 1 (the mildest result); `roll` keeps the unclamped value
+ * so callers can show the arithmetic.
+ *
+ * @param naturalRoll - The natural d20 roll that triggered disapproval
+ * @param disapprovalRange - Current disapproval range (reported only)
  * @param disapprovalTable - Table to look up the result
- * @param options - Roll options
+ * @param luckModifier - The cleric's Luck modifier (default 0)
+ * @param options - Roll options. A custom roller receives "Nd4".
  * @returns The disapproval result
  */
-export declare function rollDisapproval(disapprovalRange: number, disapprovalTable: SimpleTable, options?: RollOptions): DisapprovalResult;
+export declare function rollDisapproval(naturalRoll: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: RollOptions): DisapprovalResult;
 /**
  * Combined check and roll for disapproval.
  * Returns undefined if disapproval was not triggered.
@@ -79,10 +108,11 @@ export declare function rollDisapproval(disapprovalRange: number, disapprovalTab
  * @param natural - The natural die roll from the spell check
  * @param disapprovalRange - Current disapproval range
  * @param disapprovalTable - Table to look up the result
+ * @param luckModifier - The cleric's Luck modifier (default 0)
  * @param options - Roll options
  * @returns DisapprovalResult if triggered, undefined otherwise
  */
-export declare function checkAndRollDisapproval(natural: number, disapprovalRange: number, disapprovalTable: SimpleTable, options?: RollOptions): DisapprovalResult | undefined;
+export declare function checkAndRollDisapproval(natural: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: RollOptions): DisapprovalResult | undefined;
 /**
  * Disapproval severity level
  */
@@ -95,8 +125,13 @@ export declare function getDisapprovalSeverity(roll: number): DisapprovalSeverit
 /**
  * Calculate the expected disapproval severity for a given range.
  * Useful for warning players about high disapproval ranges.
+ *
+ * Any natural roll from 1 to the range triggers disapproval, and the roll is
+ * (natural)d4 − Luck modifier, so the best case is a natural 1 rolling a 1
+ * and the worst case is a natural equal to the range rolling all 4s.
+ * The average assumes each triggering natural is equally likely.
  */
-export declare function getExpectedSeverity(disapprovalRange: number): {
+export declare function getExpectedSeverity(disapprovalRange: number, luckModifier?: number): {
     minimum: DisapprovalSeverity;
     maximum: DisapprovalSeverity;
     average: DisapprovalSeverity;

@@ -2061,37 +2061,54 @@ test('item-bound wizard cast leaves hit points alone without the opt-in (#921)',
 })
 
 test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async () => {
-  rollToMessageMock.mockClear()
-  const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  // Logged only when a disapproval roll actually happens (automation on,
+  // natural in range) — not on every cleric cast.
+  const cast = async (automate) => {
+    rollToMessageMock.mockClear()
+    gameSettingsGetMock.mockImplementation((module, key) =>
+      module === 'dcc' && key === 'automateClericDisapproval' && automate)
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  actor.system.class.patron = ''
-  actor.system.class.className = 'Cleric'
-  actor.system.class.disapproval = 1
-  // Intentionally no `class.disapprovalTable` — loadDisapprovalTable
-  // returns null on the empty-tableName guard.
-  actor.system.details.sheetClass = 'Cleric'
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.class.patron = ''
+    actor.system.class.className = 'Cleric'
+    actor.system.class.disapproval = 20 // the mocked natural lands in range
+    // Intentionally no `class.disapprovalTable` — loadDisapprovalTable
+    // returns null on the empty-tableName guard.
+    actor.system.details.sheetClass = 'Cleric'
 
-  const spellItem = makeClericSpellItem()
-  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+    const spellItem = makeClericSpellItem()
+    const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+    const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(null)
 
-  await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
+    await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
 
-  // The cleric cast still runs via the adapter — this is a degradation,
-  // not a legacy fallback.
-  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+    // The cleric cast still runs via the adapter — this is a degradation,
+    // not a legacy fallback.
+    expect(rollToMessageMock).toHaveBeenCalledTimes(1)
 
-  const reasonLog = consoleSpy.mock.calls.find(([line]) =>
-    typeof line === 'string' &&
-    line.includes('[DCC adapter] rollSpellCheck') &&
-    line.includes('via adapter') &&
-    line.includes('reason=noDisapprovalTable')
-  )
-  expect(reasonLog, `expected reason=noDisapprovalTable log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
+    const reasonLog = consoleSpy.mock.calls.find(([line]) =>
+      typeof line === 'string' &&
+      line.includes('[DCC adapter] rollSpellCheck') &&
+      line.includes('via adapter') &&
+      line.includes('reason=noDisapprovalTable')
+    )
+    const rolled = rollDisapprovalSpy.mock.calls.length
 
-  findSpy.mockRestore()
-  consoleSpy.mockRestore()
+    findSpy.mockRestore()
+    consoleSpy.mockRestore()
+    gameSettingsGetMock.mockReset()
+    return { reasonLog, rolled }
+  }
+
+  const on = await cast(true)
+  expect(on.reasonLog, 'expected reason=noDisapprovalTable log').toBeDefined()
+  expect(on.rolled).toBe(1)
+
+  const off = await cast(false)
+  expect(off.reasonLog).toBeUndefined()
+  expect(off.rolled).toBe(0)
 })
 
 test('wizard first-cast without a configured mercurial table emits reason=noMercurialTable', async () => {
@@ -3743,6 +3760,61 @@ test('#923 the disapproval table draw respects automateClericDisapproval', async
 
   expect(await cast(false)).toBe(0)
   expect(await cast(true)).toBeGreaterThan(0)
+})
+
+test('#961 a cleric cast rolls disapproval through actor.rollDisapproval with the natural', async () => {
+  // Every disapproval caller shares the lib-backed `rollDisapproval`; the
+  // spell path used to roll its own 1d4 inside the lib cast instead.
+  const cast = async (disapproval) => {
+    gameSettingsGetMock.mockImplementation((module, key) => {
+      if (module !== 'dcc') return false
+      if (key === 'automateClericDisapproval') return true
+      if (key === 'disapprovalPacks') return 'dcc-core-book.dcc-disapproval'
+      return false
+    })
+    const originalTables = game.tables
+    const disapprovalTable = {
+      id: 'dis',
+      name: 'P961 Disapproval',
+      results: [{ range: [1, 4], description: 'Smitten' }]
+    }
+    clearAllTableCaches()
+    game.tables = {
+      contents: [disapprovalTable],
+      getName: () => null,
+      find: (predicate) => ([disapprovalTable].find(predicate) ?? null)
+    }
+
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.class.patron = ''
+    actor.system.class.className = 'Cleric'
+    actor.system.details.sheetClass = 'Cleric'
+    actor.system.class.disapproval = disapproval
+    actor.system.class.disapprovalTable = 'P961 Disapproval'
+
+    const spellItem = makeClericSpellItem()
+    const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+    const rollDisapprovalSpy = vi.spyOn(actor, 'rollDisapproval').mockResolvedValue(null)
+    libCalcSpellCheckMock.mockClear()
+
+    await actor.rollSpellCheck({ spellItem })
+
+    // The table is never handed to the lib cast, so the lib can't roll a
+    // second disapproval of its own.
+    expect(libCalcSpellCheckMock).toHaveBeenCalled()
+    for (const [, input] of libCalcSpellCheckMock.mock.calls) expect(input.disapprovalTable).toBeUndefined()
+    const calls = rollDisapprovalSpy.mock.calls
+    findSpy.mockRestore()
+    game.tables = originalTables
+    gameSettingsGetMock.mockReset()
+    return calls
+  }
+
+  // The mocked spell-check roll is a natural 10.
+  // The cast records the pre-cast range it was checked against.
+  expect(await cast(10)).toEqual([[10, { disapprovalRange: 10 }]])
+  expect(await cast(9)).toEqual([])
 })
 
 // ---- #923 audit: legacy failure automation ----
