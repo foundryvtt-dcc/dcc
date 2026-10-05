@@ -1114,3 +1114,69 @@ test('buildAttackInput omits deedDie for plain numeric toHits', () => {
   expect('deedDie' in input).toBe(false)
   expect(input.attackBonus).toBe(3)
 })
+
+// ============================================================================
+// Crit range scaling (#977) — the lib scales the d20-relative threat range
+// to the die actually rolled; rollToHit must not pre-scale it
+// ============================================================================
+
+async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null }) {
+  const originalCall = Hooks.call
+  Hooks.call = (hook, terms) => {
+    if (hook === 'dcc.modifyAttackRollTerms' && bumpTo) terms[0].formula = bumpTo
+    return true
+  }
+  const restoreRoll = withActionDieRoll(natural, `1d${faces}`)
+  const restore = withAutomate(true)
+  try {
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    return await actor.rollToHit(makeSimpleWeapon(weaponOverrides), {})
+  } finally {
+    restore()
+    restoreRoll()
+    Hooks.call = originalCall
+  }
+}
+
+test('#977: crit 20 on a hook-bumped d16 (long range) crits only on 16, not 12–16', async () => {
+  const miss = await rollToHitWith({ faces: 16, natural: 12, bumpTo: '1d16' })
+  expect(miss.libResult.die).toBe('d16')
+  expect(miss.crit).toBe(false)
+  expect(miss.roll.dice[0].options.dcc.upperThreshold).toBe(16)
+
+  const max = await rollToHitWith({ faces: 16, natural: 16, bumpTo: '1d16' })
+  expect(max.crit).toBe(true)
+})
+
+test('#977: a warrior 19–20 range on a bumped d16 scales once, to 15–16', async () => {
+  const fifteen = await rollToHitWith({ faces: 16, natural: 15, bumpTo: '1d16', weaponOverrides: { critRange: 19 } })
+  expect(fifteen.crit).toBe(true)
+  expect(fifteen.roll.dice[0].options.dcc.upperThreshold).toBe(15)
+
+  const fourteen = await rollToHitWith({ faces: 16, natural: 14, bumpTo: '1d16', weaponOverrides: { critRange: 19 } })
+  expect(fourteen.crit).toBe(false)
+})
+
+test('#977: a die changed outside the hook (roll dialog) still reaches the lib', async () => {
+  // terms[0] stays 1d20, but Foundry evaluated a d24 — the lib must judge
+  // the crit (and auto-hit) against the d24 that was rolled.
+  const twentyThree = await rollToHitWith({ faces: 24, natural: 23 })
+  expect(twentyThree.libResult.die).toBe('d24')
+  expect(twentyThree.crit).toBe(false)
+  expect(twentyThree.roll.dice[0].options.dcc.upperThreshold).toBe(24)
+
+  const twentyFour = await rollToHitWith({ faces: 24, natural: 24 })
+  expect(twentyFour.crit).toBe(true)
+  expect(twentyFour.libResult.critSource).toBe('natural-max')
+})
+
+test('#977: a crit-on-max-die two-weapon range follows a changed die to its max face', async () => {
+  const weaponOverrides = { actionDie: '1d16', critRange: 16, twoWeaponCritOnMaxDie: true }
+  const sixteen = await rollToHitWith({ faces: 20, natural: 16, weaponOverrides })
+  expect(sixteen.crit).toBe(false)
+  expect(sixteen.roll.dice[0].options.dcc.upperThreshold).toBe(20)
+
+  const twenty = await rollToHitWith({ faces: 20, natural: 20, weaponOverrides })
+  expect(twenty.crit).toBe(true)
+})

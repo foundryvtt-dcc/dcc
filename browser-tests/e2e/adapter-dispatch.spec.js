@@ -3780,6 +3780,67 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(flag.isCriticalThreat).toBe(false)
     })
 
+    test('a hook-bumped long-range d16 crits only on 16, not 12–16 (#977)', async ({ page }) => {
+      // The long-range penalty (weapon-range.mjs / dcc-qol) rewrites
+      // terms[0] from 1d20 to 1d16. rollToHit used to scale critRange 20 →
+      // 16 itself and then hand 16 to the lib, which scaled it again to 12,
+      // so a natural 12 on the long-range d16 critted.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P977 Long Range', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P977-Longbow',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d6', melee: false, equipped: true }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__p977Hook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
+          if (a?.name === 'P977 Long Range') terms[0].formula = '1d16'
+        })
+        // ceil((1 - 0.26) * 16) = 12 — inside the double-scaled 12–16 range.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.26
+        // Cards from earlier runs share the speaker alias; only read ours.
+        globalThis.__p977Before = new Set(game.messages.contents.map(m => m.id))
+      })
+      await page.evaluate(async () => {
+        const actor = game.actors.getName('P977 Long Range')
+        await actor.rollWeaponAttack(actor.items.getName('P977-Longbow').id)
+      })
+
+      const out = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.slice().reverse().find(m =>
+            !globalThis.__p977Before.has(m.id) &&
+            m.speaker?.alias === 'P977 Long Range' &&
+            m.getFlag('dcc', 'isToHit') &&
+            m.getFlag('dcc', 'libResult'))
+          if (msg) {
+            return {
+              lib: msg.getFlag('dcc', 'libResult'),
+              upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // Restore BEFORE asserting — see fumble-note test.
+      await page.evaluate(async () => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+        Hooks.off('dcc.modifyAttackRollTerms', globalThis.__p977Hook)
+        await game.actors.getName('P977 Long Range')?.delete()
+      })
+
+      expect(out, 'long-range attack must set dcc.libResult').not.toBeNull()
+      expect(out.lib.die).toBe('d16')
+      expect(out.lib.natural).toBe(12)
+      expect(out.lib.isCriticalThreat).toBe(false)
+      // The chat highlight threshold is the once-scaled 16.
+      expect(out.upperThreshold).toBe(16)
+    })
+
     test('automate off → adapter (session 12 / A5)', async ({ page }) => {
       // A5: `automateDamageFumblesCrits` gates the downstream damage /
       // crit / fumble chain inside `rollWeaponAttack`, not the attack
