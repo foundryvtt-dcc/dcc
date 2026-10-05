@@ -3780,58 +3780,66 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(flag.isCriticalThreat).toBe(false)
     })
 
+    // Rolls one live attack with the action die bumped by a hook and the
+    // dice pinned, then reads back that attack's card. Setup and cleanup run
+    // in one evaluate with try/finally, so a throwing roll can't leave the
+    // pinned dice, the hook, or a changed world setting behind for later
+    // specs.
+    async function rollBumpedAttack (page, { name, bumpTo, uniform, strict }) {
+      return page.evaluate(async ({ name, bumpTo, uniform, strict }) => {
+        const prevStrict = game.settings.get('dcc', 'strictCriticalHits')
+        const origRandomUniform = CONFIG.Dice.randomUniform
+        let hook = null
+        let actor = null
+        try {
+          if (strict !== undefined) await game.settings.set('dcc', 'strictCriticalHits', strict)
+          await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+          actor = await Actor.create({ name, type: 'Player' })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: `${name} Weapon`,
+            type: 'weapon',
+            system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d6', melee: true, equipped: true }
+          }])
+          hook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
+            if (a?.name === name) terms[0].formula = bumpTo
+          })
+          CONFIG.Dice.randomUniform = () => uniform
+          // Cards from earlier runs share the speaker alias; only read ours.
+          const before = new Set(game.messages.contents.map(m => m.id))
+          await actor.rollWeaponAttack(actor.items.getName(`${name} Weapon`).id)
+
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            const msg = game.messages.contents.slice().reverse().find(m =>
+              !before.has(m.id) &&
+              m.speaker?.alias === name &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult'))
+            if (msg) {
+              return {
+                lib: msg.getFlag('dcc', 'libResult'),
+                upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
+              }
+            }
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+          if (hook !== null) Hooks.off('dcc.modifyAttackRollTerms', hook)
+          await game.settings.set('dcc', 'strictCriticalHits', prevStrict)
+          await actor?.delete()
+        }
+      }, { name, bumpTo, uniform, strict })
+    }
+
     test('a hook-bumped long-range d16 crits only on 16, not 12–16 (#977)', async ({ page }) => {
       // The long-range penalty (weapon-range.mjs / dcc-qol) rewrites
       // terms[0] from 1d20 to 1d16. rollToHit used to scale critRange 20 →
       // 16 itself and then hand 16 to the lib, which scaled it again to 12,
       // so a natural 12 on the long-range d16 critted.
-      await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'P977 Long Range', type: 'Player' })
-        await actor.createEmbeddedDocuments('Item', [{
-          name: 'P977-Longbow',
-          type: 'weapon',
-          system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d6', melee: false, equipped: true }
-        }])
-        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
-        globalThis.__p977Hook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
-          if (a?.name === 'P977 Long Range') terms[0].formula = '1d16'
-        })
-        // ceil((1 - 0.26) * 16) = 12 — inside the double-scaled 12–16 range.
-        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
-        CONFIG.Dice.randomUniform = () => 0.26
-        // Cards from earlier runs share the speaker alias; only read ours.
-        globalThis.__p977Before = new Set(game.messages.contents.map(m => m.id))
-      })
-      await page.evaluate(async () => {
-        const actor = game.actors.getName('P977 Long Range')
-        await actor.rollWeaponAttack(actor.items.getName('P977-Longbow').id)
-      })
-
-      const out = await page.evaluate(async () => {
-        const deadline = Date.now() + 3000
-        while (Date.now() < deadline) {
-          const msg = game.messages.contents.slice().reverse().find(m =>
-            !globalThis.__p977Before.has(m.id) &&
-            m.speaker?.alias === 'P977 Long Range' &&
-            m.getFlag('dcc', 'isToHit') &&
-            m.getFlag('dcc', 'libResult'))
-          if (msg) {
-            return {
-              lib: msg.getFlag('dcc', 'libResult'),
-              upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
-            }
-          }
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-        return null
-      })
-
-      // Restore BEFORE asserting — see fumble-note test.
-      await page.evaluate(async () => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-        Hooks.off('dcc.modifyAttackRollTerms', globalThis.__p977Hook)
-        await game.actors.getName('P977 Long Range')?.delete()
-      })
+      // ceil((1 - 0.26) * 16) = 12 — inside the double-scaled 12–16 range.
+      const out = await rollBumpedAttack(page, { name: 'P977 Long Range', bumpTo: '1d16', uniform: 0.26 })
 
       expect(out, 'long-range attack must set dcc.libResult').not.toBeNull()
       expect(out.lib.die).toBe('d16')
@@ -3842,57 +3850,13 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     })
 
     test('strict crits default on; off keeps the literal 20–24 range on a d24 (#977)', async ({ page }) => {
-      await page.evaluate(async () => {
-        globalThis.__p977sPrev = game.settings.get('dcc', 'strictCriticalHits')
-        await game.settings.set('dcc', 'strictCriticalHits', false)
-        const actor = await Actor.create({ name: 'P977 Literal Crit', type: 'Player' })
-        await actor.createEmbeddedDocuments('Item', [{
-          name: 'P977-Sword',
-          type: 'weapon',
-          system: { actionDie: '1d20', toHit: '+0', critRange: 20, damage: '1d8', melee: true, equipped: true }
-        }])
-        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
-        globalThis.__p977sHook = Hooks.on('dcc.modifyAttackRollTerms', (terms, a) => {
-          if (a?.name === 'P977 Literal Crit') terms[0].formula = '1d24'
-        })
-        // ceil((1 - 0.19) * 24) = 20 — a crit only under the literal range.
-        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
-        CONFIG.Dice.randomUniform = () => 0.19
-        globalThis.__p977sBefore = new Set(game.messages.contents.map(m => m.id))
-      })
-      await page.evaluate(async () => {
-        const actor = game.actors.getName('P977 Literal Crit')
-        await actor.rollWeaponAttack(actor.items.getName('P977-Sword').id)
-      })
-
-      const out = await page.evaluate(async () => {
-        const deadline = Date.now() + 3000
-        while (Date.now() < deadline) {
-          const msg = game.messages.contents.slice().reverse().find(m =>
-            !globalThis.__p977sBefore.has(m.id) &&
-            m.speaker?.alias === 'P977 Literal Crit' &&
-            m.getFlag('dcc', 'isToHit') &&
-            m.getFlag('dcc', 'libResult'))
-          if (msg) {
-            return {
-              lib: msg.getFlag('dcc', 'libResult'),
-              upperThreshold: msg.rolls?.[0]?.dice?.[0]?.options?.dcc?.upperThreshold
-            }
-          }
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-        return null
-      })
-
-      const strictDefault = await page.evaluate(async () => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-        Hooks.off('dcc.modifyAttackRollTerms', globalThis.__p977sHook)
-        await game.settings.set('dcc', 'strictCriticalHits', globalThis.__p977sPrev)
-        await game.actors.getName('P977 Literal Crit')?.delete()
-        return game.settings.settings.get('dcc.strictCriticalHits').default
-      })
-
+      const strictDefault = await page.evaluate(() =>
+        game.settings.settings.get('dcc.strictCriticalHits').default)
       expect(strictDefault).toBe(true)
+
+      // ceil((1 - 0.19) * 24) = 20 — a crit only under the literal range.
+      const out = await rollBumpedAttack(page, { name: 'P977 Literal Crit', bumpTo: '1d24', uniform: 0.19, strict: false })
+
       expect(out, 'literal-range attack must set dcc.libResult').not.toBeNull()
       expect(out.lib.die).toBe('d24')
       expect(out.lib.natural).toBe(20)

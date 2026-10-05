@@ -1120,13 +1120,22 @@ test('buildAttackInput omits deedDie for plain numeric toHits', () => {
 // to the die actually rolled; rollToHit must not pre-scale it
 // ============================================================================
 
-async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null, strict = true }) {
+async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null, strict = true, options = {}, bareDie = false }) {
   const originalCall = Hooks.call
   Hooks.call = (hook, terms) => {
     if (hook === 'dcc.modifyAttackRollTerms' && bumpTo) terms[0].formula = bumpTo
     return true
   }
   const restoreRoll = withActionDieRoll(natural, `1d${faces}`)
+  if (bareDie) {
+    // A die term that reports neither `faces` nor a parseable formula.
+    const rollImpl = dccRollCreateRollMock.getMockImplementation()
+    dccRollCreateRollMock.mockImplementation((...args) => {
+      const roll = rollImpl(...args)
+      roll.dice[0] = { total: natural, options: {} }
+      return roll
+    })
+  }
   const restore = withAutomate(true)
   const automateGet = gameSettingsGetMock.getMockImplementation()
   gameSettingsGetMock.mockImplementation((module, key) =>
@@ -1134,7 +1143,7 @@ async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = n
   try {
     // noinspection JSCheckFunctionSignatures
     const actor = new DCCActor()
-    return await actor.rollToHit(makeSimpleWeapon(weaponOverrides), {})
+    return await actor.rollToHit(makeSimpleWeapon(weaponOverrides), options)
   } finally {
     restore()
     restoreRoll()
@@ -1207,4 +1216,51 @@ test('#977: with strict crits off, a smaller die crits only on its max face', as
 test('#977: with strict crits off, a two-weapon "cannot crit" range still cannot crit', async () => {
   const offHand = await rollToHitWith({ faces: 16, natural: 16, weaponOverrides: { actionDie: '1d16', critRange: 51 }, strict: false })
   expect(offHand.crit).toBe(false)
+})
+
+test('#977: the multiple-action-dice override die scales the range in both modes', async () => {
+  const warrior = { critRange: 18 }
+  const options = { _actionDieFormula: '1d14' }
+  // Strict: 18–20 is the top three faces, so 12–14 on the d14.
+  const twelve = await rollToHitWith({ faces: 14, natural: 12, weaponOverrides: warrior, options })
+  expect(twelve.libResult.die).toBe('d14')
+  expect(twelve.crit).toBe(true)
+  expect(twelve.roll.dice[0].options.dcc.upperThreshold).toBe(12)
+  const eleven = await rollToHitWith({ faces: 14, natural: 11, weaponOverrides: warrior, options })
+  expect(eleven.crit).toBe(false)
+
+  // Off: 18 is capped at the d14's top face.
+  const thirteen = await rollToHitWith({ faces: 14, natural: 13, weaponOverrides: warrior, options, strict: false })
+  expect(thirteen.crit).toBe(false)
+  const fourteen = await rollToHitWith({ faces: 14, natural: 14, weaponOverrides: warrior, options, strict: false })
+  expect(fourteen.crit).toBe(true)
+  expect(fourteen.roll.dice[0].options.dcc.upperThreshold).toBe(14)
+})
+
+test('#977: a die term without a readable size falls back to the formula die', async () => {
+  // Off mode must still apply: 19 capped at the bumped d16's top face.
+  const fifteen = await rollToHitWith({ faces: 16, natural: 15, bumpTo: '1d16', bareDie: true, weaponOverrides: { critRange: 19 }, strict: false })
+  expect(fifteen.libResult.die).toBe('d16')
+  expect(fifteen.crit).toBe(false)
+  expect(fifteen.roll.dice[0].options.dcc.upperThreshold).toBe(16)
+})
+
+test('#977: the Agl ≤15 two-weapon "cannot crit" range (21) never crits', async () => {
+  for (const strict of [true, false]) {
+    const max = await rollToHitWith({ faces: 24, natural: 24, weaponOverrides: { critRange: 21 }, strict })
+    expect(max.crit, `strict=${strict}`).toBe(false)
+  }
+})
+
+test('#977: a d30 scales to the top faces when strict, keeps the number when not', async () => {
+  const warrior = { critRange: 19 }
+  const strict29 = await rollToHitWith({ faces: 30, natural: 29, weaponOverrides: warrior })
+  expect(strict29.crit).toBe(true)
+  const strict28 = await rollToHitWith({ faces: 30, natural: 28, weaponOverrides: warrior })
+  expect(strict28.crit).toBe(false)
+
+  const literal19 = await rollToHitWith({ faces: 30, natural: 19, weaponOverrides: warrior, strict: false })
+  expect(literal19.crit).toBe(true)
+  const literal18 = await rollToHitWith({ faces: 30, natural: 18, weaponOverrides: warrior, strict: false })
+  expect(literal18.crit).toBe(false)
 })

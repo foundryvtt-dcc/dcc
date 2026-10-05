@@ -620,20 +620,20 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // the range: crit 20 on a long-range d16 came out as 12–16.
     const rolledFaces = attackRoll.dice[0].faces || parseInt(attackRoll.dice[0].formula?.match(/d(\d+)/)?.[1] || '')
     attackInput.actionDie = rolledFaces ? `d${rolledFaces}` : normalizeLibDie(options._actionDieFormula || terms[0]?.formula || die)
+    const actionDieFaces = parseInt(attackInput.actionDie.slice(1))
     // Crit-on-max-die two-weapon rules are a natural roll on the die in
     // play, so they follow a changed die to its max face.
-    if (attackInput.threatRangeIsNatural && rolledFaces) critRange = rolledFaces
+    if (attackInput.threatRangeIsNatural) critRange = actionDieFaces
     // Strict crits (the default) keep the lib's "top N faces" scaling. With
     // them off the range keeps its number — crit 20 on a d24 is 20–24 —
     // capped at the rolled die's max face so a smaller die can still crit.
     // Ranges above 20 are the two-weapon "cannot crit" sentinels; leave them.
-    if (!attackInput.threatRangeIsNatural && critRange <= 20 && rolledFaces &&
+    if (!attackInput.threatRangeIsNatural && critRange <= 20 &&
         !game.settings.get('dcc', 'strictCriticalHits')) {
-      critRange = Math.min(critRange, rolledFaces)
+      critRange = Math.min(critRange, actionDieFaces)
       attackInput.threatRangeIsNatural = true
     }
     attackInput.threatRange = critRange
-    const actionDieFaces = parseInt(attackInput.actionDie.slice(1))
     attackRoll.dice[0].options.dcc = {
       upperThreshold: attackInput.threatRangeIsNatural ? critRange : libAdjustThreatRange(critRange, actionDieFaces)
     }
