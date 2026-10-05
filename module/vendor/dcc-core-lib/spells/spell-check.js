@@ -449,7 +449,7 @@ export function getSpellCheckSummary(result) {
         parts.push(`Corruption: ${result.corruptionResult.description}`);
     }
     // Disapproval
-    if (result.disapprovalResult) {
+    if (result.disapprovalResult?.matched) {
         parts.push(`Disapproval: ${result.disapprovalResult.description}`);
     }
     // Fumble effect

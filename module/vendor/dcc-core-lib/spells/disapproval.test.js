@@ -20,6 +20,16 @@ const table = {
     })),
 };
 describe("rollDisapproval", () => {
+    it("reports a miss with an empty description when the roll is past the last row", () => {
+        const result = rollDisapproval(10, 10, table, 0, { roller: () => 31 });
+        expect(result.roll).toBe(31);
+        expect(result.matched).toBe(false);
+        expect(result.description).toBe("");
+    });
+    it("reports a match for a roll inside the table", () => {
+        const result = rollDisapproval(2, 2, table, 0, { roller: () => 5 });
+        expect(result.matched).toBe(true);
+    });
     it("rolls one d4 per point of the natural roll", () => {
         const expressions = [];
         const result = rollDisapproval(3, 5, table, 0, {

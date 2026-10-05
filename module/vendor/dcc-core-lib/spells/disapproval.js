@@ -99,7 +99,8 @@ export function rollDisapproval(naturalRoll, disapprovalRange, disapprovalTable,
         diceCount,
         naturalRoll,
         luckModifier,
-        description: tableResult?.text ?? `Disapproval (roll ${String(roll)})`,
+        matched: tableResult !== undefined,
+        description: tableResult?.text ?? "",
         disapprovalRange,
     };
     if (tableResult?.effect) {
