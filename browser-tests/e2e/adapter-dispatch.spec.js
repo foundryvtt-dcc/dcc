@@ -2932,6 +2932,59 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(damageLine, 'adapter', { weapon: 'P1-BackstabDagger' })
     })
 
+    test('attack emote uses the localized action verb for attacks and backstabs', async ({ page }) => {
+      // The emote's {actionName} used to be a hardcoded English 'attacks' /
+      // 'backstabs', so non-English emotes read e.g. "Hero: attacks mit …".
+      // Override the verb keys with markers and render each card in emote mode.
+      const result = await page.evaluate(async () => {
+        const name = 'P1 Emote Verb'
+        const existing = game.actors.getName(name)
+        if (existing) await existing.delete()
+        const actor = await Actor.create({ name, type: 'Player', system: { class: { backstab: '+7' } } })
+        const [weapon] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-EmoteDagger',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+1', damageWeapon: '1d4', damage: '1d4', backstabDamage: '1d10', melee: true, equipped: true }
+        }])
+
+        async function rollAndFind (options) {
+          const before = new Set(game.messages.contents.map(m => m.id))
+          await actor.rollWeaponAttack(weapon.id, options)
+          const deadline = Date.now() + 5000
+          while (Date.now() < deadline) {
+            const msg = game.messages.contents.find(m => !before.has(m.id) && m.speaker?.alias === name && m.getFlag('dcc', 'isToHit'))
+            if (msg) return msg
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        }
+        const attackMsg = await rollAndFind({})
+        const backstabMsg = await rollAndFind({ backstab: true })
+
+        const keys = ['DCC.AttackRollEmoteActionAttack', 'DCC.AttackRollEmoteActionBackstab']
+        const savedKeys = keys.map(k => foundry.utils.getProperty(game.i18n.translations, k))
+        const savedEmote = game.settings.get('dcc', 'emoteRolls')
+        const savedEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
+        foundry.utils.setProperty(game.i18n.translations, keys[0], 'VERB-ATTACK')
+        foundry.utils.setProperty(game.i18n.translations, keys[1], 'VERB-BACKSTAB')
+        await game.settings.set('dcc', 'emoteRolls', true)
+        await game.settings.set('dcc', 'enhancedAttackCards', false)
+        try {
+          const text = async msg => msg ? (await msg.renderHTML()).querySelector('.message-content')?.textContent ?? '' : null
+          return { attack: await text(attackMsg), backstab: await text(backstabMsg) }
+        } finally {
+          keys.forEach((k, i) => foundry.utils.setProperty(game.i18n.translations, k, savedKeys[i]))
+          await game.settings.set('dcc', 'emoteRolls', savedEmote)
+          await game.settings.set('dcc', 'enhancedAttackCards', savedEnhanced)
+        }
+      })
+
+      expect(result.attack).toContain('P1 Emote Verb VERB-ATTACK with their P1-EmoteDagger')
+      expect(result.backstab).toContain('P1 Emote Verb VERB-BACKSTAB with their P1-EmoteDagger')
+      expect(result.attack).not.toMatch(/\battacks\b/)
+      expect(result.backstab).not.toMatch(/\bbackstabs\b/)
+    })
+
     test('options.backstab populates libResult with auto-crit + class:backstab bonus', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({

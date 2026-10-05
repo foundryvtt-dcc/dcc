@@ -140,6 +140,8 @@
   "DCC.AttackRoll": "Jet d'attaque avec {weapon}",
   "DCC.AttackRollDeedEmoteSegment": "Avec un jet de haut fait de {deed}",
   "DCC.AttackRollEmote": "Attaque avec {weaponName} et touche une CA {rollHTML}{deedRollHTML} pour {damageRollHTML} points de dégats!{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
+  "DCC.AttackRollEmoteActionAttack": "attaque",
+  "DCC.AttackRollEmoteActionBackstab": "poignarde dans le dos",
   "DCC.AttackRollInvalidFormulaInline": "<b>Formule pour touche invalide '{formula}'</b>",
   "DCC.Avatar": "Avatar du joueur",
   "DCC.Backstab": "Att. sourn.",

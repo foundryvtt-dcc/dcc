@@ -168,6 +168,8 @@
   "DCC.AttackRoll": "Angriffswurf mit {weapon}",
   "DCC.AttackRollDeedEmoteSegment": " mit Kriegerwürfel {deed}",
   "DCC.AttackRollEmote": "{actorName}: {actionName} mit {weaponName}. Trifft RK {rollHTML}{deedRollHTML} und verursacht {damageRollHTML} Punkte Schaden!{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
+  "DCC.AttackRollEmoteActionAttack": "Angriff",
+  "DCC.AttackRollEmoteActionBackstab": "Hinterhältiger Angriff",
   "DCC.AttackRollInvalidFormulaInline": "<b>Ungültige Formel '{formula}' für Angriff</b>",
   "DCC.ArmorDetails": "Rüstungsdetails",
   "DCC.ArmorSettings": "Rüstungseinstellungen",

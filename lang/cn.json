@@ -168,6 +168,8 @@
   "DCC.AttackRoll": "{weapon} 攻击投骰",
   "DCC.AttackRollDeedEmoteSegment": " {deed} 壮举投骰",
   "DCC.AttackRollEmote": "{actorName} {actionName} 使用其 {weaponName} 命中 AC {rollHTML}{deedRollHTML} 造成 {damageRollHTML} 伤害！{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
+  "DCC.AttackRollEmoteActionAttack": "攻击",
+  "DCC.AttackRollEmoteActionBackstab": "背刺",
   "DCC.AttackRollInvalidFormulaInline": "<b>无效命中公式`{formula}`</b>",
   "DCC.ArmorDetails": "护甲细节",
   "DCC.ArmorSettings": "护甲设置",
