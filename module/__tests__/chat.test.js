@@ -1,3 +1,4 @@
+/* global game */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 
@@ -15,7 +16,7 @@ vi.mock('../apply-damage-dialog.js', () => ({
   })
 }))
 
-const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions, emoteAbilityRoll, emoteSavingThrowRoll } = await import('../chat.js')
+const { lookupCriticalRoll, buildMightyDeedPrompt, attachMightyDeedListeners, addChatMessageContextOptions, emoteAbilityRoll, emoteAttackRoll, emoteSavingThrowRoll } = await import('../chat.js')
 const { getCritTableResult } = await import('../utilities.js')
 const { default: ApplyDamageDialog } = await import('../apply-damage-dialog.js')
 
@@ -427,5 +428,46 @@ describe('check penalty note in emote mode (#951)', () => {
     const html = makeEmoteHtml()
     emoteSavingThrowRoll(makeMessage({ flags: { isSave: true } }), html, { alias: 'Hero' })
     expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
+  })
+})
+
+describe('attack emote action verb is localized', () => {
+  const KEYS = {
+    'DCC.AttackRollEmote': '{actorName}: {actionName} mit {weaponName}',
+    'DCC.AttackRollEmoteActionAttack': 'Angriff',
+    'DCC.AttackRollEmoteActionBackstab': 'Hinterhältiger Angriff'
+  }
+  let saved
+
+  beforeEach(() => {
+    saved = { ...game.i18n.translations }
+    Object.assign(game.i18n.translations, KEYS)
+  })
+
+  afterEach(() => {
+    game.i18n.translations = saved
+  })
+
+  function makeAttackMessage (flags = {}) {
+    const allFlags = { isToHit: true, ...flags }
+    return {
+      rolls: [{ total: 15, toAnchor: () => ({ outerHTML: '<a class="inline-roll">15</a>' }) }],
+      isContentVisible: true,
+      alias: 'Hero',
+      system: { weaponName: 'Longsword', damageInlineRoll: '' },
+      getFlag: (scope, key) => allFlags[key]
+    }
+  }
+
+  it('uses the localized attack verb', () => {
+    const html = makeHtml('')
+    emoteAttackRoll(makeAttackMessage(), html)
+    expect(html.messageContent.innerHTML).toBe('Hero: Angriff mit Longsword')
+  })
+
+  it('uses the localized backstab verb', () => {
+    const html = makeHtml('')
+    emoteAttackRoll(makeAttackMessage({ isBackstab: true }), html)
+    expect(html.messageContent.innerHTML).toBe('Hero: Hinterhältiger Angriff mit Longsword')
   })
 })
