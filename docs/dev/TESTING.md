@@ -417,6 +417,12 @@ All functional specs use a **worker-scoped `sessionPage` fixture**: each worker 
 
 The spec's `waitForAdapterLog(rollType)` matches on `[DCC adapter] <rollType> →` — **the arrow is load-bearing.** `module/adapter/debug.mjs` emits a second family of lines from the roll error boundary (`[DCC adapter] <rollType> threw — surfacing to the user …`) that shares the dispatch line's prefix, so a bare prefix match could return a boundary line — possibly one leaked from an earlier test — in place of the dispatch line, and the failure then reads as a dispatch regression (issue #867). Any new `[DCC adapter] …` log family should keep that distinction in mind.
 
+### Chat card contrast sweep (theme work)
+
+`chat-card-contrast.spec.js` posts a gallery of every DCC chat card that carries controls and audits it under all four themes the cards can follow: light, dark, and both `chat-cards-use-ui-theme` mixes. It checks every visible text node (WCAG 1.4.3), every control's border or fill (1.4.11), and every button again on hover. It needs no per-card expectations, so **when you add a chat card with buttons, selects or links, add it to `postGallery`** rather than writing a one-off color assertion.
+
+Any change to chat CSS or color tokens should also get a visual check. The spec writes one screenshot per card and a `gallery.png` sheet per theme to `browser-tests/e2e/test-results/chat-card-contrast-*/`. Open the four `gallery.png` files (or run `pnpm exec playwright show-report` after an HTML-reporter run) and look at them before opening the PR.
+
 ## Related Documentation
 
 - [Test Coverage](TEST_COVERAGE.md) - Comprehensive coverage strategy
