@@ -195,6 +195,26 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   }
 
   /*
+   * Core's light chip/button values need card tokens for enhanced-card and
+   * death-clock actions only; leave unrelated chat controls' paint unchanged.
+   */
+  .message-content :is(.dcc-enhanced-card .enhanced-card-button, .dcc-death-clock-actions button) {
+    --button-background-color: rgb(0 0 0 / 10%);
+    --button-border-color: var(--chat-border-muted-color);
+    --button-text-color: var(--chat-primary-color);
+    --button-hover-background-color: transparent;
+    --button-hover-border-color: var(--chat-primary-color);
+    --button-hover-text-color: var(--chat-primary-color);
+
+    &[disabled] {
+      --button-text-color: var(--chat-text-muted-color);
+      --button-hover-background-color: var(--button-background-color);
+      --button-hover-border-color: var(--button-border-color);
+      --button-hover-text-color: var(--button-text-color);
+    }
+  }
+
+  /*
    * Inline rolls and content links anywhere in a chat message take the color of
    * whatever they sit in (#856).
    *
