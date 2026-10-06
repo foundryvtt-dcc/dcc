@@ -120,7 +120,9 @@ a.inline-roll {
 
   .deed-table-select {
     background: var(--chat-background);
-    border: 1px solid var(--chat-border-subtle-color);
+    /* A control's edge is its affordance: the muted (3:1) border, not the
+       decorative subtle one. */
+    border: 1px solid var(--chat-border-muted-color);
     color: var(--chat-primary-color);
     /* Never spill past the card's right edge, whatever a host card imposes. */
     max-width: 100%;
@@ -192,6 +194,26 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
 
   .message-header {
     color: var(--chat-primary-color);
+  }
+
+  /*
+   * Core's light chip/button values need card tokens for enhanced-card and
+   * death-clock actions only; leave unrelated chat controls' paint unchanged.
+   */
+  .message-content :is(.dcc-enhanced-card .enhanced-card-button, .dcc-death-clock-actions button) {
+    --button-background-color: rgb(0 0 0 / 10%);
+    --button-border-color: var(--chat-border-muted-color);
+    --button-text-color: var(--chat-primary-color);
+    --button-hover-background-color: transparent;
+    --button-hover-border-color: var(--chat-primary-color);
+    --button-hover-text-color: var(--chat-primary-color);
+
+    &[disabled] {
+      --button-text-color: var(--chat-text-muted-color);
+      --button-hover-background-color: var(--button-background-color);
+      --button-hover-border-color: var(--button-border-color);
+      --button-hover-text-color: var(--button-text-color);
+    }
   }
 
   /*
