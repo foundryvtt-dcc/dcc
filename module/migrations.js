@@ -1,6 +1,7 @@
 /* global foundry, game, ui */
 
 import { getSingleActionDie, inferWeaponDie } from './utilities.js'
+import { getClassTrait } from './extension-api.mjs'
 
 /**
  * Core class keys used for migration lookups
@@ -83,8 +84,12 @@ async function buildClassNameLookup () {
  * attribute confidently — a bare die, or die + the owning actor's current
  * damage bonus — are stamped into `damageWeapon` here; anything ambiguous
  * is left untouched and rolls as stored.
+ *
+ * 0.73: reset Detect Secret Doors on non-elf Players still holding the
+ * untouched elf values (#1000) — the elf schema mixin used to give every
+ * Player the elf's +4 Heightened Senses.
  */
-export const NEEDS_MIGRATION_VERSION = 0.72
+export const NEEDS_MIGRATION_VERSION = 0.73
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -507,6 +512,23 @@ export const migrateActorData = async function (actor) {
   const actionDieAtDefault = trimmedActionDieValue === '1d20'
   if (configActionDie && (actionDieBlank || (actionDieAtDefault && configActionDie !== trimmedActionDieValue))) {
     updateData['system.attributes.actionDice.value'] = configActionDie
+  }
+
+  // Reset Detect Secret Doors on Players that only got the elf's Heightened
+  // Senses from the old elf schema mixin, which replaced the base-body field
+  // for every Player (#1000). Data-driven: only the untouched elf triple
+  // (label + ability + value) is reset, and only when the actor's class has
+  // no `detectSecretDoorsBonus` trait (elves, and homebrew classes like the
+  // crawl Elven Rogue, keep theirs). Edited values are left alone.
+  const rawDetect = actor._source?.system?.skills?.detectSecretDoors
+  if (actor.type === 'Player' &&
+    rawDetect?.label === 'DCC.HeightenedSenses' &&
+    rawDetect.ability === 'int' &&
+    rawDetect.value === '+4' &&
+    !getClassTrait(actor, 'detectSecretDoorsBonus')) {
+    updateData['system.skills.detectSecretDoors.label'] = 'DCC.DetectSecretDoors'
+    updateData['system.skills.detectSecretDoors.ability'] = ''
+    updateData['system.skills.detectSecretDoors.value'] = '+0'
   }
 
   // Migrate Owned Items

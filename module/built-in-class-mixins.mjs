@@ -97,20 +97,12 @@ export const BUILT_IN_CLASS_MIXINS = {
   },
   elf (schema) {
     // Elves cast as wizards (same field shape) — attach the shared
-    // wizard fields, then override detectSecretDoors with the elf-
-    // specific HeightenedSenses shape. The base body declares
-    // detectSecretDoors as the non-Elf default
-    // (`label='DCC.DetectSecretDoors'`, `ability=''`, `value='+0'`);
-    // the elf mixin replaces the SchemaField entirely.
+    // wizard fields. `detectSecretDoors` stays the base-body default:
+    // mixins contribute to the one shared Player schema, so replacing
+    // it here gave every Player the elf's +4 (#1000). The elf's
+    // Heightened Senses label/ability come from its class defaults and
+    // the +4 from the `detectSecretDoorsBonus` class trait.
     attachWizardFields(schema)
-    const fields = foundry.data.fields
-    schema.skills.fields.detectSecretDoors = new fields.SchemaField({
-      label: new fields.StringField({ initial: 'DCC.HeightenedSenses' }),
-      ability: new fields.StringField({ initial: 'int' }),
-      value: new fields.StringField({ initial: '+4' }),
-      // AE-modifier target (never AE the editable `value`); see #714.
-      otherMod: new fields.NumberField({ initial: 0, integer: true })
-    })
   },
   halfling (schema) {
     const fields = foundry.data.fields

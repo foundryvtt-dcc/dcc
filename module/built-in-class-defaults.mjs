@@ -80,7 +80,12 @@ export const BUILT_IN_CLASS_DEFAULTS = {
       'config.addClassLevelToInitiative': false,
       'config.showSpells': true,
       'config.showBackstab': false,
-      'skills.shieldBash.useDeed': false
+      'skills.shieldBash.useDeed': false,
+      // Heightened Senses (#1000). The value is also forced to the
+      // `detectSecretDoorsBonus` trait in prepareDerivedData.
+      'skills.detectSecretDoors.label': 'DCC.HeightenedSenses',
+      'skills.detectSecretDoors.ability': 'int',
+      'skills.detectSecretDoors.value': '+4'
     }
   },
   halfling: {

@@ -569,3 +569,65 @@ describe('migrateActorData — weapon context for the legacy weapon-die split (#
     expect(await migrateActorData(actor)).toEqual({})
   })
 })
+
+describe('Detect Secret Doors elf-default reset (#1000)', () => {
+  const ELF_DETECT = { label: 'DCC.HeightenedSenses', ability: 'int', value: '+4', otherMod: 0 }
+
+  /** A Player whose raw source carries the given detectSecretDoors. */
+  function playerWithDetect (classId, detect) {
+    const actor = cleanActor()
+    actor.type = 'Player'
+    actor.classId = classId
+    actor._source = { system: { skills: { detectSecretDoors: { ...detect } } } }
+    return actor
+  }
+
+  test('a non-elf Player on the untouched elf values is reset to the base default', async () => {
+    const updateData = await migrateActorData(playerWithDetect('warrior', ELF_DETECT))
+
+    expect(updateData).toEqual({
+      'system.skills.detectSecretDoors.label': 'DCC.DetectSecretDoors',
+      'system.skills.detectSecretDoors.ability': '',
+      'system.skills.detectSecretDoors.value': '+0'
+    })
+  })
+
+  test('a Player with no class yet is reset too', async () => {
+    const updateData = await migrateActorData(playerWithDetect(null, ELF_DETECT))
+
+    expect(updateData['system.skills.detectSecretDoors.value']).toBe('+0')
+  })
+
+  test('an elf keeps its Heightened Senses', async () => {
+    expect(await migrateActorData(playerWithDetect('elf', ELF_DETECT))).toEqual({})
+  })
+
+  test('a class with the detectSecretDoorsBonus trait keeps its values', async () => {
+    const originalConfig = globalThis.CONFIG
+    globalThis.CONFIG = { DCC: { classTraits: { 'elven-rogue': { detectSecretDoorsBonus: '+4' } } } }
+    try {
+      expect(await migrateActorData(playerWithDetect('elven-rogue', ELF_DETECT))).toEqual({})
+    } finally {
+      globalThis.CONFIG = originalConfig
+    }
+  })
+
+  test('an edited value is left alone', async () => {
+    const actor = playerWithDetect('warrior', { ...ELF_DETECT, value: '+5' })
+
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('a Player already on the base default is left alone', async () => {
+    const actor = playerWithDetect('warrior', { label: 'DCC.DetectSecretDoors', ability: '', value: '+0' })
+
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+
+  test('NPCs are never touched', async () => {
+    const actor = playerWithDetect('warrior', ELF_DETECT)
+    actor.type = 'NPC'
+
+    expect(await migrateActorData(actor)).toEqual({})
+  })
+})
