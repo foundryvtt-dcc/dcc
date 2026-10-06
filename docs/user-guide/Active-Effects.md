@@ -286,7 +286,7 @@ Target the `otherMod` modifier field, **not** the `value` base (see the warning 
 - `system.skills.castSpellFromScroll.otherMod` - Cast Spell From Scroll
 
 ### Other Skills
-- `system.skills.detectSecretDoors.otherMod` - Detect Secret Doors (Elves)
+- `system.skills.detectSecretDoors.otherMod` - Detect Secret Doors (all characters; Heightened Senses for elves)
 - `system.skills.sneakAndHide.otherMod` - Sneak and Hide (Halflings)
 - Cleric skills also support a modifier: `system.skills.divineAid.otherMod`, `system.skills.turnUnholy.otherMod`, `system.skills.layOnHands.otherMod`
 - Dwarf shield bash: `system.skills.shieldBash.otherMod`
