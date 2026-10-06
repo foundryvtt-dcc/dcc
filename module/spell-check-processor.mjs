@@ -29,6 +29,7 @@
 
 import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
 import { rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
+import { getClassTrait } from './extension-api.mjs'
 
 /**
  * Handle the results of a spell check cast through any mechanism.
@@ -148,7 +149,7 @@ export async function processSpellCheck (actor, spellData) {
   // try/catch — a sibling module's item-like object without `system.config`
   // must not throw out of the call.
   let castingMode = spellData.castingMode || (item ? item.system?.config?.castingMode : 'wizard')
-  if (!spellData.castingMode && !item && actor.classId === 'cleric') {
+  if (!spellData.castingMode && !item && getClassTrait(actor, 'idolMagic') === true) {
     castingMode = 'cleric'
   }
 

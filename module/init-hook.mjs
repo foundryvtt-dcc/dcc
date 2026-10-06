@@ -36,9 +36,10 @@ import SpellDuel from './spell-duel.js'
 import SpellResult from './spell-result.js'
 import TableResult from './table-result.js'
 import DCCPartySheet from './party-sheet.js'
-import { getActiveVariant, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart, registerVariant } from './extension-api.mjs'
+import { getActiveVariant, getClassTraits, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerClassTraits, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart, registerVariant } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
+import { registerBuiltInClassTraits } from './built-in-class-traits.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
 import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
@@ -154,6 +155,7 @@ export function registerBuiltInRegistries () {
   registerBuiltInClassMixins(registerClassMixin)
   registerBuiltInClassDefaults(registerClassDefaults)
   registerBuiltInClassStartingItems(registerClassStartingItems)
+  registerBuiltInClassTraits(registerClassTraits)
   registerBuiltInSheetParts(registerSheetPart)
   registerBuiltInClassLevelNames(registerHomebrewClassForProgressionLoad)
   registerBuiltInVariant(registerVariant)
@@ -254,12 +256,14 @@ export function assembleGameDccNamespace () {
     applySpellburn,
     processSpellCheck,
     getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
+    getClassTraits, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassDefaults, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassProgression, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassProgressions, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassStartingItems, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassTraits, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerHomebrewClassForProgressionLoad, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerSheetPart, // Stable extension API — see docs/dev/EXTENSION_API.md

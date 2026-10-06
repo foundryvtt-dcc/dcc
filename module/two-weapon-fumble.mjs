@@ -1,5 +1,7 @@
 /* global game */
 
+import { getClassTrait } from './extension-api.mjs'
+
 /**
  * Halfling two-weapon fumbles (#968).
  *
@@ -42,13 +44,15 @@ function twoWeaponRole (weapon) {
 }
 
 /**
- * Whether this attack falls under the halfling both-1s fumble rule.
+ * Whether this attack falls under the both-1s fumble rule: a two-weapon
+ * attack by a class with the `twoWeaponFumbleBothOnes` trait (#998) —
+ * halflings, and classes that borrow their two-weapon rules.
  * @param {Actor} actor
  * @param {Item} weapon
  * @returns {boolean}
  */
 export function isHalflingTwoWeaponAttack (actor, weapon) {
-  return actor?.classId === 'halfling' && twoWeaponRole(weapon) !== null
+  return getClassTrait(actor, 'twoWeaponFumbleBothOnes') === true && twoWeaponRole(weapon) !== null
 }
 
 /**

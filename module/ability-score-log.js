@@ -1,5 +1,7 @@
 /* global ChatMessage, CONFIG, foundry, game, Hooks */
 
+import { getClassTraits } from './extension-api.mjs'
+
 /**
  * Ability Score Change Log
  *
@@ -46,7 +48,7 @@ export function getRecoveryClass (type, actor) {
     // sheetClass field for plain objects (unit test fixtures)
     const classId = (typeof actor.classId === 'string' && actor.classId) ||
       actor.system.details?.sheetClass?.toLowerCase?.() || null
-    if (classId !== 'thief' && classId !== 'halfling') {
+    if (getClassTraits(classId).luckRecovers !== true) {
       return 'permanent'
     }
   }

@@ -6,6 +6,7 @@ import { ContainerItemMixin } from './item/container-mixin.mjs'
 import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 import { SpellItemMixin } from './item/spell-mixin.mjs'
 import { isRollCancellation } from './roll-cancellation.mjs'
+import { getClassTrait } from './extension-api.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -111,15 +112,17 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
       // Two-Weapon Fighting Dice Modifications
       if (this.system.twoWeaponPrimary || this.system.twoWeaponSecondary) {
         const agilityScore = this.actor?.system?.abilities?.agl?.value || 0
-        const isHalfling = this.actor?.classId === 'halfling'
+        // Class traits (#998): halflings (and classes that borrow their
+        // two-weapon rules) fight as if Agility were at least 16, and crit
+        // on the reduced die's max face.
+        const minAgility = getClassTrait(this.actor, 'twoWeaponMinAgility')
+        const critOnMax = getClassTrait(this.actor, 'twoWeaponCritOnMax') === true
 
         // Calculate dice penalty based on agility and weapon hand
         let dicePenalty = 0
         let effectiveAgility = agilityScore
-
-        // Halflings have special rules - minimum effective agility of 16
-        if (isHalfling) {
-          effectiveAgility = Math.max(agilityScore, 16)
+        if (typeof minAgility === 'number') {
+          effectiveAgility = Math.max(agilityScore, minAgility)
         }
 
         // Determine dice penalty based on agility and weapon type
@@ -147,7 +150,7 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
 
         // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)
         let twoWeaponCritSet = false
-        if (isHalfling && effectiveAgility <= 17) {
+        if (critOnMax && effectiveAgility <= 17) {
           // Halflings score crit and automatic hit on natural 16 when fighting
           // two-weapon — BUT if agility is 18+, they use normal two-weapon
           // fighting rules instead. The natural 16 is the max face of the

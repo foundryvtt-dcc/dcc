@@ -39,10 +39,12 @@ vi.mock('../table-result.js', () => ({ default: { name: 'TableResult' } }))
 vi.mock('../party-sheet.js', () => ({ default: { name: 'DCCPartySheet' } }))
 vi.mock('../extension-api.mjs', () => ({
   getActiveVariant: vi.fn(),
+  getClassTraits: vi.fn(),
   registerActorSheet: vi.fn(),
   registerClassDefaults: vi.fn(),
   registerClassMixin: vi.fn(),
   registerClassStartingItems: vi.fn(),
+  registerClassTraits: vi.fn(),
   registerHomebrewClassForProgressionLoad: vi.fn(),
   registerItemSheet: vi.fn(),
   registerSheetPart: vi.fn(),
@@ -51,6 +53,7 @@ vi.mock('../extension-api.mjs', () => ({
 vi.mock('../built-in-class-mixins.mjs', () => ({ registerBuiltInClassMixins: vi.fn() }))
 vi.mock('../built-in-class-defaults.mjs', () => ({ registerBuiltInClassDefaults: vi.fn() }))
 vi.mock('../built-in-class-starting-items.mjs', () => ({ registerBuiltInClassStartingItems: vi.fn() }))
+vi.mock('../built-in-class-traits.mjs', () => ({ registerBuiltInClassTraits: vi.fn() }))
 vi.mock('../built-in-class-level-names.mjs', () => ({ registerBuiltInClassLevelNames: vi.fn() }))
 vi.mock('../built-in-sheet-parts.mjs', () => ({ registerBuiltInSheetParts: vi.fn() }))
 vi.mock('../built-in-variant.mjs', () => ({ registerBuiltInVariant: vi.fn() }))
@@ -95,6 +98,7 @@ const extensionApi = await import('../extension-api.mjs')
 const builtInMixins = await import('../built-in-class-mixins.mjs')
 const builtInDefaults = await import('../built-in-class-defaults.mjs')
 const builtInStartingItems = await import('../built-in-class-starting-items.mjs')
+const builtInTraits = await import('../built-in-class-traits.mjs')
 const builtInLevelNames = await import('../built-in-class-level-names.mjs')
 const builtInSheetParts = await import('../built-in-sheet-parts.mjs')
 const builtInVariant = await import('../built-in-variant.mjs')
@@ -160,6 +164,7 @@ describe('registerBuiltInRegistries', () => {
     expect(builtInMixins.registerBuiltInClassMixins).toHaveBeenCalledWith(extensionApi.registerClassMixin)
     expect(builtInDefaults.registerBuiltInClassDefaults).toHaveBeenCalledWith(extensionApi.registerClassDefaults)
     expect(builtInStartingItems.registerBuiltInClassStartingItems).toHaveBeenCalledWith(extensionApi.registerClassStartingItems)
+    expect(builtInTraits.registerBuiltInClassTraits).toHaveBeenCalledWith(extensionApi.registerClassTraits)
     expect(builtInSheetParts.registerBuiltInSheetParts).toHaveBeenCalledWith(extensionApi.registerSheetPart)
     expect(builtInLevelNames.registerBuiltInClassLevelNames).toHaveBeenCalledWith(extensionApi.registerHomebrewClassForProgressionLoad)
     expect(builtInVariant.registerBuiltInVariant).toHaveBeenCalledWith(extensionApi.registerVariant)
@@ -230,6 +235,7 @@ describe('assembleGameDccNamespace', () => {
       'getSkillTable', 'processSpellCheck', 'getActiveVariant',
       'registerActorSheet', 'registerClassDefaults', 'registerClassMixin',
       'registerClassProgression', 'registerClassProgressions', 'registerClassStartingItems',
+      'registerClassTraits', 'getClassTraits',
       'registerHomebrewClassForProgressionLoad', 'registerItemSheet', 'registerSheetPart', 'registerVariant',
       'rollDCCWeaponMacro', 'getMacroActor', 'getMacroOptions',
       'attachMightyDeedListeners', 'buildMightyDeedPrompt'
@@ -243,6 +249,8 @@ describe('assembleGameDccNamespace', () => {
     expect(globalThis.game.dcc.registerClassMixin).toBe(extensionApi.registerClassMixin)
     expect(globalThis.game.dcc.registerVariant).toBe(extensionApi.registerVariant)
     expect(globalThis.game.dcc.getActiveVariant).toBe(extensionApi.getActiveVariant)
+    expect(globalThis.game.dcc.registerClassTraits).toBe(extensionApi.registerClassTraits)
+    expect(globalThis.game.dcc.getClassTraits).toBe(extensionApi.getClassTraits)
   })
 })
 

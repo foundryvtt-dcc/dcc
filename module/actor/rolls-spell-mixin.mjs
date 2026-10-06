@@ -20,6 +20,7 @@ import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import { formatMercurialDescriptionHTML } from '../utilities.js'
+import { getClassTrait } from '../extension-api.mjs'
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -193,7 +194,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // routes the symmetric "Wizard spell on cleric-by-className-only actor"
     // case through the adapter with the right `castingModeOverride`.
     const isCleric =
-      this.classId === 'cleric' ||
+      getClassTrait(this, 'idolMagic') === true ||
       this.system.class?.className === 'Cleric'
 
     if (!spellItem) {
@@ -550,7 +551,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     const abilityId = options.abilityId || this.system.class.spellCheckAbility || ''
     const ability = this.system.abilities[abilityId] || { value: 10, mod: 0 }
 
-    const isIdolMagic = this.classId === 'cleric'
+    const isIdolMagic = getClassTrait(this, 'idolMagic') === true
     const profileType = isIdolMagic ? 'cleric' : 'wizard'
     const casterProfile = libGetCasterProfile(profileType) || libGetCasterProfile('wizard')
 
