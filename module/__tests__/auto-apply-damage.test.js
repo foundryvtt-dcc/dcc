@@ -12,7 +12,7 @@ vi.mock('../socket.mjs', () => ({
 }))
 
 const { executeAsGM, registerSocketHandler } = await import('../socket.mjs')
-const { attackHitsTarget, autoApplyAttackDamage, registerAutoApplyDamageHandler, cardAwaitsDamage, applyCardDamage, attachManualDamageAutoApply } = await import('../auto-apply-damage.mjs')
+const { attackHitsTarget, autoApplyAttackDamage, registerAutoApplyDamageHandler, cardAwaitsDamage, canApplyCardDamage, applyCardDamage, attachManualDamageAutoApply } = await import('../auto-apply-damage.mjs')
 
 let originalGame
 let originalFromUuid
@@ -133,10 +133,23 @@ describe('registerAutoApplyDamageHandler', () => {
 })
 
 describe('manual damage from an attack card (#992)', () => {
+  let originalChatMessage
+  let speakerActor
+  beforeEach(() => {
+    originalChatMessage = globalThis.ChatMessage
+    speakerActor = null
+    globalThis.ChatMessage = { getSpeakerActor: vi.fn(() => speakerActor), getSpeaker: vi.fn(() => ({ alias: 'Clicker' })) }
+    globalThis.game.user = { isGM: true }
+  })
+  afterEach(() => {
+    globalThis.ChatMessage = originalChatMessage
+  })
+
   function makeCard (flags = {}, extra = {}) {
     const store = { isToHit: true, hitsTarget: true, targetUuid: 'Actor.tgt', ...flags }
     return {
       id: 'card1',
+      speaker: { alias: 'Attacker' },
       getFlag: (scope, key) => store[key],
       setFlag: vi.fn(async (scope, key, value) => { store[key] = value }),
       testUserPermission: vi.fn(() => false),
@@ -152,6 +165,7 @@ describe('manual damage from an attack card (#992)', () => {
     expect(cardAwaitsDamage(makeCard())).toBe(true)
     expect(cardAwaitsDamage(makeCard({ hitsTarget: false }))).toBe(false)
     expect(cardAwaitsDamage(makeCard({ targetUuid: undefined }))).toBe(false)
+    expect(cardAwaitsDamage(makeCard({ automated: true }))).toBe(false) // applied at attack time already
     expect(cardAwaitsDamage(makeCard({ damageApplied: true }))).toBe(false)
     expect(cardAwaitsDamage(makeCard({ isToHit: false }))).toBe(false)
   })
@@ -169,6 +183,24 @@ describe('manual damage from an attack card (#992)', () => {
     expect(executeAsGM).toHaveBeenCalledWith('dcc.applyCardDamage', { messageId: 'card1', amount: 7 })
     await applyCardDamage(makeCard(), -2)
     expect(executeAsGM).toHaveBeenLastCalledWith('dcc.applyCardDamage', { messageId: 'card1', amount: 1 })
+  })
+
+  test('the GM, the card author, and owners of the attacking character may apply it', () => {
+    const player = { isGM: false }
+    expect(canApplyCardDamage(makeCard(), { isGM: true })).toBe(true)
+    expect(canApplyCardDamage(makeCard({}, { testUserPermission: () => true }), player)).toBe(true)
+    speakerActor = { testUserPermission: (user, level) => user === player && level === 'OWNER' }
+    expect(canApplyCardDamage(makeCard(), player)).toBe(true) // GM rolled the attack for this player's PC
+    speakerActor = { testUserPermission: () => false }
+    expect(canApplyCardDamage(makeCard(), player)).toBe(false)
+    expect(canApplyCardDamage(makeCard(), null)).toBe(false)
+  })
+
+  test('applyCardDamage does not ask the GM for a user who may not apply it', async () => {
+    globalThis.game.user = { isGM: false }
+    speakerActor = { testUserPermission: () => false }
+    await applyCardDamage(makeCard(), 7)
+    expect(executeAsGM).not.toHaveBeenCalled()
   })
 
   test('applyCardDamage does nothing for a card that missed', async () => {
@@ -207,13 +239,38 @@ describe('manual damage from an attack card (#992)', () => {
 
     const first = handler({ messageId: 'card1', amount: 5 }, 'player')
     const second = handler({ messageId: 'card1', amount: 5 }, 'player')
+    await vi.waitFor(() => expect(card.setFlag).toHaveBeenCalled())
     release()
     await Promise.all([first, second])
 
     expect(applyDamage).toHaveBeenCalledTimes(1)
   })
 
-  test('the GM handler refuses a requester who does not own the card', async () => {
+  test('a target deleted since the attack leaves the card unapplied', async () => {
+    const card = makeCard({}, { testUserPermission: vi.fn(() => true) })
+    globalThis.fromUuid = vi.fn(async () => null)
+    globalThis.game.messages = { get: () => card }
+    globalThis.game.users = { get: () => ({ isGM: true }) }
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await cardHandler()({ messageId: 'card1', amount: 5 }, 'gm')
+    expect(card.setFlag).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  test('the GM handler accepts an owner of the attacking character', async () => {
+    const card = makeCard() // authored by the GM
+    const player = { isGM: false }
+    speakerActor = { testUserPermission: (user) => user === player }
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    globalThis.game.messages = { get: () => card }
+    globalThis.game.users = { get: () => player }
+    await cardHandler()({ messageId: 'card1', amount: 5 }, 'player')
+    expect(applyDamage).toHaveBeenCalledWith(5, 1)
+  })
+
+  test('the GM handler refuses a requester who owns neither the card nor the character', async () => {
     const card = makeCard()
     const applyDamage = vi.fn()
     globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
@@ -229,7 +286,7 @@ describe('manual damage from an attack card (#992)', () => {
     beforeEach(() => {
       rolled = { total: 6, toMessage: vi.fn(async () => {}) }
       globalThis.Roll = { create: vi.fn(() => rolled) }
-      globalThis.ChatMessage = { getSpeaker: vi.fn(() => ({ alias: 'A' })), getSpeakerActor: vi.fn(() => ({ getRollData: () => ({}) })) }
+      speakerActor = { getRollData: () => ({ str: 2 }), testUserPermission: () => false }
       globalThis.foundry = { dice: { Roll: { _mapLegacyRollMode: () => 'public' } } }
     })
 
@@ -250,14 +307,36 @@ describe('manual damage from an attack card (#992)', () => {
       const event = clickAnchor(makeCard())
       expect(event.defaultPrevented).toBe(true)
       await vi.waitFor(() => expect(executeAsGM).toHaveBeenCalledWith('dcc.applyCardDamage', { messageId: 'card1', amount: 6 }))
-      expect(globalThis.Roll.create).toHaveBeenCalledWith('1d6', {})
-      expect(rolled.toMessage).toHaveBeenCalledWith({ flavor: 'Damage', speaker: { alias: 'A' } }, { messageMode: 'public' })
+      // Posted as the attacker with the attacker's roll data, not the clicker's token.
+      expect(globalThis.Roll.create).toHaveBeenCalledWith('1d6', { str: 2 })
+      expect(rolled.toMessage).toHaveBeenCalledWith({ flavor: 'Damage', speaker: { alias: 'Attacker' } }, { messageMode: 'public' })
+    })
+
+    test('a viewer who may not apply it keeps the default inline roll', () => {
+      globalThis.game.user = { isGM: false }
+      expect(clickAnchor(makeCard()).defaultPrevented).toBe(false)
     })
 
     test('leaves other inline rolls and already-rolled results to Foundry', () => {
       expect(clickAnchor(makeCard(), { flavor: 'Critical' }).defaultPrevented).toBe(false)
       expect(clickAnchor(makeCard(), { result: true }).defaultPrevented).toBe(false)
       expect(globalThis.Roll.create).not.toHaveBeenCalled()
+    })
+
+    test('a roll that throws tells the user instead of failing silently', async () => {
+      globalThis.Roll = { create: vi.fn(() => { throw new Error('bad formula') }) }
+      const originalUI = globalThis.ui
+      globalThis.ui = { notifications: { error: vi.fn() } }
+      globalThis.game.i18n = { localize: k => k, format: k => k }
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        clickAnchor(makeCard())
+        await vi.waitFor(() => expect(globalThis.ui.notifications.error).toHaveBeenCalled())
+        expect(executeAsGM).not.toHaveBeenCalled()
+      } finally {
+        globalThis.ui = originalUI
+        err.mockRestore()
+      }
     })
 
     test('a card that missed keeps the default inline roll', () => {

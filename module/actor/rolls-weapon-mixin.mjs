@@ -11,7 +11,7 @@ import {
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
-import { autoApplyAttackDamage, attackHitsTarget } from '../auto-apply-damage.mjs'
+import { autoApplyAttackDamage, attackHitsTarget, DAMAGE_INLINE_FLAVOR } from '../auto-apply-damage.mjs'
 import { maybeFriendlyFire } from '../friendly-fire.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
@@ -209,7 +209,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       libDamageResult = damageDispatch.libDamageResult
       rolls.push(damageRoll)
     } else if (damageRollFormula) {
-      damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+      damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # ${DAMAGE_INLINE_FLAVOR}]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 

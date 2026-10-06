@@ -158,7 +158,9 @@ test.describe('Auto-apply damage', () => {
           hpAfterAttack,
           hpAfterFirst,
           hpAfterSecond: npc.system.attributes.hp.value,
-          damageApplied: !!card?.getFlag('dcc', 'damageApplied')
+          damageApplied: !!card?.getFlag('dcc', 'damageApplied'),
+          // The damage roll posts as the attacker, not the clicking user's token.
+          damageSpeaker: game.messages.contents.find(m => !before.has(m.id) && m.id !== card?.id && m.rolls?.length)?.speaker?.alias ?? null
         }
       } finally {
         CONFIG.Dice.randomUniform = origRandomUniform
@@ -189,6 +191,7 @@ test.describe('Auto-apply damage', () => {
     expect(out.hitsTarget).toBe(true)
     expect(out.foundButton).toBe(true)
     expect(out.hpAfterAttack).toBe(20)
+    expect(out.damageSpeaker).toBe('DCC ManualDmg Attacker')
     expect(out.hpAfterFirst).toBe(14)
     expect(out.damageApplied).toBe(true)
     expect(out.hpAfterSecond).toBe(14)
