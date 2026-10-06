@@ -96,10 +96,10 @@ export class PlayerData extends BaseActorData {
       // Skills. Only `detectSecretDoors` is a base-body skill —
       // every other class skill lives on a class mixin (cleric:
       // divineAid/turnUnholy/layOnHands; thief: 12-skill block;
-      // halfling: sneakAndHide; dwarf: shieldBash). The base shape
-      // here is the non-Elf default; the `'elf'` mixin replaces it
-      // with the HeightenedSenses overrides (label / ability='int'
-      // / value='+4').
+      // halfling: sneakAndHide; dwarf: shieldBash). Every Player
+      // starts with this base shape; the elf's Heightened Senses
+      // (label / ability='int' / value='+4') is written by the elf
+      // class defaults and the `detectSecretDoorsBonus` trait (#1000).
       skills: new SchemaField({
         detectSecretDoors: new SchemaField({
           label: new StringField({ initial: 'DCC.DetectSecretDoors' }),

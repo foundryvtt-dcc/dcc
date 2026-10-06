@@ -436,6 +436,7 @@
   "DCC.HandlePoison": "Manejar veneno",
   "DCC.HealDamage": "Curado {damage} PV",
   "DCC.Healing": "Curación",
+  "DCC.DetectSecretDoors": "Detectar puertas secretas",
   "DCC.HeightenedSenses": "Detectar puertas secretas",
   "DCC.HeightenedSensesDescription": "+4 para detectar puertas secretas (Int)",
   "DCC.HideInShadows": "Ocultarse en las sombras",

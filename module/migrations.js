@@ -1,6 +1,7 @@
 /* global foundry, game, ui */
 
 import { getSingleActionDie, inferWeaponDie } from './utilities.js'
+import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
 
 /**
  * Core class keys used for migration lookups
@@ -83,8 +84,12 @@ async function buildClassNameLookup () {
  * attribute confidently — a bare die, or die + the owning actor's current
  * damage bonus — are stamped into `damageWeapon` here; anything ambiguous
  * is left untouched and rolls as stored.
+ *
+ * 0.73: reset Detect Secret Doors on non-elf Players still holding the
+ * untouched elf values (#1000) — the elf schema mixin used to give every
+ * Player the elf's +4 Heightened Senses.
  */
-export const NEEDS_MIGRATION_VERSION = 0.72
+export const NEEDS_MIGRATION_VERSION = 0.73
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -507,6 +512,22 @@ export const migrateActorData = async function (actor) {
   const actionDieAtDefault = trimmedActionDieValue === '1d20'
   if (configActionDie && (actionDieBlank || (actionDieAtDefault && configActionDie !== trimmedActionDieValue))) {
     updateData['system.attributes.actionDice.value'] = configActionDie
+  }
+
+  // Reset Detect Secret Doors on Players that only got the elf's Heightened
+  // Senses from the old elf schema mixin (#1000). Gated to the 0.73 sweep so
+  // a later bump never undoes a hand-set triple. Reads the pending sheetClass
+  // backfill above so a legacy elf (className only) keeps its values.
+  if (actor.type === 'Player' && currentVersion < 0.73) {
+    const sheetClass = updateData['system.details.sheetClass'] ??
+      actor._source?.system?.details?.sheetClass ??
+      actor.system?.details?.sheetClass
+    const reset = strayElfDetectSecretDoorsReset(actor._source?.system?.skills?.detectSecretDoors, sheetClass)
+    if (reset) {
+      for (const [key, value] of Object.entries(reset)) {
+        updateData[`system.skills.detectSecretDoors.${key}`] = value
+      }
+    }
   }
 
   // Migrate Owned Items

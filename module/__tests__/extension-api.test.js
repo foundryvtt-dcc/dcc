@@ -248,11 +248,10 @@ test('applyClassMixins runs each registered mixin against the supplied schema', 
 })
 
 test('applyClassMixins visits classIds in sorted order for deterministic schema shape', () => {
-  // Registration order shouldn't influence the final schema. Future
-  // slices may key behavior on mixin ordering (e.g. an `'elf'` mixin
-  // overriding a `'player'` baseline detectSecretDoors override),
-  // and a sort makes the resulting shape reproducible regardless of
-  // load-order across sibling modules.
+  // Registration order shouldn't influence the final schema. Two
+  // mixins can attach the same field (wizard + elf both attach the
+  // wizard fields), and a sort makes the resulting shape reproducible
+  // regardless of load-order across sibling modules.
   const CONFIG = makeMockConfig()
   const visited = []
   registerClassMixin('warrior', () => visited.push('warrior'), { CONFIG })

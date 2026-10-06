@@ -2437,8 +2437,8 @@ test.describe('DCC Extension API', () => {
     // and elves share the same 9-field shape (elves cast as wizards in
     // DCC); the wizard and elf mixins both call `attachWizardFields`
     // so the declarations live in one place. This case verifies the
-    // wizard side; the next case verifies the elf side plus the
-    // detectSecretDoors override.
+    // wizard side; the next case verifies the elf side and that
+    // detectSecretDoors keeps its base default (#1000).
     const result = await page.evaluate(async () => {
       const wizardMixin = CONFIG.DCC?.classMixins?.wizard
       const player = await Actor.create({ name: 'P4S6 Wizard Probe', type: 'Player' })
@@ -2481,39 +2481,37 @@ test.describe('DCC Extension API', () => {
     expect(result.corruptionFieldType).toBe('HTMLField')
   })
 
-  test('built-in elf mixin attaches wizard fields AND overrides detectSecretDoors with HeightenedSenses defaults', async ({ page }) => {
+  test('built-in elf mixin attaches wizard fields and leaves detectSecretDoors at the base default', async ({ page }) => {
     // Phase 4 session 6 — elf side of the per-class extraction arc.
-    // The elf mixin (a) re-attaches the shared wizard fields via
+    // The elf mixin re-attaches the shared wizard fields via
     // `attachWizardFields` (last-write-wins on duplicate registrations
     // — second pass is a no-op shape-wise because both mixins build
-    // identical instances), and (b) overrides
-    // `skills.detectSecretDoors` with the elf-specific defaults
-    // (label='DCC.HeightenedSenses', ability='int', value='+4'). The
-    // base body declares `detectSecretDoors` as the non-Elf default;
-    // because the elf mixin runs **after** the base body, the
-    // override wins on the schema actually constructed for every
-    // Player document — Foundry-smelling shape per §2.12 still
-    // resolves the path `system.skills.detectSecretDoors` identically.
+    // identical instances). It must NOT replace
+    // `skills.detectSecretDoors`: mixins contribute to the one shared
+    // Player schema, so doing that gave every Player the elf's +4
+    // Heightened Senses (#1000). The elf's values come from its class
+    // defaults + the `detectSecretDoorsBonus` trait instead (next test).
     const result = await page.evaluate(async () => {
       const elfMixin = CONFIG.DCC?.classMixins?.elf
-      const player = await Actor.create({ name: 'P4S6 Elf Probe', type: 'Player' })
+      const player = await Actor.create({
+        name: 'P4S6 Elf Probe',
+        type: 'Player',
+        system: { details: { sheetClass: 'Warrior' } }
+      })
       const src = player.system._source ?? {}
-      const skills = src.skills ?? {}
       const cls = src.class ?? {}
-      const skillsFields = player.system.schema.fields.skills
-      const detect = skillsFields?.fields?.detectSecretDoors ?? null
+      const detect = src.skills?.detectSecretDoors ?? {}
+      const derivedValue = player.system.skills.detectSecretDoors.value
       await player.delete()
       return {
         mixinIsFunction: typeof elfMixin === 'function',
-        // Wizard fields attached via the shared helper:
         knownSpells: cls.knownSpells,
         patron: cls.patron,
         patronTaintChance: cls.patronTaintChance ?? null,
-        // detectSecretDoors override:
-        hasDetect: detect !== null,
-        detectLabel: skills.detectSecretDoors?.label ?? null,
-        detectAbility: skills.detectSecretDoors?.ability ?? null,
-        detectValue: skills.detectSecretDoors?.value ?? null
+        detectLabel: detect.label ?? null,
+        detectAbility: detect.ability ?? null,
+        detectValue: detect.value ?? null,
+        derivedValue
       }
     })
     expect(result.mixinIsFunction).toBe(true)
@@ -2522,11 +2520,61 @@ test.describe('DCC Extension API', () => {
     expect(result.knownSpells).toBe(0)
     expect(result.patron).toBeNull()
     expect(result.patronTaintChance).toBe('1%')
-    // detectSecretDoors carries the elf override defaults:
-    expect(result.hasDetect).toBe(true)
-    expect(result.detectLabel).toBe('DCC.HeightenedSenses')
-    expect(result.detectAbility).toBe('int')
-    expect(result.detectValue).toBe('+4')
+    // A new Warrior starts with the base Detect Secret Doors, not the elf's:
+    expect(result.detectLabel).toBe('DCC.DetectSecretDoors')
+    expect(result.detectAbility).toBe('')
+    expect(result.detectValue).toBe('+0')
+    expect(result.derivedValue).toBe('+0')
+  })
+
+  test('elf class defaults give a new elf Heightened Senses +4 with Int (#1000)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const { applyClassDefaults } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const player = await Actor.create({ name: '#1000 Elf Probe', type: 'Player' })
+      await applyClassDefaults(player, 'elf')
+      const detect = player.system._source.skills.detectSecretDoors
+      const out = {
+        label: detect.label,
+        ability: detect.ability,
+        value: detect.value,
+        derivedValue: player.system.skills.detectSecretDoors.value
+      }
+      await player.delete()
+      return out
+    })
+    expect(result.label).toBe('DCC.HeightenedSenses')
+    expect(result.ability).toBe('int')
+    expect(result.value).toBe('+4')
+    expect(result.derivedValue).toBe('+4')
+  })
+
+  test('creating a Player resets the stray elf Detect Secret Doors on core non-elf classes (#1000)', async ({ page }) => {
+    // Pregens / adventure actors exported while the elf mixin shipped carry
+    // the elf triple whatever their class; imports skip the world
+    // migration, so DCCActor._preCreate resets them.
+    const result = await page.evaluate(async () => {
+      const elfTriple = { label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' }
+      const make = async (sheetClass) => {
+        const actor = await Actor.create({
+          name: `#1000 ${sheetClass} Import Probe`,
+          type: 'Player',
+          system: { details: { sheetClass }, skills: { detectSecretDoors: elfTriple } }
+        })
+        const detect = actor.system._source.skills.detectSecretDoors
+        const out = {
+          label: detect.label,
+          ability: detect.ability,
+          value: detect.value,
+          localizedLabel: game.i18n.localize(detect.label)
+        }
+        await actor.delete()
+        return out
+      }
+      return { zero: await make('Zero'), elf: await make('Elf'), homebrew: await make('Elven-Rogue') }
+    })
+    expect(result.zero).toEqual({ label: 'DCC.DetectSecretDoors', ability: '', value: '+0', localizedLabel: 'Detect Secret Doors' })
+    expect(result.elf).toMatchObject({ label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' })
+    expect(result.homebrew).toMatchObject({ label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' })
   })
 
   // -------------------------------------------------------------------

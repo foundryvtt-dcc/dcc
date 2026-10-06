@@ -436,6 +436,7 @@
   "DCC.HandlePoison": "处理毒素",
   "DCC.HealDamage": "治疗 {damage} HP",
   "DCC.Healing": "治疗",
+  "DCC.DetectSecretDoors": "侦测暗门",
   "DCC.HeightenedSenses": "侦测暗门",
   "DCC.HeightenedSensesDescription": "+4 侦测暗门（智）",
   "DCC.HideInShadows": "遁入阴影",

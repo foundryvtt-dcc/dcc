@@ -63,7 +63,7 @@ const playerSystemData = {
   },
   skills: {
     sneakSilently: { label: 'DCC.SneakSilently', ability: 'agl', value: '0', otherMod: 0 },
-    detectSecretDoors: { label: 'DCC.HeightenedSenses', ability: 'int', value: '+4', otherMod: 0 }
+    detectSecretDoors: { label: 'DCC.DetectSecretDoors', ability: '', value: '+0', otherMod: 0 }
   }
 }
 
@@ -126,7 +126,7 @@ describe('getEffectKeyOptions', () => {
     expect(byValue['system.abilities.str.otherMod']).toBe('Strength')
     expect(byValue['system.saves.frt.otherBonus']).toBe('Fortitude')
     // Skill label comes from the actor's own data (class/module overrides win)
-    expect(byValue['system.skills.detectSecretDoors.otherMod']).toBe('HeightenedSenses')
+    expect(byValue['system.skills.detectSecretDoors.otherMod']).toBe('DetectSecretDoors')
   })
 
   test('walks up to the owning actor for effects on owned items', () => {
