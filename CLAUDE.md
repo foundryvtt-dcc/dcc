@@ -19,6 +19,11 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 
 ## Critical Rules
 
+- **Rules automation tiers**: Before automating a game rule (especially one
+  that links several rolls or depends on combat context), follow
+  [docs/dev/RULES_AUTOMATION.md](docs/dev/RULES_AUTOMATION.md): note by
+  default, offer a button when inferred, decide automatically only when the
+  context is certain
 - **Plain CSS, no build step**: `styles/*.css` is native nested CSS loaded
   directly. A new stylesheet must be added to `system.json`'s `styles` array
   (layer `system`) — order matters, later files win specificity ties
@@ -122,6 +127,7 @@ All project skills live in `.claude/skills/<name>/SKILL.md` (there is no
 - [Development](docs/dev/DEVELOPMENT.md) - Workflow, commands, code standards
 - [Testing](docs/dev/TESTING.md) - Test suite, mocks, coverage
 - [Pack Management](docs/dev/PACKS.md) - Compendium JSON/LevelDB workflow
+- [Rules Automation Policy](docs/dev/RULES_AUTOMATION.md) - Note / Offer / Decide tiers for automating rules
 - [Internationalization](docs/dev/I18N.md) - Translation system
 - [DCC-QOL Integration](docs/dev/DCC_QOL_INTEGRATION.md) - Analysis: folding dcc-qol features into core behind settings
 
