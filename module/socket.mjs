@@ -50,14 +50,18 @@ async function runHandler (action, payload, userId) {
 
 /**
  * Socket message dispatcher. Only the active GM acts on an incoming message;
- * every other client ignores it. The requesting user's id rides in the
- * envelope so handlers can authorize the request (e.g. only let an owner mark
- * their own chat card). It is client-supplied, so handlers must treat it as a
- * claim — pair it with a capability/allowlist check, never trust it alone.
+ * every other client ignores it. Handlers get the requesting user's id so they
+ * can authorize the request (e.g. only let an owner mark their own chat card).
+ * That id is the sender Foundry's server stamps on the message (the listener's
+ * second argument), never a field the sender wrote into the envelope — a
+ * player could forge that one as a GM's id.
+ *
+ * @param {{action: string, payload: any}} message
+ * @param {string} [senderId] - the sending user's id, set by Foundry's server
  */
-export async function onSocketMessage (message) {
+export async function onSocketMessage (message, senderId) {
   if (!message || !isActiveGM()) return
-  await runHandler(message.action, message.payload, message.userId)
+  await runHandler(message.action, message.payload, senderId)
 }
 
 /**
@@ -75,7 +79,7 @@ export async function executeAsGM (action, payload) {
     ui.notifications?.warn(game.i18n.localize('DCC.SocketNoGMWarning'))
     return undefined
   }
-  game.socket.emit(DCC_SOCKET, { action, payload, userId: game.user?.id })
+  game.socket.emit(DCC_SOCKET, { action, payload })
   return undefined
 }
 

@@ -48,6 +48,7 @@ import { onCombatTurnForActionDice, onCombatRoundForActionDice, onRenderCombatTr
 import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
+import { attachManualDamageAutoApply } from './auto-apply-damage.mjs'
 import { onRenderActiveEffectConfig } from './active-effect-key-autocomplete.mjs'
 
 /**
@@ -104,6 +105,8 @@ export async function onRenderChatMessageHTML (message, html, data) {
   chat.highlightCriticalSuccessFailure(message, html, data)
   chat.enforceMinimumDamage(message, html)
   SpellResult.processChatMessage(message, html, data)
+  // Plain / emote attack card: apply a manual inline damage roll (#992).
+  attachManualDamageAutoApply(message, html)
 
   // Add data-item-id for modules that want to use it
   const itemId = message.getFlag('dcc', 'ItemId')

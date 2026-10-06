@@ -29,6 +29,7 @@ import { qolHandlingCombat } from '../integrations.mjs'
 import { executeAsGM, registerSocketHandler } from '../socket.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import { wantsModifierDialog } from '../utilities.js'
+import { applyCardDamage } from '../auto-apply-damage.mjs'
 
 const UPDATE_FLAGS_ACTION = 'dcc.updateMessageFlags'
 const TEMPLATE = 'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -224,6 +225,7 @@ async function rollCardButton (message, actor, kind, event) {
   })
 
   await markButtonClicked(message, spec.flag)
+  if (kind === 'damage') await applyCardDamage(message, roll.total)
 }
 
 /**
