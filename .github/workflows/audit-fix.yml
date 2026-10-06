@@ -2,18 +2,19 @@
 #
 # Dependabot security updates cover direct dependencies it can bump, but
 # transitive vulnerabilities (or advisories Dependabot skips) can slip
-# through. This workflow runs `pnpm audit --fix` at the workspace root
+# through. This workflow runs `pnpm audit --fix update` at the workspace root
 # (which covers the e2e package too — one lockfile) and, if that produces
 # changes that still pass the unit tests, opens (or updates) a PR on the
 # fixed branch `automated/npm-audit-fix`. If the tree is clean no PR is
 # created and any existing one is left to close on its own.
 #
-# pnpm semantics differ from npm: `pnpm audit --fix` does NOT bump the
-# lockfile directly — it writes version *overrides* into package.json's
-# pnpm.overrides, and the follow-up `pnpm install` realizes them in
-# pnpm-lock.yaml. Overrides pin transitive versions permanently, so when
-# an upstream release makes one redundant it should be removed (check on
-# review of these PRs). The npm-era #877 false-trigger (release version
+# pnpm 11 requires a mode for --fix (a bare `--fix` exits with
+# ERR_PNPM_INVALID_FIX_OPTION, which the old `|| true` hid, so this job
+# reported success for weeks while fixing nothing). `update` refreshes the
+# vulnerable packages in pnpm-lock.yaml within their existing semver ranges
+# and adds no permanent overrides. An advisory with no in-range patch is
+# left in the audit report for a human to handle. The npm-era #877
+# false-trigger (release version
 # bumps re-syncing package-lock.json) cannot happen here: `npm version`
 # never touches pnpm-lock.yaml.
 #
@@ -57,12 +58,14 @@ jobs:
       - name: Audit and fix (workspace-wide)
         run: |
           pnpm audit || true
-          pnpm audit --fix || true
-          # Realize any new overrides into the lockfile.
+          # `pnpm audit` exits non-zero whenever an advisory remains (including
+          # ones with no patch upstream), so the exit status can't separate
+          # "nothing fixable" from "the command broke". Fail on pnpm errors
+          # only, so a broken fix step can't pass silently again.
           #
           # --config.minimumReleaseAge=0 deliberately suspends the 7-day
-          # supply-chain quarantine from pnpm-workspace.yaml for this one
-          # install. The quarantine is unconditional — pnpm has no notion of
+          # supply-chain quarantine from pnpm-workspace.yaml for the fix and
+          # the install after it. The quarantine is unconditional — pnpm has no notion of
           # "this is a security fix, let it through" — so without the bypass a
           # freshly published fix would be refused with
           # ERR_PNPM_NO_MATURE_MATCHING_VERSION and this job could never
@@ -73,12 +76,18 @@ jobs:
           # workflow: that is where the quarantine does its real work.
           # (Env vars and --minimum-release-age do not work; only
           # --config.<key> is honoured.)
+          out=$(pnpm audit --fix update --config.minimumReleaseAge=0 2>&1) || true
+          echo "$out"
+          if grep -q 'ERR_PNPM' <<< "$out"; then
+            echo "::error::pnpm audit --fix update failed"
+            exit 1
+          fi
           pnpm install --no-frozen-lockfile --config.minimumReleaseAge=0
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet -- package.json pnpm-lock.yaml browser-tests/e2e/package.json; then
+          if git diff --quiet -- package.json pnpm-lock.yaml pnpm-workspace.yaml browser-tests/e2e/package.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -98,14 +107,12 @@ jobs:
           commit-message: 'fix(deps): apply pnpm audit fixes for security vulnerabilities'
           title: 'fix(deps): apply pnpm audit fixes for security vulnerabilities'
           body: |
-            Automated `pnpm audit --fix` for vulnerabilities not covered by an
-            open Dependabot PR, applied workspace-wide (root +
-            `/browser-tests/e2e` share one lockfile).
-
-            **Review note:** fixes land as `pnpm.overrides` entries in
-            package.json, which pin the affected transitive versions
-            permanently. When the upstream dependency ships a release that
-            makes an override redundant, remove the override in a follow-up.
+            Automated `pnpm audit --fix update` for vulnerabilities not
+            covered by an open Dependabot PR, applied workspace-wide (root +
+            `/browser-tests/e2e` share one lockfile). Fixes are lockfile
+            refreshes within existing semver ranges; no overrides are added.
+            Advisories with no in-range patch remain in the workflow run's
+            audit report.
 
             **Review note:** if the fix pulls in a version published less
             than 7 days ago, CI on this PR will fail with
