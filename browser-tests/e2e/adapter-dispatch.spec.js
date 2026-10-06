@@ -3563,15 +3563,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(flatTwoWeaponMod, 'must not introduce flat two-weapon penalty').toBeUndefined()
     })
 
-    test('halfling two-weapon fumble note round-trips through adapter', async ({ page }) => {
-      // Halfling RAW: a two-weapon fumble is only "real" if BOTH dice
-      // came up natural 1. The chat card embeds a localized note in
-      // that state so the player can decide. The note triggers off
-      // `attackRollResult.fumble` + `weapon.system.twoWeapon*` +
-      // `actor.system.details.sheetClass === 'Halfling'`. This e2e
-      // verifies the adapter's `libResult.isFumble → fumble` round-trip
-      // doesn't drop the note for the now-adapter-routed two-weapon
-      // path.
+    test('halfling two-weapon natural 1 outside combat holds the fumble (#968)', async ({ page }) => {
+      // Halfling RAW: a two-weapon fumble only applies if BOTH dice came up
+      // natural 1. Outside combat the system can't tell which attack is the
+      // other hand, so the fumble is held behind a click-to-roll prompt
+      // (Offer tier, docs/dev/RULES_AUTOMATION.md) — even with automation
+      // on — and the card isn't flagged as a fumble.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Halfling Fumble',
@@ -3607,7 +3604,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Halfling Fumble').rollWeaponAttack(id)
       }, weaponId)
 
-      const noteHtml = await page.evaluate(async () => {
+      const card = await page.evaluate(async () => {
         const deadline = Date.now() + 3000
         while (Date.now() < deadline) {
           const msg = game.messages.contents
@@ -3617,7 +3614,16 @@ test.describe('DCC Adapter Dispatch Validation', () => {
               m.speaker?.alias === 'P1 Halfling Fumble' &&
               m.getFlag('dcc', 'isToHit')
             )
-          if (msg) return msg.content || ''
+          if (msg) {
+            return {
+              content: msg.content || '',
+              isFumble: msg.getFlag('dcc', 'isFumble'),
+              state: msg.getFlag('dcc', 'twoWeaponFumble'),
+              fumblePrompt: msg.system.fumblePrompt,
+              fumbleResult: msg.system.fumbleResult,
+              fumbleInlineRoll: msg.system.fumbleInlineRoll
+            }
+          }
           await new Promise(resolve => setTimeout(resolve, 50))
         }
         return null
@@ -3630,8 +3636,189 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
       })
 
-      expect(noteHtml, 'halfling two-weapon fumble must produce chat card').not.toBeNull()
-      expect(noteHtml).toContain('Fumble only applies if both attack rolls were a natural 1')
+      expect(card, 'halfling two-weapon fumble must produce chat card').not.toBeNull()
+      expect(card.content).toContain('Fumble only applies if both attack rolls were a natural 1')
+      expect(card.isFumble).toBe(false)
+      expect(card.state).toBe('held')
+      expect(card.fumblePrompt).toBe('If both hands rolled a natural 1, roll a fumble')
+      expect(card.fumbleResult, 'held fumble must not be auto-rolled').toBeFalsy()
+      expect(card.fumbleInlineRoll).toContain('inline-roll')
+    })
+
+    test('a class registered with the halfling traits holds a two-weapon fumble (#998)', async ({ page }) => {
+      // Class traits registry: a sibling-module class (e.g. a crawl Halfling
+      // Champion) opts in to the halfling two-weapon rules via
+      // game.dcc.registerClassTraits, with no 'halfling' class ID check.
+      await page.evaluate(async () => {
+        game.dcc.registerClassTraits('p1-halfling-kin', {
+          twoWeaponMinAgility: 16,
+          twoWeaponCritOnMax: true,
+          twoWeaponFumbleBothOnes: true
+        })
+        const actor = await Actor.create({
+          name: 'P1 Halfling Kin',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 10 } },
+            details: { sheetClass: 'P1-Halfling-Kin' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-KinDagger',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            critRange: 20,
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponSecondary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.99
+      })
+      const weapon = await page.evaluate(() => {
+        const item = game.actors.getName('P1 Halfling Kin').items.getName('P1-KinDagger')
+        return { id: item.id, critRange: item.system.critRange, critOnMax: item.system.twoWeaponCritOnMaxDie }
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Halfling Kin').rollWeaponAttack(id)
+      }, weapon.id)
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Halfling Kin' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) {
+            return {
+              isFumble: msg.getFlag('dcc', 'isFumble'),
+              state: msg.getFlag('dcc', 'twoWeaponFumble'),
+              fumbleResult: msg.system.fumbleResult
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+        delete CONFIG.DCC.classTraits['p1-halfling-kin']
+      })
+
+      // Agility 10 lifted to 16, with the halfling crit on the off-hand's max face.
+      expect(weapon.critOnMax).toBe(true)
+      expect(card, 'registered class two-weapon fumble must produce chat card').not.toBeNull()
+      expect(card.isFumble).toBe(false)
+      expect(card.state).toBe('held')
+      expect(card.fumbleResult, 'held fumble must not be auto-rolled').toBeFalsy()
+    })
+
+    test('halfling two-weapon fumbles pair within a combat round (#968)', async ({ page }) => {
+      // With an active combat the other hand's card is known: same
+      // combatant, same round, opposite hand. Round 1: both hands roll a
+      // natural 1 → the fumble rolls on the second card and the first card
+      // points at it. Round 2: only the first hand rolls a 1 → the first
+      // card's held fumble is cleared.
+      const result = await page.evaluate(async () => {
+        const name = 'P1 Halfling Pair'
+        const actor = await Actor.create({
+          name,
+          type: 'Player',
+          system: { abilities: { agl: { value: 13 } }, details: { sheetClass: 'Halfling' } }
+        })
+        const weapon = (itemName, hand) => ({
+          name: itemName,
+          type: 'weapon',
+          system: { toHit: '+0', critRange: 20, damageWeapon: '1d4', damage: '1d4', melee: true, equipped: true, [hand]: true }
+        })
+        await actor.createEmbeddedDocuments('Item', [weapon('P1-PairMain', 'twoWeaponPrimary'), weapon('P1-PairOff', 'twoWeaponSecondary')])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        const combat = await Combat.create({})
+        await combat.createEmbeddedDocuments('Combatant', [{ actorId: actor.id }])
+        await combat.startCombat()
+        await combat.activate()
+
+        const origRandom = CONFIG.Dice.randomUniform
+        const cardFor = async (itemName, after) => {
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            const msg = game.messages.contents.slice().reverse().find(m =>
+              m.speaker?.alias === name && m.getFlag('dcc', 'isToHit') &&
+              m.system?.weaponName === itemName && !after.includes(m.id))
+            if (msg) return msg
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return null
+        }
+        const flagsOf = m => ({ isFumble: m?.getFlag('dcc', 'isFumble'), state: m?.getFlag('dcc', 'twoWeaponFumble'), pairedWith: m?.getFlag('dcc', 'twoWeaponPair')?.pairedWith, content: m?.content || '' })
+        const waitFor = async (check) => {
+          const deadline = Date.now() + 3000
+          while (Date.now() < deadline) {
+            if (check()) return true
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          return false
+        }
+        const attack = async (itemName, natural1, seen) => {
+          // 0.99 → natural 1; 0.5 → a middling roll, never 1 or max.
+          CONFIG.Dice.randomUniform = () => (natural1 ? 0.99 : 0.5)
+          try {
+            await actor.rollWeaponAttack(actor.items.getName(itemName).id)
+          } finally {
+            CONFIG.Dice.randomUniform = origRandom
+          }
+          const msg = await cardFor(itemName, seen)
+          if (msg) seen.push(msg.id)
+          return msg
+        }
+
+        const seen = game.messages.contents.map(m => m.id)
+        try {
+          // Round 1: both hands roll a natural 1.
+          const r1Main = await attack('P1-PairMain', true, seen)
+          const r1Off = await attack('P1-PairOff', true, seen)
+          await waitFor(() => r1Main?.getFlag('dcc', 'twoWeaponFumble') === 'confirmedElsewhere')
+          const round1 = { main: flagsOf(r1Main), off: flagsOf(r1Off), offId: r1Off?.id }
+
+          // Round 2: only the first hand rolls a natural 1.
+          await combat.nextRound()
+          const r2Main = await attack('P1-PairMain', true, seen)
+          const heldState = r2Main?.getFlag('dcc', 'twoWeaponFumble')
+          const r2Off = await attack('P1-PairOff', false, seen)
+          await waitFor(() => r2Main?.getFlag('dcc', 'twoWeaponFumble') === 'cleared')
+          const round2 = { heldState, main: flagsOf(r2Main), off: flagsOf(r2Off), offId: r2Off?.id }
+          return { round1, round2 }
+        } finally {
+          await combat.delete()
+          await actor.delete()
+        }
+      })
+
+      // Round 1: the fumble rolls on the off-hand card; the main card defers to it.
+      expect(result.round1.off.isFumble).toBe(true)
+      expect(result.round1.off.state).toBe('confirmed')
+      expect(result.round1.main.isFumble).toBe(false)
+      expect(result.round1.main.state).toBe('confirmedElsewhere')
+      expect(result.round1.main.pairedWith).toBe(result.round1.offId)
+      expect(result.round1.main.content).toContain('the fumble is rolled on the other hand')
+
+      // Round 2: held on the main card, then cleared once the off-hand missed the 1.
+      expect(result.round2.heldState).toBe('held')
+      expect(result.round2.main.state).toBe('cleared')
+      expect(result.round2.main.isFumble).toBe(false)
+      expect(result.round2.main.pairedWith).toBe(result.round2.offId)
+      expect(result.round2.main.content).toContain('Natural 1, but no fumble')
+      expect(result.round2.off.state).toBeUndefined()
     })
 
     test('halfling two-weapon crit range survives the adapter (1d16, threatRange 16)', async ({ page }) => {

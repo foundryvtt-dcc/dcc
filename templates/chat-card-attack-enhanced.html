@@ -4,7 +4,7 @@
   One template serves both layouts; `compact` switches between them.
   Banner classes (attack-hit / attack-miss) drive the colored left border.
 --}}
-<div class="dcc-enhanced-card chat-card{{#if compact}} compact{{/if}}{{#if isFumble}} attack-miss{{else}}{{#if hasTarget}}{{#if hitsTarget}} attack-hit{{else}} attack-miss{{/if}}{{else}} attack-hit{{/if}}{{/if}}">
+<div class="dcc-enhanced-card chat-card{{#if compact}} compact{{/if}}{{#if isFumble}} attack-miss{{else if naturalMiss}} attack-miss{{else}}{{#if hasTarget}}{{#if hitsTarget}} attack-hit{{else}} attack-miss{{/if}}{{else}} attack-hit{{/if}}{{/if}}">
   <header class="card-header flexrow">
     <h3 class="flavor-text">
       {{#if isBackstab}}<img src="/systems/dcc/styles/images/backstab.png" title="{{localize 'DCC.Backstab'}}" width="20" height="20" class="backstab-icon" />{{/if}}
@@ -44,6 +44,8 @@
     <div class="chat-details centered">
       {{#if isFumble}}
         <div class="roll-result status-failure">{{localize "DCC.Fumble"}}!</div>
+      {{else if naturalMiss}}
+        <div class="roll-result status-failure">{{localize "DCC.AttackMissesNatural1"}}</div>
       {{else if hasTarget}}
         {{#if hitsTarget}}
           <div class="roll-result status-success">{{#if isCrit}}{{localize "DCC.AttackHitsCrit"}}{{else}}{{localize "DCC.AttackHits"}}{{/if}} {{targetName}}!</div>
@@ -61,6 +63,10 @@
     {{#if isFumble}}
       {{#unless automated}}
         {{#if canUserModify}}<button type="button" class="enhanced-card-button{{#if compact}} compact-button{{/if}}{{#if fumbleButtonClicked}}{{#unless isGM}} disabled{{/unless}}{{/if}}" data-action="roll-fumble">{{localize "DCC.RollFumble"}}</button>{{/if}}
+      {{/unless}}
+    {{else if fumbleHeld}}
+      {{#unless automated}}
+        {{#if canUserModify}}<button type="button" class="enhanced-card-button{{#if compact}} compact-button{{/if}}{{#if fumbleButtonClicked}}{{#unless isGM}} disabled{{/unless}}{{/if}}" data-action="roll-fumble">{{fumblePrompt}}</button>{{/if}}
       {{/unless}}
     {{else}}
       {{#unless suppressDamage}}

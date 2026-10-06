@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "Verfehlt",
   "DCC.AttackHitsCritNoTarget": "Kritischer Treffer!",
   "DCC.AttackHitsAC": "Trifft RK {ac}",
+  "DCC.AttackMissesNatural1": "Verfehlt (natürliche 1)",
   "DCC.CritNeedsHitNote": "Nur ein kritischer Treffer, wenn dieser Angriff trifft.",
   "DCC.RollsDamageWith": "Würfelt Schaden mit {weapon}",
   "DCC.SocketNoGMWarning": "Es ist kein Spielleiter verbunden, daher konnte diese Aktion nicht ausgeführt werden. Ein SL muss online sein.",
@@ -1067,6 +1068,10 @@
   "DCC.TwoWeaponSecondary": "2-Waff. Neben",
   "DCC.TwoWeaponSecondaryHint": "Diese Waffe wird für den Kampf mit zwei Waffen verwendet und befindet sich in der Nebenhand.",
   "DCC.HalflingTwoWeaponFumbleNote": "Patzer tritt nur ein, wenn beide Angriffswürfe eine natürliche 1 waren.",
+  "DCC.HalflingTwoWeaponFumbleOffer": "Wenn beide Hände eine natürliche 1 gewürfelt haben, Patzer würfeln",
+  "DCC.HalflingTwoWeaponFumbleCleared": "Natürliche 1, aber kein Patzer: Der Angriff der anderen Hand in dieser Runde war keine natürliche 1.",
+  "DCC.HalflingTwoWeaponFumbleConfirmed": "Beide Hände haben in dieser Runde eine natürliche 1 gewürfelt: Patzer.",
+  "DCC.HalflingTwoWeaponFumbleConfirmedElsewhere": "Beide Hände haben in dieser Runde eine natürliche 1 gewürfelt: Der Patzer wird beim Angriff der anderen Hand gewürfelt.",
   "DCC.WeaponWarningUnequipped": "Kein Angriff möglich; Waffe nicht angelegt.",
   "DCC.Welcome": {
     "Title": "Dungeon Crawl Classics",

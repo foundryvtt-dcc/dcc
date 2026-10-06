@@ -94,6 +94,11 @@ export async function buildEnhancedCardData (message, actor, weapon) {
   const isFumble = !!flag('isFumble')
   const hasTarget = !!flag('hasTarget')
   const hitsTarget = !!flag('hitsTarget')
+  // Halfling two-weapon natural 1 that isn't (or isn't yet) a fumble (#968):
+  // still a miss, never a damage roll. `held` keeps a Roll Fumble button.
+  const twoWeaponFumble = flag('twoWeaponFumble')
+  const naturalMiss = !isFumble && !!twoWeaponFumble
+  const fumbleHeld = twoWeaponFumble === 'held' && !!sys.fumbleRollFormula
 
   // Whether damage/crit/fumble were auto-rolled is fixed when the card is
   // created (by the attacker's client), so render from the stored `automated`
@@ -133,11 +138,13 @@ export async function buildEnhancedCardData (message, actor, weapon) {
     isBackstab,
     isCrit,
     isFumble,
+    naturalMiss,
+    fumbleHeld,
     hasTarget,
     hitsTarget,
     showHitMiss,
     automated,
-    suppressDamage: hasTarget && !hitsTarget,
+    suppressDamage: (hasTarget && !hitsTarget) || naturalMiss,
     targetName: flag('targetName') ?? '',
     hitsAc: sys.hitsAc,
     actorName: actor?.name ?? '',

@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "未命中",
   "DCC.AttackHitsCritNoTarget": "重击！",
   "DCC.AttackHitsAC": "命中 AC {ac}",
+  "DCC.AttackMissesNatural1": "未命中（自然 1）",
   "DCC.CritNeedsHitNote": "仅在此次攻击命中时才算重击。",
   "DCC.RollsDamageWith": "使用 {weapon} 掷伤害",
   "DCC.SocketNoGMWarning": "没有连接的游戏主持人，因此无法完成此操作。必须有一名 GM 在线。",
@@ -1067,6 +1068,10 @@
   "DCC.TwoWeaponSecondary": "双持副手",
   "DCC.TwoWeaponSecondaryHint": "此武器用于双持战斗的副手",
   "DCC.HalflingTwoWeaponFumbleNote": "大失败仅用时两次攻击投骰均为自然 1",
+  "DCC.HalflingTwoWeaponFumbleOffer": "若双手均投出自然 1，则投掷大失败",
+  "DCC.HalflingTwoWeaponFumbleCleared": "自然 1，但不是大失败：本轮另一只手的攻击没有同样投出自然 1。",
+  "DCC.HalflingTwoWeaponFumbleConfirmed": "本轮双手均投出自然 1：大失败。",
+  "DCC.HalflingTwoWeaponFumbleConfirmedElsewhere": "本轮双手均投出自然 1：大失败在另一只手的攻击上投掷。",
   "DCC.WeaponWarningUnequipped": "无法使用未穿戴武器攻击",
   "DCC.Welcome": {
     "Title": "地城探险经典",

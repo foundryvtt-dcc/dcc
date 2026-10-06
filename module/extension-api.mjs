@@ -10,6 +10,8 @@
  * pain point.
  */
 
+import { BUILT_IN_CLASS_TRAITS } from './built-in-class-traits.mjs'
+
 /**
  * Register an Item sheet for the DCC system. Closes the
  * `Items.unregisterSheet('core', ItemSheetV2) + Items.registerSheet(…)`
@@ -731,4 +733,98 @@ export function applyActiveVariantSheetTheme (element, deps = {}) {
   if (!theme) return
   if (element.classList.contains(theme)) return
   element.classList.add(theme)
+}
+
+/**
+ * The class traits `registerClassTraits` accepts, and each one's value type.
+ * See `module/built-in-class-traits.mjs` for what each trait does.
+ */
+export const CLASS_TRAIT_TYPES = Object.freeze({
+  twoWeaponMinAgility: 'number',
+  twoWeaponCritOnMax: 'boolean',
+  twoWeaponFumbleBothOnes: 'boolean',
+  idolMagic: 'boolean',
+  detectSecretDoorsBonus: 'string',
+  luckRecovers: 'boolean'
+})
+
+/**
+ * Register a class's rule traits (#998). Rules that used to check for a
+ * built-in class ID (`'halfling'`, `'cleric'`, …) read these instead, so a
+ * homebrew or sibling-module class can opt in to the same rule, e.g.
+ *
+ * ```js
+ * game.dcc.registerClassTraits('halfling-champion', {
+ *   twoWeaponMinAgility: 16,
+ *   twoWeaponCritOnMax: true,
+ *   twoWeaponFumbleBothOnes: true
+ * })
+ * ```
+ *
+ * `classId` is the lowercase canonical class identifier, same convention
+ * as the other class registries. Re-registering a `classId` replaces its
+ * traits (last-write-wins); to add a trait to a built-in class, spread
+ * `getClassTraits(classId)` into the new registration. Unknown trait names
+ * and wrong value types throw, so a typo fails loudly at init.
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {object} traits - trait name → value, per `CLASS_TRAIT_TYPES`.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - defaults to `globalThis.CONFIG`.
+ */
+export function registerClassTraits (classId, traits, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerClassTraits: classId must be a non-empty string')
+  }
+  if (!traits || typeof traits !== 'object' || Array.isArray(traits)) {
+    throw new Error('registerClassTraits: traits must be an object')
+  }
+  for (const [name, value] of Object.entries(traits)) {
+    const type = CLASS_TRAIT_TYPES[name]
+    if (!type) {
+      throw new Error(`registerClassTraits: unknown trait "${name}"`)
+    }
+    if (typeof value !== type) { // eslint-disable-line valid-typeof
+      throw new Error(`registerClassTraits: trait "${name}" must be a ${type}`)
+    }
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerClassTraits: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.classTraits ??= {}
+  CONFIGImpl.DCC.classTraits[classId] = { ...traits }
+}
+
+/**
+ * The registered traits for a class, or `{}`. Before anything is
+ * registered (unit tests, pre-init) the built-in table answers, so
+ * built-in classes behave the same either way.
+ *
+ * @param {string|null|undefined} classId - lowercase canonical class identifier.
+ * @param {object} [deps]
+ * @param {object} [deps.CONFIG] - defaults to `globalThis.CONFIG`.
+ * @returns {object}
+ */
+export function getClassTraits (classId, deps = {}) {
+  if (!classId) return {}
+  const registry = (deps.CONFIG ?? globalThis.CONFIG)?.DCC?.classTraits
+  const traits = registry ? registry[classId] : BUILT_IN_CLASS_TRAITS[classId]
+  return { ...(traits ?? {}) }
+}
+
+/**
+ * One trait for an actor's class (via `actor.classId`), or `undefined`.
+ * Never throws: rules call this on hot paths (data prep, rolls).
+ *
+ * @param {object|null|undefined} actor - DCCActor (or anything with `classId`).
+ * @param {string} trait - a `CLASS_TRAIT_TYPES` key.
+ * @param {object} [deps]
+ * @returns {*}
+ */
+export function getClassTrait (actor, trait, deps = {}) {
+  return getClassTraits(actor?.classId, deps)[trait]
 }
