@@ -39,11 +39,12 @@ const BORDER_SUBTLE_DARK = 'rgb(61, 60, 68)' //  #3d3c44
 const BORDER_MUTED_LIGHT = 'rgb(122, 121, 113)' // #7a7971 — must stay visible
 const BORDER_MUTED_DARK = 'rgb(107, 106, 117)' // #6b6a75
 /* Crit / fumble accents — mirror the `--chat-critical-color` /
- * `--chat-fumble-color` values in styles/variables.css. Light keeps the literal
- * `green` / `red`; dark uses lighter hues for the #0b0a13 card (#948).
+ * `--chat-fumble-color` values in styles/variables.css. Light uses darker
+ * greens/reds that clear 4.5:1 on parchment (#1003); dark uses lighter hues
+ * for the #0b0a13 card (#948).
  */
-const CRIT_GREEN_LIGHT = 'rgb(0, 128, 0)' // `green`
-const FUMBLE_RED_LIGHT = 'rgb(255, 0, 0)' // `red`
+const CRIT_GREEN_LIGHT = 'rgb(0, 100, 0)' // #006400
+const FUMBLE_RED_LIGHT = 'rgb(176, 0, 0)' // #b00000
 const CRIT_GREEN_DARK = 'rgb(125, 219, 99)' // #7ddb63
 const FUMBLE_RED_DARK = 'rgb(255, 127, 127)' // #ff7f7f
 const MUTED_TEXT_LIGHT = 'rgb(102, 102, 102)' // #666

@@ -56,8 +56,8 @@
   --system-damage-color: #8b0000;
   /* Crit / fumble accent text (issue #948). Mirrored by the --chat-* pair on
      body.theme-light / body.theme-dark below, which is what chat cards use. */
-  --system-critical-color: green;
-  --system-fumble-color: red;
+  --system-critical-color: #006400;
+  --system-fumble-color: #b00000;
   /* Two border weights below --system-border-color (which frames boxes),
      replacing `--color-border-light-primary` / `--color-border-light-tertiary`
      (issue #861). Foundry V14 declares those only under `body.game .app`, the
@@ -109,10 +109,11 @@ body.theme-light {
   --chat-border-subtle-color: #b5b3a4;
   --chat-border-muted-color: #7a7971;
   --chat-text-muted-color: #666;
-  /* Crit / fumble accent text (issue #948): the literal `green` / `red` the
-     chat.css declarations always carried, so the light theme is unchanged. */
-  --chat-critical-color: green;
-  --chat-fumble-color: red;
+  /* Crit / fumble accent text (issue #948). The literal `green` / `red` these
+     replaced measure 3.6:1 / 2.8:1 on parchment, under the 4.5:1 text floor;
+     these darker hues of the same colors are 5.2:1 (#1003 contrast sweep). */
+  --chat-critical-color: #006400;
+  --chat-fumble-color: #b00000;
 }
 
 body.theme-dark {

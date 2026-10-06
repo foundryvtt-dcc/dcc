@@ -120,7 +120,9 @@ a.inline-roll {
 
   .deed-table-select {
     background: var(--chat-background);
-    border: 1px solid var(--chat-border-subtle-color);
+    /* A control's edge is its affordance: the muted (3:1) border, not the
+       decorative subtle one. */
+    border: 1px solid var(--chat-border-muted-color);
     color: var(--chat-primary-color);
     /* Never spill past the card's right edge, whatever a host card imposes. */
     max-width: 100%;
