@@ -21,6 +21,7 @@ import { isRollCancellation, rollOrNullOnCancel } from '../roll-cancellation.mjs
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
 import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import DiceChain from '../dice-chain.js'
+import { isHalflingTwoWeaponAttack, twoWeaponPairContext, findTwoWeaponPartner, resolveTwoWeaponFumble, twoWeaponFumbleNote, settleTwoWeaponPartner } from '../two-weapon-fumble.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -285,9 +286,20 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const monsterFumbleLuckMod = (this.isNPC && !qolHandlingCombat() && game.settings.get('dcc', 'monsterFumbles'))
       ? highestPcTargetLuckMod(options.targets)
       : null
-    if (attackRollResult.fumble) {
+    // Halfling two-weapon fighting (#968): a natural 1 only fumbles when both
+    // hands roll one. Pair with the other hand's card this round when combat
+    // says which it is; otherwise hold the fumble behind a click-to-roll prompt.
+    const halflingTwoWeapon = isHalflingTwoWeaponAttack(this, weapon)
+    const pairContext = halflingTwoWeapon ? twoWeaponPairContext(this, weapon) : null
+    const pairPartner = findTwoWeaponPartner(pairContext)
+    const { state: twoWeaponFumbleState, partnerState } = halflingTwoWeapon
+      ? resolveTwoWeaponFumble(!!attackRollResult.fumble, pairPartner)
+      : { state: null, partnerState: null }
+    const fumbleHeld = twoWeaponFumbleState === 'held'
+    const isFumble = !!attackRollResult.fumble && (!halflingTwoWeapon || twoWeaponFumbleState === 'confirmed')
+    if (isFumble || fumbleHeld) {
       const fumbleDispatch = await this._rollFumble(weapon, {
-        automate: automateDamageFumblesCrits,
+        automate: automateDamageFumblesCrits && !fumbleHeld,
         luckMod,
         inverseLuckMod,
         useNPCFumbles,
@@ -305,6 +317,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       isNPCFumble = fumbleDispatch.isNPCFumble
       libFumbleResult = fumbleDispatch.libFumbleResult
       if (fumbleRoll) rolls.push(fumbleRoll)
+      if (fumbleHeld) fumblePrompt = game.i18n.localize('DCC.HalflingTwoWeaponFumbleOffer')
     }
 
     const flags = {
@@ -315,7 +328,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       // to choose Roll buttons vs. resolved results consistently for everyone.
       'dcc.automated': automateDamageFumblesCrits,
       'dcc.isBackstab': options.backstab,
-      'dcc.isFumble': attackRollResult.fumble,
+      'dcc.isFumble': isFumble,
       'dcc.isCrit': attackRollResult.crit,
       'dcc.isNaturalCrit': attackRollResult.naturalCrit,
       'dcc.critNeedsHit': !!attackRollResult.critNeedsHit,
@@ -348,18 +361,18 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     if (libFumbleResult) {
       flags['dcc.libFumbleResult'] = libFumbleResult
     }
+    if (pairContext) {
+      flags['dcc.twoWeaponPair'] = { ...pairContext, fumbled: !!attackRollResult.fumble, pairedWith: pairPartner?.id ?? null }
+    }
+    if (twoWeaponFumbleState) {
+      flags['dcc.twoWeaponFumble'] = twoWeaponFumbleState
+    }
     game.dcc.FleetingLuck.updateFlags(flags, attackRollResult.roll)
 
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
-    // Check for halfling two-weapon fighting special note
-    let twoWeaponNote = ''
-    if (attackRollResult.fumble &&
-      (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
-      this.classId === 'halfling') {
-      twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
-    }
+    const twoWeaponNote = twoWeaponFumbleNote(twoWeaponFumbleState)
 
     const messageData = {
       user: game.user.id,
@@ -427,11 +440,18 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     delete messageData.system.fumbleRoll
     delete messageData.system.deedDieRoll
 
-    messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
+    const renderAttackCard = message => foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message })
+    messageData.content = await renderAttackCard(messageData)
 
     // Output the results
     ChatMessage.applyMode(messageData, messageMode)
-    ChatMessage.create(messageData)
+    const messageCreated = ChatMessage.create(messageData)
+
+    // Pair the other hand's card with this one (#968). Fire-and-forget,
+    // like the create itself; it logs its own errors.
+    if (pairPartner) {
+      messageCreated?.then?.(message => settleTwoWeaponPartner(pairPartner, message?.id, partnerState, system => renderAttackCard({ system })))
+    }
 
     // Auto-apply damage to a hit target (setting-gated; routes through the GM
     // socket). Fire-and-forget — it swallows its own errors.

@@ -812,6 +812,7 @@
   "DCC.AttackMisses": "Chybia",
   "DCC.AttackHitsCritNoTarget": "Trafienie krytyczne!",
   "DCC.AttackHitsAC": "Trafia KP {ac}",
+  "DCC.AttackMissesNatural1": "Chybia (naturalna 1)",
   "DCC.CritNeedsHitNote": "Trafienie krytyczne tylko wtedy, gdy ten atak trafi.",
   "DCC.RollsDamageWith": "Rzut na obrażenia za pomocą {weapon}",
   "DCC.SocketNoGMWarning": "Żaden Mistrz Gry nie jest połączony, więc nie udało się wykonać tej akcji. MG musi być online.",
@@ -1067,6 +1068,10 @@
   "DCC.TwoWeaponSecondary": "2-Broń Pom",
   "DCC.TwoWeaponSecondaryHint": "Ta broń jest używana do walki dwoma broniami i znajduje się w drugiej ręce.",
   "DCC.HalflingTwoWeaponFumbleNote": "Błąd krytyczny dotyczy tylko wtedy, gdy oba rzuty ataku były naturalną 1.",
+  "DCC.HalflingTwoWeaponFumbleOffer": "Jeśli obie ręce wyrzuciły naturalną 1, rzuć na błąd krytyczny",
+  "DCC.HalflingTwoWeaponFumbleCleared": "Naturalna 1, ale bez błędu krytycznego: atak drugiej ręki w tej rundzie nie dał również naturalnej 1.",
+  "DCC.HalflingTwoWeaponFumbleConfirmed": "Obie ręce wyrzuciły naturalną 1 w tej rundzie: błąd krytyczny.",
+  "DCC.HalflingTwoWeaponFumbleConfirmedElsewhere": "Obie ręce wyrzuciły naturalną 1 w tej rundzie: błąd krytyczny rzucany jest przy ataku drugiej ręki.",
   "DCC.WeaponWarningUnequipped": "Nie można atakować nieoddaną bronią",
   "DCC.Welcome": {
     "Title": "Dungeon Crawl Classics",

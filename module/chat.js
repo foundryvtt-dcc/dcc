@@ -328,7 +328,9 @@ export const emoteAttackRoll = function (message, html) {
   }
 
   let fumble = ''
-  if (message.getFlag('dcc', 'isFumble')) {
+  // A held halfling two-weapon fumble (#968) keeps its click-to-roll prompt.
+  const fumbleHeld = message.getFlag('dcc', 'twoWeaponFumble') === 'held' && message.system.fumbleInlineRoll
+  if (message.getFlag('dcc', 'isFumble') || fumbleHeld) {
     fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!</p>${message.system.fumbleInlineRoll}`
     // Add navigable fumble result if available
     if (message.system.fumbleResult) {
