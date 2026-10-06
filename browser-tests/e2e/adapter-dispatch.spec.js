@@ -3645,6 +3645,84 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(card.fumbleInlineRoll).toContain('inline-roll')
     })
 
+    test('a class registered with the halfling traits holds a two-weapon fumble (#998)', async ({ page }) => {
+      // Class traits registry: a sibling-module class (e.g. a crawl Halfling
+      // Champion) opts in to the halfling two-weapon rules via
+      // game.dcc.registerClassTraits, with no 'halfling' class ID check.
+      await page.evaluate(async () => {
+        game.dcc.registerClassTraits('p1-halfling-kin', {
+          twoWeaponMinAgility: 16,
+          twoWeaponCritOnMax: true,
+          twoWeaponFumbleBothOnes: true
+        })
+        const actor = await Actor.create({
+          name: 'P1 Halfling Kin',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 10 } },
+            details: { sheetClass: 'P1-Halfling-Kin' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-KinDagger',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            critRange: 20,
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponSecondary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.99
+      })
+      const weapon = await page.evaluate(() => {
+        const item = game.actors.getName('P1 Halfling Kin').items.getName('P1-KinDagger')
+        return { id: item.id, critRange: item.system.critRange, critOnMax: item.system.twoWeaponCritOnMaxDie }
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Halfling Kin').rollWeaponAttack(id)
+      }, weapon.id)
+
+      const card = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Halfling Kin' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) {
+            return {
+              isFumble: msg.getFlag('dcc', 'isFumble'),
+              state: msg.getFlag('dcc', 'twoWeaponFumble'),
+              fumbleResult: msg.system.fumbleResult
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+        delete CONFIG.DCC.classTraits['p1-halfling-kin']
+      })
+
+      // Agility 10 lifted to 16, with the halfling crit on the off-hand's max face.
+      expect(weapon.critOnMax).toBe(true)
+      expect(card, 'registered class two-weapon fumble must produce chat card').not.toBeNull()
+      expect(card.isFumble).toBe(false)
+      expect(card.state).toBe('held')
+      expect(card.fumbleResult, 'held fumble must not be auto-rolled').toBeFalsy()
+    })
+
     test('halfling two-weapon fumbles pair within a combat round (#968)', async ({ page }) => {
       // With an active combat the other hand's card is known: same
       // combatant, same round, opposite hand. Round 1: both hands roll a

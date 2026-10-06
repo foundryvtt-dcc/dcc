@@ -14,6 +14,7 @@ import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib
 import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
+import { getClassTrait } from './extension-api.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -152,6 +153,17 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     return baseSpeed + mod + penalty + aeModifier
   }
 
+  /**
+   * Apply class traits that set skill values (#998): the elf's (or any
+   * class with `detectSecretDoorsBonus`) Detect Secret Doors bonus.
+   */
+  applyClassSkillTraits () {
+    const detectSecretDoorsBonus = getClassTrait(this, 'detectSecretDoorsBonus')
+    if (detectSecretDoorsBonus && this.system.skills?.detectSecretDoors) {
+      this.system.skills.detectSecretDoors.value = detectSecretDoorsBonus
+    }
+  }
+
   /** @override */
   prepareDerivedData () {
     super.prepareDerivedData()
@@ -177,9 +189,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       }
     }
 
-    if (this.classId === 'elf') {
-      this.system.skills.detectSecretDoors.value = '+4'
-    }
+    this.applyClassSkillTraits()
 
     // For NPCs, add otherBonus to displayed save values (tracked as overrides for #714)
     if (this.isNPC) {

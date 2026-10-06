@@ -11,6 +11,7 @@ import { applyForceCritToFoundryRoll } from './force-crit.mjs'
 import { emitAfterSpellCheckResult } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, reconcilePlannedActionDie, actionDicePresetsFromPlan, slotRollFormula } from '../action-dice-tracker.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
+import { getClassTrait } from '../extension-api.mjs'
 
 /**
  * Skill-check dispatch mixin for {@link DCCActor}.
@@ -479,7 +480,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // Hands, Turn Unholy, Divine Aid) have none and fall back to cleric on
     // a cleric actor — same default the failure-automation block below uses.
     let castingMode = skill.castingMode
-    if (!castingMode && !skillItem && this.classId === 'cleric') {
+    if (!castingMode && !skillItem && getClassTrait(this, 'idolMagic') === true) {
       castingMode = 'cleric'
     }
 
