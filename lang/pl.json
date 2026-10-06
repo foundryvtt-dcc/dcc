@@ -436,6 +436,7 @@
   "DCC.HandlePoison": "Obchodzenie się z trucizną",
   "DCC.HealDamage": "Uleczono na {damage} PW",
   "DCC.Healing": "Leczenie",
+  "DCC.DetectSecretDoors": "Wykrywanie Ukrytych Drzwi",
   "DCC.HeightenedSenses": "Wykrywanie Ukrytych Drzwi",
   "DCC.HeightenedSensesDescription": "+4 do Wykrywania Ukrytych Drzwi (Int)",
   "DCC.HideInShadows": "Ukrywanie w cieniu",

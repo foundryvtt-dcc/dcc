@@ -423,6 +423,7 @@
   "DCC.HandlePoison": "Utiliser poisons",
   "DCC.HealDamage": "Soigné de {damage} HP.",
   "DCC.Healing": "Soigner",
+  "DCC.DetectSecretDoors": "Détecter les portes secrètes",
   "DCC.HeightenedSenses": "Dét. p. secrètes",
   "DCC.HeightenedSensesDescription": "+4 pour détecter les portes secrètes (Int)",
   "DCC.HideInShadows": "Se cacher dans l'ombre",

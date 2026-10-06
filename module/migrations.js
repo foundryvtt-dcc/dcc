@@ -1,7 +1,7 @@
 /* global foundry, game, ui */
 
 import { getSingleActionDie, inferWeaponDie } from './utilities.js'
-import { getClassTrait } from './extension-api.mjs'
+import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
 
 /**
  * Core class keys used for migration lookups
@@ -515,20 +515,19 @@ export const migrateActorData = async function (actor) {
   }
 
   // Reset Detect Secret Doors on Players that only got the elf's Heightened
-  // Senses from the old elf schema mixin, which replaced the base-body field
-  // for every Player (#1000). Data-driven: only the untouched elf triple
-  // (label + ability + value) is reset, and only when the actor's class has
-  // no `detectSecretDoorsBonus` trait (elves, and homebrew classes like the
-  // crawl Elven Rogue, keep theirs). Edited values are left alone.
-  const rawDetect = actor._source?.system?.skills?.detectSecretDoors
-  if (actor.type === 'Player' &&
-    rawDetect?.label === 'DCC.HeightenedSenses' &&
-    rawDetect.ability === 'int' &&
-    rawDetect.value === '+4' &&
-    !getClassTrait(actor, 'detectSecretDoorsBonus')) {
-    updateData['system.skills.detectSecretDoors.label'] = 'DCC.DetectSecretDoors'
-    updateData['system.skills.detectSecretDoors.ability'] = ''
-    updateData['system.skills.detectSecretDoors.value'] = '+0'
+  // Senses from the old elf schema mixin (#1000). Gated to the 0.73 sweep so
+  // a later bump never undoes a hand-set triple. Reads the pending sheetClass
+  // backfill above so a legacy elf (className only) keeps its values.
+  if (actor.type === 'Player' && currentVersion < 0.73) {
+    const sheetClass = updateData['system.details.sheetClass'] ??
+      actor._source?.system?.details?.sheetClass ??
+      actor.system?.details?.sheetClass
+    const reset = strayElfDetectSecretDoorsReset(actor._source?.system?.skills?.detectSecretDoors, sheetClass)
+    if (reset) {
+      for (const [key, value] of Object.entries(reset)) {
+        updateData[`system.skills.detectSecretDoors.${key}`] = value
+      }
+    }
   }
 
   // Migrate Owned Items

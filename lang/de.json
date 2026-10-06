@@ -436,6 +436,7 @@
   "DCC.HandlePoison": "Gift mischen",
   "DCC.HealDamage": "Wurde um {damage} TP geheilt.",
   "DCC.Healing": "Heilung",
+  "DCC.DetectSecretDoors": "Geheimtüren entdecken",
   "DCC.HeightenedSenses": "Geheimtüren entdecken",
   "DCC.HeightenedSensesDescription": "+4 auf Geheimtüren entdecken (IN)",
   "DCC.HideInShadows": "Im Schatten verstecken",

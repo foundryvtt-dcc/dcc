@@ -11,6 +11,7 @@ import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
 import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
 import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
@@ -36,6 +37,22 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     return typeof sheetClass === 'string' && sheetClass.length > 0
       ? sheetClass.toLowerCase()
       : null
+  }
+
+  /** @override */
+  async _preCreate (data, options, user) {
+    const allowed = await super._preCreate(data, options, user)
+    if (allowed === false) return false
+    // Pregens and adventure actors exported while the elf schema mixin
+    // shipped carry the elf's Heightened Senses whatever their class
+    // (#1000); imports skip the world migration, so reset them here.
+    if (this.type === 'Player') {
+      const reset = strayElfDetectSecretDoorsReset(
+        this._source.system?.skills?.detectSecretDoors,
+        this._source.system?.details?.sheetClass
+      )
+      if (reset) this.updateSource({ 'system.skills.detectSecretDoors': reset })
+    }
   }
 
   /** @override */

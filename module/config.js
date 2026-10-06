@@ -404,7 +404,7 @@ DCC.activeEffectKeyLabels = {
   'system.class.spellCheckOtherMod': 'DCC.SpellCheck',
   'system.class.luckDie': 'DCC.LuckDie',
   'system.class.backstab': 'DCC.Backstab',
-  'system.skills.detectSecretDoors.otherMod': 'DCC.HeightenedSenses',
+  'system.skills.detectSecretDoors.otherMod': 'DCC.DetectSecretDoors',
   'system.skills.sneakSilently.otherMod': 'DCC.SneakSilently',
   'system.skills.hideInShadows.otherMod': 'DCC.HideInShadows',
   'system.skills.pickPockets.otherMod': 'DCC.PickPocket',

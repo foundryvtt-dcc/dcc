@@ -2548,6 +2548,35 @@ test.describe('DCC Extension API', () => {
     expect(result.derivedValue).toBe('+4')
   })
 
+  test('creating a Player resets the stray elf Detect Secret Doors on core non-elf classes (#1000)', async ({ page }) => {
+    // Pregens / adventure actors exported while the elf mixin shipped carry
+    // the elf triple whatever their class; imports skip the world
+    // migration, so DCCActor._preCreate resets them.
+    const result = await page.evaluate(async () => {
+      const elfTriple = { label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' }
+      const make = async (sheetClass) => {
+        const actor = await Actor.create({
+          name: `#1000 ${sheetClass} Import Probe`,
+          type: 'Player',
+          system: { details: { sheetClass }, skills: { detectSecretDoors: elfTriple } }
+        })
+        const detect = actor.system._source.skills.detectSecretDoors
+        const out = {
+          label: detect.label,
+          ability: detect.ability,
+          value: detect.value,
+          localizedLabel: game.i18n.localize(detect.label)
+        }
+        await actor.delete()
+        return out
+      }
+      return { zero: await make('Zero'), elf: await make('Elf'), homebrew: await make('Elven-Rogue') }
+    })
+    expect(result.zero).toEqual({ label: 'DCC.DetectSecretDoors', ability: '', value: '+0', localizedLabel: 'Detect Secret Doors' })
+    expect(result.elf).toMatchObject({ label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' })
+    expect(result.homebrew).toMatchObject({ label: 'DCC.HeightenedSenses', ability: 'int', value: '+4' })
+  })
+
   // -------------------------------------------------------------------
   // Lib re-exports — registerClassProgression / registerClassProgressions
   // (Phase 6 session 1)

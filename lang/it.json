@@ -436,6 +436,7 @@
   "DCC.HandlePoison": "Usare veleni",
   "DCC.HealDamage": "Guarito di {damage} PF",
   "DCC.Healing": "Guarigione",
+  "DCC.DetectSecretDoors": "Individuare Porte Segrete",
   "DCC.HeightenedSenses": "Individuare Porte Segrete",
   "DCC.HeightenedSensesDescription": "+4 a Individuare Porte Segrete (Int)",
   "DCC.HideInShadows": "Nascondersi nelle ombre",
