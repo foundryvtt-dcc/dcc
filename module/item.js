@@ -6,7 +6,7 @@ import { ContainerItemMixin } from './item/container-mixin.mjs'
 import { CurrencyItemMixin } from './item/currency-mixin.mjs'
 import { SpellItemMixin } from './item/spell-mixin.mjs'
 import { isRollCancellation } from './roll-cancellation.mjs'
-import { getClassTrait } from './extension-api.mjs'
+import { twoWeaponCritRuleKey, twoWeaponRules } from './two-weapon-rules.mjs'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -109,106 +109,24 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
         this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[${game.i18n.localize('DCC.untrained')}]`
       }
 
-      // Two-Weapon Fighting Dice Modifications
-      if (this.system.twoWeaponPrimary || this.system.twoWeaponSecondary) {
-        const agilityScore = this.actor?.system?.abilities?.agl?.value || 0
-        // Class traits (#998): halflings (and classes that borrow their
-        // two-weapon rules) fight as if Agility were at least 16, and crit
-        // on the reduced die's max face.
-        const minAgility = getClassTrait(this.actor, 'twoWeaponMinAgility')
-        const critOnMax = getClassTrait(this.actor, 'twoWeaponCritOnMax') === true
-
-        // Calculate dice penalty based on agility and weapon hand
-        let dicePenalty = 0
-        let effectiveAgility = agilityScore
-        if (typeof minAgility === 'number') {
-          effectiveAgility = Math.max(agilityScore, minAgility)
+      // Two-Weapon Fighting (Table 4-3, from the lib — #996). The raw dice
+      // penalty is kept (derived, not persisted) so the multiple-action-dice
+      // override — which replaces this weapon die with an extra slot's die —
+      // can re-apply it to the chosen base die (#834). The hand's crit rules
+      // are applied at roll time, on whatever die is actually rolled.
+      const twoWeapon = twoWeaponRules(this.actor, this)
+      if (twoWeapon) {
+        this.system.twoWeaponDicePenalty = twoWeapon.dicePenalty
+        if (twoWeapon.dicePenalty !== 0) {
+          const tag = twoWeapon.hand === 'primary' ? game.i18n.localize('DCC.2w-primary') : game.i18n.localize('DCC.2w-off-hand')
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, twoWeapon.dicePenalty)}[${tag}]`
         }
-
-        // Determine dice penalty based on agility and weapon type
-        if (effectiveAgility <= 8) {
-          dicePenalty = this.system.twoWeaponPrimary ? -3 : -4
-        } else if (effectiveAgility >= 9 && effectiveAgility <= 11) {
-          dicePenalty = this.system.twoWeaponPrimary ? -2 : -3
-        } else if (effectiveAgility >= 12 && effectiveAgility <= 15) {
-          dicePenalty = this.system.twoWeaponPrimary ? -1 : -2
-        } else if (effectiveAgility >= 16 && effectiveAgility <= 17) {
-          dicePenalty = -1 // Both hands get -1 die
-        } else if (effectiveAgility >= 18) {
-          dicePenalty = this.system.twoWeaponPrimary ? 0 : -1
-        }
-
-        // Apply the dice penalty. The raw penalty is kept (derived, not
-        // persisted) so the multiple-action-dice override — which replaces
-        // this weapon die with an extra slot's die — can re-apply it to the
-        // chosen base die (#834).
-        this.system.twoWeaponDicePenalty = dicePenalty
-        if (dicePenalty !== 0) {
-          const tag = this.system.twoWeaponPrimary ? game.i18n.localize('DCC.2w-primary') : game.i18n.localize('DCC.2w-off-hand')
-          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[${tag}]`
-        }
-
-        // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)
-        let twoWeaponCritSet = false
-        if (critOnMax && effectiveAgility <= 17) {
-          // Halflings score crit and automatic hit on natural 16 when fighting
-          // two-weapon — BUT if agility is 18+, they use normal two-weapon
-          // fighting rules instead. The natural 16 is the max face of the
-          // halfling's penalized d16, so derive it from the die actually in
-          // play: with a smaller extra action die (a 6th-level halfling's
-          // 1d14, fought at 1d12) the crit lands on that die's max face, and
-          // the multiple-action-dice override re-derives it via
-          // twoWeaponCritOnMaxDie (#834), same as the Agl 16-17 primary.
-          const actionDie = this.system.actionDie || '1d20'
-          this.system.critRange = parseInt(actionDie.match(/d(\d+)/)?.[1] || '20')
-          this.system.twoWeaponCritOnMaxDie = true
-          twoWeaponCritSet = true
-        } else {
-          // Non-halflings have restricted critical hit ability when fighting two-handed
-          if (effectiveAgility <= 15) {
-            // Cannot score critical hits
-            this.system.critRange = 21 // No critical hits possible (impossible to roll >= 21 on d20)
-            twoWeaponCritSet = true
-          } else if (effectiveAgility >= 16 && effectiveAgility <= 17) {
-            // Primary hand scores critical on max die roll that also beats AC
-            if (this.system.twoWeaponPrimary) {
-              // Get the current action die size to determine max roll (after penalties)
-              const actionDie = this.system.actionDie || '1d20'
-              const dieFaces = parseInt(actionDie.match(/d(\d+)/)?.[1] || '20')
-              this.system.critRange = dieFaces
-              // "Crit on max die roll" tracks the die actually rolled, so the
-              // multiple-action-dice override re-derives critRange from its
-              // replacement die (#834).
-              this.system.twoWeaponCritOnMaxDie = true
-              twoWeaponCritSet = true
-            } else {
-              this.system.critRange = 51 // Secondary hand cannot crit
-              twoWeaponCritSet = true
-            }
-          } else if (effectiveAgility >= 18) {
-            // Primary hand scores crits as normal, secondary cannot
-            if (this.system.twoWeaponPrimary) {
-              // Keep original crit range (no change needed, let actor's value be used below)
-            } else {
-              this.system.critRange = 51 // Secondary hand cannot crit
-              twoWeaponCritSet = true
-            }
-          }
-        }
-
-        // Store flag to prevent later override
-        this.system._twoWeaponCritSet = twoWeaponCritSet
+        const critRuleKey = twoWeaponCritRuleKey(twoWeapon)
+        this.system.twoWeaponCritRule = critRuleKey ? game.i18n.localize(critRuleKey) : ''
       }
 
       if (this.system.config.actionDieOverride) {
         this.system.actionDie = this.system.config.actionDieOverride
-        // Crit-on-max-die thresholds are natural rolls on the die actually
-        // in play, so an override die moves the threshold to ITS max face —
-        // otherwise a smaller override (say 1d12) would keep an unreachable
-        // critRange 16 and never crit.
-        if (this.system.twoWeaponCritOnMaxDie) {
-          this.system.critRange = parseInt(this.system.actionDie.match(/d(\d+)/)?.[1] || '20')
-        }
       }
 
       // To-Hit Calculation
@@ -265,10 +183,7 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
     }
 
     // Crit Calculation
-    // Only set critRange if it hasn't already been set by two-weapon fighting logic
-    if (!this.system._twoWeaponCritSet) {
-      this.system.critRange = this.system?.config?.critRangeOverride ?? this.actor?.system?.details?.critRange ?? 20
-    }
+    this.system.critRange = this.system?.config?.critRangeOverride ?? this.actor?.system?.details?.critRange ?? 20
     this.system.critDie = this.system?.config?.critDieOverride || this.actor?.system?.attributes?.critical?.die || '1d4'
     this.system.critTable = this.system?.config?.critTableOverride || this.actor?.system?.attributes?.critical?.table || 'I'
 

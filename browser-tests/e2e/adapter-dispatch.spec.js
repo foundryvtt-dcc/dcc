@@ -3741,7 +3741,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       })
       const weapon = await page.evaluate(() => {
         const item = game.actors.getName('P1 Halfling Kin').items.getName('P1-KinDagger')
-        return { id: item.id, critRange: item.system.critRange, critOnMax: item.system.twoWeaponCritOnMaxDie }
+        return { id: item.id, critRuleIsMaxAutoHit: item.system.twoWeaponCritRule === game.i18n.localize('DCC.TwoWeaponCritMaxAutoHit') }
       })
       await page.evaluate(async (id) => {
         await game.actors.getName('P1 Halfling Kin').rollWeaponAttack(id)
@@ -3775,7 +3775,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       })
 
       // Agility 10 lifted to 16, with the halfling crit on the off-hand's max face.
-      expect(weapon.critOnMax).toBe(true)
+      expect(weapon.critRuleIsMaxAutoHit).toBe(true)
       expect(card, 'registered class two-weapon fumble must produce chat card').not.toBeNull()
       expect(card.isFumble).toBe(false)
       expect(card.state).toBe('held')
@@ -3880,15 +3880,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.round2.off.state).toBeUndefined()
     })
 
-    test('halfling two-weapon crit range survives the adapter (1d16, threatRange 16)', async ({ page }) => {
+    test('halfling two-weapon crits on the max face of the d16', async ({ page }) => {
       // Halfling RAW (DCC core): when fighting two-weapon at agl ≤17,
       // halflings score crits AND auto-hit on natural 16 — the max face
-      // of their penalized d16. item.js prepareBaseData sets
-      // `weapon.system.critRange = 16` + `twoWeaponCritOnMaxDie` on the
-      // pre-bumped weapon, and the adapter passes it through as a
-      // NATURAL `AttackInput.threatRange` (`threatRangeIsNatural`). We
-      // force a natural 16 (max on the d16) and assert the lib
-      // classifies it as a crit.
+      // of their penalized d16. rollToHit applies the lib's
+      // applyTwoWeaponHandRules to the attack result (#996). We force a
+      // natural 16 (max on the d16) and assert it's a crit.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Halfling Crit',
@@ -3903,8 +3900,6 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           type: 'weapon',
           system: {
             toHit: '+0',
-            // critRange omitted — item.js prepareBaseData sets 16 from
-            // the halfling-two-weapon branch.
             damageWeapon: '1d4',
             damage: '1d4',
             melee: true,
@@ -3951,20 +3946,15 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(flag, 'halfling two-weapon crit-on-16 must set dcc.libResult').not.toBeNull()
       expect(flag.die).toBe('d16')
       expect(flag.natural).toBe(16)
-      // A natural 16 on a d16 is auto-hit (max-on-die) — and the
-      // halfling two-weapon critRange was set to 16 by prepareBaseData,
-      // so this should classify as a crit. critSource will be
-      // 'natural-max' since 16 IS the max on this die.
+      // A natural 16 on a d16 is the max face: auto-hit and crit.
       expect(flag.isCriticalThreat).toBe(true)
       expect(flag.critSource).toBe('natural-max')
     })
 
     test('halfling two-weapon roll below the max face does not crit (natural 12 on d16)', async ({ page }) => {
-      // Regression for the crit-on-natural-11 bug: the lib used to
-      // reinterpret the halfling threatRange 16 as a d20-relative
-      // "top 5 faces" range and rescale it to the rolled die — 12+ on
-      // the d16 pair (8+ on a d12 extra-die pair) critted. With the
-      // threshold passed as natural, only the max face crits.
+      // Regression for the crit-on-natural-11 bug: a halfling threat range
+      // was once rescaled as a d20-relative "top N faces" range, so 12+ on
+      // the d16 pair critted. Only the max face crits.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Halfling NoCrit',

@@ -10,8 +10,8 @@ const { expect, createSessionTest } = require('./fixtures')
  */
 const test = createSessionTest()
 
-async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC = null, backstab = false, enhanced = false }) {
-  return page.evaluate(async ({ name, uniform, critRange, targetAC, backstab, enhanced }) => {
+async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC = null, backstab = false, enhanced = false, agility = 10, hand = null }) {
+  return page.evaluate(async ({ name, uniform, critRange, targetAC, backstab, enhanced, agility, hand }) => {
     if (!game.canvas?.ready || !game.canvas?.scene) {
       const scene = await Scene.create({ name: 'DCC Crit Confirm Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
       await scene.view()
@@ -28,11 +28,11 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
       await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
       await game.settings.set('dcc', 'autoApplyDamage', true)
       await game.settings.set('dcc', 'enhancedAttackCards', enhanced)
-      actor = await Actor.create({ name, type: 'Player', system: { class: { backstab: '+0' }, details: { critRange } } })
+      actor = await Actor.create({ name, type: 'Player', system: { abilities: { agl: { value: agility } }, class: { backstab: '+0' }, details: { critRange } } })
       const [weapon] = await actor.createEmbeddedDocuments('Item', [{
         name: `${name} Weapon`,
         type: 'weapon',
-        system: { actionDie: '1d20', toHit: '+0', critRange, damage: '1d6', backstabDamage: '1d6', melee: true, equipped: true }
+        system: { actionDie: '1d20', toHit: '+0', critRange, damage: '1d6', backstabDamage: '1d6', melee: true, equipped: true, ...(hand ? { [hand]: true } : {}) }
       }])
       game.user.targets.forEach(t => t.setTarget(false, { releaseOthers: false }))
       if (targetAC !== null) {
@@ -65,6 +65,7 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
             }
           }
           return {
+            die: msg.getFlag('dcc', 'libResult')?.die,
             hasEnhancedCard: !!card,
             enhancedNote: card?.querySelector('.crit-needs-hit-note')?.textContent.trim() ?? null,
             enhancedBanner: card?.querySelector('.roll-result')?.textContent.trim() ?? null,
@@ -94,7 +95,7 @@ async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC
       await target?.delete()
       await actor?.delete()
     }
-  }, { name, uniform, critRange, targetAC, backstab, enhanced })
+  }, { name, uniform, critRange, targetAC, backstab, enhanced, agility, hand })
 }
 
 test.describe('Crits need the attack to hit (#978)', () => {
@@ -153,5 +154,76 @@ test.describe('Crits need the attack to hit (#978)', () => {
     expect(out.isCrit).toBe(false)
     expect(out.critSource).toBeNull()
     expect(out.targetHp).toBe(30)
+  })
+})
+
+test.describe('Two-weapon crits follow Table 4-3 (#996)', () => {
+  // natural = ceil((1 - 0.001) * faces) = the die's max face
+  test('Agl 16-17 primary: a natural max that misses AC is neither a hit nor a crit', async ({ page }) => {
+    const out = await rollPinnedAttack(page, { name: 'P996 Max Miss', uniform: 0.001, agility: 16, hand: 'twoWeaponPrimary', targetAC: 40 })
+    expect(out, 'attack card must be posted').not.toBeNull()
+    expect(out.die).toBe('d16')
+    expect(out.natural).toBe(16)
+    expect(out.isHit).toBe(false)
+    expect(out.hitsTarget).toBe(false)
+    expect(out.isCrit).toBe(false)
+    expect(out.targetHp).toBe(30)
+  })
+
+  test('Agl 16-17 primary: a natural max that beats AC crits', async ({ page }) => {
+    const out = await rollPinnedAttack(page, { name: 'P996 Max Hit', uniform: 0.001, agility: 16, hand: 'twoWeaponPrimary', targetAC: 10 })
+    expect(out, 'attack card must be posted').not.toBeNull()
+    expect(out.hitsTarget).toBe(true)
+    expect(out.isCrit).toBe(true)
+    expect(out.critSource).toBe('natural-max')
+    expect(out.hasCritRoll).toBe(true)
+  })
+
+  test('Agl 12-15 off-hand: a natural max hits but cannot crit', async ({ page }) => {
+    const out = await rollPinnedAttack(page, { name: 'P996 No Crit', uniform: 0.001, agility: 14, hand: 'twoWeaponSecondary', targetAC: 10 })
+    expect(out, 'attack card must be posted').not.toBeNull()
+    expect(out.die).toBe('d14')
+    expect(out.natural).toBe(14)
+    expect(out.hitsTarget).toBe(true)
+    expect(out.isCrit).toBe(false)
+    expect(out.hasCritRoll).toBe(false)
+  })
+
+  test('Agl 18+ primary keeps an improved threat range', async ({ page }) => {
+    // ceil((1 - 0.07) * 20) = 19
+    const out = await rollPinnedAttack(page, { name: 'P996 Agl18', uniform: 0.07, critRange: 19, agility: 18, hand: 'twoWeaponPrimary', targetAC: 10 })
+    expect(out, 'attack card must be posted').not.toBeNull()
+    expect(out.die).toBe('d20')
+    expect(out.natural).toBe(19)
+    expect(out.isCrit).toBe(true)
+    expect(out.critSource).toBe('threat-range')
+  })
+
+  test('the weapon sheet shows the hand\'s two-weapon crit rule', async ({ page }) => {
+    const out = await page.evaluate(async () => {
+      const actor = await Actor.create({ name: 'P996 Sheet', type: 'Player', system: { abilities: { agl: { value: 14 } } } })
+      try {
+        const [weapon] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'P996 Sheet Dagger',
+          type: 'weapon',
+          system: { actionDie: '1d20', toHit: '+0', damage: '1d4', melee: true, equipped: true, twoWeaponSecondary: true }
+        }])
+        await weapon.sheet.render(true)
+        const rule = game.i18n.localize('DCC.TwoWeaponCritNone')
+        const deadline = Date.now() + 3000
+        let text = ''
+        while (Date.now() < deadline && !text.includes(rule)) {
+          text = [...(weapon.sheet.element?.querySelectorAll('.value-display') ?? [])]
+            .map(el => el.textContent.replace(/\s+/g, ' ').trim()).join(' | ')
+          if (!text.includes(rule)) await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        await weapon.sheet.close()
+        return { text, rule, critRange: weapon.system.critRange }
+      } finally {
+        await actor.delete()
+      }
+    })
+    expect(out.critRange).toBe(20)
+    expect(out.text).toContain(out.rule)
   })
 })
