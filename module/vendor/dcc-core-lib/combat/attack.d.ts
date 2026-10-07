@@ -110,22 +110,34 @@ export declare function getTwoWeaponDice(agility: number, options?: {
  * Roll a full two-weapon attack round (both hands).
  *
  * Computes each hand's reduced action die from `baseActionDie` per
- * Table 4-3, clamps any improved threat range to 20 (warriors lose
- * their improved threat range when two-weapon fighting), then rolls
- * each hand and applies the two-weapon-specific overrides:
- *  - non-crittable rows strip any threatened crit;
- *  - the Agl-16-17 row (non-halfling) requires the natural max to
- *    actually beat AC to count as a hit/crit (no auto-hit);
- *  - the halfling 16-17 override restores auto-hit + auto-crit on
- *    the reduced die's natural max for either hand;
- *  - the halfling fumble rule clears `isFumble` unless both hands
- *    rolled a natural 1.
+ * Table 4-3, rolls each hand, applies {@link applyTwoWeaponHandRules}
+ * to each, then the halfling fumble rule (clears `isFumble` unless both
+ * hands rolled a natural 1). An improved threat range is kept: the 18+
+ * row's primary hand "scores critical hits as normal".
  *
  * Combat events (`onAttackRoll`, `onCriticalThreat`, `onFumbleRoll`,
  * `onDeedAttempt`) are emitted for each hand AFTER overrides are
  * applied, so listeners observe the post-RAW state.
  */
 export declare function rollTwoWeaponAttack(input: TwoWeaponAttackInput, roller?: DiceRoller, events?: CombatEvents): TwoWeaponAttackResult;
+/**
+ * Apply one hand's Table 4-3 critical-hit rules to an attack roll made
+ * with that hand's reduced die (mutates `result`). Use this when each
+ * hand is rolled separately; {@link rollTwoWeaponAttack} calls it for
+ * both hands.
+ *
+ *  - a hand that cannot crit has any crit threat stripped;
+ *  - on the Agl-16-17 row only the reduced die's natural max can crit,
+ *    so an improved threat range below the max is stripped;
+ *  - non-halfling 16-17 primary: the natural max is not an auto-hit and
+ *    crits only if it beats `targetAC` (left unresolved without one);
+ *  - halfling 16-17 row: a natural max auto-hits and auto-crits with
+ *    either hand.
+ *
+ * The halfling both-1s fumble rule spans both hands and is not applied
+ * here.
+ */
+export declare function applyTwoWeaponHandRules(result: AttackResult, config: TwoWeaponDiceConfig, hand: "primary" | "offHand", targetAC?: number): void;
 /**
  * Check if a deed die roll is successful
  *

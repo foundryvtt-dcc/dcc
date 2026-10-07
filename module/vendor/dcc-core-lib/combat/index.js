@@ -11,7 +11,7 @@
  * - Healing
  */
 // Attack functions
-export { makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponDice, rollTwoWeaponAttack, isDeedSuccessful, } from "./attack.js";
+export { makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponDice, rollTwoWeaponAttack, applyTwoWeaponHandRules, isDeedSuccessful, } from "./attack.js";
 // Action dice (multiple-action-die budget)
 export { classExtraActionDieUse, parseActionDice, actionMatchesUse, nextActionDie, spendActionDie, resetActionDice, isActionDiceStateCurrent, actionDieRollTerms, } from "./action-dice.js";
 // Damage functions
