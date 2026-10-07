@@ -7,9 +7,9 @@ import {
   getAbilityModifier as libGetAbilityModifier,
   rollMercurialMagic as libRollMercurialMagic,
   evaluateRoll as libEvaluateRoll,
-  rollTriggersDisapproval,
-  didSpellCheckSucceed
+  rollTriggersDisapproval
 } from '../vendor/dcc-core-lib/index.js'
+import { spellCheckSucceeded } from '../spell-check-success.mjs'
 import { applySpellburn, scoresFromBurnAmounts, spellburnDescriptor } from '../spellburn.mjs'
 import { renderSpellCheck, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable } from '../adapter/spell-input.mjs'
@@ -742,13 +742,12 @@ export const RollsSpellMixin = (Base) => class extends Base {
 
     // Cleric disapproval: legacy parity. When natural is in the
     // disapproval range and automation is enabled, draw the
-    // disapproval table + emit chat. Failed casts (no `success` tier
-    // hit) increment the disapproval range via `applyDisapproval`.
+    // disapproval table + emit chat. Failed casts increment the
+    // disapproval range via `applyDisapproval`.
+    const success = this._spellCheckSucceeded(null, foundryRoll, result)
     if (isIdolMagic && game.settings.get('dcc', 'automateClericDisapproval')) {
       const disapprovalRange = parseInt(this.system.class?.disapproval || 1, 10) || 1
       const inRange = rollTriggersDisapproval(natural, disapprovalRange)
-      const successTiers = ['success', 'success-minor', 'success-major', 'success-critical']
-      const success = result.tier && successTiers.includes(result.tier)
       if (inRange) {
         await this.rollDisapproval(natural, { disapprovalRange })
       }
@@ -765,7 +764,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
       result,
       spellItem: null,
       castingMode: isIdolMagic ? 'cleric' : 'wizard',
-      spellburn: sumSpellburn(input.spellburn)
+      spellburn: sumSpellburn(input.spellburn),
+      success
     })
 
     return foundryRoll
@@ -1311,18 +1311,19 @@ export const RollsSpellMixin = (Base) => class extends Base {
   }
 
   /**
-   * Whether an item spell check succeeded: the lib's spell-level threshold
-   * (`didSpellCheckSucceed`, 10 + 2 × level) applied to the Foundry total, and
-   * no disapproval-range auto-failure. Shared by the failure automation and
-   * the `dcc.afterSpellCheckResult` payload so the two always agree (#979).
-   *
-   * Items without a level (spell-like skills) are treated as level 1,
-   * matching `processSpellCheck`.
+   * Whether an adapter spell check succeeded (`spellCheckSucceeded` on the
+   * Foundry total). Shared by the failure automation and the
+   * `dcc.afterSpellCheckResult` payload so the two always agree (#979). A
+   * naked cast (no item) is level 1.
    * @private
    */
   _spellCheckSucceeded (spellItem, foundryRoll, result) {
-    const level = Number(spellItem?.system?.level ?? 1) || 1
-    return didSpellCheckSucceed(foundryRoll.total, level) && !result?.disapprovalAutoFail
+    return spellCheckSucceeded({
+      total: foundryRoll.total,
+      level: spellItem?.system?.level,
+      fumble: !!result?.fumble,
+      disapprovalFailure: !!result?.disapprovalAutoFail
+    })
   }
 
   /**

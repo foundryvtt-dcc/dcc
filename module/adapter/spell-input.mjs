@@ -50,6 +50,7 @@ import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
+import { normalizeSpellLevel } from '../spell-check-success.mjs'
 import { docNameMatches, findPackEntryByName, getMercurialSpecial } from '../utilities.js'
 
 /**
@@ -112,7 +113,7 @@ function buildSpellDefinition (spellItem) {
   return {
     id: deriveSpellId(spellItem),
     name: spellItem?.name || '',
-    level: Number(spellItem?.system?.level ?? 1),
+    level: normalizeSpellLevel(spellItem?.system?.level),
     description: '',
     range: '',
     duration: '',

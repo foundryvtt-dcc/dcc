@@ -3852,7 +3852,7 @@ test('#961 a cleric cast rolls disapproval through actor.rollDisapproval with th
 // disapproval at all.
 
 /** Cast a wizard spell at a chosen total with spell-loss automation on. */
-async function castWizardAtTotal (total, { automate = true, level = 1, onHook = null } = {}) {
+async function castWizardAtTotal (total, { automate = true, level = 1, natural = 10, onHook = null } = {}) {
   gameSettingsGetMock.mockImplementation((module, key) =>
     module === 'dcc' && key === 'automateWizardSpellLoss' && automate)
 
@@ -3874,7 +3874,7 @@ async function castWizardAtTotal (total, { automate = true, level = 1, onHook = 
       this.total = total
       this._total = total
       this._formula = String(formula)
-      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+      this.dice = [{ total: natural, results: [natural], options: {}, faces: 20 }]
     }
   }
   FixedRoll.safeEval = OriginalRoll.safeEval
@@ -3924,6 +3924,21 @@ test('#979 a level-3 spell totalling 16 succeeds: the spell is kept and the hook
   expect(payload.success).toBe(true)
 })
 
+test('#979 a natural 1 fails even when the total clears the threshold', async () => {
+  // A fumble is a failure whatever the modifiers: natural 1 + 24 = 25 on a
+  // level-1 spell still loses it, and the hook must not report success.
+  let payload
+  const lost = await castWizardAtTotal(25, { natural: 1, onHook: (p) => { payload = p } })
+  expect(lost).toHaveBeenCalledTimes(1)
+  expect(payload.fumble).toBe(true)
+  expect(payload.success).toBe(false)
+})
+
+test('#979 a level-0 spell uses the level-1 threshold (11 fails)', async () => {
+  const lost = await castWizardAtTotal(11, { level: 0 })
+  expect(lost).toHaveBeenCalledTimes(1)
+})
+
 test('#923 spell loss on a failed threshold still respects the automation setting', async () => {
   const lost = await castWizardAtTotal(9, { automate: false })
   expect(lost).not.toHaveBeenCalled()
@@ -3969,6 +3984,53 @@ test('#923 a cleric who fails the threshold gains a point of disapproval', async
   }
 
   expect(applySpy).toHaveBeenCalledTimes(1)
+  findSpy.mockRestore()
+})
+
+test('#979 a level-3 cleric spell totalling 14 gains disapproval and reports failure', async () => {
+  // Legacy applied +1 disapproval for ANY failed cleric check. The adapter
+  // only bumped via the lib event, which fires on an in-range natural.
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  const spellItem = makeClericSpellItem({ level: 3 })
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 14
+      this._total = 14
+      this._formula = String(formula)
+      // Natural 10 — outside the disapproval range, so the lib bumps nothing.
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+  }
+
+  expect(applySpy).toHaveBeenCalledTimes(1)
+  const payload = callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')?.[2]
+  expect(payload.success).toBe(false)
+  callAllSpy.mockRestore()
   findSpy.mockRestore()
 })
 

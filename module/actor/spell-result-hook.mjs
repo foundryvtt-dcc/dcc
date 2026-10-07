@@ -1,5 +1,7 @@
 /* global Hooks */
 
+const SUCCESS_TIERS = ['success', 'success-minor', 'success-major', 'success-critical']
+
 /**
  * Fire the `dcc.afterSpellCheckResult` post-result extension hook for an
  * adapter-routed spell check, mirroring the emission the legacy
@@ -44,12 +46,11 @@
  * @param {boolean} [ctx.suppressPatronTaint=false] - Whether the caller
  *   opted out of the built-in patron-taint roll for this cast.
  * @param {number} [ctx.spellburn=0] - Total ability points burned this cast.
- * @param {boolean} [ctx.success] - The caller's success verdict (spell-level
- *   threshold + disapproval auto-failure). When omitted, `success` is read
- *   from the lib tier, which is only level-aware for naked (level-1) casts.
+ * @param {boolean} [ctx.success] - The caller's `spellCheckSucceeded`
+ *   verdict (threshold, fumble, disapproval auto-failure) on the Foundry
+ *   total. When omitted, `success` is read from the lib tier, which can
+ *   differ when the Foundry and lib totals diverge.
  */
-const SUCCESS_TIERS = ['success', 'success-minor', 'success-major', 'success-critical']
-
 export function emitAfterSpellCheckResult (actor, {
   foundryRoll,
   result,

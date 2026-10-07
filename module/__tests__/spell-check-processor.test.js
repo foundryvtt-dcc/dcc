@@ -210,6 +210,18 @@ describe('processSpellCheck — spell-level threshold (#979)', () => {
     expect(flags['dcc.spellResult']).toContain('DCC.SpellCheckFailureNoTable')
   })
 
+  test('a level-0 spell uses the level-1 threshold (11 fails)', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 9, total: 11 })
+    const actor = { type: 'Player', system: { class: {}, details: { level: { value: 1 } } } }
+    const item = { id: 'spell0', system: { level: 0 } }
+
+    await processSpellCheck(actor, { roll, item })
+
+    const flags = stubs.updateFlags.mock.calls[0][0]
+    expect(flags['dcc.spellResult']).toContain('DCC.SpellCheckFailureNoTable')
+  })
+
   test('a level-3 spell totalling 16 shows the success indicator', async () => {
     const stubs = installFoundryStubs()
     const roll = makeRoll({ natural: 11, total: 16 })
@@ -457,6 +469,28 @@ describe('processSpellCheck — casting-mode side effects', () => {
     await processSpellCheck(actor, { roll, item })
 
     // 7 < 12 = failure → loseSpell fires.
+    expect(loseSpell).toHaveBeenCalledWith(item)
+  })
+
+  test('wizard automation ON loses the spell on a natural 1 even when the total clears the threshold (#979)', async () => {
+    installFoundryStubs({ settings: { automateWizardSpellLoss: true } })
+    const roll = makeRoll({ natural: 1, total: 25 })
+    const loseSpell = vi.fn()
+    const item = {
+      id: 'i3',
+      name: 'Magic Missile',
+      system: { level: 1, config: { castingMode: 'wizard' }, associatedPatron: '' },
+      update: vi.fn()
+    }
+    const actor = {
+      type: 'Player',
+      system: { class: {}, details: { level: { value: 1 } } },
+      classId: 'wizard',
+      loseSpell
+    }
+
+    await processSpellCheck(actor, { roll, item })
+
     expect(loseSpell).toHaveBeenCalledWith(item)
   })
 
