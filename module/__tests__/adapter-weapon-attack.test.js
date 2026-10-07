@@ -505,25 +505,28 @@ function withActionDieRoll (natural, formula) {
   }
 }
 
-test('halfling two-weapon pair fought on a d12 extra die crits only on the max face', async () => {
-  // Regression for the crit-on-natural-11 bug: the halfling two-weapon
-  // crit threshold is the max face of the die actually rolled (item.js
-  // bakes critRange + twoWeaponCritOnMaxDie; the multiple-action-dice
-  // override re-derives critRange for the extra die). The adapter must
-  // pass it as a NATURAL threshold — without `threatRangeIsNatural` the
-  // lib rescaled 12-on-d12 to a d20-relative "top N faces" range and a
-  // natural 11 (even 4!) critted.
-  const restore = withAutomate(true)
-  // Mirror the post-prepare + override state of the second pair: the
-  // 1d14 slot fought at -1d (d12), critting on its max face.
-  const makePairWeapon = () => makeSimpleWeapon({
-    twoWeaponPrimary: true,
-    actionDie: '1d12[2w-primary]',
-    critRange: 12,
-    twoWeaponCritOnMaxDie: true
-  })
+/** A halfling (two-weapon crit-and-auto-hit on the max face, #996). */
+function makeHalfling () {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
+  actor.type = 'Player'
+  actor.system.details.xp ??= { value: 0 }
+  actor.system.abilities.agl.value = 10
+  actor.system.details.sheetClass = 'Halfling'
+  return actor
+}
+
+test('halfling two-weapon pair fought on a d12 extra die crits only on the max face', async () => {
+  // Regression for the crit-on-natural-11 bug: the halfling two-weapon crit
+  // is the max face of the die actually rolled. The lib's
+  // applyTwoWeaponHandRules judges it on the rolled die (#996), so a
+  // natural 11 on the d12 is not a crit and a 12 is.
+  const restore = withAutomate(true)
+  const makePairWeapon = () => makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d12[2w-primary]'
+  })
+  const actor = makeHalfling()
 
   let restoreRoll = withActionDieRoll(11, '1d12')
   let result
@@ -536,27 +539,24 @@ test('halfling two-weapon pair fought on a d12 extra die crits only on the max f
     restoreRoll = withActionDieRoll(12, '1d12')
     result = await actor.rollToHit(makePairWeapon(), {})
     expect(result.naturalCrit).toBe(true)
+    expect(result.autoHit).toBe(true)
   } finally {
     restoreRoll()
     restore()
   }
 })
 
-test('multiple-action-dice override re-derives the max-die crit threshold', async () => {
-  // Drives the ACTUAL override path (rolls-weapon-mixin ~499): the weapon
-  // carries its first-pair post-prepare state (d16, critRange 16,
-  // twoWeaponCritOnMaxDie) and `options._actionDieFormula` swaps in the
-  // extra-die pair's 1d12 — rollToHit must re-derive critRange from the
-  // die actually rolled, so a natural 11 misses the crit and 12 lands it.
+test('multiple-action-dice override die moves the halfling max-die crit', async () => {
+  // Drives the ACTUAL override path: the weapon carries its first-pair die
+  // (d16) and `options._actionDieFormula` swaps in the extra-die pair's
+  // 1d12 — the crit follows the die actually rolled, so a natural 11
+  // misses the crit and 12 lands it.
   const restore = withAutomate(true)
   const makePairWeapon = () => makeSimpleWeapon({
     twoWeaponPrimary: true,
-    actionDie: '1d16[2w-primary]',
-    critRange: 16,
-    twoWeaponCritOnMaxDie: true
+    actionDie: '1d16[2w-primary]'
   })
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
+  const actor = makeHalfling()
 
   let restoreRoll = withActionDieRoll(11, '1d12')
   let result
@@ -720,27 +720,14 @@ test('buildAttackInput passes the weapon fumble range through (#343)', () => {
   expect(cursed.fumbleRange).toBe(3)
 })
 
-test('buildAttackInput flags a crit-on-max-die threat range as natural', () => {
-  // Halfling two-weapon / Agl 16-17 primary: critRange is the max face of
-  // the die actually rolled (16 on d16, 12 on a d12 extra-die pair), not a
-  // d20-relative range. Without the flag the lib rescales it to "top N
-  // faces" — a natural-16 threshold on d12 became crit-on-8+.
+test('buildAttackInput keeps a two-weapon hand\'s threat range d20-relative', () => {
+  // Two-weapon crit rules are applied to the lib result per hand (#996),
+  // not encoded in the threat range, so nothing flags it as natural.
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
-  const weapon = makeSimpleWeapon({
-    twoWeaponPrimary: true,
-    actionDie: '1d16[2w-primary]',
-    critRange: 16,
-    twoWeaponCritOnMaxDie: true
-  })
-
-  const input = buildAttackInput(actor, weapon)
-  expect(input.threatRange).toBe(16)
-  expect(input.threatRangeIsNatural).toBe(true)
-
-  // Ordinary weapons keep the d20-relative semantics (no flag).
-  const plain = buildAttackInput(actor, makeSimpleWeapon({ critRange: 19 }))
-  expect(plain.threatRangeIsNatural).toBeUndefined()
+  const input = buildAttackInput(actor, makeSimpleWeapon({ twoWeaponPrimary: true, actionDie: '1d16[2w-primary]' }))
+  expect(input.threatRange).toBe(20)
+  expect(input.threatRangeIsNatural).toBeUndefined()
 })
 
 test('buildAttackInput falls back to the sheet action die when the weapon die is blank', () => {
@@ -1120,7 +1107,7 @@ test('buildAttackInput omits deedDie for plain numeric toHits', () => {
 // to the die actually rolled; rollToHit must not pre-scale it
 // ============================================================================
 
-async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null, strict = true, options = {}, bareDie = false }) {
+async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = null, strict = true, options = {}, bareDie = false, agility = null, sheetClass = null }) {
   const originalCall = Hooks.call
   Hooks.call = (hook, terms) => {
     if (hook === 'dcc.modifyAttackRollTerms' && bumpTo) terms[0].formula = bumpTo
@@ -1143,6 +1130,13 @@ async function rollToHitWith ({ faces, natural, weaponOverrides = {}, bumpTo = n
   try {
     // noinspection JSCheckFunctionSignatures
     const actor = new DCCActor()
+    if (agility !== null) {
+      // Two-weapon rules apply to Player actors, as in DCCItem.prepareBaseData.
+      actor.type = 'Player'
+      actor.system.details.xp ??= { value: 0 }
+      actor.system.abilities.agl.value = agility
+    }
+    if (sheetClass) actor.system.details.sheetClass = sheetClass
     return await actor.rollToHit(makeSimpleWeapon(weaponOverrides), options)
   } finally {
     restore()
@@ -1183,14 +1177,18 @@ test('#977: a die changed outside the hook (roll dialog) still reaches the lib',
   expect(twentyFour.libResult.critSource).toBe('natural-max')
 })
 
-test('#977: a crit-on-max-die two-weapon range follows a changed die to its max face', async () => {
-  const weaponOverrides = { actionDie: '1d16', critRange: 16, twoWeaponCritOnMaxDie: true }
-  const sixteen = await rollToHitWith({ faces: 20, natural: 16, weaponOverrides })
+test('#977: the Agl 16-17 two-weapon max-die crit follows a changed die to its max face', async () => {
+  const twoWeapon = { agility: 16, weaponOverrides: { twoWeaponPrimary: true, actionDie: '1d16' } }
+  const sixteen = await rollToHitWith({ faces: 20, natural: 16, ...twoWeapon })
   expect(sixteen.crit).toBe(false)
   expect(sixteen.roll.dice[0].options.dcc.upperThreshold).toBe(20)
 
-  const twenty = await rollToHitWith({ faces: 20, natural: 20, weaponOverrides })
+  // No target: the max face isn't an auto-hit on this row, so the crit
+  // only counts if the attack hits.
+  const twenty = await rollToHitWith({ faces: 20, natural: 20, ...twoWeapon })
   expect(twenty.crit).toBe(true)
+  expect(twenty.autoHit).toBe(false)
+  expect(twenty.critNeedsHit).toBe(true)
 })
 
 test('#977: with strict crits off, a d24 keeps the literal 20–24 range', async () => {
@@ -1213,9 +1211,10 @@ test('#977: with strict crits off, a smaller die crits only on its max face', as
   expect(sixteen.crit).toBe(true)
 })
 
-test('#977: with strict crits off, a two-weapon "cannot crit" range still cannot crit', async () => {
-  const offHand = await rollToHitWith({ faces: 16, natural: 16, weaponOverrides: { actionDie: '1d16', critRange: 51 }, strict: false })
+test('#977: with strict crits off, a two-weapon hand that cannot crit still cannot crit', async () => {
+  const offHand = await rollToHitWith({ faces: 16, natural: 16, agility: 16, weaponOverrides: { twoWeaponSecondary: true, actionDie: '1d16' }, strict: false })
   expect(offHand.crit).toBe(false)
+  expect(offHand.roll.dice[0].options.dcc.upperThreshold).toBe(17)
 })
 
 test('#977: the multiple-action-dice override die scales the range in both modes', async () => {
@@ -1245,10 +1244,11 @@ test('#977: a die term without a readable size falls back to the formula die', a
   expect(fifteen.roll.dice[0].options.dcc.upperThreshold).toBe(16)
 })
 
-test('#977: the Agl ≤15 two-weapon "cannot crit" range (21) never crits', async () => {
+test('#977: an Agl ≤15 two-weapon hand never crits', async () => {
   for (const strict of [true, false]) {
-    const max = await rollToHitWith({ faces: 24, natural: 24, weaponOverrides: { critRange: 21 }, strict })
+    const max = await rollToHitWith({ faces: 24, natural: 24, agility: 14, weaponOverrides: { twoWeaponPrimary: true }, strict })
     expect(max.crit, `strict=${strict}`).toBe(false)
+    expect(max.autoHit, `strict=${strict}`).toBe(true)
   }
 })
 
@@ -1365,5 +1365,58 @@ describe('target AC confirms the crit (#978)', () => {
     const result = await rollToHitWith({ faces: 20, natural: 1, options: { targets: targetWithAC(1) } })
     expect(result.fumble).toBe(true)
     expect(result.hitsTarget).toBe(false)
+  })
+})
+
+describe('two-weapon crit rules from the lib (#996)', () => {
+  const targetWithAC = (ac) => ({ first: () => ({ actor: { system: { attributes: { ac: { value: ac } } } } }) })
+  const agl16Primary = { agility: 16, weaponOverrides: { twoWeaponPrimary: true, actionDie: '1d16[2w-primary]', toHit: '+0' } }
+
+  test('Agl 16-17 primary: a natural max that misses AC is neither a hit nor a crit', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, ...agl16Primary, options: { targets: targetWithAC(20) } })
+    expect(result.autoHit).toBe(false)
+    expect(result.hitsTarget).toBe(false)
+    expect(result.crit).toBe(false)
+  })
+
+  test('Agl 16-17 primary: with no target a natural max crit is unconfirmed', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, ...agl16Primary })
+    expect(result.crit).toBe(true)
+    expect(result.autoHit).toBe(false)
+    expect(result.critNeedsHit).toBe(true)
+    // Not a natural crit until it hits, so no Fleeting Luck yet (#978).
+    expect(result.naturalCrit).toBe(false)
+  })
+
+  test('Agl 16-17 primary: a natural max that beats AC crits', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, ...agl16Primary, options: { targets: targetWithAC(12) } })
+    expect(result.hitsTarget).toBe(true)
+    expect(result.crit).toBe(true)
+    expect(result.naturalCrit).toBe(true)
+    expect(result.libResult.critSource).toBe('natural-max')
+  })
+
+  test('Agl 16-17 primary: an improved range below the max face does not crit', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 15, agility: 16, weaponOverrides: { twoWeaponPrimary: true, actionDie: '1d16[2w-primary]', critRange: 19 } })
+    expect(result.crit).toBe(false)
+    expect(result.roll.dice[0].options.dcc.upperThreshold).toBe(16)
+  })
+
+  test('Agl 18+ primary keeps an improved crit range', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 19, agility: 18, weaponOverrides: { twoWeaponPrimary: true, critRange: 19 } })
+    expect(result.crit).toBe(true)
+    expect(result.roll.dice[0].options.dcc.upperThreshold).toBe(19)
+  })
+
+  test('halfling off-hand: a natural max auto-hits and crits whatever the AC', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, agility: 10, sheetClass: 'Halfling', weaponOverrides: { twoWeaponSecondary: true, actionDie: '1d16[2w-off-hand]' }, options: { targets: targetWithAC(30) } })
+    expect(result.autoHit).toBe(true)
+    expect(result.hitsTarget).toBe(true)
+    expect(result.crit).toBe(true)
+  })
+
+  test('an NPC ignores two-weapon flags, as its weapon die does', async () => {
+    const result = await rollToHitWith({ faces: 20, natural: 20, weaponOverrides: { twoWeaponSecondary: true } })
+    expect(result.crit).toBe(true)
   })
 })

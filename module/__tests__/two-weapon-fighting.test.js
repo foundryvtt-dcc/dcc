@@ -74,14 +74,17 @@ describe('Two-Weapon Fighting', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(21) // No crits possible
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritNone')
+      // The crit rule is applied at roll time (#996): no 21/51 sentinel range.
+      expect(weapon.system.critRange).toBe(20)
     })
 
     it('should prevent critical hits for two-weapon secondary with low agility', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(21) // No crits possible
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritNone')
+      expect(weapon.system.critRange).toBe(20)
     })
 
     it('should apply dice penalty for two-weapon primary with low agility', () => {
@@ -120,18 +123,17 @@ describe('Two-Weapon Fighting', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(16) // Can crit on modified die max (1d16 after penalty)
-      // #834: flagged so the multiple-action-dice die override re-derives
-      // critRange from the die actually rolled.
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+      // Crits on the max face of whatever die is rolled, if it beats AC —
+      // judged at roll time by the lib's applyTwoWeaponHandRules (#996).
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritMaxBeatsAC')
+      expect(weapon.system.critRange).toBe(20)
     })
 
     it('should prevent two-weapon secondary from critting', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(51) // No crits possible
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBeUndefined() // fixed range, not max-die
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritNone')
     })
 
     it('should apply minor penalty to two-weapon primary with medium agility', () => {
@@ -159,13 +161,25 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.critRange).toBe(20) // Normal crit range (no penalty)
+      expect(weapon.system.twoWeaponCritRule).toBe('')
+    })
+
+    // Table 4-3, 18+ row: "Primary hand scores critical hits as normal" —
+    // a warrior keeps an improved threat range (#996).
+    it('should keep an improved crit range on the primary with high agility', () => {
+      actor.system.details.critRange = 19
+      const weapon = createWeapon(actor, { twoWeaponPrimary: true })
+
+      weapon.prepareBaseData()
+      expect(weapon.system.critRange).toBe(19)
+      expect(weapon.system.twoWeaponCritRule).toBe('')
     })
 
     it('should prevent two-weapon secondary from critting with high agility', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(51) // No crits possible
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritNone')
     })
   })
 
@@ -174,29 +188,23 @@ describe('Two-Weapon Fighting', () => {
       actor = createActor(12, 'Halfling')
     })
 
-    it('should set halfling crit range to 16 for agility 17 or lower', () => {
+    it('should crit and auto-hit on the max face for agility 17 or lower', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(16) // Max face of the penalized d16
-      // The natural 16 is the max face of the penalized die, so the
-      // multiple-action-dice override re-derives it for the die actually
-      // rolled (a 1d14 extra die fought at 1d12 crits on 12, not 16).
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+      // The natural max of whatever die is rolled (a 1d14 extra die fought at
+      // 1d12 crits on 12), judged at roll time (#996).
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
     })
 
     it('should give the halfling off-hand the same max-die crit as the primary', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(16)
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
     })
 
-    it('should move the max-die crit to an actionDieOverride die', () => {
-      // config.actionDieOverride replaces the die AFTER the two-weapon
-      // derivation — a crit-on-max-die threshold must follow it, or a
-      // smaller override die keeps an unreachable natural-16 critRange.
+    it('should let an actionDieOverride replace the penalized die', () => {
       const weapon = createWeapon(actor, {
         twoWeaponPrimary: true,
         config: { actionDieOverride: '1d12' }
@@ -204,20 +212,15 @@ describe('Two-Weapon Fighting', () => {
 
       weapon.prepareBaseData()
       expect(weapon.system.actionDie).toBe('1d12')
-      expect(weapon.system.critRange).toBe(12)
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
+      expect(weapon.system.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
     })
 
-    it('should derive the halfling crit from the penalized die, not a fixed 16', () => {
-      // A smaller base action die (e.g. a second action die authored as the
-      // actor's die) penalizes to d12 — the crit lands on ITS max face.
+    it('should penalize a smaller base action die down the dice chain', () => {
       actor.system.attributes.actionDice.value = '1d14'
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
       expect(weapon.system.actionDie).toMatch(/d12.*\[2w-primary]/)
-      expect(weapon.system.critRange).toBe(12)
-      expect(weapon.system.twoWeaponCritOnMaxDie).toBe(true)
     })
 
     it('should use minimum effective agility of 16 for halflings', () => {
@@ -246,8 +249,8 @@ describe('Two-Weapon Fighting', () => {
       // Should follow normal agility 18+ rules, not special halfling rules
       expect(primary.system.actionDie).toBe('1d20') // No penalty for primary at 18+
       expect(secondary.system.actionDie).toMatch(/d16.*\[2w-off-hand]/) // -1 penalty for secondary
-      expect(primary.system.critRange).toBe(20) // Normal crit range, not 16
-      expect(secondary.system.critRange).toBe(51) // Secondary can't crit
+      expect(primary.system.twoWeaponCritRule).toBe('') // Normal crits, not max-die
+      expect(secondary.system.twoWeaponCritRule).toBe('TwoWeaponCritNone')
     })
   })
 
@@ -261,6 +264,8 @@ describe('Two-Weapon Fighting', () => {
 
       expect(weapon.system.actionDie).toBe('1d20')
       expect(weapon.system.critRange).toBe(20) // Default actor crit range
+      expect(weapon.system.twoWeaponCritRule).toBeUndefined()
+      expect(weapon.system.twoWeaponDicePenalty).toBeUndefined()
     })
   })
 
@@ -305,16 +310,13 @@ describe('Two-Weapon Fighting', () => {
       actor = createActor(16, 'Warrior') // Medium agility for testing primary weapon crit on max
     })
 
-    it('should set crit range based on actor action die, not weapon override', () => {
-      const testDice = ['1d20', '1d24', '1d30', '1d16', '1d12']
-      const expectedCrit = 16 // Based on modified die after two-weapon penalty (1d16)
-
-      testDice.forEach((die, index) => {
+    it('should derive the die from the actor action die, not the weapon die', () => {
+      for (const die of ['1d20', '1d24', '1d30', '1d16', '1d12']) {
         const weapon = createWeapon(actor, { twoWeaponPrimary: true, actionDie: die })
 
         weapon.prepareBaseData()
-        expect(weapon.system.critRange).toBe(expectedCrit) // 16 from modified 1d16 die
-      })
+        expect(weapon.system.actionDie).toMatch(/^1d16\[2w-primary]/)
+      }
     })
   })
 })

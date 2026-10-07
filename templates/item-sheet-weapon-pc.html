@@ -214,7 +214,7 @@
       <div class="box-title">{{localize "DCC.CriticalFumble"}}</div>
       <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
         <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
-          {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
+          {{#if system.twoWeaponCritRule}}{{system.twoWeaponCritRule}}{{else}}{{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}{{/if}}, {{localize "DCC.Roll"}}
           {{system.critDie}}{{system.lck.mod}} {{localize "DCC.on"}} {{localize "DCC.Table"}} {{system.critTable}}
         </div>
 

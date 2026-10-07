@@ -31,6 +31,16 @@ When you check the two-weapon fighting checkboxes:
 
 The action die display will show annotations like `1d16[2w-primary]` or `1d16[2w-off-hand]` to indicate the two-weapon fighting configuration.
 
+### Critical Hits
+
+Critical hits follow Table 4-3, based on Agility:
+
+- **Agility 15 or lower:** neither hand can score a critical hit.
+- **Agility 16-17:** the primary hand scores a critical hit only on the die's maximum roll (16 on a d16), and only if that roll also beats the target's AC. The maximum roll is not an automatic hit. The off hand can't score a critical hit. With no target selected, the card notes that the crit only counts if the attack hits.
+- **Agility 18 or higher:** the primary hand scores critical hits as normal, including a warrior's improved crit range. The off hand can't score a critical hit.
+
+When a hand's crit rule differs from normal, the weapon sheet's Critical Hits box describes it instead of a crit range.
+
 ## Halfling Two-Weapon Fighting
 
 Halflings are natural two-weapon fighters. When you select the Halfling sheet type, the character is automatically configured with appropriate action dice for two-weapon fighting:

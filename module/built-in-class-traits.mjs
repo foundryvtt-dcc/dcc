@@ -12,9 +12,10 @@
  *
  * - `twoWeaponMinAgility` (number): two-weapon fighting uses at least this
  *   Agility for Table 4-3.
- * - `twoWeaponCritOnMax` (boolean): while fighting two-weapon at an
- *   effective Agility of 17 or less, a natural max on the reduced die is a
- *   crit and an automatic hit, on either hand.
+ * - `twoWeaponCritOnMax` (boolean): selects the lib's halfling two-weapon
+ *   rules — at an effective Agility of 17 or less, a natural max on the
+ *   reduced die is a crit and an automatic hit, on either hand. It also
+ *   floors the Table 4-3 row at Agility 16 (#996).
  * - `twoWeaponFumbleBothOnes` (boolean): a two-weapon fumble needs both
  *   hands to roll a natural 1 (#968).
  * - `idolMagic` (boolean): spell checks and spell-like skills with no

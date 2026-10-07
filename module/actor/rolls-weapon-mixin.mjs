@@ -7,7 +7,8 @@ import {
   rollCritical as libRollCritical,
   rollFumble as libRollFumble,
   getMonsterFumbleDie,
-  adjustThreatRange as libAdjustThreatRange
+  adjustThreatRange as libAdjustThreatRange,
+  applyTwoWeaponHandRules
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
@@ -21,6 +22,7 @@ import { isRollCancellation, rollOrNullOnCancel } from '../roll-cancellation.mjs
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
 import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import DiceChain from '../dice-chain.js'
+import { twoWeaponRules } from '../two-weapon-rules.mjs'
 import { isHalflingTwoWeaponAttack, twoWeaponPairContext, findTwoWeaponPartner, resolveTwoWeaponFumble, twoWeaponFumbleNote, settleTwoWeaponPartner } from '../two-weapon-fumble.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -523,13 +525,6 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let die = weapon.system?.actionDie || this.system.attributes.actionDice.value || actorActionDice
     if (options._actionDieFormula) die = options._actionDieFormula
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
-    // The agility 16–17 two-weapon primary crits on the max face of the die
-    // actually rolled; the weapon's critRange was derived from its own
-    // (first-die) penalized size, so re-derive it for an override die (#834).
-    if (options._actionDieFormula && weapon.system?.twoWeaponCritOnMaxDie) {
-      const overrideFaces = parseInt(options._actionDieFormula.match(/d(\d+)/)?.[1] || '')
-      if (overrideFaces) critRange = overrideFaces
-    }
 
     if (!Roll.validate(toHit)) {
       return { rolled: false, formula: toHit }
@@ -649,22 +644,22 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const rolledFaces = attackRoll.dice[0].faces || parseInt(attackRoll.dice[0].formula?.match(/d(\d+)/)?.[1] || '')
     attackInput.actionDie = rolledFaces ? `d${rolledFaces}` : normalizeLibDie(options._actionDieFormula || terms[0]?.formula || die)
     const actionDieFaces = parseInt(attackInput.actionDie.slice(1))
-    // Crit-on-max-die two-weapon rules are a natural roll on the die in
-    // play, so they follow a changed die to its max face.
-    if (attackInput.threatRangeIsNatural) critRange = actionDieFaces
     // Strict crits (the default) keep the lib's "top N faces" scaling. With
     // them off the range keeps its number — crit 20 on a d24 is 20–24 —
     // capped at the rolled die's max face so a smaller die can still crit.
-    // Ranges above 20 are the two-weapon "cannot crit" sentinels; leave them.
-    if (!attackInput.threatRangeIsNatural && critRange <= 20 &&
-        !game.settings.get('dcc', 'strictCriticalHits')) {
+    if (!game.settings.get('dcc', 'strictCriticalHits')) {
       critRange = Math.min(critRange, actionDieFaces)
       attackInput.threatRangeIsNatural = true
     }
     attackInput.threatRange = critRange
-    attackRoll.dice[0].options.dcc = {
-      upperThreshold: attackInput.threatRangeIsNatural ? critRange : libAdjustThreatRange(critRange, actionDieFaces)
-    }
+    // Two-weapon hands (Table 4-3, #996): the lib's per-hand rules are
+    // applied to the result below; mirror them in the die highlight. Player
+    // only, like the two-weapon die in DCCItem.prepareBaseData.
+    const twoWeapon = this.type === 'Player' ? twoWeaponRules(this, weapon) : null
+    let upperThreshold = attackInput.threatRangeIsNatural ? critRange : libAdjustThreatRange(critRange, actionDieFaces)
+    if (twoWeapon && !twoWeapon.canCrit) upperThreshold = actionDieFaces + 1
+    else if (twoWeapon?.critOnMaxOnly) upperThreshold = actionDieFaces
+    attackRoll.dice[0].options.dcc = { upperThreshold }
     const bonuses = []
     if (options.backstab) {
       attackInput.isBackstab = true
@@ -756,11 +751,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       attackInput.targetAC = targetAC
       libResult = libMakeAttackRoll(attackInput, makeSequencedRoller())
     }
+    if (twoWeapon) applyTwoWeaponHandRules(libResult, twoWeapon.config, twoWeapon.hand, attackInput.targetAC)
 
     const fumble = libResult.isFumble
     const crit = !fumble && libResult.isCriticalThreat
-    // A natural max on the die always hits, whatever the AC.
-    const autoHit = d20RollResult === actionDieFaces
+    // A natural max on the die always hits, whatever the AC — except the
+    // Agl 16-17 two-weapon primary, whose max must still beat AC.
+    const autoHit = d20RollResult === actionDieFaces && !twoWeapon?.noAutoHit
     // With no target AC the lib can't confirm a threat-range or backstab
     // crit, so the crit still rolls but the card notes that it only counts
     // if the attack hits.

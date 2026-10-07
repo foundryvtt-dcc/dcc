@@ -131,8 +131,8 @@ describe('two-weapon traits', () => {
       const champion = preparedWeapon(createActor(10, 'Halfling-Champion'), hand)
       const halfling = preparedWeapon(createActor(10, 'Halfling'), hand)
       expect(champion.actionDie).toBe(halfling.actionDie)
-      expect(champion.critRange).toBe(halfling.critRange)
-      expect(champion.twoWeaponCritOnMaxDie).toBe(true)
+      expect(champion.twoWeaponCritRule).toBe(halfling.twoWeaponCritRule)
+      expect(champion.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
     }
   })
 
@@ -142,17 +142,26 @@ describe('two-weapon traits', () => {
       const ranger = preparedWeapon(createActor(10, 'Ranger'), hand)
       const agile = preparedWeapon(createActor(16, 'Warrior'), hand)
       expect(ranger.actionDie).toBe(agile.actionDie)
-      expect(ranger.critRange).toBe(agile.critRange)
+      expect(ranger.twoWeaponCritRule).toBe(agile.twoWeaponCritRule)
     }
-    // Off-hand can't crit on the non-halfling Agility 16-17 row.
-    expect(preparedWeapon(createActor(10, 'Ranger'), 'twoWeaponSecondary').critRange).toBe(51)
+    // Non-halfling Agility 16-17 row: the primary's max must beat AC, and
+    // the off-hand can't crit.
+    expect(preparedWeapon(createActor(10, 'Ranger'), 'twoWeaponPrimary').twoWeaponCritRule).toBe('TwoWeaponCritMaxBeatsAC')
+    expect(preparedWeapon(createActor(10, 'Ranger'), 'twoWeaponSecondary').twoWeaponCritRule).toBe('TwoWeaponCritNone')
+  })
+
+  test('the halfling crit alone also floors the row at Agility 16 (lib halfling rules)', () => {
+    registerClassTraits('lucky-brawler', { twoWeaponCritOnMax: true })
+    const brawler = preparedWeapon(createActor(8, 'Lucky-Brawler'), 'twoWeaponSecondary')
+    expect(brawler.actionDie).toMatch(/^1d16\[/)
+    expect(brawler.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
   })
 
   test('a class without the traits keeps the normal Table 4-3 row', () => {
     const warrior = preparedWeapon(createActor(10, 'Warrior'), 'twoWeaponPrimary')
     const champion = preparedWeapon(createActor(10, 'Halfling-Champion'), 'twoWeaponPrimary')
     expect(champion.actionDie).toBe(warrior.actionDie)
-    expect(champion.critRange).toBe(21)
+    expect(champion.twoWeaponCritRule).toBe('TwoWeaponCritNone')
   })
 
   test('the both-1s fumble rule follows twoWeaponFumbleBothOnes', () => {
