@@ -613,6 +613,30 @@ test('naked spell check (no item) routes via adapter through libCastSpell (D4 na
   itemSpy.mockRestore()
 })
 
+async function nakedWizardCheck (classFields) {
+  rollToMessageMock.mockClear()
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  Object.assign(actor.system.class, { spellCheckOverride: '', spellCheckOtherMod: null, ...classFields })
+  await actor.rollSpellCheck()
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  return { formula: rollToMessageMock.mock.contexts[0].formula, modifiers: messageData.flags['dcc.libResult'].modifiers }
+}
+
+test('naked spell check sums a chained spellCheckOverride like the item path (#989)', async () => {
+  // parseInt('+1+2') was 1; the item path's _evaluateBonusString gives 3.
+  const { formula } = await nakedWizardCheck({ spellCheckOverride: '+1+2' })
+  expect(formula).toBe('1d20+3')
+})
+
+test('naked spell check sums a chained spellCheckOtherMod like the item path (#989)', async () => {
+  const { modifiers } = await nakedWizardCheck({ spellCheckOtherMod: '+1+1' })
+  expect(modifiers).toContainEqual(expect.objectContaining({ source: 'spell-check-other-mod', value: 2 }))
+})
+
 test('naked spell check fires dcc.afterSpellCheckResult with the documented payload (adapter seam parity)', async () => {
   // #732 seam parity: naked casts route through `_castNakedViaAdapter`
   // (not `processSpellCheck`), so the post-result hook is emitted via

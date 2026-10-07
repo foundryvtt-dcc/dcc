@@ -274,7 +274,7 @@ export const emoteAttackRoll = function (message, html) {
   let deedRollHTML = ''
   let deedTablePrompt = ''
   if (message.system.deedDieRollResult) {
-    const critical = message.system.deedSucceed ? ' critical' : ''
+    const critical = message.system.deedRollSuccess ? ' critical' : ''
     let iconClass = 'fa-dice-d4'
     if (message.system?.deedDieFormula.includes('d6') || message.system?.deedDieFormula.includes('d7')) {
       iconClass = 'fa-dice-d6'
