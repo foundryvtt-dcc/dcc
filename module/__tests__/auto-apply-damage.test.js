@@ -351,6 +351,29 @@ describe('automated card damage (#994)', () => {
     expect(applyDamage).toHaveBeenCalledTimes(1)
   })
 
+  test('clearing the damageApplied flag does not let the author apply the card again', async () => {
+    const card = makeAutomatedCard()
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    const handler = handlerFor(card)
+    await handler({ messageId: 'card2' }, 'player')
+    await card.setFlag('dcc', 'damageApplied', false) // the author rewrites their own card
+    await handler({ messageId: 'card2' }, 'player')
+    expect(applyDamage).toHaveBeenCalledTimes(1)
+  })
+
+  test('the GM refuses a non-numeric manual amount', async () => {
+    const card = makeAutomatedCard({ automated: false })
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    const handler = handlerFor(card)
+    await handler({ messageId: 'card2', amount: '1e6' }, 'player')
+    await handler({ messageId: 'card2', amount: Infinity }, 'player')
+    expect(applyDamage).not.toHaveBeenCalled()
+    await handler({ messageId: 'card2', amount: 4 }, 'player')
+    expect(applyDamage).toHaveBeenCalledWith(4, 1)
+  })
+
   test('the GM refuses a requester who owns neither the card nor the attacker', async () => {
     const card = makeAutomatedCard({}, { owner: false })
     const applyDamage = vi.fn()

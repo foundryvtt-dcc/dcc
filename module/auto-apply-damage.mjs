@@ -40,6 +40,12 @@ export const DAMAGE_INLINE_FLAVOR = 'Damage'
 const cardsApplying = new Set()
 
 /**
+ * Cards whose damage the GM has applied this session. Unlike the card's
+ * `dcc.damageApplied` flag, the card's author can't clear it.
+ */
+const cardsApplied = new WeakSet()
+
+/**
  * Whether the attack hit the target. `rollToHit` already asked the lib when the
  * primary target's AC was readable (`hitsTarget`); otherwise a fumble always
  * misses, a natural max always hits, and the attack total (`hitsAc`) must meet
@@ -222,8 +228,13 @@ export function attachManualDamageAutoApply (message, html) {
  * and the requester (the sender Foundry stamps on the socket message) must
  * pass `canApplyCardDamage`. A card is claimed in `cardsApplying` before any
  * await and flagged applied before the damage lands, so a second request
- * can't apply it twice. A target that no longer exists leaves the card
- * unapplied.
+ * can't apply it twice; `cardsApplied` keeps the author from clearing the flag
+ * to apply it again this session. A target that no longer exists leaves the
+ * card unapplied.
+ *
+ * Not a trust boundary against the card itself: its flags and rolls are data
+ * its author wrote, so a player who creates a card by hand still names its
+ * target and damage. A system has no server-side hook to verify them.
  *
  * @param {{messageId: string, amount?: number}} payload - `amount` only for a manual roll
  * @param {string} [userId] requesting user id (client-supplied; verified here)
@@ -233,13 +244,13 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
   if (!message || !cardDamagePending(message)) return
   if (isAutomatedCard(message)) amount = cardDamageRollTotal(message)
   else if (!message.getFlag('dcc', 'isToHit')) return
-  if (!(amount > 0)) return
+  if (!Number.isFinite(amount) || !(amount > 0)) return
   const sender = userId ? game.users?.get(userId) : null
   if (!canApplyCardDamage(message, sender)) return
   // Claim the card synchronously: the flag write below is a server round trip,
   // and a second request (a double-click) arriving during it would still see
   // the card awaiting damage.
-  if (cardsApplying.has(messageId)) return
+  if (cardsApplying.has(messageId) || cardsApplied.has(message)) return
   cardsApplying.add(messageId)
   try {
     // Resolve the target first: if its token was deleted since the attack,
@@ -250,6 +261,7 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
       console.warn(`DCC | card ${messageId}: target ${message.getFlag('dcc', 'targetUuid')} no longer exists; damage not applied`)
       return
     }
+    cardsApplied.add(message)
     await message.setFlag('dcc', 'damageApplied', true)
     await target.applyDamage(amount, 1)
   } catch (err) {
