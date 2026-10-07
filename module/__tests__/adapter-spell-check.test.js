@@ -3852,7 +3852,7 @@ test('#961 a cleric cast rolls disapproval through actor.rollDisapproval with th
 // disapproval at all.
 
 /** Cast a wizard spell at a chosen total with spell-loss automation on. */
-async function castWizardAtTotal (total, { automate = true } = {}) {
+async function castWizardAtTotal (total, { automate = true, level = 1, onHook = null } = {}) {
   gameSettingsGetMock.mockImplementation((module, key) =>
     module === 'dcc' && key === 'automateWizardSpellLoss' && automate)
 
@@ -3863,8 +3863,9 @@ async function castWizardAtTotal (total, { automate = true } = {}) {
   actor.system.details.sheetClass = 'Wizard'
   const loseSpellSpy = vi.spyOn(actor, 'loseSpell').mockResolvedValue(undefined)
 
-  const spellItem = makeWizardSpellItem()
+  const spellItem = makeWizardSpellItem({ level })
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+  const callAllSpy = vi.spyOn(Hooks, 'callAll')
 
   const OriginalRoll = globalThis.Roll
   class FixedRoll extends OriginalRoll {
@@ -3888,6 +3889,10 @@ async function castWizardAtTotal (total, { automate = true } = {}) {
   }
 
   findSpy.mockRestore()
+  if (onHook) {
+    onHook(callAllSpy.mock.calls.find(c => c[0] === 'dcc.afterSpellCheckResult')?.[2])
+  }
+  callAllSpy.mockRestore()
   return loseSpellSpy
 }
 
@@ -3901,6 +3906,22 @@ test('#923 a wizard who fails the threshold loses the spell, not just on a natur
 test('#923 a wizard who makes the threshold keeps the spell', async () => {
   const lost = await castWizardAtTotal(14)
   expect(lost).not.toHaveBeenCalled()
+})
+
+test('#979 a level-3 spell totalling 14 fails: the spell is lost and the hook reports failure', async () => {
+  // Level 3 needs 16 (10 + 2 × 3). The hook used to read `success` from the
+  // lib's level-blind tier ladder (≥ 12 = success) and disagree.
+  let payload
+  const lost = await castWizardAtTotal(14, { level: 3, onHook: (p) => { payload = p } })
+  expect(lost).toHaveBeenCalledTimes(1)
+  expect(payload.success).toBe(false)
+})
+
+test('#979 a level-3 spell totalling 16 succeeds: the spell is kept and the hook reports success', async () => {
+  let payload
+  const lost = await castWizardAtTotal(16, { level: 3, onHook: (p) => { payload = p } })
+  expect(lost).not.toHaveBeenCalled()
+  expect(payload.success).toBe(true)
 })
 
 test('#923 spell loss on a failed threshold still respects the automation setting', async () => {

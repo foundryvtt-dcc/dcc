@@ -44,6 +44,9 @@
  * @param {boolean} [ctx.suppressPatronTaint=false] - Whether the caller
  *   opted out of the built-in patron-taint roll for this cast.
  * @param {number} [ctx.spellburn=0] - Total ability points burned this cast.
+ * @param {boolean} [ctx.success] - The caller's success verdict (spell-level
+ *   threshold + disapproval auto-failure). When omitted, `success` is read
+ *   from the lib tier, which is only level-aware for naked (level-1) casts.
  */
 const SUCCESS_TIERS = ['success', 'success-minor', 'success-major', 'success-critical']
 
@@ -54,7 +57,8 @@ export function emitAfterSpellCheckResult (actor, {
   spellItem = null,
   castingMode,
   suppressPatronTaint = false,
-  spellburn = 0
+  spellburn = 0,
+  success
 } = {}) {
   const naturalRoll = result?.natural ?? foundryRoll?.dice?.[0]?.total ?? foundryRoll?.total
 
@@ -70,7 +74,7 @@ export function emitAfterSpellCheckResult (actor, {
     // `disapprovalAutoFail`; the skill-table terminal's hand-built descriptor
     // sets it from its own disapproval-failure verdict.
     disapprovalFailure: !!result?.disapprovalAutoFail,
-    success: !!(result?.tier && SUCCESS_TIERS.includes(result.tier)),
+    success: typeof success === 'boolean' ? success : !!(result?.tier && SUCCESS_TIERS.includes(result.tier)),
     castingMode,
     patronTaint: null,
     suppressPatronTaint: !!suppressPatronTaint,
