@@ -471,3 +471,40 @@ describe('attack emote action verb is localized', () => {
     expect(html.messageContent.innerHTML).toBe('Hero: Hinterhältiger Angriff mit Longsword')
   })
 })
+
+describe('attack emote deed die highlight (#989)', () => {
+  let saved
+
+  beforeEach(() => {
+    saved = { ...game.i18n.translations }
+    Object.assign(game.i18n.translations, {
+      'DCC.AttackRollEmote': '{deedRollHTML}',
+      'DCC.AttackRollDeedEmoteSegment': '{deed}'
+    })
+  })
+
+  afterEach(() => {
+    game.i18n.translations = saved
+  })
+
+  function emoteDeed (deedRollSuccess) {
+    const html = makeHtml('')
+    emoteAttackRoll({
+      rolls: [{ total: 15, toAnchor: () => ({ outerHTML: '<a class="inline-roll">15</a>' }) }],
+      isContentVisible: true,
+      alias: 'Hero',
+      system: { weaponName: 'Longsword', damageInlineRoll: '', deedDieRollResult: deedRollSuccess ? 4 : 2, deedDieFormula: '1d4', deedRollSuccess },
+      getFlag: (scope, key) => key === 'isToHit'
+    }, html)
+    return html.messageContent.innerHTML
+  }
+
+  it('highlights a successful deed die', () => {
+    expect(emoteDeed(true)).toContain('class="inline-roll critical"')
+  })
+
+  it('leaves a failed deed die plain', () => {
+    expect(emoteDeed(false)).toContain('class="inline-roll"')
+    expect(emoteDeed(false)).not.toContain('critical')
+  })
+})

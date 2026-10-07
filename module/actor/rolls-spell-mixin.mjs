@@ -608,14 +608,14 @@ export const RollsSpellMixin = (Base) => class extends Base {
       // abilityMod + otherMod are SUPPRESSED and a single bonus replaces
       // them. Surface it as a situational modifier and zero out the
       // ability+level contributions.
-      const overrideValue = parseInt(this.system.class.spellCheckOverride, 10) || 0
+      const overrideValue = this._evaluateBonusString(this.system.class.spellCheckOverride) ?? 0
       situationalModifiers.push({
         source: 'spell-check-override',
         value: overrideValue,
         label: game.i18n.localize('DCC.SpellCheck')
       })
     } else if (this.system.class.spellCheckOtherMod) {
-      const otherMod = parseInt(this.system.class.spellCheckOtherMod, 10) || 0
+      const otherMod = this._evaluateBonusString(this.system.class.spellCheckOtherMod) ?? 0
       if (otherMod !== 0) {
         situationalModifiers.push({
           source: 'spell-check-other-mod',

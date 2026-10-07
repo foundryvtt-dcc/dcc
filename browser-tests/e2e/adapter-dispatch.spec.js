@@ -1806,6 +1806,29 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { mode: 'naked' })
     })
 
+    test('naked spell check sums a chained spellCheckOverride (#989)', async ({ page }) => {
+      // parseInt('+1+2') used to read 1; the item path's bonus evaluator gives 3.
+      const formula = await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P989 Spell Override',
+          type: 'Player',
+          system: { class: { className: 'Wizard', spellCheckOverride: '+1+2' }, details: { sheetClass: 'Wizard' } }
+        })
+        const before = new Set(game.messages.contents.map(m => m.id))
+        await actor.rollSpellCheck()
+        const deadline = Date.now() + 4000
+        let msg
+        while (Date.now() < deadline && !msg) {
+          msg = game.messages.contents.find(m => !before.has(m.id) && m.getFlag('dcc', 'isSpellCheck'))
+          if (!msg) await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        const out = msg?.rolls?.[0]?.formula ?? null
+        await actor.delete()
+        return out
+      })
+      expect(formula?.replace(/\s+/g, '')).toMatch(/^1d20\+3$/)
+    })
+
     test('naked spell check on a Cleric actor → adapter cleric profile (D4 naked)', async ({ page }) => {
       await page.evaluate(async () => {
         await Actor.create({
@@ -3027,6 +3050,42 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.backstab).toContain('P1 Emote Verb VERB-BACKSTAB')
       expect(result.attack.split('P1-EmoteDagger')[0]).not.toMatch(/\battacks\b/)
       expect(result.backstab.split('P1-EmoteDagger')[0]).not.toMatch(/\bbackstabs\b/)
+    })
+
+    test('emote attack highlights a successful deed die (#989)', async ({ page }) => {
+      const result = await page.evaluate(async () => {
+        const savedEmote = game.settings.get('dcc', 'emoteRolls')
+        const savedEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
+        await game.settings.set('dcc', 'emoteRolls', true)
+        await game.settings.set('dcc', 'enhancedAttackCards', false)
+        const make = async (deedRollSuccess) => {
+          const roll = await new Roll('1d20').evaluate()
+          return ChatMessage.create({
+            speaker: { alias: 'P989 Deed' },
+            flags: { 'dcc.isToHit': true },
+            rolls: [roll],
+            system: { weaponName: 'P989 Sword', damageInlineRoll: '', deedDieFormula: '1d4', deedDieRollResult: deedRollSuccess ? 4 : 2, deedRollSuccess }
+          })
+        }
+        const hit = await make(true)
+        const miss = await make(false)
+        try {
+          const deed = async msg => {
+            const html = await msg.renderHTML()
+            return [...html.querySelectorAll('.message-content span.inline-roll')].map(el => el.className)
+          }
+          return { success: await deed(hit), failure: await deed(miss), stored: hit.system.deedRollSuccess }
+        } finally {
+          await game.settings.set('dcc', 'emoteRolls', savedEmote)
+          await game.settings.set('dcc', 'enhancedAttackCards', savedEnhanced)
+          await hit.delete()
+          await miss.delete()
+        }
+      })
+      expect(result.stored).toBe(true)
+      expect(result.success.some(c => c.includes('critical'))).toBe(true)
+      expect(result.failure.length).toBeGreaterThan(0)
+      expect(result.failure.some(c => c.includes('critical'))).toBe(false)
     })
 
     test('options.backstab populates libResult with auto-crit + class:backstab bonus', async ({ page }) => {

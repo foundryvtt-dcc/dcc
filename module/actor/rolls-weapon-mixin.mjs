@@ -268,7 +268,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let fumblePrompt = ''
     let useNPCFumbles = true // even if core compendium isn't installed, still show correct fumble table in flavor text
     try {
-      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
+      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') ?? true
     } catch {
       // Module not installed, use default (true)
     }
