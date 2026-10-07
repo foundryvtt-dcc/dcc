@@ -197,6 +197,32 @@ describe('processSpellCheck — natural fumble / crit detection', () => {
   })
 })
 
+describe('processSpellCheck — spell-level threshold (#979)', () => {
+  test('a level-3 spell totalling 14 shows the failure indicator', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 9, total: 14 })
+    const actor = { type: 'Player', system: { class: {}, details: { level: { value: 3 } } } }
+    const item = { id: 'spell3', system: { level: 3 } }
+
+    await processSpellCheck(actor, { roll, item })
+
+    const flags = stubs.updateFlags.mock.calls[0][0]
+    expect(flags['dcc.spellResult']).toContain('DCC.SpellCheckFailureNoTable')
+  })
+
+  test('a level-3 spell totalling 16 shows the success indicator', async () => {
+    const stubs = installFoundryStubs()
+    const roll = makeRoll({ natural: 11, total: 16 })
+    const actor = { type: 'Player', system: { class: {}, details: { level: { value: 3 } } } }
+    const item = { id: 'spell3', system: { level: 3 } }
+
+    await processSpellCheck(actor, { roll, item })
+
+    const flags = stubs.updateFlags.mock.calls[0][0]
+    expect(flags['dcc.spellResult']).toContain('DCC.SpellCheckSuccessNoTable')
+  })
+})
+
 describe('processSpellCheck — rollTable branch', () => {
   test('non-crit non-fumble looks up table by roll.total', async () => {
     const stubs = installFoundryStubs()

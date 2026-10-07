@@ -407,6 +407,12 @@ describe("Invoke Patron", () => {
             const result = invokePatron(baseInput, { roller: () => 3 });
             expect(result.success).toBe(false);
             expect(result.total).toBe(8);
+            // RAW: a failed Invoke Patron check loses the spell, not just a fumble
+            expect(result.spellLost).toBe(true);
+        });
+        it("keeps the spell when the patron answers", () => {
+            const result = invokePatron(baseInput, { roller: () => 10 });
+            expect(result.spellLost).toBe(false);
         });
         it("detects critical on natural 20", () => {
             const result = invokePatron(baseInput, { roller: () => 20 });

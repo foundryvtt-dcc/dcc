@@ -21,6 +21,10 @@
  */
 import { evaluateRoll } from "../dice/roll.js";
 import { DEFAULT_SPELL_DUEL_TABLES, lookupCounterspellPowerEntry, lookupPhlogistonDisturbanceEntry, entryToCounterspellPowerResult, entryToPhlogistonDisturbanceResult, } from "./spell-duel-tables.js";
+import { getSpellCheckThreshold, didSpellCheckSucceed } from "./cast.js";
+// The spell-check threshold lives in cast.ts (castSpell's default tiers use
+// it); re-exported here for existing spell-duel importers.
+export { SPELL_CHECK_THRESHOLDS, getSpellCheckThreshold, didSpellCheckSucceed, } from "./cast.js";
 export { DEFAULT_SPELL_DUEL_TABLES, DEFAULT_COUNTERSPELL_POWER_TABLE, DEFAULT_PHLOGISTON_DISTURBANCE_TABLE, defaultGetComparisonDie, lookupCounterspellPowerEntry, lookupPhlogistonDisturbanceEntry, entryToCounterspellPowerResult, entryToPhlogistonDisturbanceResult, } from "./spell-duel-tables.js";
 // =============================================================================
 // Constants
@@ -29,16 +33,6 @@ export { DEFAULT_SPELL_DUEL_TABLES, DEFAULT_COUNTERSPELL_POWER_TABLE, DEFAULT_PH
  * Starting momentum for all duel participants
  */
 export const STARTING_MOMENTUM = 10;
-/**
- * Minimum spell check thresholds by spell level
- */
-export const SPELL_CHECK_THRESHOLDS = {
-    1: 12,
-    2: 14,
-    3: 16,
-    4: 18,
-    5: 20,
-};
 /**
  * Default spells and what they can counter
  */
@@ -165,19 +159,6 @@ export function createSpellDuelParticipant(id, name, casterType, initiative, pat
         initiative,
         patron,
     };
-}
-/**
- * Get the minimum spell check threshold for a spell level
- */
-export function getSpellCheckThreshold(spellLevel) {
-    return SPELL_CHECK_THRESHOLDS[spellLevel] ?? 12 + (spellLevel - 1) * 2;
-}
-/**
- * Check if a spell check succeeded (met minimum threshold)
- */
-export function didSpellCheckSucceed(total, spellLevel) {
-    const threshold = getSpellCheckThreshold(spellLevel);
-    return total >= threshold;
 }
 /**
  * Determine if a spell is lost based on the initial check (spell duel context)

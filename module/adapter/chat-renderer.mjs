@@ -788,11 +788,10 @@ function buildNakedSpellResultHtml (result) {
   if (result.critical) {
     return `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
   }
-  // Any tier above 'failure' / 'lost' is treated as success; mirrors
-  // legacy threshold check `roll.total >= 10 + level * 2`. The lib's
-  // default tier ladder (cast.ts:165) maps total ≥ 12 to
-  // success-minor or higher for level-1 spells, which is the same
-  // boundary.
+  // Any tier above 'failure' / 'lost' is treated as success. The lib's
+  // default tier ladder fails any total under the spell-level threshold
+  // (`getSpellCheckThreshold`, 10 + 2 × level), so this is the same
+  // boundary as `processSpellCheck` for every spell level (#979).
   const successTiers = ['success', 'success-minor', 'success-major', 'success-critical']
   if (result.tier && successTiers.includes(result.tier)) {
     return `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</p>`

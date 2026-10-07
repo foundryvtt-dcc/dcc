@@ -2,7 +2,7 @@
  * Spell Check Orchestration Tests
  */
 import { describe, it, expect } from "vitest";
-import { castSpell } from "./cast.js";
+import { castSpell, determineSpellResult, isSpellLostResult } from "./cast.js";
 import { calculateSpellCheck, getCasterLevel, getCasterProfileFromCharacter, getSpellCheckAbility, getCurrentLuck, getStartingLuck, getLuckMultiplier, getDisapprovalRange, getPatronId, getSpellbookEntry, buildSpellCastInput, isSpellCheckSuccess, isSpellCheckFailure, getSpellCheckSummary, } from "./spell-check.js";
 import { CASTER_PROFILES } from "../types/spells.js";
 // =============================================================================
@@ -1211,5 +1211,86 @@ describe("Patron Taint", () => {
             expect(result.fumble).toBe(true);
             expect(result.patronTaintAcquired).toBe(false);
         });
+    });
+});
+// =============================================================================
+// Default tiers honor the spell-level threshold
+// =============================================================================
+describe("determineSpellResult default tiers", () => {
+    const spellAtLevel = (level) => ({ ...testSpell, level });
+    it("keeps the level-1 ladder (12 succeeds, 11 fails)", () => {
+        expect(determineSpellResult(11, spellAtLevel(1))?.tier).toBe("failure");
+        expect(determineSpellResult(12, spellAtLevel(1))?.tier).toBe("success-minor");
+    });
+    it("fails a level-3 spell below 16", () => {
+        expect(determineSpellResult(14, spellAtLevel(3))?.tier).toBe("failure");
+        expect(determineSpellResult(15, spellAtLevel(3))?.tier).toBe("failure");
+        expect(determineSpellResult(16, spellAtLevel(3))?.tier).toBe("success");
+    });
+    it("fails a level-5 spell below 20", () => {
+        expect(determineSpellResult(19, spellAtLevel(5))?.tier).toBe("failure");
+        expect(determineSpellResult(20, spellAtLevel(5))?.tier).toBe("success-major");
+    });
+    it("still returns lost on a total of 1", () => {
+        expect(determineSpellResult(1, spellAtLevel(3))?.tier).toBe("lost");
+    });
+    it("treats a missing or invalid level as level 1", () => {
+        expect(determineSpellResult(12, spellAtLevel(0))?.tier).toBe("success-minor");
+        expect(determineSpellResult(12, spellAtLevel(Number.NaN))?.tier).toBe("success-minor");
+    });
+    it("flows through castSpell: a level-3 spell totalling 14 fails", () => {
+        const result = castSpell({
+            spell: spellAtLevel(3),
+            casterProfile: CASTER_PROFILES.wizard,
+            casterLevel: 3,
+            abilityScore: 16,
+            abilityModifier: 2,
+        }, { roller: () => 9 });
+        // 9 (roll) + 2 (INT mod) + 3 (level) = 14, under the level-3 threshold of 16
+        expect(result.total).toBe(14);
+        expect(result.tier).toBe("failure");
+    });
+});
+// =============================================================================
+// Spell loss on a failed check follows the caster type (DCC RAW)
+// =============================================================================
+describe("spell loss on a failed check", () => {
+    const castAt = (profile, natural) => castSpell({
+        spell: testSpell,
+        casterProfile: profile,
+        casterLevel: 1,
+        abilityScore: 10,
+        abilityModifier: 0,
+    }, { roller: () => natural });
+    it("a wizard loses the spell on a plain failure", () => {
+        // 8 (roll) + 1 (level) = 9, under the level-1 threshold of 12
+        const result = castAt(CASTER_PROFILES.wizard, 8);
+        expect(result.tier).toBe("failure");
+        expect(result.spellLost).toBe(true);
+    });
+    it("an elf loses the spell on a plain failure", () => {
+        const result = castAt(CASTER_PROFILES.elf, 8);
+        expect(result.spellLost).toBe(true);
+    });
+    it("a wizard keeps the spell on a success", () => {
+        const result = castAt(CASTER_PROFILES.wizard, 15);
+        expect(result.spellLost).toBe(false);
+    });
+    it("a cleric keeps the spell on a failure or a natural 1", () => {
+        expect(castAt(CASTER_PROFILES.cleric, 8).spellLost).toBe(false);
+        expect(castAt(CASTER_PROFILES.cleric, 1).spellLost).toBe(false);
+    });
+    it("an explicit lost flag on the result entry still loses a cleric's spell", () => {
+        expect(isSpellLostResult({ min: 1, tier: "failure", text: "", lost: true }, "failure", CASTER_PROFILES.cleric)).toBe(true);
+    });
+    it("a custom profile without the flag loses spells unless it uses disapproval", () => {
+        const { losesSpellOnFailure: _w, ...customArcane } = CASTER_PROFILES.wizard;
+        const { losesSpellOnFailure: _c, ...customDivine } = CASTER_PROFILES.cleric;
+        expect(isSpellLostResult(undefined, "failure", customArcane)).toBe(true);
+        expect(isSpellLostResult(undefined, "failure", customDivine)).toBe(false);
+    });
+    it("without a profile only the lost tier counts", () => {
+        expect(isSpellLostResult(undefined, "failure")).toBe(false);
+        expect(isSpellLostResult(undefined, "lost")).toBe(true);
     });
 });

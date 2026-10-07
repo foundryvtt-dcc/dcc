@@ -109,6 +109,12 @@ export interface CasterProfile {
     canSpellburn: boolean;
     /** How lost spells can be recovered */
     lostSpellRecovery: "none" | "rest" | "prayer";
+    /**
+     * Is the spell lost for the day when a spell check fails? DCC RAW: true for
+     * wizards and elves; a cleric's failure raises disapproval instead. When
+     * omitted, casters that use disapproval keep the spell and all others lose it.
+     */
+    losesSpellOnFailure?: boolean;
 }
 /**
  * Standard caster profiles for DCC classes

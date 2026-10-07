@@ -1,7 +1,7 @@
 /* global game, CONFIG, Roll, ChatMessage, ui, foundry */
 
 import { ensurePlus } from '../utilities.js'
-import { rollCheck as libRollCheck, rollTriggersDisapproval } from '../vendor/dcc-core-lib/index.js'
+import { didSpellCheckSucceed, rollCheck as libRollCheck, rollTriggersDisapproval } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
 import { renderSkillCheck, actionDiceLineHtml } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
@@ -527,7 +527,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // processSpellCheck branch. `level` for the threshold defaults
       // to 1 (skill items typically don't carry a spell level).
       const noTableLevel = skillItem?.system?.level ?? 1
-      const noTableSuccess = roll.total >= 10 + noTableLevel * 2
+      const noTableSuccess = didSpellCheckSucceed(roll.total, noTableLevel)
       let spellResultHtml
       if (fumble) {
         spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
@@ -582,7 +582,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // below reports `success` for every skill-table check, not just
     // spell-like ones.
     const spellLikeLevel = skillItem?.system?.level ?? 1
-    let success = roll.total >= (10 + spellLikeLevel * 2) && !disapprovalFailure
+    let success = didSpellCheckSucceed(roll.total, spellLikeLevel) && !disapprovalFailure
 
     if (castingMode === 'wizard') {
       if (game.settings.get('dcc', 'automateWizardSpellLoss') && !success) {

@@ -1433,6 +1433,99 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.lostAfter, 'a failed wizard cast should flip system.lost to true').toBe(true)
     })
 
+    test('a level-3 spell uses the level-3 threshold: 14 fails, 16 succeeds (#979)', async ({ page }) => {
+      // The success threshold is 10 + 2 × spell level, so a level-3 spell
+      // needs 16. The `dcc.afterSpellCheckResult` hook used to read `success`
+      // from the lib's level-blind tier ladder (≥ 12) and report 14 as a
+      // success while the failure automation lost the spell.
+      //
+      // Deterministic totals: `spellCheckOverride: '+5'` replaces level +
+      // ability, and CONFIG.Dice.randomUniform pins the d20 natural
+      // (natural = ceil((1 - u) × faces)): u 0.56 → 9 (total 14),
+      // u 0.46 → 11 (total 16). The spell has no results table, so the card
+      // shows the bare pass/fail line.
+      const priorLossSetting = await page.evaluate(async () => {
+        const prev = game.settings.get('dcc', 'automateWizardSpellLoss')
+        await game.settings.set('dcc', 'automateWizardSpellLoss', true)
+        return prev
+      })
+
+      const results = await page.evaluate(async () => {
+        const cast = async (uniform) => {
+          const actor = await Actor.create({
+            name: 'P1 Level3 Threshold Wizard',
+            type: 'Player',
+            system: {
+              class: { className: 'Wizard', spellCheckOverride: '+5' },
+              details: { level: { value: 5 } }
+            }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-Level3-Spell',
+            type: 'spell',
+            system: {
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              level: 3,
+              lost: false
+            }
+          }])
+
+          const itemId = actor.items.getName('P1-Level3-Spell').id
+          let payload = null
+          const hookId = Hooks.on('dcc.afterSpellCheckResult', (_actor, data) => {
+            if (_actor === actor) payload = { total: data.total, success: data.success }
+          })
+          const origRandomUniform = CONFIG.Dice.randomUniform
+          CONFIG.Dice.randomUniform = () => uniform
+          let lost = false
+          let card = null
+          try {
+            await actor.rollSpellCheck({ spell: 'P1-Level3-Spell' })
+            // The table-less card's pass/fail line comes from the lib tier,
+            // which is level-aware from dcc-core-lib 0.14.3. Poll: the chat
+            // message create can lag the cast.
+            for (let i = 0; i < 30 && !card; i++) {
+              // The verdict rides on the `dcc.spellResult` flag and is
+              // injected into the card at render time.
+              const msg = game.messages.contents.findLast(m =>
+                m.flags?.dcc?.ItemId === itemId && m.flags?.dcc?.spellResult)
+              if (msg) {
+                const verdict = msg.flags.dcc.spellResult
+                card = {
+                  success: verdict.includes(game.i18n.localize('DCC.SpellCheckSuccessNoTable')),
+                  failure: verdict.includes(game.i18n.localize('DCC.SpellCheckFailureNoTable'))
+                }
+              } else {
+                await new Promise(resolve => setTimeout(resolve, 50))
+              }
+            }
+            // `loseSpell`'s item update is not awaited by the cast; poll ~1.5s.
+            for (let i = 0; i < 30; i++) {
+              if (actor.items.getName('P1-Level3-Spell')?.system?.lost === true) { lost = true; break }
+              await new Promise(resolve => setTimeout(resolve, 50))
+            }
+          } finally {
+            CONFIG.Dice.randomUniform = origRandomUniform
+            Hooks.off('dcc.afterSpellCheckResult', hookId)
+            await actor.delete()
+          }
+          return { payload, lost, card }
+        }
+        return { fail: await cast(0.56), pass: await cast(0.46) }
+      })
+
+      await page.evaluate(async (prev) => {
+        await game.settings.set('dcc', 'automateWizardSpellLoss', prev)
+      }, priorLossSetting)
+
+      expect(results.fail.payload).toEqual({ total: 14, success: false })
+      expect(results.fail.lost, 'a level-3 spell totalling 14 should be lost').toBe(true)
+      expect(results.pass.payload).toEqual({ total: 16, success: true })
+      expect(results.pass.lost, 'a level-3 spell totalling 16 should be kept').toBe(false)
+      expect(results.fail.card).toEqual({ success: false, failure: true })
+      expect(results.pass.card).toEqual({ success: true, failure: false })
+    })
+
     test('wizard-castingMode spell item on a patron-bound wizard → adapter (session 4)', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({

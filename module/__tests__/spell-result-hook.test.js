@@ -90,6 +90,19 @@ describe('emitAfterSpellCheckResult', () => {
     expect(payload.item).toBe(null)
   })
 
+  test('an explicit success verdict overrides the lib tier (#979)', () => {
+    // A level-3 spell totalling 14: the caller's threshold verdict is failure
+    // even if the tier says success.
+    emitAfterSpellCheckResult({}, {
+      foundryRoll: { total: 14, dice: [{ total: 9 }] },
+      result: { total: 14, natural: 9, tier: 'success' },
+      spellItem: { id: 'spell3' },
+      castingMode: 'wizard',
+      success: false
+    })
+    expect(payloadFrom().payload.success).toBe(false)
+  })
+
   test('defaults item to null, suppressPatronTaint to false, spellburn to 0', () => {
     emitAfterSpellCheckResult({}, {
       foundryRoll: { total: 12, dice: [{ total: 12 }] },

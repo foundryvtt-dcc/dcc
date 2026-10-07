@@ -7,7 +7,8 @@ import {
   getAbilityModifier as libGetAbilityModifier,
   rollMercurialMagic as libRollMercurialMagic,
   evaluateRoll as libEvaluateRoll,
-  rollTriggersDisapproval
+  rollTriggersDisapproval,
+  didSpellCheckSucceed
 } from '../vendor/dcc-core-lib/index.js'
 import { applySpellburn, scoresFromBurnAmounts, spellburnDescriptor } from '../spellburn.mjs'
 import { renderSpellCheck, renderMercurialEffect } from '../adapter/chat-renderer.mjs'
@@ -881,7 +882,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
       // `DCCItem.castSpell` sets this for every magic-item cast; omitting it
       // reported `false` to listeners that key off it (#923).
       suppressPatronTaint: !!options.suppressPatronTaint,
-      spellburn: sumSpellburn(input.spellburn)
+      spellburn: sumSpellburn(input.spellburn),
+      success: this._spellCheckSucceeded(spellItem, foundryRoll, result)
     })
 
     return foundryRoll
@@ -1157,7 +1159,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
       })
     }
 
-    await this._applySpellFailureAutomation({ spellItem, foundryRoll, result, profile })
+    const success = this._spellCheckSucceeded(spellItem, foundryRoll, result)
+    await this._applySpellFailureAutomation({ spellItem, success, result, profile })
 
     // D3a (2026-04-24) — persist the lib's per-cast patron-taint chance
     // update. The lib runs the RAW creeping-chance check + result-table
@@ -1187,7 +1190,8 @@ export const RollsSpellMixin = (Base) => class extends Base {
       tableResult,
       castingMode: profile?.type,
       suppressPatronTaint: !!options.suppressPatronTaint,
-      spellburn: sumSpellburn(input.spellburn)
+      spellburn: sumSpellburn(input.spellburn),
+      success
     })
 
     return foundryRoll
@@ -1307,29 +1311,37 @@ export const RollsSpellMixin = (Base) => class extends Base {
   }
 
   /**
+   * Whether an item spell check succeeded: the lib's spell-level threshold
+   * (`didSpellCheckSucceed`, 10 + 2 × level) applied to the Foundry total, and
+   * no disapproval-range auto-failure. Shared by the failure automation and
+   * the `dcc.afterSpellCheckResult` payload so the two always agree (#979).
+   *
+   * Items without a level (spell-like skills) are treated as level 1,
+   * matching `processSpellCheck`.
+   * @private
+   */
+  _spellCheckSucceeded (spellItem, foundryRoll, result) {
+    const level = Number(spellItem?.system?.level ?? 1) || 1
+    return didSpellCheckSucceed(foundryRoll.total, level) && !result?.disapprovalAutoFail
+  }
+
+  /**
    * DCC RAW failure automation, restored from `processSpellCheck` (#923).
    *
-   * The rule is a THRESHOLD: a check under `10 + spell level × 2` fails, and a
-   * failed cast costs a wizard the spell or a cleric a point of disapproval.
+   * The rule is a THRESHOLD (see `_spellCheckSucceeded`): a failed cast costs
+   * a wizard the spell or a cleric a point of disapproval.
    *
-   * The lib cannot be the source of truth for this here. It classifies tiers
-   * from its DEFAULT ladder because the adapter deliberately never sets
+   * The lib's `result.spellLost` is not used: the adapter never sets
    * `input.resultTable` (see `loadSpellResultsTable` — the table drives the
-   * card, not the lib's classification), so `result.spellLost` is reachable
-   * only through the forced `total = 1` of a natural 1. Driving the automation
-   * off the lib tier meant a wizard failing at 9 kept the spell and a cleric
-   * failing at 9 gained no disapproval at all.
+   * card, not the lib's classification), so the lib only reports a spell lost
+   * on the forced `total = 1` of a natural 1.
    *
    * `loseSpell` / `applyDisapproval` are the system's own methods, so the
    * "spell lost" emote and the disapproval chat come back with them — the
    * event bridge only ever wrote the flag.
    * @private
    */
-  async _applySpellFailureAutomation ({ spellItem, foundryRoll, result, profile }) {
-    // Items without a level (spell-like skills) are treated as level 1,
-    // matching `processSpellCheck`.
-    const level = Number(spellItem?.system?.level ?? 1) || 1
-    const success = foundryRoll.total >= (10 + level * 2) && !result.disapprovalAutoFail
+  async _applySpellFailureAutomation ({ spellItem, success, result, profile }) {
     if (success) return
 
     if (profile?.type === 'cleric') {
