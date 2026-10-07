@@ -21,6 +21,7 @@
  */
 import type { DiceRoller } from "../types/dice.js";
 import { type SpellDuelTables, type CounterspellPowerTable, type PhlogistonDisturbanceTable, type ComparisonDieLookup } from "./spell-duel-tables.js";
+export { SPELL_CHECK_THRESHOLDS, getSpellCheckThreshold, didSpellCheckSucceed, } from "./cast.js";
 export type { SpellDuelTables, CounterspellPowerTable, PhlogistonDisturbanceTable, ComparisonDieLookup, CounterspellPowerEntry, PhlogistonDisturbanceEntry, } from "./spell-duel-tables.js";
 export { DEFAULT_SPELL_DUEL_TABLES, DEFAULT_COUNTERSPELL_POWER_TABLE, DEFAULT_PHLOGISTON_DISTURBANCE_TABLE, defaultGetComparisonDie, lookupCounterspellPowerEntry, lookupPhlogistonDisturbanceEntry, entryToCounterspellPowerResult, entryToPhlogistonDisturbanceResult, } from "./spell-duel-tables.js";
 /**
@@ -184,10 +185,6 @@ export interface SpellDuelState {
  */
 export declare const STARTING_MOMENTUM = 10;
 /**
- * Minimum spell check thresholds by spell level
- */
-export declare const SPELL_CHECK_THRESHOLDS: Record<number, number>;
-/**
  * Default spells and what they can counter
  */
 export declare const COUNTERSPELL_RELATIONSHIPS: Record<string, string[]>;
@@ -248,14 +245,6 @@ export declare function createSpellDuelState(participants: {
  * Create a spell duel participant
  */
 export declare function createSpellDuelParticipant(id: string, name: string, casterType: SpellDuelCasterType, initiative: number, patron?: string): SpellDuelParticipant;
-/**
- * Get the minimum spell check threshold for a spell level
- */
-export declare function getSpellCheckThreshold(spellLevel: number): number;
-/**
- * Check if a spell check succeeded (met minimum threshold)
- */
-export declare function didSpellCheckSucceed(total: number, spellLevel: number): boolean;
 /**
  * Determine if a spell is lost based on the initial check (spell duel context)
  */

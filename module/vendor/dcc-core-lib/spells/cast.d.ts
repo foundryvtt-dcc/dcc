@@ -18,8 +18,24 @@ export declare function buildSpellCheckModifiers(input: SpellCastInput): LegacyR
  */
 export declare function findInlineResult(results: readonly SpellResultEntry[], roll: number): SpellResultEntry | undefined;
 /**
+ * Minimum spell check total to succeed, by spell level (DCC RAW: 10 + 2 × level)
+ */
+export declare const SPELL_CHECK_THRESHOLDS: Record<number, number>;
+/**
+ * Get the minimum spell check threshold for a spell level
+ */
+export declare function getSpellCheckThreshold(spellLevel: number): number;
+/**
+ * Check if a spell check succeeded (met minimum threshold)
+ */
+export declare function didSpellCheckSucceed(total: number, spellLevel: number): boolean;
+/**
  * Determine the spell result from a check total.
  * Uses inline results if available, otherwise falls back to table lookup.
+ *
+ * Without inline results or a table, the default tiers apply the spell-level
+ * threshold: a total below `getSpellCheckThreshold(spell.level)` is a failure.
+ * A missing or invalid level is treated as level 1.
  */
 export declare function determineSpellResult(total: number, spell: SpellDefinition, resultTable?: TieredTable): {
     tier: ResultTier;
@@ -27,9 +43,20 @@ export declare function determineSpellResult(total: number, spell: SpellDefiniti
     text?: string;
 } | undefined;
 /**
- * Check if a result indicates the spell is lost
+ * Does this caster lose the spell for the day on a failed spell check?
+ * See `CasterProfile.losesSpellOnFailure`.
  */
-export declare function isSpellLostResult(entry: SpellResultEntry | TieredEntry | undefined, tier: ResultTier): boolean;
+export declare function losesSpellOnFailure(profile: CasterProfile): boolean;
+/**
+ * Check if a result indicates the spell is lost.
+ *
+ * An entry's explicit `lost` flag always wins. Otherwise, with a caster
+ * profile, DCC RAW applies: a wizard or elf loses the spell on any failed
+ * check (`failure` or `lost` tier), and a cleric keeps it (a failed cleric
+ * check raises disapproval instead). Without a profile, only the `lost`
+ * tier counts.
+ */
+export declare function isSpellLostResult(entry: SpellResultEntry | TieredEntry | undefined, tier: ResultTier, profile?: CasterProfile): boolean;
 /**
  * Check if a result triggers corruption
  */

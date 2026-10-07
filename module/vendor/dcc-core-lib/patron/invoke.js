@@ -176,8 +176,9 @@ export function invokePatron(input, options = {}, events) {
     }
     // Determine success (patron answers)
     const success = !fumble && total >= INVOKE_PATRON_MIN_SUCCESS;
-    // Spell is lost on fumble
-    const spellLost = fumble;
+    // Invoke Patron is a wizard/elf spell: any failed check loses it for the
+    // day (DCC RAW), not just a fumble.
+    const spellLost = !success;
     // Build result (handle optional properties for exactOptionalPropertyTypes)
     const result = {
         patronId: input.patronId,

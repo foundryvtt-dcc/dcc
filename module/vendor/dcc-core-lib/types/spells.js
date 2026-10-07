@@ -20,6 +20,7 @@ export const CASTER_PROFILES = {
         usesDisapproval: false,
         canSpellburn: true,
         lostSpellRecovery: "rest",
+        losesSpellOnFailure: true,
     },
     cleric: {
         type: "cleric",
@@ -29,6 +30,7 @@ export const CASTER_PROFILES = {
         usesDisapproval: true,
         canSpellburn: false,
         lostSpellRecovery: "prayer",
+        losesSpellOnFailure: false,
     },
     elf: {
         type: "elf",
@@ -38,6 +40,7 @@ export const CASTER_PROFILES = {
         usesDisapproval: false,
         canSpellburn: true,
         lostSpellRecovery: "rest",
+        losesSpellOnFailure: true,
     },
 };
 /**
