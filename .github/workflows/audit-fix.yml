@@ -96,7 +96,13 @@ jobs:
 
       - name: Run unit tests against fixed dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: pnpm test
+        # `pnpm test` checks deps before running and, finding the lockfile
+        # changed, re-runs `pnpm install` WITHOUT the bypass above — which
+        # re-verifies the lockfile against the quarantine and fails on the
+        # very fix we just applied. The previous step already installed, so
+        # skip the check. The pnpm flag must precede `test`, or it is
+        # forwarded to vitest.
+        run: pnpm --config.verifyDepsBeforeRun=false test
 
       - name: Create or update fix PR
         if: steps.changes.outputs.changed == 'true'
