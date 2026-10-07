@@ -28,7 +28,8 @@
  */
 
 import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
-import { didSpellCheckSucceed, rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
+import { rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
+import { spellCheckSucceeded } from './spell-check-success.mjs'
 import { getClassTrait } from './extension-api.mjs'
 
 /**
@@ -227,9 +228,9 @@ export async function processSpellCheck (actor, spellData) {
       }
 
       // Build the spell result indicator for pass/fail display
-      // Items without a level field (e.g. spell-like skills) are treated as level 1
-      const noTableLevel = (item ? item.system.level : 1) ?? 1
-      const noTableSuccess = didSpellCheckSucceed(roll.total, noTableLevel)
+      // The fumble / disapproval branches below take precedence, so only the
+      // threshold matters here.
+      const noTableSuccess = spellCheckSucceeded({ total: roll.total, level: item?.system?.level })
       let spellResultHtml = ''
       if (fumble) {
         spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
@@ -269,13 +270,9 @@ export async function processSpellCheck (actor, spellData) {
       await roll.toMessage(toMessageData)
     }
 
-    // Spell check threshold is 10 + spell level * 2 (lib `didSpellCheckSucceed`),
-    // anything below this is a failure.
-    // A natural roll inside the disapproval range is an automatic failure
-    // regardless of the total (RAW — see disapprovalFailure above).
-    // Items without a level field (e.g. spell-like skills) are treated as level 1
-    const level = (item ? item.system.level : 1) ?? 1
-    let success = didSpellCheckSucceed(roll.total, level) && !disapprovalFailure
+    // Threshold 10 + spell level × 2; a fumble or a natural inside the
+    // disapproval range fails regardless of the total (see `spellCheckSucceeded`).
+    let success = spellCheckSucceeded({ total: roll.total, level: item?.system?.level, fumble, disapprovalFailure })
 
     // Handle spell failure based on casting mode
     if (castingMode === 'wizard') {

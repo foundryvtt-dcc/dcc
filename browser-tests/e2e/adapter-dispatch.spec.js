@@ -1443,7 +1443,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // ability, and CONFIG.Dice.randomUniform pins the d20 natural
       // (natural = ceil((1 - u) × faces)): u 0.56 → 9 (total 14),
       // u 0.46 → 11 (total 16). The spell has no results table, so the card
-      // shows the bare pass/fail line.
+      // shows the bare pass/fail line. A natural 1 (u 0.96) with +15 also
+      // totals 16, but a fumble fails whatever the modifiers.
       const priorLossSetting = await page.evaluate(async () => {
         const prev = game.settings.get('dcc', 'automateWizardSpellLoss')
         await game.settings.set('dcc', 'automateWizardSpellLoss', true)
@@ -1451,12 +1452,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       })
 
       const results = await page.evaluate(async () => {
-        const cast = async (uniform) => {
+        const cast = async (uniform, spellCheckOverride = '+5') => {
           const actor = await Actor.create({
             name: 'P1 Level3 Threshold Wizard',
             type: 'Player',
             system: {
-              class: { className: 'Wizard', spellCheckOverride: '+5' },
+              class: { className: 'Wizard', spellCheckOverride },
               details: { level: { value: 5 } }
             }
           })
@@ -1511,7 +1512,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           }
           return { payload, lost, card }
         }
-        return { fail: await cast(0.56), pass: await cast(0.46) }
+        return { fail: await cast(0.56), pass: await cast(0.46), fumble: await cast(0.96, '+15') }
       })
 
       await page.evaluate(async (prev) => {
@@ -1524,6 +1525,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(results.pass.lost, 'a level-3 spell totalling 16 should be kept').toBe(false)
       expect(results.fail.card).toEqual({ success: false, failure: true })
       expect(results.pass.card).toEqual({ success: true, failure: false })
+      // The payload total is the lib's: a fumble forces it to 1 (RAW).
+      expect(results.fumble.payload).toEqual({ total: 1, success: false })
+      expect(results.fumble.lost, 'a natural 1 should lose the spell even at total 16').toBe(true)
     })
 
     test('wizard-castingMode spell item on a patron-bound wizard → adapter (session 4)', async ({ page }) => {
