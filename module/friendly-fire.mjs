@@ -18,13 +18,14 @@
  * Gated by `qolHandlingCombat` so dcc-qol drives this while that module is
  * active, and off by default so existing worlds are unaffected until opt-in.
  * Fired once per attack from the weapon-attack dispatch (alongside
- * auto-apply-damage), so no de-duplication flag is needed.
+ * auto-apply-damage); the card's `dcc.damageApplied` flag keeps its damage
+ * from landing twice.
  */
 
 import { checkFiringIntoMelee } from './vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from './integrations.mjs'
 import { getFirstTargetDoc, getAttackerTokenDoc, getAlliesInMeleeWithTarget } from './weapon-range.mjs'
-import { attackHitsTarget, applyDamageViaGM } from './auto-apply-damage.mjs'
+import { attackHitsTarget, applyAutomatedCardDamage } from './auto-apply-damage.mjs'
 
 /**
  * Build the `1d20 + <to-hit>` formula for the stray shot against an ally,
@@ -61,8 +62,12 @@ function sequencedRoller (naturals) {
 /**
  * Post the friendly-fire result chat card. Built as inline content (no
  * template/render-hook coupling) with the rolls attached for Dice So Nice.
+ * When the stray shot hit, the card records the struck ally as its target so
+ * the GM can apply the card's damage roll to it (#994).
+ *
+ * @returns {Promise<ChatMessage|undefined>} the posted card
  */
-async function postFriendlyFireCard (actor, weapon, { d100Roll, allyAttackRoll, damageRoll, allyName, allyAC, hitAlly, allyWasHit }) {
+async function postFriendlyFireCard (actor, weapon, { d100Roll, allyAttackRoll, damageRoll, allyName, allyAC, allyUuid, hitAlly, allyWasHit }) {
   const lines = [`<p>${game.i18n.localize('DCC.FriendlyFireIntoMelee')}</p>`]
   lines.push(`<p>${game.i18n.localize('DCC.FriendlyFireCheckLabel')} ${d100Roll.toAnchor().outerHTML}</p>`)
 
@@ -77,11 +82,16 @@ async function postFriendlyFireCard (actor, weapon, { d100Roll, allyAttackRoll, 
     }
   }
 
-  await ChatMessage.create({
+  const flags = { 'dcc.isFriendlyFire': true }
+  if (allyWasHit && damageRoll && allyUuid) {
+    Object.assign(flags, { 'dcc.automated': true, 'dcc.hitsTarget': true, 'dcc.targetUuid': allyUuid })
+  }
+
+  return ChatMessage.create({
     user: game.user.id,
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: game.i18n.localize('DCC.FriendlyFireCheck'),
-    flags: { 'dcc.isFriendlyFire': true },
+    flags,
     rolls: [d100Roll, allyAttackRoll, damageRoll].filter(Boolean),
     content: `<div class="dcc chat-card friendly-fire">${lines.join('')}</div>`
   })
@@ -145,24 +155,26 @@ export async function maybeFriendlyFire (actor, options, attackRollResult, weapo
     let damageRoll
     if (result.allyWasHit && struckAlly) {
       const damageFormula = weapon?.system?.damage || '1d4'
-      damageRoll = new Roll(damageFormula, rollData)
+      damageRoll = new Roll(damageFormula, rollData, { dcc: { isDamageRoll: true } })
       await damageRoll.evaluate()
-      // Auto-apply to the struck ally only when the GM has opted into
-      // auto-applying damage; otherwise the card shows the roll for manual use.
-      if (game.settings.get('dcc', 'autoApplyDamage') && damageRoll.total > 0) {
-        await applyDamageViaGM(struckAlly.actor?.uuid, damageRoll.total)
-      }
+      // A hit always deals at least 1 damage, as the weapon attack's own roll does.
+      if (damageRoll.total < 1) damageRoll._total = 1
     }
 
-    await postFriendlyFireCard(actor, weapon, {
+    const message = await postFriendlyFireCard(actor, weapon, {
       d100Roll,
       allyAttackRoll,
       damageRoll,
       allyName,
       allyAC,
+      allyUuid: struckAlly?.actor?.uuid,
       hitAlly: result.hitAlly,
       allyWasHit: result.allyWasHit
     })
+    // Apply the card's damage roll to the struck ally, only when the GM has
+    // opted into auto-applying damage (checked there); otherwise the card
+    // shows the roll for manual use.
+    await applyAutomatedCardDamage(message)
   } catch (err) {
     console.error('DCC | friendly fire resolution failed', err)
   }

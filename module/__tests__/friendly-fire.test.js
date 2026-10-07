@@ -16,12 +16,12 @@ vi.mock('../weapon-range.mjs', () => ({
 }))
 vi.mock('../auto-apply-damage.mjs', () => ({
   attackHitsTarget: vi.fn(() => false), // default: the attack missed
-  applyDamageViaGM: vi.fn()
+  applyAutomatedCardDamage: vi.fn()
 }))
 
 const { qolHandlingCombat } = await import('../integrations.mjs')
 const { getFirstTargetDoc, getAttackerTokenDoc, getAlliesInMeleeWithTarget } = await import('../weapon-range.mjs')
-const { attackHitsTarget, applyDamageViaGM } = await import('../auto-apply-damage.mjs')
+const { attackHitsTarget, applyAutomatedCardDamage } = await import('../auto-apply-damage.mjs')
 const { maybeFriendlyFire, buildAllyAttackFormula } = await import('../friendly-fire.mjs')
 
 let originalGame, originalRoll, originalChatMessage
@@ -32,10 +32,13 @@ let settings
 // Deterministic Roll whose total is the next value queued by the test, in
 // construction order (d100, then ally-index, ally-attack, damage).
 class MockRoll {
-  constructor (formula) {
+  constructor (formula, data, options = {}) {
     this.formula = formula
-    this.total = rollQueue.length ? rollQueue.shift() : 0
+    this.options = options
+    this._total = rollQueue.length ? rollQueue.shift() : 0
   }
+
+  get total () { return this._total }
 
   async evaluate () { return this }
   toAnchor () { return { outerHTML: `<a class="roll">${this.total}</a>` } }
@@ -151,29 +154,32 @@ describe('maybeFriendlyFire resolution', () => {
     await maybeFriendlyFire(actor, {}, {}, rangedWeapon)
     expect(ChatMessage.create).toHaveBeenCalledTimes(1)
     expect(created[0].content).toContain('DCC.FriendlyFireSafe')
-    expect(applyDamageViaGM).not.toHaveBeenCalled()
+    expect(created[0].flags).toEqual({ 'dcc.isFriendlyFire': true })
   })
 
-  test('a triggered check that hits the ally applies damage via the GM', async () => {
+  test('a triggered check that hits the ally records it as the card target and applies the card damage', async () => {
     rollQueue = [30, 1, 25, 6] // d100, ally index, stray attack (>=15), damage
     await maybeFriendlyFire(actor, {}, {}, rangedWeapon)
     expect(created[0].content).toContain('DCC.FriendlyFireHits')
-    expect(applyDamageViaGM).toHaveBeenCalledWith('Actor.bob', 6)
+    expect(created[0].flags).toEqual({ 'dcc.isFriendlyFire': true, 'dcc.automated': true, 'dcc.hitsTarget': true, 'dcc.targetUuid': 'Actor.bob' })
+    // The damage roll is tagged so the GM reads the amount from the card (#994).
+    const damage = created[0].rolls.at(-1)
+    expect(damage.total).toBe(6)
+    expect(damage.options).toEqual({ dcc: { isDamageRoll: true } })
+    expect(applyAutomatedCardDamage).toHaveBeenCalledWith(created[0])
   })
 
-  test('damage is not auto-applied when autoApplyDamage is off', async () => {
-    settings.autoApplyDamage = false
-    rollQueue = [30, 1, 25, 6]
+  test('a stray hit deals at least 1 damage, even with a negative modifier (#989)', async () => {
+    rollQueue = [30, 1, 25, -2] // damage roll totals -2
     await maybeFriendlyFire(actor, {}, {}, rangedWeapon)
-    expect(created[0].content).toContain('DCC.FriendlyFireHits')
-    expect(applyDamageViaGM).not.toHaveBeenCalled()
+    expect(created[0].rolls.at(-1).total).toBe(1)
   })
 
   test('a triggered check that misses the ally deals no damage', async () => {
     rollQueue = [30, 1, 8] // stray attack (8 < AC 15) → miss, no damage roll
     await maybeFriendlyFire(actor, {}, {}, rangedWeapon)
     expect(created[0].content).toContain('DCC.FriendlyFireMisses')
-    expect(applyDamageViaGM).not.toHaveBeenCalled()
+    expect(created[0].flags).toEqual({ 'dcc.isFriendlyFire': true })
   })
 
   test('errors are swallowed (a roll failure never breaks the attack)', async () => {

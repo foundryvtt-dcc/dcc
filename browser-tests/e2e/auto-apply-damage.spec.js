@@ -59,6 +59,9 @@ test.describe('Auto-apply damage', () => {
       // Did this attack fumble? (natural-1 auto-miss — no damage expected.)
       const lastAttack = game.messages.contents.filter(m => m.getFlag('dcc', 'isToHit')).at(-1)
       const fumbled = !!lastAttack?.getFlag('dcc', 'isFumble')
+      // The GM applies the card's own damage roll and marks the card (#994).
+      const cardDamage = lastAttack?.rolls?.find(r => r.options?.dcc?.isDamageRoll)?.total
+      const damageApplied = !!lastAttack?.getFlag('dcc', 'damageApplied')
 
       // cleanup
       placeable.setTarget(false, { releaseOthers: true })
@@ -68,15 +71,33 @@ test.describe('Auto-apply damage', () => {
       await npc.delete()
       await attacker.delete()
 
-      return { startHp, endHp, fumbled }
+      return { startHp, endHp, fumbled, cardDamage, damageApplied }
     })
 
     expect(result.startHp).toBe(20)
     if (result.fumbled) {
       expect(result.endHp).toBe(20) // auto-miss: untouched
+      expect(result.damageApplied).toBe(false)
     } else {
-      expect(result.endHp).toBeLessThan(20) // hit: damage applied to the target
+      // hit: exactly the card's damage roll is applied to the target, once
+      expect(result.cardDamage).toBeGreaterThan(0)
+      expect(result.endHp).toBe(20 - result.cardDamage)
+      expect(result.damageApplied).toBe(true)
     }
+  })
+
+  test('the raw dcc.applyDamage socket action no longer exists (#994)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const { executeAsGM } = await import(foundry.utils.getRoute('systems/dcc/module/socket.mjs'))
+      const npc = await Actor.create({ name: 'DCC RawDmg Target', type: 'NPC', system: { attributes: { hp: { value: 20, max: 20 }, ac: { value: 10 } } } })
+      // Any client used to be able to damage any actor with this request.
+      await executeAsGM('dcc.applyDamage', { actorUuid: npc.uuid, amount: 7 })
+      await new Promise(resolve => setTimeout(resolve, 500))
+      const hp = npc.system.attributes.hp.value
+      await npc.delete()
+      return { hp }
+    })
+    expect(result.hp).toBe(20)
   })
 
   /**

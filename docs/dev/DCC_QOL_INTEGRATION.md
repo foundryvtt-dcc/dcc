@@ -402,7 +402,7 @@ card). Friendly fire stays automatic (no FF button — see the FF slice).
 "Friendly Fire Check" *button* on its enhanced attack card; the system has no
 enhanced card yet (§9 "Not yet built"), so the system version is fully
 automated off the `automateFriendlyFire` setting. It fires from the
-weapon-attack dispatch (alongside `autoApplyAttackDamage`) whenever a *missed*
+weapon-attack dispatch (alongside `applyAutomatedCardDamage`) whenever a *missed*
 missile attack (a fumble counts as a miss, matching dcc-qol's `!hitsTarget`
 eligibility) targets a creature engaged in melee with one of the attacker's
 allies. The lib `checkFiringIntoMelee` owns the rule (50% threshold, random
@@ -416,7 +416,9 @@ the check runs. **Damage decision:** on a stray hit the weapon damage is rolled
 and shown; it is auto-applied to the struck ally **only when `autoApplyDamage`
 is also on** (composing with that setting / its GM socket action), otherwise
 the GM applies it manually. The ally damage write reuses the auto-apply slice's
-`dcc.applyDamage` socket action via the shared `applyDamageViaGM` helper.
+`dcc.applyCardDamage` socket action via `applyAutomatedCardDamage`: the card
+records the struck ally as its target and tags its damage roll, and the GM
+reads both from the card and checks the requester may act for it (#994).
 
 **Gating as built (deviates from §7's plan — reconcile or accept):** every
 handler is **always registered** and checks `qolHandlingCombat()` + its setting

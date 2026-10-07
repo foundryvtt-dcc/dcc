@@ -9,19 +9,24 @@
  * socket: the active GM performs the `actor.applyDamage`. Gated by
  * `qolHandlingCombat` so dcc-qol drives it while that module is active.
  *
- * Two triggers:
- * - Automated damage: the weapon-attack dispatch applies the rolled damage once,
- *   right after the attack.
+ * Every request names a chat card, never a raw actor and amount (#994): the
+ * card records the hit verdict and the target's UUID when it is created, the GM
+ * reads the target from those flags, checks the requester may act for the
+ * card, and marks it `dcc.damageApplied` so it applies only once.
+ *
+ * Three triggers:
+ * - Automated damage: once the weapon-attack dispatch has posted its card, the
+ *   damage roll on that card is applied.
+ * - Friendly fire: a stray shot that hits an ally applies the damage roll on
+ *   the friendly-fire card to that ally.
  * - Manual damage (#992): with automation off, the card's Roll Damage button
  *   (enhanced card) or inline damage roll (plain / emote card) applies the roll
- *   when it lands. The card records the hit verdict and the target's UUID at
- *   attack time; the GM marks it `dcc.damageApplied` so it applies only once.
+ *   when it lands.
  */
 
 import { qolHandlingCombat } from './integrations.mjs'
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
 
-export const APPLY_DAMAGE_ACTION = 'dcc.applyDamage'
 export const APPLY_CARD_DAMAGE_ACTION = 'dcc.applyCardDamage'
 
 /**
@@ -35,19 +40,10 @@ export const DAMAGE_INLINE_FLAVOR = 'Damage'
 const cardsApplying = new Set()
 
 /**
- * Apply damage to an actor through the GM (the active GM runs the
- * `actor.applyDamage`). Shared by the auto-apply-damage and friendly-fire
- * paths so the privileged-write action name lives in one place. No-op for
- * non-positive amounts.
- *
- * @param {string} actorUuid - UUID of the actor (or its token) to damage
- * @param {number} amount - positive damage amount
- * @returns {Promise<void>}
+ * Cards whose damage the GM has applied this session. Unlike the card's
+ * `dcc.damageApplied` flag, the card's author can't clear it.
  */
-export async function applyDamageViaGM (actorUuid, amount) {
-  if (!actorUuid || !(amount > 0)) return
-  await executeAsGM(APPLY_DAMAGE_ACTION, { actorUuid, amount })
-}
+const cardsApplied = new WeakSet()
 
 /**
  * Whether the attack hit the target. `rollToHit` already asked the lib when the
@@ -70,26 +66,57 @@ export function attackHitsTarget (attackRollResult, targetActor) {
 }
 
 /**
- * Apply a hit's rolled damage to the targeted token via the GM, when the
- * `autoApplyDamage` setting is on. No-op when dcc-qol is active, the setting is
- * off, there is no positive damage, no single target, or the attack missed.
+ * Whether a card's damage is still owed to its target: auto-apply is on,
+ * dcc-qol isn't driving, the card is an attack or friendly-fire card that hit
+ * a known target, and no damage has been applied from it yet.
+ *
+ * @param {ChatMessage} message - an attack or friendly-fire card
+ * @returns {boolean}
+ */
+function cardDamagePending (message) {
+  try {
+    if (qolHandlingCombat()) return false
+    if (!game.settings.get('dcc', 'autoApplyDamage')) return false
+    const flag = (key) => message?.getFlag?.('dcc', key)
+    if (!flag('isToHit') && !flag('isFriendlyFire')) return false
+    return flag('hitsTarget') === true && !!flag('targetUuid') && !flag('damageApplied')
+  } catch {
+    return false
+  }
+}
+
+/** Whether the card rolled its own damage (automated attack, friendly fire). */
+function isAutomatedCard (message) {
+  return message?.getFlag?.('dcc', 'automated') === true
+}
+
+/**
+ * The total of the damage roll carried on the card itself (the roll tagged
+ * `dcc.isDamageRoll`), or `undefined` when it has none.
+ *
+ * @param {ChatMessage} message
+ * @returns {number|undefined}
+ */
+function cardDamageRollTotal (message) {
+  return message?.rolls?.find?.(r => r?.options?.dcc?.isDamageRoll)?.total
+}
+
+/**
+ * Apply the damage roll carried on an automated card (an automated attack card
+ * or a friendly-fire card) to the card's target, through the GM. No-op when
+ * the card has no damage owed or the user may not act for it. The GM takes
+ * the amount from the card's roll, so the request carries only the card's id.
  * Errors are swallowed (logged) so a feedback failure never breaks the attack.
  *
- * @param {object} options - the attack options (carries `targets`)
- * @param {object} attackRollResult - result from `rollToHit`
- * @param {Roll} [damageRoll] - the evaluated damage roll (absent when not automated)
+ * @param {ChatMessage} [message] - the posted card (absent if its creation was cancelled)
+ * @returns {Promise<void>}
  */
-export async function autoApplyAttackDamage (options, attackRollResult, damageRoll) {
+export async function applyAutomatedCardDamage (message) {
   try {
-    if (qolHandlingCombat()) return
-    if (!game.settings.get('dcc', 'autoApplyDamage')) return
-    const amount = damageRoll?.total
-    if (!(amount > 0)) return
-    const target = options?.targets?.first?.()
-    const targetActor = target?.actor
-    if (!targetActor) return
-    if (attackHitsTarget(attackRollResult, targetActor) !== true) return
-    await applyDamageViaGM(targetActor.uuid, amount)
+    if (!isAutomatedCard(message) || !cardDamagePending(message)) return
+    if (!(cardDamageRollTotal(message) > 0)) return
+    if (!canApplyCardDamage(message, game.user)) return
+    await executeAsGM(APPLY_CARD_DAMAGE_ACTION, { messageId: message.id })
   } catch (err) {
     console.error('DCC | auto-apply damage failed', err)
   }
@@ -97,23 +124,14 @@ export async function autoApplyAttackDamage (options, attackRollResult, damageRo
 
 /**
  * Whether an attack card's manual damage roll should be applied to its target:
- * auto-apply is on, dcc-qol isn't driving, the card wasn't automated, the
- * attack hit a known target, and the card hasn't had damage applied yet.
+ * the card's damage is still owed and the card wasn't automated (automated
+ * cards apply the damage they rolled themselves, never a second roll).
  *
  * @param {ChatMessage} message - the attack card
  * @returns {boolean}
  */
 export function cardAwaitsDamage (message) {
-  try {
-    if (qolHandlingCombat()) return false
-    if (!game.settings.get('dcc', 'autoApplyDamage')) return false
-    const flag = (key) => message?.getFlag?.('dcc', key)
-    // Automated cards apply their damage at attack time; never a second time.
-    if (flag('automated') === true) return false
-    return !!flag('isToHit') && flag('hitsTarget') === true && !!flag('targetUuid') && !flag('damageApplied')
-  } catch {
-    return false
-  }
+  return cardDamagePending(message) && !!message.getFlag('dcc', 'isToHit') && !isAutomatedCard(message)
 }
 
 /**
@@ -203,26 +221,36 @@ export function attachManualDamageAutoApply (message, html) {
 }
 
 /**
- * GM-side handler: apply a card's manual damage once. Hardened against a
- * crafted payload — the target comes from the card's own flags (never the
- * payload), the card must still await damage, and the requester (the sender
- * Foundry stamps on the socket message) must pass `canApplyCardDamage`. A card
- * is claimed in `cardsApplying` before any await and flagged applied before
- * the damage lands, so a second request can't apply it twice. A target that no
- * longer exists leaves the card unapplied.
+ * GM-side handler: apply a card's damage once. Hardened against a crafted
+ * payload — the target comes from the card's own flags (never the payload),
+ * an automated card's amount comes from its own damage roll (only a manual
+ * roll's amount is taken from the payload), the card must still owe damage,
+ * and the requester (the sender Foundry stamps on the socket message) must
+ * pass `canApplyCardDamage`. A card is claimed in `cardsApplying` before any
+ * await and flagged applied before the damage lands, so a second request
+ * can't apply it twice; `cardsApplied` keeps the author from clearing the flag
+ * to apply it again this session. A target that no longer exists leaves the
+ * card unapplied.
  *
- * @param {{messageId: string, amount: number}} payload
+ * Not a trust boundary against the card itself: its flags and rolls are data
+ * its author wrote, so a player who creates a card by hand still names its
+ * target and damage. A system has no server-side hook to verify them.
+ *
+ * @param {{messageId: string, amount?: number}} payload - `amount` only for a manual roll
  * @param {string} [userId] requesting user id (client-supplied; verified here)
  */
 async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
   const message = game.messages?.get(messageId)
-  if (!message || !cardAwaitsDamage(message) || !(amount > 0)) return
+  if (!message || !cardDamagePending(message)) return
+  if (isAutomatedCard(message)) amount = cardDamageRollTotal(message)
+  else if (!message.getFlag('dcc', 'isToHit')) return
+  if (!Number.isFinite(amount) || !(amount > 0)) return
   const sender = userId ? game.users?.get(userId) : null
   if (!canApplyCardDamage(message, sender)) return
   // Claim the card synchronously: the flag write below is a server round trip,
   // and a second request (a double-click) arriving during it would still see
   // the card awaiting damage.
-  if (cardsApplying.has(messageId)) return
+  if (cardsApplying.has(messageId) || cardsApplied.has(message)) return
   cardsApplying.add(messageId)
   try {
     // Resolve the target first: if its token was deleted since the attack,
@@ -233,6 +261,7 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
       console.warn(`DCC | card ${messageId}: target ${message.getFlag('dcc', 'targetUuid')} no longer exists; damage not applied`)
       return
     }
+    cardsApplied.add(message)
     await message.setFlag('dcc', 'damageApplied', true)
     await target.applyDamage(amount, 1)
   } catch (err) {
@@ -242,16 +271,7 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
   }
 }
 
-/** GM-side socket handler: resolve the target and apply the damage. */
-async function applyDamageHandler ({ actorUuid, amount }) {
-  const doc = await fromUuid(actorUuid)
-  const actor = doc?.documentName === 'Actor' ? doc : doc?.actor
-  if (typeof actor?.applyDamage !== 'function' || !(amount > 0)) return
-  await actor.applyDamage(amount, 1)
-}
-
-/** Register the GM-side apply-damage socket handlers. Call once at ready. */
+/** Register the GM-side apply-damage socket handler. Call once at ready. */
 export function registerAutoApplyDamageHandler () {
-  registerSocketHandler(APPLY_DAMAGE_ACTION, applyDamageHandler)
   registerSocketHandler(APPLY_CARD_DAMAGE_ACTION, applyCardDamageHandler)
 }

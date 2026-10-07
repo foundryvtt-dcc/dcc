@@ -21,7 +21,9 @@ test.describe('Friendly fire', () => {
       const scene = game.canvas.scene
 
       const prevFF = game.settings.get('dcc', 'automateFriendlyFire')
+      const prevAuto = game.settings.get('dcc', 'autoApplyDamage')
       await game.settings.set('dcc', 'automateFriendlyFire', true)
+      await game.settings.set('dcc', 'autoApplyDamage', true)
 
       // High-AC target so the attack reliably misses (only a natural 20 hits).
       const target = await Actor.create({ name: 'DCC FF Target', type: 'NPC', system: { attributes: { hp: { value: 20, max: 20 }, ac: { value: 30 } } }, prototypeToken: { actorLink: true } })
@@ -62,17 +64,32 @@ test.describe('Friendly fire', () => {
       const lastAttack = game.messages.contents.filter(m => m.getFlag('dcc', 'isToHit')).at(-1)
       const crit = !!lastAttack?.getFlag('dcc', 'isCrit')
 
+      // A stray shot that hit the ally names it as the card's target; the GM
+      // applies the card's damage roll to it (#994). Poll for the HP write.
+      const struckAlly = ffMessage?.getFlag('dcc', 'targetUuid') ?? null
+      const ffDamage = ffMessage?.rolls?.find(r => r.options?.dcc?.isDamageRoll)?.total ?? null
+      if (struckAlly) {
+        const deadline2 = Date.now() + 4000
+        while (Date.now() < deadline2 && allyActor.system.attributes.hp.value === 20) await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
       const out = {
         before,
         crit,
         hasFFMessage: !!ffMessage,
         ffContent: ffMessage?.content ?? '',
-        ffRollCount: ffMessage?.rolls?.length ?? 0
+        ffRollCount: ffMessage?.rolls?.length ?? 0,
+        struckAlly,
+        allyUuid: allyActor.uuid,
+        ffDamage,
+        ffDamageApplied: !!ffMessage?.getFlag('dcc', 'damageApplied'),
+        allyHp: allyActor.system.attributes.hp.value
       }
 
       // cleanup
       game.canvas.tokens.get(targetToken.id)?.setTarget(false, { releaseOthers: true })
       await game.settings.set('dcc', 'automateFriendlyFire', prevFF)
+      await game.settings.set('dcc', 'autoApplyDamage', prevAuto)
       await scene.deleteEmbeddedDocuments('Token', [attackerToken.id, targetToken.id, allyToken.id])
       await target.delete()
       await allyActor.delete()
@@ -87,6 +104,13 @@ test.describe('Friendly fire', () => {
       expect(result.hasFFMessage).toBe(true)
       expect(result.ffContent).toContain('friendly-fire')
       expect(result.ffRollCount).toBeGreaterThanOrEqual(1) // at least the d100
+      if (result.struckAlly) {
+        expect(result.struckAlly).toBe(result.allyUuid)
+        expect(result.ffDamageApplied).toBe(true)
+        expect(result.allyHp).toBe(20 - result.ffDamage)
+      } else {
+        expect(result.allyHp).toBe(20) // safe, or the stray shot missed
+      }
     }
   })
 })
