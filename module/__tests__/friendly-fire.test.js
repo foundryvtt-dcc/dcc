@@ -35,8 +35,10 @@ class MockRoll {
   constructor (formula, data, options = {}) {
     this.formula = formula
     this.options = options
-    this.total = rollQueue.length ? rollQueue.shift() : 0
+    this._total = rollQueue.length ? rollQueue.shift() : 0
   }
+
+  get total () { return this._total }
 
   async evaluate () { return this }
   toAnchor () { return { outerHTML: `<a class="roll">${this.total}</a>` } }
@@ -165,6 +167,12 @@ describe('maybeFriendlyFire resolution', () => {
     expect(damage.total).toBe(6)
     expect(damage.options).toEqual({ dcc: { isDamageRoll: true } })
     expect(applyAutomatedCardDamage).toHaveBeenCalledWith(created[0])
+  })
+
+  test('a stray hit deals at least 1 damage, even with a negative modifier (#989)', async () => {
+    rollQueue = [30, 1, 25, -2] // damage roll totals -2
+    await maybeFriendlyFire(actor, {}, {}, rangedWeapon)
+    expect(created[0].rolls.at(-1).total).toBe(1)
   })
 
   test('a triggered check that misses the ally deals no damage', async () => {

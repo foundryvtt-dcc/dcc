@@ -157,6 +157,8 @@ export async function maybeFriendlyFire (actor, options, attackRollResult, weapo
       const damageFormula = weapon?.system?.damage || '1d4'
       damageRoll = new Roll(damageFormula, rollData, { dcc: { isDamageRoll: true } })
       await damageRoll.evaluate()
+      // A hit always deals at least 1 damage, as the weapon attack's own roll does.
+      if (damageRoll.total < 1) damageRoll._total = 1
     }
 
     const message = await postFriendlyFireCard(actor, weapon, {
