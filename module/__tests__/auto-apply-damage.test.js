@@ -12,16 +12,10 @@ vi.mock('../socket.mjs', () => ({
 }))
 
 const { executeAsGM, registerSocketHandler } = await import('../socket.mjs')
-const { attackHitsTarget, autoApplyAttackDamage, registerAutoApplyDamageHandler, cardAwaitsDamage, canApplyCardDamage, applyCardDamage, attachManualDamageAutoApply } = await import('../auto-apply-damage.mjs')
+const { attackHitsTarget, applyAutomatedCardDamage, registerAutoApplyDamageHandler, cardAwaitsDamage, canApplyCardDamage, applyCardDamage, attachManualDamageAutoApply } = await import('../auto-apply-damage.mjs')
 
 let originalGame
 let originalFromUuid
-
-function makeTargets (actor) {
-  const set = new Set([{ actor }])
-  set.first = () => [...set][0]
-  return set
-}
 
 const targetActor = (ac, uuid = 'Actor.tgt') => ({ uuid, system: { attributes: { ac: { value: ac } } } })
 
@@ -68,67 +62,6 @@ describe('attackHitsTarget', () => {
   test('a fumble or natural max still decides the hit when the AC is unreadable', () => {
     expect(attackHitsTarget({ fumble: true, hitsAc: 99 }, { system: {} })).toBe(false)
     expect(attackHitsTarget({ fumble: false, autoHit: true, hitsAc: 1 }, { system: {} })).toBe(true)
-  })
-})
-
-describe('autoApplyAttackDamage', () => {
-  const hit = { fumble: false, crit: false, hitsAc: 18 }
-
-  test('applies damage to the target via the GM on a hit', async () => {
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(15)) }, hit, { total: 7 })
-    expect(executeAsGM).toHaveBeenCalledWith('dcc.applyDamage', { actorUuid: 'Actor.tgt', amount: 7 })
-  })
-
-  test('stands down when dcc-qol is active', async () => {
-    globalThis.game.modules.get.mockReturnValue({ active: true })
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(15)) }, hit, { total: 7 })
-    expect(executeAsGM).not.toHaveBeenCalled()
-  })
-
-  test('does nothing when the setting is off', async () => {
-    globalThis.game.settings.get.mockReturnValue(false)
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(15)) }, hit, { total: 7 })
-    expect(executeAsGM).not.toHaveBeenCalled()
-  })
-
-  test('does nothing without positive damage', async () => {
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(15)) }, hit, { total: 0 })
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(15)) }, hit, undefined)
-    expect(executeAsGM).not.toHaveBeenCalled()
-  })
-
-  test('does nothing on a miss', async () => {
-    await autoApplyAttackDamage({ targets: makeTargets(targetActor(25)) }, { fumble: false, crit: false, hitsAc: 18 }, { total: 7 })
-    expect(executeAsGM).not.toHaveBeenCalled()
-  })
-
-  test('does nothing without a target', async () => {
-    await autoApplyAttackDamage({ targets: new Set() }, hit, { total: 7 })
-    await autoApplyAttackDamage({}, hit, { total: 7 })
-    expect(executeAsGM).not.toHaveBeenCalled()
-  })
-})
-
-describe('registerAutoApplyDamageHandler', () => {
-  test('registers a GM handler that resolves the target and applies damage', async () => {
-    registerAutoApplyDamageHandler()
-    expect(registerSocketHandler).toHaveBeenCalledWith('dcc.applyDamage', expect.any(Function))
-    const handler = registerSocketHandler.mock.calls[0][1]
-
-    const applyDamage = vi.fn()
-    // a token-doc UUID resolves to a TokenDocument whose .actor is applied to
-    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Token', actor: { applyDamage } }))
-
-    await handler({ actorUuid: 'Scene.s.Token.t.Actor.a', amount: 6 })
-
-    expect(applyDamage).toHaveBeenCalledWith(6, 1)
-  })
-
-  test('the handler is a no-op for an unresolvable target', async () => {
-    registerAutoApplyDamageHandler()
-    const handler = registerSocketHandler.mock.calls[0][1]
-    globalThis.fromUuid = vi.fn(async () => null)
-    await expect(handler({ actorUuid: 'Actor.missing', amount: 6 })).resolves.toBeUndefined()
   })
 })
 
@@ -342,5 +275,112 @@ describe('manual damage from an attack card (#992)', () => {
     test('a card that missed keeps the default inline roll', () => {
       expect(clickAnchor(makeCard({ hitsTarget: false })).defaultPrevented).toBe(false)
     })
+  })
+})
+
+describe('automated card damage (#994)', () => {
+  let originalChatMessage
+  beforeEach(() => {
+    originalChatMessage = globalThis.ChatMessage
+    globalThis.ChatMessage = { getSpeakerActor: vi.fn(() => null) }
+    globalThis.game.user = { isGM: false }
+  })
+  afterEach(() => {
+    globalThis.ChatMessage = originalChatMessage
+  })
+
+  const damageRoll = (total) => ({ total, options: { dcc: { isDamageRoll: true } } })
+  function makeAutomatedCard (flags = {}, { rolls = [{ total: 19, options: {} }, damageRoll(7)], owner = true } = {}) {
+    const store = { isToHit: true, automated: true, hitsTarget: true, targetUuid: 'Actor.tgt', ...flags }
+    return {
+      id: 'card2',
+      speaker: {},
+      rolls,
+      getFlag: (scope, key) => store[key],
+      setFlag: vi.fn(async (scope, key, value) => { store[key] = value }),
+      testUserPermission: vi.fn(() => owner)
+    }
+  }
+  const handlerFor = (card, sender = { isGM: false }) => {
+    globalThis.game.messages = { get: (id) => (id === card.id ? card : undefined) }
+    globalThis.game.users = { get: () => sender }
+    registerAutoApplyDamageHandler()
+    return registerSocketHandler.mock.calls.find(([action]) => action === 'dcc.applyCardDamage')[1]
+  }
+
+  test('only the card-based action is registered; the raw dcc.applyDamage action is gone', () => {
+    registerAutoApplyDamageHandler()
+    expect(registerSocketHandler.mock.calls.map(([action]) => action)).toEqual(['dcc.applyCardDamage'])
+  })
+
+  test('asks the GM to apply the card by id only — no target or amount in the request', async () => {
+    await applyAutomatedCardDamage(makeAutomatedCard())
+    expect(executeAsGM).toHaveBeenCalledWith('dcc.applyCardDamage', { messageId: 'card2' })
+  })
+
+  test('does nothing for a miss, a manual card, no damage roll, a cancelled card, or a non-owner', async () => {
+    await applyAutomatedCardDamage(makeAutomatedCard({ hitsTarget: false }))
+    await applyAutomatedCardDamage(makeAutomatedCard({ automated: false }))
+    await applyAutomatedCardDamage(makeAutomatedCard({}, { rolls: [{ total: 19, options: {} }] }))
+    await applyAutomatedCardDamage(undefined)
+    await applyAutomatedCardDamage(makeAutomatedCard({}, { owner: false }))
+    expect(executeAsGM).not.toHaveBeenCalled()
+  })
+
+  test('stands down with the setting off or dcc-qol active', async () => {
+    globalThis.game.settings.get.mockReturnValue(false)
+    await applyAutomatedCardDamage(makeAutomatedCard())
+    globalThis.game.settings.get.mockReturnValue(true)
+    globalThis.game.modules.get.mockReturnValue({ active: true })
+    await applyAutomatedCardDamage(makeAutomatedCard())
+    expect(executeAsGM).not.toHaveBeenCalled()
+  })
+
+  test("the GM applies the card's own damage roll to the card's own target, ignoring the payload", async () => {
+    const card = makeAutomatedCard()
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Token', actor: { applyDamage } }))
+    const handler = handlerFor(card)
+
+    await handler({ messageId: 'card2', amount: 999, actorUuid: 'Actor.someoneElse' }, 'player')
+    expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.tgt')
+    expect(applyDamage).toHaveBeenCalledWith(7, 1)
+    expect(card.setFlag).toHaveBeenCalledWith('dcc', 'damageApplied', true)
+
+    await handler({ messageId: 'card2' }, 'player')
+    expect(applyDamage).toHaveBeenCalledTimes(1)
+  })
+
+  test('the GM refuses a requester who owns neither the card nor the attacker', async () => {
+    const card = makeAutomatedCard({}, { owner: false })
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    await handlerFor(card)({ messageId: 'card2' }, 'stranger')
+    expect(applyDamage).not.toHaveBeenCalled()
+  })
+
+  test('the GM ignores an unknown card, and a card that is neither an attack nor friendly fire', async () => {
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    const handler = handlerFor(makeAutomatedCard({ isToHit: false }))
+    await handler({ messageId: 'card2' }, 'player')
+    await handler({ messageId: 'nope', amount: 5 }, 'player')
+    expect(applyDamage).not.toHaveBeenCalled()
+  })
+
+  test('a friendly-fire card applies its damage roll to the struck ally', async () => {
+    const card = makeAutomatedCard({ isToHit: undefined, isFriendlyFire: true, targetUuid: 'Actor.ally' }, { rolls: [{ total: 30, options: {} }, damageRoll(4)] })
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    await applyAutomatedCardDamage(card)
+    expect(executeAsGM).toHaveBeenCalledWith('dcc.applyCardDamage', { messageId: 'card2' })
+    await handlerFor(card)({ messageId: 'card2' }, 'player')
+    expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.ally')
+    expect(applyDamage).toHaveBeenCalledWith(4, 1)
+  })
+
+  test('an automated card never awaits a manual damage roll', () => {
+    expect(cardAwaitsDamage(makeAutomatedCard())).toBe(false)
+    expect(cardAwaitsDamage(makeAutomatedCard({ isToHit: undefined, isFriendlyFire: true, automated: false }))).toBe(false)
   })
 })

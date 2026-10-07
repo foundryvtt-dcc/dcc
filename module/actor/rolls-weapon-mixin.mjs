@@ -11,7 +11,7 @@ import {
 } from '../vendor/dcc-core-lib/index.js'
 import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
-import { autoApplyAttackDamage, attackHitsTarget, DAMAGE_INLINE_FLAVOR } from '../auto-apply-damage.mjs'
+import { applyAutomatedCardDamage, attackHitsTarget, DAMAGE_INLINE_FLAVOR } from '../auto-apply-damage.mjs'
 import { maybeFriendlyFire } from '../friendly-fire.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
@@ -453,9 +453,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       messageCreated?.then?.(message => settleTwoWeaponPartner(pairPartner, message?.id, partnerState, system => renderAttackCard({ system })))
     }
 
-    // Auto-apply damage to a hit target (setting-gated; routes through the GM
-    // socket). Fire-and-forget — it swallows its own errors.
-    autoApplyAttackDamage(options, attackRollResult, damageRoll)
+    // Auto-apply the card's damage roll to a hit target once the card exists
+    // (setting-gated; the GM reads target and amount from the card, #994).
+    // Fire-and-forget — it swallows its own errors.
+    messageCreated?.then?.(message => applyAutomatedCardDamage(message))
 
     // Friendly fire: a missed missile shot into melee may stray into an ally
     // (setting-gated). Fire-and-forget — it swallows its own errors.
