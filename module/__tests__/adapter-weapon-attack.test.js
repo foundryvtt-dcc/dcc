@@ -1379,6 +1379,15 @@ describe('two-weapon crit rules from the lib (#996)', () => {
     expect(result.crit).toBe(false)
   })
 
+  test('Agl 16-17 primary: with no target a natural max crit is unconfirmed', async () => {
+    const result = await rollToHitWith({ faces: 16, natural: 16, ...agl16Primary })
+    expect(result.crit).toBe(true)
+    expect(result.autoHit).toBe(false)
+    expect(result.critNeedsHit).toBe(true)
+    // Not a natural crit until it hits, so no Fleeting Luck yet (#978).
+    expect(result.naturalCrit).toBe(false)
+  })
+
   test('Agl 16-17 primary: a natural max that beats AC crits', async () => {
     const result = await rollToHitWith({ faces: 16, natural: 16, ...agl16Primary, options: { targets: targetWithAC(12) } })
     expect(result.hitsTarget).toBe(true)

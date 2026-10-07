@@ -150,6 +150,13 @@ describe('two-weapon traits', () => {
     expect(preparedWeapon(createActor(10, 'Ranger'), 'twoWeaponSecondary').twoWeaponCritRule).toBe('TwoWeaponCritNone')
   })
 
+  test('the halfling crit alone also floors the row at Agility 16 (lib halfling rules)', () => {
+    registerClassTraits('lucky-brawler', { twoWeaponCritOnMax: true })
+    const brawler = preparedWeapon(createActor(8, 'Lucky-Brawler'), 'twoWeaponSecondary')
+    expect(brawler.actionDie).toMatch(/^1d16\[/)
+    expect(brawler.twoWeaponCritRule).toBe('TwoWeaponCritMaxAutoHit')
+  })
+
   test('a class without the traits keeps the normal Table 4-3 row', () => {
     const warrior = preparedWeapon(createActor(10, 'Warrior'), 'twoWeaponPrimary')
     const champion = preparedWeapon(createActor(10, 'Halfling-Champion'), 'twoWeaponPrimary')
