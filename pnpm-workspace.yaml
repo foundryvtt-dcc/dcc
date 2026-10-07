@@ -43,3 +43,15 @@ minimumReleaseAgeExclude:
 # classic-level backs e2e-env's world-settings edits.
 allowBuilds:
   classic-level: true
+# Accepted advisories — each entry needs a reason and a removal condition.
+#
+# GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, stack-exhaustion DoS on deeply nested
+# brace patterns): no patched release exists, and even the latest stylelint
+# still pulls it in via micromatch. It is dev-only (stylelint's globbing), the
+# only patterns it sees are our own lint globs, and release zips are built
+# with `git archive`, so nothing reaches Foundry users. Ignoring it keeps the
+# daily Audit Fix report focused on fixable advisories. Remove this entry once
+# braces ships a fix (or stylelint drops micromatch), so the fix gets picked up.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
