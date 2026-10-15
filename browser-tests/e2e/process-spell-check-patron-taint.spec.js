@@ -13,7 +13,7 @@ const { expect, createSessionTest } = require('./fixtures')
  */
 const test = createSessionTest()
 
-const scenarioFn = `async ({ chance, d100, d6 }) => {
+const scenarioFn = `async ({ chance, d100, d6, noTable }) => {
   const observed = {}
   const tag = Math.random().toString(36).slice(2, 8)
   const patron = 'P981 Patron ' + tag
@@ -63,12 +63,12 @@ const scenarioFn = `async ({ chance, d100, d6 }) => {
     const roll = new Roll('1d20')
     await roll.evaluate()
     const start = Date.now()
-    await game.dcc.processSpellCheck(actor, { roll, item, rollTable: resultsTable, flavor: 'P981 cast' })
+    await game.dcc.processSpellCheck(actor, { roll, item, rollTable: noTable ? undefined : resultsTable, flavor: 'P981 cast' })
     proto._roll = origRoll
 
     for (let i = 0; i < 80 && !observed.card; i++) {
       const message = game.messages.contents.findLast((m) =>
-        m.timestamp >= start && (m.content || '').includes('p981 result'))
+        m.timestamp >= start && (m.content || '').includes(noTable ? 'Patron Taint' : 'p981 result'))
       if (message) observed.card = message.content
       else await new Promise((resolve) => setTimeout(resolve, 25))
     }
@@ -105,5 +105,13 @@ test.describe('processSpellCheck patron taint (#981)', () => {
     expect(observed.chance).toBe('4%')
     expect(observed.card).toContain('Patron Taint chance increased to: 4%')
     expect(observed.card).not.toContain('p981 taint row')
+  })
+
+  test('an acquisition with no spell results table is still reported in chat', async ({ page }) => {
+    const observed = await runScenario(page, { chance: 5, d100: 1, d6: 3, noTable: true })
+
+    expect(observed.chance).toBe('1%')
+    expect(observed.card).toContain('p981 taint row 3')
+    expect(observed.card).toContain('Patron Taint chance reset to: 1%')
   })
 })

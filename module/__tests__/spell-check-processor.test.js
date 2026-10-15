@@ -57,7 +57,7 @@ function installFoundryStubs ({
   patronTaintRoll = { total: 50 }
 } = {}) {
   globalThis.game = {
-    i18n: { localize },
+    i18n: { localize, format: (key, data) => `${key} ${JSON.stringify(data)}` },
     settings: {
       get: vi.fn((scope, key) => settings[key])
     },
@@ -735,6 +735,78 @@ describe('processSpellCheck — patron taint branch', () => {
 
     expect(stubs.addChatMessage.mock.calls[0][3].patronTaint).toBeNull()
     expect(actor.update).not.toHaveBeenCalledWith(expect.objectContaining({ 'system.class.patronTaintChance': expect.anything() }))
+  })
+})
+
+describe('processSpellCheck — patron taint without a results table or with failures', () => {
+  function taintActor (chance = '5%') {
+    return {
+      type: 'Player',
+      system: {
+        class: { patron: 'Sezrekan', patronTaintChance: chance },
+        details: { level: { value: 1 } }
+      },
+      classId: 'wizard',
+      loseSpell: vi.fn(),
+      update: vi.fn()
+    }
+  }
+  function patronItem () {
+    return {
+      id: 'i12',
+      name: 'Invoke Patron',
+      system: { level: 1, config: { castingMode: 'wizard' }, associatedPatron: '' },
+      update: vi.fn()
+    }
+  }
+
+  test('acquisition with no results table still reports the taint and reset in chat', async () => {
+    installFoundryStubs({ patronTaintRoll: { total: 1 } })
+    const roll = makeRoll({ natural: 10, total: 15 })
+    const actor = taintActor()
+
+    await processSpellCheck(actor, { roll, item: patronItem(), rollTable: null })
+
+    expect(actor.update).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '1%' })
+    const content = roll.toMessage.mock.calls[0][0].content
+    expect(content).toContain('DCC.PatronTaint')
+    expect(content).toContain('DCC.PatronTaintChanceReset')
+    expect(content).toContain('1%')
+  })
+
+  test('acquisition with no taint table leaves the manifestation empty', async () => {
+    const stubs = installFoundryStubs({ patronTaintRoll: { total: 1 } })
+    const roll = makeRoll({ natural: 10, total: 15 })
+
+    await processSpellCheck(taintActor(), { roll, item: patronItem(), rollTable: { getResultsForRoll: vi.fn(() => []) } })
+
+    const taint = stubs.addChatMessage.mock.calls[0][3].patronTaint
+    expect(taint.manifestation).toBe('')
+    expect(taint.description).toBe('<strong>DCC.PatronTaintChance!</strong>')
+  })
+
+  test('suppressPatronTaint skips the check entirely', async () => {
+    const stubs = installFoundryStubs({ patronTaintRoll: { total: 1 } })
+    const roll = makeRoll({ natural: 10, total: 15 })
+    const actor = taintActor()
+
+    await processSpellCheck(actor, { roll, item: patronItem(), rollTable: { getResultsForRoll: vi.fn(() => []) }, suppressPatronTaint: true })
+
+    expect(stubs.addChatMessage.mock.calls[0][3].patronTaint).toBeNull()
+    expect(actor.update).not.toHaveBeenCalledWith(expect.objectContaining({ 'system.class.patronTaintChance': expect.anything() }))
+  })
+
+  test('a failing taint step still renders the spell result', async () => {
+    const stubs = installFoundryStubs({ patronTaintRoll: { total: 50 } })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const roll = makeRoll({ natural: 10, total: 15 })
+    const actor = taintActor()
+    actor.update = vi.fn(async () => { throw new Error('not permitted') })
+
+    await processSpellCheck(actor, { roll, item: patronItem(), rollTable: { getResultsForRoll: vi.fn(() => []) } })
+
+    expect(stubs.addChatMessage).toHaveBeenCalled()
+    expect(stubs.addChatMessage.mock.calls[0][3].patronTaint).toBeNull()
   })
 })
 

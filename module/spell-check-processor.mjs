@@ -41,7 +41,7 @@ import { getClassTrait } from './extension-api.mjs'
  * taint table on acquisition. The chance bookkeeping - reset to 1% on
  * acquisition, otherwise up by 1% - lives in the lib's private
  * `handlePatronTaintTriggers` (`spells/spell-check.js`), so it is mirrored
- * here. The dice are Foundry rolls so they show in the dice log.
+ * here. The dice are Foundry rolls, so dice-term patches and roll hooks apply.
  * @param {Actor} actor     The caster
  * @param {string} patron   The caster's patron
  * @returns {Object}        {roll, tainted, oldChance, newChance, description, manifestation}
@@ -74,6 +74,21 @@ async function rollPatronTaintCheck (actor, patron) {
       ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>${manifestation ? ` ${manifestation}` : ''}`
       : game.i18n.localize('DCC.NoPatronTaint')
   }
+}
+
+/**
+ * Render the patron taint block for a card that has no spell results table
+ *
+ * Mirrors the block in `chat-card-spell-result.html`, so an acquisition (which
+ * resets the chance) is never silent.
+ * @param {Object} patronTaint  Result of rollPatronTaintCheck
+ * @returns {string}            HTML
+ */
+function patronTaintHtml (patronTaint) {
+  const chanceKey = patronTaint.tainted ? 'DCC.PatronTaintChanceReset' : 'DCC.PatronTaintChanceIncreased'
+  return `<div class="mb-8"><strong>${game.i18n.localize('DCC.PatronTaint')}:</strong> ${patronTaint.description}` +
+    ` (${game.i18n.localize('DCC.Roll')}: ${patronTaint.roll})<br/>` +
+    `${game.i18n.format(chanceKey, { chance: `${patronTaint.newChance}%` })}</div>`
 }
 
 /**
@@ -155,7 +170,13 @@ export async function processSpellCheck (actor, spellData) {
   if (item && actor && actor.type !== 'NPC') {
     const patron = actor.system.class?.patron
     if (!suppressPatronTaint && patron && isPatronSpellItem(item)) {
-      patronTaint = await rollPatronTaintCheck(actor, patron)
+      // A taint failure (a malformed taint table, a rejected update) must not
+      // take the spell result down with it
+      try {
+        patronTaint = await rollPatronTaintCheck(actor, patron)
+      } catch (error) {
+        console.error('DCC | Patron taint check failed', error)
+      }
     }
   }
 
@@ -281,8 +302,8 @@ export async function processSpellCheck (actor, spellData) {
         flags,
         system: { spellId: item?.id }
       }
-      if (actionDiceChatLine) {
-        toMessageData.content = `${await roll.render()}${actionDiceLineHtml(actionDiceChatLine)}`
+      if (actionDiceChatLine || patronTaint) {
+        toMessageData.content = `${await roll.render()}${actionDiceChatLine ? actionDiceLineHtml(actionDiceChatLine) : ''}${patronTaint ? patronTaintHtml(patronTaint) : ''}`
       }
       await roll.toMessage(toMessageData)
     }
