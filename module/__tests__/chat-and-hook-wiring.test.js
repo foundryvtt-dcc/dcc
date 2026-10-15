@@ -127,8 +127,8 @@ beforeEach(() => {
     i18n: { format: vi.fn((key) => key) },
     dcc: { DiceChain: { bumpDie: vi.fn() } }
   }
-  // Minimal stand-in for the Foundry global; only WORLD_DOCUMENT_TYPES is read here.
-  globalThis.CONST = { WORLD_DOCUMENT_TYPES: ['Actor', 'Item', 'JournalEntry', 'Macro', 'RollTable', 'Scene', 'Playlist', 'Cards'] }
+  // Minimal stand-in for the Foundry constants used by these handlers.
+  globalThis.CONST = { TOKEN_DISPLAY_MODES: { HOVER: 30 }, WORLD_DOCUMENT_TYPES: ['Actor', 'Item', 'JournalEntry', 'Macro', 'RollTable', 'Scene', 'Playlist', 'Cards'] }
   globalThis.foundry = {
     utils: {
       getProperty: vi.fn(),
@@ -433,6 +433,31 @@ describe('onRenderActorDirectory', () => {
 })
 
 describe('onPreCreateActor', () => {
+  test('defaults only new Party bars, using input rather than schema-populated source', () => {
+    const document = { type: 'Party', name: 'Party', _source: { prototypeToken: { bar1: { attribute: null }, displayBars: 0 } }, updateSource: vi.fn() }
+    onPreCreateActor(document, {}, {})
+    expect(document.updateSource).toHaveBeenCalledWith({ 'prototypeToken.bar1.attribute': 'aggregate.hp', 'prototypeToken.displayBars': 30 })
+  })
+
+  test.each([
+    [{ prototypeToken: { bar1: { attribute: null }, displayBars: 0 } }, {}],
+    [{ 'prototypeToken.bar1.attribute': 'custom', 'prototypeToken.displayBars': 50 }, {}],
+    [{}, { keepId: true }]
+  ])('preserves explicit bars and imports: %j %j', (data, options) => {
+    const document = { type: 'Party', name: 'Party', updateSource: vi.fn() }
+    onPreCreateActor(document, data, options)
+    expect(document.updateSource.mock.calls.some(([change]) => Object.keys(change).some(key => key.includes('bar1') || key.includes('displayBars')))).toBe(false)
+  })
+
+  test('defaults missing Party settings independently and leaves other types alone', () => {
+    const document = { type: 'Party', name: 'Party', updateSource: vi.fn() }
+    onPreCreateActor(document, { prototypeToken: { bar1: { attribute: 'custom' } } }, {})
+    expect(document.updateSource).toHaveBeenCalledWith({ 'prototypeToken.displayBars': 30 })
+    document.updateSource.mockClear()
+    document.type = 'Player'
+    onPreCreateActor(document, {}, {})
+    expect(document.updateSource.mock.calls.some(([change]) => Object.keys(change).some(key => key.includes('bar1') || key.includes('displayBars')))).toBe(false)
+  })
   test('assigns the EntityImages default img when GM creates an actor without an img', () => {
     EntityImages.imageForActor.mockReturnValue('icons/svg/probe-actor.svg')
     const document = { type: 'NPC', name: 'P_Probe', updateSource: vi.fn() }

@@ -258,6 +258,18 @@ export function onPreCreateActor (document, data, options) {
   if (!options.keepId && ['Player', 'Party'].includes(document.type) && !document.name.includes('Item Pile')) {
     document.updateSource({ 'prototypeToken.actorLink': true })
   }
+  // The creation payload, unlike document._source, does not contain schema
+  // defaults. Imported/duplicated actors carry their own prototype settings.
+  if (!options.keepId && document.type === 'Party') {
+    const defaults = {}
+    if (!Object.hasOwn(data, 'prototypeToken.bar1.attribute') && !Object.hasOwn(data.prototypeToken?.bar1 ?? {}, 'attribute')) {
+      defaults['prototypeToken.bar1.attribute'] = 'aggregate.hp'
+    }
+    if (!Object.hasOwn(data, 'prototypeToken.displayBars') && !Object.hasOwn(data.prototypeToken ?? {}, 'displayBars')) {
+      defaults['prototypeToken.displayBars'] = CONST.TOKEN_DISPLAY_MODES.HOVER
+    }
+    if (Object.keys(defaults).length) document.updateSource(defaults)
+  }
 }
 
 /**

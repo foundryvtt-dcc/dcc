@@ -20,6 +20,7 @@ import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { registerTableLoadingHooks } from './table-loading.mjs'
 import { registerTableCacheInvalidation } from './adapter/table-cache.mjs'
 import { registerChatAndHookWiring } from './chat-and-hook-wiring.mjs'
+import { registerPartyTokenHooks } from './party-token.mjs'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -75,3 +76,4 @@ registerTableCacheInvalidation()
 // sidebar-style menu). See module/chat-and-hook-wiring.mjs for the
 // handler bodies.
 registerChatAndHookWiring()
+registerPartyTokenHooks()
