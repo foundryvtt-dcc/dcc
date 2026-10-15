@@ -8,6 +8,18 @@
   gap: 6px;
   margin-bottom: 8px;
 
+  .party-portrait {
+    flex: 0 0 auto;
+    height: 48px;
+    width: 48px;
+    /*
+     * Fixed square box — letterbox non-square portraits instead of
+     * stretching them (mirrors the PC / NPC / member-portrait treatment).
+     */
+    object-fit: contain;
+    cursor: pointer;
+  }
+
   label {
     font-size: 13px;
   }
