@@ -562,6 +562,10 @@ describe('attack emote follows the stored hit/miss verdict (#1016)', () => {
     expect(emote({ twoWeaponFumble: 'cleared' })).toBe('MISS with Longsword')
   })
 
+  it('escapes the target name', () => {
+    expect(emote({ hasTarget: true, hitsTarget: false, targetName: '<img src=x>' })).toBe('MISS &lt;img src=x&gt; with Longsword')
+  })
+
   it('names the target on a targeted fumble', () => {
     expect(emote({ isFumble: true, hasTarget: true, hitsTarget: false, targetName: 'Goblin' })).toBe('MISS Goblin with Longsword')
   })

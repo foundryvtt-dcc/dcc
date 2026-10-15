@@ -373,7 +373,8 @@ export const emoteAttackRoll = function (message, html) {
     actionName: game.i18n.localize(message.getFlag('dcc', 'isBackstab') ? 'DCC.AttackRollEmoteActionBackstab' : 'DCC.AttackRollEmoteActionAttack'),
     actorName: message.alias,
     weaponName: message.system.weaponName,
-    targetName: message.getFlag('dcc', 'targetName') ?? '',
+    // A token name is owner-editable and lands in innerHTML below.
+    targetName: foundry.utils.escapeHTML(message.getFlag('dcc', 'targetName') ?? ''),
     rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
     damageRollHTML: damageInlineRoll,
