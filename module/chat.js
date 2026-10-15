@@ -356,10 +356,25 @@ export const emoteAttackRoll = function (message, html) {
 
   const damageInlineRoll = message.system.damageInlineRoll?.replaceAll('@ab', message.system.deedDieRollResult) || ''
 
-  const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
+  // Tell the same story as the enhanced card (#1016): branch on the verdict
+  // stored on the message, not on this viewer's settings. A fumble or a
+  // halfling two-weapon natural 1 is a miss even without a target.
+  const hasTarget = !!message.getFlag('dcc', 'hasTarget')
+  const missesTarget = hasTarget && message.getFlag('dcc', 'hitsTarget') === false
+  const naturalMiss = !!message.getFlag('dcc', 'isFumble') || !!message.getFlag('dcc', 'twoWeaponFumble')
+  let emoteKey = 'DCC.AttackRollEmote'
+  if (missesTarget || (hasTarget && naturalMiss)) {
+    emoteKey = 'DCC.AttackRollEmoteMiss'
+  } else if (naturalMiss) {
+    emoteKey = 'DCC.AttackRollEmoteMissNoTarget'
+  }
+
+  const attackEmote = game.i18n.format(emoteKey, {
     actionName: game.i18n.localize(message.getFlag('dcc', 'isBackstab') ? 'DCC.AttackRollEmoteActionBackstab' : 'DCC.AttackRollEmoteActionAttack'),
     actorName: message.alias,
     weaponName: message.system.weaponName,
+    // A token name is owner-editable and lands in innerHTML below.
+    targetName: foundry.utils.escapeHTML(message.getFlag('dcc', 'targetName') ?? ''),
     rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
     damageRollHTML: damageInlineRoll,

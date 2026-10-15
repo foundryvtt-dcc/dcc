@@ -140,6 +140,8 @@
   "DCC.AttackRoll": "Jet d'attaque avec {weapon}",
   "DCC.AttackRollDeedEmoteSegment": "Avec un jet de haut fait de {deed}",
   "DCC.AttackRollEmote": "{actorName} {actionName} avec {weaponName} et touche une CA {rollHTML}{deedRollHTML} pour {damageRollHTML} points de dégats!{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
+  "DCC.AttackRollEmoteMiss": "{actorName} {actionName} avec {weaponName} et rate {targetName}, avec un jet de {rollHTML}{deedRollHTML}.{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
+  "DCC.AttackRollEmoteMissNoTarget": "{actorName} {actionName} avec {weaponName} et rate, avec un jet de {rollHTML}{deedRollHTML}.{deedTablePrompt}{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollEmoteActionAttack": "attaque",
   "DCC.AttackRollEmoteActionBackstab": "attaque sournoisement",
   "DCC.AttackRollInvalidFormulaInline": "<b>Formule pour touche invalide '{formula}'</b>",

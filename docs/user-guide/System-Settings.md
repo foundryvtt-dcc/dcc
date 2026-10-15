@@ -90,7 +90,7 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Prompt for Item Deletion** asks for confirmation before deleting equipment, spells, or custom skills from character sheets.
 
-**Show rolls as emotes** will change rolls made from character sheets in to compact emotes in the chat log.
+**Show rolls as emotes** will change rolls made from character sheets in to compact emotes in the chat log. An attack emote reads as a miss (with no damage) when the attack misses its selected target or fumbles, matching what the enhanced attack card shows.
 
 **Automate Cleric Disapproval** will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
 

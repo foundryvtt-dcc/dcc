@@ -3185,6 +3185,55 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.failure.some(c => c.includes('critical'))).toBe(false)
     })
 
+    test('emote attack follows the stored hit/miss verdict (#1016)', async ({ page }) => {
+      // The emote used to say "hits AC … for N points of damage!" on every
+      // attack, so an emote client read a miss as a hit while an enhanced-card
+      // client read the same message as a miss. It now branches on the flags.
+      const result = await page.evaluate(async () => {
+        const savedEmote = game.settings.get('dcc', 'emoteRolls')
+        const savedEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
+        await game.settings.set('dcc', 'emoteRolls', true)
+        await game.settings.set('dcc', 'enhancedAttackCards', false)
+        const created = []
+        const render = async (flags) => {
+          const roll = await new Roll('1d20').evaluate()
+          const msg = await ChatMessage.create({
+            speaker: { alias: 'P1016 Emote' },
+            flags: { 'dcc.isToHit': true, ...flags },
+            rolls: [roll],
+            system: { weaponName: 'P1016 Sword', damageInlineRoll: '<a class="inline-roll p1016-damage">3</a>' }
+          })
+          created.push(msg)
+          const content = (await msg.renderHTML()).querySelector('.message-content')
+          return { text: content?.textContent ?? '', hasDamage: !!content?.querySelector('.p1016-damage') }
+        }
+        try {
+          return {
+            hit: await render({ 'dcc.hasTarget': true, 'dcc.hitsTarget': true, 'dcc.targetName': 'P1016 Goblin' }),
+            miss: await render({ 'dcc.hasTarget': true, 'dcc.hitsTarget': false, 'dcc.targetName': 'P1016 Goblin' }),
+            fumble: await render({ 'dcc.isFumble': true }),
+            twoWeapon: await render({ 'dcc.twoWeaponFumble': 'held' }),
+            missKey: game.i18n.has('DCC.AttackRollEmoteMiss') && game.i18n.has('DCC.AttackRollEmoteMissNoTarget')
+          }
+        } finally {
+          await game.settings.set('dcc', 'emoteRolls', savedEmote)
+          await game.settings.set('dcc', 'enhancedAttackCards', savedEnhanced)
+          for (const msg of created) await msg.delete()
+        }
+      })
+      expect(result.missKey).toBe(true)
+      expect(result.hit.text).toContain('hits AC')
+      expect(result.hit.hasDamage).toBe(true)
+      expect(result.miss.text).toContain('misses P1016 Goblin')
+      expect(result.miss.text).not.toContain('hits AC')
+      expect(result.miss.hasDamage).toBe(false)
+      for (const natural of [result.fumble, result.twoWeapon]) {
+        expect(natural.text).toContain('misses')
+        expect(natural.text).not.toContain('hits AC')
+        expect(natural.hasDamage).toBe(false)
+      }
+    })
+
     test('options.backstab populates libResult with auto-crit + class:backstab bonus', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({

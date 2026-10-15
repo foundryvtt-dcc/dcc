@@ -77,7 +77,9 @@ async function attackUntilDeed (page, ids, wantSuccess) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }
       const msg = game.messages.contents.at(-1)
-      if (game.messages.size > before && Boolean(msg.system?.deedRollSuccess) === wantSuccess) {
+      // Skip misses: a missed attack's emote has no damage sentence (#1016).
+      const missed = msg.getFlag('dcc', 'isFumble') || msg.getFlag('dcc', 'twoWeaponFumble') || msg.getFlag('dcc', 'hitsTarget') === false
+      if (game.messages.size > before && Boolean(msg.system?.deedRollSuccess) === wantSuccess && !missed) {
         return {
           messageId: msg.id,
           deedDieRollResult: msg.system.deedDieRollResult,
