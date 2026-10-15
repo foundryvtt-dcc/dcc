@@ -201,8 +201,9 @@ async function createSourceWithItem (page) {
 /**
  * Dispatch a synthetic drag event of `eventType` (default `drop`) on the element
  * matching `selector`, carrying `json` as the `text/plain` drag payload. The
- * party sheet's DragDrop listeners are bound on the `.party` section, so the
- * event bubbles up from a descendant target.
+ * party sheet's DropZone is the sheet form itself (its classes include `party`,
+ * so `DragDrop.bind` binds `[html]` and not the inner section), so dispatch on a
+ * descendant and let the event bubble up to the form.
  */
 async function dispatchDrag (page, selector, json, eventType = 'drop') {
   await page.evaluate(({ selector, json, eventType }) => {
