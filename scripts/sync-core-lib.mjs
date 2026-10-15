@@ -67,7 +67,7 @@ if (pkg.name !== '@moonloch/dcc-core-lib') {
 rmSync(resolve(LIB_SRC, 'dist'), { recursive: true, force: true })
 
 console.log(`sync-core-lib: building ${pkg.name}@${pkg.version} at ${LIB_SRC}`)
-execSync('npm run build', { cwd: LIB_SRC, stdio: 'inherit' })
+execSync('pnpm run build', { cwd: LIB_SRC, stdio: 'inherit' })
 
 const dist = resolve(LIB_SRC, 'dist')
 if (!existsSync(dist)) fail(`build produced no dist/ at ${dist}`)
