@@ -11,6 +11,9 @@ Useful for overland maps, or for funnels. A party could represent all the PCs co
 You drag actors from the Actors tab onto the Party Sheet.
 ![Party Sheet](images/party_sheet.png)
 
+## Changing the Party Portrait
+The party's own portrait appears next to its name at the top of the party sheet. Click it to choose a new image. This is separate from the party token's image, which you change with Configure Prototype Token in the sheet header.
+
 ## Editing Actors in the Party
 You can click the avatar image of an actor on the party sheet to open their character sheet. Alternatively, there is a button that is a person with a gear in the lower right of each actor. Click that to open the regular actor sheet for that actor.
 ![Party Actor Edit](images/party_sheet_edit_member.png)
@@ -18,6 +21,14 @@ You can click the avatar image of an actor on the party sheet to open their char
 ## Removing Actors from the Party
 There is a button that is a person with an X in the lower right of each actor on the party sheet. Click that to remove the actor from the party.
 ![Party Actor Remove](images/party_sheet_remove_member.png)
+
+## Giving Items to Party Members
+Drag an item onto a member's row on the party sheet to add it to that character's inventory.
+
+- From another character's sheet, or from a member's weapon icon on the party sheet, the item is **moved**: it is added to the target member and removed from the character it came from.
+- From the Items sidebar or a compendium, the item is **copied**; the original stays where it was.
+
+The Party actor has no inventory of its own. Dropping an item on an empty part of the party sheet, away from the member rows, shows a notice and leaves the item where it was. Drop it on a member row or on a character sheet instead.
 
 ## Rolling Party Initiative
 The Initiative button (d20 icon) at the top of the party sheet rolls initiative for the party and adds the party token to the combat tracker. The roll uses the initiative formula of the party's best member — the one with the highest initiative bonus (ties broken by Agility) — including any initiative die changes from that member's equipped weapon (for example a two-handed weapon's d16).
