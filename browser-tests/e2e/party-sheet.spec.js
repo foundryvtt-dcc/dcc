@@ -222,6 +222,8 @@ test.describe('Party Sheet — Effects tab (#1022)', () => {
 
     const panel = sheet.locator('section.tab[data-tab="effects"]')
     await expect(panel).toHaveClass(/active/)
+    await expect(panel).toBeVisible()
+    await expect(sheet.locator('section.tab[data-tab="party"]')).toBeHidden()
     await expect(panel.locator('.effect-item .effect-name')).toHaveText('PARTY Probe Effect')
     await expect(panel.locator('[data-action="effectCreate"]')).toHaveCount(1)
   })

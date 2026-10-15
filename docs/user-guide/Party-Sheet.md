@@ -25,7 +25,7 @@ The Initiative button (d20 icon) at the top of the party sheet rolls initiative 
 The party token must be placed in the current scene before rolling; the party sheet will warn you if it isn't.
 
 ## Effects and Notes
-The party sheet has the same **Effects** and **Notes** tabs as the other actor sheets. Use the Effects tab to view, add, edit, toggle, or delete Active Effects on the Party actor itself. See [Active Effects](Active-Effects.md).
+The party sheet has the same **Effects** and **Notes** tabs as the other actor sheets. Use the Effects tab to view, add, edit, toggle, or delete Active Effects on the Party actor itself. Effects on the Party actor do not apply to its members. See [Active Effects](Active-Effects.md).
 
 ## Using the Party Actor on the map
 You can drag the Party Actor onto the map, and it will create a token for the party. You can then move the token around the map to represent the position of the party.
