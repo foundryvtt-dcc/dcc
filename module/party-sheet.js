@@ -45,6 +45,8 @@ class DCCPartySheet extends DCCActorSheet {
         dragstart: '_canDragStart',
         drop: '_canDragDrop'
       },
+      // Real drag/drop wiring lives in DCCActorSheet.#createDragDropHandlers;
+      // these entries document intent only (that method overwrites callbacks).
       callbacks: {
         dragstart: '_onDragStart',
         dragover: '_onDragOver',
@@ -606,7 +608,7 @@ class DCCPartySheet extends DCCActorSheet {
    */
   _onDragOver (event) {
     const row = event.target.closest('.character-row')
-    for (const other of this.element.querySelectorAll('.character-row.drag-over')) {
+    for (const other of this.element?.querySelectorAll('.character-row.drag-over') ?? []) {
       if (other !== row) other.classList.remove('drag-over')
     }
     if (row) row.classList.add('drag-over')

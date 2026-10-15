@@ -261,6 +261,33 @@ describe('_onDrop', () => {
     expect(ctx._clearDragHighlight).toHaveBeenCalled()
     expect(parentProto._onDrop).not.toHaveBeenCalled()
   })
+
+  test('routes an item drop to the member row and does not delegate to the parent', async () => {
+    // Drive the REAL handlePartyItemDrop so the _onDrop wiring is covered
+    // end to end: an item dropped on a member row returns the created item and
+    // must short-circuit before super._onDrop (the transfer-delete path).
+    const origFromUuid = globalThis.fromUuid
+    const origActorsGet = globalThis.game.actors.get
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.item-1' })
+      globalThis.fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+      globalThis.game.actors.get = (id) => ({
+        id,
+        sheet: { _onDropItem: vi.fn(async () => ({ id: 'created-1' })) },
+        deleteEmbeddedDocuments: vi.fn()
+      })
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => ({ dataset: { actorId: 'alice' } }) } }
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toEqual({ id: 'created-1' })
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fromUuid = origFromUuid
+      globalThis.game.actors.get = origActorsGet
+    }
+  })
 })
 
 describe('_onDragLeave', () => {
@@ -277,5 +304,51 @@ describe('_onDragLeave', () => {
     proto._onDragLeave.call(ctx, { relatedTarget: null, currentTarget: { contains: vi.fn() } })
     proto._onDragLeave.call(ctx, { relatedTarget: { nodeName: 'DIV' }, currentTarget: { contains: vi.fn(() => false) } })
     expect(ctx._clearDragHighlight).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('_onDragOver / _clearDragHighlight', () => {
+  /**
+   * A fake member row with the `classList` spies the highlight code calls.
+   * `element.querySelectorAll` returns the same `.character-row.drag-over`
+   * array for both methods, mirroring the single selector they share.
+   */
+  function makeRow () {
+    return { classList: { add: vi.fn(), remove: vi.fn() } }
+  }
+
+  test('_onDragOver adds drag-over to the hovered row and clears the others', () => {
+    const other = makeRow()
+    const hovered = makeRow()
+    const ctx = { element: { querySelectorAll: vi.fn(() => [other, hovered]) } }
+    proto._onDragOver.call(ctx, { target: { closest: vi.fn(() => hovered) } })
+    expect(hovered.classList.add).toHaveBeenCalledWith('drag-over')
+    expect(hovered.classList.remove).not.toHaveBeenCalled()
+    expect(other.classList.remove).toHaveBeenCalledWith('drag-over')
+    expect(other.classList.add).not.toHaveBeenCalled()
+  })
+
+  test('_onDragOver clears every highlighted row when not over a row', () => {
+    const first = makeRow()
+    const second = makeRow()
+    const ctx = { element: { querySelectorAll: vi.fn(() => [first, second]) } }
+    proto._onDragOver.call(ctx, { target: { closest: vi.fn(() => null) } })
+    expect(first.classList.remove).toHaveBeenCalledWith('drag-over')
+    expect(second.classList.remove).toHaveBeenCalledWith('drag-over')
+    expect(first.classList.add).not.toHaveBeenCalled()
+    expect(second.classList.add).not.toHaveBeenCalled()
+  })
+
+  test('_clearDragHighlight removes drag-over from every highlighted row', () => {
+    const first = makeRow()
+    const second = makeRow()
+    const ctx = { element: { querySelectorAll: vi.fn(() => [first, second]) } }
+    proto._clearDragHighlight.call(ctx)
+    expect(first.classList.remove).toHaveBeenCalledWith('drag-over')
+    expect(second.classList.remove).toHaveBeenCalledWith('drag-over')
+  })
+
+  test('_clearDragHighlight tolerates a missing element', () => {
+    expect(() => proto._clearDragHighlight.call({})).not.toThrow()
   })
 })
