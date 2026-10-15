@@ -1,7 +1,7 @@
 {
   "name": "@moonloch/dcc-core-lib",
-  "version": "0.14.4",
-  "commit": "534f02a4f85719dd3029a1c17b2aa7037816d269",
+  "version": "0.15.0",
+  "commit": "aa1564d6339ff3a398f5113bccc81fb9788b6f1b",
   "dirty": false,
-  "syncedAt": "2026-10-15T19:02:50.406Z"
+  "syncedAt": "2026-10-15T19:19:49.325Z"
 }

@@ -274,24 +274,22 @@ export function getTwoWeaponInitBonus(classId) {
 /**
  * Luck Recovery
  *
- * Thieves and halflings can recover spent luck points. Thieves recover
- * luck when they succeed at certain thief skills. Halflings can share
- * their luck recovery with nearby allies.
+ * Thieves and halflings regain spent Luck overnight: one point per class
+ * level, never past the character's natural maximum (DCC RPG core rules,
+ * Thief and Halfling class text).
  */
 export const LUCK_RECOVERY = {
     id: "luck-recovery",
     name: "Luck Recovery",
-    description: "You can recover spent luck points. Thieves recover luck equal to " +
-        "their luck die when rolling a natural 20 on a thief skill check. " +
-        "Halflings recover 1 luck point per day and can share luck with allies.",
+    description: "Spent Luck returns each night, one point per class level, up to " +
+        "your natural maximum Luck score.",
     type: "passive",
     enables: {
         action: "luck-recovery",
-        condition: "varies-by-class",
+        condition: "nightly",
         data: {
-            thiefTrigger: "natural-20-on-thief-skill",
-            halflingDailyRecovery: 1,
-            halflingCanShareLuck: true,
+            pointsPerLevel: 1,
+            capAtNaturalMax: true,
         },
     },
     tags: ["luck"],
@@ -304,23 +302,17 @@ export function canRecoverLuck(classId) {
     return LUCK_RECOVERY.classes?.includes(classId) ?? false;
 }
 /**
- * Get daily luck recovery amount for halflings from skill definition
+ * Luck score after a night's rest for a class that recovers Luck: the
+ * current score plus one point per level, capped at the natural maximum.
+ * A score already at or above the maximum is left unchanged. Callers
+ * decide whether the character recovers Luck at all (see
+ * {@link canRecoverLuck}).
  */
-export function getHalflingDailyLuckRecovery() {
-    const data = LUCK_RECOVERY.enables?.data;
-    if (data) {
-        const recovery = data["halflingDailyRecovery"];
-        if (typeof recovery === "number") {
-            return recovery;
-        }
-    }
-    return 1;
-}
-/**
- * Check if a thief should recover luck (on natural 20 of thief skill)
- */
-export function thiefShouldRecoverLuck(naturalRoll, isThiefSkill) {
-    return isThiefSkill && naturalRoll === 20;
+export function nightlyLuckRecovery(input) {
+    const { level, current, max } = input;
+    if (current >= max)
+        return current;
+    return Math.min(max, current + Math.max(0, level));
 }
 // =============================================================================
 // Halfling Luck Sharing
@@ -328,41 +320,46 @@ export function thiefShouldRecoverLuck(naturalRoll, isThiefSkill) {
 /**
  * Luck Sharing (Halfling)
  *
- * Halflings can spend their luck to aid allies within 30 feet.
+ * A halfling can burn their own Luck on an ally's roll when the ally is
+ * nearby and visible to them, even outside their turn in the initiative
+ * order. The halfling loses the Luck and the ally gets the bonus.
+ * Only one halfling in a party can do this. There is no fixed range.
  */
 export const LUCK_SHARING = {
     id: "luck-sharing",
     name: "Good Fortune",
-    description: "You can spend your own luck to aid allies within 30 feet, adding " +
-        "your luck modifier to their rolls. The ally must be aware of your aid.",
+    description: "You can burn your own Luck on a roll made by an ally who is nearby " +
+        "and visible to you, even out of initiative order. You lose the Luck " +
+        "and the ally gets the bonus. Only one halfling in a party can do this.",
     type: "passive",
     enables: {
         action: "share-luck",
-        condition: "ally-within-30-feet",
+        condition: "ally-nearby-and-visible",
         data: {
-            range: 30,
-            requiresAwareness: true,
-            usesLuckModifier: true,
+            requiresAllyVisible: true,
+            actsOutOfInitiative: true,
+            onePerParty: true,
+            spendsOwnLuck: true,
         },
     },
     tags: ["luck", "support"],
     classes: ["halfling"],
 };
 /**
- * Check if a halfling can share luck with an ally
+ * Check if a character can share Luck with an ally. The class must have
+ * {@link LUCK_SHARING} and the ally must be visible. A range applies only
+ * when the caller supplies `maxRange`. The one-halfling-per-party limit
+ * is left to the caller.
  */
-export function canShareLuck(classId, distanceToAlly) {
+export function canShareLuck(classId, options = {}) {
     if (!LUCK_SHARING.classes?.includes(classId))
         return false;
-    const data = LUCK_SHARING.enables?.data;
-    let range = 30;
-    if (data) {
-        const dataRange = data["range"];
-        if (typeof dataRange === "number") {
-            range = dataRange;
-        }
+    if (options.allyVisible === false)
+        return false;
+    if (options.maxRange !== undefined && options.distanceToAlly !== undefined) {
+        return options.distanceToAlly <= options.maxRange;
     }
-    return distanceToAlly <= range;
+    return true;
 }
 // =============================================================================
 // Skill Registry

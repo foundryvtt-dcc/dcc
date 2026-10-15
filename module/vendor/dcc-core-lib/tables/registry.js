@@ -166,6 +166,17 @@ function isTieredTable(data) {
         Array.isArray(data.entries));
 }
 /**
+ * Type guard for LayOnHandsTable
+ */
+function isLayOnHandsTable(data) {
+    return (typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        data.type === "lay-on-hands" &&
+        "rows" in data &&
+        Array.isArray(data.rows));
+}
+/**
  * Parse a table from JSON data.
  *
  * @param data - Raw JSON data
@@ -192,6 +203,9 @@ export function parseTable(data) {
         return { success: true, table: data };
     }
     if (isTieredTable(data)) {
+        return { success: true, table: data };
+    }
+    if (isLayOnHandsTable(data)) {
         return { success: true, table: data };
     }
     return {
