@@ -184,3 +184,57 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
     expect(result.combats).toBe(0)
   })
 })
+
+test.describe('Party Sheet — Actor Portrait', () => {
+  test.beforeEach(async ({ page }) => {
+    await cleanProbeState(page)
+    consoleErrors.length = 0
+  })
+
+  test.afterEach(async ({ page }) => {
+    await cleanProbeState(page)
+    const errors = significantConsoleErrors(consoleErrors)
+    expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
+  })
+
+  test('renders the party portrait in the header row, wired for editing', async ({ page }) => {
+    await createParty(page)
+    await openActorSheet(page, 'PARTY Test Party')
+
+    const portrait = page.locator('.dcc.actor.party .party-name img.party-portrait')
+    await expect(portrait).toBeVisible()
+    await expect(portrait).toHaveAttribute('data-action', 'editImage')
+    await expect(portrait).toHaveAttribute('data-edit', 'img')
+    // prepareImage() falls back to the Party default artwork when the actor
+    // has no custom image.
+    await expect(portrait).toHaveAttribute('src', /party\.webp/)
+
+    // Regression guard: the sheet used to clobber the inherited `editImage`
+    // handler with an undefined value, so a click would do nothing.
+    const handlerType = await page.evaluate(() =>
+      typeof game.actors.getName('PARTY Test Party').sheet.options.actions.editImage)
+    expect(handlerType).toBe('function')
+  })
+
+  test('persists a portrait change submitted through the sheet form', async ({ page }) => {
+    await createParty(page)
+    await openActorSheet(page, 'PARTY Test Party')
+
+    const newImg = 'systems/dcc/styles/images/actor.webp'
+    await page.evaluate((img) => {
+      const sheet = document.querySelector('.dcc.actor.party')
+      const portrait = sheet.querySelector('.party-name img.party-portrait')
+      // Mirrors the FilePicker callback wired by the editImage action: swap the
+      // img src, then submit the sheet form (FormDataExtended reads img[data-edit]).
+      portrait.src = img
+      sheet.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+    }, newImg)
+
+    await page.waitForFunction(
+      (img) => game.actors.getName('PARTY Test Party').img === img,
+      newImg,
+      { timeout: 5000 }
+    )
+    expect(await page.evaluate(() => game.actors.getName('PARTY Test Party').img)).toBe(newImg)
+  })
+})
