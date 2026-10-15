@@ -1,6 +1,11 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 // party-sheet.js coverage backfill (audit 2026-06-08: 0 dedicated tests). The static
 // #roll* action handlers are class-private (reachable only through the action map,
@@ -223,5 +228,29 @@ describe('_processFormData / _processSubmitData member-weapon round-trip', () =>
     expect(result).toBe('PARENT_SUBMIT')
     expect(ctx._updateMember).toHaveBeenCalledWith('alice', { activeMelee: 'sword' })
     expect(ctx._pendingMemberUpdates).toBeUndefined() // cleaned up
+  })
+})
+
+describe('party portrait', () => {
+  // The party sheet used to clobber the inherited `editImage` action with an
+  // undefined handler (`DCCPartySheet.editImage` was never defined — Foundry's
+  // own handler is private), which silently broke portrait editing. Leave the
+  // key absent so `DocumentSheetV2`'s default `editImage` survives the merge.
+  test('does not override the inherited editImage action', () => {
+    expect('editImage' in DCCPartySheet.DEFAULT_OPTIONS.actions).toBe(false)
+  })
+
+  // The party actor's own portrait must be rendered (and bound for editing) in
+  // the party-name header row — previously there was no `<img>` at all, so the
+  // portrait was neither visible nor editable (#party-portrait).
+  test('renders an editable portrait bound to the actor img', () => {
+    const template = fs.readFileSync(
+      path.join(ROOT, 'templates', 'party-sheet-partial-party.html'), 'utf8'
+    )
+    const portrait = template.match(/<img[^>]*class="party-portrait"[^>]*>/)
+    expect(portrait, 'party-sheet-partial-party.html has no .party-portrait img').not.toBeNull()
+    expect(portrait[0]).toContain('src="{{img}}"')
+    expect(portrait[0]).toContain('data-action="editImage"')
+    expect(portrait[0]).toContain('data-edit="img"')
   })
 })

@@ -4,6 +4,8 @@
          data-group="{{tabs.party.group}}">
   {{!-- Name Section --}}
   <div class="party-name">
+    <img class="party-portrait" src="{{img}}" data-action="editImage" data-edit="img"
+         title="{{localize 'DCC.CharacterPortrait'}}" alt="{{localize 'DCC.CharacterPortrait'}}">
     <label for="name">{{localize "DCC.Name"}}</label>
     <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.Name'}}"
            placeholder="{{localize 'DCC.Name'}}" autocomplete="off">
