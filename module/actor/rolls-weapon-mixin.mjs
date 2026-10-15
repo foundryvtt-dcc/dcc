@@ -770,9 +770,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // A Mighty Deed needs a 3+ on the deed die AND a hit (#1018). The lib
     // folds the hit verdict into `deedSuccess`; like a crit, a deed with no
     // target AC still shows but carries a note that it needs the attack to hit.
-    // TEMPORARY: the `isHit` / `fumble` guards cover the vendored lib until it
-    // is synced past moonloch/dcc-core-lib#18; remove them after the sync.
-    const deedSucceed = !!libResult.deedSuccess && libResult.isHit !== false && !fumble
+    const deedSucceed = !!libResult.deedSuccess
     const deedNeedsHit = deedSucceed && libResult.isHit === undefined && !autoHit
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
