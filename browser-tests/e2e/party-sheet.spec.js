@@ -74,19 +74,6 @@ async function createParty (page) {
   })
 }
 
-/** Create a Player carrying one weapon; return its ids and a drag payload. */
-async function createSourceWithItem (page) {
-  return await page.evaluate(async () => {
-    const actor = await Actor.create({ name: 'PARTY Dropper', type: 'Player' })
-    const [item] = await actor.createEmbeddedDocuments('Item', [{ name: 'PARTY Sword', type: 'weapon', system: { melee: true } }])
-    return {
-      actorId: actor.id,
-      itemId: item.id,
-      dragData: JSON.stringify({ type: 'Item', actorId: actor.id, uuid: item.uuid, data: item.toObject() })
-    }
-  })
-}
-
 test.describe('Party Sheet — Roll Party Initiative', () => {
   test.beforeEach(async ({ page }) => {
     await cleanProbeState(page)
@@ -198,6 +185,34 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
   })
 })
 
+/** Create a Player carrying one weapon; return its ids and a drag payload. */
+async function createSourceWithItem (page) {
+  return await page.evaluate(async () => {
+    const actor = await Actor.create({ name: 'PARTY Dropper', type: 'Player' })
+    const [item] = await actor.createEmbeddedDocuments('Item', [{ name: 'PARTY Sword', type: 'weapon', system: { melee: true } }])
+    return {
+      actorId: actor.id,
+      itemId: item.id,
+      dragData: JSON.stringify({ type: 'Item', actorId: actor.id, uuid: item.uuid, data: item.toObject() })
+    }
+  })
+}
+
+/**
+ * Dispatch a synthetic drag event of `eventType` (default `drop`) on the element
+ * matching `selector`, carrying `json` as the `text/plain` drag payload. The
+ * party sheet's DragDrop listeners are bound on the `.party` section, so the
+ * event bubbles up from a descendant target.
+ */
+async function dispatchDrag (page, selector, json, eventType = 'drop') {
+  await page.evaluate(({ selector, json, eventType }) => {
+    const target = document.querySelector(selector)
+    const dataTransfer = new DataTransfer()
+    dataTransfer.setData('text/plain', json)
+    target.dispatchEvent(new DragEvent(eventType, { bubbles: true, cancelable: true, dataTransfer }))
+  }, { selector, json, eventType })
+}
+
 test.describe('Party Sheet — Item Drops', () => {
   test.beforeEach(async ({ page }) => {
     await cleanProbeState(page)
@@ -215,26 +230,31 @@ test.describe('Party Sheet — Item Drops', () => {
     const { actorId, dragData } = await createSourceWithItem(page)
     await openActorSheet(page, 'PARTY Test Party')
 
-    const result = await page.evaluate(async ({ json, pid, sourceId }) => {
-      const warns = []
-      const originalWarn = ui.notifications.warn
-      ui.notifications.warn = (message) => { warns.push(String(message)) }
-      try {
-        const body = document.querySelector('.dcc.actor.party .party-body')
-        const dataTransfer = new DataTransfer()
-        dataTransfer.setData('text/plain', json)
-        body.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }))
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } finally {
-        ui.notifications.warn = originalWarn
-      }
-      return {
-        warns,
+    // Capture the warning across the dispatch. The reject path warns
+    // synchronously inside the handler, so no fixed sleep is needed; poll in
+    // case the DragDrop callback ever defers the call.
+    await page.evaluate(() => {
+      globalThis.__partyDropWarns = []
+      globalThis.__partyDropWarn = ui.notifications.warn
+      ui.notifications.warn = (message) => { globalThis.__partyDropWarns.push(String(message)) }
+    })
+    let result
+    try {
+      await dispatchDrag(page, '.dcc.actor.party .party-body', dragData)
+      await page.waitForFunction(() => (globalThis.__partyDropWarns ?? []).length > 0, null, { timeout: 5000 })
+      result = await page.evaluate(({ pid, sourceId }) => ({
+        warns: globalThis.__partyDropWarns ?? [],
         expected: game.i18n.localize('DCC.PartyNoInventoryHint'),
         partyItems: game.actors.get(pid).items.size,
         sourceItems: game.actors.get(sourceId).items.size
-      }
-    }, { json: dragData, pid: partyId, sourceId: actorId })
+      }), { pid: partyId, sourceId: actorId })
+    } finally {
+      await page.evaluate(() => {
+        ui.notifications.warn = globalThis.__partyDropWarn
+        delete globalThis.__partyDropWarn
+        delete globalThis.__partyDropWarns
+      })
+    }
 
     expect(result.warns).toContain(result.expected)
     expect(result.partyItems).toBe(0)
@@ -242,42 +262,48 @@ test.describe('Party Sheet — Item Drops', () => {
   })
 
   test('routes a drop on a member row to that member and removes it from the source', async ({ page }) => {
-    const { aliceId } = await createParty(page)
+    const { aliceId, partyId } = await createParty(page)
     const { actorId, dragData } = await createSourceWithItem(page)
     await openActorSheet(page, 'PARTY Test Party')
 
-    const result = await page.evaluate(async ({ json, memberId, sourceId }) => {
-      const row = document.querySelector(`.dcc.actor.party .character-row[data-actor-id="${memberId}"]`)
-      const dataTransfer = new DataTransfer()
-      dataTransfer.setData('text/plain', json)
-      row.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }))
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return {
-        memberItems: game.actors.get(memberId).items.size,
-        sourceItems: game.actors.get(sourceId).items.size
-      }
-    }, { json: dragData, memberId: aliceId, sourceId: actorId })
+    await dispatchDrag(page, `.dcc.actor.party .character-row[data-actor-id="${aliceId}"]`, dragData)
+
+    // The DragDrop callback does not await _onDrop, so the create-then-delete is
+    // fire-and-forget: poll for the end state rather than sleeping.
+    await page.waitForFunction(({ memberId, sourceId }) =>
+      game.actors.get(memberId).items.size === 1 &&
+      game.actors.get(sourceId).items.size === 0,
+    { memberId: aliceId, sourceId: actorId }, { timeout: 5000 })
+
+    const result = await page.evaluate(({ pid, memberId, sourceId }) => ({
+      partyItems: game.actors.get(pid).items.size,
+      memberItems: game.actors.get(memberId).items.size,
+      sourceItems: game.actors.get(sourceId).items.size
+    }), { pid: partyId, memberId: aliceId, sourceId: actorId })
 
     expect(result.memberItems).toBe(1)
     expect(result.sourceItems).toBe(0)
+    // The item must not land on the invisible Party inventory either.
+    expect(result.partyItems).toBe(0)
   })
 
   test('highlights the member row on dragover and clears it on drop', async ({ page }) => {
     const { aliceId } = await createParty(page)
     await openActorSheet(page, 'PARTY Test Party')
 
-    const result = await page.evaluate(async ({ memberId }) => {
-      const row = document.querySelector(`.dcc.actor.party .character-row[data-actor-id="${memberId}"]`)
-      const dataTransfer = new DataTransfer()
-      dataTransfer.setData('text/plain', JSON.stringify({ type: 'Item', uuid: 'Item.does-not-exist' }))
-      row.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }))
-      const highlighted = row.classList.contains('drag-over')
-      row.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }))
-      await new Promise(resolve => setTimeout(resolve, 300))
-      return { highlighted, afterDrop: row.classList.contains('drag-over') }
-    }, { memberId: aliceId })
+    const selector = `.dcc.actor.party .character-row[data-actor-id="${aliceId}"]`
+    // An Item payload with no UUID is harmless: the party helper resolves
+    // nothing and rejects without warning, while still running the
+    // highlight-then-clear path through _onDrop.
+    const payload = JSON.stringify({ type: 'Item' })
 
-    expect(result.highlighted).toBe(true)
-    expect(result.afterDrop).toBe(false)
+    await dispatchDrag(page, selector, payload, 'dragover')
+    const highlighted = await page.evaluate(sel => document.querySelector(sel).classList.contains('drag-over'), selector)
+
+    await dispatchDrag(page, selector, payload, 'drop')
+    const afterDrop = await page.evaluate(sel => document.querySelector(sel).classList.contains('drag-over'), selector)
+
+    expect(highlighted).toBe(true)
+    expect(afterDrop).toBe(false)
   })
 })
