@@ -250,6 +250,20 @@ describe('SpellDuel.resolveExchange', () => {
     expect(rolledFormulas).toEqual([])
   })
 
+  test('a Phlogiston Disturbance from capped checks gives the high roller momentum, either way round', async () => {
+    // Table 4-5 caps at 28, so 30 vs 29 lands on its PD cell
+    globalThis.game.tables.getName = (name) =>
+      name.includes('4-5') ? fakeTable({ 28: '28: PD' }) : null
+    await SpellDuel.resolveExchange('atk', 30, 'def', 29)
+    expect(rolledFormulas).toEqual(['1d10'])
+    expect(momentumOf('atk')).toBe(11)
+    expect(momentumOf('def')).toBe(10)
+
+    await SpellDuel.resolveExchange('atk', 29, 'def', 30)
+    expect(momentumOf('atk')).toBe(11)
+    expect(momentumOf('def')).toBe(11)
+  })
+
   test('a check below the spell\'s minimum stops the comparison', async () => {
     await SpellDuel.resolveExchange('atk', 14, 'def', 11)
     expect(lastMessage()).toContain('DCC.SpellDuelCheckFailed')

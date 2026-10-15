@@ -156,7 +156,10 @@ export interface CounterspellExchangeResult {
     comparison: SpellCheckComparison;
     /** Counterspell power result (if not phlogiston disturbance) */
     counterspellPower?: CounterspellPowerResult | undefined;
-    /** Phlogiston disturbance result (if checks were equal) */
+    /**
+     * Phlogiston disturbance result (if Table 4-5 returned PD). Table 4-5 caps
+     * both checks, so the totals may differ; momentum still goes to the higher.
+     */
     phlogistonDisturbance?: PhlogistonDisturbanceResult | undefined;
     /** Updated attacker momentum */
     newAttackerMomentum: number;
