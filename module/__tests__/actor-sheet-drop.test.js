@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, test, vi } from 'vitest'
-import { handleContainerDrop, dropActiveEffect } from '../actor-sheet/drop.mjs'
+import { handleContainerDrop, dropActiveEffect, handlePartyItemDrop } from '../actor-sheet/drop.mjs'
 
 /** Build a fake drop event whose `target.closest` returns the given element. */
 function makeEvent (closestResult) {
@@ -225,5 +225,104 @@ describe('dropActiveEffect', () => {
     const [, [created]] = actor.createEmbeddedDocuments.mock.calls[0]
     expect(created.name).toBe('Shield')
     expect(created.img).toBe('icons/svg/shield.svg')
+  })
+})
+
+/** Fake drop event whose target.closest('[data-actor-id]') returns a member row. */
+function memberEvent (actorId) {
+  return { target: { closest: vi.fn(() => (actorId ? { dataset: { actorId } } : null)) } }
+}
+
+/** Fake `game` whose actors collection resolves ids to the given objects. */
+function makeGame (actors) {
+  return { actors: { get: (id) => actors[id] } }
+}
+
+/** Fake member actor exposing only what the drop helper reads. */
+function makeMember (id, { created = { id: 'new-item' } } = {}) {
+  return {
+    id,
+    isOwner: true,
+    sheet: { _onDropItem: vi.fn(async () => created) },
+    deleteEmbeddedDocuments: vi.fn(async () => {})
+  }
+}
+
+describe('handlePartyItemDrop', () => {
+  const party = { id: 'party-1' }
+
+  test('returns undefined for non-item drags so the caller can delegate to super', async () => {
+    const result = await handlePartyItemDrop(party, memberEvent('alice'), { type: 'Actor' }, { i18n, ui: makeUi() })
+    expect(result).toBeUndefined()
+  })
+
+  test('normalises a DCC Item (spell) drag and creates it on the member', async () => {
+    const alice = makeMember('alice')
+    const fromUuid = vi.fn(async () => ({ id: 'spell-1' }))
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'DCC Item', uuid: 'Item.spell-1' },
+      { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(alice.sheet._onDropItem).toHaveBeenCalledOnce()
+    expect(result).toEqual({ id: 'new-item' })
+  })
+
+  test('warns and returns false when the drop is not over a member row', async () => {
+    const ui = makeUi()
+    const result = await handlePartyItemDrop(
+      party, memberEvent(null),
+      { type: 'Item', uuid: 'Item.x' },
+      { game: makeGame({}), i18n, ui, fromUuid: vi.fn() }
+    )
+    expect(result).toBe(false)
+    expect(ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNoInventoryHint')
+  })
+
+  test('warns and returns false when the row resolves to the party itself', async () => {
+    const ui = makeUi()
+    const result = await handlePartyItemDrop(
+      party, memberEvent('party-1'),
+      { type: 'Item', uuid: 'Item.x' },
+      { game: makeGame({ 'party-1': makeMember('party-1') }), i18n, ui, fromUuid: vi.fn() }
+    )
+    expect(result).toBe(false)
+    expect(ui.notifications.warn).toHaveBeenCalled()
+  })
+
+  test('moves the item: deletes it from the source actor after a successful member drop', async () => {
+    const alice = makeMember('alice')
+    const source = makeMember('bob')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1', actorId: 'bob' },
+      { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(source.deleteEmbeddedDocuments).toHaveBeenCalledWith('Item', ['item-1'])
+  })
+
+  test('does not delete the source when the member drop fails', async () => {
+    const alice = makeMember('alice', { created: null })
+    const source = makeMember('bob')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1', actorId: 'bob' },
+      { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toBe(false)
+    expect(source.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('does not delete anything when an item is dropped on its own member row', async () => {
+    const alice = makeMember('alice')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1', actorId: 'alice' },
+      { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(alice.deleteEmbeddedDocuments).not.toHaveBeenCalled()
   })
 })
