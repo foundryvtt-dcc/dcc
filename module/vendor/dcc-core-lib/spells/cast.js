@@ -228,9 +228,9 @@ export function checkDisapproval(natural, disapprovalRange) {
 /**
  * Calculate the disapproval-range increase this cast causes.
  *
- * DCC RAW (core rulebook, cleric magic): "Each failed spell check increases
- * the chance of disapproval" by one, and "any natural roll within that range
- * automatically fails". So a natural inside the range (natural 1 included)
+ * DCC RAW (core rulebook, cleric magic): every failed spell check widens the
+ * disapproval range by one, and a natural roll inside the range is an
+ * automatic failure. So a natural inside the range (natural 1 included)
  * is a failed check and raises the range by exactly 1.
  *
  * Only in-range naturals are counted here. A check that fails on its total
@@ -294,9 +294,9 @@ export function castSpell(input, options = {}, events) {
     }
     // Determine critical/fumble
     const fumble = natural !== undefined && natural === 1;
-    // DCC RAW (core rulebook, cleric magic): "any natural roll within that
-    // range automatically fails ... even though a roll of 13 would normally
-    // mean success on 1st-level spells." A natural roll inside the caster's
+    // DCC RAW (core rulebook, cleric magic): a natural roll inside the
+    // disapproval range is an automatic failure, even when the total would
+    // otherwise succeed. A natural roll inside the caster's
     // disapproval range is an automatic failure regardless of the total.
     // Natural 1 is already the fumble path; this covers 2..range — including
     // a would-be crit when the range has grown to swallow the die's max face.

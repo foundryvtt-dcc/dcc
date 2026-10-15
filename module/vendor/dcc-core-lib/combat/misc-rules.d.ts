@@ -269,8 +269,7 @@ export declare function getFiringIntoMeleePenalty(targetEngagedInMelee: boolean)
  *
  * @param numAlliesInMelee - Number of allies engaged with the target
  * @param allyACs - Array of ally armor classes
- * @param attackRoll - The original attack roll (to re-roll against ally)
- * @param attackBonus - Attacker's bonus
+ * @param attackBonus - Attacker's bonus, applied to the re-roll against the ally
  * @param roller - Dice roller
  * @returns Result of firing into melee
  */
@@ -374,7 +373,7 @@ export declare function getGrappleModifier(participant: GrappleParticipant): num
  */
 export declare function resolveGrapple(attacker: GrappleParticipant, defender: GrappleParticipant, roller?: DiceRoller): GrappleResult;
 /**
- * Check if armor recovered from a fallen foe is usable
+ * Check whether armor salvaged from a defeated enemy is usable
  *
  * @param checkHumanSized - Whether to also check if armor is human-sized
  * @param roller - Dice roller
@@ -593,7 +592,7 @@ export declare function getMountedInitiativeModifier(riderInitMod: number, mount
  * Check if a horse is spooked by damage
  *
  * - Warhorses: only spooked when first dropping below half HP
- * - Other horses: spooked any time they suffer a wound
+ * - Other horses: spooked whenever they take damage
  *
  * @param mount - Current mount state
  * @param damageDealt - Damage just dealt to the horse

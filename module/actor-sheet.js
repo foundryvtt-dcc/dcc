@@ -990,6 +990,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       d.callbacks = {
         dragstart: this._onDragStart.bind(this),
         dragover: this._onDragOver.bind(this),
+        dragleave: this._onDragLeave.bind(this),
         drop: this._onDrop.bind(this)
       }
       return new DragDrop(d)
@@ -1020,6 +1021,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   _onDragOver (event) {
     // Optional: handle dragover events if needed
+  }
+
+  /**
+   * Handle drag leave events
+   * @param {DragEvent} event
+   */
+  _onDragLeave (event) {
+    // Optional: handle dragleave events if needed
   }
 
   /**

@@ -121,7 +121,6 @@ export function loadBirthAugurs(raw) {
  * The modifier is calculated from the luck score using the standard
  * ability modifier table.
  *
- * @param luckScore - The character's current luck score
  * @param luckModifier - The calculated modifier from the luck score
  * @param augur - The character's birth augur
  * @returns Object with the modifier value and what it affects

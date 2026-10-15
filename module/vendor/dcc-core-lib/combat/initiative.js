@@ -1,12 +1,11 @@
 /**
  * Initiative System
  *
- * RAW (Core Book Ch. 4 — Initiative):
- *   "An initiative check is conducted by rolling 1d20 and adding the
- *    appropriate modifier: Agility modifier, and, for warriors, class
- *    level."
- *   "A d16 is used instead of a d20 for characters wielding two-handed
- *    weapons."
+ * RAW (Core Book Ch. 4 — Initiative), paraphrased:
+ *   - Initiative is a d20 roll plus the character's Agility modifier;
+ *     warriors also add their class level.
+ *   - A character fighting with a two-handed weapon rolls a d16 for
+ *     initiative in place of the d20.
  *
  * There is no per-class initiative die scaling; warriors get a flat
  * class-level modifier instead. Halflings have no special initiative

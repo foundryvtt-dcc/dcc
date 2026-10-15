@@ -8,7 +8,7 @@
  *
  * @example
  * ```typescript
- * import { turnUnholy, layOnHands, divineAid } from "dcc-core-lib";
+ * import { turnUnholy, layOnHands, divineAid } from "@moonloch/dcc-core-lib";
  *
  * // Turn Unholy
  * const turnResult = turnUnholy(

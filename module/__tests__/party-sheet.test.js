@@ -1,6 +1,11 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 // party-sheet.js coverage backfill (audit 2026-06-08: 0 dedicated tests). The static
 // #roll* action handlers are class-private (reachable only through the action map,
@@ -223,6 +228,110 @@ describe('_processFormData / _processSubmitData member-weapon round-trip', () =>
     expect(result).toBe('PARENT_SUBMIT')
     expect(ctx._updateMember).toHaveBeenCalledWith('alice', { activeMelee: 'sword' })
     expect(ctx._pendingMemberUpdates).toBeUndefined() // cleaned up
+  })
+})
+
+describe('party portrait', () => {
+  // The party sheet used to clobber the inherited `editImage` action with an
+  // undefined handler (`DCCPartySheet.editImage` was never defined — Foundry's
+  // own handler is private), which silently broke portrait editing. Leave the
+  // key absent so `DocumentSheetV2`'s default `editImage` survives the merge.
+  test('does not override the inherited editImage action', () => {
+    expect('editImage' in DCCPartySheet.DEFAULT_OPTIONS.actions).toBe(false)
+  })
+
+  // The party actor's own portrait must be rendered (and bound for editing) in
+  // the party-name header row — previously there was no `<img>` at all, so the
+  // portrait was neither visible nor editable (#party-portrait).
+  test('renders an editable portrait bound to the actor img', () => {
+    const template = fs.readFileSync(
+      path.join(ROOT, 'templates', 'party-sheet-partial-party.html'), 'utf8'
+    )
+    const portrait = template.match(/<img[^>]*class="party-portrait"[^>]*>/)
+    expect(portrait, 'party-sheet-partial-party.html has no .party-portrait img').not.toBeNull()
+    expect(portrait[0]).toContain('src="{{img}}"')
+    expect(portrait[0]).toContain('data-action="editImage"')
+    expect(portrait[0]).toContain('data-edit="img"')
+  })
+})
+
+describe('_onDrop', () => {
+  // _onDrop calls super._onDrop; stub the parent prototype method for the
+  // duration. `super._onDrop` resolves through DCCPartySheet.prototype's
+  // prototype at call time, so replacing it here intercepts the delegation.
+  let parentProto, origSuperDrop, origGetDragEventData
+
+  beforeEach(() => {
+    parentProto = Object.getPrototypeOf(proto)
+    origSuperDrop = parentProto._onDrop
+    parentProto._onDrop = vi.fn(async () => 'SUPER')
+    origGetDragEventData = globalThis.foundry.applications.ux.TextEditor.getDragEventData
+  })
+
+  afterEach(() => {
+    parentProto._onDrop = origSuperDrop
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = origGetDragEventData
+  })
+
+  test('delegates a non-item drop to the parent sheet', async () => {
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = vi.fn(() => ({ type: 'Actor' }))
+    const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+    const result = await proto._onDrop.call(ctx, {})
+    expect(result).toBe('SUPER')
+    expect(ctx._clearDragHighlight).toHaveBeenCalled()
+    expect(parentProto._onDrop).toHaveBeenCalled()
+  })
+
+  test('routes an item drop to the member row and does not delegate to the parent', async () => {
+    // Drive the REAL handlePartyItemDrop so the _onDrop wiring is covered
+    // end to end: an item dropped on a member row returns the created item and
+    // must short-circuit before super._onDrop (the transfer-delete path).
+    const origFromUuid = globalThis.fromUuid
+    const origActorsGet = globalThis.game.actors.get
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.item-1' })
+      globalThis.fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+      globalThis.game.actors.get = (id) => ({
+        id,
+        sheet: { _onDropItem: vi.fn(async () => ({ id: 'created-1' })) },
+        deleteEmbeddedDocuments: vi.fn()
+      })
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => ({ dataset: { actorId: 'alice' } }) } }
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toEqual({ id: 'created-1' })
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fromUuid = origFromUuid
+      globalThis.game.actors.get = origActorsGet
+    }
+  })
+
+  test('returns false for a rejected item drop without delegating to the parent', async () => {
+    // A handled-but-rejected item drop (no member row under the cursor) returns
+    // false, which must short-circuit before super._onDrop. A truthy check in
+    // place of `!== undefined` would wrongly delegate and reintroduce the
+    // invisible-copy + source-deletion bug this override exists to prevent.
+    const origUi = globalThis.ui
+    const origI18n = globalThis.game.i18n
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.x' })
+      globalThis.ui = { notifications: { warn: vi.fn() } }
+      globalThis.game.i18n = { localize: (key) => key }
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => null } } // no member row under the cursor
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toBe(false)
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNoInventoryHint')
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.ui = origUi
+      globalThis.game.i18n = origI18n
+    }
   })
 })
 

@@ -46,7 +46,7 @@ export interface RollLuckCheckOptions {
  * @returns The luck check result
  *
  * @example
- * import { rollLuckCheck } from 'dcc-core-lib';
+ * import { rollLuckCheck } from '@moonloch/dcc-core-lib';
  *
  * const result = rollLuckCheck(character);
  * if (result.success) {
@@ -66,7 +66,7 @@ export declare function rollLuckCheck(character: Character, options?: RollLuckCh
  * @returns The luck check result
  *
  * @example
- * import { rollLuckCheckSimple } from 'dcc-core-lib';
+ * import { rollLuckCheckSimple } from '@moonloch/dcc-core-lib';
  *
  * const result = rollLuckCheckSimple(12);
  * if (result.success) {

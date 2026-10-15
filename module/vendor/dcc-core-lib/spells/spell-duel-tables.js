@@ -5,7 +5,7 @@
  * and provides fan-made default tables for use when official
  * DCC tables are not available.
  *
- * Official DCC tables can be provided via the dcc-official-data package.
+ * Official DCC tables can be provided by the caller.
  */
 // =============================================================================
 // Default Fan-Made Table 4-5: Spell Duel Check Comparison

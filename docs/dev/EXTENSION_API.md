@@ -6,9 +6,12 @@ two channels: **Foundry hooks** (`Hooks.on('dcc.*', …)`) and the global
 surface so module authors know what they can rely on and so the adapter
 over `@moonloch/dcc-core-lib` preserves the right behavior.
 
-> The library is published on npm as **`@moonloch/dcc-core-lib`** (scoped).
-> The unscoped name is not published; install / import / link with the
-> scoped name only.
+> The library is published to GitHub Packages as
+> **`@moonloch/dcc-core-lib`** (scoped), and its source is public at
+> [moonloch/dcc-core-lib](https://github.com/moonloch/dcc-core-lib). The
+> unscoped name is not published; install / import / link with the scoped
+> name only. The system itself vendors the compiled lib at
+> `module/vendor/dcc-core-lib/`.
 
 **Categories:**
 

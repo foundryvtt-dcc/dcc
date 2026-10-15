@@ -7,7 +7,7 @@
  * for testing and demonstration purposes. These are original creations
  * and are NOT from any published game system.
  *
- * For official DCC RPG data, use the separate dcc-official-data package.
+ * For official DCC RPG data, supply your own licensed data.
  */
 // =============================================================================
 // Example Birth Augurs (Fan-Made)
@@ -26,7 +26,7 @@ export const SAMPLE_BIRTH_AUGURS = [
     { roll: 6, name: "Scarred Veteran", affects: "Damage rolls", effectType: "damage-all" },
     { roll: 7, name: "Bear's Strength", affects: "Melee damage rolls", effectType: "damage-melee" },
     { roll: 8, name: "Steady Hand", affects: "Missile fire damage rolls", effectType: "damage-missile" },
-    { roll: 9, name: "Ancestral Blade", affects: "Attack and damage rolls for 0-level starting weapon", effectType: "starting-weapon" },
+    { roll: 9, name: "Ancestral Blade", affects: "Starting weapon attack and damage", effectType: "starting-weapon" },
     { roll: 10, name: "Nimble Fingers", affects: "Skill checks (including thief skills)", effectType: "skill-check" },
     { roll: 11, name: "Wary Mind", affects: "Find/disable traps", effectType: "find-trap" },
     { roll: 12, name: "Keen Senses", affects: "Find secret doors", effectType: "find-secret-door" },
@@ -146,7 +146,7 @@ export const SAMPLE_OCCUPATIONS = [
  * Default character creation data using fan-made content.
  * Use this for testing or when official data isn't available.
  *
- * For official DCC RPG data, use the dcc-official-data package instead.
+ * For official DCC RPG data, supply your own licensed data instead.
  */
 export const DEFAULT_CHARACTER_CREATION_DATA = {
     birthAugurs: SAMPLE_BIRTH_AUGURS,
@@ -195,7 +195,7 @@ export function getBirthAugurEffectType(augur) {
  * XP needed to reach each level (index 0 = level 1).
  *
  * This is a fan-made approximation for testing purposes.
- * Official DCC data should be loaded from dcc-official-data.
+ * Official DCC data should be supplied by the consuming application.
  */
 const STANDARD_XP = [10, 50, 110, 190, 290, 410, 550, 710, 890, 1090];
 /**

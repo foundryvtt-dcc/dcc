@@ -605,6 +605,7 @@
   "DCC.PartyNoEffectsHint": "Aktive Effekte können nicht auf eine Gruppe gelegt werden; ziehe sie stattdessen auf den Bogen des jeweiligen Mitglieds",
   "DCC.PartyNoMembersWarning": "Die Gruppe hat keine Mitglieder; ziehe zuerst Akteure auf den Gruppenbogen",
   "DCC.PartyNoTokenWarning": "Die Gruppe hat keinen Token in der aktuellen Szene; platziere den Gruppen-Token, bevor du Initiative würfelst",
+  "DCC.PartyNoInventoryHint": "Der Gruppenbogen hat kein Inventar. Ziehe das Item auf eine Mitgliederzeile oder auf einen Charakterbogen.",
   "DCC.Paralysis": "Paralyse",
   "DCC.Patron": "Patron",
   "DCC.PatronTaint": "Patronverunreinigung",

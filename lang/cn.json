@@ -605,6 +605,7 @@
   "DCC.PartyNoEffectsHint": "主动效果不能放在队伍上；请将其拖放到成员自己的角色卡上",
   "DCC.PartyNoMembersWarning": "队伍没有成员；请先将角色拖到队伍卡上",
   "DCC.PartyNoTokenWarning": "队伍在当前场景中没有代币；请先放置队伍代币再投先攻",
+  "DCC.PartyNoInventoryHint": "队伍卡没有背包。请将物品拖到成员行或角色卡上。",
   "DCC.Paralysis": "麻痹",
   "DCC.Patron": "宗主",
   "DCC.PatronTaint": "宗主腐蚀",

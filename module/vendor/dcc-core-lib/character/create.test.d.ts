@@ -1,4 +1,0 @@
-/**
- * Character Creation Tests
- */
-export {};
