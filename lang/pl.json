@@ -602,6 +602,7 @@
   "DCC.PartyDeleteExplain": "To usunie postać z drużyny.",
   "DCC.PartyEdit": "Edytuj Członka",
   "DCC.PartyEmpty": "Przeciągnij i upuść postać tutaj",
+  "DCC.PartyNoEffectsHint": "Efektów aktywnych nie można umieszczać na drużynie; upuść je zamiast tego na karcie danego członka",
   "DCC.PartyNoMembersWarning": "Drużyna nie ma członków; najpierw przeciągnij aktorów na kartę drużyny",
   "DCC.PartyNoTokenWarning": "Drużyna nie ma żetonu w bieżącej scenie; umieść żeton drużyny przed rzutem na inicjatywę",
   "DCC.PartyNoInventoryHint": "Karta drużyny nie ma ekwipunku. Upuść przedmiot na wiersz członka lub na kartę postaci.",

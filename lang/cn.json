@@ -602,6 +602,7 @@
   "DCC.PartyDeleteExplain": "这会将此角色移出冒险团队",
   "DCC.PartyEdit": "编辑成员",
   "DCC.PartyEmpty": "此处拖入角色",
+  "DCC.PartyNoEffectsHint": "主动效果不能放在队伍上；请将其拖放到成员自己的角色卡上",
   "DCC.PartyNoMembersWarning": "队伍没有成员；请先将角色拖到队伍卡上",
   "DCC.PartyNoTokenWarning": "队伍在当前场景中没有代币；请先放置队伍代币再投先攻",
   "DCC.PartyNoInventoryHint": "队伍卡没有背包。请将物品拖到成员行或角色卡上。",

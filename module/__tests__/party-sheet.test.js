@@ -334,3 +334,27 @@ describe('_onDrop', () => {
     }
   })
 })
+
+describe('no effects tab (#1022)', () => {
+  beforeEach(() => {
+    globalThis.foundry.utils.deepClone = obj => JSON.parse(JSON.stringify(obj))
+  })
+
+  test('does not register an effects part', () => {
+    expect(DCCPartySheet.PARTS.effects).toBeUndefined()
+  })
+
+  test('_getTabsConfig strips the inherited effects tab but keeps notes', () => {
+    const ctx = { constructor: DCCPartySheet, options: { document: {} }, tabGroups: {} }
+    const tabs = proto._getTabsConfig.call(ctx, 'sheet')
+    expect(tabs.tabs.map(t => t.id)).toEqual(['party', 'notes'])
+  })
+
+  test('_onDropActiveEffect warns and refuses the drop', async () => {
+    const warn = vi.fn()
+    globalThis.ui = { notifications: { warn } }
+    globalThis.game.i18n = { localize: key => key }
+    expect(await proto._onDropActiveEffect.call({}, {}, { type: 'ActiveEffect' })).toBe(false)
+    expect(warn).toHaveBeenCalledWith('DCC.PartyNoEffectsHint')
+  })
+})

@@ -602,6 +602,7 @@
   "DCC.PartyDeleteExplain": "Esto eliminará el actor del grupo.",
   "DCC.PartyEdit": "Editar miembro",
   "DCC.PartyEmpty": "Arrastra y suelta un actor aquí",
+  "DCC.PartyNoEffectsHint": "Los efectos activos no se pueden aplicar a un grupo; suéltalos en la hoja del propio miembro",
   "DCC.PartyNoMembersWarning": "El grupo no tiene miembros; arrastra actores a la hoja de grupo primero",
   "DCC.PartyNoTokenWarning": "El grupo no tiene token en la escena actual; coloca el token del grupo antes de tirar iniciativa",
   "DCC.PartyNoInventoryHint": "La hoja de grupo no tiene inventario. Suelta el objeto en la fila de un miembro o en una hoja de personaje.",

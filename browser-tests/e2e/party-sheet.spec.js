@@ -3,7 +3,8 @@ const { expect, createSessionTest, openActorSheet, significantConsoleErrors } = 
 
 /**
  * Party Sheet E2E tests: Roll Party Initiative (#789), the party actor
- * portrait (#1019), and item drops onto member rows (#1023).
+ * portrait (#1019), item drops onto member rows (#1023), and the missing
+ * Effects tab (#1022).
  *
  * Drives the party sheet DOM → data-action path for the party-header
  * Roll Initiative button:
@@ -361,5 +362,52 @@ test.describe('Party Sheet — Item Drops', () => {
 
     expect(highlighted).toBe(true)
     expect(afterDrop).toBe(false)
+  })
+})
+
+test.describe('Party Sheet — no Effects tab (#1022)', () => {
+  test.beforeEach(async ({ page }) => {
+    await cleanProbeState(page)
+    consoleErrors.length = 0
+  })
+
+  test.afterEach(async ({ page }) => {
+    await cleanProbeState(page)
+    const errors = significantConsoleErrors(consoleErrors)
+    expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
+  })
+
+  test('renders only Party and Notes tabs and refuses an Active Effect drop', async ({ page }) => {
+    const { partyId } = await createParty(page)
+    await openActorSheet(page, 'PARTY Test Party')
+    const sheet = page.locator('.dcc.actor.party')
+
+    // Effects is stripped from the inherited end tabs; Notes stays
+    const tabIds = await sheet.locator('nav.sheet-tabs [data-action="tab"]').evaluateAll(
+      els => els.map(el => el.dataset.tab)
+    )
+    expect(tabIds).toEqual(['party', 'notes'])
+    await expect(sheet.locator('section.tab[data-tab="effects"]')).toHaveCount(0)
+
+    // Dropping an effect (as from the effects sidebar / another sheet) is
+    // refused with a notice and creates nothing on the party actor
+    const result = await page.evaluate(async (pid) => {
+      const party = game.actors.get(pid)
+      const sheet = party.sheet
+      const data = {
+        type: 'ActiveEffect',
+        data: { name: 'PARTY Probe Effect', img: 'icons/svg/aura.svg' }
+      }
+      const event = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() })
+      event.dataTransfer.setData('text/plain', JSON.stringify(data))
+      const returned = await sheet._onDrop(event)
+      return {
+        returned,
+        effects: party.effects.size,
+        notice: document.querySelector('#notifications .notification.warning')?.textContent ?? null
+      }
+    }, partyId)
+    expect(result.effects).toBe(0)
+    expect(result.notice).toContain(await page.evaluate(() => game.i18n.localize('DCC.PartyNoEffectsHint')))
   })
 })
