@@ -85,7 +85,7 @@ module.exports = async function globalSetup () {
       await page.waitForTimeout(1000)
     }
 
-    const userSelect = page.locator('select[name="userid"]')
+    const userSelect = page.locator('select[name="userId"]')
     const selectVisible = await userSelect.isVisible({ timeout: 20000 }).catch(() => false)
     if (!selectVisible) {
       throw new Error(
