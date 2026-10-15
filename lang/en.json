@@ -589,6 +589,7 @@
   "DCC.PartyDeleteExplain": "This will remove the actor from the party.",
   "DCC.PartyEdit": "Edit Member",
   "DCC.PartyEmpty": "Drag and drop an actor here",
+  "DCC.PartyNoEffectsHint": "Active Effects cannot be placed on a party; drop them on the member's own sheet instead",
   "DCC.PartyNoMembersWarning": "The party has no members; drag actors onto the party sheet first",
   "DCC.PartyNoTokenWarning": "The party has no token in the current scene; place the party token before rolling initiative",
   "DCC.Paralysis": "Paralysis",

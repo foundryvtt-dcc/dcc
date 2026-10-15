@@ -185,7 +185,7 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
   })
 })
 
-test.describe('Party Sheet — Effects tab (#1022)', () => {
+test.describe('Party Sheet — no Effects tab (#1022)', () => {
   test.beforeEach(async ({ page }) => {
     await cleanProbeState(page)
     consoleErrors.length = 0
@@ -197,34 +197,37 @@ test.describe('Party Sheet — Effects tab (#1022)', () => {
     expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
   })
 
-  test('Effects tab renders a panel listing the party actor effects', async ({ page }) => {
+  test('renders only Party and Notes tabs and refuses an Active Effect drop', async ({ page }) => {
     const { partyId } = await createParty(page)
-    await page.evaluate(async (pid) => {
-      await game.actors.get(pid).createEmbeddedDocuments('ActiveEffect', [{
-        name: 'PARTY Probe Effect',
-        img: 'icons/svg/aura.svg'
-      }])
-    }, partyId)
-
     await openActorSheet(page, 'PARTY Test Party')
     const sheet = page.locator('.dcc.actor.party')
 
-    // Tab order matches the other actor sheets: Party, Effects, Notes
+    // Effects is stripped from the inherited end tabs; Notes stays
     const tabIds = await sheet.locator('nav.sheet-tabs [data-action="tab"]').evaluateAll(
       els => els.map(el => el.dataset.tab)
     )
-    expect(tabIds).toEqual(['party', 'effects', 'notes'])
+    expect(tabIds).toEqual(['party', 'notes'])
+    await expect(sheet.locator('section.tab[data-tab="effects"]')).toHaveCount(0)
 
-    // In-page click — overlays can hang Playwright pointer clicks
-    await page.evaluate(() => {
-      document.querySelector('.dcc.actor.party nav.sheet-tabs [data-tab="effects"]').click()
-    })
-
-    const panel = sheet.locator('section.tab[data-tab="effects"]')
-    await expect(panel).toHaveClass(/active/)
-    await expect(panel).toBeVisible()
-    await expect(sheet.locator('section.tab[data-tab="party"]')).toBeHidden()
-    await expect(panel.locator('.effect-item .effect-name')).toHaveText('PARTY Probe Effect')
-    await expect(panel.locator('[data-action="effectCreate"]')).toHaveCount(1)
+    // Dropping an effect (as from the effects sidebar / another sheet) is
+    // refused with a notice and creates nothing on the party actor
+    const result = await page.evaluate(async (pid) => {
+      const party = game.actors.get(pid)
+      const sheet = party.sheet
+      const data = {
+        type: 'ActiveEffect',
+        data: { name: 'PARTY Probe Effect', img: 'icons/svg/aura.svg' }
+      }
+      const event = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() })
+      event.dataTransfer.setData('text/plain', JSON.stringify(data))
+      const returned = await sheet._onDrop(event)
+      return {
+        returned,
+        effects: party.effects.size,
+        notice: document.querySelector('#notifications .notification.warning')?.textContent ?? null
+      }
+    }, partyId)
+    expect(result.effects).toBe(0)
+    expect(result.notice).toContain(await page.evaluate(() => game.i18n.localize('DCC.PartyNoEffectsHint')))
   })
 })

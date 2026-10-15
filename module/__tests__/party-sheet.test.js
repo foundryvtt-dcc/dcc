@@ -226,17 +226,26 @@ describe('_processFormData / _processSubmitData member-weapon round-trip', () =>
   })
 })
 
-describe('effects tab (#1022)', () => {
-  test('registers an effects part using the shared effects template', () => {
-    expect(DCCPartySheet.PARTS.effects).toEqual({
-      id: 'effects',
-      template: 'systems/dcc/templates/partial-effects.html'
-    })
+describe('no effects tab (#1022)', () => {
+  beforeEach(() => {
+    globalThis.foundry.utils.deepClone = obj => JSON.parse(JSON.stringify(obj))
   })
 
-  test('leaves effects and notes to the inherited END_TABS (Party, Effects, Notes)', () => {
-    const ownTabs = DCCPartySheet.TABS.sheet.tabs.map(t => t.id)
-    const endTabs = DCCPartySheet.END_TABS.sheet.tabs.map(t => t.id)
-    expect([...ownTabs, ...endTabs]).toEqual(['party', 'effects', 'notes'])
+  test('does not register an effects part', () => {
+    expect(DCCPartySheet.PARTS.effects).toBeUndefined()
+  })
+
+  test('_getTabsConfig strips the inherited effects tab but keeps notes', () => {
+    const ctx = { constructor: DCCPartySheet, options: { document: {} }, tabGroups: {} }
+    const tabs = proto._getTabsConfig.call(ctx, 'sheet')
+    expect(tabs.tabs.map(t => t.id)).toEqual(['party', 'notes'])
+  })
+
+  test('_onDropActiveEffect warns and refuses the drop', async () => {
+    const warn = vi.fn()
+    globalThis.ui = { notifications: { warn } }
+    globalThis.game.i18n = { localize: key => key }
+    expect(await proto._onDropActiveEffect.call({}, {}, { type: 'ActiveEffect' })).toBe(false)
+    expect(warn).toHaveBeenCalledWith('DCC.PartyNoEffectsHint')
   })
 })

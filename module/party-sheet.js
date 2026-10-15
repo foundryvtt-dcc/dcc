@@ -61,21 +61,13 @@ class DCCPartySheet extends DCCActorSheet {
       id: 'party',
       template: 'systems/dcc/templates/party-sheet-partial-party.html'
     },
-    effects: {
-      id: 'effects',
-      template: 'systems/dcc/templates/partial-effects.html'
-    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
     }
   }
 
-  /**
-   * Effects and Notes are appended by the inherited END_TABS, matching the
-   * tab order of the other actor sheets (#1022).
-   * @inheritDoc
-   */
+  /** @inheritDoc */
   static TABS = {
     sheet: {
       tabs: [
@@ -83,6 +75,27 @@ class DCCPartySheet extends DCCActorSheet {
       ],
       initial: 'party'
     }
+  }
+
+  /**
+   * Drop the inherited Effects tab: nothing reads a Party actor's own stats
+   * and effects never propagate to members, so the tab would be inert (#1022).
+   * @inheritDoc
+   */
+  _getTabsConfig (group) {
+    const tabs = super._getTabsConfig(group)
+    if (tabs) tabs.tabs = tabs.tabs.filter(tab => tab.id !== 'effects')
+    return tabs
+  }
+
+  /**
+   * Refuse Active Effect drops: a Party actor has no stats of its own to
+   * modify, and effects do not apply to its members (#1022).
+   * @inheritDoc
+   */
+  async _onDropActiveEffect (event, data) {
+    ui.notifications.warn(game.i18n.localize('DCC.PartyNoEffectsHint'))
+    return false
   }
 
   /** @inheritdoc */
