@@ -508,3 +508,61 @@ describe('attack emote deed die highlight (#989)', () => {
     expect(emoteDeed(false)).not.toContain('critical')
   })
 })
+
+describe('attack emote follows the stored hit/miss verdict (#1016)', () => {
+  let saved
+
+  beforeEach(() => {
+    saved = { ...game.i18n.translations }
+    Object.assign(game.i18n.translations, {
+      'DCC.AttackRollEmote': 'HIT {weaponName} for {damageRollHTML}',
+      'DCC.AttackRollEmoteMiss': 'MISS {targetName} with {weaponName}',
+      'DCC.AttackRollEmoteMissNoTarget': 'MISS with {weaponName}',
+      'DCC.AttackRollEmoteActionAttack': 'attacks'
+    })
+  })
+
+  afterEach(() => {
+    game.i18n.translations = saved
+  })
+
+  function emote (flags = {}) {
+    const allFlags = { isToHit: true, ...flags }
+    const html = makeHtml('')
+    emoteAttackRoll({
+      rolls: [{ total: 5, toAnchor: () => ({ outerHTML: '<a class="inline-roll">5</a>' }) }],
+      isContentVisible: true,
+      alias: 'Hero',
+      system: { weaponName: 'Longsword', damageInlineRoll: '<a class="inline-roll damage">3</a>' },
+      getFlag: (scope, key) => allFlags[key]
+    }, html)
+    return html.messageContent.innerHTML
+  }
+
+  it('reads as a hit when the target is hit', () => {
+    expect(emote({ hasTarget: true, hitsTarget: true, targetName: 'Goblin' })).toBe('HIT Longsword for <a class="inline-roll damage">3</a>')
+  })
+
+  it('reads as a hit when there is no target and no natural miss', () => {
+    expect(emote()).toContain('HIT Longsword')
+  })
+
+  it('names the target and drops the damage roll on a targeted miss', () => {
+    const out = emote({ hasTarget: true, hitsTarget: false, targetName: 'Goblin' })
+    expect(out).toBe('MISS Goblin with Longsword')
+    expect(out).not.toContain('damage')
+  })
+
+  it('reads as a miss on an untargeted fumble', () => {
+    expect(emote({ isFumble: true })).toBe('MISS with Longsword')
+  })
+
+  it('reads as a miss on an untargeted halfling two-weapon natural 1', () => {
+    expect(emote({ twoWeaponFumble: 'held' })).toBe('MISS with Longsword')
+    expect(emote({ twoWeaponFumble: 'cleared' })).toBe('MISS with Longsword')
+  })
+
+  it('names the target on a targeted fumble', () => {
+    expect(emote({ isFumble: true, hasTarget: true, hitsTarget: false, targetName: 'Goblin' })).toBe('MISS Goblin with Longsword')
+  })
+})
