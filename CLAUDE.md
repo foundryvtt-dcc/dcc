@@ -57,6 +57,17 @@ GitHub repo `moonloch/dcc-core-lib`, vendored into this repo at
 to one of those local identifiers — the npm package is always the scoped
 form.
 
+The lib repo is **public** and contains no DCC RPG book text. Keep it
+that way in any lib PR: no rules prose, table text or official values in
+code, comments, tests or fixtures. Cite a rule by table and page instead.
+The lib's `CONTRIBUTING.md`, including its LLM contribution policy,
+applies to lib PRs.
+
+**API reference:** `module/vendor/dcc-core-lib/dcc-core-lib.d.ts` is the
+lib's whole public surface, with doc comments, in one file. Read it
+before grepping the vendored JS. Per-module docs live in the lib repo
+under `docs/api/`.
+
 When investigating roll/check/save/combat behavior and the bug appears
 to be in the lib (not just an adapter translation issue):
 

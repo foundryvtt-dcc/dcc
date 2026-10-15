@@ -8,19 +8,25 @@ description: Sync the vendored dcc-core-lib copy after a lib fix merges upstream
 The lib's compiled output lives at `module/vendor/dcc-core-lib/` and is
 committed to the system repo (Foundry has no bundler). The upstream
 checkout is at `/Users/timlwhite/WebstormProjects/dcc-core-lib`
-(GitHub repo `moonloch/dcc-core-lib`).
+(public GitHub repo `moonloch/dcc-core-lib`).
 
 ## Sync procedure
 
-1. After the lib PR merges, pull `main` in the lib checkout.
+1. After the lib PR merges, pull `main` in the lib checkout. It must
+   be clean and on the merged commit; otherwise `VERSION.json` records
+   `"dirty": true` or a SHA that isn't on the lib's `main`.
 2. From the system repo, run `pnpm run sync-core-lib`. The script
-   (`scripts/sync-core-lib.mjs`) builds the lib via `pnpm run build`,
-   copies `dist/` into the vendor directory, and writes
-   `module/vendor/dcc-core-lib/VERSION.json` with the source commit
-   SHA + timestamp.
+   (`scripts/sync-core-lib.mjs`) builds the lib via `npm run build` (the
+   lib uses npm, not pnpm), copies `dist/` into the vendor directory,
+   strips sourcemaps, and writes `module/vendor/dcc-core-lib/VERSION.json`
+   with the source commit SHA + timestamp.
    - Override the source path with
      `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib pnpm run sync-core-lib`.
-3. Commit the resulting vendor diff with a message like
+   - Since lib 0.14.4, `dist/` contains no compiled test files and adds
+     `dcc-core-lib.d.ts`, the whole public API in one declaration file.
+3. Check the vendor diff. Changes outside comments mean behavior
+   changes: run the affected unit tests and E2E specs.
+4. Commit the resulting vendor diff with a message like
    `vendor: sync dcc-core-lib to <version> (<sha7>)`.
 
 ## Adapter cleanup follows the sync
