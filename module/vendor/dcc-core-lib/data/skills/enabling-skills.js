@@ -112,8 +112,8 @@ export const BACKSTAB_BONUS_ID = "class:backstab";
 /**
  * Backstab
  *
- * Per DCC core rules: when a thief attacks a target from behind OR a
- * target that is otherwise unaware, the thief adds an alignment- and
+ * Per DCC core rules: when a thief strikes from behind, or strikes a
+ * foe who has not noticed them, the thief adds an alignment- and
  * level-scaled attack bonus (Table 1-9) and, on a hit, automatically
  * scores a critical hit rolled on Crit Table II with the thief's
  * level-scaled crit die (Table 1-7).
@@ -124,7 +124,7 @@ export const BACKSTAB_BONUS_ID = "class:backstab";
 export const BACKSTAB = {
     id: "backstab",
     name: "Backstab",
-    description: "When attacking a target from behind or an unaware target, add the " +
+    description: "When striking from behind or against an unaware foe, add the " +
         "alignment- and level-scaled attack bonus from Table 1-9. On a hit, " +
         "the attack automatically scores a critical hit on Crit Table II " +
         "using the thief's level-scaled crit die. Target must have clear " +
@@ -159,8 +159,8 @@ export function getBackstabAttackBonus(progression, level, alignment) {
     return typeof raw === "number" ? raw : undefined;
 }
 /**
- * RAW backstab trigger: "attacking a target from behind OR a target
- * that is otherwise unaware" (DCC core rulebook, Thief class).
+ * RAW backstab trigger (DCC core rulebook, Thief class, paraphrased): the
+ * attack comes from behind, OR the target is unaware of the attacker.
  *
  * This helper covers only the rulebook trigger. Extensions (extra
  * classes, magic items, spells, special effects) that grant backstab

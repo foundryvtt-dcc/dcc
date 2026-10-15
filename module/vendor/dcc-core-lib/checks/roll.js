@@ -71,7 +71,7 @@ function inlineToDefinition(config) {
  * @returns The skill check result
  *
  * @example
- * import { Ability, Save, rollCheck } from 'dcc-core-lib';
+ * import { Ability, Save, rollCheck } from '@moonloch/dcc-core-lib';
  *
  * // Ability check
  * const result = rollCheck(Ability.STR, character);

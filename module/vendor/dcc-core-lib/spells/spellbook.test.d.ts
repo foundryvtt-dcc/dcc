@@ -1,4 +1,0 @@
-/**
- * Spellbook Management Tests
- */
-export {};

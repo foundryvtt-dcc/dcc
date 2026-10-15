@@ -33,11 +33,11 @@ export declare function rollTriggersDisapproval(natural: number, disapprovalRang
  */
 export declare function increaseDisapprovalRange(currentRange: number, increase?: number): number;
 /**
- * Reset disapproval range (after appropriate penance/atonement).
+ * Reduce the disapproval range (after appropriate penance/atonement).
  *
- * @param fullReset - If true, reset to 1; if false, reduce by a fixed amount
  * @param currentRange - Current disapproval range
- * @param reduction - Amount to reduce if not full reset (default 1)
+ * @param reduction - Amount to reduce by (default 1)
+ * @param minimum - Floor for the result (default DEFAULT_DISAPPROVAL_RANGE)
  * @returns New disapproval range
  */
 export declare function reduceDisapprovalRange(currentRange: number, reduction?: number, minimum?: number): number;

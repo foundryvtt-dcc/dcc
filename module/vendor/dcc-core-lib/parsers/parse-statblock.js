@@ -5,7 +5,7 @@
  *
  * @example
  * const result = parseStatBlock(
- *   "Goblin: Init +1; Atk club +0 melee (1d4); AC 11; HD 1d6; MV 30'; Act 1d20; SV Fort +0, Ref +1, Will -1; AL C."
+ *   "Goblin: Init +1; Atk club +0 melee (1d4); AC 11; HD 1d6; MV 30'; Act 1d20; SV Fort +3, Ref +4, Will -1; AL C."
  * );
  * if (result.success) {
  *   console.log(result.creature);
@@ -22,7 +22,7 @@
  * @returns Parse result with creature data or error
  *
  * @example
- * parseStatBlock("Bandit: Init +2; Atk scimitar +2 melee (1d8+1); AC 15; HD 1d8; MV 20'; Act 1d20; SV Fort +2, Ref +2, Will +0; AL C.")
+ * parseStatBlock("Road Reaver: Init +1; Atk hooked blade +3 melee (1d7+1); AC 14; HD 1d10; MV 25'; Act 1d20; SV Fort +2, Ref +4, Will -1; AL C.")
  */
 export function parseStatBlock(statblock, options = {}) {
     const warnings = [];
@@ -184,10 +184,10 @@ function parseSingleAttack(attackStr, warnings) {
     }
     // Standard attack format: "weapon +N melee/missile fire (damage)"
     // Examples:
-    //   "scimitar +2 melee (1d8+1)"
-    //   "javelin +3 missile fire (1d6)"
-    //   "wand +4 missile fire (range 60', 1d4+2)"
-    //   "poisoned dagger +9 melee (1d12 then 1d4, plus poison)"
+    //   "hooked blade +3 melee (1d7+1)"
+    //   "throwing spear +2 missile fire (1d5)"
+    //   "spark rod +5 missile fire (range 50', 1d5+3)"
+    //   "venom stiletto +7 melee (1d10 then 1d5, plus venom)"
     // Try to match standard format
     const standardMatch = /^(.+?)\s+([+-]?\d+)\s+(melee|missile\s*fire?)\s*\((.+)\)$/i.exec(attackStr);
     if (standardMatch) {
@@ -296,7 +296,7 @@ function parseMovement(text, warnings) {
     // "20', fly 40'" - land and fly with comma
     // "fly 40'" - fly only (no land)
     // "30' or swim 40'" - land and swim
-    // "jump 80' or fly 30'" - special movement
+    // "jump 60' or fly 20'" - special movement
     // Split on "or" and ","
     const parts = mvText.split(/\s+or\s+|,\s*/i);
     let hasLand = false;

@@ -75,8 +75,9 @@ export function divineAid(input, aidTable, options = {}) {
     const check = resolveSkillCheck(checkInput, options);
     // Get natural roll for disapproval check
     const natural = check.natural ?? 1;
-    // RAW DCC p.31: "This extraordinary act imparts a cumulative +10 penalty
-    // to future disapproval range." The +10 applies to every Divine Aid
+    // RAW DCC p.31 (paraphrased): each Divine Aid request permanently widens
+    // the cleric's disapproval range by 10, and the increases stack. The
+    // +10 applies to every Divine Aid
     // request, regardless of success. Normal disapproval-range hits still
     // stack on top.
     let newDisapprovalRange = input.disapprovalRange + DIVINE_AID_DISAPPROVAL_COST;

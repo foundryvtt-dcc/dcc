@@ -9,7 +9,7 @@
  * - `skill:backstab` - Thief backstab skill
  *
  * @example
- * import { Ability, Save } from 'dcc-core-lib';
+ * import { Ability, Save } from '@moonloch/dcc-core-lib';
  *
  * rollCheck(Ability.STR, character);  // "ability:str"
  * rollCheck(Save.REF, character);     // "save:reflex"

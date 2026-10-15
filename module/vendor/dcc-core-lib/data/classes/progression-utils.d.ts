@@ -5,12 +5,12 @@
  *
  * This module provides a registry pattern for class progressions.
  * The actual class data should be loaded from external sources
- * (e.g., dcc-official-data) and registered using registerClassProgression().
+ * (e.g. the consuming application's licensed compendium data) and registered using registerClassProgression().
  *
  * @example
  * ```typescript
- * import { registerClassProgression } from "dcc-core-lib";
- * import { WARRIOR_PROGRESSION } from "dcc-official-data";
+ * import { registerClassProgression } from "@moonloch/dcc-core-lib";
+ * import { WARRIOR_PROGRESSION } from "./my-class-data.js"; // your own data
  *
  * // Register class data at app startup
  * registerClassProgression(WARRIOR_PROGRESSION);
@@ -28,7 +28,7 @@ import type { SavingThrows } from "../../types/character.js";
  *
  * @example
  * ```typescript
- * import { WARRIOR_PROGRESSION } from "dcc-official-data";
+ * import { WARRIOR_PROGRESSION } from "./my-class-data.js"; // your own data
  * registerClassProgression(WARRIOR_PROGRESSION);
  * ```
  */
@@ -40,7 +40,7 @@ export declare function registerClassProgression(progression: ClassProgression):
  *
  * @example
  * ```typescript
- * import { ALL_CLASS_PROGRESSIONS } from "dcc-official-data";
+ * import { ALL_CLASS_PROGRESSIONS } from "./my-class-data.js"; // your own data
  * registerClassProgressions(ALL_CLASS_PROGRESSIONS);
  * ```
  */

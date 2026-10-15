@@ -14,9 +14,8 @@ import { getCriticalHitData } from "../data/classes/progression-utils.js";
 // Crit Die / Table Resolution
 // =============================================================================
 //
-// Per-class crit die and crit table progressions are rulebook data and live in
-// the companion `dcc-official-data` package. At runtime, callers register that
-// data via `registerClassProgression()`; the lookups below read from the
+// Per-class crit die and crit table progressions are rulebook data supplied by
+// the consuming application. At runtime, callers register that data via `registerClassProgression()`; the lookups below read from the
 // registry via `getCriticalHitData()`.
 //
 // If no progression is registered for a class (e.g., homebrew class, or tests

@@ -88,9 +88,9 @@ export function canBeSaved(level, roundsElapsed) {
         return false;
     }
     // The save window is the round the character dropped PLUS (level) full
-    // rounds: "If they are healed on the round they're reduced to 0 hit
-    // points or the next round, they are healed... If they are not healed
-    // before the second round, they may be permanently killed." So healing
+    // rounds. A 1st-level character can still be saved on the round they
+    // drop or the round after, and only dies once a second round passes
+    // without healing. So healing
     // during the (maxRounds)th round after the drop still saves them.
     const maxRounds = getBleedOutRounds(level);
     return roundsElapsed <= maxRounds;

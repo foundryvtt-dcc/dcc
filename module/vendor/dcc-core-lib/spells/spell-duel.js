@@ -17,7 +17,7 @@
  *
  * Table Data:
  * - Default fan-made tables are provided for basic functionality
- * - Official DCC tables can be injected via the dcc-official-data package
+ * - Official DCC tables can be injected by the caller
  */
 import { evaluateRoll } from "../dice/roll.js";
 import { DEFAULT_SPELL_DUEL_TABLES, lookupCounterspellPowerEntry, lookupPhlogistonDisturbanceEntry, entryToCounterspellPowerResult, entryToPhlogistonDisturbanceResult, } from "./spell-duel-tables.js";
