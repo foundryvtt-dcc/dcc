@@ -591,6 +591,7 @@
   "DCC.PartyEmpty": "Drag and drop an actor here",
   "DCC.PartyNoMembersWarning": "The party has no members; drag actors onto the party sheet first",
   "DCC.PartyNoTokenWarning": "The party has no token in the current scene; place the party token before rolling initiative",
+  "DCC.PartyNoInventoryHint": "The party sheet has no inventory. Drop the item on a member row or on a character sheet.",
   "DCC.Paralysis": "Paralysis",
   "DCC.Patron": "Patron",
   "DCC.PatronTaint": "Patron Taint",

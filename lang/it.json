@@ -604,6 +604,7 @@
   "DCC.PartyEmpty": "Trascina un Attore qui",
   "DCC.PartyNoMembersWarning": "Il gruppo non ha membri; trascina prima degli Attori sulla scheda del gruppo",
   "DCC.PartyNoTokenWarning": "Il gruppo non ha un token nella scena attuale; posiziona il token del gruppo prima di tirare l'iniziativa",
+  "DCC.PartyNoInventoryHint": "La scheda del gruppo non ha un inventario. Trascina l'oggetto sulla riga di un membro o sulla scheda di un personaggio.",
   "DCC.Paralysis": "Paralisi",
   "DCC.Patron": "Patrono",
   "DCC.PatronTaint": "Corruzione del Patrono",

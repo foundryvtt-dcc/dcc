@@ -591,6 +591,7 @@
   "DCC.PartyEmpty": "Glissez-déposez un acteur ici",
   "DCC.PartyNoMembersWarning": "Le groupe n'a aucun membre ; faites d'abord glisser des acteurs sur la feuille de groupe",
   "DCC.PartyNoTokenWarning": "Le groupe n'a pas de pion dans la scène actuelle ; placez le pion du groupe avant de lancer l'initiative",
+  "DCC.PartyNoInventoryHint": "La feuille de groupe n'a pas d'inventaire. Déposez l'objet sur la ligne d'un membre ou sur une feuille de personnage.",
   "DCC.PasteBlock": "Coller dans un bloc de statistique pour importer",
   "DCC.Patron": "Patron",
   "DCC.PatronTaint": "Corruption du Patron",
