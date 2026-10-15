@@ -124,13 +124,11 @@ export function makeAttackRoll(input, roller, events) {
         ? { mode: "evaluate", roller }
         : { mode: "evaluate" };
     const roll = evaluateRoll(formula, rollOptions);
-    // Roll deed die if applicable
+    // Roll deed die if applicable. Whether the deed succeeds also depends
+    // on the hit, so it is resolved once the hit is known (syncDeedSuccess).
     let deedRoll;
-    let deedSuccess;
     if (input.deedDie !== undefined) {
         deedRoll = rollDeedDie(input.deedDie, roller);
-        // Deed is successful if roll is 3+
-        deedSuccess = (deedRoll.natural ?? 0) >= 3;
         // Add deed die result to modifiers
         if (deedRoll.natural !== undefined) {
             appliedModifiers.push({
@@ -199,8 +197,8 @@ export function makeAttackRoll(input, roller, events) {
         isFumble,
         isHit,
         appliedModifiers,
-        deedSuccess,
     };
+    syncDeedSuccess(result);
     // Emit events
     events?.onAttackRoll?.(result);
     if (isCriticalThreat) {
@@ -209,10 +207,28 @@ export function makeAttackRoll(input, roller, events) {
     if (isFumble) {
         events?.onFumbleRoll?.(result);
     }
-    if (deedRoll !== undefined && deedSuccess !== undefined) {
-        events?.onDeedAttempt?.(deedRoll, deedSuccess);
+    if (deedRoll !== undefined && result.deedSuccess !== undefined) {
+        events?.onDeedAttempt?.(deedRoll, result.deedSuccess);
     }
     return result;
+}
+/**
+ * Set `result.deedSuccess` from the deed die and the hit (mutates
+ * `result`). A deed succeeds only when the deed die shows 3+ and the
+ * attack hits (DCC RPG core rules, p. 88). A fumble always misses. With
+ * no `targetAC` the hit is unknown (`isHit` undefined), so only the deed
+ * die is judged and the caller must confirm the hit itself, as with an
+ * unconfirmed critical threat. Leaves `deedSuccess` undefined when no
+ * deed die was rolled.
+ */
+function syncDeedSuccess(result) {
+    if (result.deedRoll === undefined) {
+        return;
+    }
+    result.deedSuccess =
+        isDeedSuccessful(result.deedRoll.natural ?? 0) &&
+            result.isHit !== false &&
+            !result.isFumble;
 }
 /**
  * Calculate attack bonus from character data
@@ -407,6 +423,7 @@ export function applyTwoWeaponHandRules(result, config, hand, targetAC) {
         result.isHit = true;
         result.isCriticalThreat = true;
         result.critSource = "natural-max";
+        syncDeedSuccess(result);
         return;
     }
     // Non-halfling 16-17 row: primary crits only on natural max that
@@ -431,6 +448,7 @@ export function applyTwoWeaponHandRules(result, config, hand, targetAC) {
             result.isCriticalThreat = true;
             result.critSource = "natural-max";
         }
+        syncDeedSuccess(result);
     }
 }
 function applyHalflingFumbleRule(primary, offHand, config) {
@@ -461,10 +479,12 @@ function emitTwoWeaponEvents(result, events) {
 /**
  * Check if a deed die roll is successful
  *
- * A deed is successful if the deed die shows 3 or higher.
+ * A deed die roll is successful if it shows 3 or higher. This judges the
+ * die only: the deed itself also needs the attack to hit, which
+ * {@link AttackResult.deedSuccess} accounts for.
  *
  * @param deedRoll - The deed die roll result
- * @returns Whether the deed succeeded
+ * @returns Whether the deed die shows 3+
  */
 export function isDeedSuccessful(deedRoll) {
     return deedRoll >= 3;

@@ -141,9 +141,11 @@ export declare function applyTwoWeaponHandRules(result: AttackResult, config: Tw
 /**
  * Check if a deed die roll is successful
  *
- * A deed is successful if the deed die shows 3 or higher.
+ * A deed die roll is successful if it shows 3 or higher. This judges the
+ * die only: the deed itself also needs the attack to hit, which
+ * {@link AttackResult.deedSuccess} accounts for.
  *
  * @param deedRoll - The deed die roll result
- * @returns Whether the deed succeeded
+ * @returns Whether the deed die shows 3+
  */
 export declare function isDeedSuccessful(deedRoll: number): boolean;
