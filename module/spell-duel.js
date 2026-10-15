@@ -599,15 +599,15 @@ class SpellDuel {
 
     // Build participant options - attacker defaults to first, defender to second
     const attackerOptions = SpellDuel.participants.map((p, index) =>
-      `<option value="${p.actorId}"${index === 0 ? ' selected' : ''}>${p.name} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
+      `<option value="${p.actorId}"${index === 0 ? ' selected' : ''}>${foundry.utils.escapeHTML(p.name)} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
     ).join('')
 
     const defenderOptions = SpellDuel.participants.map((p, index) =>
-      `<option value="${p.actorId}"${index === 1 ? ' selected' : ''}>${p.name} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
+      `<option value="${p.actorId}"${index === 1 ? ' selected' : ''}>${foundry.utils.escapeHTML(p.name)} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
     ).join('')
 
     const content = `
-      <form>
+      <div>
         <p class="notes">${game.i18n.localize('DCC.SpellDuelResolveInstructions')}</p>
         <div class="form-group">
           <label>${game.i18n.localize('DCC.SpellDuelAttacker')}</label>
@@ -637,7 +637,7 @@ class SpellDuel {
           <label>${game.i18n.localize('DCC.SpellDuelSamePatron')}</label>
           <input type="checkbox" name="samePatron"/>
         </div>
-      </form>
+      </div>
     `
 
     const dialog = new foundry.applications.api.DialogV2({
@@ -710,11 +710,10 @@ class SpellDuel {
       return
     }
 
-    // Table 4-5 needs dcc-core-book. Without it, a tie still resolves (as a
-    // Phlogiston Disturbance) and anything else asks for a manual lookup.
+    // Table 4-5 needs dcc-core-book. Without it, identical checks still resolve
+    // (as a Phlogiston Disturbance) and anything else asks for a manual lookup.
     const bookDie = await SpellDuel.getSpellDuelDie(attackerCheck, defenderCheck)
-    const tied = clampToComparisonTable(attackerCheck) === clampToComparisonTable(defenderCheck)
-    const tables = await buildLibTables(() => bookDie ?? (tied ? 'PD' : 'd3'))
+    const tables = await buildLibTables(() => bookDie ?? (attackerCheck === defenderCheck ? 'PD' : 'd3'))
 
     const spell = (level) => samePatron
       ? { name: 'invoke-patron', level, category: 'invoke-patron', patron: 'same' }
@@ -747,42 +746,46 @@ class SpellDuel {
     await SpellDuel.saveState()
 
     const winner = firstPass.comparison.attackerHigh ? attacker : defender
-    const names = { attacker: attacker.name, attackerCheck, defender: defender.name, defenderCheck }
+    const attackerName = foundry.utils.escapeHTML(attacker.name)
+    const defenderName = foundry.utils.escapeHTML(defender.name)
+    const names = { attacker: attackerName, attackerCheck, defender: defenderName, defenderCheck }
 
     if (!attackerSpellCheck.succeeded || !defenderSpellCheck.succeeded) {
-      const failed = [attackerSpellCheck.succeeded ? null : attacker.name, defenderSpellCheck.succeeded ? null : defender.name].filter(Boolean)
-      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelCheckFailed', { ...names, failed: failed.join(', ') }))
+      const failed = [attackerSpellCheck.succeeded ? null : attackerName, defenderSpellCheck.succeeded ? null : defenderName].filter(Boolean)
+      const list = new Intl.ListFormat(game.i18n.lang, { type: 'conjunction' }).format(failed)
+      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelCheckFailed', { ...names, failed: list }))
     } else if (firstPass.samePatronCancellation) {
       await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelSamePatronCancelled', names))
     } else if (manualLookup) {
       await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelManualLookup', {
         ...names,
-        winner: winner.name,
+        winner: foundry.utils.escapeHTML(winner.name),
         page: SPELL_DUEL_TABLES.spellDuelCheckComparison.page
       }))
     } else {
       const flavor = firstPass.phlogistonDisturbance
         ? game.i18n.localize('DCC.SpellDuelPhlogistonRoll')
         : game.i18n.format('DCC.SpellDuelCounterspellRoll', { die: firstPass.comparison.comparisonDie })
-      const totals = {}
+      const totals = []
       for (const formula of formulas) {
         const roll = await new Roll(formula).evaluate()
         await roll.toMessage({ flavor, speaker: { alias: game.i18n.localize('DCC.SpellDuel') } })
-        totals[formula] = roll.total
+        totals.push(roll.total)
       }
-      const result = resolve((formula) => totals[formula])
+      // Replayed in order: the second pass asks for the same dice as the first
+      const result = resolve(() => totals.shift())
 
       if (result.phlogistonDisturbance) {
         await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
-          attacker: attacker.name,
-          defender: defender.name,
+          attacker: attackerName,
+          defender: defenderName,
           result: result.phlogistonDisturbance.effect
         }))
       } else {
         const power = result.counterspellPower
         await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelExchangeResult', {
           ...names,
-          winner: winner.name,
+          winner: foundry.utils.escapeHTML(winner.name),
           die: result.comparison.comparisonDie,
           roll: power.roll,
           modifier: power.momentumModifier >= 0 ? `+${power.momentumModifier}` : power.momentumModifier,

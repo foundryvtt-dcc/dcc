@@ -8,6 +8,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // foundry.applications.api must exist at import time (class extends it).
 globalThis.foundry = {
+  utils: { escapeHTML: (s) => String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;') },
   applications: {
     api: {
       ApplicationV2: class {},
@@ -224,6 +225,29 @@ describe('SpellDuel.resolveExchange', () => {
     // 31 - 10 = +21; 6 + 21 = 27 -> attackerHigh 10+
     expect(lastMessage()).toContain('"finalRoll":27')
     expect(lastMessage()).toContain('SpellDuelEffectReflectAndOverwhelm')
+  })
+
+  test('a negative modifier never takes the roll below 1', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').momentum = 16
+    nextRollTotal = 1
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12)
+    // attacker 10 -> 11 vs 16: -5; 1 - 5 floors at 1
+    expect(lastMessage()).toContain('"modifier":-5')
+    expect(lastMessage()).toContain('"finalRoll":1')
+  })
+
+  test('actor names are escaped in the chat card', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').name = '<img src=x>'
+    await SpellDuel.resolveExchange('atk', 14, 'def', 11)
+    expect(lastMessage()).toContain('&lt;img src=x&gt;')
+    expect(lastMessage()).not.toContain('<img src=x>')
+  })
+
+  test('without the comparison table, only identical checks count as a tie', async () => {
+    globalThis.game.tables.getName = () => null
+    await SpellDuel.resolveExchange('atk', 30, 'def', 29)
+    expect(lastMessage()).toContain('DCC.SpellDuelManualLookup')
+    expect(rolledFormulas).toEqual([])
   })
 
   test('a check below the spell\'s minimum stops the comparison', async () => {
