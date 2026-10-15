@@ -409,6 +409,388 @@ describe('gather workflow', () => {
 
 afterEach(() => vi.unstubAllGlobals())
 
+async function deployWorkflowFixture ({ crossScene = false, tokenIds = [] } = {}) {
+  const fixture = gatherWorkflowFixture()
+  const { party, scene: sourceScene, make, events } = fixture
+  game.actors.push({ id: 'a' }, { id: 'b' })
+  const gathered = await fixture.gather({ tokenIds })
+  let scene = sourceScene
+  if (crossScene) {
+    scene = { ...sourceScene, id: 'destination', tokens: collection([]) }
+    // Reuse the persistent backend with a separate storage collection.
+    for (const name of ['createEmbeddedDocuments', 'deleteEmbeddedDocuments']) {
+      const operation = sourceScene[name].getMockImplementation()
+      scene[name] = vi.fn(async (...args) => {
+        const tokens = sourceScene.tokens
+        sourceScene.tokens = scene.tokens
+        try { return await operation(...args) } finally { sourceScene.tokens = tokens }
+      })
+    }
+    const token = sourceScene.tokens.get(gathered.partyTokenId)
+    sourceScene.tokens.splice(sourceScene.tokens.indexOf(token), 1)
+    scene.tokens.push(token)
+    game.scenes.push(scene)
+  }
+  const partyToken = scene.tokens.get(gathered.partyTokenId)
+  const snapshot = structuredClone(party.getFlag('dcc', 'partyTokenSnapshots'))
+  events.length = 0
+  scene.createEmbeddedDocuments.mockClear()
+  scene.deleteEmbeddedDocuments.mockClear()
+  party.setFlag.mockClear()
+  party.unsetFlag.mockClear()
+  const deploy = (options = {}) => service.deployPartyTokens({ party, scene, partyTokenId: partyToken.id, ...options })
+  return { ...fixture, sourceScene, scene, partyToken, snapshot, deploy, make }
+}
+
+describe('deploy workflow', () => {
+  test.each(['square', 'hexagonal', 'gridless'])('deploy creates fresh IDs and deep-cloned full payloads using %s geometry before consuming snapshot', async type => {
+    const { party, scene, partyToken, snapshot, deploy, events, foreign } = await deployWorkflowFixture()
+    Object.assign(scene, placementFixture(type))
+    const center = partyToken.getCenterPoint()
+    const placements = service.computeDeployPlacements(scene, center, snapshot.members.map(m => m.tokenData))
+    const result = await deploy()
+    expect(result).toMatchObject({ deployed: 2, skippedMemberIds: [], skipped: 0 })
+    const created = scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))
+    for (const [i, token] of created.entries()) {
+      expect(token.id).not.toBe(snapshot.members[i].tokenData._id)
+      expect(token.toObject()).toEqual({ ...snapshot.members[i].tokenData, ...placements[i], _id: token.id })
+    }
+    expect(events).toEqual(['create', 'delete-party', 'clear'])
+    expect(scene.tokens.get(foreign.id)).toBe(foreign)
+    expect(scene.tokens.has(partyToken.id)).toBe(false)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+    const payload = scene.createEmbeddedDocuments.mock.calls[0][1][0]
+    payload.texture.src = 'changed'
+    expect(snapshot.members[0].tokenData.texture.src).toBe('member.webp')
+    const count = events.length
+    await expect(deploy()).rejects.toMatchObject({ code: 'missing-snapshot' })
+    expect(events).toHaveLength(count)
+  })
+
+  test.each([false, true])('deploy always uses current target Party level, including same-scene switch (cross scene %s)', async crossScene => {
+    const { scene, sourceScene, partyToken, snapshot, deploy } = await deployWorkflowFixture({ crossScene })
+    partyToken.level = 'upper'
+    const toObject = partyToken.toObject
+    partyToken.toObject = () => ({ ...toObject(), level: 'upper' })
+    canvas.scene = null
+    await deploy()
+    for (const token of scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))) {
+      expect(token.level).toBe('upper')
+      expect(token.elevation).toBe(17)
+    }
+    expect(snapshot.members.every(m => m.tokenData.level === 'ground')).toBe(true)
+    if (crossScene) expect(sourceScene.tokens.some(t => ['a', 'b'].includes(t.actorId))).toBe(false)
+  })
+
+  test('deploy re-resolves stale documents and only deploys gathered, existing, still-rostered members', async () => {
+    const { party, scene, snapshot, deploy } = await deployWorkflowFixture()
+    const staleParty = { ...party, flags: structuredClone(party.flags) }
+    const staleScene = { ...scene, tokens: collection([]) }
+    party.flags.dcc.partyMembers = [{ id: 'a' }, { id: 'new-member' }]
+    game.actors.push({ id: 'new-member' })
+    await expect(deploy({ party: staleParty, scene: staleScene })).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['b'] })
+    expect(scene.tokens.filter(t => t.actorId === 'new-member')).toHaveLength(0)
+    expect(snapshot.members).toHaveLength(2)
+  })
+
+  test('deploy only replaces the gathered subset, leaving ungathered current roster tokens untouched', async () => {
+    const { scene, b, deploy } = await deployWorkflowFixture({ tokenIds: ['aaaaaaaaaaaaaaaa'] })
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skippedMemberIds: [] })
+    expect(scene.tokens.get(b.id)).toBe(b)
+    expect(scene.tokens.filter(t => t.actorId === 'b')).toEqual([b])
+    expect(scene.tokens.filter(t => t.actorId === 'a')).toHaveLength(1)
+  })
+
+  test('deploy skips a deleted world member even if its ID remains on the roster', async () => {
+    const { scene, deploy } = await deployWorkflowFixture()
+    game.actors.splice(game.actors.findIndex(actor => actor.id === 'a'), 1)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['a'] })
+    expect(scene.tokens.filter(t => t.actorId === 'a')).toHaveLength(0)
+    expect(scene.tokens.filter(t => t.actorId === 'b')).toHaveLength(1)
+  })
+
+  test.each(['all-departed', 'all-deleted'])('deploy safely clears %s snapshot without ever deleting Party without replacements', async mode => {
+    const { party, scene, partyToken, deploy, events } = await deployWorkflowFixture()
+    if (mode === 'all-departed') party.flags.dcc.partyMembers = []
+    else game.actors.splice(1)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 0, skipped: 2, skippedMemberIds: ['a', 'b'] })
+    expect(events).toEqual(['clear'])
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+  })
+
+  test.each(['original', 'departed-original', 'invalid-id', 'source-missing', 'missing-token', 'wrong-party', 'legacy-alone', 'legacy-alongside', 'combat', 'level', 'world', 'synthetic', 'pack', 'scene-missing', 'blocked'])('deploy guards %s before mutations', async mode => {
+    const { party, scene, sourceScene, partyToken, a, make, deploy, events } = await deployWorkflowFixture()
+    const codes = { original: 'original-token-exists', 'departed-original': 'original-token-exists', 'invalid-id': 'invalid-snapshot-token-id', 'source-missing': 'missing-source-scene', 'missing-token': 'missing-party-token', 'wrong-party': 'missing-party-token', 'legacy-alone': 'unlinked-party-token', 'legacy-alongside': 'unlinked-party-token', combat: 'party-token-in-combat', level: 'invalid-deploy-level', world: 'invalid-party', synthetic: 'invalid-party', pack: 'invalid-party', 'scene-missing': 'missing-scene', blocked: 'party-blocked' }
+    if (mode.includes('original')) sourceScene.tokens.push(a)
+    if (mode === 'departed-original') party.flags.dcc.partyMembers = []
+    if (mode === 'invalid-id') party.flags.dcc.partyTokenSnapshots.members[0].tokenData._id = 'invalid'
+    if (mode === 'source-missing') party.flags.dcc.partyTokenSnapshots.sceneId = 'deleted'
+    if (mode === 'missing-token' || mode === 'legacy-alone') scene.tokens.splice(scene.tokens.indexOf(partyToken), 1)
+    if (mode === 'wrong-party') partyToken.actorId = 'other-party'
+    if (mode.startsWith('legacy')) scene.tokens.push(make('llllllllllllllll', party.id, { actorLink: false, level: 'upper' }))
+    if (mode === 'combat') game.combats = [{ scene, started: true, combatants: [{ tokenId: partyToken.id }] }]
+    if (mode === 'level') scene.levels.splice(0)
+    if (mode === 'world') game.actors.splice(0, 1)
+    if (mode === 'synthetic') party.isToken = true
+    if (mode === 'pack') party.pack = 'pack'
+    if (mode === 'scene-missing') game.scenes.splice(0)
+    if (mode === 'blocked') service.blockedPartyIds.add(party.id)
+    await expect(deploy()).rejects.toMatchObject({ code: codes[mode] })
+    expect(events).toEqual([])
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
+  })
+
+  test.each(['throw', 'silent', 'partial', 'not-stored', 'wrong-data', 'original-id'])('deploy verifies member creation (%s), fully rolls back and permits immediate retry', async mode => {
+    const { party, scene, partyToken, snapshot, deploy } = await deployWorkflowFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (type, data, options) => {
+      if (mode === 'throw') throw new Error('create')
+      if (mode === 'silent') return []
+      const result = await create(type, mode === 'partial' ? data.slice(0, 1) : data, options)
+      if (mode === 'not-stored') scene.tokens.splice(scene.tokens.indexOf(result[0]), 1)
+      if (mode === 'wrong-data') result[0].toObject = () => ({ ...data[0], _id: result[0].id, elevation: 999 })
+      if (mode === 'original-id') {
+        result[0].id = snapshot.members[0].tokenData._id
+        result[0].toObject = () => ({ ...data[0], _id: result[0].id })
+      }
+      return result
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: true })
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+    expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(0)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+    expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+  })
+
+  test.each(['throw', 'silent', 'after-delete', 'clear-throw', 'clear-silent', 'clear-after-write'])('deploy failure (%s) restores original Party ID before member cleanup and preserves snapshot for retry', async mode => {
+    const { party, scene, partyToken, snapshot, deploy, events } = await deployWorkflowFixture()
+    const source = partyToken.toObject()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    if (mode === 'throw') scene.deleteEmbeddedDocuments.mockRejectedValueOnce(new Error('delete'))
+    if (mode === 'silent') scene.deleteEmbeddedDocuments.mockResolvedValueOnce([])
+    if (mode === 'after-delete') scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => { await remove(...args); throw new Error('deleted') })
+    if (mode === 'clear-throw') party.unsetFlag.mockRejectedValueOnce(new Error('clear'))
+    if (mode === 'clear-silent') party.unsetFlag.mockResolvedValueOnce(party)
+    if (mode === 'clear-after-write') {
+      const clear = party.unsetFlag.getMockImplementation()
+      party.unsetFlag.mockImplementationOnce(async (...args) => { await clear(...args); throw new Error('cleared') })
+    }
+    await expect(deploy()).rejects.toMatchObject({ code: mode.startsWith('clear') ? 'snapshot-clear-failed' : 'party-delete-failed', rollbackComplete: true })
+    expect(scene.tokens.get(partyToken.id)?.toObject()).toEqual(source)
+    expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(0)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    if (events.includes('restore')) expect(events.indexOf('restore')).toBeLessThan(events.lastIndexOf('delete-party'))
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+  })
+
+  test.each(['restore-throw', 'restore-silent', 'cleanup-throw', 'cleanup-silent', 'cleanup-partial', 'snapshot-restore'])('deploy incomplete rollback (%s) retains data and follow-up clicks on both actions are no-ops', async mode => {
+    const { party, scene, partyToken, snapshot, deploy, gather } = await deployWorkflowFixture()
+    party.unsetFlag.mockImplementationOnce(async (scope, key) => { delete party.flags[scope][key]; throw new Error('clear') })
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    if (mode.startsWith('restore')) {
+      scene.createEmbeddedDocuments.mockImplementation((type, data, options) => {
+        if (!options?.keepId) return create(type, data, options)
+        if (mode === 'restore-throw') throw new Error('restore')
+        return []
+      })
+    }
+    if (mode.startsWith('cleanup')) {
+      scene.deleteEmbeddedDocuments.mockImplementation((type, ids) => {
+        if (ids.includes(partyToken.id)) return remove(type, ids)
+        if (mode === 'cleanup-throw') throw new Error('cleanup')
+        if (mode === 'cleanup-silent') return []
+        return remove(type, ids.slice(0, 1))
+      })
+    }
+    if (mode === 'snapshot-restore') party.setFlag.mockResolvedValue(party)
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: false, severity: 'error' })
+    if (mode !== 'snapshot-restore') expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    if (mode === 'snapshot-restore') expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+    if (mode.startsWith('restore')) {
+      expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+      expect(scene.deleteEmbeddedDocuments).toHaveBeenCalledTimes(1)
+    }
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+    const calls = scene.createEmbeddedDocuments.mock.calls.length + scene.deleteEmbeddedDocuments.mock.calls.length + party.setFlag.mock.calls.length + party.unsetFlag.mock.calls.length
+    await expect(deploy()).rejects.toMatchObject({ code: 'party-blocked' })
+    await expect(gather()).rejects.toMatchObject({ code: 'party-blocked' })
+    expect(scene.createEmbeddedDocuments.mock.calls.length + scene.deleteEmbeddedDocuments.mock.calls.length + party.setFlag.mock.calls.length + party.unsetFlag.mock.calls.length).toBe(calls)
+  })
+
+  test.each(['throw', 'empty', 'partial-unreturned', 'external-only'])('deploy unknown creation attribution (%s) never deletes possible external members and blocks retry', async mode => {
+    const { party, scene, make, snapshot, deploy } = await deployWorkflowFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    const external = make('eeeeeeeeeeeeeeee', 'a')
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const result = mode === 'external-only' ? [] : await create(...args)
+      scene.tokens.push(external)
+      if (mode === 'throw') throw new Error('create-callback')
+      if (mode === 'partial-unreturned') return result.slice(0, 1)
+      return []
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: false })
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
+  })
+
+  test('deploy rollback only deletes proven own returned members, not a concurrent same-actor token', async () => {
+    const { scene, make, deploy } = await deployWorkflowFixture()
+    const external = make('eeeeeeeeeeeeeeee', 'a')
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => { const result = await create(...args); scene.tokens.push(external); return result })
+    scene.deleteEmbeddedDocuments.mockRejectedValueOnce(new Error('delete'))
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: true })
+    expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toEqual([external])
+  })
+
+  test.each(['original', 'roster', 'snapshot', 'party-missing', 'party-changed', 'combat', 'world', 'party-type', 'level', 'legacy'])('deploy rechecks awaited creation changes (%s) before Party destruction', async mode => {
+    const { party, scene, a, partyToken, deploy } = await deployWorkflowFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const result = await create(...args)
+      if (mode === 'original') scene.tokens.push(a)
+      if (mode === 'roster') party.flags.dcc.partyMembers = []
+      if (mode === 'snapshot') delete party.flags.dcc.partyTokenSnapshots
+      if (mode === 'party-missing') scene.tokens.splice(scene.tokens.indexOf(partyToken), 1)
+      if (mode === 'party-changed') partyToken.actorId = 'external-party'
+      if (mode === 'combat') game.combats = [{ scene, started: true, combatants: [{ tokenId: partyToken.id }] }]
+      if (mode === 'world') game.actors.splice(0, 1)
+      if (mode === 'party-type') party.type = 'NPC'
+      if (mode === 'level') scene.levels.splice(0)
+      if (mode === 'legacy') scene.tokens.push({ ...partyToken, id: 'llllllllllllllll', actorLink: false, level: 'upper' })
+      return result
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'deploy-context-changed' })
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(partyToken.id)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
+    if (mode === 'party-missing') expect(scene.tokens.get(partyToken.id)?.actorId).toBe(party.id)
+    if (mode === 'party-changed') {
+      expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+      expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+      expect(service.blockedPartyIds.has(party.id)).toBe(true)
+    }
+    if (mode === 'world') {
+      expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+      expect(service.blockedPartyIds.has(party.id)).toBe(true)
+    }
+  })
+
+  test('deploy rechecks original IDs after Party deletion and never clears snapshot on conflict', async () => {
+    const { party, scene, a, deploy } = await deployWorkflowFixture()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => { const result = await remove(...args); scene.tokens.push(a); return result })
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: false })
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
+    expect(scene.tokens.get(a.id)).toBe(a)
+  })
+
+  test('deploy never mutates even the live snapshot payload when a failed backend mutates creation data', async () => {
+    const { party, scene, deploy, snapshot } = await deployWorkflowFixture()
+    const live = party.getFlag('dcc', 'partyTokenSnapshots')
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (type, data) => {
+      data[0].texture.src = 'normalized'
+      data[0].flags.custom.preserved = false
+      throw new Error('failed-create')
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: true })
+    expect(live).toEqual(snapshot)
+  })
+
+  test('deploy accepts only Foundry movement/region normalization, retaining all other source properties', async () => {
+    const { scene, deploy } = await deployWorkflowFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const result = await create(...args)
+      for (const token of result) {
+        const source = token.toObject()
+        token.toObject = () => ({ ...source, _movementHistory: [], _regions: ['new-region'] })
+      }
+      return result
+    })
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+  })
+
+  test('deploy rollback preserves a foreign document occupying a proven own member ID after Party restoration', async () => {
+    const { party, scene, make, deploy } = await deployWorkflowFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    let external
+    scene.createEmbeddedDocuments.mockImplementation(async (type, data, options) => {
+      const result = await create(type, data, options)
+      if (options?.keepId) {
+        const member = scene.tokens.find(t => t.actorId === 'a')
+        external = make(member.id, 'foreign')
+        scene.tokens.splice(scene.tokens.indexOf(member), 1, external)
+      }
+      return result
+    })
+    party.unsetFlag.mockRejectedValueOnce(new Error('clear'))
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: false })
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+  })
+
+  test.each(['party-vanished', 'party-replaced', 'snapshot-vanished'])('deploy verifies final rollback state after awaited cleanup (%s)', async mode => {
+    const { party, scene, partyToken, make, deploy } = await deployWorkflowFixture()
+    if (mode === 'snapshot-vanished') party.setFlag.mockResolvedValue(party)
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockRejectedValueOnce(new Error('party-delete'))
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const result = await remove(...args)
+      if (mode === 'snapshot-vanished') delete party.flags.dcc.partyTokenSnapshots
+      else {
+        scene.tokens.splice(scene.tokens.findIndex(t => t.id === partyToken.id), 1)
+        if (mode === 'party-replaced') scene.tokens.push(make(partyToken.id, 'foreign'))
+      }
+      return result
+    })
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: false })
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+  })
+
+  test('deploy rollback confirms actual member absence even when the cleanup callback throws after deletion', async () => {
+    const { scene, deploy } = await deployWorkflowFixture()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockRejectedValueOnce(new Error('party-delete'))
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => { await remove(...args); throw new Error('cleanup-callback') })
+    await expect(deploy()).rejects.toMatchObject({ rollbackComplete: true })
+  })
+
+  test.each(['clear-throw', 'clear-silent', 'original-appears'])('deploy all-invalid completion (%s) retains the Party and recovery data', async mode => {
+    const { party, scene, partyToken, a, deploy, snapshot } = await deployWorkflowFixture()
+    party.flags.dcc.partyMembers = []
+    if (mode === 'clear-throw') party.unsetFlag.mockRejectedValueOnce(new Error('clear'))
+    if (mode === 'clear-silent') party.unsetFlag.mockResolvedValueOnce(party)
+    if (mode === 'original-appears') {
+      party.unsetFlag.mockImplementationOnce(async (scope, key) => {
+        scene.tokens.push(a)
+        delete party.flags[scope][key]
+      })
+    }
+    await expect(deploy()).rejects.toMatchObject({ code: 'snapshot-clear-failed' })
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+  })
+
+  test('deploy all-invalid checks original IDs again immediately before clearing, not only at initial preflight', async () => {
+    const { party, scene, partyToken, a, deploy, snapshot } = await deployWorkflowFixture()
+    party.flags.dcc.partyMembers = []
+    const center = partyToken.getCenterPoint()
+    partyToken.getCenterPoint = () => { scene.tokens.push(a); return center }
+    await expect(deploy()).rejects.toMatchObject({ code: 'deploy-context-changed' })
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+  })
+})
+
 test('registers synchronous setup and client lifecycle hooks once at entry point', async () => {
   registerPartyTokenHooks()
   expect(Hooks.once).toHaveBeenCalledWith('setup', expect.any(Function))

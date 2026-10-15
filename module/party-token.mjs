@@ -1,6 +1,6 @@
 /* global CONFIG, game, TokenDocument, canvas, Hooks, foundry */
 
-/** Session-local safety latch for incomplete rollbacks; not a recovery mechanism. */
+/** Session-local latch, lost on reload. Unattributed fresh-ID Tokens need manual inspection. */
 export const blockedPartyIds = new Set()
 
 /** All started, still-present encounters in the supplied scene, not just the active tracker. */
@@ -193,16 +193,191 @@ export function resolveDeployContext (party, scene, { partyTokenId } = {}) {
   assertPartyAvailable(party)
   const snapshot = party.flags?.dcc?.partyTokenSnapshots
   if (!snapshot) throw new Error('missing-snapshot')
+  const sourceScene = assertOriginalTokensAbsent(snapshot)
+  const partyToken = resolvePartyToken(party, scene, partyTokenId)
+  if (!partyToken) throw new Error('missing-party-token')
+  return { sourceScene, snapshot, partyToken }
+}
+
+function assertOriginalTokensAbsent (snapshot) {
   const sourceScene = game.scenes.get(snapshot.sceneId)
   if (!sourceScene) throw new Error('missing-source-scene')
+  if (!Array.isArray(snapshot.members)) throw new Error('invalid-snapshot-token-id')
   for (const member of snapshot.members) {
     const id = member.tokenData?._id
     if (typeof id !== 'string' || !/^[A-Za-z0-9]{16}$/.test(id)) throw new Error('invalid-snapshot-token-id')
   }
   if (snapshot.members.some(member => sourceScene.tokens.has(member.tokenData._id))) throw new Error('original-token-exists')
-  const partyToken = resolvePartyToken(party, scene, partyTokenId)
-  if (!partyToken) throw new Error('missing-party-token')
-  return { sourceScene, snapshot, partyToken }
+  return sourceScene
+}
+
+/** Foundry resets movement history and recalculates regions when creating a Token. */
+function sameTokenSource (document, source) {
+  if (!document) return false
+  if (['actorId', 'actorLink', 'level'].some(key => document[key] !== source[key])) return false
+  const comparable = data => {
+    const copy = structuredClone(data)
+    delete copy._movementHistory
+    delete copy._regions
+    return copy
+  }
+  return foundry.utils.equals(comparable(document.toObject()), comparable(source))
+}
+
+function currentDeployMembers (party, snapshot) {
+  const roster = new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+  return snapshot.members.filter(member => roster.has(member.actorId) && game.actors.has(member.actorId))
+}
+
+/** Internal, document-only workflow. No canvas, socket, persisted journal or reload recovery. */
+export async function deployPartyTokens ({ party, scene, partyTokenId }) {
+  let context
+  try {
+    if (party?.isToken || party?.pack) throw new Error('invalid-party')
+    party = game.actors.get(party?.id)
+    scene = game.scenes.get(scene?.id)
+    if (party?.type !== 'Party') throw new Error('invalid-party')
+    if (!scene) throw new Error('missing-scene')
+    context = resolveDeployContext(party, scene, { partyTokenId })
+    if (!scene.levels.has(context.partyToken.level)) throw new Error('invalid-deploy-level')
+  } catch (error) {
+    error.code ??= error.message
+    throw error
+  }
+
+  const snapshot = structuredClone(context.snapshot)
+  const originalParty = context.partyToken
+  const partySource = structuredClone(originalParty.toObject())
+  const members = currentDeployMembers(party, snapshot)
+  const skippedMemberIds = snapshot.members.filter(member => !members.includes(member)).map(member => member.actorId)
+  const result = { deployed: members.length, skipped: skippedMemberIds.length, skippedMemberIds }
+  const payloads = members.map(member => {
+    const data = structuredClone(member.tokenData)
+    delete data._id
+    data.level = originalParty.level
+    return data
+  })
+  const placements = computeDeployPlacements(scene, originalParty.getCenterPoint(), payloads)
+  for (const [i, data] of payloads.entries()) Object.assign(data, placements[i])
+  const expectedPayloads = structuredClone(payloads)
+  const ownMembers = new Map()
+  let uncertainCreation = false
+  let code = 'deploy-context-changed'
+
+  const assertContext = (withParty = true) => {
+    assertPartyAvailable(party)
+    if (party.type !== 'Party' || party.isToken || party.pack ||
+      game.actors.get(party.id) !== party || game.scenes.get(scene.id) !== scene ||
+      !foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot) ||
+      !foundry.utils.equals(currentDeployMembers(party, snapshot), members)) throw new Error(code)
+    assertOriginalTokensAbsent(snapshot)
+    if (withParty) {
+      const current = resolveDeployContext(party, scene, { partyTokenId: originalParty.id }).partyToken
+      if (current !== originalParty || current.actorId !== party.id || !current.actorLink ||
+        current.level !== partySource.level || !scene.levels.has(current.level) || !sameTokenSource(current, partySource)) throw new Error(code)
+    }
+  }
+  const assertReplacements = () => {
+    if (ownMembers.size !== payloads.length || [...ownMembers].some(([id, { document, source }]) =>
+      scene.tokens.get(id) !== document || !sameTokenSource(document, source))) throw new Error(code)
+  }
+
+  try {
+    assertContext()
+    if (members.length) {
+      code = 'member-create-failed'
+      const before = new Set([...scene.tokens].map(token => token.id))
+      let created
+      try {
+        // This guard must precede every create, including rollback Party restoration.
+        assertOriginalTokensAbsent(snapshot)
+        created = await scene.createEmbeddedDocuments('Token', payloads)
+      } finally {
+        // Scene additions alone never establish ownership: another client can
+        // create even the only new same-Actor Token while our create aborts.
+        for (const [i, token] of (created ?? []).entries()) {
+          if (!before.has(token.id) && scene.tokens.get(token.id) === token) {
+            ownMembers.set(token.id, { document: token, source: { ...expectedPayloads[i], _id: token.id } })
+          }
+        }
+        if (created?.length !== payloads.length || ownMembers.size !== payloads.length) {
+          const actors = new Set(members.map(member => member.actorId))
+          uncertainCreation = [...scene.tokens].some(token => !before.has(token.id) && !ownMembers.has(token.id) && actors.has(token.actorId))
+        }
+      }
+      const originals = new Set(snapshot.members.map(member => member.tokenData._id))
+      if (created?.length !== payloads.length || [...ownMembers.keys()].some(id =>
+        !/^[A-Za-z0-9]{16}$/.test(id) || originals.has(id))) throw new Error(code)
+      assertReplacements()
+      code = 'deploy-context-changed'
+      assertContext()
+      // Check actual documents, not just a successful batch return, before any destruction.
+      assertReplacements()
+      code = 'party-delete-failed'
+      await scene.deleteEmbeddedDocuments('Token', [originalParty.id])
+      if (scene.tokens.has(originalParty.id)) throw new Error(code)
+      assertReplacements()
+    }
+    code = 'snapshot-clear-failed'
+    // Includes ALL original IDs even if every snapshotted member has departed.
+    assertContext(!members.length)
+    if (members.length && scene.tokens.has(originalParty.id)) throw new Error(code)
+    await party.unsetFlag('dcc', 'partyTokenSnapshots')
+    if (party.getFlag('dcc', 'partyTokenSnapshots') != null) throw new Error(code)
+    assertOriginalTokensAbsent(snapshot)
+    assertReplacements()
+    if (members.length ? scene.tokens.has(originalParty.id) : !sameTokenSource(scene.tokens.get(originalParty.id), partySource)) throw new Error(code)
+    return result
+  } catch (cause) {
+    const rollbackIssues = uncertainCreation ? ['member-create-uncertain'] : []
+    // A rejected flag clear can already have persisted. Retain the deep-cloned
+    // original snapshot on every failed completion, regardless of cleanup outcome.
+    if (!foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot)) {
+      try { await party.setFlag('dcc', 'partyTokenSnapshots', structuredClone(snapshot)) } catch (_) { /* Verify below. */ }
+    }
+    if (!foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot)) rollbackIssues.push('snapshot-restore-failed')
+
+    // Never delete a legitimate external Token that now occupies the Party ID.
+    // Restore a missing original Party first, including when it disappeared in
+    // an awaited creation before our own deletion was ever attempted.
+    if (!scene.tokens.has(originalParty.id)) {
+      try {
+        assertOriginalTokensAbsent(snapshot)
+        await scene.createEmbeddedDocuments('Token', [structuredClone(partySource)], { keepId: true })
+      } catch (_) { /* Stored documents, not exceptions, decide restoration. */ }
+    }
+    const restored = scene.tokens.get(originalParty.id)
+    const partyRestored = game.actors.get(party.id) === party && game.scenes.get(scene.id) === scene &&
+      restored?.actorId === party.id && restored.actorLink &&
+      restored.level === partySource.level && sameTokenSource(restored, partySource)
+    if (!partyRestored) rollbackIssues.push('party-restore-failed')
+    if (partyRestored && foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot)) {
+      // Keep document identity as well as the returned ID: do not delete a
+      // foreign replacement that acquired that ID during an awaited rollback.
+      const remaining = [...ownMembers].filter(([id, { document }]) => scene.tokens.get(id) === document).map(([id]) => id)
+      try {
+        if (remaining.length) await scene.deleteEmbeddedDocuments('Token', remaining)
+      } catch (_) { /* Verify actual absence even after a callback throws. */ }
+    }
+    // Cleanup itself is awaited: never claim retry safety from a pre-await check.
+    if (!foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot)) {
+      try { await party.setFlag('dcc', 'partyTokenSnapshots', structuredClone(snapshot)) } catch (_) { /* Verify below. */ }
+      if (!foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot) &&
+        !rollbackIssues.includes('snapshot-restore-failed')) rollbackIssues.push('snapshot-restore-failed')
+    }
+    if ([...ownMembers.keys()].some(id => scene.tokens.has(id))) rollbackIssues.push('member-delete-failed')
+    const finalParty = scene.tokens.get(originalParty.id)
+    if ((game.actors.get(party.id) !== party || game.scenes.get(scene.id) !== scene || !sameTokenSource(finalParty, partySource)) &&
+      !rollbackIssues.includes('party-restore-failed')) rollbackIssues.push('party-restore-failed')
+    if (rollbackIssues.length) blockedPartyIds.add(party.id)
+    throw Object.assign(new Error(code, { cause }), {
+      code,
+      rollbackComplete: !rollbackIssues.length,
+      rollbackIssues,
+      severity: rollbackIssues.length ? 'error' : 'warning',
+      manualInspectionRequired: !!rollbackIssues.length
+    })
+  }
 }
 
 /*
