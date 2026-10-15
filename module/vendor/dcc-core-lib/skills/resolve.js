@@ -167,10 +167,8 @@ function finalizeSkillCheck(skill, input, die, formula, modifiers, natural, rawT
         result.natural = natural;
     }
     // Phase 4: multipliers (relevant for damage; pass-through for checks)
-    let total = rawTotal;
     if (rawTotal !== undefined) {
-        total = applyMultipliers(rawTotal, modifiers);
-        result.total = total;
+        result.total = applyMultipliers(rawTotal, modifiers);
     }
     // Phase 5: threat resolution + critical/fumble classification
     if (natural !== undefined) {

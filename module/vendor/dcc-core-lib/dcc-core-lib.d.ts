@@ -3057,7 +3057,13 @@ export interface AttackResult {
 	isHit?: boolean | undefined;
 	/** All modifiers that were applied */
 	appliedModifiers: LegacyRollModifier[];
-	/** Whether the deed was successful (roll >= 3) */
+	/**
+	 * Whether the deed succeeded: the deed die shows 3+ and the attack hits.
+	 * `false` on a fumble or a known miss. When `targetAC` was omitted the
+	 * hit is unknown (`isHit` undefined) and only the deed die is judged, so
+	 * the caller must still confirm the hit. Undefined when no deed die was
+	 * rolled.
+	 */
 	deedSuccess?: boolean | undefined;
 }
 /**
@@ -7343,10 +7349,12 @@ export declare function applyTwoWeaponHandRules(result: AttackResult, config: Tw
 /**
  * Check if a deed die roll is successful
  *
- * A deed is successful if the deed die shows 3 or higher.
+ * A deed die roll is successful if it shows 3 or higher. This judges the
+ * die only: the deed itself also needs the attack to hit, which
+ * {@link AttackResult.deedSuccess} accounts for.
  *
  * @param deedRoll - The deed die roll result
- * @returns Whether the deed succeeded
+ * @returns Whether the deed die shows 3+
  */
 export declare function isDeedSuccessful(deedRoll: number): boolean;
 /**

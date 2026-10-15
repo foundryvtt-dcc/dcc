@@ -39,6 +39,9 @@
     </div>
   {{/if}}
   {{#if deedPromptHTML}}{{{deedPromptHTML}}}{{/if}}
+  {{#if deedNeedsHitNote}}
+    <div class="pt-8 centered deed-needs-hit-note"><em>{{deedNeedsHitNote}}</em></div>
+  {{/if}}
 
   {{#if showHitMiss}}
     <div class="chat-details centered">

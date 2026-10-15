@@ -302,6 +302,9 @@ export const emoteAttackRoll = function (message, html) {
     // Kept separate from the inline deed-roll text so this block-level markup lands
     // *after* the "…for X points of damage!" sentence instead of splitting it apart.
     deedTablePrompt = buildMightyDeedPrompt(message)
+    if (message.system.deedNeedsHitNote) {
+      deedTablePrompt += `<p class="emote-note deed-needs-hit-note"><em>${message.system.deedNeedsHitNote}</em></p>`
+    }
   }
 
   let crit = ''

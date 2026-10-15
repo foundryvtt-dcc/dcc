@@ -18,6 +18,9 @@
     </select>
   </div>
 {{/if}}
+{{#if message.system.deedNeedsHitNote}}
+  <div class="pt-8 deed-needs-hit-note"><em>{{message.system.deedNeedsHitNote}}</em></div>
+{{/if}}
 {{#if message.system.damageInlineRoll}}
   <div class="pt-8"><strong>{{message.system.damagePrompt}}:</strong> {{{message.system.damageInlineRoll}}}</div>
 {{/if}}

@@ -812,6 +812,7 @@
   "DCC.AttackHitsAC": "Touche la CA {ac}",
   "DCC.AttackMissesNatural1": "Manque (1 naturel)",
   "DCC.CritNeedsHitNote": "Critique seulement si cette attaque touche.",
+  "DCC.DeedNeedsHitNote": "Haut fait seulement si cette attaque touche.",
   "DCC.RollsDamageWith": "Lance les dégâts avec {weapon}",
   "DCC.SocketNoGMWarning": "Aucun Maître de Jeu n'est connecté, cette action n'a donc pas pu être effectuée. Un MJ doit être en ligne.",
   "DCC.SettingAutoApplyDamage": "Appliquer automatiquement les dégâts à la cible",
