@@ -1148,5 +1148,10 @@
   "DCC.system.skills.sneakSilently.value": "Muoversi silenziosamente",
   "DCC.Unlimited": "illimitato",
   "DCC.untrained": "non addestrato",
-  "DCC.WeightUnit": "lb"
+  "DCC.WeightUnit": "lb",
+  "DCC.SpellDuelAttackerSpellLevel": "Livello dell'incantesimo dell'attaccante",
+  "DCC.SpellDuelDefenderSpellLevel": "Livello dell'incantesimo del difensore",
+  "DCC.SpellDuelSamePatron": "Entrambi invocano lo stesso patrono",
+  "DCC.SpellDuelCheckFailed": "<b>Scambio di Duello Magico</b><br>{attacker} ({attackerCheck}) contro {defender} ({defenderCheck})<br>{failed}: sotto la prova d'incantesimo minima, quindi nessun confronto di duello. Lo slancio non cambia.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Scambio di Duello Magico</b><br>{attacker} ({attackerCheck}) contro {defender} ({defenderCheck})<br>Entrambi hanno invocato lo stesso patrono: entrambi gli incantesimi sono annullati."
 }

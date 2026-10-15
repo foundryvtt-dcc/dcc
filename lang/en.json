@@ -1148,5 +1148,10 @@
   "DCC.system.skills.sneakAndHide.value": "Sneak and Hide",
   "DCC.system.skills.sneakSilently.value": "Sneak Silently",
   "DCC.Unlimited": "unlimited",
-  "DCC.untrained": "untrained"
+  "DCC.untrained": "untrained",
+  "DCC.SpellDuelAttackerSpellLevel": "Attacker spell level",
+  "DCC.SpellDuelDefenderSpellLevel": "Defender spell level",
+  "DCC.SpellDuelSamePatron": "Both invoke the same patron",
+  "DCC.SpellDuelCheckFailed": "<b>Spell Duel Exchange</b><br>{attacker} ({attackerCheck}) vs {defender} ({defenderCheck})<br>{failed}: below the minimum spell check, so there is no spell duel comparison. Momentum is unchanged.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Spell Duel Exchange</b><br>{attacker} ({attackerCheck}) vs {defender} ({defenderCheck})<br>Both invoked the same patron: both spells are cancelled."
 }

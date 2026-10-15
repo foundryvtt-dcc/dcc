@@ -1,5 +1,8 @@
 /* global canvas, CONFIG, CONST, fromUuid, game, Hooks, foundry, ui, Roll */
 
+import { resolveCounterspellExchange } from './vendor/dcc-core-lib/index.js'
+import { spellCheckSucceeded } from './spell-check-success.mjs'
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
@@ -35,26 +38,34 @@ const COUNTERSPELL_POWER_TABLE = {
 
 /**
  * RollTable references for dcc-core-book integration
+ *
+ * Tables are found by `_id` in the pack, then by any of `names` (in the pack or
+ * the world). Table 4-7 was renamed to fix a typo, so both spellings are kept
+ * for older dcc-core-book installs.
  */
 const SPELL_DUEL_TABLES = {
   spellDuelCheckComparison: {
     pack: 'dcc-core-book.dcc-core-tables',
-    name: 'Table 4-5: Spell Duel Check Comparison',
+    id: 'b8Eh0tUvRsYo5Zax',
+    names: ['Table 4-5: Spell Duel Check Comparison'],
     page: 100
   },
   counterspellDefenderHigh: {
     pack: 'dcc-core-book.dcc-core-tables',
-    name: 'Table 4-6: Counterspell Power (Defender High)',
+    id: 'd6Cf8sRtPqWn3Xyz',
+    names: ['Table 4-6: Counterspell Power (Defender High)'],
     page: 101
   },
   counterspellAttackerHigh: {
     pack: 'dcc-core-book.dcc-core-tables',
-    name: 'Table 4-6: Counterspell Power (Attacker High)',
+    id: 'a7Dg9sTuQrXn4Yzw',
+    names: ['Table 4-6: Counterspell Power (Attacker High)'],
     page: 101
   },
   phlogistonDisturbance: {
     pack: 'dcc-core-book.dcc-core-tables',
-    name: 'Table 4-7: Phologiston Disturbance',
+    id: 'EehqfTN3QVUZSf6l',
+    names: ['Table 4-7: Phlogiston Disturbance', 'Table 4-7: Phologiston Disturbance'],
     page: 103
   }
 }
@@ -98,7 +109,7 @@ async function getSpellDuelTable (tableKey) {
     try {
       const pack = game.packs.get(tableInfo.pack)
       if (pack) {
-        const entry = pack.index.find(e => e.name === tableInfo.name)
+        const entry = pack.index.get(tableInfo.id) ?? pack.index.find(e => tableInfo.names.includes(e.name))
         if (entry) {
           return await pack.getDocument(entry._id)
         }
@@ -109,7 +120,11 @@ async function getSpellDuelTable (tableKey) {
   }
 
   // Fall back to searching world tables by name
-  return game.tables.getName(tableInfo.name) || null
+  for (const name of tableInfo.names) {
+    const table = game.tables.getName(name)
+    if (table) return table
+  }
+  return null
 }
 
 /**
@@ -127,6 +142,84 @@ function getTableResultText (table, rollValue) {
     return results[0].description ?? results[0].text
   }
   return null
+}
+
+/**
+ * Result text for a table row: the dcc-core-book RollTable text when available,
+ * otherwise the fallback label with a rulebook page reference
+ * @param {RollTable|null} table
+ * @param {number} value
+ * @param {string} key - Fallback label key
+ * @param {number} page
+ * @returns {string}
+ */
+function rowText (table, value, key, page) {
+  return getTableResultText(table, value) ?? game.i18n.format('DCC.SpellDuelResultWithPageRef', {
+    effect: game.i18n.localize(key),
+    page
+  })
+}
+
+/**
+ * Table 4-6 and Table 4-7 in the lib's shape (`SpellDuelTables`)
+ *
+ * The chat card shows only each row's `effect` text, so the lib's structured
+ * fields (spell effectiveness, check modifiers, who is affected) are left
+ * neutral rather than encoded here.
+ * @param {Function} getComparisonDie - Table 4-5 lookup
+ * @returns {Promise<Object>}
+ */
+async function buildLibTables (getComparisonDie) {
+  const powerColumn = async (column, tableKey) => {
+    const table = await getSpellDuelTable(tableKey)
+    const { page } = SPELL_DUEL_TABLES[tableKey]
+    return Object.entries(COUNTERSPELL_POWER_TABLE[column]).map(([value, { key }]) => {
+      const n = Number(value)
+      return {
+        min: n,
+        max: n === 10 ? Infinity : n, // the "10+" row
+        effect: rowText(table, n, key, page),
+        attackerSpellEffective: true,
+        defenderSpellEffective: true,
+        attackerCheckModifier: 0,
+        defenderCheckModifier: 0,
+        simultaneousEffect: true
+      }
+    })
+  }
+
+  const phlogistonTable = await getSpellDuelTable('phlogistonDisturbance')
+  const { page } = SPELL_DUEL_TABLES.phlogistonDisturbance
+  // Rows cover 1-10 exactly: the lib sizes the die to the highest `max`
+  const phlogistonDisturbance = Object.entries(PHLOGISTON_DISTURBANCE_TABLE).map(([value, { key }]) => {
+    const n = Number(value)
+    return {
+      min: n,
+      max: n,
+      effect: rowText(phlogistonTable, n, key, page),
+      affectsAttacker: true,
+      affectsDefender: true,
+      affectsBystanders: false
+    }
+  })
+
+  return {
+    getComparisonDie,
+    counterspellPower: {
+      attackerHigh: await powerColumn('attackerHigh', 'counterspellAttackerHigh'),
+      defenderHigh: await powerColumn('defenderHigh', 'counterspellDefenderHigh')
+    },
+    phlogistonDisturbance
+  }
+}
+
+/**
+ * Clamp a spell check to the Table 4-5 range
+ * @param {number} check
+ * @returns {number}
+ */
+function clampToComparisonTable (check) {
+  return Math.max(12, Math.min(28, check))
 }
 
 class SpellDuelDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -506,15 +599,15 @@ class SpellDuel {
 
     // Build participant options - attacker defaults to first, defender to second
     const attackerOptions = SpellDuel.participants.map((p, index) =>
-      `<option value="${p.actorId}"${index === 0 ? ' selected' : ''}>${p.name} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
+      `<option value="${p.actorId}"${index === 0 ? ' selected' : ''}>${foundry.utils.escapeHTML(p.name)} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
     ).join('')
 
     const defenderOptions = SpellDuel.participants.map((p, index) =>
-      `<option value="${p.actorId}"${index === 1 ? ' selected' : ''}>${p.name} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
+      `<option value="${p.actorId}"${index === 1 ? ' selected' : ''}>${foundry.utils.escapeHTML(p.name)} (${game.i18n.localize('DCC.SpellDuelMomentum')}: ${p.momentum})</option>`
     ).join('')
 
     const content = `
-      <form>
+      <div>
         <p class="notes">${game.i18n.localize('DCC.SpellDuelResolveInstructions')}</p>
         <div class="form-group">
           <label>${game.i18n.localize('DCC.SpellDuelAttacker')}</label>
@@ -525,6 +618,10 @@ class SpellDuel {
           <input type="number" name="attackerCheck" value="" min="1" max="40"/>
         </div>
         <div class="form-group">
+          <label>${game.i18n.localize('DCC.SpellDuelAttackerSpellLevel')}</label>
+          <input type="number" name="attackerLevel" value="1" min="1" max="5"/>
+        </div>
+        <div class="form-group">
           <label>${game.i18n.localize('DCC.SpellDuelDefender')}</label>
           <select name="defenderId">${defenderOptions}</select>
         </div>
@@ -532,7 +629,15 @@ class SpellDuel {
           <label>${game.i18n.localize('DCC.SpellDuelDefenderCheck')}</label>
           <input type="number" name="defenderCheck" value="" min="1" max="40"/>
         </div>
-      </form>
+        <div class="form-group">
+          <label>${game.i18n.localize('DCC.SpellDuelDefenderSpellLevel')}</label>
+          <input type="number" name="defenderLevel" value="1" min="1" max="5"/>
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize('DCC.SpellDuelSamePatron')}</label>
+          <input type="checkbox" name="samePatron"/>
+        </div>
+      </div>
     `
 
     const dialog = new foundry.applications.api.DialogV2({
@@ -561,7 +666,11 @@ class SpellDuel {
               return
             }
 
-            await SpellDuel.resolveExchange(attackerId, attackerCheck, defenderId, defenderCheck)
+            await SpellDuel.resolveExchange(attackerId, attackerCheck, defenderId, defenderCheck, {
+              attackerLevel: parseInt(form.attackerLevel.value) || 1,
+              defenderLevel: parseInt(form.defenderLevel.value) || 1,
+              samePatron: form.samePatron.checked
+            })
           }
         },
         {
@@ -578,12 +687,21 @@ class SpellDuel {
 
   /**
    * Resolve a spell duel exchange
+   *
+   * The rules are the lib's `resolveCounterspellExchange`: both checks must
+   * succeed, invocations of the same patron cancel, the high roller gains 1
+   * momentum, and the Table 4-6 roll is modified by the winner's momentum minus
+   * the loser's. Tables 4-5 to 4-7 come from dcc-core-book.
    * @param {String} attackerId
    * @param {Number} attackerCheck
    * @param {String} defenderId
    * @param {Number} defenderCheck
+   * @param {Object} [options]
+   * @param {Number} [options.attackerLevel=1] - Level of the attacker's spell
+   * @param {Number} [options.defenderLevel=1] - Level of the defender's spell
+   * @param {Boolean} [options.samePatron=false] - Both cast invoke patron for the same patron
    */
-  static async resolveExchange (attackerId, attackerCheck, defenderId, defenderCheck) {
+  static async resolveExchange (attackerId, attackerCheck, defenderId, defenderCheck, { attackerLevel = 1, defenderLevel = 1, samePatron = false } = {}) {
     const attacker = SpellDuel.participants.find(p => p.actorId === attackerId)
     const defender = SpellDuel.participants.find(p => p.actorId === defenderId)
 
@@ -592,150 +710,90 @@ class SpellDuel {
       return
     }
 
-    // Determine winner and update momentum
-    const attackerWins = attackerCheck > defenderCheck
-    const winner = attackerWins ? attacker : defender
-    winner.momentum += 1
+    // Table 4-5 needs dcc-core-book. Without it, identical checks still resolve
+    // (as a Phlogiston Disturbance) and anything else asks for a manual lookup.
+    const bookDie = await SpellDuel.getSpellDuelDie(attackerCheck, defenderCheck)
+    const tables = await buildLibTables(() => bookDie ?? (attackerCheck === defenderCheck ? 'PD' : 'd3'))
+
+    const spell = (level) => samePatron
+      ? { name: 'invoke-patron', level, category: 'invoke-patron', patron: 'same' }
+      : { name: 'spell', level, category: 'same-spell' }
+    const check = (casterId, total, level) => ({
+      casterId,
+      spell: spell(level),
+      naturalRoll: total,
+      total,
+      succeeded: spellCheckSucceeded({ total, level }),
+      spellLost: false
+    })
+    const attackerSpellCheck = check(attackerId, attackerCheck, attackerLevel)
+    const defenderSpellCheck = check(defenderId, defenderCheck, defenderLevel)
+    const state = {
+      participants: [attacker, defender].map(p => ({ id: p.actorId, name: p.name, casterType: 'wizard', momentum: p.momentum, initiative: 0 })),
+      exchanges: [],
+      active: true
+    }
+    const resolve = (roller) => resolveCounterspellExchange(state, attackerId, defenderId, attackerSpellCheck, defenderSpellCheck, { tables, roller })
+
+    // The lib rolls through a synchronous roller, so a first pass finds the
+    // die it needs; Foundry rolls that die into chat and a second pass uses it.
+    const formulas = []
+    const firstPass = resolve((formula) => { formulas.push(formula); return 1 })
+    const manualLookup = !bookDie && Boolean(firstPass.counterspellPower)
+
+    attacker.momentum = firstPass.newAttackerMomentum
+    defender.momentum = firstPass.newDefenderMomentum
     await SpellDuel.saveState()
 
-    // Handle identical spell checks (Phlogiston Disturbance)
-    if (attackerCheck === defenderCheck) {
-      const roll = await new Roll('1d10').evaluate()
-      await roll.toMessage({
-        flavor: game.i18n.localize('DCC.SpellDuelPhlogistonRoll'),
-        speaker: { alias: game.i18n.localize('DCC.SpellDuel') }
-      })
+    const winner = firstPass.comparison.attackerHigh ? attacker : defender
+    const attackerName = foundry.utils.escapeHTML(attacker.name)
+    const defenderName = foundry.utils.escapeHTML(defender.name)
+    const names = { attacker: attackerName, attackerCheck, defender: defenderName, defenderCheck }
 
-      const tableEntry = PHLOGISTON_DISTURBANCE_TABLE[roll.total]
-
-      // Try to get full result text from dcc-core-book RollTable
-      const phlogistonTable = await getSpellDuelTable('phlogistonDisturbance')
-      const tableResultText = getTableResultText(phlogistonTable, roll.total)
-
-      // Build result text - use RollTable text if available, otherwise effect type + page reference
-      let resultText
-      if (tableResultText) {
-        resultText = tableResultText
-      } else {
-        const effectType = game.i18n.localize(tableEntry.key)
-        const tableInfo = SPELL_DUEL_TABLES.phlogistonDisturbance
-        resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
-          effect: effectType,
-          page: tableInfo.page
-        })
-      }
-
-      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
-        attacker: attacker.name,
-        defender: defender.name,
-        result: resultText
-      }))
-
-      await SpellDuel.refresh()
-      return
-    }
-
-    // Look up die type from comparison table (requires dcc-core-book)
-    const dieType = await SpellDuel.getSpellDuelDie(attackerCheck, defenderCheck)
-
-    // If no dcc-core-book, show fallback message with page reference
-    if (!dieType) {
-      const tableInfo = SPELL_DUEL_TABLES.spellDuelCheckComparison
+    if (!attackerSpellCheck.succeeded || !defenderSpellCheck.succeeded) {
+      const failed = [attackerSpellCheck.succeeded ? null : attackerName, defenderSpellCheck.succeeded ? null : defenderName].filter(Boolean)
+      const list = new Intl.ListFormat(game.i18n.lang, { type: 'conjunction' }).format(failed)
+      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelCheckFailed', { ...names, failed: list }))
+    } else if (firstPass.samePatronCancellation) {
+      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelSamePatronCancelled', names))
+    } else if (manualLookup) {
       await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelManualLookup', {
-        attacker: attacker.name,
-        attackerCheck,
-        defender: defender.name,
-        defenderCheck,
-        winner: winner.name,
-        page: tableInfo.page
+        ...names,
+        winner: foundry.utils.escapeHTML(winner.name),
+        page: SPELL_DUEL_TABLES.spellDuelCheckComparison.page
       }))
-      await SpellDuel.refresh()
-      return
-    }
-
-    // Handle Phlogiston Disturbance (PD) - identical checks already handled above,
-    // but table can also return PD for very close results
-    if (dieType === 'PD') {
-      const roll = await new Roll('1d10').evaluate()
-      await roll.toMessage({
-        flavor: game.i18n.localize('DCC.SpellDuelPhlogistonRoll'),
-        speaker: { alias: game.i18n.localize('DCC.SpellDuel') }
-      })
-
-      const tableEntry = PHLOGISTON_DISTURBANCE_TABLE[roll.total]
-      const phlogistonTable = await getSpellDuelTable('phlogistonDisturbance')
-      const tableResultText = getTableResultText(phlogistonTable, roll.total)
-
-      let resultText
-      if (tableResultText) {
-        resultText = tableResultText
-      } else {
-        const effectType = game.i18n.localize(tableEntry.key)
-        const tableInfo = SPELL_DUEL_TABLES.phlogistonDisturbance
-        resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
-          effect: effectType,
-          page: tableInfo.page
-        })
-      }
-
-      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
-        attacker: attacker.name,
-        defender: defender.name,
-        result: resultText
-      }))
-
-      await SpellDuel.refresh()
-      return
-    }
-
-    // Roll the die
-    const dieRoll = await new Roll(`1${dieType}`).evaluate()
-    await dieRoll.toMessage({
-      flavor: game.i18n.format('DCC.SpellDuelCounterspellRoll', { die: dieType }),
-      speaker: { alias: game.i18n.localize('DCC.SpellDuel') }
-    })
-
-    // Calculate momentum difference (winner's perspective)
-    const momentumDiff = attacker.momentum - defender.momentum
-
-    // Apply momentum modifier to roll
-    const modifiedRoll = Math.max(1, Math.min(10, dieRoll.total + momentumDiff))
-
-    // Get result from counterspell power table
-    const column = attackerWins ? 'attackerHigh' : 'defenderHigh'
-    const tableKey = attackerWins ? 'counterspellAttackerHigh' : 'counterspellDefenderHigh'
-    const tableEntry = COUNTERSPELL_POWER_TABLE[column][modifiedRoll]
-
-    // Try to get full result text from dcc-core-book RollTable
-    const counterspellTable = await getSpellDuelTable(tableKey)
-    const tableResultText = getTableResultText(counterspellTable, modifiedRoll)
-
-    // Build result text - use RollTable text if available, otherwise effect type + page reference
-    let resultText
-    if (tableResultText) {
-      resultText = tableResultText
     } else {
-      const effectType = game.i18n.localize(tableEntry.key)
-      const tableInfo = SPELL_DUEL_TABLES[tableKey]
-      resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
-        effect: effectType,
-        page: tableInfo.page
-      })
-    }
+      const flavor = firstPass.phlogistonDisturbance
+        ? game.i18n.localize('DCC.SpellDuelPhlogistonRoll')
+        : game.i18n.format('DCC.SpellDuelCounterspellRoll', { die: firstPass.comparison.comparisonDie })
+      const totals = []
+      for (const formula of formulas) {
+        const roll = await new Roll(formula).evaluate()
+        await roll.toMessage({ flavor, speaker: { alias: game.i18n.localize('DCC.SpellDuel') } })
+        totals.push(roll.total)
+      }
+      // Replayed in order: the second pass asks for the same dice as the first
+      const result = resolve(() => totals.shift())
 
-    // Send chat message with full result
-    await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelExchangeResult', {
-      attacker: attacker.name,
-      attackerCheck,
-      defender: defender.name,
-      defenderCheck,
-      winner: winner.name,
-      die: dieType,
-      roll: dieRoll.total,
-      modifier: momentumDiff >= 0 ? `+${momentumDiff}` : momentumDiff,
-      finalRoll: modifiedRoll,
-      result: resultText
-    }))
+      if (result.phlogistonDisturbance) {
+        await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
+          attacker: attackerName,
+          defender: defenderName,
+          result: result.phlogistonDisturbance.effect
+        }))
+      } else {
+        const power = result.counterspellPower
+        await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelExchangeResult', {
+          ...names,
+          winner: foundry.utils.escapeHTML(winner.name),
+          die: result.comparison.comparisonDie,
+          roll: power.roll,
+          modifier: power.momentumModifier >= 0 ? `+${power.momentumModifier}` : power.momentumModifier,
+          finalRoll: power.modifiedResult,
+          result: power.effect
+        }))
+      }
+    }
 
     await SpellDuel.refresh()
   }
@@ -749,8 +807,8 @@ class SpellDuel {
    */
   static async getSpellDuelDie (attackerCheck, defenderCheck) {
     // Clamp values to table boundaries
-    const attackerLookup = Math.max(12, Math.min(28, attackerCheck))
-    const defenderLookup = Math.max(12, Math.min(28, defenderCheck))
+    const attackerLookup = clampToComparisonTable(attackerCheck)
+    const defenderLookup = clampToComparisonTable(defenderCheck)
 
     // Try to get the comparison table from dcc-core-book
     const comparisonTable = await getSpellDuelTable('spellDuelCheckComparison')
