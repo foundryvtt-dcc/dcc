@@ -28,9 +28,68 @@
  */
 
 import { actionDiceLineHtml } from './adapter/chat-renderer.mjs'
-import { rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
+import { isPatronSpellItem, loadPatronTaintTable } from './adapter/spell-input.mjs'
+import { applyPatronTaintAcquisition, rollPatronTaintChanceCheck, rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
 import { spellCheckSucceeded } from './spell-check-success.mjs'
 import { getClassTrait } from './extension-api.mjs'
+
+/**
+ * Roll a patron-based cast's patron taint check and persist the new chance
+ *
+ * The rules are the lib's: `rollPatronTaintChanceCheck` for the d100 against
+ * the current chance, then `applyPatronTaintAcquisition` for the patron's
+ * taint table on acquisition. The chance bookkeeping - reset to 1% on
+ * acquisition, otherwise up by 1% - lives in the lib's private
+ * `handlePatronTaintTriggers` (`spells/spell-check.js`), so it is mirrored
+ * here. The dice are Foundry rolls, so dice-term patches and roll hooks apply.
+ * @param {Actor} actor     The caster
+ * @param {string} patron   The caster's patron
+ * @returns {Object}        {roll, tainted, oldChance, newChance, description, manifestation}
+ */
+async function rollPatronTaintCheck (actor, patron) {
+  const oldChance = Math.max(1, parseInt(actor.system.class?.patronTaintChance) || 1)
+  const d100 = new Roll('1d100')
+  await d100.evaluate()
+  const check = rollPatronTaintChanceCheck(oldChance, { roller: () => d100.total })
+
+  let manifestation = ''
+  if (check.acquired) {
+    const table = await loadPatronTaintTable(actor)
+    const d6 = table ? new Roll('1d6') : null
+    await d6?.evaluate()
+    const taint = applyPatronTaintAcquisition(patron, table ?? undefined, { roller: () => d6?.total }, undefined, {})
+    manifestation = taint?.description || ''
+  }
+
+  const newChance = check.acquired ? 1 : oldChance + 1
+  await actor.update({ 'system.class.patronTaintChance': `${newChance}%` })
+
+  return {
+    roll: check.roll,
+    tainted: check.acquired,
+    oldChance,
+    newChance,
+    manifestation,
+    description: check.acquired
+      ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>${manifestation ? ` ${manifestation}` : ''}`
+      : game.i18n.localize('DCC.NoPatronTaint')
+  }
+}
+
+/**
+ * Render the patron taint block for a card that has no spell results table
+ *
+ * Mirrors the block in `chat-card-spell-result.html`, so an acquisition (which
+ * resets the chance) is never silent.
+ * @param {Object} patronTaint  Result of rollPatronTaintCheck
+ * @returns {string}            HTML
+ */
+function patronTaintHtml (patronTaint) {
+  const chanceKey = patronTaint.tainted ? 'DCC.PatronTaintChanceReset' : 'DCC.PatronTaintChanceIncreased'
+  return `<div class="mb-8"><strong>${game.i18n.localize('DCC.PatronTaint')}:</strong> ${patronTaint.description}` +
+    ` (${game.i18n.localize('DCC.Roll')}: ${patronTaint.roll})<br/>` +
+    `${game.i18n.format(chanceKey, { chance: `${patronTaint.newChance}%` })}</div>`
+}
 
 /**
  * Handle the results of a spell check cast through any mechanism.
@@ -103,42 +162,21 @@ export async function processSpellCheck (actor, spellData) {
     roll._total += (1 - originalDieRoll)
   }
 
-  // Check for Patron Taint
+  // Patron taint (#981): the same lib rule the adapter cast path runs. A
+  // player character with a patron casting a patron spell rolls the creeping
+  // chance; on acquisition the chance resets to 1% and the patron's taint
+  // table is rolled, otherwise it goes up by 1%. NPCs don't track taint.
   let patronTaint = null
-  if (item && actor) {
-    const patronField = actor.system.class?.patron
-    const spellName = item.name || ''
-    const associatedPatron = item.system?.associatedPatron || ''
-
-    // Check if actor has a patron and spell is patron-related
-    if (!suppressPatronTaint && patronField && (spellName.includes('Patron') || associatedPatron)) {
-      // Roll d100 for patron taint
-      const patronTaintRoll = new Roll('1d100')
-      await patronTaintRoll.evaluate()
-
-      // Get current patron taint chance (parse percentage string like "1%")
-      const patronTaintChanceStr = actor.system.class?.patronTaintChance || '1%'
-      const currentChance = parseInt(patronTaintChanceStr) || 1
-
-      // Check if taint occurred (roll <= chance)
-      const tainted = patronTaintRoll.total <= currentChance
-
-      // Calculate new patron taint chance
-      const newChance = currentChance + 1
-
-      // Store patron taint data for display
-      patronTaint = {
-        roll: patronTaintRoll.total,
-        tainted,
-        oldChance: currentChance,
-        newChance,
-        description: tainted
-          ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>`
-          : game.i18n.localize('DCC.NoPatronTaint')
+  if (item && actor && actor.type !== 'NPC') {
+    const patron = actor.system.class?.patron
+    if (!suppressPatronTaint && patron && isPatronSpellItem(item)) {
+      // A taint failure (a malformed taint table, a rejected update) must not
+      // take the spell result down with it
+      try {
+        patronTaint = await rollPatronTaintCheck(actor, patron)
+      } catch (error) {
+        console.error('DCC | Patron taint check failed', error)
       }
-
-      // Update actor's patron taint chance
-      await actor.update({ 'system.class.patronTaintChance': `${newChance}%` })
     }
   }
 
@@ -264,8 +302,8 @@ export async function processSpellCheck (actor, spellData) {
         flags,
         system: { spellId: item?.id }
       }
-      if (actionDiceChatLine) {
-        toMessageData.content = `${await roll.render()}${actionDiceLineHtml(actionDiceChatLine)}`
+      if (actionDiceChatLine || patronTaint) {
+        toMessageData.content = `${await roll.render()}${actionDiceChatLine ? actionDiceLineHtml(actionDiceChatLine) : ''}${patronTaint ? patronTaintHtml(patronTaint) : ''}`
       }
       await roll.toMessage(toMessageData)
     }

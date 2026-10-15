@@ -612,6 +612,7 @@
   "DCC.PatronTaintChance": "宗主腐蚀概率",
   "DCC.NoPatronTaint": "无宗主腐蚀",
   "DCC.PatronTaintChanceIncreased": "宗主腐蚀提升至：{chance}",
+  "DCC.PatronTaintChanceReset": "宗主腐蚀几率重置为：{chance}",
   "DCC.Penalty": "惩罚",
   "DCC.PickLock": "开锁",
   "DCC.PickPocket": "盗窃",
