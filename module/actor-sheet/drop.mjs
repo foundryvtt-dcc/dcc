@@ -1,7 +1,7 @@
 /**
  * Drop handlers for the DCC actor sheet.
  *
- * Phase 7 (Appendix-A actor-sheet.js shrinkage): the two self-contained
+ * Phase 7 (Appendix-A actor-sheet.js shrinkage): the first two self-contained
  * drop-side handlers — `_handleContainerDrop` (drop an item onto a container
  * element) and `_onDropActiveEffect` (drop an ActiveEffect onto the actor) —
  * were lifted out of `module/actor-sheet.js` into this module as free functions,
@@ -9,6 +9,12 @@
  * only the actor (`this.options.document`) plus the DOM event / drag data, so
  * they extract cleanly; the sheet's `_handleContainerDrop` / `_onDropActiveEffect`
  * collapse to thin wrappers calling these.
+ *
+ * `handlePartyItemDrop` joined them later: the party sheet has no inventory, so
+ * an item dropped on it is routed to the member row under the cursor. It takes
+ * the party actor plus the event / drag data and is called from
+ * `DCCPartySheet._onDrop` — like `_onDrop`, it cannot fully move because the
+ * sheet's `_onDrop` calls `super._onDrop`.
  *
  * `_onDrop` itself stays on the sheet — it calls `super._onDrop`, so it cannot
  * fully move.
@@ -160,4 +166,91 @@ export async function dropActiveEffect (actor, data, deps = {}) {
 
   // Create the effect on the actor
   return actor.createEmbeddedDocuments('ActiveEffect', [createData])
+}
+
+/**
+ * Route an item dropped onto the party sheet.
+ *
+ * The party sheet has no inventory, so a dropped item would otherwise be
+ * created on the Party actor and never rendered, and a drop from another actor
+ * would delete the item from that actor (`DCCActorSheet._onDrop`). Creating the
+ * item on a member row keeps it reachable; rejecting the drop elsewhere avoids
+ * the invisible copy entirely.
+ *
+ * This has to run from `DCCPartySheet._onDrop` rather than a `_onDropItem`
+ * override: the inherited transfer-delete happens after `super._onDrop` and
+ * never sees a veto, because `ActorSheetV2._onDrop` resolves to `undefined`.
+ *
+ * @param {Actor} actor - the party actor (the sheet's `options.document`).
+ * @param {DragEvent} event - the drop event (used to find the member row).
+ * @param {object} data - the drag-event data.
+ * @param {object} [deps] - injectable Foundry globals (default to the live ones).
+ * @param {object} [deps.game] - `game` (actors collection).
+ * @param {object} [deps.ui] - `ui` (only `.notifications.warn` is used).
+ * @param {object} [deps.i18n] - `game.i18n` (only `.localize` is used).
+ * @param {(uuid: string) => Promise<any>} [deps.fromUuid] - UUID resolver.
+ * @returns {Promise<Item|false|undefined>} the created item, `false` when the
+ *   drop was handled (rejected or failed), or `undefined` when this is not an
+ *   item drop and the caller should delegate to `super._onDrop`.
+ */
+export async function handlePartyItemDrop (actor, event, data, deps = {}) {
+  const {
+    game: gameApi = globalThis.game,
+    ui: uiApi = globalThis.ui,
+    i18n = globalThis.game?.i18n,
+    fromUuid: resolveUuid = globalThis.fromUuid
+  } = deps
+
+  // Spell drags use 'DCC Item'; normalise to 'Item' (matches DCCActorSheet._onDrop).
+  const type = data.type === 'DCC Item' ? 'Item' : data.type
+  if (type !== 'Item') return undefined
+
+  const targetId = event.target.closest('[data-actor-id]')?.dataset.actorId
+  const target = targetId && targetId !== actor.id ? gameApi.actors.get(targetId) : null
+  if (!target) {
+    uiApi.notifications.warn(i18n.localize('DCC.PartyNoInventoryHint'))
+    return false
+  }
+
+  // Resolve the dropped item (skipped for drags without a UUID).
+  let item
+  try {
+    item = data.uuid ? await resolveUuid(data.uuid) : null
+  } catch (err) {
+    console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
+    return false
+  }
+  if (!item) return false
+
+  // Call the member sheet's `_onDropItem` directly rather than `_onDrop`: the
+  // create result is needed to decide whether the source item may be deleted
+  // (the base `_onDrop` does not return the created document), mirroring how the
+  // dnd5e Group sheet routes a drop to a member. This bypasses the
+  // `dropActorSheetData` hook — acceptable because neither the system nor the
+  // dependent modules (dcc-qol, xcc, mcc-classes, dcc-crawl-classes) use it.
+  let created
+  try {
+    created = await target.sheet._onDropItem(event, item)
+  } catch (err) {
+    console.error(`DCC | Failed to drop item "${item.name}" onto party member`, err)
+    return false
+  }
+  if (!created) return false // keep the source item if the member drop failed
+
+  // A drag from another actor is a move, matching item drags between sheets.
+  if (data.actorId && data.actorId !== target.id) {
+    const source = gameApi.actors.get(data.actorId)
+    if (source) {
+      try {
+        await source.deleteEmbeddedDocuments('Item', [item.id])
+      } catch (err) {
+        // The handout to the member already succeeded, so keep the created item
+        // rather than failing the drop: a failed cleanup leaves a duplicate the
+        // user can tidy up, whereas rejecting here would lose the item entirely.
+        console.error(`DCC | Failed to remove moved item "${item.name}" from source actor`, err)
+      }
+    }
+  }
+
+  return created
 }
