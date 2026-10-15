@@ -81,17 +81,19 @@ export function compareSpellChecks(attackerCheck, defenderCheck, lookupFn) {
 /**
  * Table 4-6: Counterspell Power results
  *
- * Roll is modified by the difference between momentum trackers
+ * The roll is modified by the winner's momentum minus the loser's (Table 4-6
+ * and the spell duel rules, core book p. 98), so it is negative when the
+ * winner of this exchange trails on momentum.
  * If attacker high, use "Attacker High" column
  * If defender high, use "Defender High" column
  *
  * @param comparisonDie - The die to roll (from Table 4-5)
  * @param attackerHigh - Whether the attacker had the higher spell check
- * @param momentumDifference - Absolute difference between momentum trackers
+ * @param momentumModifier - The winner's momentum minus the loser's
  * @param roller - Optional dice roller
  * @param table - Optional custom table data (for official tables)
  */
-export function rollCounterspellPower(comparisonDie, attackerHigh, momentumDifference, roller, table) {
+export function rollCounterspellPower(comparisonDie, attackerHigh, momentumModifier, roller, table) {
     if (comparisonDie === "PD") {
         throw new Error("Cannot roll counterspell power on Phlogiston Disturbance");
     }
@@ -102,7 +104,6 @@ export function rollCounterspellPower(comparisonDie, attackerHigh, momentumDiffe
         ? evaluateRoll(dieFormula, { mode: "evaluate", roller })
         : evaluateRoll(dieFormula, { mode: "evaluate" });
     const roll = rollResult.total ?? 1;
-    const momentumModifier = attackerHigh ? momentumDifference : -momentumDifference;
     const modifiedResult = Math.max(1, roll + momentumModifier);
     // Look up the entry from the appropriate column
     const column = attackerHigh ? tableData.attackerHigh : tableData.defenderHigh;
@@ -118,15 +119,23 @@ export function rollCounterspellPower(comparisonDie, attackerHigh, momentumDiffe
  * This occurs when both spell checks are identical
  * Dangerous magical effects can occur
  *
+ * The die matches the table: its size is the highest `max` in the table, so
+ * the core book's Table 4-7 (p. 98) rolls a d10 and the default placeholder
+ * table rolls a d20. Rows must therefore cover 1 to the die size exactly, with
+ * no catch-all row (such as `max: 100`) at the end.
+ *
  * @param roller - Optional dice roller
  * @param table - Optional custom table data (for official tables)
  */
 export function rollPhlogistonDisturbance(roller, table) {
     const tableData = table ?? DEFAULT_SPELL_DUEL_TABLES.phlogistonDisturbance;
-    // Roll d20 for phlogiston disturbance
+    if (tableData.length === 0) {
+        throw new Error("Phlogiston disturbance table is empty");
+    }
+    const dieFormula = `1d${String(Math.max(...tableData.map((entry) => entry.max)))}`;
     const rollResult = roller
-        ? evaluateRoll("1d20", { mode: "evaluate", roller })
-        : evaluateRoll("1d20", { mode: "evaluate" });
+        ? evaluateRoll(dieFormula, { mode: "evaluate", roller })
+        : evaluateRoll(dieFormula, { mode: "evaluate" });
     const roll = rollResult.total ?? 10;
     const entry = lookupPhlogistonDisturbanceEntry(tableData, roll);
     return entryToPhlogistonDisturbanceResult(entry, roll);
@@ -260,23 +269,6 @@ export function resolveCounterspellExchange(state, attackerId, defenderId, attac
     if (!attacker || !defender) {
         throw new Error("Attacker or defender not found in spell duel state");
     }
-    // Check for same-patron cancellation
-    if (isSamePatronInvocation(attackerCheck.spell, defenderCheck.spell)) {
-        return {
-            attackerCheck,
-            defenderCheck,
-            comparison: {
-                attackerCheck: attackerCheck.total,
-                defenderCheck: defenderCheck.total,
-                attackerHigh: false,
-                comparisonDie: "PD",
-                isPhlogistonDisturbance: false,
-            },
-            newAttackerMomentum: attacker.momentum,
-            newDefenderMomentum: defender.momentum,
-            samePatronCancellation: true,
-        };
-    }
     // Both checks must succeed
     if (!attackerCheck.succeeded || !defenderCheck.succeeded) {
         // Failed checks don't progress the duel meaningfully
@@ -295,6 +287,24 @@ export function resolveCounterspellExchange(state, attackerId, defenderId, attac
             samePatronCancellation: false,
         };
     }
+    // Same-patron cancellation applies only when both checks succeed (core
+    // book p. 98, spell duel special notes)
+    if (isSamePatronInvocation(attackerCheck.spell, defenderCheck.spell)) {
+        return {
+            attackerCheck,
+            defenderCheck,
+            comparison: {
+                attackerCheck: attackerCheck.total,
+                defenderCheck: defenderCheck.total,
+                attackerHigh: false,
+                comparisonDie: "PD",
+                isPhlogistonDisturbance: false,
+            },
+            newAttackerMomentum: attacker.momentum,
+            newDefenderMomentum: defender.momentum,
+            samePatronCancellation: true,
+        };
+    }
     // Compare spell checks
     const comparison = compareSpellChecks(attackerCheck.total, defenderCheck.total, tables?.getComparisonDie);
     // Update momentum - winner increments by 1
@@ -306,8 +316,6 @@ export function resolveCounterspellExchange(state, attackerId, defenderId, attac
     else if (!comparison.isPhlogistonDisturbance) {
         newDefenderMomentum += 1;
     }
-    // Calculate momentum difference for table modifier
-    const momentumDifference = Math.abs(newAttackerMomentum - newDefenderMomentum);
     // Resolve based on comparison result
     if (comparison.isPhlogistonDisturbance) {
         const phlogistonDisturbance = rollPhlogistonDisturbance(roller, tables?.phlogistonDisturbance);
@@ -322,7 +330,11 @@ export function resolveCounterspellExchange(state, attackerId, defenderId, attac
         };
     }
     else {
-        const counterspellPower = rollCounterspellPower(comparison.comparisonDie, comparison.attackerHigh, momentumDifference, roller, tables?.counterspellPower);
+        // Table 4-6 modifier: the winner's momentum minus the loser's
+        const momentumModifier = comparison.attackerHigh
+            ? newAttackerMomentum - newDefenderMomentum
+            : newDefenderMomentum - newAttackerMomentum;
+        const counterspellPower = rollCounterspellPower(comparison.comparisonDie, comparison.attackerHigh, momentumModifier, roller, tables?.counterspellPower);
         return {
             attackerCheck,
             defenderCheck,
