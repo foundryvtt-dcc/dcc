@@ -416,4 +416,23 @@ describe('handlePartyItemDrop', () => {
     )
     expect(alice.deleteEmbeddedDocuments).not.toHaveBeenCalled()
   })
+
+  test('keeps the created item and logs when the source cleanup throws', async () => {
+    const alice = makeMember('alice')
+    const source = makeMember('bob')
+    source.deleteEmbeddedDocuments = vi.fn(async () => { throw new Error('db') })
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const result = await handlePartyItemDrop(
+        party, memberEvent('alice'),
+        { type: 'Item', uuid: 'Item.item-1', actorId: 'bob' },
+        { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+      )
+      expect(result).toEqual({ id: 'new-item' })
+      expect(errorSpy).toHaveBeenCalled()
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
 })

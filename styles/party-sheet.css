@@ -38,6 +38,11 @@
     grid-gap: 2px 3px;
     grid-template-columns: 96px repeat(12, 1fr);
 
+    &.drag-over {
+      border-color: var(--system-accent-color);
+      box-shadow: 0 0 6px var(--system-accent-color);
+    }
+
     .ac-summary {
       margin-top: 3px;
     }

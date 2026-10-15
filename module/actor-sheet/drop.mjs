@@ -1,7 +1,7 @@
 /**
  * Drop handlers for the DCC actor sheet.
  *
- * Phase 7 (Appendix-A actor-sheet.js shrinkage): the two self-contained
+ * Phase 7 (Appendix-A actor-sheet.js shrinkage): the first two self-contained
  * drop-side handlers — `_handleContainerDrop` (drop an item onto a container
  * element) and `_onDropActiveEffect` (drop an ActiveEffect onto the actor) —
  * were lifted out of `module/actor-sheet.js` into this module as free functions,

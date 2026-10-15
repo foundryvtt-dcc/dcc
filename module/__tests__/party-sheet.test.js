@@ -225,3 +225,40 @@ describe('_processFormData / _processSubmitData member-weapon round-trip', () =>
     expect(ctx._pendingMemberUpdates).toBeUndefined() // cleaned up
   })
 })
+
+describe('_onDrop', () => {
+  // _onDrop calls super._onDrop; stub the parent prototype method for the
+  // duration. `super._onDrop` resolves through DCCPartySheet.prototype's
+  // prototype at call time, so replacing it here intercepts the delegation.
+  let parentProto, origSuperDrop, origGetDragEventData
+
+  beforeEach(() => {
+    parentProto = Object.getPrototypeOf(proto)
+    origSuperDrop = parentProto._onDrop
+    parentProto._onDrop = vi.fn(async () => 'SUPER')
+    origGetDragEventData = globalThis.foundry.applications.ux.TextEditor.getDragEventData
+  })
+
+  afterEach(() => {
+    parentProto._onDrop = origSuperDrop
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = origGetDragEventData
+  })
+
+  test('delegates a non-item drop to the parent sheet', async () => {
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = vi.fn(() => ({ type: 'Actor' }))
+    const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+    const result = await proto._onDrop.call(ctx, {})
+    expect(result).toBe('SUPER')
+    expect(ctx._clearDragHighlight).toHaveBeenCalled()
+    expect(parentProto._onDrop).toHaveBeenCalled()
+  })
+
+  test('returns false without delegating when there is no drag data', async () => {
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = vi.fn(() => null)
+    const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+    const result = await proto._onDrop.call(ctx, {})
+    expect(result).toBe(false)
+    expect(ctx._clearDragHighlight).toHaveBeenCalled()
+    expect(parentProto._onDrop).not.toHaveBeenCalled()
+  })
+})
