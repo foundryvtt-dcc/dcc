@@ -1148,5 +1148,10 @@
   "DCC.system.skills.sneakSilently.value": "Moverse en silencio",
   "DCC.Unlimited": "ilimitado",
   "DCC.untrained": "sin entrenar",
-  "DCC.WeightUnit": "lb"
+  "DCC.WeightUnit": "lb",
+  "DCC.SpellDuelAttackerSpellLevel": "Nivel del hechizo del atacante",
+  "DCC.SpellDuelDefenderSpellLevel": "Nivel del hechizo del defensor",
+  "DCC.SpellDuelSamePatron": "Ambos invocan al mismo patrón",
+  "DCC.SpellDuelCheckFailed": "<b>Intercambio de Duelo de Hechizos</b><br>{attacker} ({attackerCheck}) contra {defender} ({defenderCheck})<br>{failed}: por debajo del chequeo de hechizo mínimo, así que no hay comparación de duelo. El impulso no cambia.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Intercambio de Duelo de Hechizos</b><br>{attacker} ({attackerCheck}) contra {defender} ({defenderCheck})<br>Ambos invocaron al mismo patrón: los dos hechizos se cancelan."
 }

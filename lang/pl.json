@@ -1148,5 +1148,10 @@
   "DCC.system.skills.sneakSilently.value": "Ciche Skradanie",
   "DCC.Unlimited": "nieograniczone",
   "DCC.untrained": "niewyszkolony",
-  "DCC.WeightUnit": "lb"
+  "DCC.WeightUnit": "lb",
+  "DCC.SpellDuelAttackerSpellLevel": "Krąg czaru atakującego",
+  "DCC.SpellDuelDefenderSpellLevel": "Krąg czaru obrońcy",
+  "DCC.SpellDuelSamePatron": "Obaj przyzywają tego samego patrona",
+  "DCC.SpellDuelCheckFailed": "<b>Wymiana Pojedynku Magicznego</b><br>{attacker} ({attackerCheck}) kontra {defender} ({defenderCheck})<br>{failed}: poniżej minimalnego rzutu na czar, więc nie ma porównania w pojedynku. Impet się nie zmienia.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Wymiana Pojedynku Magicznego</b><br>{attacker} ({attackerCheck}) kontra {defender} ({defenderCheck})<br>Obaj przyzwali tego samego patrona: oba czary zostają anulowane."
 }

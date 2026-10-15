@@ -1148,5 +1148,10 @@
   "DCC.system.skills.sneakSilently.value": "静默潜行",
   "DCC.Unlimited": "无限制",
   "DCC.untrained": "未训",
-  "DCC.WeightUnit": "磅"
+  "DCC.WeightUnit": "磅",
+  "DCC.SpellDuelAttackerSpellLevel": "攻击方法术等级",
+  "DCC.SpellDuelDefenderSpellLevel": "防守方法术等级",
+  "DCC.SpellDuelSamePatron": "双方祈求同一位守护者",
+  "DCC.SpellDuelCheckFailed": "<b>法术对决</b><br>{attacker}（{attackerCheck}）对 {defender}（{defenderCheck}）<br>{failed}：低于法术检定最低值，因此不进行法术对决比较。动量不变。",
+  "DCC.SpellDuelSamePatronCancelled": "<b>法术对决</b><br>{attacker}（{attackerCheck}）对 {defender}（{defenderCheck}）<br>双方祈求了同一位守护者：两个法术均被取消。"
 }
