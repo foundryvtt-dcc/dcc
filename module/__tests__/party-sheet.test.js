@@ -225,3 +225,18 @@ describe('_processFormData / _processSubmitData member-weapon round-trip', () =>
     expect(ctx._pendingMemberUpdates).toBeUndefined() // cleaned up
   })
 })
+
+describe('effects tab (#1022)', () => {
+  test('registers an effects part using the shared effects template', () => {
+    expect(DCCPartySheet.PARTS.effects).toEqual({
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    })
+  })
+
+  test('leaves effects and notes to the inherited END_TABS (Party, Effects, Notes)', () => {
+    const ownTabs = DCCPartySheet.TABS.sheet.tabs.map(t => t.id)
+    const endTabs = DCCPartySheet.END_TABS.sheet.tabs.map(t => t.id)
+    expect([...ownTabs, ...endTabs]).toEqual(['party', 'effects', 'notes'])
+  })
+})

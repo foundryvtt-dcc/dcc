@@ -61,18 +61,25 @@ class DCCPartySheet extends DCCActorSheet {
       id: 'party',
       template: 'systems/dcc/templates/party-sheet-partial-party.html'
     },
+    effects: {
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
     }
   }
 
-  /** @inheritDoc */
+  /**
+   * Effects and Notes are appended by the inherited END_TABS, matching the
+   * tab order of the other actor sheets (#1022).
+   * @inheritDoc
+   */
   static TABS = {
     sheet: {
       tabs: [
-        { id: 'party', group: 'sheet', label: 'DCC.Party' },
-        { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+        { id: 'party', group: 'sheet', label: 'DCC.Party' }
       ],
       initial: 'party'
     }

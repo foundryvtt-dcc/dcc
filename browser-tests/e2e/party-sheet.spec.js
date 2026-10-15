@@ -184,3 +184,45 @@ test.describe('Party Sheet — Roll Party Initiative', () => {
     expect(result.combats).toBe(0)
   })
 })
+
+test.describe('Party Sheet — Effects tab (#1022)', () => {
+  test.beforeEach(async ({ page }) => {
+    await cleanProbeState(page)
+    consoleErrors.length = 0
+  })
+
+  test.afterEach(async ({ page }) => {
+    await cleanProbeState(page)
+    const errors = significantConsoleErrors(consoleErrors)
+    expect(errors, `Console errors detected: ${errors.join('\n')}`).toHaveLength(0)
+  })
+
+  test('Effects tab renders a panel listing the party actor effects', async ({ page }) => {
+    const { partyId } = await createParty(page)
+    await page.evaluate(async (pid) => {
+      await game.actors.get(pid).createEmbeddedDocuments('ActiveEffect', [{
+        name: 'PARTY Probe Effect',
+        img: 'icons/svg/aura.svg'
+      }])
+    }, partyId)
+
+    await openActorSheet(page, 'PARTY Test Party')
+    const sheet = page.locator('.dcc.actor.party')
+
+    // Tab order matches the other actor sheets: Party, Effects, Notes
+    const tabIds = await sheet.locator('nav.sheet-tabs [data-action="tab"]').evaluateAll(
+      els => els.map(el => el.dataset.tab)
+    )
+    expect(tabIds).toEqual(['party', 'effects', 'notes'])
+
+    // In-page click — overlays can hang Playwright pointer clicks
+    await page.evaluate(() => {
+      document.querySelector('.dcc.actor.party nav.sheet-tabs [data-tab="effects"]').click()
+    })
+
+    const panel = sheet.locator('section.tab[data-tab="effects"]')
+    await expect(panel).toHaveClass(/active/)
+    await expect(panel.locator('.effect-item .effect-name')).toHaveText('PARTY Probe Effect')
+    await expect(panel.locator('[data-action="effectCreate"]')).toHaveCount(1)
+  })
+})
