@@ -10,6 +10,12 @@
  * they extract cleanly; the sheet's `_handleContainerDrop` / `_onDropActiveEffect`
  * collapse to thin wrappers calling these.
  *
+ * `handlePartyItemDrop` joined them later: the party sheet has no inventory, so
+ * an item dropped on it is routed to the member row under the cursor. It takes
+ * the party actor plus the event / drag data and is called from
+ * `DCCPartySheet._onDrop` — like `_onDrop`, it cannot fully move because the
+ * sheet's `_onDrop` calls `super._onDrop`.
+ *
  * `_onDrop` itself stays on the sheet — it calls `super._onDrop`, so it cannot
  * fully move.
  *
@@ -206,16 +212,44 @@ export async function handlePartyItemDrop (actor, event, data, deps = {}) {
     return false
   }
 
-  const item = data.uuid ? await resolveUuid(data.uuid) : null
+  // Resolve the dropped item (skipped for drags without a UUID).
+  let item
+  try {
+    item = data.uuid ? await resolveUuid(data.uuid) : null
+  } catch (err) {
+    console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
+    return false
+  }
   if (!item) return false
 
-  const created = await target.sheet._onDropItem(event, item)
+  // Call the member sheet's `_onDropItem` directly rather than `_onDrop`: the
+  // create result is needed to decide whether the source item may be deleted
+  // (the base `_onDrop` does not return the created document), mirroring how the
+  // dnd5e Group sheet routes a drop to a member. This bypasses the
+  // `dropActorSheetData` hook — acceptable because neither the system nor the
+  // dependent modules (dcc-qol, xcc, mcc-classes, dcc-crawl-classes) use it.
+  let created
+  try {
+    created = await target.sheet._onDropItem(event, item)
+  } catch (err) {
+    console.error(`DCC | Failed to drop item "${item.name}" onto party member`, err)
+    return false
+  }
   if (!created) return false // keep the source item if the member drop failed
 
   // A drag from another actor is a move, matching item drags between sheets.
   if (data.actorId && data.actorId !== target.id) {
     const source = gameApi.actors.get(data.actorId)
-    if (source) await source.deleteEmbeddedDocuments('Item', [item.id])
+    if (source) {
+      try {
+        await source.deleteEmbeddedDocuments('Item', [item.id])
+      } catch (err) {
+        // The handout to the member already succeeded, so keep the created item
+        // rather than failing the drop: a failed cleanup leaves a duplicate the
+        // user can tidy up, whereas rejecting here would lose the item entirely.
+        console.error(`DCC | Failed to remove moved item "${item.name}" from source actor`, err)
+      }
+    }
   }
 
   return created

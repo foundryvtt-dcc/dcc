@@ -265,7 +265,98 @@ describe('handlePartyItemDrop', () => {
       { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
     )
     expect(alice.sheet._onDropItem).toHaveBeenCalledOnce()
+    expect(alice.sheet._onDropItem).toHaveBeenCalledWith(expect.anything(), { id: 'spell-1' })
     expect(result).toEqual({ id: 'new-item' })
+  })
+
+  test('returns false when the uuid resolves to nothing', async () => {
+    const alice = makeMember('alice')
+    const source = makeMember('bob')
+    const fromUuid = vi.fn(async () => null)
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.gone', actorId: 'bob' },
+      { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toBe(false)
+    expect(alice.sheet._onDropItem).not.toHaveBeenCalled()
+    expect(source.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('returns false without throwing when data.uuid is missing', async () => {
+    const alice = makeMember('alice')
+    const fromUuid = vi.fn()
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item' },
+      { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toBe(false)
+    expect(fromUuid).not.toHaveBeenCalled()
+    expect(alice.sheet._onDropItem).not.toHaveBeenCalled()
+  })
+
+  test('returns false when fromUuid throws, without deleting the source', async () => {
+    const alice = makeMember('alice')
+    const source = makeMember('bob')
+    const fromUuid = vi.fn(async () => { throw new Error('boom') })
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.bad', actorId: 'bob' },
+      { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toBe(false)
+    expect(alice.sheet._onDropItem).not.toHaveBeenCalled()
+    expect(source.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('returns false when the member drop throws, without deleting the source', async () => {
+    const alice = makeMember('alice')
+    alice.sheet._onDropItem = vi.fn(async () => { throw new Error('db') })
+    const source = makeMember('bob')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1', actorId: 'bob' },
+      { game: makeGame({ alice, bob: source }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toBe(false)
+    expect(source.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('warns and returns false when the member row resolves to no actor', async () => {
+    const ui = makeUi()
+    const result = await handlePartyItemDrop(
+      party, memberEvent('ghost'),
+      { type: 'Item', uuid: 'Item.x' },
+      { game: makeGame({}), i18n, ui, fromUuid: vi.fn() }
+    )
+    expect(result).toBe(false)
+    expect(ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNoInventoryHint')
+  })
+
+  test('still returns the created item when the source actor is missing', async () => {
+    const alice = makeMember('alice')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1', actorId: 'bob' },
+      { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toEqual({ id: 'new-item' })
+    expect(alice.sheet._onDropItem).toHaveBeenCalledOnce()
+  })
+
+  test('creates on the member and never deletes for a sidebar/compendium drag', async () => {
+    const alice = makeMember('alice')
+    const fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+    const result = await handlePartyItemDrop(
+      party, memberEvent('alice'),
+      { type: 'Item', uuid: 'Item.item-1' },
+      { game: makeGame({ alice }), i18n, ui: makeUi(), fromUuid }
+    )
+    expect(result).toEqual({ id: 'new-item' })
+    expect(alice.deleteEmbeddedDocuments).not.toHaveBeenCalled()
   })
 
   test('warns and returns false when the drop is not over a member row', async () => {
