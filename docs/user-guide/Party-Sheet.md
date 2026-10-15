@@ -11,6 +11,9 @@ Useful for overland maps, or for funnels. A party could represent all the PCs co
 You drag actors from the Actors tab onto the Party Sheet.
 ![Party Sheet](images/party_sheet.png)
 
+## Changing the Party Portrait
+The party's own portrait appears next to its name at the top of the party sheet. Click it to choose a new image. This is separate from the party token's image, which you change with Configure Prototype Token in the sheet header.
+
 ## Editing Actors in the Party
 You can click the avatar image of an actor on the party sheet to open their character sheet. Alternatively, there is a button that is a person with a gear in the lower right of each actor. Click that to open the regular actor sheet for that actor.
 ![Party Actor Edit](images/party_sheet_edit_member.png)
