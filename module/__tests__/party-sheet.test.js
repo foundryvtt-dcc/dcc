@@ -288,6 +288,31 @@ describe('_onDrop', () => {
       globalThis.game.actors.get = origActorsGet
     }
   })
+
+  test('returns false for a rejected item drop without delegating to the parent', async () => {
+    // A handled-but-rejected item drop (no member row under the cursor) returns
+    // false, which must short-circuit before super._onDrop. A truthy check in
+    // place of `!== undefined` would wrongly delegate and reintroduce the
+    // invisible-copy + source-deletion bug this override exists to prevent.
+    const origUi = globalThis.ui
+    const origI18n = globalThis.game.i18n
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.x' })
+      globalThis.ui = { notifications: { warn: vi.fn() } }
+      globalThis.game.i18n = { localize: (key) => key }
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => null } } // no member row under the cursor
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toBe(false)
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNoInventoryHint')
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.ui = origUi
+      globalThis.game.i18n = origI18n
+    }
+  })
 })
 
 describe('_onDragLeave', () => {
@@ -350,5 +375,13 @@ describe('_onDragOver / _clearDragHighlight', () => {
 
   test('_clearDragHighlight tolerates a missing element', () => {
     expect(() => proto._clearDragHighlight.call({})).not.toThrow()
+  })
+
+  test('_onDragOver tolerates a missing element without adding a highlight', () => {
+    // No `element` and the pointer not over a row: the optional-chain guard on
+    // querySelectorAll must keep this from throwing, and nothing is highlighted.
+    const event = { target: { closest: vi.fn(() => null) } }
+    expect(() => proto._onDragOver.call({}, event)).not.toThrow()
+    expect(event.target.closest).toHaveBeenCalledWith('.character-row')
   })
 })

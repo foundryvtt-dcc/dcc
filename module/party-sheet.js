@@ -41,12 +41,13 @@ class DCCPartySheet extends DCCActorSheet {
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
       dropSelector: '.party',
+      // Real drag/drop wiring lives in DCCActorSheet.#createDragDropHandlers;
+      // it overwrites both `permissions` and `callbacks`, so the entries here
+      // document intent only.
       permissions: {
         dragstart: '_canDragStart',
         drop: '_canDragDrop'
       },
-      // Real drag/drop wiring lives in DCCActorSheet.#createDragDropHandlers;
-      // these entries document intent only (that method overwrites callbacks).
       callbacks: {
         dragstart: '_onDragStart',
         dragover: '_onDragOver',
