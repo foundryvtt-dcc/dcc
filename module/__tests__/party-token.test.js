@@ -1,6 +1,7 @@
 /* global CONFIG, game, TokenDocument, canvas, Hooks */
 import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest'
 import { isDeepStrictEqual } from 'node:util'
+import { EventEmitter } from 'node:events'
 
 let registerPartyTokenHooks
 let hooks
@@ -939,9 +940,35 @@ async function socketFixture (fixture = gatherWorkflowFixture()) {
 }
 
 describe('serialized Party socket entry', () => {
+  test.each(['authorization', 'validation', 'workflow'])('ignored socket event promise contains %s failures without unhandled rejection', async mode => {
+    const { payload, scene, events } = await socketFixture()
+    const socket = await import('../socket.mjs')
+    const emitter = new EventEmitter()
+    game.socket.on = emitter.on.bind(emitter)
+    socket.registerSocket()
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    try {
+      if (mode === 'workflow') scene.createEmbeddedDocuments.mockRejectedValueOnce(new Error('create'))
+      // EventEmitter, like Socket.IO, ignores the async listener's return value.
+      emitter.emit('system.dcc', { action: 'partyTokenAction', payload: mode === 'validation' ? {} : payload }, mode === 'authorization' ? 'unknown' : 'gm')
+      await new Promise(resolve => setImmediate(resolve))
+      expect(unhandled).not.toHaveBeenCalled()
+      if (mode !== 'workflow') expect(events).toEqual([])
+      expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+      // Failure completion must also release the lock for a fresh local request.
+      await expect(service.requestPartyTokenAction(payload)).resolves.toMatchObject({ gathered: 1 })
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
   test.each(['player', 'unknown', null])('rejects unauthenticated/non-GM sender %s despite forged payload userId', async sender => {
-    const { payload, remote, events } = await socketFixture()
-    await expect(remote({ ...payload, userId: 'gm' }, sender)).rejects.toMatchObject({ code: 'unauthorized' })
+    const { payload, remote, events, gm } = await socketFixture()
+    await expect(remote({ ...payload, userId: 'gm' }, sender)).resolves.toBeUndefined()
+    game.users.splice(0, 1)
+    await expect(service.requestPartyTokenAction(payload)).resolves.toEqual({ error: { code: 'unauthorized' } })
+    game.users.unshift(gm)
     expect(events).toEqual([])
   })
 
@@ -959,7 +986,9 @@ describe('serialized Party socket entry', () => {
     { tokenIds: [null] }, { partyTokenId: {} }, { action: 'deploy', partyTokenId: undefined }
   ])('rejects malformed/unsupported input before any mutations: %j', async patch => {
     const { remote, payload, events } = await socketFixture()
-    await expect(remote(patch === null ? null : { ...payload, ...patch })).rejects.toHaveProperty('code')
+    const invalid = patch === null ? null : { ...payload, ...patch }
+    await expect(remote(invalid)).resolves.toBeUndefined()
+    await expect(service.requestPartyTokenAction(invalid)).resolves.toHaveProperty('error.code')
     expect(events).toEqual([])
   })
 
@@ -969,7 +998,8 @@ describe('serialized Party socket entry', () => {
     if (mode === 'synthetic') party.isToken = true
     if (mode === 'pack') party.pack = 'compendium'
     if (mode === 'wrong-type') party.type = 'Player'
-    await expect(remote()).rejects.toMatchObject({ code: 'invalid-party' })
+    await expect(remote()).resolves.toBeUndefined()
+    await expect(service.requestPartyTokenAction({ action: 'gather', partyId: party.id, sceneId: 'scene', levelId: 'ground', tokenIds: [] })).resolves.toMatchObject({ error: { code: 'invalid-party' } })
     expect(events).toEqual([])
   })
 
@@ -977,7 +1007,7 @@ describe('serialized Party socket entry', () => {
     const { remote, scene, payload, b } = await socketFixture()
     canvas.scene = { id: 'elsewhere', tokens: [] }
     b.level = 'upper'
-    await expect(remote({ ...payload, tokenIds: [payload.tokenIds[0], b.id] })).rejects.toMatchObject({ code: 'invalid-gather-level' })
+    await expect(service.requestPartyTokenAction({ ...payload, tokenIds: [payload.tokenIds[0], b.id] })).resolves.toMatchObject({ error: { code: 'invalid-gather-level' } })
     await expect(remote()).resolves.toBeUndefined()
     expect(scene.tokens.has(payload.tokenIds[0])).toBe(false)
     expect(scene.tokens.has(b.id)).toBe(true)
@@ -997,18 +1027,18 @@ describe('serialized Party socket entry', () => {
     scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => { entered.resolve(); await release.promise; return create(...args) })
     const first = service.requestPartyTokenAction(payload)
     await entered.promise
-    await expect(remote({ ...payload, userId: 'gm' }, 'unknown')).rejects.toMatchObject({ code: 'unauthorized' })
+    await expect(remote({ ...payload, userId: 'gm' }, 'unknown')).resolves.toBeUndefined()
     await expect(remote()).resolves.toBeUndefined()
     await expect(remote({ ...payload, action: 'deploy', partyTokenId: 'new0000000000001' })).resolves.toBeUndefined()
     expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(1)
     release.resolve()
     await expect(first).resolves.toMatchObject({ gathered: 1 })
-    await expect(remote()).rejects.toMatchObject({ code: 'snapshot-open' })
+    await expect(service.requestPartyTokenAction(payload)).resolves.toMatchObject({ error: { code: 'snapshot-open' } })
     expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
   })
 
   test('Gather rollback holds the global lock even for a different Party', async () => {
-    const { remote, payload, scene, party } = await socketFixture()
+    const { payload, scene, party } = await socketFixture()
     const other = { ...party, id: 'other', flags: { dcc: { partyMembers: [] } } }
     game.actors.push(other)
     const entered = deferred()
@@ -1024,8 +1054,8 @@ describe('serialized Party socket entry', () => {
       await release.promise
       return create(...args)
     })
-    const first = remote()
-    const assertion = expect(first).rejects.toMatchObject({ code: 'member-delete-failed', rollbackComplete: true })
+    const first = service.requestPartyTokenAction(payload)
+    const assertion = expect(first).resolves.toMatchObject({ error: { code: 'member-delete-failed', rollbackComplete: true } })
     await entered.promise
     await expect(service.requestPartyTokenAction({ ...payload, partyId: other.id })).resolves.toBeUndefined()
     expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(2)
@@ -1051,7 +1081,7 @@ describe('serialized Party socket entry', () => {
     expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
     release.resolve()
     await expect(first).resolves.toBeUndefined()
-    await expect(remote(request)).rejects.toMatchObject({ code: 'missing-snapshot' })
+    await expect(service.requestPartyTokenAction(request)).resolves.toMatchObject({ error: { code: 'missing-snapshot' } })
     expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
     expect(party.setFlag).not.toHaveBeenCalled()
     expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
@@ -1074,8 +1104,8 @@ describe('serialized Party socket entry', () => {
       return damaged ? [] : create(...args)
     })
     const request = { ...payload, action: 'deploy', partyTokenId: 'new0000000000001' }
-    const first = remote(request)
-    const assertion = expect(first).rejects.toMatchObject({ code: 'party-delete-failed', rollbackComplete: !damaged })
+    const first = service.requestPartyTokenAction(request)
+    const assertion = expect(first).resolves.toMatchObject({ error: { code: 'party-delete-failed', rollbackComplete: !damaged } })
     await entered.promise
     const calls = scene.createEmbeddedDocuments.mock.calls.length
     await expect(remote(request)).resolves.toBeUndefined()
@@ -1083,7 +1113,7 @@ describe('serialized Party socket entry', () => {
     release.resolve()
     await assertion
     if (damaged) {
-      await expect(remote(request)).rejects.toMatchObject({ code: 'party-blocked' })
+      await expect(service.requestPartyTokenAction(request)).resolves.toMatchObject({ error: { code: 'party-blocked' } })
       const other = { ...party, id: 'other', flags: { dcc: { partyMembers: [] } } }
       game.actors.push(other)
       await expect(service.requestPartyTokenAction({ ...payload, partyId: other.id })).resolves.toMatchObject({ gathered: 0 })
@@ -1094,7 +1124,9 @@ describe('serialized Party socket entry', () => {
     const { remote, payload, scene, partyToken, foreign, events } = await socketFixture(await deployWorkflowFixture())
     if (mode === 'legacy') partyToken.actorLink = false
     if (mode === 'wrong-scene') scene.tokens.splice(scene.tokens.indexOf(partyToken), 1)
-    await expect(remote({ ...payload, action: 'deploy', partyTokenId: mode === 'foreign' ? foreign.id : partyToken.id })).rejects.toHaveProperty('code')
+    const invalid = { ...payload, action: 'deploy', partyTokenId: mode === 'foreign' ? foreign.id : partyToken.id }
+    await expect(remote(invalid)).resolves.toBeUndefined()
+    await expect(service.requestPartyTokenAction(invalid)).resolves.toHaveProperty('error.code')
     expect(events).toEqual([])
   })
 

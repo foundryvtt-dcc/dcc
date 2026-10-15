@@ -29,9 +29,6 @@ async function onPartyTokenAction (payload, senderId) {
     return await (action === 'gather'
       ? gatherPartyTokens({ party, scene, levelId, tokenIds, partyTokenId })
       : deployPartyTokens({ party, scene, partyTokenId }))
-  } catch (error) {
-    error.code ??= error.message
-    throw error
   } finally {
     inFlight = false
   }
@@ -39,10 +36,18 @@ async function onPartyTokenAction (payload, senderId) {
 
 /** Internal ready registration; intentionally not exposed on game.dcc. */
 export function registerPartyTokenSocket () {
-  registerSocketHandler('partyTokenAction', onPartyTokenAction)
+  registerSocketHandler('partyTokenAction', async (payload, senderId) => {
+    // Socket event emitters ignore promises: contain every Party failure here,
+    // including authorization before the workflow acquires its lock.
+    try {
+      return await onPartyTokenAction(payload, senderId)
+    } catch (error) {
+      return { error: { ...error, code: error.code ?? error.message } }
+    }
+  })
 }
 
-/** Future UI callers, including the active GM, must use the same socket/lock path. */
+/** Same socket/lock path for every UI caller. Local failures return { error: { code, ... } }; remote calls are fire-and-forget. */
 export function requestPartyTokenAction (payload) {
   return executeAsGM('partyTokenAction', payload)
 }
