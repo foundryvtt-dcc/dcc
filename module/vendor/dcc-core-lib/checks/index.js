@@ -12,7 +12,7 @@
  * - `skill:backstab` - Skill check
  *
  * @example
- * import { Ability, Save, rollCheck } from 'dcc-core-lib';
+ * import { Ability, Save, rollCheck } from '@moonloch/dcc-core-lib';
  *
  * // Roll a strength check (Ability.STR = "ability:str")
  * const result = rollCheck(Ability.STR, character);

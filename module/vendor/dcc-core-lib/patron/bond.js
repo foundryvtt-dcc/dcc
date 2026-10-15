@@ -89,7 +89,7 @@ export function hasPatronBond(character) {
  *
  * @param currentState - Current wizard state (or undefined for new)
  * @param patronId - The patron to bond with
- * @param patronDef - The patron definition (optional, for validation)
+ * @param _patronDef - The patron definition (reserved for validation; currently unused)
  * @returns Updated wizard state
  */
 export function formWizardPatronBond(currentState, patronId, _patronDef) {
@@ -115,7 +115,7 @@ export function formWizardPatronBond(currentState, patronId, _patronDef) {
  *
  * @param currentState - Current elf state (or undefined for new)
  * @param patronId - The patron to bond with
- * @param patronDef - The patron definition (optional, for validation)
+ * @param _patronDef - The patron definition (reserved for validation; currently unused)
  * @returns Updated elf state
  */
 export function formElfPatronBond(currentState, patronId, _patronDef) {

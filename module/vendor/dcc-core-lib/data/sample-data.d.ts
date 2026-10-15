@@ -7,7 +7,7 @@
  * for testing and demonstration purposes. These are original creations
  * and are NOT from any published game system.
  *
- * For official DCC RPG data, use the separate dcc-official-data package.
+ * For official DCC RPG data, supply your own licensed data.
  */
 import type { BirthAugurEntry, BirthAugurEffectType } from "../types/tables.js";
 import type { OccupationEntry } from "../character/create.js";
@@ -28,7 +28,7 @@ export declare const SAMPLE_OCCUPATIONS: OccupationEntry[];
  * Default character creation data using fan-made content.
  * Use this for testing or when official data isn't available.
  *
- * For official DCC RPG data, use the dcc-official-data package instead.
+ * For official DCC RPG data, supply your own licensed data instead.
  */
 export declare const DEFAULT_CHARACTER_CREATION_DATA: {
     birthAugurs: BirthAugurEntry[];

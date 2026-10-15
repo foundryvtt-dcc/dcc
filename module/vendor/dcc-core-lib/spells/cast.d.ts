@@ -68,9 +68,9 @@ export declare function checkDisapproval(natural: number, disapprovalRange: numb
 /**
  * Calculate the disapproval-range increase this cast causes.
  *
- * DCC RAW (core rulebook, cleric magic): "Each failed spell check increases
- * the chance of disapproval" by one, and "any natural roll within that range
- * automatically fails". So a natural inside the range (natural 1 included)
+ * DCC RAW (core rulebook, cleric magic): every failed spell check widens the
+ * disapproval range by one, and a natural roll inside the range is an
+ * automatic failure. So a natural inside the range (natural 1 included)
  * is a failed check and raises the range by exactly 1.
  *
  * Only in-range naturals are counted here. A check that fails on its total

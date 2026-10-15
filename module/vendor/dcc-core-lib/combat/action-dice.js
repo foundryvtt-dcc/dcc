@@ -26,8 +26,8 @@ const DIE_TERM = /^(\d*)d(\d+)$/i;
  * The `use` of a class's *extra* (slot ≥ 1) action dice.
  *
  * Verified against the DCC core-book class descriptions: the **wizard** is
- * the only core class that restricts an extra action die ("his second
- * action die can only be used for spell checks"). The elf and cleric are
+ * the only core class that restricts an extra action die (the wizard's
+ * second die is reserved for spell checks). The elf and cleric are
  * casters too, but their extra dice are explicitly unrestricted, as are the
  * warrior, dwarf, thief, and halfling. The primary die (slot 0) is always
  * `"any"` regardless of class.

@@ -39,11 +39,11 @@ export function increaseDisapprovalRange(currentRange, increase = 1) {
     return Math.min(MAX_DISAPPROVAL_RANGE, currentRange + increase);
 }
 /**
- * Reset disapproval range (after appropriate penance/atonement).
+ * Reduce the disapproval range (after appropriate penance/atonement).
  *
- * @param fullReset - If true, reset to 1; if false, reduce by a fixed amount
  * @param currentRange - Current disapproval range
- * @param reduction - Amount to reduce if not full reset (default 1)
+ * @param reduction - Amount to reduce by (default 1)
+ * @param minimum - Floor for the result (default DEFAULT_DISAPPROVAL_RANGE)
  * @returns New disapproval range
  */
 export function reduceDisapprovalRange(currentRange, reduction = 1, minimum = DEFAULT_DISAPPROVAL_RANGE) {

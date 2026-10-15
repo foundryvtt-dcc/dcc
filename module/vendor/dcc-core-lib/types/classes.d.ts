@@ -5,7 +5,7 @@
  * This enables data-driven class definitions for easy homebrew.
  *
  * NOTE: This file contains only type definitions. Actual class data
- * should be loaded from dcc-official-data and registered using
+ * should be loaded from the consuming application's own data and registered using
  * registerClassProgression() from data/classes/progression-utils.
  */
 import type { CritDieFormula, DieType } from "./dice.js";

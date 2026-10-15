@@ -50,7 +50,7 @@ export declare function hasPatronBond(character: Character): boolean;
  *
  * @param currentState - Current wizard state (or undefined for new)
  * @param patronId - The patron to bond with
- * @param patronDef - The patron definition (optional, for validation)
+ * @param _patronDef - The patron definition (reserved for validation; currently unused)
  * @returns Updated wizard state
  */
 export declare function formWizardPatronBond(currentState: {
@@ -72,7 +72,7 @@ export declare function formWizardPatronBond(currentState: {
  *
  * @param currentState - Current elf state (or undefined for new)
  * @param patronId - The patron to bond with
- * @param patronDef - The patron definition (optional, for validation)
+ * @param _patronDef - The patron definition (reserved for validation; currently unused)
  * @returns Updated elf state
  */
 export declare function formElfPatronBond(currentState: {

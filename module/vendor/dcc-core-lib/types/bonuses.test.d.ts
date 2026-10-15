@@ -1,4 +1,0 @@
-/**
- * Bonus System Tests
- */
-export {};

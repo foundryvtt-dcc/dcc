@@ -113,7 +113,7 @@ export declare function getTwoWeaponDice(agility: number, options?: {
  * Table 4-3, rolls each hand, applies {@link applyTwoWeaponHandRules}
  * to each, then the halfling fumble rule (clears `isFumble` unless both
  * hands rolled a natural 1). An improved threat range is kept: the 18+
- * row's primary hand "scores critical hits as normal".
+ * row's primary hand crits normally.
  *
  * Combat events (`onAttackRoll`, `onCriticalThreat`, `onFumbleRoll`,
  * `onDeedAttempt`) are emitted for each hand AFTER overrides are

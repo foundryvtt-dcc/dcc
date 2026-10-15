@@ -8,8 +8,8 @@
  *
  * @example
  * ```typescript
- * import { registerXPThresholds, canLevelUp, levelUp } from "dcc-core-lib";
- * import { ALL_XP_THRESHOLDS } from "dcc-official-data";
+ * import { registerXPThresholds, canLevelUp, levelUp } from "@moonloch/dcc-core-lib";
+ * import { ALL_XP_THRESHOLDS } from "./my-xp-data.js"; // your own data
  *
  * // Register XP data at startup
  * registerXPThresholds(ALL_XP_THRESHOLDS);

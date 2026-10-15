@@ -75,7 +75,7 @@ export interface AttackInput {
  * What an action die may be spent on.
  *
  * In DCC, the **wizard** is the only core class that restricts an extra
- * action die: its second die "can only be used for spell checks." Every
+ * action die: its second die may be spent on spell checks alone. Every
  * other class — including the elf and cleric, who are also casters — may
  * use its extra dice for anything. See `classExtraActionDieUse`.
  *
@@ -478,8 +478,8 @@ export interface CombatEvents {
     onDeedAttempt?: (deedRoll: RollResult, success: boolean) => void;
 }
 /**
- * Alternate damage expression used when a thief succeeds in a backstab
- * attempt with a backstab-friendly weapon (DCC Table 3-1 footnote).
+ * Alternate damage expression used when a thief lands a successful
+ * backstab using a backstab-friendly weapon (DCC Table 3-1 footnote).
  *
  * The thief rolls this expression *instead of* the weapon's normal
  * damage — it is a full replacement, not an additive bonus.

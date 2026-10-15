@@ -61,6 +61,11 @@ if (pkg.name !== '@moonloch/dcc-core-lib') {
   fail(`expected @moonloch/dcc-core-lib at ${LIB_SRC}, found ${pkg.name}`)
 }
 
+// Build into an empty dist/: tsc never deletes stale outputs, and dist/ is
+// copied wholesale, so leftovers from an older build (such as the compiled
+// test files lib builds before 0.14.4 emitted) would otherwise be vendored.
+rmSync(resolve(LIB_SRC, 'dist'), { recursive: true, force: true })
+
 console.log(`sync-core-lib: building ${pkg.name}@${pkg.version} at ${LIB_SRC}`)
 execSync('npm run build', { cwd: LIB_SRC, stdio: 'inherit' })
 
