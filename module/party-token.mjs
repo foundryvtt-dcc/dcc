@@ -123,14 +123,13 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       try {
         created = await scene.createEmbeddedDocuments('Token', [document.toObject()])
       } finally {
-        // Prefer the returned batch so concurrent additions are never ours to
-        // remove. Without a result, only a unique scene addition is identifiable.
+        // Only returned documents establish ownership. Even a unique scene
+        // addition could belong to another caller while our creation aborted.
         const returnedIds = new Set((created ?? []).map(token => token.id))
         const additions = [...scene.tokens].filter(token => !before.has(token.id))
         const candidates = additions.filter(token => token.actorId === party.id)
         if (returnedIds.size) newPartyIds.push(...additions.filter(token => returnedIds.has(token.id)).map(token => token.id))
-        else if (candidates.length === 1) newPartyIds.push(candidates[0].id)
-        else if (candidates.length > 1) uncertainPartyCreation = true
+        else if (candidates.length) uncertainPartyCreation = true
       }
       partyToken = created?.length === 1 ? scene.tokens.get(created[0]?.id) : null
       if (!partyToken?.actorLink || partyToken.actorId !== party.id || partyToken.level !== levelId ||
@@ -155,7 +154,7 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
     const rollbackIssues = uncertainPartyCreation ? ['party-create-uncertain'] : []
     // Restore only missing originals, with their full sources and original IDs.
     // A rejected operation may still have applied; verify stored data afterwards.
-    if (confirmedSave && memberDeleteStarted) {
+    if (confirmedSave && (memberDeleteStarted || originalIds.some(id => !scene.tokens.has(id)))) {
       const missing = snapshot.members.filter(member => !scene.tokens.has(member.tokenData._id))
       if (missing.length) {
         try {
