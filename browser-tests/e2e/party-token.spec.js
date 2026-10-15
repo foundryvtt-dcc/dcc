@@ -181,3 +181,39 @@ test('v14 resource choices preserve Player and NPC HP and expose Party aggregate
     }
   }
 })
+
+test('member HP refreshes do not accumulate additive token light effects', async ({ page }) => {
+  const ids = await page.evaluate(async () => {
+    const member = await Actor.create({ name: 'PARTY TOKEN Light Member', type: 'Player', system: { attributes: { hp: { value: 5, max: 8 } } } })
+    const party = await Actor.create({
+      name: 'PARTY TOKEN Light Party',
+      type: 'Party',
+      flags: { dcc: { partyMembers: [{ id: member.id }] } },
+      prototypeToken: { light: { bright: 10 } },
+      effects: [{ name: 'PARTY TOKEN Additive Light', changes: [{ key: 'token.light.bright', mode: CONST.ACTIVE_EFFECT_MODES.ADD, value: '5' }] }]
+    })
+    const scene = await Scene.create({ name: 'PARTY TOKEN Light Scene', width: 2000, height: 2000, grid: { size: 100, type: 1 } })
+    await scene.view()
+    const [token] = await scene.createEmbeddedDocuments('Token', [(await party.getTokenDocument({ x: 500, y: 500 })).toObject()])
+    return { member: member.id, party: party.id, scene: scene.id, token: token.id }
+  })
+  try {
+    await page.waitForFunction(ids => canvas.tokens?.get(ids.token)?.bars, ids)
+    const state = () => page.evaluate(ids => {
+      const token = canvas.scene.tokens.get(ids.token)
+      return { value: token.bar1.value, max: token.bar1.max, bright: token.light.bright, sourceBright: token.toObject().light.bright }
+    }, ids)
+    expect(await state()).toEqual({ value: 5, max: 8, bright: 15, sourceBright: 10 })
+    for (const hp of [4, 3, 2]) {
+      await page.evaluate(async ({ ids, hp }) => {
+        await game.actors.get(ids.member).update({ 'system.attributes.hp.value': hp })
+      }, { ids, hp })
+      await expect.poll(state).toEqual({ value: hp, max: 8, bright: 15, sourceBright: 10 })
+    }
+  } finally {
+    await page.evaluate(async ids => {
+      await game.scenes.get(ids.scene)?.delete()
+      for (const id of [ids.party, ids.member]) await game.actors.get(id)?.delete()
+    }, ids)
+  }
+})

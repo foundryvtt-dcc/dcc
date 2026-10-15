@@ -76,8 +76,34 @@ test.each([false, true])('snapshots partial foreign registry before mutation (ex
 })
 
 function token (actor) {
-  return { actor, prepareData: vi.fn(), object: { renderFlags: { set: vi.fn() } } }
+  return { actor, reset: vi.fn(), prepareData: vi.fn(), object: { renderFlags: { set: vi.fn() } } }
 }
+
+test('repeated member HP refreshes reinitialize token effects instead of stacking them', () => {
+  const member = { id: 'member', hp: 5 }
+  const affected = token({ type: 'Party', flags: { dcc: { partyMembers: [{ id: member.id }] } } })
+  // v14 prepareData applies additive effects to current values; reset first
+  // reinitializes from source and then runs preparation.
+  const sourceBright = 10
+  affected.light = { bright: sourceBright }
+  affected.prepareData.mockImplementation(() => {
+    affected.light.bright += 5
+    affected.bar1 = { value: member.hp, max: 8 }
+  })
+  affected.reset.mockImplementation(() => {
+    affected.light.bright = sourceBright
+    affected.prepareData()
+  })
+  affected.reset()
+  canvas.scene.tokens = [affected]
+  registerPartyTokenHooks()
+  for (const hp of [4, 3, 2]) {
+    member.hp = hp
+    hooks.updateActor(member, { 'system.attributes.hp.value': hp }, {}, 'remote-GM')
+    expect(affected.bar1).toEqual({ value: hp, max: 8 })
+    expect(affected.light.bright).toBe(15)
+  }
+})
 
 test('refreshes only affected viewed-scene Party documents before bars and bound HUD on remote updates/deletions', () => {
   const party = { id: 'party', type: 'Party', flags: { dcc: { partyMembers: [{ id: 'member' }] } } }
@@ -88,14 +114,14 @@ test('refreshes only affected viewed-scene Party documents before bars and bound
   canvas.hud.token.object = affected.object
   registerPartyTokenHooks()
   for (const name of ['updateActor', 'deleteActor']) hooks[name](member.actor, {}, {}, 'remote-GM')
-  expect(affected.prepareData).toHaveBeenCalledTimes(2)
+  expect(affected.reset).toHaveBeenCalledTimes(2)
   expect(affected.object.renderFlags.set).toHaveBeenCalledWith({ refreshBars: true })
-  expect(affected.prepareData.mock.invocationCallOrder[0]).toBeLessThan(affected.object.renderFlags.set.mock.invocationCallOrder[0])
+  expect(affected.reset.mock.invocationCallOrder[0]).toBeLessThan(affected.object.renderFlags.set.mock.invocationCallOrder[0])
   expect(canvas.hud.token.render).toHaveBeenCalledTimes(2)
-  expect(other.prepareData).not.toHaveBeenCalled()
-  expect(member.prepareData).not.toHaveBeenCalled()
+  expect(other.reset).not.toHaveBeenCalled()
+  expect(member.reset).not.toHaveBeenCalled()
   hooks.updateActor(party, { flags: { dcc: { partyMembers: [] } } })
-  expect(affected.prepareData).toHaveBeenCalledTimes(3)
+  expect(affected.reset).toHaveBeenCalledTimes(3)
 })
 
 test('refreshes member effects via actor lifecycle, including item effects, without persistence', () => {
@@ -107,7 +133,7 @@ test('refreshes member effects via actor lifecycle, including item effects, with
     hooks[name]({ parent: member })
     hooks[name]({ parent: { documentName: 'Item', parent: member } })
   }
-  expect(affected.prepareData).toHaveBeenCalledTimes(6)
+  expect(affected.reset).toHaveBeenCalledTimes(6)
   expect(canvas.hud.token.render).not.toHaveBeenCalled()
   canvas.scene = null
   expect(() => hooks.updateActor(member)).not.toThrow()

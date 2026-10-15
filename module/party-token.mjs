@@ -26,7 +26,9 @@ function refreshPartyTokens (actor) {
     if (party?.type !== 'Party') continue
     const members = party.flags?.dcc?.partyMembers ?? []
     if (party.id !== actor.id && !members.some(member => member.id === actor.id)) continue
-    document.prepareData()
+    // Reinitialize from source before preparation: prepareData alone reapplies
+    // additive Token ActiveEffects to their already-modified values in v14.
+    document.reset()
     const object = document.object
     object?.renderFlags.set({ refreshBars: true })
     if (object && canvas.hud?.token?.object === object) canvas.hud.token.render()
