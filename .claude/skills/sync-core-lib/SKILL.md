@@ -16,16 +16,17 @@ checkout is at `/Users/timlwhite/WebstormProjects/dcc-core-lib`
    be clean and on the merged commit; otherwise `VERSION.json` records
    `"dirty": true` or a SHA that isn't on the lib's `main`.
 2. From the system repo, run `pnpm run sync-core-lib`. The script
-   (`scripts/sync-core-lib.mjs`) builds the lib via `npm run build` (the
-   lib uses npm, not pnpm), copies `dist/` into the vendor directory,
+   (`scripts/sync-core-lib.mjs`) empties the lib's `dist/`, builds the lib via
+   `npm run build` (the lib uses npm, not pnpm), copies `dist/` into the vendor directory,
    strips sourcemaps, and writes `module/vendor/dcc-core-lib/VERSION.json`
    with the source commit SHA + timestamp.
    - Override the source path with
      `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib pnpm run sync-core-lib`.
    - Since lib 0.14.4, `dist/` contains no compiled test files and adds
      `dcc-core-lib.d.ts`, the whole public API in one declaration file.
-3. Check the vendor diff. Changes outside comments mean behavior
-   changes: run the affected unit tests and E2E specs.
+3. Check the vendor diff. Changes to `.js` files outside comments mean
+   behavior changes: run the affected unit tests and E2E specs. Changes
+   only to `.d.ts` files are type-only.
 4. Commit the resulting vendor diff with a message like
    `vendor: sync dcc-core-lib to <version> (<sha7>)`.
 
