@@ -12,6 +12,8 @@ Just click on the "Level" label next to the level of your PC:
 
 Once you accept this change, it will be logged to the Chat, and the Hit Points will be rolled.
 
+Each level you gain rolls your class's hit die and adds your Stamina modifier, with a minimum of 1 hit point per level. Going from level 0 to level 1 counts as a gained level. If you jump several levels at once, each level is rolled separately. Lowering your level rolls the same dice and subtracts them.
+
 If you would like a different Hit Point formula, you can roll that in the chat yourself, and adjust your character as desired.
 
 Authoring your own level data? See [Adding Level Up Data](Adding-Level-Up-Data.md) for how to author the level items that this dialog reads.

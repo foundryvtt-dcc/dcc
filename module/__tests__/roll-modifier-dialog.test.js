@@ -105,13 +105,14 @@ describe('_updateSpellburnHpRow', () => {
   })
 
   test('shows the row with the ΔHP wording when the burn crosses a threshold', () => {
-    // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
+    // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 is three hit point
+    // rolls (0-level + 2 levels) -> -3 HP (#983)
     const row = makeRow()
     const term = { index: 0, type: 'Spellburn', staStart: 13, sta: 11, level: 2, hpAdjustable: true }
     proto._updateSpellburnHpRow.call(hpCtx(term, row), 0)
 
     expect(row.classList.contains('hidden')).toBe(false)
-    expect(row.label.textContent).toBe('Also adjust hit points by -2 (Stamina modifier +1 → 0, level 2)')
+    expect(row.label.textContent).toBe('Also adjust hit points by -3 (Stamina modifier +1 → 0, level 2)')
   })
 
   test('hides the row again when the burn stays inside one modifier band', () => {
@@ -128,7 +129,7 @@ describe('_updateSpellburnHpRow', () => {
     proto._updateSpellburnHpRow.call(hpCtx(term, row), 0)
 
     expect(row.label.textContent).toContain('by -1')
-    expect(row.label.textContent).toContain('level 1')
+    expect(row.label.textContent).toContain('level 0')
   })
 
   test('does nothing when the row is not in the DOM (non-spellburn dialogs)', () => {

@@ -264,12 +264,13 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await expect(hpRow).toHaveCount(1)
     await expect(hpRow).toBeHidden()
 
-    // Sta 13 -> 12 crosses +1 -> 0: 1 modifier step x level 2 = 2 hit points
+    // Sta 13 -> 12 crosses +1 -> 0: 1 modifier step x 3 hit point rolls
+    // (0-level + 2 levels) = 3 hit points (#983)
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="sta"][data-mod="+1"]').click()
     })
     await expect(hpRow).toBeVisible()
-    await expect(hpRow).toContainText('-2')
+    await expect(hpRow).toContainText('by -3')
     await expect(hpRow.locator('input[type="checkbox"]')).toBeChecked()
 
     await page.evaluate(() => {
@@ -287,10 +288,10 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       }
     })
     expect(afterBurn.sta).toBe(12)
-    expect(afterBurn.hp).toBe(6)
-    expect(afterBurn.hpMax).toBe(8)
+    expect(afterBurn.hp).toBe(5)
+    expect(afterBurn.hpMax).toBe(7)
     expect(afterBurn.log).toHaveLength(1)
-    expect(afterBurn.log[0]).toMatchObject({ ability: 'sta', change: -2, type: 'spellburn', hpChange: -2 })
+    expect(afterBurn.log[0]).toMatchObject({ ability: 'sta', change: -2, type: 'spellburn', hpChange: -3 })
 
     // Healing the entry back through the log viewer restores the hit points
     // on the step that crosses the threshold again (12 -> 13 gives +2,
@@ -401,11 +402,12 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await expect(hpRow).toHaveCount(1)
     await expect(hpRow).toBeHidden()
 
-    // Sta 16 -> 15 crosses +2 -> +1: 1 step x level 2 = 2 hit points
+    // Sta 16 -> 15 crosses +2 -> +1: 1 step x 3 hit point rolls (0-level +
+    // 2 levels) = 3 hit points (#983)
     await page.locator('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="sta"][data-mod="+1"]')
       .click()
     await expect(hpRow).toBeVisible()
-    await expect(hpRow).toContainText('-2')
+    await expect(hpRow).toContainText('by -3')
 
     await page.locator('.dcc-roll-modifier button[type="submit"]').click()
     await page.waitForTimeout(2000)
@@ -422,14 +424,14 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       }
     })
     expect(after.sta).toBe(15)
-    expect(after.hp).toBe(8)
-    expect(after.hpMax).toBe(8)
+    expect(after.hp).toBe(7)
+    expect(after.hpMax).toBe(7)
     // #923 — the entry has to be typed and sourced to the spell, not just
     // present. A burn that writes the ability values without logging (what
     // XCC's copy of this term does) produces no chat card and no Heal
     // button, and would still satisfy an ability-value-only assertion.
     expect(after.log).toEqual([{
-      ability: 'sta', hpChange: -2, type: 'spellburn', source: 'ASL-Sheet-Spell'
+      ability: 'sta', hpChange: -3, type: 'spellburn', source: 'ASL-Sheet-Spell'
     }])
   })
 

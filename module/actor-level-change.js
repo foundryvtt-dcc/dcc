@@ -1,9 +1,58 @@
 /* global ChatMessage, game, CONFIG, Roll, ui, foundry */
 
-import DiceChain from './dice-chain.js'
 import { ensurePlus, removeActiveEffectOverrides } from './utilities.js'
+import { rollHPForLevel } from './vendor/dcc-core-lib/index.js'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+/**
+ * Hit point roll for a level change (#983)
+ *
+ * Every level gained or lost is one hit die roll plus the Stamina modifier,
+ * with a minimum of 1 per level - the lib's `rollHPForLevel` rule. Going from
+ * level 0 to 1 is a gained level like any other. A level drop rolls the same
+ * dice and subtracts them.
+ *
+ * The formula spells each level out (`max(1, 1d6-1) + max(1, 1d6-1)`) so the
+ * chat card shows every die and a total that matches the rule; the `max` is
+ * dropped when the modifier can't take a roll below 1.
+ * @param {string} hitDie       The level's hit die, e.g. `1d6`
+ * @param {number} staMod       Stamina modifier
+ * @param {number} oldLevel     Level before the change
+ * @param {number} newLevel     Level after the change
+ * @returns {Object|null}       {formula, sign, levels, faces, staMod}, or null for no change
+ */
+export function levelChangeHitPoints (hitDie, staMod, oldLevel, newLevel) {
+  const levels = (parseInt(newLevel) || 0) - (parseInt(oldLevel) || 0)
+  if (!levels) return null
+  const sign = Math.sign(levels)
+  const count = Math.abs(levels)
+  const mod = parseInt(staMod) || 0
+  const faces = parseInt(/d(\d+)/i.exec(hitDie || '')?.[1]) || 6
+  const perLevel = mod < 0 ? `max(1, 1d${faces}${ensurePlus(mod)})` : `1d${faces}${mod ? ensurePlus(mod) : ''}`
+  const sum = Array(count).fill(perLevel).join(' + ')
+  const formula = sign < 0 ? `-(${sum})` : sum
+  return { formula, sign, levels: count, faces, staMod: mod }
+}
+
+/**
+ * Hit points actually gained (or lost) for an evaluated level-change roll
+ *
+ * Runs each rolled hit die through the lib's `rollHPForLevel` so the rule
+ * (Stamina modifier per level, minimum 1 per level) lives in the lib; the
+ * Foundry roll only supplies the dice.
+ * @param {Object} hpChange     The result of `levelChangeHitPoints`
+ * @param {Roll} roll           The evaluated roll of `hpChange.formula`
+ * @returns {number}            Signed hit point change
+ */
+export function levelChangeHitPointTotal (hpChange, roll) {
+  const results = roll.dice.flatMap(die => die.results.filter(r => r.active !== false).map(r => r.result))
+  const gained = results.reduce((total, rolled) => {
+    const random = { roll: () => rolled, rollMultiple: (count) => Array(count).fill(rolled) }
+    return total + rollHPForLevel(`d${hpChange.faces}`, hpChange.staMod, random).gained
+  }, 0)
+  return hpChange.sign * gained
+}
 
 class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
@@ -41,6 +90,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     this.currentLevel = this.options.document.system.details.level.value
     this.levelData = null
     this.newHitPointsExpression = ''
+    this.hitPointChange = null
   }
 
   /* -------------------------------------------- */
@@ -250,31 +300,19 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       // Calculate level data
       this.levelData = await this._getLevelDataFromItem(levelItem)
 
-      // Calculate hit points expression
+      // Hit points: one hit die + Stamina modifier per level changed (#983)
       const hitDie = this.levelData['system.attributes.hitDice.value'] || '1d6'
-      let hpExpression = `+(${hitDie}${ensurePlus(this.options.document.system?.abilities?.sta?.mod)})`
-      let levelDifference = parseInt(this.currentLevel) - parseInt(this.options.document.system.details.level.value)
-
-      if (levelDifference !== 1) {
-        if (parseInt(this.options.document.system.details.level.value) === 0) {
-          levelDifference -= 1
-        }
-        hpExpression = DiceChain.bumpDieCount(hitDie, levelDifference)
-
-        const staModTotal = levelDifference * this.options.document.system?.abilities?.sta?.mod
-        hpExpression = `+(${hpExpression}${ensurePlus(staModTotal)})`
-
-        if (levelDifference < 0) {
-          hpExpression = hpExpression.replace('+', '-')
-        }
-        if (levelDifference === 0) {
-          hpExpression = ''
-        }
-      }
-      this.newHitPointsExpression = hpExpression
+      this.hitPointChange = levelChangeHitPoints(
+        hitDie,
+        this.options.document.system?.abilities?.sta?.mod,
+        this.options.document.system.details.level.value,
+        this.currentLevel
+      )
+      this.newHitPointsExpression = this.hitPointChange?.formula || ''
     } else {
       this.levelData = null
       this.newHitPointsExpression = ''
+      this.hitPointChange = null
     }
 
     // Re-render the application with updated data
@@ -313,11 +351,16 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       // Roll new Hit Points
-      if (this.newHitPointsExpression) {
-        const hpRoll = new Roll(this.newHitPointsExpression)
+      if (this.hitPointChange) {
+        const hpRoll = new Roll(this.hitPointChange.formula)
+        await hpRoll.evaluate()
+        const hpTotal = levelChangeHitPointTotal(this.hitPointChange, hpRoll)
+        if (hpTotal !== hpRoll.total) {
+          console.warn('[DCC] level-change hit points: roll total and lib rule disagree - using the lib', { formula: this.hitPointChange.formula, roll: hpRoll.total, lib: hpTotal })
+        }
         await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.options.document }) })
-        const newHp = this.options.document.system.attributes.hp.value + hpRoll.total
-        const newMaxHp = parseInt(this.options.document.system.attributes.hp.max) + hpRoll.total
+        const newHp = (parseInt(this.options.document.system.attributes.hp.value) || 0) + hpTotal
+        const newMaxHp = (parseInt(this.options.document.system.attributes.hp.max) || 0) + hpTotal
         levelData['system.attributes.hp.value'] = newHp
         levelData['system.attributes.hp.max'] = newMaxHp
       }

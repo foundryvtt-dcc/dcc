@@ -733,13 +733,14 @@ test('naked spell check forwards the HP opt-in through to the actor update (#921
   actor.system.attributes.hp.value = 8
   actor.system.attributes.hp.max = 10
 
-  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 hit points
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 is three hit point
+  // rolls (0-level + 2 levels) -> -3 hit points (#983)
   await actor.rollSpellCheck({ spellburn: { str: 0, agl: 0, sta: 2, adjustHP: true } })
 
   expect(actorUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
     'system.abilities.sta.value': 11,
-    'system.attributes.hp.value': 6,
-    'system.attributes.hp.max': 8
+    'system.attributes.hp.value': 5,
+    'system.attributes.hp.max': 7
   }))
 
   itemSpy.mockRestore()
@@ -1001,13 +1002,14 @@ test('createSpellEvents onSpellburnApplied honours the dialog HP opt-in for Stam
   // state rides in on createSpellEvents.
   const events = createSpellEvents({ actor, spellItem: null, adjustSpellburnHP: true })
 
-  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 is three hit point
+  // rolls (0-level + 2 levels) -> -3 HP (#983)
   events.onSpellburnApplied({ str: 0, agl: 0, sta: 2 })
 
   expect(actor.update).toHaveBeenCalledWith({
     'system.abilities.sta.value': 11,
-    'system.attributes.hp.value': 6,
-    'system.attributes.hp.max': 8
+    'system.attributes.hp.value': 5,
+    'system.attributes.hp.max': 7
   })
 })
 
@@ -2038,7 +2040,8 @@ test('item-bound wizard cast forwards the HP opt-in through createSpellEvents (#
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
   const updateSpy = vi.spyOn(actor, 'update').mockResolvedValue(undefined)
 
-  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 hit points
+  // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 is three hit point
+  // rolls (0-level + 2 levels) -> -3 hit points (#983)
   await actor.rollSpellCheck({ spell: 'Magic Missile', spellburn: { str: 0, agl: 0, sta: 2, adjustHP: true } })
 
   const burnUpdate = updateSpy.mock.calls.find(([data]) =>
@@ -2046,8 +2049,8 @@ test('item-bound wizard cast forwards the HP opt-in through createSpellEvents (#
   )
   expect(burnUpdate, 'expected a Stamina deduction from the spellburn').toBeDefined()
   expect(burnUpdate[0]['system.abilities.sta.value']).toBe(11)
-  expect(burnUpdate[0]['system.attributes.hp.value']).toBe(6)
-  expect(burnUpdate[0]['system.attributes.hp.max']).toBe(8)
+  expect(burnUpdate[0]['system.attributes.hp.value']).toBe(5)
+  expect(burnUpdate[0]['system.attributes.hp.max']).toBe(7)
 
   itemSpy.mockRestore()
   findSpy.mockRestore()

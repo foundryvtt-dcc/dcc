@@ -1,6 +1,7 @@
 /* global ChatMessage, CONFIG, foundry, game, Hooks */
 
 import { getClassTraits } from './extension-api.mjs'
+import { calculateMinimumHP } from './vendor/dcc-core-lib/index.js'
 
 /**
  * Ability Score Change Log
@@ -93,7 +94,13 @@ export function requiresNote (type) {
 
 /**
  * Compute the hit point adjustment for a Stamina modifier threshold crossing
- * ΔHP = (newMod − oldMod) × max(1, level)
+ * ΔHP = (newMod − oldMod) × (level + 1)
+ *
+ * A character's hit points are the 0-level roll plus one roll per class
+ * level, and the Stamina modifier applies to each roll, so a modifier change
+ * moves hit points once per roll: level + 1 times (#983). This is the lib's
+ * rule - `calculateMaxHP` re-applies the modifier to every roll, including the
+ * 0-level one.
  *
  * Deliberately base-score arithmetic: both endpoints are BASE Stamina values
  * (the log dialog only ever edits the base), so a transient Active Effect
@@ -130,10 +137,23 @@ export function staminaHpDeltaForLevel (level, oldValue, newValue) {
   const oldMod = abilityMod(oldValue)
   const newMod = abilityMod(newValue)
   return {
-    hpChange: (newMod - oldMod) * Math.max(1, parseInt(level) || 0),
+    hpChange: (newMod - oldMod) * hitPointRollCount(level),
     oldMod,
     newMod
   }
+}
+
+/**
+ * How many hit point rolls a character of this level has made
+ *
+ * The 0-level roll plus one per class level. Each roll is worth at least 1
+ * hit point, so this is also the lib's `calculateMinimumHP` - the floor on
+ * max hit points.
+ * @param {number|string} level   The character's level
+ * @returns {number}              Number of hit point rolls (at least 1)
+ */
+function hitPointRollCount (level) {
+  return calculateMinimumHP(Math.max(0, parseInt(level) || 0))
 }
 
 /**
@@ -174,8 +194,8 @@ function abilityMod (score) {
  * has the hit points to lose - which is every case short of dying - the result
  * is identical to moving both by the full amount.
  *
- * The floor on max is max(1, level): a level-1 character can lose Stamina
- * without their maximum going to 0.
+ * The floor on max is level + 1, the lib's `calculateMinimumHP`: each hit
+ * point roll (the 0-level roll plus one per class level) is worth at least 1.
  * @param {Object} actor      The actor being updated
  * @param {Object} update     The update object being assembled (mutated)
  * @param {number} hpChange   Signed hit point delta to apply
@@ -188,7 +208,7 @@ function applyHpChange (actor, update, hpChange) {
     console.error('[DCC] cannot apply Stamina hit point adjustment - actor has no attributes.hp', { actor: actor?.name, hpChange })
     return 0
   }
-  const minMax = Math.max(1, parseInt(actor.system.details?.level?.value) || 0)
+  const minMax = hitPointRollCount(actor.system.details?.level?.value)
   const oldValue = parseInt(hp.value) || 0
   const oldMax = parseInt(hp.max) || 0
 
@@ -481,7 +501,7 @@ export async function healAbilityLogEntry (actor, entryId, { healAll = false } =
     if (hpRemaining > 0) {
       const oldMod = abilityMod(oldValue)
       const newMod = abilityMod(value)
-      const delta = (newMod - oldMod) * Math.max(1, level)
+      const delta = (newMod - oldMod) * hitPointRollCount(level)
       if (delta > 0) {
         const applied = Math.min(delta, hpRemaining)
         hpDelta += applied

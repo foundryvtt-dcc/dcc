@@ -136,9 +136,9 @@ describe('logAbilityChange', () => {
     expect(entry.hpChange).toEqual(-2)
   })
 
-  test('hit points clamp at 0 and max clamps at max(1, level)', async () => {
+  test('hit points clamp at 0', async () => {
     const actor = makeActor()
-    actor.system.attributes.hp = { value: 1, max: 3 }
+    actor.system.attributes.hp = { value: 1, max: 6 }
     await logAbilityChange(actor, {
       ability: 'sta',
       change: -6,
@@ -148,7 +148,24 @@ describe('logAbilityChange', () => {
 
     const [update] = actor.update.mock.calls[0]
     expect(update['system.attributes.hp.value']).toEqual(0)
-    expect(update['system.attributes.hp.max']).toEqual(2) // max(1, level 2)
+    expect(update['system.attributes.hp.max']).toEqual(5)
+  })
+
+  test('max hit points clamp at level + 1, one per hit point roll (#983)', async () => {
+    // Level 2: the 0-level roll plus two class levels, each worth at least 1
+    // (the lib's calculateMinimumHP)
+    const actor = makeActor()
+    actor.system.attributes.hp = { value: 2, max: 4 }
+    await logAbilityChange(actor, {
+      ability: 'sta',
+      change: -6,
+      type: 'damage',
+      hpChange: -4
+    }, { announce: false })
+
+    const [update] = actor.update.mock.calls[0]
+    expect(update['system.attributes.hp.value']).toEqual(1)
+    expect(update['system.attributes.hp.max']).toEqual(3)
   })
 
   test('setting off applies the value change without logging', async () => {
@@ -225,20 +242,21 @@ describe('logSpellburn', () => {
 
   test('adjustHP applies the Stamina threshold ΔHP and records it on the Stamina entry (#921)', async () => {
     const actor = makeActor()
-    // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 -> -2 HP
+    // sta 13 (mod +1) -> 11 (mod 0): Δmod = -1, level 2 is three hit point
+    // rolls (0-level + 2 levels) -> -3 HP (#983)
     await logSpellburn(actor, { str: 10, agl: 14, sta: 11 }, 'Magic Missile', { adjustHP: true })
 
     expect(actor.update).toHaveBeenCalledTimes(1)
     const [update, options] = actor.update.mock.calls[0]
-    expect(update['system.attributes.hp.value']).toEqual(6) // 8 - 2
-    expect(update['system.attributes.hp.max']).toEqual(8) // 10 - 2
+    expect(update['system.attributes.hp.value']).toEqual(5) // 8 - 3
+    expect(update['system.attributes.hp.max']).toEqual(7) // 10 - 3
     expect(options).toEqual({ dcc: { abilityLogged: true } })
 
     const log = update['system.abilityLog']
     // Only the Stamina entry owns the HP delta, so healing it back is what
     // restores the hit points
     expect(log[0]).toMatchObject({ ability: 'str', hpChange: 0 })
-    expect(log[1]).toMatchObject({ ability: 'sta', hpChange: -2 })
+    expect(log[1]).toMatchObject({ ability: 'sta', hpChange: -3 })
   })
 
   test('adjustHP is a no-op when the burn crosses no modifier threshold (#921)', async () => {
@@ -261,8 +279,8 @@ describe('logSpellburn', () => {
     const [update, options] = actor.update.mock.calls[0]
     expect(update).toEqual({
       'system.abilities.sta.value': 11,
-      'system.attributes.hp.value': 6,
-      'system.attributes.hp.max': 8
+      'system.attributes.hp.value': 5,
+      'system.attributes.hp.max': 7
     })
     // No log entry written, so nothing to heal the hit points back from
     expect(update['system.abilityLog']).toBeUndefined()
@@ -331,7 +349,7 @@ describe('logSpellburn', () => {
 
     expect(actor.update).toHaveBeenCalledTimes(1)
     const [update] = actor.update.mock.calls[0]
-    expect(update['system.attributes.hp.value']).toEqual(6)
+    expect(update['system.attributes.hp.value']).toEqual(5)
     expect(update['system.abilityLog']).toBeUndefined()
     expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalled()
   })
@@ -350,7 +368,7 @@ describe('logSpellburn', () => {
 
     // Re-seed the actor with the post-burn state the update would have written
     actor.system.abilities.sta.value = 11
-    actor.system.attributes.hp = { value: 6, max: 8 }
+    actor.system.attributes.hp = { value: 5, max: 7 }
     actor.system.abilityLog = burnUpdate['system.abilityLog']
     actor.update.mockClear()
 
@@ -606,14 +624,21 @@ describe('deleteAbilityLogEntry', () => {
 /* -------------------------------------------- */
 
 describe('staminaHpDelta', () => {
-  test('ΔHP = Δmod × max(1, level)', () => {
+  test('ΔHP = Δmod × (level + 1) (#983)', () => {
     const actor = makeActor()
     actor.system.details.level.value = 3
-    // 13 (mod +1) -> 8 (mod -1): Δmod = -2, level 3 -> -6
-    expect(staminaHpDelta(actor, 13, 8)).toEqual({ hpChange: -6, oldMod: 1, newMod: -1 })
+    // 13 (mod +1) -> 8 (mod -1): Δmod = -2, level 3 is four hit point rolls
+    // (0-level + 3 levels) -> -8
+    expect(staminaHpDelta(actor, 13, 8)).toEqual({ hpChange: -8, oldMod: 1, newMod: -1 })
   })
 
-  test('level 0 uses a minimum of 1', () => {
+  test('level 1 counts the 0-level roll too (#983)', () => {
+    const actor = makeActor()
+    actor.system.details.level.value = 1
+    expect(staminaHpDelta(actor, 13, 11).hpChange).toEqual(-2)
+  })
+
+  test('level 0 is the single 0-level roll', () => {
     const actor = makeActor()
     actor.system.details.level.value = 0
     expect(staminaHpDelta(actor, 13, 11).hpChange).toEqual(-1)
@@ -626,7 +651,7 @@ describe('staminaHpDelta', () => {
 
   test('the bare-level form the spellburn dialog previews with matches (#921)', () => {
     // The roll modifier dialog has the term's level, not the actor document
-    expect(staminaHpDeltaForLevel(3, 13, 8)).toEqual({ hpChange: -6, oldMod: 1, newMod: -1 })
+    expect(staminaHpDeltaForLevel(3, 13, 8)).toEqual({ hpChange: -8, oldMod: 1, newMod: -1 })
     expect(staminaHpDeltaForLevel(0, 13, 11).hpChange).toEqual(-1)
     expect(staminaHpDeltaForLevel(2, 12, 10).hpChange).toEqual(0)
   })
