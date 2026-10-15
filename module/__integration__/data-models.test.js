@@ -220,9 +220,9 @@ describe('PartyData live aggregate (real Foundry TypeDataModel)', () => {
     const data = new PartyData({}, { parent })
     const source = data.toObject()
 
-    expect(data.aggregate).toEqual({ value: 7, max: 12 })
+    expect(data.aggregate).toEqual({ hp: { value: 7, max: 12 } })
     first.updateSource({ 'attributes.hp.value': 2 })
-    expect(data.aggregate).toEqual({ value: 4, max: 12 })
+    expect(data.aggregate.hp).toEqual({ value: 4, max: 12 })
     expect(PartyData.schema.fields.aggregate).toBeUndefined()
     expect(data.toObject().aggregate).toBeUndefined()
     expect(data.toObject(false).aggregate).toBeUndefined()
@@ -231,7 +231,7 @@ describe('PartyData live aggregate (real Foundry TypeDataModel)', () => {
 
   test('constructs without a parent before world actors exist', () => {
     vi.stubGlobal('game', { ...globalThis.game, actors: undefined })
-    expect(new PartyData({}).aggregate).toEqual({ value: 0, max: 0 })
+    expect(new PartyData({}).aggregate).toEqual({ hp: { value: 0, max: 0 } })
   })
 })
 

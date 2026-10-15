@@ -18,7 +18,7 @@ export class PartyData extends BaseActorData {
       aggregate.value += Number.isFinite(value) ? value : 0
       aggregate.max += Number.isFinite(max) ? max : 0
     }
-    return aggregate
+    return { hp: aggregate }
   }
 
   static defineSchema () {

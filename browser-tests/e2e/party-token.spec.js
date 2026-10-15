@@ -33,7 +33,7 @@ test('party aggregate reads live world actor HP without persisting it', async ({
     }
   })
 
-  expect(result.before).toEqual({ value: 7, max: 12 })
-  expect(result.after).toEqual({ value: 4, max: 12 })
+  expect(result.before).toEqual({ hp: { value: 7, max: 12 } })
+  expect(result.after).toEqual({ hp: { value: 4, max: 12 } })
   expect(result.persisted).toBe(false)
 })
