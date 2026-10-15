@@ -139,9 +139,9 @@ test.describe('Mighty Deeds E2E Tests', () => {
     const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
 
     if (!isInGame) {
-      const userSelect = page.locator('select[name="userid"]')
+      const userSelect = page.locator('select[name="userId"]')
       await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
+      await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
       await page.click('button[name="join"]')
       await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
     }

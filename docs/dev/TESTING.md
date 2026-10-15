@@ -366,6 +366,39 @@ live install does not reach existing envs on its own. The **world** is only
 rebuilt from the template by `reset` (state accumulated during test runs
 persists across `up`/`down` until then).
 
+#### After updating Foundry
+
+Updating the Foundry install (e.g. build 365 → 369) breaks every env until
+you do two things. Stop all envs first (`pnpm run e2e:env down` in each
+checkout and worktree), update, then:
+
+1. **macOS only — clear the download quarantine.** A build downloaded with a
+   browser is quarantined, and macOS then refuses to load its ad-hoc-signed
+   native LevelDB module. `up` fails with "Foundry exited during startup", and
+   `.foundry-server/logs/foundry.log` shows `ERR_DLOPEN_FAILED … classic-level.node
+   … library load disallowed by system policy`. Clear it once for the install:
+
+   ```bash
+   xattr -dr com.apple.quarantine ~/Applications/foundry-14   # your install path
+   ```
+
+2. **Reset every env's world.** The template world is stamped with the build
+   that created it, and a newer build boots to the setup screen instead of
+   auto-launching it. `up` then fails with "Foundry is on an unrecognized
+   license screen", even though the log says "Software license verification
+   succeeded" and then "The requested World "dcc-e2e" is not available to
+   auto-launch". Rebuild each world for the new build:
+
+   ```bash
+   pnpm run e2e:env reset     # in each checkout / worktree
+   ```
+
+A new build can also change Foundry's own markup that the suite drives. Build
+369 renamed the `/join` user picker from `select[name="userid"]` to
+`select[name="userId"]`, which made global setup fail with "the /join user
+picker never appeared". If global setup or login fails right after an update,
+compare the selectors in `global-setup.js` / `fixtures.js` with the new page.
+
 ### Running a suite (manual, against the live install)
 
 Foundry must be running before Playwright starts. The fvtt CLI config is global — set it to match the worktree you're testing:
