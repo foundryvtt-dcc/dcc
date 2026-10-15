@@ -14,7 +14,11 @@
       <strong>{{localize "DCC.PatronTaint"}}:</strong>
       {{{ patronTaint.description }}} ({{localize "DCC.Roll"}}: {{ patronTaint.roll }})
       <br/>
-      {{localize "DCC.PatronTaintChanceIncreased" chance=(concat patronTaint.newChance "%")}}
+      {{#if patronTaint.tainted}}
+        {{localize "DCC.PatronTaintChanceReset" chance=(concat patronTaint.newChance "%")}}
+      {{else}}
+        {{localize "DCC.PatronTaintChanceIncreased" chance=(concat patronTaint.newChance "%")}}
+      {{/if}}
     </div>
   {{/if}}
 

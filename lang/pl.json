@@ -612,6 +612,7 @@
   "DCC.PatronTaintChance": "Szansa na Skażenie Patrona",
   "DCC.NoPatronTaint": "Brak Skażenia Patrona",
   "DCC.PatronTaintChanceIncreased": "Szansa na Skażenie Patrona zwiększona do: {chance}",
+  "DCC.PatronTaintChanceReset": "Szansa na Skażenie Patrona zresetowana do: {chance}",
   "DCC.Penalty": "Kara",
   "DCC.PickLock": "Otwieranie zamków",
   "DCC.PickPocket": "Kieszonkowanie",

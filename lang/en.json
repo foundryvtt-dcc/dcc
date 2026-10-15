@@ -599,6 +599,7 @@
   "DCC.PatronTaintChance": "Patron Taint Chance",
   "DCC.NoPatronTaint": "No Patron Taint",
   "DCC.PatronTaintChanceIncreased": "Patron Taint chance increased to: {chance}",
+  "DCC.PatronTaintChanceReset": "Patron Taint chance reset to: {chance}",
   "DCC.Penalty": "Penalty",
   "DCC.PickLock": "Pick lock",
   "DCC.PickPocket": "Pick pocket",

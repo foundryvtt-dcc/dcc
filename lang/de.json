@@ -612,6 +612,7 @@
   "DCC.PatronTaintChance": "Chance auf Patronverunreinigung",
   "DCC.NoPatronTaint": "Keine Patronverunreinigung",
   "DCC.PatronTaintChanceIncreased": "Patronverunreinigungs-Chance erhöht auf: {chance}",
+  "DCC.PatronTaintChanceReset": "Patronverunreinigungs-Chance zurückgesetzt auf: {chance}",
   "DCC.Penalty": "Malus",
   "DCC.PickLock": "Schlösser knacken",
   "DCC.PickPocket": "Taschendiebstahl",

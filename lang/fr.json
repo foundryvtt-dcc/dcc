@@ -599,6 +599,7 @@
   "DCC.PatronTaintChance": "Chance de Corruption du Patron",
   "DCC.NoPatronTaint": "Pas de Corruption du Patron",
   "DCC.PatronTaintChanceIncreased": "Chance de Corruption du Patron augmentée à : {chance}",
+  "DCC.PatronTaintChanceReset": "Chance de Corruption du Patron réinitialisée à : {chance}",
   "DCC.Penalty": "Malus",
   "DCC.PickLock": "Crocheter serrures",
   "DCC.PickPocket": "Vol à la tire",

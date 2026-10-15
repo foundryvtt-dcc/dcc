@@ -338,10 +338,8 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
   // `patronTaintChance`: parsed from `system.class.patronTaintChance`
   //   (stored on the actor as a percent string like "3%"; defaults to 1
   //   when absent or unparseable).
-  // `isPatronSpell`: derived from the Foundry item's legacy-patron
-  //   detection — name prefix "Patron" OR a configured
-  //   `system.associatedPatron` string. Matches the detection
-  //   `processSpellCheck` uses at `module/dcc.js:609`.
+  // `isPatronSpell`: `isPatronSpellItem` below, the same test
+  //   `processSpellCheck` uses (#981).
   if (profile.type === 'wizard' || profile.type === 'elf') {
     const chanceStr = actor.system.class?.patronTaintChance
     const parsedChance = parseInt(chanceStr, 10)
@@ -349,12 +347,24 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
       ? parsedChance
       : 1
 
-    const spellName = spellItem?.name || ''
-    const associatedPatron = spellItem?.system?.associatedPatron || ''
-    input.isPatronSpell = spellName.includes('Patron') || !!associatedPatron
+    input.isPatronSpell = isPatronSpellItem(spellItem)
   }
 
   return { character, input, profile, abilityId }
+}
+
+/**
+ * Is this spell item a patron spell, for the patron-taint check?
+ *
+ * A name containing "Patron" (Patron Bond, Invoke Patron) or a configured
+ * `system.associatedPatron`. The adapter cast path and `processSpellCheck`
+ * both use this, so the two always agree on which casts risk taint (#981).
+ * @param {Object} item   The spell item (or an item-like object)
+ * @returns {boolean}
+ */
+export function isPatronSpellItem (item) {
+  const spellName = item?.name || ''
+  return spellName.includes('Patron') || !!item?.system?.associatedPatron
 }
 
 /**

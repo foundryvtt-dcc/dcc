@@ -612,6 +612,7 @@
   "DCC.PatronTaintChance": "Probabilità di Corruzione del Patrono",
   "DCC.NoPatronTaint": "Nessuna Corruzione del Patrono",
   "DCC.PatronTaintChanceIncreased": "Probabilità di Corruzione del Patrono aumentata a: {chance}",
+  "DCC.PatronTaintChanceReset": "Probabilità di Corruzione del Patrono reimpostata a: {chance}",
   "DCC.Penalty": "Penalità",
   "DCC.PickLock": "Scassinare",
   "DCC.PickPocket": "Svuotare Tasche",
