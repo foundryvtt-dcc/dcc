@@ -220,7 +220,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const deedDieRoll = attackRollResult.deedDieRoll
     const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
-    const deedRollSuccess = attackRollResult.deedDieRollResult > 2
+    // A deed needs a 3+ on the deed die AND a hit (#1018), decided in rollToHit.
+    const deedRollSuccess = !!attackRollResult.deedSucceed
 
     // On a successful deed, offer a prompt to look up the deed die result on a Mighty Deed table (issue #319).
     // Gated on the `mightyDeedsEnabled` world setting (off by default) so the prompt never appears unless a GM opts in.
@@ -397,6 +398,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         critTableLookupHint,
         critRollTotal,
         critNeedsHitNote: attackRollResult.critNeedsHit ? game.i18n.localize('DCC.CritNeedsHitNote') : '',
+        deedNeedsHitNote: attackRollResult.deedNeedsHit ? game.i18n.localize('DCC.DeedNeedsHitNote') : '',
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
@@ -685,7 +687,6 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let deedDieRoll
     let deedDieFormula = ''
     let deedDieRollResult = ''
-    let deedSucceed = false
     const naturals = [d20RollResult]
     if (attackInput.deedDie) {
       // Gate said deedDie applies; the Foundry Roll's Compound term
@@ -706,7 +707,6 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       deedDieRoll = Roll.fromTerms([attackRoll.dice[1]])
       deedDieRoll._total = deedTotal
       deedDieRoll._evaluated = true
-      deedSucceed = deedTotal > 2
     }
     // Throw on over-consumption rather than silently feeding 0 — a future
     // lib that adds a third internal roll would otherwise silently get a
@@ -767,6 +767,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // not be awarded for backstab auto-crits (#530, #938) or for a crit
     // that isn't confirmed yet (#978).
     const naturalCrit = crit && libResult.critSource !== 'backstab-auto' && !critNeedsHit
+    // A Mighty Deed needs a 3+ on the deed die AND a hit (#1018). The lib
+    // folds the hit verdict into `deedSuccess`; like a crit, a deed with no
+    // target AC still shows but carries a note that it needs the attack to hit.
+    // TEMPORARY: the `isHit` / `fumble` guards cover the vendored lib until it
+    // is synced past moonloch/dcc-core-lib#18; remove them after the sync.
+    const deedSucceed = !!libResult.deedSuccess && libResult.isHit !== false && !fumble
+    const deedNeedsHit = deedSucceed && libResult.isHit === undefined && !autoHit
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
 
@@ -776,6 +783,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       deedDieRollResult,
       deedDieRoll,
       deedSucceed,
+      deedNeedsHit,
       autoHit,
       crit,
       critNeedsHit,

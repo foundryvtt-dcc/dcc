@@ -819,6 +819,7 @@
   "DCC.AttackHitsAC": "Acierta a CA {ac}",
   "DCC.AttackMissesNatural1": "Falla (1 natural)",
   "DCC.CritNeedsHitNote": "Solo es crítico si este ataque acierta.",
+  "DCC.DeedNeedsHitNote": "Solo es una hazaña si este ataque acierta.",
   "DCC.RollsDamageWith": "Tirando daño con {weapon}",
   "DCC.SocketNoGMWarning": "No hay ningún Director de Juego conectado, por lo que no se pudo completar esta acción. Un DJ debe estar en línea.",
   "DCC.SettingAutoApplyDamage": "Aplicar daño al objetivo automáticamente",

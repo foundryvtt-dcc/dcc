@@ -162,6 +162,7 @@ export async function buildEnhancedCardData (message, actor, weapon) {
     deedDieRollResult: sys.deedDieRollResult,
     deedRollSuccess: sys.deedRollSuccess,
     deedPromptHTML: game.dcc?.buildMightyDeedPrompt?.(message) ?? '',
+    deedNeedsHitNote: sys.deedNeedsHitNote,
     damageInlineRoll: sys.damageInlineRoll,
     damagePrompt: sys.damagePrompt,
     damageRollFormula: sys.damageRollFormula,

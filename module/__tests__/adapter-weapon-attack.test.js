@@ -1420,3 +1420,53 @@ describe('two-weapon crit rules from the lib (#996)', () => {
     expect(result.crit).toBe(true)
   })
 })
+
+describe('a Mighty Deed needs the attack to hit (#1018)', () => {
+  const targetWithAC = (ac) => ({ first: () => ({ actor: { system: { attributes: { ac: { value: ac } } } } }) })
+
+  /** L1 warrior (+1d3 deed die) attack with fixed action-die and deed-die naturals. */
+  async function deedAttack (d20Natural, deedNatural, options = {}) {
+    const restore = withAutomate(true)
+    const restoreRoll = withDeedDiceRoll(d20Natural, deedNatural)
+    try {
+      // noinspection JSCheckFunctionSignatures
+      const actor = new DCCActor()
+      actor.system.details.attackBonus = '+1d3'
+      return await actor.rollToHit(makeSimpleWeapon({ toHit: '+1d3+0' }), options)
+    } finally {
+      restoreRoll()
+      restore()
+    }
+  }
+
+  test('a 3+ deed that hits the target succeeds', async () => {
+    const result = await deedAttack(15, 3, { targets: targetWithAC(10) })
+    expect(result.deedSucceed).toBe(true)
+    expect(result.deedNeedsHit).toBe(false)
+  })
+
+  test('a 3+ deed that misses the target fails', async () => {
+    const result = await deedAttack(5, 3, { targets: targetWithAC(20) })
+    expect(result.hitsTarget).toBe(false)
+    expect(result.deedSucceed).toBe(false)
+    expect(result.deedNeedsHit).toBe(false)
+  })
+
+  test('a 3+ deed on a fumble fails, even with no target', async () => {
+    const result = await deedAttack(1, 3)
+    expect(result.fumble).toBe(true)
+    expect(result.deedSucceed).toBe(false)
+  })
+
+  test('a 3+ deed with no target still shows, noting it needs a hit', async () => {
+    const result = await deedAttack(10, 3)
+    expect(result.deedSucceed).toBe(true)
+    expect(result.deedNeedsHit).toBe(true)
+  })
+
+  test('a natural max always hits, so its deed needs no note', async () => {
+    const result = await deedAttack(20, 3)
+    expect(result.deedSucceed).toBe(true)
+    expect(result.deedNeedsHit).toBe(false)
+  })
+})

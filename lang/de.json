@@ -819,6 +819,7 @@
   "DCC.AttackHitsAC": "Trifft RK {ac}",
   "DCC.AttackMissesNatural1": "Verfehlt (natürliche 1)",
   "DCC.CritNeedsHitNote": "Nur ein kritischer Treffer, wenn dieser Angriff trifft.",
+  "DCC.DeedNeedsHitNote": "Nur eine Großtat, wenn dieser Angriff trifft.",
   "DCC.RollsDamageWith": "Würfelt Schaden mit {weapon}",
   "DCC.SocketNoGMWarning": "Es ist kein Spielleiter verbunden, daher konnte diese Aktion nicht ausgeführt werden. Ein SL muss online sein.",
   "DCC.SettingAutoApplyDamage": "Schaden automatisch auf Ziel anwenden",

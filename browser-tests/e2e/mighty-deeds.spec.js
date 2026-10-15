@@ -16,7 +16,7 @@ const { FOUNDRY_URL } = require('./fixtures')
  * The tests will automatically log in as Gamemaster (no password).
  */
 
-/* global game, ui, Actor, RollTable, CONFIG, CONST */
+/* global game, ui, Actor, RollTable, Scene, CONFIG, CONST, document */
 
 /**
  * Create the test fixtures in the live world: a Mighty Deed roll table
@@ -77,13 +77,15 @@ async function attackUntilDeed (page, ids, wantSuccess) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }
       const msg = game.messages.contents.at(-1)
-      // Skip misses: a missed attack's emote has no damage sentence (#1016).
-      const missed = msg.getFlag('dcc', 'isFumble') || msg.getFlag('dcc', 'twoWeaponFumble') || msg.getFlag('dcc', 'hitsTarget') === false
-      if (game.messages.size > before && Boolean(msg.system?.deedRollSuccess) === wantSuccess && !missed) {
+      // deedRollSuccess already folds in the hit verdict (#1018): a fumble is
+      // never a successful deed, so no separate miss-skip is needed.
+      if (game.messages.size > before && Boolean(msg.system?.deedRollSuccess) === wantSuccess) {
         return {
           messageId: msg.id,
+          natural: msg.getFlag('dcc', 'libResult')?.natural,
           deedDieRollResult: msg.system.deedDieRollResult,
           deedRollSuccess: msg.system.deedRollSuccess,
+          deedNeedsHitNote: msg.system.deedNeedsHitNote,
           deedTables: msg.system.deedTables,
           contentHasPrompt: msg.content.includes('deed-table-prompt')
         }
@@ -91,6 +93,77 @@ async function attackUntilDeed (page, ids, wantSuccess) {
     }
     return null
   }, { ...ids, wantSuccess })
+}
+
+/**
+ * Attack once with every die pinned (CONFIG.Dice.randomUniform: natural =
+ * ceil((1 - u) * faces)), optionally against a targeted token of the given
+ * AC, and read back the message plus its rendered emote / enhanced card.
+ * @param {import('@playwright/test').Page} page
+ * @param {{actorId: string, weaponId: string}} ids
+ * @param {{uniform: number, targetAC?: number|null, enhanced?: boolean}} opts
+ */
+async function rollPinnedDeed (page, ids, { uniform, targetAC = null, enhanced = false }) {
+  return page.evaluate(async ({ actorId, weaponId, uniform, targetAC, enhanced }) => {
+    if (!game.canvas?.ready || !game.canvas?.scene) {
+      const scene = await Scene.create({ name: 'E2E Deed Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
+      await scene.view()
+    }
+    const scene = game.canvas.scene
+    const actor = game.actors.get(actorId)
+    const prevEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
+    const origRandomUniform = CONFIG.Dice.randomUniform
+    let target = null
+    let tokenDoc = null
+    try {
+      await game.settings.set('dcc', 'enhancedAttackCards', enhanced)
+      game.user.targets.forEach(t => t.setTarget(false, { releaseOthers: false }))
+      if (targetAC !== null) {
+        target = await Actor.create({ name: 'E2E Deed Target', type: 'NPC', system: { attributes: { hp: { value: 30, max: 30 }, ac: { value: targetAC } } }, prototypeToken: { actorLink: true } })
+        ;[tokenDoc] = await scene.createEmbeddedDocuments('Token', [{ name: 'E2E Deed Target', actorId: target.id, actorLink: true, x: 500, y: 500, width: 1, height: 1, disposition: -1 }])
+        const tokenDeadline = Date.now() + 3000
+        while (Date.now() < tokenDeadline && !game.canvas.tokens.get(tokenDoc.id)) await new Promise(resolve => setTimeout(resolve, 50))
+        game.canvas.tokens.get(tokenDoc.id).setTarget(true, { releaseOthers: true })
+      }
+
+      CONFIG.Dice.randomUniform = () => uniform
+      const before = new Set(game.messages.contents.map(m => m.id))
+      await actor.rollWeaponAttack(weaponId)
+      CONFIG.Dice.randomUniform = origRandomUniform
+
+      const deadline = Date.now() + 5000
+      while (Date.now() < deadline) {
+        const msg = game.messages.contents.find(m => !before.has(m.id) && m.getFlag('dcc', 'isToHit'))
+        const el = msg && document.querySelector(`.message[data-message-id="${msg.id}"]`)
+        const rendered = el && (enhanced ? el.querySelector('.dcc-enhanced-card') : el.querySelector('.message-content'))
+        if (rendered) {
+          return {
+            natural: msg.getFlag('dcc', 'libResult')?.natural,
+            hitsTarget: msg.getFlag('dcc', 'hitsTarget'),
+            deedDieRollResult: msg.system.deedDieRollResult,
+            deedRollSuccess: msg.system.deedRollSuccess,
+            deedTables: msg.system.deedTables,
+            hasPicker: !!rendered.querySelector('.deed-table-prompt'),
+            hasNote: !!rendered.querySelector('.deed-needs-hit-note'),
+            // Enhanced card: the deed line; emote: the inline deed die span.
+            deedStyledSuccess: enhanced
+              ? !!rendered.querySelector('.deed-result.critical')
+              : !!rendered.querySelector(`.inline-roll.critical[title="${msg.system.deedDieFormula}"]`)
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      return null
+    } finally {
+      CONFIG.Dice.randomUniform = origRandomUniform
+      if (tokenDoc) {
+        game.canvas.tokens.get(tokenDoc.id)?.setTarget(false, { releaseOthers: true })
+        await scene.deleteEmbeddedDocuments('Token', [tokenDoc.id])
+      }
+      await target?.delete()
+      await game.settings.set('dcc', 'enhancedAttackCards', prevEnhanced)
+    }
+  }, { ...ids, uniform, targetAC, enhanced })
 }
 
 /**
@@ -207,6 +280,13 @@ test.describe('Mighty Deeds E2E Tests', () => {
     // Other deed tables may be registered too (e.g. the dcc-core-book pack)
     expect(success.deedTables).toContainEqual({ name: 'E2E Deed Table', path: 'E2E Deed Table' })
     expect(success.contentHasPrompt).toBe(true)
+    // No target, so the deed only counts if the attack hits (#1018) — unless
+    // the action die rolled its max, which always hits.
+    if (success.natural === 20) {
+      expect(success.deedNeedsHitNote).toBeFalsy()
+    } else {
+      expect(success.deedNeedsHitNote).toBe(await page.evaluate(() => game.i18n.localize('DCC.DeedNeedsHitNote')))
+    }
 
     // Bring the card into view
     await page.evaluate(() => ui.sidebar.expand())
@@ -275,7 +355,8 @@ test.describe('Mighty Deeds E2E Tests', () => {
 
     const failure = await attackUntilDeed(page, fixtures, false)
     expect(failure, 'no failed deed in 30 attacks').not.toBeNull()
-    expect(failure.deedDieRollResult).toBeLessThan(3)
+    // Usually a deed die under 3; a fumble with a 3+ also fails (#1018).
+    expect(failure.deedRollSuccess).toBeFalsy()
     expect(failure.deedTables).toEqual([])
     expect(failure.contentHasPrompt).toBe(false)
   })
@@ -361,4 +442,51 @@ test.describe('Mighty Deeds E2E Tests', () => {
       await page.evaluate((value) => game.settings.set('dcc', 'automateDamageFumblesCrits', value), previousAutomate)
     }
   })
+
+  // A deed needs a 3+ AND a hit (#1018). u = 0.45 pins the action die to a
+  // natural 11 and the d4 deed die to a 3: total 14, so AC 30 misses and AC 10 hits.
+  for (const enhanced of [false, true]) {
+    const card = enhanced ? 'enhanced card' : 'emote'
+    test(`${card}: a 3+ deed that misses the target is not a deed`, async ({ page }) => {
+      const fixtures = await createDeedFixtures(page)
+      await setMightyDeedsEnabled(page, true)
+
+      const result = await rollPinnedDeed(page, fixtures, { uniform: 0.45, targetAC: 30, enhanced })
+      expect(result, 'attack card did not render').not.toBeNull()
+      expect(result.natural).toBe(11)
+      expect(result.deedDieRollResult).toBe(3)
+      expect(result.hitsTarget).toBe(false)
+      expect(result.deedRollSuccess).toBe(false)
+      expect(result.deedTables).toEqual([])
+      expect(result.hasPicker).toBe(false)
+      expect(result.hasNote).toBe(false)
+      expect(result.deedStyledSuccess).toBe(false)
+    })
+
+    test(`${card}: a 3+ deed that hits the target offers the picker, with no note`, async ({ page }) => {
+      const fixtures = await createDeedFixtures(page)
+      await setMightyDeedsEnabled(page, true)
+
+      const result = await rollPinnedDeed(page, fixtures, { uniform: 0.45, targetAC: 10, enhanced })
+      expect(result, 'attack card did not render').not.toBeNull()
+      expect(result.hitsTarget).toBe(true)
+      expect(result.deedRollSuccess).toBe(true)
+      expect(result.hasPicker).toBe(true)
+      expect(result.hasNote).toBe(false)
+      expect(result.deedStyledSuccess).toBe(true)
+    })
+
+    test(`${card}: an untargeted 3+ deed offers the picker with a needs-a-hit note`, async ({ page }) => {
+      const fixtures = await createDeedFixtures(page)
+      await setMightyDeedsEnabled(page, true)
+
+      const result = await rollPinnedDeed(page, fixtures, { uniform: 0.45, enhanced })
+      expect(result, 'attack card did not render').not.toBeNull()
+      expect(result.hitsTarget).toBeUndefined()
+      expect(result.deedRollSuccess).toBe(true)
+      expect(result.hasPicker).toBe(true)
+      expect(result.hasNote).toBe(true)
+      expect(result.deedStyledSuccess).toBe(true)
+    })
+  }
 })

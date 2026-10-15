@@ -507,6 +507,19 @@ describe('attack emote deed die highlight (#989)', () => {
     expect(emoteDeed(false)).toContain('class="inline-roll"')
     expect(emoteDeed(false)).not.toContain('critical')
   })
+
+  it('adds the needs-a-hit note for an untargeted deed (#1018)', () => {
+    game.i18n.translations['DCC.AttackRollEmote'] = '{deedRollHTML}{deedTablePrompt}'
+    const html = makeHtml('')
+    emoteAttackRoll({
+      rolls: [{ total: 15, toAnchor: () => ({ outerHTML: '<a class="inline-roll">15</a>' }) }],
+      isContentVisible: true,
+      alias: 'Hero',
+      system: { weaponName: 'Longsword', damageInlineRoll: '', deedDieRollResult: 3, deedDieFormula: '1d4', deedRollSuccess: true, deedNeedsHitNote: 'Needs a hit' },
+      getFlag: (scope, key) => key === 'isToHit'
+    }, html)
+    expect(html.messageContent.innerHTML).toContain('<p class="emote-note deed-needs-hit-note"><em>Needs a hit</em></p>')
+  })
 })
 
 describe('attack emote follows the stored hit/miss verdict (#1016)', () => {

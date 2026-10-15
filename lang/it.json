@@ -819,6 +819,7 @@
   "DCC.AttackHitsAC": "Colpisce CA {ac}",
   "DCC.AttackMissesNatural1": "Manca (1 naturale)",
   "DCC.CritNeedsHitNote": "È un critico solo se questo attacco colpisce.",
+  "DCC.DeedNeedsHitNote": "È un Cimento solo se questo attacco colpisce.",
   "DCC.RollsDamageWith": "Tira i danni con {weapon}",
   "DCC.SocketNoGMWarning": "Nessun Game Master è connesso, quindi questa azione non può essere completata. Un GM deve essere online.",
   "DCC.SettingAutoApplyDamage": "Applica automaticamente i danni al bersaglio",
