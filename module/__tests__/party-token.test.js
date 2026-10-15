@@ -443,6 +443,23 @@ async function deployWorkflowFixture ({ crossScene = false, tokenIds = [] } = {}
 }
 
 describe('deploy workflow', () => {
+  test.each(['missing', 'null', 'empty', 'unknown'])('deploy requires an explicit existing target ID (%s) without mutations', async mode => {
+    const { party, scene, snapshot, events } = await deployWorkflowFixture()
+    const input = { party, scene }
+    if (mode !== 'missing') input.partyTokenId = { null: null, empty: '', unknown: 'unknown-token-id' }[mode]
+    const code = mode === 'unknown' ? 'missing-party-token' : 'missing-party-token-id'
+    const tokens = scene.tokens.map(token => token.toObject())
+    expect(() => service.resolveDeployContext(party, scene, input)).toThrow(code)
+    await expect(service.deployPartyTokens(input)).rejects.toMatchObject({ code })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+    expect(scene.tokens.map(token => token.toObject())).toEqual(tokens)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+  })
+
   test.each(['square', 'hexagonal', 'gridless'])('deploy creates fresh IDs and deep-cloned full payloads using %s geometry before consuming snapshot', async type => {
     const { party, scene, partyToken, snapshot, deploy, events, foreign } = await deployWorkflowFixture()
     Object.assign(scene, placementFixture(type))
@@ -1009,14 +1026,15 @@ test.each(['gather', 'deploy'])('%s rejects same-actor legacy unlinked tokens on
   expect(resolve().partyToken).toBe(partyToken)
 })
 
-test.each(['gather', 'deploy'])('%s requires unique or explicitly selected Party token', action => {
+test.each(['gather', 'deploy'])('%s applies its target selection contract', action => {
   const { party, scene, partyToken } = gatherFixture()
   if (action === 'deploy') party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
   const resolve = options => service[action === 'gather' ? 'resolveGatherContext' : 'resolveDeployContext'](party, scene, { levelId: 'ground', ...options })
   scene.tokens.push(partyToken)
-  expect(resolve().partyToken).toBe(partyToken)
+  if (action === 'gather') expect(resolve().partyToken).toBe(partyToken)
+  else expect(() => resolve()).toThrow('missing-party-token-id')
   scene.tokens.push({ ...partyToken, id: 'duplicate' })
-  expect(() => resolve()).toThrow('ambiguous-party-token')
+  expect(() => resolve()).toThrow(action === 'gather' ? 'ambiguous-party-token' : 'missing-party-token-id')
   expect(resolve({ partyTokenId: 'duplicate' }).partyToken.id).toBe('duplicate')
   expect(() => resolve({ partyTokenId: 'missing' })).toThrow('missing-party-token')
   game.combats = [{ scene, started: true, combatants: [{ tokenId: partyToken.id }] }]
@@ -1064,7 +1082,7 @@ test.each(['departed', 'all-invalid'])('deploy checks ALL original IDs even when
   expect(() => service.resolveDeployContext(party, scene)).toThrow('original-token-exists')
   scene.tokens.splice(scene.tokens.indexOf(b), 1)
   const destination = { id: 'destination', tokens: collection([partyToken]) }
-  expect(service.resolveDeployContext(party, destination).sourceScene).toBe(scene)
+  expect(service.resolveDeployContext(party, destination, { partyTokenId: partyToken.id }).sourceScene).toBe(scene)
 })
 
 test.each([undefined, '', 'invalid', 123, null])('deploy rejects invalid original ID %s', id => {
@@ -1083,7 +1101,7 @@ test('deploy requires an existing snapshot source scene but does not block diffe
   party.flags.dcc.partyTokenSnapshots.sceneId = scene.id
   scene.tokens.splice(0, 1)
   scene.tokens.push({ ...a, id: 'new-id' })
-  expect(service.resolveDeployContext(party, scene).sourceScene).toBe(scene)
+  expect(service.resolveDeployContext(party, scene, { partyTokenId: partyToken.id }).sourceScene).toBe(scene)
 })
 
 test.each(['gather', 'deploy'])('blocked Party prevents %s without implementing recovery', action => {

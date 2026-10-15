@@ -194,6 +194,7 @@ export function resolveDeployContext (party, scene, { partyTokenId } = {}) {
   const snapshot = party.flags?.dcc?.partyTokenSnapshots
   if (!snapshot) throw new Error('missing-snapshot')
   const sourceScene = assertOriginalTokensAbsent(snapshot)
+  if (typeof partyTokenId !== 'string' || !partyTokenId.length) throw new Error('missing-party-token-id')
   const partyToken = resolvePartyToken(party, scene, partyTokenId)
   if (!partyToken) throw new Error('missing-party-token')
   return { sourceScene, snapshot, partyToken }
