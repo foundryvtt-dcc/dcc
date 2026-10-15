@@ -30,6 +30,7 @@ Work Process (for developers): [GitHub Process for JSON/LevelDB](docs/GITHUB-JSO
 * Tony Zito (@tonyrobots)
 * Marco Bertolini (@bertolinimarco) and Emanuele Granatello (Italian translation)
 * ZzNoah (Chinese Translation)
+* Alexander Minges (@Athemis)
 
 Contains some icon art from [game-icons.net](https://game-icons.net), used under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) — see [per-artist credits](styles/images/game-icons-net/credits.txt).
 
