@@ -1,6 +1,7 @@
 /* global game, foundry, ui */
 
 import DCCActorSheet from './actor-sheet.js'
+import { handlePartyItemDrop } from './actor-sheet/drop.mjs'
 import HitPointsConfig from './hit-points-config.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -567,6 +568,65 @@ class DCCPartySheet extends DCCActorSheet {
       const actor = game.actors.get(actorId)
       if (actor && actor.isToken) dragData.tokenId = actor.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
+  }
+
+  /**
+   * Handle a drop on the party sheet.
+   *
+   * Items route to a member row or are rejected (the party sheet has no
+   * inventory). Everything else delegates to the base sheet. The party sheet
+   * does not override `_onDropItem`: the inherited transfer-delete runs after
+   * `super._onDrop`, so an item must be handled here to keep a rejected drop
+   * from deleting the source item.
+   * @override
+   */
+  async _onDrop (event) {
+    this._clearDragHighlight()
+
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+    if (!data) return false
+
+    const result = await handlePartyItemDrop(this.actor, event, data)
+    if (result !== undefined) return result
+
+    return super._onDrop(event)
+  }
+
+  /**
+   * Highlight the member row under the pointer while dragging.
+   *
+   * Every Foundry drag writes only `text/plain`, so the payload type is not
+   * readable during `dragover`; the highlight is therefore shown for any drag
+   * over a row. Member rows are valid drop targets either way.
+   * @override
+   */
+  _onDragOver (event) {
+    const row = event.target.closest('.character-row')
+    for (const other of this.element?.querySelectorAll('.character-row.drag-over') ?? []) {
+      if (other !== row) other.classList.remove('drag-over')
+    }
+    if (row) row.classList.add('drag-over')
+  }
+
+  /**
+   * Clear the highlight once the pointer leaves the drop zone. `dragleave`
+   * also fires for descendant elements, so ignore leaves that stay inside.
+   * @override
+   */
+  _onDragLeave (event) {
+    if (event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) return
+    this._clearDragHighlight()
+  }
+
+  /**
+   * Remove the drag-over highlight from every member row. Deliberately not a
+   * `#private` method so the fake-`this` unit tests can stub it (private
+   * methods cannot be invoked on a plain object).
+   */
+  _clearDragHighlight () {
+    for (const row of this.element?.querySelectorAll('.character-row.drag-over') ?? []) {
+      row.classList.remove('drag-over')
     }
   }
 

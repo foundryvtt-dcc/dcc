@@ -254,3 +254,83 @@ describe('party portrait', () => {
     expect(portrait[0]).toContain('data-edit="img"')
   })
 })
+
+describe('_onDrop', () => {
+  // _onDrop calls super._onDrop; stub the parent prototype method for the
+  // duration. `super._onDrop` resolves through DCCPartySheet.prototype's
+  // prototype at call time, so replacing it here intercepts the delegation.
+  let parentProto, origSuperDrop, origGetDragEventData
+
+  beforeEach(() => {
+    parentProto = Object.getPrototypeOf(proto)
+    origSuperDrop = parentProto._onDrop
+    parentProto._onDrop = vi.fn(async () => 'SUPER')
+    origGetDragEventData = globalThis.foundry.applications.ux.TextEditor.getDragEventData
+  })
+
+  afterEach(() => {
+    parentProto._onDrop = origSuperDrop
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = origGetDragEventData
+  })
+
+  test('delegates a non-item drop to the parent sheet', async () => {
+    globalThis.foundry.applications.ux.TextEditor.getDragEventData = vi.fn(() => ({ type: 'Actor' }))
+    const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+    const result = await proto._onDrop.call(ctx, {})
+    expect(result).toBe('SUPER')
+    expect(ctx._clearDragHighlight).toHaveBeenCalled()
+    expect(parentProto._onDrop).toHaveBeenCalled()
+  })
+
+  test('routes an item drop to the member row and does not delegate to the parent', async () => {
+    // Drive the REAL handlePartyItemDrop so the _onDrop wiring is covered
+    // end to end: an item dropped on a member row returns the created item and
+    // must short-circuit before super._onDrop (the transfer-delete path).
+    const origFromUuid = globalThis.fromUuid
+    const origActorsGet = globalThis.game.actors.get
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.item-1' })
+      globalThis.fromUuid = vi.fn(async () => ({ id: 'item-1' }))
+      globalThis.game.actors.get = (id) => ({
+        id,
+        sheet: { _onDropItem: vi.fn(async () => ({ id: 'created-1' })) },
+        deleteEmbeddedDocuments: vi.fn()
+      })
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => ({ dataset: { actorId: 'alice' } }) } }
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toEqual({ id: 'created-1' })
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fromUuid = origFromUuid
+      globalThis.game.actors.get = origActorsGet
+    }
+  })
+
+  test('returns false for a rejected item drop without delegating to the parent', async () => {
+    // A handled-but-rejected item drop (no member row under the cursor) returns
+    // false, which must short-circuit before super._onDrop. A truthy check in
+    // place of `!== undefined` would wrongly delegate and reintroduce the
+    // invisible-copy + source-deletion bug this override exists to prevent.
+    const origUi = globalThis.ui
+    const origI18n = globalThis.game.i18n
+    try {
+      globalThis.foundry.applications.ux.TextEditor.getDragEventData = () => ({ type: 'Item', uuid: 'Item.x' })
+      globalThis.ui = { notifications: { warn: vi.fn() } }
+      globalThis.game.i18n = { localize: (key) => key }
+
+      const ctx = { actor: { id: 'party' }, _clearDragHighlight: vi.fn() }
+      const event = { target: { closest: () => null } } // no member row under the cursor
+      const result = await proto._onDrop.call(ctx, event)
+
+      expect(result).toBe(false)
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNoInventoryHint')
+      expect(parentProto._onDrop).not.toHaveBeenCalled()
+    } finally {
+      globalThis.ui = origUi
+      globalThis.game.i18n = origI18n
+    }
+  })
+})
