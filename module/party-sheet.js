@@ -34,7 +34,6 @@ class DCCPartySheet extends DCCActorSheet {
       rollSave: this.#rollSave,
       rollAttack: this.#rollAttack,
       rollPartyInitiative: this.#rollPartyInitiative,
-      editImage: DCCPartySheet.editImage,
       adjustHitPoints: this.#adjustHitPoints
     },
     dragDrop: [{
