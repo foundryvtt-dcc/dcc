@@ -17,7 +17,7 @@ checkout is at `/Users/timlwhite/WebstormProjects/dcc-core-lib`
    `"dirty": true` or a SHA that isn't on the lib's `main`.
 2. From the system repo, run `pnpm run sync-core-lib`. The script
    (`scripts/sync-core-lib.mjs`) empties the lib's `dist/`, builds the lib via
-   `npm run build` (the lib uses npm, not pnpm), copies `dist/` into the vendor directory,
+   `pnpm run build` (the lib uses pnpm), copies `dist/` into the vendor directory,
    strips sourcemaps, and writes `module/vendor/dcc-core-lib/VERSION.json`
    with the source commit SHA + timestamp.
    - Override the source path with
