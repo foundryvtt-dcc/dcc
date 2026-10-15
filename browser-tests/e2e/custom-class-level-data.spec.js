@@ -64,4 +64,83 @@ test.describe('Custom class level-data world-item fallback', () => {
     // No match anywhere still returns the empty-object sentinel.
     expect(result.missIsEmptyObject).toBe(true)
   })
+
+  test('levelling up rolls one hit die + Stamina per level, minimum 1 each (#983)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const { default: DCCActorLevelChange } =
+        await import('../../../../../../../../systems/dcc/module/actor-level-change.js')
+
+      const items = []
+      let actor, dialog
+      const savedUniform = CONFIG.Dice.randomUniform
+      try {
+        for (const level of [2, 3]) {
+          items.push(await Item.create({
+            name: `e2e-hpwitch-${level}`,
+            type: 'level',
+            system: { levelData: 'system.attributes.hitDice.value=1d6' }
+          }))
+        }
+        // Stamina 5 is a -2 modifier: a 1 on the hit die would be -1 HP
+        // without the minimum, and the old single expression rolled
+        // 2d6-4 for two levels
+        actor = await Actor.create({
+          name: 'P_LevelHp',
+          type: 'Player',
+          system: {
+            class: { className: 'e2e-hpwitch' },
+            details: { level: { value: 1 } },
+            abilities: { sta: { value: 5, max: 5 } },
+            attributes: { hp: { value: 10, max: 10 } }
+          }
+        })
+        const staMod = actor.system.abilities.sta.mod
+
+        dialog = new DCCActorLevelChange({ document: actor })
+        await dialog.render(true)
+        dialog.currentLevel = 3
+        await dialog._updateLevelUpDisplay()
+        const formula = dialog.newHitPointsExpression
+
+        // Every hit die lands on 1
+        CONFIG.Dice.randomUniform = () => 0.9
+        const before = game.messages.contents.length
+        dialog.element.requestSubmit()
+
+        let updated = false
+        for (let i = 0; i < 100 && !updated; i++) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+          updated = actor.system.details.level.value === 3
+        }
+        CONFIG.Dice.randomUniform = savedUniform
+
+        const hpMessage = game.messages.contents.slice(before).find(m => m.rolls?.length)
+        const hpRoll = hpMessage?.rolls[0]
+        return {
+          staMod,
+          formula,
+          level: actor.system.details.level.value,
+          hp: actor.system.attributes.hp.value,
+          hpMax: actor.system.attributes.hp.max,
+          rollFormula: hpRoll?.formula ?? null,
+          rollTotal: hpRoll?.total ?? null,
+          dice: hpRoll?.dice.flatMap(d => d.results.map(r => r.result)) ?? null
+        }
+      } finally {
+        CONFIG.Dice.randomUniform = savedUniform
+        await dialog?.close()
+        await actor?.delete()
+        for (const item of items) await item.delete()
+      }
+    })
+
+    expect(result.staMod).toBe(-2)
+    expect(result.formula).toBe('max(1, 1d6-2) + max(1, 1d6-2)')
+    expect(result.level).toBe(3)
+    // Two levels, each 1 - 2 raised to the minimum of 1
+    expect(result.dice).toEqual([1, 1])
+    expect(result.rollTotal).toBe(2)
+    expect(result.hp).toBe(12)
+    expect(result.hpMax).toBe(12)
+  })
 })

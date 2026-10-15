@@ -236,7 +236,7 @@ class AbilityScoreConfig extends HandlebarsApplicationMixin(ApplicationV2) {
               hpChange: hpChange > 0 ? `+${hpChange}` : `${hpChange}`,
               oldMod: oldMod > 0 ? `+${oldMod}` : `${oldMod}`,
               newMod: newMod > 0 ? `+${newMod}` : `${newMod}`,
-              level: Math.max(1, parseInt(this.actor.system.details?.level?.value) || 0)
+              level: parseInt(this.actor.system.details?.level?.value) || 0
             })
           }
         }

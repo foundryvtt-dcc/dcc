@@ -145,7 +145,7 @@ function DCCSpellburnTerm (options) {
     sta: options.sta,
     // `staStart` is the pre-burn score; `sta` above is mutated in place as
     // the player clicks the +/- buttons, so the preview needs the original to
-    // compare against. `level` scales the delta (ΔHP = Δmod × max(1, level)).
+    // compare against. `level` scales the delta (ΔHP = Δmod × (level + 1), #983).
     staStart: options.sta,
     level: hpAdjustable ? level : 0,
     // `hpAdjustable` is the template's cue to render the row at all. Mirrors
@@ -714,7 +714,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
           hpChange: _signed(hpChange),
           oldMod: _signed(oldMod),
           newMod: _signed(newMod),
-          level: Math.max(1, term.level)
+          level: term.level
         })
       }
     }
