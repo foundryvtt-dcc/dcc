@@ -262,3 +262,20 @@ describe('_onDrop', () => {
     expect(parentProto._onDrop).not.toHaveBeenCalled()
   })
 })
+
+describe('_onDragLeave', () => {
+  test('keeps the highlight when the pointer stays inside the drop zone', () => {
+    const ctx = { _clearDragHighlight: vi.fn() }
+    const event = { relatedTarget: { nodeName: 'DIV' }, currentTarget: { contains: vi.fn(() => true) } }
+    proto._onDragLeave.call(ctx, event)
+    expect(ctx._clearDragHighlight).not.toHaveBeenCalled()
+  })
+
+  test('clears the highlight when the pointer leaves the drop zone', () => {
+    const ctx = { _clearDragHighlight: vi.fn() }
+    // relatedTarget null (left the window) and outside the drop zone both clear.
+    proto._onDragLeave.call(ctx, { relatedTarget: null, currentTarget: { contains: vi.fn() } })
+    proto._onDragLeave.call(ctx, { relatedTarget: { nodeName: 'DIV' }, currentTarget: { contains: vi.fn(() => false) } })
+    expect(ctx._clearDragHighlight).toHaveBeenCalledTimes(2)
+  })
+})
