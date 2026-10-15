@@ -4434,33 +4434,60 @@ export declare function getTwoWeaponInitBonus(classId: string): number;
 /**
  * Luck Recovery
  *
- * Thieves and halflings can recover spent luck points. Thieves recover
- * luck when they succeed at certain thief skills. Halflings can share
- * their luck recovery with nearby allies.
+ * Thieves and halflings regain spent Luck overnight: one point per class
+ * level, never past the character's natural maximum (DCC RPG core rules,
+ * Thief and Halfling class text).
  */
 export declare const LUCK_RECOVERY: SkillDefinition;
 /**
  * Check if a character can recover luck
  */
 export declare function canRecoverLuck(classId: string): boolean;
+/** Input to {@link nightlyLuckRecovery}. */
+export interface NightlyLuckRecoveryInput {
+	/** The character's class level. */
+	level: number;
+	/** The character's current Luck score. */
+	current: number;
+	/** The character's natural maximum Luck score. */
+	max: number;
+}
 /**
- * Get daily luck recovery amount for halflings from skill definition
+ * Luck score after a night's rest for a class that recovers Luck: the
+ * current score plus one point per level, capped at the natural maximum.
+ * A score already at or above the maximum is left unchanged. Callers
+ * decide whether the character recovers Luck at all (see
+ * {@link canRecoverLuck}).
  */
-export declare function getHalflingDailyLuckRecovery(): number;
-/**
- * Check if a thief should recover luck (on natural 20 of thief skill)
- */
-export declare function thiefShouldRecoverLuck(naturalRoll: number, isThiefSkill: boolean): boolean;
+export declare function nightlyLuckRecovery(input: NightlyLuckRecoveryInput): number;
 /**
  * Luck Sharing (Halfling)
  *
- * Halflings can spend their luck to aid allies within 30 feet.
+ * A halfling can burn their own Luck on an ally's roll when the ally is
+ * nearby and visible to them, even outside their turn in the initiative
+ * order. The halfling loses the Luck and the ally gets the bonus.
+ * Only one halfling in a party can do this. There is no fixed range.
  */
 export declare const LUCK_SHARING: SkillDefinition;
+/** Optional conditions for {@link canShareLuck}. */
+export interface ShareLuckOptions {
+	/** Whether the ally is nearby and visible to the halfling. Default true. */
+	allyVisible?: boolean | undefined;
+	/** Distance to the ally. Only checked when `maxRange` is also given. */
+	distanceToAlly?: number | undefined;
+	/**
+	 * A table's own range limit. The rules set none, so there is no default.
+	 * Ignored unless `distanceToAlly` is also given.
+	 */
+	maxRange?: number | undefined;
+}
 /**
- * Check if a halfling can share luck with an ally
+ * Check if a character can share Luck with an ally. The class must have
+ * {@link LUCK_SHARING} and the ally must be visible. A range applies only
+ * when the caller supplies `maxRange`. The one-halfling-per-party limit
+ * is left to the caller.
  */
-export declare function canShareLuck(classId: string, distanceToAlly: number): boolean;
+export declare function canShareLuck(classId: string, options?: ShareLuckOptions): boolean;
 /**
  * All enabling skills indexed by ID
  */
