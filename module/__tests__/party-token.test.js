@@ -917,6 +917,196 @@ test('refreshes member effects via actor lifecycle, including item effects, with
   expect(() => hooks.updateActor(member)).not.toThrow()
 })
 
+function deferred () {
+  let resolve
+  const promise = new Promise(_resolve => { resolve = _resolve })
+  return { promise, resolve }
+}
+
+async function socketFixture (fixture = gatherWorkflowFixture()) {
+  const gm = { id: 'gm', isGM: true }
+  const otherGM = { id: 'other-gm', isGM: true }
+  const player = { id: 'player', isGM: false }
+  game.user = gm
+  game.users = collection([gm, otherGM, player])
+  game.users.activeGM = gm
+  game.socket = { emit: vi.fn() }
+  service.registerPartyTokenSocket()
+  const socket = await import('../socket.mjs')
+  const payload = { action: 'gather', partyId: fixture.party.id, sceneId: fixture.scene.id, levelId: 'ground', tokenIds: [fixture.a.id] }
+  const remote = (data = payload, sender = gm.id) => socket.onSocketMessage({ action: 'partyTokenAction', payload: data }, sender)
+  return { ...fixture, gm, otherGM, player, payload, remote }
+}
+
+describe('serialized Party socket entry', () => {
+  test.each(['player', 'unknown', null])('rejects unauthenticated/non-GM sender %s despite forged payload userId', async sender => {
+    const { payload, remote, events } = await socketFixture()
+    await expect(remote({ ...payload, userId: 'gm' }, sender)).rejects.toMatchObject({ code: 'unauthorized' })
+    expect(events).toEqual([])
+  })
+
+  test('accepts another GM and filters forged foreign/departed selection and payload snapshots', async () => {
+    const { payload, remote, party, scene, a, b, foreign } = await socketFixture()
+    party.flags.dcc.partyMembers = [{ id: 'a' }]
+    await expect(remote({ ...payload, tokenIds: [a.id, b.id, foreign.id], snapshot: {}, stats: { hp: 999 } }, 'other-gm')).resolves.toBeUndefined()
+    expect(scene.tokens).toEqual(expect.arrayContaining([b, foreign]))
+    expect(party.getFlag('dcc', 'partyTokenSnapshots').members.map(m => m.actorId)).toEqual(['a'])
+  })
+
+  test.each([
+    null, { action: undefined }, { action: 'toggle' }, { partyId: '' }, { partyId: 1 }, { sceneId: null }, { sceneId: 'missing' },
+    { levelId: undefined }, { levelId: 3 }, { levelId: 'deleted' }, { tokenIds: undefined }, { tokenIds: 'all' },
+    { tokenIds: [null] }, { partyTokenId: {} }, { action: 'deploy', partyTokenId: undefined }
+  ])('rejects malformed/unsupported input before any mutations: %j', async patch => {
+    const { remote, payload, events } = await socketFixture()
+    await expect(remote(patch === null ? null : { ...payload, ...patch })).rejects.toHaveProperty('code')
+    expect(events).toEqual([])
+  })
+
+  test.each(['missing', 'synthetic', 'pack', 'wrong-type'])('re-resolves the world Party (%s)', async mode => {
+    const { remote, party, events } = await socketFixture()
+    if (mode === 'missing') game.actors.splice(0, 1)
+    if (mode === 'synthetic') party.isToken = true
+    if (mode === 'pack') party.pack = 'compendium'
+    if (mode === 'wrong-type') party.type = 'Player'
+    await expect(remote()).rejects.toMatchObject({ code: 'invalid-party' })
+    expect(events).toEqual([])
+  })
+
+  test('uses the explicit client scene/level, never the executing GM canvas', async () => {
+    const { remote, scene, payload, b } = await socketFixture()
+    canvas.scene = { id: 'elsewhere', tokens: [] }
+    b.level = 'upper'
+    await expect(remote({ ...payload, tokenIds: [payload.tokenIds[0], b.id] })).rejects.toMatchObject({ code: 'invalid-gather-level' })
+    await expect(remote()).resolves.toBeUndefined()
+    expect(scene.tokens.has(payload.tokenIds[0])).toBe(false)
+    expect(scene.tokens.has(b.id)).toBe(true)
+  })
+
+  test('a missing selected ID never falls back to gathering the full roster', async () => {
+    const { remote, payload, events } = await socketFixture()
+    await expect(remote({ ...payload, tokenIds: ['deleted'] })).resolves.toBeUndefined()
+    expect(events).toEqual([])
+  })
+
+  test('local active GM and remote Gather share the synchronous lock; repeated Gather never toggles Deploy', async () => {
+    const { remote, payload, scene, party } = await socketFixture()
+    const entered = deferred()
+    const release = deferred()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => { entered.resolve(); await release.promise; return create(...args) })
+    const first = service.requestPartyTokenAction(payload)
+    await entered.promise
+    await expect(remote({ ...payload, userId: 'gm' }, 'unknown')).rejects.toMatchObject({ code: 'unauthorized' })
+    await expect(remote()).resolves.toBeUndefined()
+    await expect(remote({ ...payload, action: 'deploy', partyTokenId: 'new0000000000001' })).resolves.toBeUndefined()
+    expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(1)
+    release.resolve()
+    await expect(first).resolves.toMatchObject({ gathered: 1 })
+    await expect(remote()).rejects.toMatchObject({ code: 'snapshot-open' })
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
+  })
+
+  test('Gather rollback holds the global lock even for a different Party', async () => {
+    const { remote, payload, scene, party } = await socketFixture()
+    const other = { ...party, id: 'other', flags: { dcc: { partyMembers: [] } } }
+    game.actors.push(other)
+    const entered = deferred()
+    const release = deferred()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      await remove(...args)
+      throw new Error('delete callback')
+    })
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(create).mockImplementationOnce(async (...args) => {
+      entered.resolve()
+      await release.promise
+      return create(...args)
+    })
+    const first = remote()
+    const assertion = expect(first).rejects.toMatchObject({ code: 'member-delete-failed', rollbackComplete: true })
+    await entered.promise
+    await expect(service.requestPartyTokenAction({ ...payload, partyId: other.id })).resolves.toBeUndefined()
+    expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(2)
+    release.resolve()
+    await assertion
+    await expect(service.requestPartyTokenAction({ ...payload, partyId: other.id })).resolves.toMatchObject({ gathered: 0 })
+    await expect(service.requestPartyTokenAction(payload)).resolves.toMatchObject({ gathered: 1 })
+  })
+
+  test('overlapping Deploy B performs zero mutations and cannot restore A consumed snapshot', async () => {
+    const { remote, payload, scene, party, partyToken } = await socketFixture(await deployWorkflowFixture())
+    const entered = deferred()
+    const release = deferred()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => { entered.resolve(); await release.promise; return create(...args) })
+    const request = { ...payload, action: 'deploy', partyTokenId: partyToken.id }
+    const first = remote(request)
+    await entered.promise
+    await expect(service.requestPartyTokenAction(request)).resolves.toBeUndefined()
+    await expect(remote(payload)).resolves.toBeUndefined()
+    expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(1)
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    release.resolve()
+    await expect(first).resolves.toBeUndefined()
+    await expect(remote(request)).rejects.toMatchObject({ code: 'missing-snapshot' })
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toHaveLength(2)
+    expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(1)
+  })
+
+  test.each([false, true])('holds lock through awaited rollback and releases even when Party is blocked (%s)', async damaged => {
+    const { remote, payload, scene, party } = await socketFixture(await deployWorkflowFixture())
+    const entered = deferred()
+    const release = deferred()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      await remove(...args)
+      throw new Error('delete callback')
+    })
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(create).mockImplementationOnce(async (...args) => {
+      entered.resolve()
+      await release.promise
+      return damaged ? [] : create(...args)
+    })
+    const request = { ...payload, action: 'deploy', partyTokenId: 'new0000000000001' }
+    const first = remote(request)
+    const assertion = expect(first).rejects.toMatchObject({ code: 'party-delete-failed', rollbackComplete: !damaged })
+    await entered.promise
+    const calls = scene.createEmbeddedDocuments.mock.calls.length
+    await expect(remote(request)).resolves.toBeUndefined()
+    expect(scene.createEmbeddedDocuments).toHaveBeenCalledTimes(calls)
+    release.resolve()
+    await assertion
+    if (damaged) {
+      await expect(remote(request)).rejects.toMatchObject({ code: 'party-blocked' })
+      const other = { ...party, id: 'other', flags: { dcc: { partyMembers: [] } } }
+      game.actors.push(other)
+      await expect(service.requestPartyTokenAction({ ...payload, partyId: other.id })).resolves.toMatchObject({ gathered: 0 })
+    } else await expect(service.requestPartyTokenAction(request)).resolves.toMatchObject({ deployed: 2 })
+  })
+
+  test.each(['legacy', 'foreign', 'wrong-scene'])('rejects an explicit invalid Deploy target (%s)', async mode => {
+    const { remote, payload, scene, partyToken, foreign, events } = await socketFixture(await deployWorkflowFixture())
+    if (mode === 'legacy') partyToken.actorLink = false
+    if (mode === 'wrong-scene') scene.tokens.splice(scene.tokens.indexOf(partyToken), 1)
+    await expect(remote({ ...payload, action: 'deploy', partyTokenId: mode === 'foreign' ? foreign.id : partyToken.id })).rejects.toHaveProperty('code')
+    expect(events).toEqual([])
+  })
+
+  test('remote request helper uses existing fire-and-forget executeAsGM and does not expose raw workflows', async () => {
+    const { payload, otherGM } = await socketFixture()
+    game.user = otherGM
+    await expect(service.requestPartyTokenAction(payload)).resolves.toBeUndefined()
+    expect(game.socket.emit).toHaveBeenCalledWith('system.dcc', { action: 'partyTokenAction', payload })
+    expect(game.dcc?.gatherPartyTokens).toBeUndefined()
+  })
+})
+
 function collection (documents) {
   return Object.assign(documents, { get: id => documents.find(document => document.id === id), has: id => documents.some(document => document.id === id) })
 }

@@ -1,7 +1,51 @@
 /* global CONFIG, game, TokenDocument, canvas, Hooks, foundry */
 
+import { executeAsGM, registerSocketHandler } from './socket.mjs'
+
 /** Session-local latch, lost on reload. Unattributed fresh-ID Tokens need manual inspection. */
 export const blockedPartyIds = new Set()
+
+// One productive entry for every Party, held until workflow rollback has settled.
+// Overlapping requests are dropped, never queued against a stale snapshot.
+let inFlight = false
+
+async function onPartyTokenAction (payload, senderId) {
+  if (!game.users.get(senderId)?.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
+  if (inFlight) return
+  inFlight = true
+  try {
+    const isId = value => typeof value === 'string' && value.length > 0
+    if (!payload || !['gather', 'deploy'].includes(payload.action) ||
+      !isId(payload.partyId) || !isId(payload.sceneId) ||
+      (payload.partyTokenId !== undefined && !isId(payload.partyTokenId))) throw new Error('invalid-request')
+    const { action, partyId, sceneId, levelId, tokenIds, partyTokenId } = payload
+    if (action === 'gather' && (!isId(levelId) || !Array.isArray(tokenIds) || !tokenIds.every(isId))) throw new Error('invalid-request')
+    if (action === 'deploy' && !isId(partyTokenId)) throw new Error('missing-party-token-id')
+    const party = game.actors.get(partyId)
+    const scene = game.scenes.get(sceneId)
+    if (party?.type !== 'Party' || party.isToken || party.pack) throw new Error('invalid-party')
+    if (!scene) throw new Error('missing-scene')
+    // Only document IDs cross the boundary: no client snapshots, stats or canvas fallback.
+    return await (action === 'gather'
+      ? gatherPartyTokens({ party, scene, levelId, tokenIds, partyTokenId })
+      : deployPartyTokens({ party, scene, partyTokenId }))
+  } catch (error) {
+    error.code ??= error.message
+    throw error
+  } finally {
+    inFlight = false
+  }
+}
+
+/** Internal ready registration; intentionally not exposed on game.dcc. */
+export function registerPartyTokenSocket () {
+  registerSocketHandler('partyTokenAction', onPartyTokenAction)
+}
+
+/** Future UI callers, including the active GM, must use the same socket/lock path. */
+export function requestPartyTokenAction (payload) {
+  return executeAsGM('partyTokenAction', payload)
+}
 
 /** All started, still-present encounters in the supplied scene, not just the active tracker. */
 export function isTokenInRunningCombat (token, scene) {
