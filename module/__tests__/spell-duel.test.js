@@ -8,6 +8,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // foundry.applications.api must exist at import time (class extends it).
 globalThis.foundry = {
+  utils: { escapeHTML: (s) => String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;') },
   applications: {
     api: {
       ApplicationV2: class {},
@@ -21,8 +22,9 @@ const { default: SpellDuel } = await import('../spell-duel.js')
 // Controllable Roll: `new Roll(f).evaluate()` resolves to itself; `.total` is the
 // scripted next result; `.toMessage()` is a no-op.
 let nextRollTotal = 5
+let rolledFormulas = []
 class MockRoll {
-  constructor (formula) { this.formula = formula; this.total = nextRollTotal }
+  constructor (formula) { this.formula = formula; this.total = nextRollTotal; rolledFormulas.push(formula) }
   async evaluate () { return this }
   async toMessage () {}
 }
@@ -40,6 +42,7 @@ beforeEach(() => {
   SpellDuel._addingParticipant = false
   SpellDuel.dialog = null
   nextRollTotal = 5
+  rolledFormulas = []
 
   globalThis.Roll = MockRoll
   globalThis.ui = { notifications: { warn: vi.fn(), error: vi.fn() } }
@@ -150,14 +153,19 @@ describe('SpellDuel participant state machine', () => {
 })
 
 describe('SpellDuel.resolveExchange', () => {
+  const momentumOf = (id) => SpellDuel.participants.find(p => p.actorId === id).momentum
+  const lastMessage = () => SpellDuel.addChatMessage.mock.calls.at(-1)[0]
+
   beforeEach(async () => {
     await SpellDuel.addParticipant(actor('atk', 'Attacker'))
     await SpellDuel.addParticipant(actor('def', 'Defender'))
     SpellDuel.addChatMessage.mockClear()
-    // comparison table yields a die for the counterspell path; counterspell +
-    // phlogiston tables return null so the module-constant fallback is used.
+    rolledFormulas = []
+    // comparison table yields d6 for every pairing used below; counterspell +
+    // phlogiston tables return null so the fallback labels are used.
+    const row = '12: PD, 13: d6, 14: d6, 28: d6'
     globalThis.game.tables.getName = (name) =>
-      name.includes('4-5') ? fakeTable({ 12: '14: d6, 28: d6' }) : null
+      name.includes('4-5') ? fakeTable({ 12: row, 13: row, 14: row }) : null
   })
 
   test('errors and bails when a participant is missing', async () => {
@@ -166,35 +174,153 @@ describe('SpellDuel.resolveExchange', () => {
     expect(SpellDuel.addChatMessage).not.toHaveBeenCalled()
   })
 
-  test('identical checks award the defender momentum and post the phlogiston result', async () => {
-    nextRollTotal = 3 // 1d10 phlogiston
+  test('identical checks give no one momentum and roll a d10 phlogiston disturbance', async () => {
+    nextRollTotal = 3
     await SpellDuel.resolveExchange('atk', 12, 'def', 12)
-    // attackerWins = 12 > 12 = false -> winner is defender
-    expect(SpellDuel.participants.find(p => p.actorId === 'def').momentum).toBe(11)
-    const msg = SpellDuel.addChatMessage.mock.calls.at(-1)[0]
-    expect(msg).toContain('DCC.SpellDuelPhlogistonMessage')
+    expect(momentumOf('atk')).toBe(10)
+    expect(momentumOf('def')).toBe(10)
+    expect(rolledFormulas).toEqual(['1d10'])
+    expect(lastMessage()).toContain('DCC.SpellDuelPhlogistonMessage')
+    expect(lastMessage()).toContain('SpellDuelPhlogistonEffectTimeAccelerates')
   })
 
-  test('attacker win selects attackerHigh + clamps the momentum-modified roll', async () => {
-    // attacker check 14 > defender 12 -> attacker wins, attacker.momentum 10->11.
-    // momentumDiff = 11 - 10 = 1; dieRoll.total = 5 -> modifiedRoll = min(10, 5+1) = 6.
-    // attackerHigh[6] = DCC.SpellDuelEffectOverwhelmAndReflect.
+  test('an attacker win uses the attacker-high column with the winner\'s momentum lead', async () => {
+    // attacker 10 -> 11, lead +1; d6 roll 5 -> 6 -> attackerHigh[6]
     nextRollTotal = 5
     await SpellDuel.resolveExchange('atk', 14, 'def', 12)
-    expect(SpellDuel.participants.find(p => p.actorId === 'atk').momentum).toBe(11)
-    const msg = SpellDuel.addChatMessage.mock.calls.at(-1)[0]
-    expect(msg).toContain('DCC.SpellDuelExchangeResult')
-    expect(msg).toContain('"finalRoll":6')
-    expect(msg).toContain('SpellDuelEffectOverwhelmAndReflect')
+    expect(momentumOf('atk')).toBe(11)
+    expect(rolledFormulas).toEqual(['1d6'])
+    expect(lastMessage()).toContain('DCC.SpellDuelExchangeResult')
+    expect(lastMessage()).toContain('"modifier":"+1"')
+    expect(lastMessage()).toContain('"finalRoll":6')
+    expect(lastMessage()).toContain('SpellDuelEffectOverwhelmAndReflect')
   })
 
-  test('momentum modifier clamps the final roll to the [1,10] table bounds', async () => {
-    // Give the attacker a big momentum lead so dieRoll + momentumDiff overflows 10.
+  test('a defender who wins while ahead adds their lead, not subtracts it (#982)', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').momentum = 12
+    globalThis.game.tables.getName = (name) =>
+      name.includes('4-5') ? fakeTable({ 14: '12: d6, 14: PD' }) : null
+    nextRollTotal = 5
+    await SpellDuel.resolveExchange('atk', 12, 'def', 14)
+    // defender 12 -> 13 vs 10: +3; 5 + 3 = 8 -> defenderHigh[8]
+    expect(momentumOf('def')).toBe(13)
+    expect(lastMessage()).toContain('"modifier":"+3"')
+    expect(lastMessage()).toContain('"finalRoll":8')
+    expect(lastMessage()).toContain('SpellDuelEffectOverwhelm')
+  })
+
+  test('a winner who trails on momentum gets a negative modifier', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').momentum = 13
+    nextRollTotal = 5
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12)
+    // attacker 10 -> 11 vs 13: -2; 5 - 2 = 3
+    expect(lastMessage()).toContain('"modifier":-2')
+    expect(lastMessage()).toContain('"finalRoll":3')
+  })
+
+  test('results above 10 use the 10+ row', async () => {
     SpellDuel.participants.find(p => p.actorId === 'atk').momentum = 30
     nextRollTotal = 6
     await SpellDuel.resolveExchange('atk', 14, 'def', 12)
-    // attacker wins -> momentum 31; momentumDiff 31-10=21; 6+21 -> clamp 10.
-    const msg = SpellDuel.addChatMessage.mock.calls.at(-1)[0]
-    expect(msg).toContain('"finalRoll":10')
+    // 31 - 10 = +21; 6 + 21 = 27 -> attackerHigh 10+
+    expect(lastMessage()).toContain('"finalRoll":27')
+    expect(lastMessage()).toContain('SpellDuelEffectReflectAndOverwhelm')
+  })
+
+  test('a negative modifier never takes the roll below 1', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').momentum = 16
+    nextRollTotal = 1
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12)
+    // attacker 10 -> 11 vs 16: -5; 1 - 5 floors at 1
+    expect(lastMessage()).toContain('"modifier":-5')
+    expect(lastMessage()).toContain('"finalRoll":1')
+  })
+
+  test('actor names are escaped in the chat card', async () => {
+    SpellDuel.participants.find(p => p.actorId === 'def').name = '<img src=x>'
+    await SpellDuel.resolveExchange('atk', 14, 'def', 11)
+    expect(lastMessage()).toContain('&lt;img src=x&gt;')
+    expect(lastMessage()).not.toContain('<img src=x>')
+  })
+
+  test('without the comparison table, only identical checks count as a tie', async () => {
+    globalThis.game.tables.getName = () => null
+    await SpellDuel.resolveExchange('atk', 30, 'def', 29)
+    expect(lastMessage()).toContain('DCC.SpellDuelManualLookup')
+    expect(rolledFormulas).toEqual([])
+  })
+
+  test('a Phlogiston Disturbance from capped checks gives the high roller momentum, either way round', async () => {
+    // Table 4-5 caps at 28, so 30 vs 29 lands on its PD cell
+    globalThis.game.tables.getName = (name) =>
+      name.includes('4-5') ? fakeTable({ 28: '28: PD' }) : null
+    await SpellDuel.resolveExchange('atk', 30, 'def', 29)
+    expect(rolledFormulas).toEqual(['1d10'])
+    expect(momentumOf('atk')).toBe(11)
+    expect(momentumOf('def')).toBe(10)
+
+    await SpellDuel.resolveExchange('atk', 29, 'def', 30)
+    expect(momentumOf('atk')).toBe(11)
+    expect(momentumOf('def')).toBe(11)
+  })
+
+  test('a check below the spell\'s minimum stops the comparison', async () => {
+    await SpellDuel.resolveExchange('atk', 14, 'def', 11)
+    expect(lastMessage()).toContain('DCC.SpellDuelCheckFailed')
+    expect(lastMessage()).toContain('"failed":"Defender"')
+    expect(momentumOf('atk')).toBe(10)
+    expect(rolledFormulas).toEqual([])
+  })
+
+  test('the minimum follows the spell level', async () => {
+    // 13 succeeds at level 1 but not at level 2 (needs 14)
+    await SpellDuel.resolveExchange('atk', 14, 'def', 13, { defenderLevel: 2 })
+    expect(lastMessage()).toContain('DCC.SpellDuelCheckFailed')
+  })
+
+  test('same-patron invocations cancel when both succeed', async () => {
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12, { samePatron: true })
+    expect(lastMessage()).toContain('DCC.SpellDuelSamePatronCancelled')
+    expect(momentumOf('atk')).toBe(10)
+    expect(rolledFormulas).toEqual([])
+  })
+
+  test('same-patron invocations do not cancel when a check fails', async () => {
+    await SpellDuel.resolveExchange('atk', 14, 'def', 11, { samePatron: true })
+    expect(lastMessage()).toContain('DCC.SpellDuelCheckFailed')
+  })
+
+  test('without the comparison table, a non-tie asks for a manual lookup and rolls nothing', async () => {
+    globalThis.game.tables.getName = () => null
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12)
+    expect(lastMessage()).toContain('DCC.SpellDuelManualLookup')
+    expect(lastMessage()).toContain('"winner":"Attacker"')
+    expect(momentumOf('atk')).toBe(11)
+    expect(rolledFormulas).toEqual([])
+  })
+
+  test('uses the core-book table text found by id in the pack', async () => {
+    const tables = {
+      b8Eh0tUvRsYo5Zax: fakeTable({ 12: '12: PD, 14: d6' }),
+      a7Dg9sTuQrXn4Yzw: fakeTable({ 6: 'attacker high row six' })
+    }
+    globalThis.game.modules.get = () => ({ active: true })
+    globalThis.game.packs = {
+      get: () => ({
+        index: { get: (id) => (tables[id] ? { _id: id } : undefined), find: () => undefined },
+        getDocument: async (id) => tables[id]
+      })
+    }
+    nextRollTotal = 5
+    await SpellDuel.resolveExchange('atk', 14, 'def', 12)
+    expect(lastMessage()).toContain('attacker high row six')
+  })
+
+  test('finds Table 4-7 under its old misspelled name', async () => {
+    globalThis.game.tables.getName = (name) =>
+      name === 'Table 4-7: Phologiston Disturbance' ? fakeTable({ 4: 'old-name row four' }) : null
+    nextRollTotal = 4
+    await SpellDuel.resolveExchange('atk', 12, 'def', 12)
+    expect(lastMessage()).toContain('old-name row four')
   })
 })

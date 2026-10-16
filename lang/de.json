@@ -1185,5 +1185,10 @@
   "DCC.system.skills.sneakSilently.value": "Lautlos schleichen",
   "DCC.Unlimited": "unbegrenzt",
   "DCC.untrained": "ungeübt",
-  "DCC.WeightUnit": "Pfd."
+  "DCC.WeightUnit": "Pfd.",
+  "DCC.SpellDuelAttackerSpellLevel": "Zauberstufe des Angreifers",
+  "DCC.SpellDuelDefenderSpellLevel": "Zauberstufe des Verteidigers",
+  "DCC.SpellDuelSamePatron": "Beide rufen denselben Patron an",
+  "DCC.SpellDuelCheckFailed": "<b>Zauberduell-Austausch</b><br>{attacker} ({attackerCheck}) gegen {defender} ({defenderCheck})<br>{failed}: unter dem Mindestwert für den Zauberwurf, daher kein Vergleich im Zauberduell. Der Schwung bleibt unverändert.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Zauberduell-Austausch</b><br>{attacker} ({attackerCheck}) gegen {defender} ({defenderCheck})<br>Beide haben denselben Patron angerufen: Beide Zauber werden aufgehoben."
 }

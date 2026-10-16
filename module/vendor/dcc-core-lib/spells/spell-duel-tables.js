@@ -55,7 +55,8 @@ export function defaultGetComparisonDie(attackerCheck, defenderCheck) {
  * Default counterspell power table (fan-made)
  *
  * This provides a balanced set of outcomes for spell duels.
- * Lower results favor the defender, higher results favor the attacker.
+ * In each column, higher results favor whoever won the exchange: the
+ * momentum modifier is the winner's momentum minus the loser's.
  */
 export const DEFAULT_COUNTERSPELL_POWER_TABLE = {
     attackerHigh: [
@@ -134,32 +135,32 @@ export const DEFAULT_COUNTERSPELL_POWER_TABLE = {
         {
             min: 1,
             max: 2,
-            effect: "The counter overwhelms! The attacker's spell is negated, the counter takes full effect.",
-            attackerSpellEffective: false,
-            defenderSpellEffective: true,
-            attackerCheckModifier: 0,
-            defenderCheckModifier: 2,
+            effect: "The counter backfires! The attacker's spell is enhanced by the failed magical interference.",
+            attackerSpellEffective: true,
+            defenderSpellEffective: false,
+            attackerCheckModifier: 2,
+            defenderCheckModifier: 0,
             simultaneousEffect: false,
         },
         {
             min: 3,
             max: 4,
-            effect: "Strong counter! The attacker's spell is mostly blocked.",
+            effect: "The counter fails! The attacker's spell takes full effect.",
             attackerSpellEffective: true,
-            defenderSpellEffective: true,
-            attackerCheckModifier: -4,
+            defenderSpellEffective: false,
+            attackerCheckModifier: 0,
             defenderCheckModifier: 0,
-            simultaneousEffect: true,
+            simultaneousEffect: false,
         },
         {
             min: 5,
             max: 6,
-            effect: "The spells clash! Both take effect simultaneously.",
+            effect: "The counter is weakened. The attacker's spell takes effect at reduced power.",
             attackerSpellEffective: true,
-            defenderSpellEffective: true,
-            attackerCheckModifier: 0,
+            defenderSpellEffective: false,
+            attackerCheckModifier: -2,
             defenderCheckModifier: 0,
-            simultaneousEffect: true,
+            simultaneousEffect: false,
         },
         {
             min: 7,
@@ -174,31 +175,31 @@ export const DEFAULT_COUNTERSPELL_POWER_TABLE = {
         {
             min: 9,
             max: 10,
-            effect: "The counter is weakened. The attacker's spell takes effect at reduced power.",
+            effect: "The spells clash! Both take effect simultaneously.",
             attackerSpellEffective: true,
-            defenderSpellEffective: false,
-            attackerCheckModifier: -2,
+            defenderSpellEffective: true,
+            attackerCheckModifier: 0,
             defenderCheckModifier: 0,
-            simultaneousEffect: false,
+            simultaneousEffect: true,
         },
         {
             min: 11,
             max: 12,
-            effect: "The counter fails! The attacker's spell takes full effect.",
+            effect: "Strong counter! The attacker's spell is mostly blocked.",
             attackerSpellEffective: true,
-            defenderSpellEffective: false,
-            attackerCheckModifier: 0,
+            defenderSpellEffective: true,
+            attackerCheckModifier: -4,
             defenderCheckModifier: 0,
-            simultaneousEffect: false,
+            simultaneousEffect: true,
         },
         {
             min: 13,
             max: 100, // Catch-all for high rolls
-            effect: "The counter backfires! The attacker's spell is enhanced by the failed magical interference.",
-            attackerSpellEffective: true,
-            defenderSpellEffective: false,
-            attackerCheckModifier: 2,
-            defenderCheckModifier: 0,
+            effect: "The counter overwhelms! The attacker's spell is negated, the counter takes full effect.",
+            attackerSpellEffective: false,
+            defenderSpellEffective: true,
+            attackerCheckModifier: 0,
+            defenderCheckModifier: 2,
             simultaneousEffect: false,
         },
     ],

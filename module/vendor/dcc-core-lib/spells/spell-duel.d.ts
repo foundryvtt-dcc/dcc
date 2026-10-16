@@ -156,7 +156,10 @@ export interface CounterspellExchangeResult {
     comparison: SpellCheckComparison;
     /** Counterspell power result (if not phlogiston disturbance) */
     counterspellPower?: CounterspellPowerResult | undefined;
-    /** Phlogiston disturbance result (if checks were equal) */
+    /**
+     * Phlogiston disturbance result (if Table 4-5 returned PD). Table 4-5 caps
+     * both checks, so the totals may differ; momentum still goes to the higher.
+     */
     phlogistonDisturbance?: PhlogistonDisturbanceResult | undefined;
     /** Updated attacker momentum */
     newAttackerMomentum: number;
@@ -210,22 +213,29 @@ export declare function compareSpellChecks(attackerCheck: number, defenderCheck:
 /**
  * Table 4-6: Counterspell Power results
  *
- * Roll is modified by the difference between momentum trackers
+ * The roll is modified by the winner's momentum minus the loser's (Table 4-6
+ * and the spell duel rules, core book p. 98), so it is negative when the
+ * winner of this exchange trails on momentum.
  * If attacker high, use "Attacker High" column
  * If defender high, use "Defender High" column
  *
  * @param comparisonDie - The die to roll (from Table 4-5)
  * @param attackerHigh - Whether the attacker had the higher spell check
- * @param momentumDifference - Absolute difference between momentum trackers
+ * @param momentumModifier - The winner's momentum minus the loser's
  * @param roller - Optional dice roller
  * @param table - Optional custom table data (for official tables)
  */
-export declare function rollCounterspellPower(comparisonDie: ComparisonDie, attackerHigh: boolean, momentumDifference: number, roller?: DiceRoller, table?: CounterspellPowerTable): CounterspellPowerResult;
+export declare function rollCounterspellPower(comparisonDie: ComparisonDie, attackerHigh: boolean, momentumModifier: number, roller?: DiceRoller, table?: CounterspellPowerTable): CounterspellPowerResult;
 /**
  * Roll on Table 4-7: Phlogiston Disturbance
  *
  * This occurs when both spell checks are identical
  * Dangerous magical effects can occur
+ *
+ * The die matches the table: its size is the highest `max` in the table, so
+ * the core book's Table 4-7 (p. 98) rolls a d10 and the default placeholder
+ * table rolls a d20. Rows must therefore cover 1 to the die size exactly, with
+ * no catch-all row (such as `max: 100`) at the end.
  *
  * @param roller - Optional dice roller
  * @param table - Optional custom table data (for official tables)

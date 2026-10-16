@@ -1185,5 +1185,10 @@
   "TYPES.Item.weapon": "Arme",
   "DCC.Unlimited": "illimité",
   "DCC.untrained": "non entraîné",
-  "DCC.WeightUnit": "lb"
+  "DCC.WeightUnit": "lb",
+  "DCC.SpellDuelAttackerSpellLevel": "Niveau du sort de l'attaquant",
+  "DCC.SpellDuelDefenderSpellLevel": "Niveau du sort du défenseur",
+  "DCC.SpellDuelSamePatron": "Les deux invoquent le même patron",
+  "DCC.SpellDuelCheckFailed": "<b>Échange de Duel de Sorts</b><br>{attacker} ({attackerCheck}) contre {defender} ({defenderCheck})<br>{failed} : sous le test d'incantation minimum, donc aucune comparaison de duel. L'élan ne change pas.",
+  "DCC.SpellDuelSamePatronCancelled": "<b>Échange de Duel de Sorts</b><br>{attacker} ({attackerCheck}) contre {defender} ({defenderCheck})<br>Les deux ont invoqué le même patron : les deux sorts sont annulés."
 }

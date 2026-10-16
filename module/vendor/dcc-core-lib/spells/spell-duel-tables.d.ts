@@ -92,7 +92,8 @@ export declare function defaultGetComparisonDie(attackerCheck: number, defenderC
  * Default counterspell power table (fan-made)
  *
  * This provides a balanced set of outcomes for spell duels.
- * Lower results favor the defender, higher results favor the attacker.
+ * In each column, higher results favor whoever won the exchange: the
+ * momentum modifier is the winner's momentum minus the loser's.
  */
 export declare const DEFAULT_COUNTERSPELL_POWER_TABLE: CounterspellPowerTable;
 /**
