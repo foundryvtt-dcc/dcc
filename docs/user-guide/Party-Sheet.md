@@ -41,6 +41,8 @@ The party sheet has a **Notes** tab for free-form text about the party. It has n
 ## Using the Party Actor on the map
 You can drag the Party Actor onto the map, and it will create a token for the party. You can then move the token around the map to represent the position of the party.
 
+By default only the GM can move that token: a new Party actor grants players no permission. Give a player **Owner** permission on the Party actor (Actor Configuration → Permissions) if they should move the party token during travel — Owner also makes the token count as a vision source for that player under **Vision From All Owned Tokens**.
+
 You can then double-click this to see the party sheet. You can use the gear on the token on the map to set it's icon.
 
 ## Using individual tokens on the map
@@ -69,6 +71,7 @@ You can gather the party on one scene and deploy it on another: gather on the fi
 ### Things to know
 
 - **GM only.** Players never see the button and cannot start a swap.
+- **Movement and vision follow the party actor's permissions.** The party token is GM-only out of the box; give a player **Owner** on the Party actor if they should move it (and see through it) while the party travels.
 - **Deploy needs a linked party token on the scene you are viewing.** If the party has an older token created before actor data linking — an *unlinked* token — enable **Link Actor Data** in that token's configuration first. The system reports the situation and stops; it will not rewrite or duplicate the token for you.
 - **One gather at a time.** Gather again only after deploying; the button follows the saved state.
 - **Combat is protected.** Member tokens in a running combat are skipped, and you cannot deploy while the party token is in a running combat.
