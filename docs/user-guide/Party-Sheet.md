@@ -58,6 +58,7 @@ The party sheet header has a **Gather** button (only a GM sees it). It collects 
 
 - When you have member tokens selected, Gather takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
 - Foreign tokens in the selection are left untouched.
+- Member tokens without **Link Actor Data** are skipped: the party token can only stand in for linked members, so an unlinked member token stays where it is.
 - The same button then reads **Deploy**: it places the members back around the party token. Each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
 - Gather and Deploy need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
 
@@ -77,4 +78,3 @@ You can gather the party on one scene and deploy it on another: gather on the fi
 ## The party token's health bar
 
 The party token shows a read-only health bar that sums the current hit points of the party's members. It updates live as members take damage or heal, and as you add or remove members. It is display only: editing the bar never distributes damage or healing to the members.
-
