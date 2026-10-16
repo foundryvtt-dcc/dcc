@@ -592,7 +592,7 @@
   "DCC.PartyNoEffectsHint": "Active Effects cannot be placed on a party; drop them on the member's own sheet instead",
   "DCC.PartyNoMembersWarning": "The party has no members; drag actors onto the party sheet first",
   "DCC.PartyTokenGather": "Gather",
-  "DCC.PartyTokenDeploy": "Deploy",
+  "DCC.PartyTokenGatherDeploy": "Gather / Deploy",
   "DCC.PartyTokenChooseParty": "Choose party",
   "DCC.PartyTokenChoosePartyHint": "Which party should gather the selected members? Close to cancel.",
   "DCC.PartyTokenGathered": "Gathered {count} member tokens.",

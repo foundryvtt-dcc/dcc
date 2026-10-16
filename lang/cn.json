@@ -605,7 +605,7 @@
   "DCC.PartyNoEffectsHint": "主动效果不能放在队伍上；请将其拖放到成员自己的角色卡上",
   "DCC.PartyNoMembersWarning": "队伍没有成员；请先将角色拖到队伍卡上",
   "DCC.PartyTokenGather": "集合",
-  "DCC.PartyTokenDeploy": "展开",
+  "DCC.PartyTokenGatherDeploy": "集合 / 展开",
   "DCC.PartyTokenChooseParty": "选择队伍",
   "DCC.PartyTokenChoosePartyHint": "哪个队伍应集合选中的成员？关闭窗口以取消。",
   "DCC.PartyTokenGathered": "已集合 {count} 个成员棋子。",

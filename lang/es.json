@@ -605,7 +605,7 @@
   "DCC.PartyNoEffectsHint": "Los efectos activos no se pueden aplicar a un grupo; suéltalos en la hoja del propio miembro",
   "DCC.PartyNoMembersWarning": "El grupo no tiene miembros; arrastra actores a la hoja de grupo primero",
   "DCC.PartyTokenGather": "Reunir",
-  "DCC.PartyTokenDeploy": "Desplegar",
+  "DCC.PartyTokenGatherDeploy": "Reunir / Desplegar",
   "DCC.PartyTokenChooseParty": "Elegir grupo",
   "DCC.PartyTokenChoosePartyHint": "¿Qué grupo debe reunir a los miembros seleccionados? Cierra para cancelar.",
   "DCC.PartyTokenGathered": "{count} fichas de miembros reunidas.",

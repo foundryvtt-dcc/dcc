@@ -605,7 +605,7 @@
   "DCC.PartyNoEffectsHint": "Efektów aktywnych nie można umieszczać na drużynie; upuść je zamiast tego na karcie danego członka",
   "DCC.PartyNoMembersWarning": "Drużyna nie ma członków; najpierw przeciągnij aktorów na kartę drużyny",
   "DCC.PartyTokenGather": "Zbierz",
-  "DCC.PartyTokenDeploy": "Rozstaw",
+  "DCC.PartyTokenGatherDeploy": "Zbierz / Rozstaw",
   "DCC.PartyTokenChooseParty": "Wybierz drużynę",
   "DCC.PartyTokenChoosePartyHint": "Która drużyna ma zebrać wybranych członków? Zamknij, aby anulować.",
   "DCC.PartyTokenGathered": "Zebrano żetony członków: {count}.",

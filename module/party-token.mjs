@@ -108,15 +108,6 @@ function hasCollectedMembers (party) {
   return party.flags?.dcc?.partyTokenSnapshots != null
 }
 
-export function partyTokenActionLabel (party) {
-  return hasCollectedMembers(party) ? 'DCC.PartyTokenDeploy' : 'DCC.PartyTokenGather'
-}
-
-/** Decorative counterpart of the label; derived from the same predicate so both stay in sync. */
-export function partyTokenActionIcon (party) {
-  return hasCollectedMembers(party) ? 'fa-people-arrows-left-right' : 'fa-people-group'
-}
-
 /** Initiator-only controller: freeze the action and selection before any asynchronous work. */
 export async function togglePartyTokens ({ party, scene, levelId, selection = [], partyTokenId, action }) {
   try {
@@ -159,7 +150,9 @@ function renderPartyTokenHUD (hud, html) {
   const party = actor?.type === 'Party' ? actor : null
   const selection = canvas.tokens?.controlled ?? []
   if (!party && !gatherHudParties(scene, selection, token).length) return
-  const label = game.i18n.localize(party ? partyTokenActionLabel(party) : 'DCC.PartyTokenGather')
+  // The party control is a neutral toggle: the action is decided on click from
+  // the snapshot state. Only the member HUD (no resolved Party) means "gather".
+  const label = game.i18n.localize(party ? 'DCC.PartyTokenGatherDeploy' : 'DCC.PartyTokenGather')
   const control = document.createElement('button')
   control.type = 'button'
   control.classList.add('control-icon')
@@ -167,7 +160,7 @@ function renderPartyTokenHUD (hud, html) {
   control.setAttribute('aria-label', label)
   control.setAttribute('title', label)
   const icon = document.createElement('i')
-  icon.classList.add('fas', party ? partyTokenActionIcon(party) : 'fa-people-group')
+  icon.classList.add('fas', 'fa-people-group')
   icon.setAttribute('aria-hidden', 'true')
   control.append(icon)
   control.addEventListener('click', async event => {

@@ -56,13 +56,13 @@ You can use the topmost box when you right-click a token to edit their hp - you 
 
 ## Gathering and Deploying Party Tokens
 
-The party sheet header has a **Gather** button (only a GM sees it). It collects the party's member tokens from the current scene and replaces them with a single party token, so you can move the whole group at once and put it back down later.
+The party sheet header has a **Gather / Deploy** button (only a GM sees it). What it does is decided when you click, based on the party's saved state: with no gathered members it collects the party's member tokens from the current scene and replaces them with a single party token, so you can move the whole group at once; with members already gathered, it puts them back down. The button label and icon never change — only the action does.
 
-- When you have member tokens selected, Gather takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
+- When you have member tokens selected, gathering takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
 - Foreign tokens in the selection are left untouched.
 - Member tokens without **Link Actor Data** are skipped: the party token can only stand in for linked members, so an unlinked member token stays where it is.
-- The same button then reads **Deploy**: it places the members back around the party token. Each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
-- Gather and Deploy need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
+- The next click then deploys: it places the members back around the party token. Each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
+- Gathering and deploying need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
 
 ### Travelling between scenes
 
@@ -73,7 +73,7 @@ You can gather the party on one scene and deploy it on another: gather on the fi
 - **GM only.** Players never see the button and cannot start a swap.
 - **Movement and vision follow the party actor's permissions.** The party token is GM-only out of the box; give a player **Owner** on the Party actor if they should move it (and see through it) while the party travels.
 - **Deploy needs a linked party token on the scene you are viewing.** If the party has an older token created before actor data linking — an *unlinked* token — enable **Link Actor Data** in that token's configuration first. The system reports the situation and stops; it will not rewrite or duplicate the token for you.
-- **One gather at a time.** Gather again only after deploying; the button follows the saved state.
+- **One gather at a time.** Gather again only after deploying; the action follows the saved state.
 - **Combat is protected.** Member tokens in a running combat are skipped, and you cannot deploy while the party token is in a running combat.
 - **Levels must match.** Gathering uses the scene level you are currently viewing. If the remaining member tokens or the party token sit on a different level, the action stops without changing anything. Deploying always uses the party token's current level.
 - **A failed swap may need a manual look.** If an operation fails partway, the system restores what it can and warns you. Inspect the tokens and the saved snapshots manually before trying again — reloading the page does not repair the state.

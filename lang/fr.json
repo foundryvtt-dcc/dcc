@@ -592,7 +592,7 @@
   "DCC.PartyNoEffectsHint": "Les effets actifs ne peuvent pas être placés sur un groupe ; déposez-les plutôt sur la fiche du membre concerné",
   "DCC.PartyNoMembersWarning": "Le groupe n'a aucun membre ; faites d'abord glisser des acteurs sur la feuille de groupe",
   "DCC.PartyTokenGather": "Rassembler",
-  "DCC.PartyTokenDeploy": "Déployer",
+  "DCC.PartyTokenGatherDeploy": "Rassembler / Déployer",
   "DCC.PartyTokenChooseParty": "Choisir le groupe",
   "DCC.PartyTokenChoosePartyHint": "Quel groupe doit rassembler les membres sélectionnés ? Fermez pour annuler.",
   "DCC.PartyTokenGathered": "{count} pions de membres rassemblés.",

@@ -605,7 +605,7 @@
   "DCC.PartyNoEffectsHint": "Aktive Effekte können nicht auf eine Gruppe gelegt werden; ziehe sie stattdessen auf den Bogen des jeweiligen Mitglieds",
   "DCC.PartyNoMembersWarning": "Die Gruppe hat keine Mitglieder; ziehe zuerst Akteure auf den Gruppenbogen",
   "DCC.PartyTokenGather": "Sammeln",
-  "DCC.PartyTokenDeploy": "Aufstellen",
+  "DCC.PartyTokenGatherDeploy": "Sammeln / Aufstellen",
   "DCC.PartyTokenChooseParty": "Gruppe auswählen",
   "DCC.PartyTokenChoosePartyHint": "Welche Gruppe soll die ausgewählten Mitglieder sammeln? Zum Abbrechen schließen.",
   "DCC.PartyTokenGathered": "{count} Mitglieder-Tokens gesammelt.",

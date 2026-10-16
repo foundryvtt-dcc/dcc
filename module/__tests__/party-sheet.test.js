@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
-import { togglePartyTokens, partyTokenActionLabel } from '../party-token.mjs'
+import { togglePartyTokens } from '../party-token.mjs'
 
-vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn(), partyTokenActionLabel: vi.fn(), partyTokenActionIcon: vi.fn() }))
+vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn() }))
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -27,11 +27,16 @@ describe('party token sheet control', () => {
     expect(togglePartyTokens).toHaveBeenCalledWith({ party: actor, scene, levelId: 'upstairs', selection })
   })
 
-  test('header button is GM-only, accessible and localized', () => {
+  test('header button is GM-only, accessible and neutral', () => {
     const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
     expect(template).toMatch(/{{#if canManagePartyTokens}}[\s\S]*data-action="togglePartyTokens"[\s\S]*{{\/if}}/)
-    expect(template).toContain('aria-label="{{localize partyTokenActionLabel}}"')
-    expect(template).toContain('title="{{localize partyTokenActionLabel}}"')
+    // The label, tooltip and accessible name all resolve the same fixed key:
+    // the button never derives its text from the party's snapshot state.
+    expect(template).toContain('aria-label="{{localize \'DCC.PartyTokenGatherDeploy\'}}"')
+    expect(template).toContain('title="{{localize \'DCC.PartyTokenGatherDeploy\'}}"')
+    expect(template).toContain("{{localize 'DCC.PartyTokenGatherDeploy'}}")
+    expect(template).toContain('class="fas fa-people-group"')
+    expect(template).not.toContain('partyTokenActionLabel')
   })
 
   test.each([true, false])('prepared sheet context exposes management only for GM=%s', async isGM => {
@@ -39,13 +44,13 @@ describe('party token sheet control', () => {
     const prepare = vi.spyOn(parent, '_prepareContext').mockResolvedValue({})
     const actor = { getFlag: () => [], system: { details: { notes: { value: '' } } } }
     globalThis.game.user = { isGM }
-    partyTokenActionLabel.mockReturnValue('DCC.PartyTokenGather')
     try {
       const sheet = new DCCPartySheet({ document: actor, dragDrop: [] })
       const context = await sheet._prepareContext({})
       expect(context.canManagePartyTokens).toBe(isGM)
-      expect(context.partyTokenActionLabel).toBe('DCC.PartyTokenGather')
-      expect(partyTokenActionLabel).toHaveBeenCalledWith(actor)
+      // State-dependent label/icon contexts are gone: the template is fixed.
+      expect(context).not.toHaveProperty('partyTokenActionLabel')
+      expect(context).not.toHaveProperty('partyTokenActionIcon')
     } finally { prepare.mockRestore() }
   })
 })

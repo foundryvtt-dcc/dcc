@@ -26,7 +26,7 @@ const test = createSessionTest({
   onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
 })
 
-test('party token control follows replicated snapshot state in the existing sheet', async ({ page }) => {
+test('party token control stays state-neutral in the existing sheet', async ({ page }) => {
   await cleanProbeState(page)
   consoleErrors.length = 0
   const { partyId } = await createParty(page)
@@ -34,13 +34,18 @@ test('party token control follows replicated snapshot state in the existing shee
     await openActorSheet(page, 'PARTY Test Party')
     const button = page.locator('.party-name [data-action="togglePartyTokens"]')
     await expect(button).toBeVisible()
-    await expect(button).toHaveAccessibleName('Gather')
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    // The icon is neutral too; capture it so the snapshot state cannot change it.
+    const iconClass = await button.locator('i').evaluate(element => element.className)
     await page.evaluate(async id => {
       await game.actors.get(id).setFlag('dcc', 'partyTokenSnapshots', { sceneId: 'unavailable', members: [] })
     }, partyId)
-    await expect(button).toHaveAccessibleName('Deploy')
+    // Neither label nor icon follow the saved snapshot state.
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    await expect(button.locator('i')).toHaveClass(iconClass)
     await page.evaluate(async id => { await game.actors.get(id).unsetFlag('dcc', 'partyTokenSnapshots') }, partyId)
-    await expect(button).toHaveAccessibleName('Gather')
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    await expect(button.locator('i')).toHaveClass(iconClass)
     const layout = await button.evaluate(element => {
       const header = element.closest('.party-name')
       return { width: header.getBoundingClientRect().width, overflow: header.scrollWidth > header.clientWidth }

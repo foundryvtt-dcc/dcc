@@ -69,7 +69,7 @@ test('sheet gathers selected individualized members; moved party HUD restores th
       canvas.tokens.releaseAll()
       for (const id of [ids.tokens[0], ids.tokens[1], ids.tokens[3]]) canvas.tokens.get(id).control({ releaseOthers: false })
     }, ids)
-    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather')
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather / Deploy')
     await page.locator(sheetSwap).evaluate(element => element.click())
     await page.waitForFunction(ids => {
       const scene = game.scenes.get(ids.scene)
@@ -89,7 +89,7 @@ test('sheet gathers selected individualized members; moved party HUD restores th
     }
     expect(gathered.remaining).toContain(ids.tokens[2])
     expect(gathered.remaining).toContain(ids.tokens[3])
-    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Deploy')
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather / Deploy')
     const partyTokenId = await page.evaluate(async ids => {
       const token = canvas.scene.tokens.find(token => token.actorId === ids.party)
       // Displace, don't walk: v14 token movement is animated by default and its
@@ -104,7 +104,7 @@ test('sheet gathers selected individualized members; moved party HUD restores th
       return { x: token.x, y: token.y }
     }, partyTokenId)).toEqual({ x: 1600, y: 1600 })
     await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, partyTokenId)
-    await expect(page.locator(hudSwap)).toHaveAccessibleName('Deploy')
+    await expect(page.locator(hudSwap)).toHaveAccessibleName('Gather / Deploy')
     await page.evaluate(async () => { await canvas.hud.token.render(true); await canvas.hud.token.render(true) })
     await expect(page.locator(hudSwap)).toHaveCount(1)
     await page.locator(hudSwap).evaluate(element => element.click())
@@ -123,7 +123,8 @@ test('sheet gathers selected individualized members; moved party HUD restores th
       expect(token.y).toBeGreaterThan(1200)
     }
     expect(restored.tokens.find(token => token._id === ids.tokens[3])).toEqual(ids.originals[3])
-    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather')
+    // The sheet control stays neutral before and after the swap.
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather / Deploy')
   } finally {
     await cleanSwapFixture(page, ids)
   }
@@ -298,7 +299,7 @@ test('deploy after a same-scene level switch restores members on the party token
     }, ids)
     await page.waitForFunction(id => canvas.tokens.get(id), partyTokenId)
     await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, partyTokenId)
-    await expect(page.locator(hudSwap)).toHaveAccessibleName('Deploy')
+    await expect(page.locator(hudSwap)).toHaveAccessibleName('Gather / Deploy')
     await page.locator(hudSwap).evaluate(element => element.click())
     await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
     const restored = await page.evaluate(ids => game.scenes.get(ids.scene).tokens

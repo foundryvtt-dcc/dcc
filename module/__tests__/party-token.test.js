@@ -1067,12 +1067,12 @@ describe('party token UI controller', () => {
     expect(ui.notifications.info).not.toHaveBeenCalled()
   })
 
-  test('label follows replicated snapshot, deploy requires a target in the viewed scene', async () => {
+  test('deploy requires a target party token in the viewed scene', async () => {
     const { party, scene } = await fixture()
-    expect(service.partyTokenActionLabel(party)).toBe('DCC.PartyTokenGather')
+    // Snapshot state still selects the action at call time ...
     party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
-    expect(service.partyTokenActionLabel(party)).toBe('DCC.PartyTokenDeploy')
     await service.togglePartyTokens({ party, scene })
+    // ... and the service validates the missing target with its own neutral notice.
     expect(ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyTokenMissingPartyTokenOnScene')
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
   })
@@ -1219,7 +1219,9 @@ describe('party token UI controller', () => {
     expect(controls[0].dataset.action).toBe('partyTokenAction')
     expect(controls[0].classList.add).toHaveBeenCalledWith('control-icon')
     expect(controls[0].classList.add).not.toHaveBeenCalledWith('dcc-party-token')
-    expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenDeploy')
+    // Party HUD control is always the neutral toggle, regardless of snapshot state.
+    expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenGatherDeploy')
+    expect(controls[0].setAttribute).toHaveBeenCalledWith('title', 'DCC.PartyTokenGatherDeploy')
     await controls[0].click({ preventDefault: vi.fn(), stopPropagation: vi.fn() })
     expect(game.socket.emit).toHaveBeenCalledTimes(1)
     expect(game.socket.emit.mock.calls[0][1].payload).toEqual({ action: 'deploy', partyId: party.id, sceneId: scene.id, partyTokenId: token.id })
@@ -1255,7 +1257,7 @@ describe('party token UI controller', () => {
     const { html, controls } = hudElement()
     registerPartyTokenHooks()
     hooks.renderTokenHUD({ document: token }, html)
-    expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenGather')
+    expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenGatherDeploy')
     await controls[0].click({ preventDefault: vi.fn(), stopPropagation: vi.fn() })
     expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith('DCC.PartyTokenUnlinkedToken')
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
@@ -1282,6 +1284,8 @@ describe('party token UI controller', () => {
     expect(controls).toHaveLength(0)
     hooks.renderTokenHUD({ document: a }, html)
     expect(controls).toHaveLength(1)
+    // Member HUD (no resolved Party) can only gather, so it keeps the Gather key.
+    expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenGather')
     await controls[0].click({ preventDefault: vi.fn(), stopPropagation: vi.fn() })
     expect(wait).toHaveBeenCalledTimes(1)
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()

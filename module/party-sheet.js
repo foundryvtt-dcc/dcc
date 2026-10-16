@@ -3,7 +3,7 @@
 import DCCActorSheet from './actor-sheet.js'
 import { handlePartyItemDrop } from './actor-sheet/drop.mjs'
 import HitPointsConfig from './hit-points-config.js'
-import { togglePartyTokens, partyTokenActionLabel, partyTokenActionIcon } from './party-token.mjs'
+import { togglePartyTokens } from './party-token.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -114,8 +114,6 @@ class DCCPartySheet extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
     context.canManagePartyTokens = !!game.user.isGM
-    context.partyTokenActionLabel = partyTokenActionLabel(this.actor)
-    context.partyTokenActionIcon = partyTokenActionIcon(this.actor)
 
     // Prepare party-specific data
     this.#preparePartyMembers(context)
