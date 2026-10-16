@@ -38,6 +38,8 @@ beforeEach(async () => {
 function gatherWorkflowFixture () {
   const fixture = gatherFixture()
   const { party, scene, make, a, b } = fixture
+  // The raw workflows are GM-only; the socket/UI path already authorizes callers.
+  game.user = { id: 'gm', isGM: true }
   const events = []
   let generatedId = 0
   vi.stubGlobal('foundry', {
@@ -442,6 +444,39 @@ describe('gather workflow', () => {
     expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
     expect(service.blockedPartyIds.has(party.id)).toBe(false)
     await expect(gather()).resolves.toMatchObject({ gathered: 2 })
+  })
+
+  test('rejects a non-GM caller with unauthorized before any mutation', async () => {
+    const { gather, events } = gatherWorkflowFixture()
+    game.user = { id: 'player', isGM: false }
+    await expect(gather()).rejects.toMatchObject({ code: 'unauthorized' })
+    expect(events).toEqual([])
+  })
+
+  test('rollback never deletes a foreign document occupying the new Party ID', async () => {
+    const { party, scene, make, gather } = gatherWorkflowFixture()
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (type, ids) => { await remove(type, ids); throw new Error('after-delete') })
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    let foreign
+    scene.createEmbeddedDocuments.mockImplementation(async (type, data, options) => {
+      const result = await create(type, data, options)
+      // While the originals are restored during rollback, a foreign document
+      // takes over the ID of the Party token we created.
+      if (options?.keepId) {
+        const partyDocument = scene.tokens.find(token => token.actorId === party.id)
+        if (partyDocument) {
+          foreign = make(partyDocument.id, 'foreign')
+          scene.tokens.splice(scene.tokens.indexOf(partyDocument), 1, foreign)
+        }
+      }
+      return result
+    })
+    await expect(gather()).rejects.toMatchObject({ code: 'member-delete-failed', rollbackComplete: false })
+    expect(foreign).toBeDefined()
+    expect(scene.tokens.get(foreign.id)).toBe(foreign)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(foreign.id)
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
   })
 })
 
@@ -862,6 +897,13 @@ describe('deploy workflow', () => {
     expect(party.unsetFlag).not.toHaveBeenCalled()
     expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
     expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+  })
+
+  test('rejects a non-GM caller with unauthorized before any mutation', async () => {
+    const { deploy, events } = await deployWorkflowFixture()
+    game.user = { id: 'player', isGM: false }
+    await expect(deploy()).rejects.toMatchObject({ code: 'unauthorized' })
+    expect(events).toEqual([])
   })
 })
 
@@ -1519,17 +1561,27 @@ test('returns ambiguous Party candidates instead of choosing one', () => {
 })
 
 test.each([
-  ['secondary running combat', 'scene', true, false, true],
-  ['inactive tracker but running', 'scene', true, false, true],
-  ['other scene', 'elsewhere', true, false, false],
-  ['unstarted', 'scene', false, false, false],
-  ['ended', 'scene', true, true, false],
-  ['global combat', null, true, false, false]
-])('protects exactly the explicit scene: %s', (label, sceneId, started, ended, expected) => {
+  ['secondary running combat', 'scene', true, true],
+  ['inactive tracker but running', 'scene', true, true],
+  ['other scene', 'elsewhere', true, false],
+  ['unstarted', 'scene', false, false],
+  ['global combat', null, true, false]
+])('protects exactly the explicit scene: %s', (label, sceneId, started, expected) => {
   const { scene, a } = gatherFixture()
   game.combat = { combatants: [] }
-  game.combats = [{ scene: sceneId && { id: sceneId }, started, ended, active: false, combatants: [{ tokenId: a.id }] }]
+  game.combats = [{ scene: sceneId && { id: sceneId }, started, active: false, combatants: [{ tokenId: a.id }] }]
   expect(service.isTokenInRunningCombat(a, scene)).toBe(expected)
+})
+
+test('only started combats still in the tracker protect their combatants', () => {
+  const { scene, a } = gatherFixture()
+  game.combat = { combatants: [] }
+  // v14 ends a Combat by deleting it, so an ended encounter is simply absent.
+  game.combats = []
+  expect(service.isTokenInRunningCombat(a, scene)).toBe(false)
+  // `ended` is not part of the v14 Combat model: a started, present combat protects.
+  game.combats = [{ scene, started: true, ended: true, combatants: [{ tokenId: a.id }] }]
+  expect(service.isTokenInRunningCombat(a, scene)).toBe(true)
 })
 
 test('resolves eligible members against every running combat, not game.combat', () => {

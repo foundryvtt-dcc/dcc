@@ -202,7 +202,7 @@ function gatherHudParties (scene, selection, token) {
 
 /** All started, still-present encounters in the supplied scene, not just the active tracker. */
 export function isTokenInRunningCombat (token, scene) {
-  return [...(game.combats ?? [])].some(combat => combat.scene?.id === scene.id && combat.started && !combat.ended &&
+  return [...(game.combats ?? [])].some(combat => combat.scene?.id === scene.id && combat.started &&
     [...combat.combatants].some(combatant => combatant.tokenId === token.id))
 }
 
@@ -224,7 +224,7 @@ export function findPartyCandidates (scene, selection) {
   return [...game.actors].filter(party => party.type === 'Party' && resolveGatherTokens(party, scene, selection).length)
 }
 
-/** Sheet gathering may use one member; the future multi-token HUD requires two. */
+/** The member HUD control requires two eligible selected members; the sheet may gather a single one. */
 export function isGatherHudEligible (party, scene, selection) {
   return selection.length >= 2 && resolveGatherTokens(party, scene, selection).length >= 2
 }
@@ -274,6 +274,7 @@ export function createPartyTokenSnapshot (party, scene, tokens) {
 
 /** Internal workflow only. Persistence is confirmed from documents, not API promises alone. */
 export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [], partyTokenId }) {
+  if (!game.user.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
   let context
   try {
     if (party?.isToken || party?.pack) throw new Error('invalid-party')
@@ -296,7 +297,7 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
 
   const snapshot = createPartyTokenSnapshot(party, scene, tokens)
   const originalIds = tokens.map(token => token.id)
-  const newPartyIds = []
+  const newPartyMembers = new Map()
   let uncertainPartyCreation = false
   let confirmedSave = false
   let memberDeleteStarted = false
@@ -325,12 +326,13 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
         const returnedIds = new Set((created ?? []).map(token => token.id))
         const additions = [...scene.tokens].filter(token => !before.has(token.id))
         const candidates = additions.filter(token => token.actorId === party.id)
-        if (returnedIds.size) newPartyIds.push(...additions.filter(token => returnedIds.has(token.id)).map(token => token.id))
-        else if (candidates.length) uncertainPartyCreation = true
+        if (returnedIds.size) {
+          for (const token of additions.filter(token => returnedIds.has(token.id))) newPartyMembers.set(token.id, token)
+        } else if (candidates.length) uncertainPartyCreation = true
       }
       partyToken = created?.length === 1 ? scene.tokens.get(created[0]?.id) : null
       if (!partyToken?.actorLink || partyToken.actorId !== party.id || partyToken.level !== levelId ||
-        newPartyIds.length !== 1 || newPartyIds[0] !== partyToken.id) throw new Error(code)
+        newPartyMembers.size !== 1 || !newPartyMembers.has(partyToken.id)) throw new Error(code)
     }
     // No original can be removed until both the snapshot and replacement exist.
     code = 'gather-context-changed'
@@ -366,12 +368,13 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       }
     }
     // Never remove the replacement while any original's restoration is unclear.
-    if (!rollbackIssues.length && newPartyIds.length) {
-      const remainingIds = newPartyIds.filter(id => scene.tokens.has(id))
+    // Delete only the document we created: a foreign one may have taken its ID.
+    if (!rollbackIssues.length && newPartyMembers.size) {
+      const remaining = [...newPartyMembers].filter(([id, document]) => scene.tokens.get(id) === document).map(([id]) => id)
       try {
-        if (remainingIds.length) await scene.deleteEmbeddedDocuments('Token', remainingIds)
+        if (remaining.length) await scene.deleteEmbeddedDocuments('Token', remaining)
       } catch (_) { rollbackIssues.push('party-delete-failed') }
-      if (newPartyIds.some(id => scene.tokens.has(id)) && !rollbackIssues.length) rollbackIssues.push('party-delete-failed')
+      if ([...newPartyMembers.keys()].some(id => scene.tokens.has(id)) && !rollbackIssues.length) rollbackIssues.push('party-delete-failed')
     }
     // Only discard our provisional flag after every token change is undone.
     if (!rollbackIssues.length) {
@@ -433,6 +436,7 @@ function currentDeployMembers (party, snapshot) {
 
 /** Internal, document-only workflow. No canvas, socket, persisted journal or reload recovery. */
 export async function deployPartyTokens ({ party, scene, partyTokenId }) {
+  if (!game.user.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
   let context
   try {
     if (party?.isToken || party?.pack) throw new Error('invalid-party')
