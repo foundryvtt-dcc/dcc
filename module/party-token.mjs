@@ -72,6 +72,7 @@ const partyTokenErrors = {
   'missing-snapshot': 'MissingSnapshot',
   'unlinked-party-token': 'UnlinkedToken',
   'unlinked-party-prototype': 'UnlinkedPrototype',
+  'unlinked-member-prototype': 'UnlinkedMemberPrototype',
   'invalid-gather-level': 'InvalidGatherLevel',
   'invalid-deploy-level': 'InvalidDeployLevel',
   'missing-source-scene': 'MissingSourceScene',
@@ -564,7 +565,7 @@ export function resolvePrototypeDeployContext (party, scene, { partyTokenId } = 
   const { members, skippedMemberIds } = prototypeDeployMembers(party, scene)
   // A token can only stand in for a linked member: refuse as a whole, never
   // partially, before any document is created.
-  if (members.some(actor => !actor.prototypeToken?.actorLink)) throw new Error('unlinked-party-prototype')
+  if (members.some(actor => !actor.prototypeToken?.actorLink)) throw new Error('unlinked-member-prototype')
   return { partyToken, members, skippedMemberIds }
 }
 

@@ -516,6 +516,27 @@ test('a legacy unlinked party token on the viewed scene is reported without any 
   }
 })
 
+test('deploy warns about an unlinked member prototype without changing the party token', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    const before = await page.evaluate(async ids => {
+      const scene = game.scenes.get(ids.scene)
+      const party = game.actors.get(ids.party)
+      await scene.deleteEmbeddedDocuments('Token', ids.tokens)
+      const [anchor] = await scene.createEmbeddedDocuments('Token', [
+        (await party.getTokenDocument({ actorLink: true, x: 1400, y: 1400, level: canvas.level.id }, { parent: scene })).toObject()
+      ])
+      await game.actors.get(ids.members[0]).update({ 'prototypeToken.actorLink': false })
+      return anchor.toObject()
+    }, ids)
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await expect(page.locator('#notifications')).toContainText('party members need “Link Actor Data” enabled in their own prototype token settings before deploying')
+    expect(await page.evaluate(ids => game.scenes.get(ids.scene).tokens.map(token => token.toObject()), ids)).toEqual([before])
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
+
 test('party aggregate reads live world actor HP without persisting it', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const created = []

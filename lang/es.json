@@ -626,6 +626,7 @@
   "DCC.PartyTokenMissingSnapshot": "No quedan miembros reunidos. Revisa el estado del grupo; vuelve a reunir a los miembros antes de desplegar.",
   "DCC.PartyTokenUnlinkedToken": "Una ficha del grupo no está vinculada. Activa «Vincular datos del actor» (Link Actor Data) en su configuración; no se cambiaron fichas ni copias.",
   "DCC.PartyTokenUnlinkedPrototype": "Activa «Vincular datos del actor» (Link Actor Data) en la ficha prototipo del grupo antes de reunir.",
+  "DCC.PartyTokenUnlinkedMemberPrototype": "Antes de desplegar, activa «Vincular datos del actor» (Link Actor Data) en la configuración de la ficha prototipo de cada miembro del grupo que lo necesite.",
   "DCC.PartyTokenInvalidGatherLevel": "Los miembros y la ficha del grupo deben estar en el nivel visible. Revisa nivel y selección; no se excluyen otros niveles silenciosamente.",
   "DCC.PartyTokenInvalidDeployLevel": "La ficha de destino no tiene un nivel de escena válido. Corrígelo antes de desplegar.",
   "DCC.PartyTokenMissingSourceScene": "Falta la escena de origen guardada. Revisa las copias manualmente; no se borró nada.",

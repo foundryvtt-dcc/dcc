@@ -626,6 +626,7 @@
   "DCC.PartyTokenMissingSnapshot": "Keine gesammelten Mitglieder mehr vorhanden. Prüfe den Gruppenstatus; sammle die Mitglieder erneut ein, bevor du aufstellst.",
   "DCC.PartyTokenUnlinkedToken": "Ein Token dieser Gruppe ist unverknüpft. Aktiviere „Akteurdaten verknüpfen“ (Link Actor Data) in seiner Token-Konfiguration; Tokens und Snapshots wurden nicht geändert.",
   "DCC.PartyTokenUnlinkedPrototype": "Aktiviere vor dem Sammeln „Akteurdaten verknüpfen“ (Link Actor Data) in der Prototyp-Token-Konfiguration dieser Gruppe.",
+  "DCC.PartyTokenUnlinkedMemberPrototype": "Aktiviere vor dem Aufstellen für die betroffenen Gruppenmitglieder „Akteurdaten verknüpfen“ (Link Actor Data) in den Einstellungen ihrer eigenen Prototyp-Tokens.",
   "DCC.PartyTokenInvalidGatherLevel": "Mitglieder und Gruppen-Token müssen auf der betrachteten Szenenebene liegen. Prüfe Ebene und Auswahl; Mitglieder auf anderen Ebenen werden nicht still ausgeschlossen.",
   "DCC.PartyTokenInvalidDeployLevel": "Der Ziel-Gruppen-Token hat keine gültige Szenenebene. Korrigiere seine Ebene vor dem Aufstellen.",
   "DCC.PartyTokenMissingSourceScene": "Die gespeicherte Ursprungsszene fehlt. Prüfe die Snapshots manuell; nichts wurde gelöscht.",

@@ -626,6 +626,7 @@
   "DCC.PartyTokenMissingSnapshot": "Non restano membri radunati. Controlla lo stato del gruppo; raduna di nuovo i membri prima di schierare.",
   "DCC.PartyTokenUnlinkedToken": "Una pedina del gruppo non è collegata. Abilita «Collega dati Attore» (Link Actor Data) nella sua configurazione; nessuna pedina o istantanea modificata.",
   "DCC.PartyTokenUnlinkedPrototype": "Abilita «Collega dati Attore» (Link Actor Data) nella pedina prototipo del gruppo prima di radunare.",
+  "DCC.PartyTokenUnlinkedMemberPrototype": "Prima di schierare, abilita «Collega dati Attore» (Link Actor Data) nelle impostazioni della pedina prototipo di ogni membro del gruppo interessato.",
   "DCC.PartyTokenInvalidGatherLevel": "Membri e pedina del gruppo devono essere sul livello visualizzato. Controlla livello e selezione; gli altri livelli non vengono esclusi silenziosamente.",
   "DCC.PartyTokenInvalidDeployLevel": "La pedina di destinazione non ha un livello valido. Correggilo prima di schierare.",
   "DCC.PartyTokenMissingSourceScene": "Manca la scena di origine salvata. Controlla manualmente le istantanee; nulla è stato cancellato.",

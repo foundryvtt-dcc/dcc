@@ -1207,7 +1207,7 @@ describe('prototype deploy workflow', () => {
   test('an unlinked prototype aborts before any mutation, never partially creating members', async () => {
     const { party, scene, partyToken, deploy, actors, events } = prototypeDeployFixture({ unlinked: ['b'] })
     const before = scene.tokens.map(token => token.toObject())
-    await expect(deploy()).rejects.toMatchObject({ code: 'unlinked-party-prototype' })
+    await expect(deploy()).rejects.toMatchObject({ code: 'unlinked-member-prototype' })
     expect(events).toEqual([])
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
     expect(partyToken.hidden).toBe(false)
@@ -1517,6 +1517,24 @@ describe('party token UI controller', () => {
     expect(game.socket.emit.mock.calls[0][1].payload).toEqual({ action: 'deploy', partyId: party.id, sceneId: scene.id, partyTokenId: partyToken.id })
   })
 
+  test('gather without a party token retains the party prototype code and notice', async () => {
+    const { party, scene } = await fixture()
+    party.prototypeToken.actorLink = false
+    await expect(service.togglePartyTokens({ party, scene, levelId: 'ground' })).resolves.toMatchObject({ error: { code: 'unlinked-party-prototype' } })
+    expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith('DCC.PartyTokenUnlinkedPrototype')
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('deploy with an unlinked member prototype reports the member code and notice', async () => {
+    const { party, scene, partyToken } = await socketFixture(prototypeDeployFixture({ unlinked: ['b'] }))
+    game.i18n = { localize: key => key, format: (key, data) => `${key}:${JSON.stringify(data)}` }
+    globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }
+    await expect(service.togglePartyTokens({ party, scene, levelId: 'ground' })).resolves.toMatchObject({ error: { code: 'unlinked-member-prototype' } })
+    expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith('DCC.PartyTokenUnlinkedMemberPrototype')
+    expect(partyToken.hidden).toBe(false)
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
   test('a click with no snapshot, members or party token only warns without mutating', async () => {
     const { party, scene } = await fixture()
     scene.tokens.splice(0)
@@ -1584,7 +1602,8 @@ describe('party token UI controller', () => {
     ['missing-scene', 'MissingScene'], ['missing-party-token-id', 'MissingPartyToken'], ['missing-party-token', 'MissingPartyTokenOnScene'],
     ['ambiguous-party-token', 'AmbiguousPartyToken'], ['party-token-in-combat', 'PartyInCombat'], ['party-blocked', 'Blocked'],
     ['snapshot-open', 'SnapshotOpen'], ['missing-snapshot', 'MissingSnapshot'], ['unlinked-party-token', 'UnlinkedToken'],
-    ['unlinked-party-prototype', 'UnlinkedPrototype'], ['invalid-gather-level', 'InvalidGatherLevel'], ['invalid-deploy-level', 'InvalidDeployLevel'],
+    ['unlinked-party-prototype', 'UnlinkedPrototype'], ['unlinked-member-prototype', 'UnlinkedMemberPrototype'],
+    ['invalid-gather-level', 'InvalidGatherLevel'], ['invalid-deploy-level', 'InvalidDeployLevel'],
     ['missing-source-scene', 'MissingSourceScene'], ['invalid-snapshot-token-id', 'InvalidSnapshot'], ['original-token-exists', 'OriginalsPresent'],
     ['member-token-already-present', 'MemberAlreadyPresent'],
     ['snapshot-save-failed', 'SnapshotSaveFailed'], ['party-create-failed', 'PartyCreateFailed'], ['gather-context-changed', 'GatherContextChanged'],

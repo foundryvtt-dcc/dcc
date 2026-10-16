@@ -626,6 +626,7 @@
   "DCC.PartyTokenMissingSnapshot": "Brak zebranych członków. Sprawdź stan drużyny; zbierz członków ponownie przed rozstawieniem.",
   "DCC.PartyTokenUnlinkedToken": "Żeton tej drużyny nie jest powiązany. Włącz „Powiąż dane aktora” (Link Actor Data) w jego konfiguracji; żetony i migawki nie zostały zmienione.",
   "DCC.PartyTokenUnlinkedPrototype": "Przed zebraniem włącz „Powiąż dane aktora” (Link Actor Data) w konfiguracji prototypu żetonu drużyny.",
+  "DCC.PartyTokenUnlinkedMemberPrototype": "Przed rozmieszczeniem włącz „Powiąż dane aktora” (Link Actor Data) w ustawieniach prototypu żetonu każdego członka drużyny, który tego wymaga.",
   "DCC.PartyTokenInvalidGatherLevel": "Członkowie i żeton drużyny muszą być na oglądanym poziomie sceny. Sprawdź poziom i zaznaczenie; inne poziomy nie są po cichu wykluczane.",
   "DCC.PartyTokenInvalidDeployLevel": "Żeton docelowy nie ma prawidłowego poziomu sceny. Popraw poziom przed rozstawieniem.",
   "DCC.PartyTokenMissingSourceScene": "Brak zapisanej sceny źródłowej. Ręcznie sprawdź migawki; niczego nie usunięto.",

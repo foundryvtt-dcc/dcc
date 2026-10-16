@@ -613,6 +613,7 @@
   "DCC.PartyTokenMissingSnapshot": "No gathered members remain. Check the party state; gather the members again before deploying.",
   "DCC.PartyTokenUnlinkedToken": "A token of this party is unlinked. Enable “Link Actor Data” in its token configuration; no tokens or snapshots were changed.",
   "DCC.PartyTokenUnlinkedPrototype": "Enable “Link Actor Data” in this party's prototype token configuration before gathering.",
+  "DCC.PartyTokenUnlinkedMemberPrototype": "One or more party members need “Link Actor Data” enabled in their own prototype token settings before deploying.",
   "DCC.PartyTokenInvalidGatherLevel": "Members and the party token must share the viewed scene level. Check the level and selection; members on other levels are not silently excluded.",
   "DCC.PartyTokenInvalidDeployLevel": "The target party token has no valid scene level. Correct its level before deploying.",
   "DCC.PartyTokenMissingSourceScene": "The saved source scene is missing. Manually inspect the saved snapshots; nothing was cleared.",
