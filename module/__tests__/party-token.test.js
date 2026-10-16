@@ -1045,6 +1045,17 @@ describe('party token UI controller', () => {
     return data
   }
 
+  test('a controlled party token never suppresses the scene-wide gather fallback', async () => {
+    const { party, scene, partyToken, a, b } = await fixture()
+    // Foundry leaves the token it just created selected: place the party token
+    // and control it as a drop would, then press Gather with no member selected.
+    scene.tokens.push(partyToken)
+    const result = await service.togglePartyTokens({ party, scene, levelId: 'ground', selection: [partyToken] })
+    expect(result).toMatchObject({ gathered: 2 })
+    expect(party.getFlag('dcc', 'partyTokenSnapshots').members.map(member => member.tokenData._id)).toEqual([a.id, b.id])
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+  })
+
   test.each(['subset', 'foreign', 'mixed', 'all'])('sheet sends %s selection through central socket without silently broadening', async mode => {
     const { party, scene, a, b, foreign } = await fixture()
     const selection = { subset: [a], foreign: [foreign], mixed: [a, foreign], all: [] }[mode]

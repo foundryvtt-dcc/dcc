@@ -130,6 +130,38 @@ test('sheet gathers selected individualized members; moved party HUD restores th
   }
 })
 
+test('gather falls back to the whole scene when only the freshly dropped party token is selected', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    // Dropping a token leaves it selected: place the party token, control it and
+    // leave every member token unselected, exactly as after dropping it manually.
+    const partyTokenId = await page.evaluate(async ids => {
+      const scene = game.scenes.get(ids.scene)
+      const doc = await game.actors.get(ids.party).getTokenDocument({ x: 1400, y: 1400, level: scene.levels.contents[0].id }, { parent: scene })
+      const token = (await scene.createEmbeddedDocuments('Token', [doc.toObject()]))[0]
+      canvas.tokens.releaseAll()
+      canvas.tokens.get(token.id).control()
+      return token.id
+    }, ids)
+    await page.evaluate(async ids => { await game.actors.get(ids.party).sheet.render(true) }, ids)
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3, ids)
+    const state = await page.evaluate(ids => {
+      const scene = game.scenes.get(ids.scene)
+      return {
+        saved: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots').members.length,
+        memberTokensLeft: scene.tokens.filter(token => ids.members.includes(token.actorId)).length,
+        partyTokens: scene.tokens.filter(token => token.actorId === ids.party).map(token => token.id)
+      }
+    }, ids)
+    expect(state.saved).toBe(3)
+    expect(state.memberTokensLeft).toBe(0)
+    expect(state.partyTokens).toEqual([partyTokenId])
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
+
 test('UI travel requires target token, blocks combat and skips departed or deleted saved members', async ({ page }) => {
   const ids = await createSwapFixture(page)
   let combatId

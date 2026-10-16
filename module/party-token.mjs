@@ -121,7 +121,13 @@ export async function togglePartyTokens ({ party, scene, levelId, selection = []
     if (action === 'gather') {
       payload.levelId = levelId
       // Keep foreign/combat/stale IDs: only the executing service filters them.
-      payload.tokenIds = selection.map(token => (token.document ?? token).id)
+      // A Party token is never a gather candidate, but Foundry leaves a freshly
+      // dropped token selected; treating it as an explicit selection would make
+      // "Gather" find no members right after placing the party token.
+      payload.tokenIds = selection
+        .map(token => token.document ?? token)
+        .filter(document => document.actorId !== party.id)
+        .map(document => document.id)
     }
     if (partyTokenId !== undefined) payload.partyTokenId = partyTokenId
     else {

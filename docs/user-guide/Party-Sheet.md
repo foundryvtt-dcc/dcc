@@ -59,6 +59,7 @@ You can use the topmost box when you right-click a token to edit their hp - you 
 The party sheet header has a **Gather / Deploy** button (only a GM sees it). What it does is decided when you click, based on the party's saved state: with no gathered members it collects the party's member tokens from the current scene and replaces them with a single party token, so you can move the whole group at once; with members already gathered, it puts them back down. The button label and icon never change — only the action does.
 
 - When you have member tokens selected, gathering takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
+- A party token that Foundry left selected after you dropped it onto the scene does not count as a selection: gathering still takes every member token on the scene.
 - Foreign tokens in the selection are left untouched.
 - Member tokens without **Link Actor Data** are skipped: the party token can only stand in for linked members, so an unlinked member token stays where it is.
 - The next click then deploys: it places the members back around the party token. Each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
