@@ -125,7 +125,7 @@ export async function togglePartyTokens ({ party, scene, levelId, selection = []
     party = game.actors.get(party?.id)
     if (party?.type !== 'Party' || party.isToken || party.pack) throw new Error('invalid-party')
     if (!scene) throw new Error('missing-scene')
-    action ??= party.flags?.dcc?.partyTokenSnapshots != null ? 'deploy' : 'gather'
+    action ??= hasCollectedMembers(party) ? 'deploy' : 'gather'
     const payload = { action, partyId: party.id, sceneId: scene.id }
     if (action === 'gather') {
       payload.levelId = levelId
