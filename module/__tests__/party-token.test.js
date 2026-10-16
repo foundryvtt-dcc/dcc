@@ -1710,12 +1710,12 @@ test.each(['gather', 'deploy'])('blocked Party prevents %s without implementing 
 })
 
 // Model the v14 document geometry contract; native snapping stays Foundry's job.
-function placementFixture (type) {
-  const grid = { size: 100, sizeX: 100, sizeY: 100, isHexagonal: type === 'hexagonal', isGridless: type === 'gridless' }
+function placementFixture (type, { sizeY = 100 } = {}) {
+  const grid = { size: 100, sizeX: 100, sizeY, isHexagonal: type === 'hexagonal', isGridless: type === 'gridless' }
   grid.getSnappedPoint = vi.fn(({ x, y }) => {
     if (grid.isGridless) return { x, y }
     const step = grid.isHexagonal ? 75 : 100
-    return { x: Math.round(x / step) * step, y: Math.round(y / 100) * 100 }
+    return { x: Math.round(x / step) * step, y: Math.round(y / grid.sizeY) * grid.sizeY }
   })
   const scene = { grid }
   vi.stubGlobal('TokenDocument', class {
@@ -1745,6 +1745,30 @@ test.each([0, 1, 8, 24, 80, 17000])('square spiral returns %i unique center-free
     ])
   }
   if (count === 24) expect(placements.every(p => Math.max(Math.abs(p.x), Math.abs(p.y)) <= 200)).toBe(true)
+})
+
+test('hexagonal placements are integer token coordinates, unique and centre-free', () => {
+  // A real hex grid has an irrational row height, so its snapped positions are
+  // fractional; TokenDocument.x/y are integer fields and Foundry rounds them on
+  // create, so computeDeployPlacements must round before returning.
+  const scene = placementFixture('hexagonal', { sizeY: 100 * 2 / Math.sqrt(3) })
+  const members = [{ width: 2, height: 1 }, { width: 1, height: 2 }, { width: 1, height: 1 }]
+  const center = { x: 500.5, y: 620.25 }
+  const placements = service.computeDeployPlacements(scene, center, members)
+  expect(placements).toEqual(service.computeDeployPlacements(scene, center, members))
+  expect(new Set(placements.map(p => `${p.x},${p.y}`)).size).toBe(placements.length)
+  for (const position of placements) {
+    expect(Number.isInteger(position.x)).toBe(true)
+    expect(Number.isInteger(position.y)).toBe(true)
+  }
+  for (const [i, position] of placements.entries()) {
+    const rect = { ...position, w: members[i].width * 100, h: members[i].height * 100 }
+    expect(center.x < rect.x || center.x > rect.x + rect.w || center.y < rect.y || center.y > rect.y + rect.h).toBe(true)
+    for (let j = 0; j < i; j++) {
+      const other = placements[j]
+      expect(rect.x >= other.x + members[j].width * 100 || other.x >= rect.x + rect.w || rect.y >= other.y + members[j].height * 100 || other.y >= rect.y + rect.h).toBe(true)
+    }
+  }
 })
 
 test.each(['square', 'hexagonal', 'gridless'])('placement delegates %s snapping to scene-parented TokenDocuments with enough spacing', type => {

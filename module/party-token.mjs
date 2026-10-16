@@ -644,7 +644,10 @@ export function computeDeployPlacements (scene, center, tokenData) {
     const { col, row } = offsets.next().value
     const pivot = document.getCenterPoint({ x: 0, y: 0 })
     const { x, y } = document.getSnappedPosition({ x: center.x + col * stepX - pivot.x, y: center.y + row * stepY - pivot.y })
-    return { x, y }
+    // TokenDocument.x/y are integer fields (Foundry rounds them on create), so
+    // round here too: otherwise a fractional hex snap would never match the
+    // persisted document and deploy verification would abort.
+    return { x: Math.round(x), y: Math.round(y) }
   })
 }
 
