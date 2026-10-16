@@ -31,6 +31,11 @@ async function createSwapFixture (page) {
       }, { parent: scene })).toObject())
     }
     const tokens = await scene.createEmbeddedDocuments('Token', data)
+    // Foundry does not guarantee that a create batch is returned in input
+    // order, so map the created Tokens back to their Actor instead of trusting
+    // the return order — the same reason deployPartyTokens matches by ID.
+    const byActor = new Map(tokens.map(token => [token.actorId, token]))
+    const ordered = [...members, foreign].map(actor => byActor.get(actor.id))
     await party.sheet.render(true)
     return {
       party: party.id,
@@ -38,8 +43,8 @@ async function createSwapFixture (page) {
       members: members.map(actor => actor.id),
       scene: scene.id,
       scenes: [scene.id],
-      tokens: tokens.map(token => token.id),
-      originals: tokens.map(token => token.toObject())
+      tokens: ordered.map(token => token.id),
+      originals: ordered.map(token => token.toObject())
     }
   })
 }
@@ -56,51 +61,14 @@ async function cleanSwapFixture (page, ids) {
 const sheetSwap = '.dcc.actor.party [data-action="togglePartyTokens"]'
 const hudSwap = '#token-hud [data-action="partyTokenAction"]'
 
-/**
- * Select exactly `tokenIds` on the canvas and resolve once the selection holds.
- *
- * The canvas draws asynchronously (and `Scene#view` can leave a previous
- * Scene's placeables briefly in the layer), so a one-shot `control()` call can
- * either be dropped or select a placeable whose document belongs to another
- * Scene. The Party helpers read `canvas.tokens.controlled` and ignore
- * placeables outside the current Scene, so an unverified selection silently
- * degrades to "no selection" or "one member". Re-apply the selection across
- * polls until every requested Token is controlled *and* belongs to the
- * currently viewed Scene.
- */
-async function selectTokens (page, tokenIds) {
-  await page.waitForFunction(ids => {
-    const scene = canvas.scene
-    const controlled = canvas.tokens?.controlled ?? []
-    // Drop Tokens that should no longer be selected (never release a Token we
-    // keep: releasing the HUD's bound Token would close the HUD).
-    for (const token of controlled) if (!ids.includes(token.id)) token.release()
-    // (Re)claim the requested Tokens, replacing any stale placeable that still
-    // points at a different Scene.
-    for (const id of ids) {
-      const current = (canvas.tokens?.controlled ?? []).find(token => token.id === id)
-      if (!current || current.document.parent?.id !== scene.id) canvas.tokens?.get(id)?.control({ releaseOthers: false })
-    }
-    const now = canvas.tokens?.controlled ?? []
-    return ids.length === now.length &&
-      ids.every(id => now.some(token => token.id === id && token.document.parent?.id === scene.id))
-  }, tokenIds, { timeout: 15000 })
-}
-
-/** Release the canvas selection and resolve once nothing is controlled. */
-async function releaseTokens (page) {
-  await page.waitForFunction(() => {
-    if (!(canvas.tokens?.controlled?.length)) return true
-    canvas.tokens?.releaseAll()
-    return false
-  }, null, { timeout: 10000 })
-}
-
 test('sheet gathers selected individualized members; moved party HUD restores them with fresh IDs', async ({ page }) => {
   const ids = await createSwapFixture(page)
   try {
     await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
-    await selectTokens(page, [ids.tokens[0], ids.tokens[1], ids.tokens[3]])
+    await page.evaluate(ids => {
+      canvas.tokens.releaseAll()
+      for (const id of [ids.tokens[0], ids.tokens[1], ids.tokens[3]]) canvas.tokens.get(id).control({ releaseOthers: false })
+    }, ids)
     await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather')
     await page.locator(sheetSwap).evaluate(element => element.click())
     await page.waitForFunction(ids => {
@@ -160,7 +128,7 @@ test('UI travel requires target token, blocks combat and skips departed or delet
   let combatId
   try {
     await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
-    await releaseTokens(page)
+    await page.evaluate(() => canvas.tokens.releaseAll())
     await page.locator(sheetSwap).evaluate(element => element.click())
     await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 && canvas.scene.tokens.size === 2, ids)
     const targetId = await page.evaluate(async () => {
@@ -219,11 +187,16 @@ test('member HUD offers gather for two controlled members with a cancellable par
     }, ids)
     ids.actors.push(other)
     await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
-    await selectTokens(page, [ids.tokens[0]])
-    await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, ids.tokens[0])
+    await page.evaluate(async ids => {
+      canvas.tokens.releaseAll()
+      canvas.tokens.get(ids.tokens[0]).control()
+      await canvas.hud.token.bind(canvas.tokens.get(ids.tokens[0]))
+    }, ids)
     await expect(page.locator(hudSwap)).toHaveCount(0)
-    await selectTokens(page, [ids.tokens[0], ids.tokens[1]])
-    await page.evaluate(async () => { await canvas.hud.token.render(true) })
+    await page.evaluate(async ids => {
+      canvas.tokens.get(ids.tokens[1]).control({ releaseOthers: false })
+      await canvas.hud.token.render(true)
+    }, ids)
     await expect(page.locator(hudSwap)).toHaveAccessibleName('Gather')
     await page.locator(hudSwap).evaluate(element => element.click())
     const dialog = page.locator('.dialog').filter({ hasText: 'Which party should gather' })
