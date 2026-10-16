@@ -638,6 +638,7 @@ async function deploySnapshotPartyTokens (party, scene, partyTokenId) {
       !foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot) ||
       !foundry.utils.equals(currentDeployMembers(party, snapshot), members)) throw new Error(code)
     assertOriginalTokensAbsent(snapshot)
+    assertNoIndependentMemberTokens(scene, members, ownMembers)
     if (withParty) {
       const current = resolveDeployContext(party, scene, { partyTokenId: originalParty.id }).partyToken
       if (current !== originalParty || current.actorId !== party.id || !current.actorLink ||
@@ -699,6 +700,7 @@ async function deploySnapshotPartyTokens (party, scene, partyTokenId) {
     await party.unsetFlag('dcc', 'partyTokenSnapshots')
     if (party.getFlag('dcc', 'partyTokenSnapshots') != null) throw new Error(code)
     assertOriginalTokensAbsent(snapshot)
+    assertNoIndependentMemberTokens(scene, members, ownMembers)
     assertReplacements()
     if (!sameTokenSource(scene.tokens.get(originalParty.id), markerSource)) throw new Error(code)
     return result

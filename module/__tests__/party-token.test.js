@@ -832,6 +832,74 @@ describe('deploy workflow', () => {
     expect(partyToken.hidden).toBe(true)
   })
 
+  test.each(['member creation', 'marker hide', 'snapshot clear'])('snapshot deploy rejects an independent member arriving during awaited %s and rolls back only own tokens', async stage => {
+    const { party, scene, partyToken, make, snapshot, deploy } = await deployWorkflowFixture()
+    const marker = partyToken.toObject()
+    const external = make('eeeeeeeeeeeeeeee', 'a')
+    const externalSource = external.toObject()
+    const own = []
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const created = await create(...args)
+      own.push(...created)
+      if (stage === 'member creation') scene.tokens.push(external)
+      return created
+    })
+    if (stage === 'marker hide') {
+      const update = partyToken.update.getMockImplementation()
+      partyToken.update.mockImplementationOnce(async changes => {
+        const result = await update(changes)
+        scene.tokens.push(external)
+        return result
+      })
+    }
+    if (stage === 'snapshot clear') {
+      const clear = party.unsetFlag.getMockImplementation()
+      party.unsetFlag.mockImplementationOnce(async (...args) => {
+        const result = await clear(...args)
+        scene.tokens.push(external)
+        return result
+      })
+    }
+
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-token-already-present', rollbackComplete: true, rollbackIssues: [] })
+    expect(own).toHaveLength(2)
+    expect(own.every(token => !scene.tokens.has(token.id))).toBe(true)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).toEqual(expect.arrayContaining(own.map(token => token.id)))
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toEqual([external])
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(external.toObject()).toEqual(externalSource)
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+    expect(partyToken.toObject()).toEqual(marker)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+  })
+
+  test('snapshot deploy blocks retry if a foreign same-actor token takes an own member ID during creation', async () => {
+    const { party, scene, partyToken, make, snapshot, deploy } = await deployWorkflowFixture()
+    const marker = partyToken.toObject()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    let external
+    let own
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const created = await create(...args)
+      own = created[0]
+      external = make(own.id, 'a')
+      scene.tokens.splice(scene.tokens.indexOf(own), 1, external)
+      return created
+    })
+
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: false })
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(scene.tokens).not.toContain(own)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
+    expect(scene.tokens.filter(token => token.actorId === 'b')).toHaveLength(0)
+    expect(partyToken.toObject()).toEqual(marker)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+  })
+
   test.each(['marker-restore-throw', 'marker-restore-silent', 'cleanup-throw', 'cleanup-silent', 'cleanup-partial', 'snapshot-restore'])('deploy incomplete rollback (%s) retains data and follow-up clicks on both actions are no-ops', async mode => {
     const { party, scene, partyToken, snapshot, deploy, gather } = await deployWorkflowFixture()
     // Fail after the marker was hidden, so rollback has to undo the marker too.
@@ -882,14 +950,14 @@ describe('deploy workflow', () => {
     expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
   })
 
-  test('deploy rollback only deletes proven own returned members, not a concurrent same-actor token', async () => {
+  test('deploy refuses a concurrent same-actor token without hiding the marker or deleting the external token', async () => {
     const { scene, make, partyToken, deploy } = await deployWorkflowFixture()
     const external = make('eeeeeeeeeeeeeeee', 'a')
     const create = scene.createEmbeddedDocuments.getMockImplementation()
     scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => { const result = await create(...args); scene.tokens.push(external); return result })
-    partyToken.update.mockRejectedValueOnce(new Error('hide'))
-    await expect(deploy()).rejects.toMatchObject({ code: 'party-delete-failed', rollbackComplete: true })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-token-already-present', rollbackComplete: true })
     expect(scene.tokens.filter(t => ['a', 'b'].includes(t.actorId))).toEqual([external])
+    expect(partyToken.update).not.toHaveBeenCalled()
   })
 
   test.each(['original', 'roster', 'snapshot', 'party-missing', 'party-changed', 'combat', 'world', 'party-type', 'level', 'legacy'])('deploy rechecks awaited creation changes (%s) before Party destruction', async mode => {
