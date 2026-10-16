@@ -637,7 +637,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "无法移除已集合的成员棋子。已回滚更改；重试前请检查棋子权限。",
   "DCC.PartyTokenDeployContextChanged": "展开期间队伍或保存的成员发生变化。已回滚更改；请检查目标棋子和成员列表。",
   "DCC.PartyTokenMemberCreateFailed": "无法恢复成员棋子。已回滚更改；请检查棋子数据和创建权限。",
-  "DCC.PartyTokenPartyDeleteFailed": "无法移除已展开的队伍棋子。已回滚更改；请检查其权限。",
+  "DCC.PartyTokenPartyDeleteFailed": "无法更新已展开的队伍棋子。已回滚更改；请检查其权限。",
   "DCC.PartyTokenSnapshotClearFailed": "无法清除已使用的快照。已回滚更改；请检查队伍状态和权限。",
   "DCC.PartyTokenRollbackFailed": "操作失败且无法确认回滚完成。请停止操作并手动检查棋子及保存的快照。重新加载不会修复此状态。",
   "DCC.PartyTokenUnexpectedError": "队伍棋子出现意外错误。重试前请检查棋子和快照；技术详情见控制台。",

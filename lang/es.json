@@ -637,7 +637,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "No se pudieron retirar las fichas reunidas. Cambios revertidos; revisa sus permisos antes de reintentar.",
   "DCC.PartyTokenDeployContextChanged": "El grupo o los miembros guardados cambiaron al desplegar. Cambios revertidos; revisa destino y lista de miembros.",
   "DCC.PartyTokenMemberCreateFailed": "No se pudieron restaurar las fichas de miembros. Cambios revertidos; revisa datos y permisos de creación.",
-  "DCC.PartyTokenPartyDeleteFailed": "No se pudo retirar la ficha del grupo desplegado. Cambios revertidos; revisa sus permisos.",
+  "DCC.PartyTokenPartyDeleteFailed": "No se pudo actualizar la ficha del grupo desplegado. Cambios revertidos; revisa sus permisos.",
   "DCC.PartyTokenSnapshotClearFailed": "No se pudieron borrar las copias usadas. Cambios revertidos; revisa estado del grupo y permisos.",
   "DCC.PartyTokenRollbackFailed": "La operación falló y no se confirmó la restauración. Detente y revisa manualmente fichas y copias. Recargar no repara este estado.",
   "DCC.PartyTokenUnexpectedError": "Error inesperado en las fichas del grupo. Revisa fichas y copias antes de reintentar; detalles técnicos en la consola.",

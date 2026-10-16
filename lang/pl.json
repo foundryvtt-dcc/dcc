@@ -637,7 +637,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "Nie udało się usunąć zebranych żetonów. Zmiany cofnięto; sprawdź uprawnienia przed ponowieniem próby.",
   "DCC.PartyTokenDeployContextChanged": "Drużyna lub zapisani członkowie zmienili się podczas rozstawiania. Zmiany cofnięto; sprawdź cel i listę członków.",
   "DCC.PartyTokenMemberCreateFailed": "Nie udało się przywrócić żetonów członków. Zmiany cofnięto; sprawdź dane i uprawnienia tworzenia.",
-  "DCC.PartyTokenPartyDeleteFailed": "Nie udało się usunąć rozstawionego żetonu drużyny. Zmiany cofnięto; sprawdź jego uprawnienia.",
+  "DCC.PartyTokenPartyDeleteFailed": "Nie udało się zaktualizować rozstawionego żetonu drużyny. Zmiany cofnięto; sprawdź jego uprawnienia.",
   "DCC.PartyTokenSnapshotClearFailed": "Nie udało się usunąć wykorzystanych migawek. Zmiany cofnięto; sprawdź stan drużyny i uprawnienia.",
   "DCC.PartyTokenRollbackFailed": "Operacja nie powiodła się, a przywrócenie nie zostało potwierdzone. Zatrzymaj się i ręcznie sprawdź żetony oraz migawki. Przeładowanie nie naprawi tego stanu.",
   "DCC.PartyTokenUnexpectedError": "Nieoczekiwany błąd żetonów drużyny. Sprawdź żetony i migawki przed ponowieniem próby; szczegóły techniczne w konsoli.",

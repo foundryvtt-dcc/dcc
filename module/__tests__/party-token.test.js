@@ -290,6 +290,26 @@ describe('gather workflow', () => {
     expect(partyToken.toObject()).toEqual({ ...before, x: 200, y: 100, hidden: false })
   })
 
+  test('gather snaps a reused marker to integer coordinates on a hexagonal grid', async () => {
+    const { party, scene, partyToken, gather } = await gatherWorkflowFixture()
+    // A real hex grid has an irrational row height, so its snapped positions are
+    // fractional; TokenDocument.x/y are integer fields and Foundry rounds them on
+    // save, so the marker must be moved to rounded coordinates.
+    Object.assign(scene, placementFixture('hexagonal', { sizeY: 100 * 2 / Math.sqrt(3) }))
+    await partyToken.update({ x: 700, y: 800, hidden: true })
+    const before = partyToken.toObject()
+    scene.tokens.push(partyToken)
+    partyToken.move.mockClear()
+    partyToken.update.mockClear()
+    await expect(gather()).resolves.toMatchObject({ gathered: 2, partyTokenId: partyToken.id })
+    expect(partyToken.move).toHaveBeenCalledExactlyOnceWith({ x: 150, y: 115, action: 'displace', snapped: true })
+    expect(partyToken.update).toHaveBeenCalledExactlyOnceWith({ hidden: false })
+    expect(partyToken.toObject()).toEqual({ ...before, x: 150, y: 115, hidden: false })
+    expect(Number.isInteger(partyToken.x)).toBe(true)
+    expect(Number.isInteger(partyToken.y)).toBe(true)
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+  })
+
   test('an incomplete marker restore keeps recovery data and blocks both actions', async () => {
     const { party, scene, partyToken, gather } = await gatherWorkflowFixture()
     await partyToken.update({ x: 700, y: 800, hidden: true })
@@ -1856,8 +1876,10 @@ function gatherFixture (events = []) {
       getSnappedPosition: position => new TokenDocument(data, { parent: scene }).getSnappedPosition(position),
       move: vi.fn(async waypoint => {
         events.push(actorId === party.id ? 'party-move' : 'member-move')
-        Object.assign(data, { x: waypoint.x, y: waypoint.y })
-        Object.assign(token, { x: waypoint.x, y: waypoint.y })
+        // TokenDocument.x/y are integer fields: Foundry rounds them on save.
+        const { x, y } = { x: Math.round(waypoint.x), y: Math.round(waypoint.y) }
+        Object.assign(data, { x, y })
+        Object.assign(token, { x, y })
         return true
       }),
       update: vi.fn(async changes => {

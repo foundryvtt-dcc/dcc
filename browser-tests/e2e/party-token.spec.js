@@ -476,6 +476,19 @@ for (const [label, gridType] of [['hexagonal', 2], ['gridless', 0]]) {
         expect(center.x > rect.x && center.x < rect.x + rect.w && center.y > rect.y && center.y < rect.y + rect.h).toBe(false)
         for (let j = 0; j < i; j++) expect(overlaps(rect, members[j])).toBe(false)
       }
+
+      // Gather again: this reuses the existing anchor instead of creating one.
+      // A fractional hex snap must still land on the integer token coordinates.
+      await page.locator(sheetSwap).evaluate(element => element.click())
+      await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 &&
+        ids.members.every(actorId => !canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
+      const reused = await page.evaluate(ids => {
+        const token = canvas.scene.tokens.find(token => token.actorId === ids.party)
+        return { x: token.x, y: token.y, hidden: token.hidden }
+      }, ids)
+      expect(Number.isInteger(reused.x)).toBe(true)
+      expect(Number.isInteger(reused.y)).toBe(true)
+      expect(reused.hidden).toBe(false)
     } finally {
       await cleanSwapFixture(page, ids)
     }

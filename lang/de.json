@@ -637,7 +637,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "Gesammelte Mitglieder-Tokens konnten nicht entfernt werden. Änderungen wurden zurückgenommen; prüfe vor erneutem Versuch die Token-Rechte.",
   "DCC.PartyTokenDeployContextChanged": "Gruppe oder gespeicherte Mitglieder haben sich beim Aufstellen geändert. Änderungen wurden zurückgenommen; prüfe Ziel-Token und Mitgliederliste.",
   "DCC.PartyTokenMemberCreateFailed": "Mitglieder-Tokens konnten nicht wiederhergestellt werden. Änderungen wurden zurückgenommen; prüfe Token-Daten und Erstellungsrechte.",
-  "DCC.PartyTokenPartyDeleteFailed": "Aufgestellter Gruppen-Token konnte nicht entfernt werden. Änderungen wurden zurückgenommen; prüfe seine Rechte.",
+  "DCC.PartyTokenPartyDeleteFailed": "Aufgestellter Gruppen-Token konnte nicht aktualisiert werden. Änderungen wurden zurückgenommen; prüfe seine Rechte.",
   "DCC.PartyTokenSnapshotClearFailed": "Verbrauchte Snapshots konnten nicht gelöscht werden. Änderungen wurden zurückgenommen; prüfe Gruppenstatus und Rechte.",
   "DCC.PartyTokenRollbackFailed": "Vorgang fehlgeschlagen; Wiederherstellung konnte nicht bestätigt werden. Stoppe und prüfe Tokens und gespeicherte Snapshots manuell. Neuladen repariert diesen Zustand nicht.",
   "DCC.PartyTokenUnexpectedError": "Unerwarteter Gruppen-Token-Fehler. Prüfe Tokens und Snapshots vor erneutem Versuch; technische Details stehen in der Konsole.",

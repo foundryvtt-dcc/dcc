@@ -394,7 +394,11 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       code = 'party-create-failed'
       previousPartySource = { x: partyToken.x, y: partyToken.y, hidden: !!partyToken.hidden }
       const pivot = partyToken.getCenterPoint({ x: 0, y: 0 })
-      const position = partyToken.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y })
+      const snapped = partyToken.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y })
+      // TokenDocument.x/y are integer fields and Foundry rounds them on save, so
+      // round here too: a fractional hex snap would never match the persisted
+      // document and the verification below would abort.
+      const position = { ...snapped, x: Math.round(snapped.x), y: Math.round(snapped.y) }
       // A plain position update runs through v14's animated movement pipeline and
       // does not reliably reach the target. The supported way to relocate the
       // anchor deterministically is the movement API with an explicit `displace`

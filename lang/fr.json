@@ -624,7 +624,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "Impossible de retirer les pions rassemblés. Modifications annulées ; vérifiez leurs droits avant de réessayer.",
   "DCC.PartyTokenDeployContextChanged": "Le groupe ou les membres sauvegardés ont changé pendant le déploiement. Modifications annulées ; vérifiez le pion cible et la liste des membres.",
   "DCC.PartyTokenMemberCreateFailed": "Impossible de restaurer les pions des membres. Modifications annulées ; vérifiez leurs données et les droits de création.",
-  "DCC.PartyTokenPartyDeleteFailed": "Impossible de retirer le pion du groupe déployé. Modifications annulées ; vérifiez ses droits.",
+  "DCC.PartyTokenPartyDeleteFailed": "Impossible de mettre à jour le pion du groupe déployé. Modifications annulées ; vérifiez ses droits.",
   "DCC.PartyTokenSnapshotClearFailed": "Impossible d'effacer les instantanés utilisés. Modifications annulées ; vérifiez l'état du groupe et les droits.",
   "DCC.PartyTokenRollbackFailed": "Échec de l'opération et restauration non confirmée. Arrêtez et vérifiez manuellement pions et instantanés. Recharger ne répare pas cet état.",
   "DCC.PartyTokenUnexpectedError": "Erreur inattendue des pions du groupe. Vérifiez pions et instantanés avant de réessayer ; détails techniques dans la console.",

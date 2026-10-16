@@ -637,7 +637,7 @@
   "DCC.PartyTokenMemberDeleteFailed": "Impossibile rimuovere le pedine radunate. Modifiche annullate; controlla i permessi prima di riprovare.",
   "DCC.PartyTokenDeployContextChanged": "Gruppo o membri salvati cambiati durante lo schieramento. Modifiche annullate; controlla destinazione ed elenco membri.",
   "DCC.PartyTokenMemberCreateFailed": "Impossibile ripristinare le pedine dei membri. Modifiche annullate; controlla dati e permessi di creazione.",
-  "DCC.PartyTokenPartyDeleteFailed": "Impossibile rimuovere la pedina del gruppo schierato. Modifiche annullate; controlla i suoi permessi.",
+  "DCC.PartyTokenPartyDeleteFailed": "Impossibile aggiornare la pedina del gruppo schierato. Modifiche annullate; controlla i suoi permessi.",
   "DCC.PartyTokenSnapshotClearFailed": "Impossibile cancellare le istantanee usate. Modifiche annullate; controlla stato del gruppo e permessi.",
   "DCC.PartyTokenRollbackFailed": "Operazione fallita e ripristino non confermato. Fermati e controlla manualmente pedine e istantanee. Ricaricare non ripara questo stato.",
   "DCC.PartyTokenUnexpectedError": "Errore imprevisto delle pedine del gruppo. Controlla pedine e istantanee prima di riprovare; dettagli tecnici nella console.",
