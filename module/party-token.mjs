@@ -108,6 +108,29 @@ function hasCollectedMembers (party) {
   return party.flags?.dcc?.partyTokenSnapshots != null
 }
 
+/**
+ * Derive the neutral control's action on the initiating client.
+ *
+ * The authoritative state is the snapshot flag plus the presence of this
+ * party's tokens on the supplied scene; a party token's visibility is never
+ * read. Never throws: ambiguity and a legacy unlinked token are reported by the
+ * workflow's existing notices, not by a new chooser here.
+ *
+ * @returns {'gather'|'deploy'|null} `null` means "nothing to act on": no mutation, only a hint.
+ */
+export function derivePartyTokenAction (party, scene) {
+  try {
+    if (hasCollectedMembers(party)) return 'deploy'
+    if (resolveGatherTokens(party, scene).length) return 'gather'
+    // No member tokens here: a party token turns the click into the prototype
+    // deploy path. Any token of this party qualifies (linked or not) so the
+    // deploy preflight can report ambiguity or a legacy token unchanged.
+    return [...scene.tokens].some(token => token.actorId === party?.id) ? 'deploy' : null
+  } catch (_) {
+    return null
+  }
+}
+
 /** Initiator-only controller: freeze the action and selection before any asynchronous work. */
 export async function togglePartyTokens ({ party, scene, levelId, selection = [], partyTokenId, action }) {
   try {
@@ -116,7 +139,8 @@ export async function togglePartyTokens ({ party, scene, levelId, selection = []
     party = game.actors.get(party?.id)
     if (party?.type !== 'Party' || party.isToken || party.pack) throw new Error('invalid-party')
     if (!scene) throw new Error('missing-scene')
-    action ??= hasCollectedMembers(party) ? 'deploy' : 'gather'
+    action ??= derivePartyTokenAction(party, scene)
+    if (!action) throw new Error('missing-party-token')
     const payload = { action, partyId: party.id, sceneId: scene.id }
     if (action === 'gather') {
       payload.levelId = levelId

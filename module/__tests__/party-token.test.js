@@ -1056,6 +1056,28 @@ describe('party token UI controller', () => {
     expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
   })
 
+  test('a lone party token click derives the prototype deploy action and freezes its id', async () => {
+    const { party, scene, partyToken, otherGM } = await fixture()
+    scene.tokens.splice(0)
+    scene.tokens.push(partyToken)
+    game.user = otherGM
+    await service.togglePartyTokens({ party, scene, levelId: 'ground' })
+    expect(game.socket.emit).toHaveBeenCalledTimes(1)
+    expect(game.socket.emit.mock.calls[0][1].payload).toEqual({ action: 'deploy', partyId: party.id, sceneId: scene.id, partyTokenId: partyToken.id })
+  })
+
+  test('a click with no snapshot, members or party token only warns without mutating', async () => {
+    const { party, scene } = await fixture()
+    scene.tokens.splice(0)
+    await service.togglePartyTokens({ party, scene, levelId: 'ground' })
+    expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith('DCC.PartyTokenMissingPartyTokenOnScene')
+    expect(game.socket.emit).not.toHaveBeenCalled()
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+  })
+
   test.each(['subset', 'foreign', 'mixed', 'all'])('sheet sends %s selection through central socket without silently broadening', async mode => {
     const { party, scene, a, b, foreign } = await fixture()
     const selection = { subset: [a], foreign: [foreign], mixed: [a, foreign], all: [] }[mode]
@@ -1661,6 +1683,45 @@ test('only new Party token creation requires a linked prototype', () => {
   expect(() => service.resolveGatherContext(party, scene, { levelId: 'ground' })).toThrow('unlinked-party-prototype')
   scene.tokens.push(partyToken)
   expect(service.resolveGatherContext(party, scene, { levelId: 'ground' }).partyToken).toBe(partyToken)
+})
+
+describe('party token action derivation', () => {
+  test('an open snapshot deploys, otherwise member tokens on the scene gather', () => {
+    const { party, scene, partyToken } = gatherFixture()
+    expect(service.derivePartyTokenAction(party, scene)).toBe('gather')
+    // Visibility is never an input: hidden member tokens still mean gather.
+    scene.tokens.forEach(token => { token.hidden = true })
+    expect(service.derivePartyTokenAction(party, scene)).toBe('gather')
+    party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
+    scene.tokens.push(partyToken)
+    expect(service.derivePartyTokenAction(party, scene)).toBe('deploy')
+  })
+
+  test('no snapshot, no members and a lone party token derives the prototype deploy path', () => {
+    const { party, scene, partyToken } = gatherFixture()
+    scene.tokens.splice(0)
+    scene.tokens.push(partyToken)
+    expect(service.derivePartyTokenAction(party, scene)).toBe('deploy')
+    // An unlinked token alone still routes to deploy, where the existing
+    // legacy-linkage notice reports it instead of a generic hint.
+    scene.tokens[0] = { ...partyToken, actorLink: false }
+    expect(service.derivePartyTokenAction(party, scene)).toBe('deploy')
+  })
+
+  test.each(['absent', 'foreign', 'unlinked members'])('nothing of this party on the scene (%s) derives no action', state => {
+    const { party, scene, a, b, foreign } = gatherFixture()
+    scene.tokens.splice(0)
+    if (state === 'foreign') scene.tokens.push(foreign)
+    if (state === 'unlinked members') scene.tokens.push({ ...a, actorLink: false }, { ...b, actorLink: false })
+    expect(service.derivePartyTokenAction(party, scene)).toBe(null)
+  })
+
+  test('never throws for a missing scene or party', () => {
+    const { party, scene } = gatherFixture()
+    expect(service.derivePartyTokenAction(party, null)).toBe(null)
+    expect(service.derivePartyTokenAction(null, scene)).toBe(null)
+    expect(service.derivePartyTokenAction(undefined, undefined)).toBe(null)
+  })
 })
 
 test.each([
