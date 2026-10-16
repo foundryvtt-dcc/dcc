@@ -206,9 +206,14 @@ export function isTokenInRunningCombat (token, scene) {
     [...combat.combatants].some(combatant => combatant.tokenId === token.id))
 }
 
+/** World-actor IDs of the party roster, deduplicated. */
+function partyMemberIds (party) {
+  return new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+}
+
 /** Resolve documents in the explicit scene. A foreign-only selection is never a fallback to all. */
 export function resolveGatherTokens (party, scene, selection = []) {
-  const members = new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+  const members = partyMemberIds(party)
   const selected = selection.length
     ? new Set(selection.map(token => {
       const document = token.document ?? token
@@ -235,6 +240,21 @@ function assertPartyAvailable (party) {
 
 function assertNoOpenSnapshot (party) {
   if (party.flags?.dcc?.partyTokenSnapshots != null) throw new Error('snapshot-open')
+}
+
+/** Both workflows run exclusively on a GM client, before any normalization or mutation. */
+function requireGM () {
+  if (!game.user.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
+}
+
+/** Resolve the world Party actor and its explicit scene, or throw a stable error code. */
+function resolveWorldPartyScene (party, scene) {
+  if (party?.isToken || party?.pack) throw new Error('invalid-party')
+  const worldParty = game.actors.get(party?.id)
+  const worldScene = game.scenes.get(scene?.id)
+  if (worldParty?.type !== 'Party') throw new Error('invalid-party')
+  if (!worldScene) throw new Error('missing-scene')
+  return { party: worldParty, scene: worldScene }
 }
 
 /** Match the world actor ID, never a synthetic actor's flags, and inspect all scene levels. */
@@ -274,14 +294,12 @@ export function createPartyTokenSnapshot (party, scene, tokens) {
 
 /** Internal workflow only. Persistence is confirmed from documents, not API promises alone. */
 export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [], partyTokenId }) {
-  if (!game.user.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
+  requireGM()
   let context
   try {
-    if (party?.isToken || party?.pack) throw new Error('invalid-party')
-    party = game.actors.get(party?.id)
-    scene = game.scenes.get(scene?.id)
-    if (party?.type !== 'Party') throw new Error('invalid-party')
-    if (!scene) throw new Error('missing-scene')
+    const resolved = resolveWorldPartyScene(party, scene)
+    party = resolved.party
+    scene = resolved.scene
     // Keep missing selected IDs in the selection: never fall back to all members.
     const selection = tokenIds.map(id => ({ id, parent: scene }))
     context = resolveGatherContext(party, scene, { selection, levelId, partyTokenId })
@@ -290,7 +308,7 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
     throw error
   }
   const { tokens } = context
-  const members = new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+  const members = partyMemberIds(party)
   const skippedCombatTokenIds = [...scene.tokens].filter(token => token.actorLink && members.has(token.actorId) &&
     (!tokenIds.length || tokenIds.includes(token.id)) && isTokenInRunningCombat(token, scene)).map(token => token.id)
   if (!tokens.length) return { gathered: 0, skippedCombatTokenIds }
@@ -430,20 +448,18 @@ function sameTokenSource (document, source) {
 }
 
 function currentDeployMembers (party, snapshot) {
-  const roster = new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+  const roster = partyMemberIds(party)
   return snapshot.members.filter(member => roster.has(member.actorId) && game.actors.has(member.actorId))
 }
 
 /** Internal, document-only workflow. No canvas, socket, persisted journal or reload recovery. */
 export async function deployPartyTokens ({ party, scene, partyTokenId }) {
-  if (!game.user.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
+  requireGM()
   let context
   try {
-    if (party?.isToken || party?.pack) throw new Error('invalid-party')
-    party = game.actors.get(party?.id)
-    scene = game.scenes.get(scene?.id)
-    if (party?.type !== 'Party') throw new Error('invalid-party')
-    if (!scene) throw new Error('missing-scene')
+    const resolved = resolveWorldPartyScene(party, scene)
+    party = resolved.party
+    scene = resolved.scene
     context = resolveDeployContext(party, scene, { partyTokenId })
     if (!scene.levels.has(context.partyToken.level)) throw new Error('invalid-deploy-level')
   } catch (error) {
