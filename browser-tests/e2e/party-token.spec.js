@@ -304,41 +304,39 @@ test('deploy after a same-scene level switch restores members on the party token
   }
 })
 
-// CONST.GRID_TYPES: 0 = gridless. A hexagonal case (type 2) is deliberately not
-// asserted: on a real hex grid Foundry rounds the fractional y that
-// getSnappedPosition returns (TokenDocument x/y are integer fields), so deploy
-// verification fails before members are placed. See the follow-up note; this
-// spec only proves the gridless path.
-test('deploy places members on a gridless scene without overlap and keeps the party centre free', async ({ page }) => {
-  const ids = await createSwapFixture(page, 0)
-  try {
-    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
-    await page.evaluate(() => canvas.tokens.releaseAll())
-    await page.locator(sheetSwap).evaluate(element => element.click())
-    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3, ids)
-    const center = await page.evaluate(ids => {
-      const partyToken = canvas.scene.tokens.find(token => token.actorId === ids.party)
-      return partyToken.getCenterPoint()
-    }, ids)
-    await page.locator(sheetSwap).evaluate(element => element.click())
-    await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
-    const members = await page.evaluate(ids => {
-      const { sizeX, sizeY } = canvas.scene.grid
-      return canvas.scene.tokens
-        .filter(token => ids.members.includes(token.actorId))
-        .map(token => ({ x: token.x, y: token.y, w: token.width * sizeX, h: token.height * sizeY }))
-    }, ids)
-    expect(members).toHaveLength(3)
-    const overlaps = (a, b) => !(a.x >= b.x + b.w || b.x >= a.x + a.w || a.y >= b.y + b.h || b.y >= a.y + a.h)
-    for (const [i, rect] of members.entries()) {
-      // The party token stood at the centre; no member may cover it.
-      expect(center.x > rect.x && center.x < rect.x + rect.w && center.y > rect.y && center.y < rect.y + rect.h).toBe(false)
-      for (let j = 0; j < i; j++) expect(overlaps(rect, members[j])).toBe(false)
+// CONST.GRID_TYPES: 0 = gridless, 2 = hexagonal (odd rows).
+for (const [label, gridType] of [['hexagonal', 2], ['gridless', 0]]) {
+  test(`deploy places members on a ${label} scene without overlap and keeps the party centre free`, async ({ page }) => {
+    const ids = await createSwapFixture(page, gridType)
+    try {
+      await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+      await page.evaluate(() => canvas.tokens.releaseAll())
+      await page.locator(sheetSwap).evaluate(element => element.click())
+      await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3, ids)
+      const center = await page.evaluate(ids => {
+        const partyToken = canvas.scene.tokens.find(token => token.actorId === ids.party)
+        return partyToken.getCenterPoint()
+      }, ids)
+      await page.locator(sheetSwap).evaluate(element => element.click())
+      await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
+      const members = await page.evaluate(ids => {
+        const { sizeX, sizeY } = canvas.scene.grid
+        return canvas.scene.tokens
+          .filter(token => ids.members.includes(token.actorId))
+          .map(token => ({ x: token.x, y: token.y, w: token.width * sizeX, h: token.height * sizeY }))
+      }, ids)
+      expect(members).toHaveLength(3)
+      const overlaps = (a, b) => !(a.x >= b.x + b.w || b.x >= a.x + a.w || a.y >= b.y + b.h || b.y >= a.y + a.h)
+      for (const [i, rect] of members.entries()) {
+        // The party token stood at the centre; no member may cover it.
+        expect(center.x > rect.x && center.x < rect.x + rect.w && center.y > rect.y && center.y < rect.y + rect.h).toBe(false)
+        for (let j = 0; j < i; j++) expect(overlaps(rect, members[j])).toBe(false)
+      }
+    } finally {
+      await cleanSwapFixture(page, ids)
     }
-  } finally {
-    await cleanSwapFixture(page, ids)
-  }
-})
+  })
+}
 
 test('a legacy unlinked party token on the viewed scene is reported without any change', async ({ page }) => {
   const ids = await createSwapFixture(page)
