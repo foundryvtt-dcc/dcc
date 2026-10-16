@@ -349,6 +349,8 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
   const snapshot = createPartyTokenSnapshot(party, scene, tokens)
   const originalIds = tokens.map(token => token.id)
   const newPartyMembers = new Map()
+  let partyToken = context.partyToken
+  let previousPartySource = null
   let uncertainPartyCreation = false
   let confirmedSave = false
   let memberDeleteStarted = false
@@ -358,15 +360,17 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
     if (!foundry.utils.equals(party.getFlag('dcc', 'partyTokenSnapshots'), snapshot)) throw new Error(code)
     confirmedSave = true
 
-    let partyToken = context.partyToken
+    // The party token is the party's anchor: a fresh one is created at the
+    // members' cluster centre, a reused one is moved there and shown.
+    const centers = tokens.map(token => token.getCenterPoint())
+    const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / tokens.length, y: sum.y + point.y / tokens.length }), { x: 0, y: 0 })
     if (!partyToken) {
       code = 'party-create-failed'
-      const centers = tokens.map(token => token.getCenterPoint())
-      const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / tokens.length, y: sum.y + point.y / tokens.length }), { x: 0, y: 0 })
       const document = await party.getTokenDocument({ ...center, level: levelId }, { parent: scene })
       if (!document.actorLink || document.actorId !== party.id) throw new Error(code)
       const pivot = document.getCenterPoint({ x: 0, y: 0 })
       document.updateSource(document.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y }))
+      document.updateSource({ hidden: false })
       const before = new Set([...scene.tokens].map(token => token.id))
       let created
       try {
@@ -384,6 +388,21 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       partyToken = created?.length === 1 ? scene.tokens.get(created[0]?.id) : null
       if (!partyToken?.actorLink || partyToken.actorId !== party.id || partyToken.level !== levelId ||
         newPartyMembers.size !== 1 || !newPartyMembers.has(partyToken.id)) throw new Error(code)
+    } else {
+      // Reuse the existing anchor: move it onto the cluster centre with the same
+      // centre/snap logic as a fresh creation, and make it visible (travelling).
+      code = 'party-create-failed'
+      previousPartySource = { x: partyToken.x, y: partyToken.y, hidden: !!partyToken.hidden }
+      const pivot = partyToken.getCenterPoint({ x: 0, y: 0 })
+      const position = partyToken.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y })
+      // A plain position update runs through v14's animated movement pipeline and
+      // does not reliably reach the target. The supported way to relocate the
+      // anchor deterministically is the movement API with an explicit `displace`
+      // waypoint (a teleport that ignores walls, surfaces and cost).
+      await partyToken.move({ ...position, action: 'displace', snapped: true })
+      await partyToken.update({ hidden: false })
+      const marker = scene.tokens.get(partyToken.id)
+      if (marker !== partyToken || marker.x !== position.x || marker.y !== position.y || marker.hidden !== false) throw new Error(code)
     }
     // No original can be removed until both the snapshot and replacement exist.
     code = 'gather-context-changed'
@@ -426,6 +445,23 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
         if (remaining.length) await scene.deleteEmbeddedDocuments('Token', remaining)
       } catch (_) { rollbackIssues.push('party-delete-failed') }
       if ([...newPartyMembers.keys()].some(id => scene.tokens.has(id)) && !rollbackIssues.length) rollbackIssues.push('party-delete-failed')
+    }
+    // Undo a reused anchor's move and visibility change. The position needs the
+    // movement API; a plain update would be dropped by the movement pipeline.
+    if (!rollbackIssues.length && previousPartySource) {
+      if (scene.tokens.get(partyToken.id) === partyToken) {
+        if (partyToken.x !== previousPartySource.x || partyToken.y !== previousPartySource.y) {
+          try {
+            await partyToken.move({ x: previousPartySource.x, y: previousPartySource.y, action: 'displace', snapped: true })
+          } catch (_) { /* Verified below. */ }
+        }
+        if (!!partyToken.hidden !== previousPartySource.hidden) {
+          try { await partyToken.update({ hidden: previousPartySource.hidden }) } catch (_) { /* Verified below. */ }
+        }
+      }
+      const restored = scene.tokens.get(partyToken.id)
+      if (!restored || restored !== partyToken || restored.x !== previousPartySource.x || restored.y !== previousPartySource.y ||
+        !!restored.hidden !== previousPartySource.hidden) rollbackIssues.push('party-token-restore-failed')
     }
     // Only discard our provisional flag after every token change is undone.
     if (!rollbackIssues.length) {
@@ -503,6 +539,9 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
   const snapshot = structuredClone(context.snapshot)
   const originalParty = context.partyToken
   const partySource = structuredClone(originalParty.toObject())
+  // The deployed marker stays on the scene, hidden: the same party token is the
+  // party's anchor while its members are placed around it.
+  const markerSource = { ...structuredClone(partySource), hidden: true }
   const members = currentDeployMembers(party, snapshot)
   const skippedMemberIds = snapshot.members.filter(member => !members.includes(member)).map(member => member.actorId)
   const result = { deployed: members.length, skipped: skippedMemberIds.length, skippedMemberIds }
@@ -523,9 +562,10 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
   const expectedPayloads = structuredClone(payloads)
   const ownMembers = new Map()
   let uncertainCreation = false
+  let markerHidden = false
   let code = 'deploy-context-changed'
 
-  const assertContext = (withParty = true) => {
+  const assertContext = (withParty = true, expectedPartySource = partySource) => {
     assertPartyAvailable(party)
     if (party.type !== 'Party' || party.isToken || party.pack ||
       game.actors.get(party.id) !== party || game.scenes.get(scene.id) !== scene ||
@@ -535,7 +575,8 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
     if (withParty) {
       const current = resolveDeployContext(party, scene, { partyTokenId: originalParty.id }).partyToken
       if (current !== originalParty || current.actorId !== party.id || !current.actorLink ||
-        current.level !== partySource.level || !scene.levels.has(current.level) || !sameTokenSource(current, partySource)) throw new Error(code)
+        current.level !== partySource.level || !scene.levels.has(current.level) ||
+        !sameTokenSource(current, expectedPartySource)) throw new Error(code)
     }
   }
   const assertReplacements = () => {
@@ -577,20 +618,22 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
       assertContext()
       // Check actual documents, not just a successful batch return, before any destruction.
       assertReplacements()
-      code = 'party-delete-failed'
-      await scene.deleteEmbeddedDocuments('Token', [originalParty.id])
-      if (scene.tokens.has(originalParty.id)) throw new Error(code)
-      assertReplacements()
     }
+    code = 'party-delete-failed'
+    // Keep the party token as the party's anchor instead of deleting it: hiding
+    // it marks the party as deployed and is undone on rollback.
+    markerHidden = true
+    await originalParty.update({ hidden: true })
+    if (!sameTokenSource(scene.tokens.get(originalParty.id), markerSource)) throw new Error(code)
+    assertReplacements()
+    code = 'deploy-context-changed'
+    assertContext(true, markerSource)
     code = 'snapshot-clear-failed'
-    // Includes ALL original IDs even if every snapshotted member has departed.
-    assertContext(!members.length)
-    if (members.length && scene.tokens.has(originalParty.id)) throw new Error(code)
     await party.unsetFlag('dcc', 'partyTokenSnapshots')
     if (party.getFlag('dcc', 'partyTokenSnapshots') != null) throw new Error(code)
     assertOriginalTokensAbsent(snapshot)
     assertReplacements()
-    if (members.length ? scene.tokens.has(originalParty.id) : !sameTokenSource(scene.tokens.get(originalParty.id), partySource)) throw new Error(code)
+    if (!sameTokenSource(scene.tokens.get(originalParty.id), markerSource)) throw new Error(code)
     return result
   } catch (cause) {
     const rollbackIssues = uncertainCreation ? ['member-create-uncertain'] : []
@@ -603,12 +646,18 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
 
     // Never delete a legitimate external Token that now occupies the Party ID.
     // Restore a missing original Party first, including when it disappeared in
-    // an awaited creation before our own deletion was ever attempted.
+    // an awaited creation before our own deletion was ever attempted. This is a
+    // safety net only: the regular deploy keeps the token as a hidden marker.
     if (!scene.tokens.has(originalParty.id)) {
       try {
         assertOriginalTokensAbsent(snapshot)
         await scene.createEmbeddedDocuments('Token', [structuredClone(partySource)], { keepId: true })
       } catch (_) { /* Stored documents, not exceptions, decide restoration. */ }
+    }
+    // Undo our own marker change (visibility) on the document we hid.
+    const hiddenParty = scene.tokens.get(originalParty.id)
+    if (markerHidden && hiddenParty === originalParty && !sameTokenSource(hiddenParty, partySource)) {
+      try { await originalParty.update({ hidden: partySource.hidden }) } catch (_) { /* Verified below. */ }
     }
     const restored = scene.tokens.get(originalParty.id)
     const partyRestored = game.actors.get(party.id) === party && game.scenes.get(scene.id) === scene &&
