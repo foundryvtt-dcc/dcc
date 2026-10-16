@@ -9,6 +9,9 @@ export const blockedPartyIds = new Set()
 // Overlapping requests are dropped, never queued against a stale snapshot.
 let inFlight = false
 
+// A future core template/class rename must not silently drop the HUD control.
+let warnedMissingHudColumn = false
+
 async function onPartyTokenAction (payload, senderId) {
   if (!game.users.get(senderId)?.isGM) throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' })
   if (inFlight) return
@@ -61,7 +64,7 @@ const partyTokenErrors = {
   'invalid-party': 'InvalidParty',
   'missing-scene': 'MissingScene',
   'missing-party-token-id': 'MissingPartyToken',
-  'missing-party-token': 'MissingPartyToken',
+  'missing-party-token': 'MissingPartyTokenOnScene',
   'ambiguous-party-token': 'AmbiguousPartyToken',
   'party-token-in-combat': 'PartyInCombat',
   'party-blocked': 'Blocked',
@@ -149,7 +152,7 @@ function renderPartyTokenHUD (hud, html) {
   const label = game.i18n.localize(party ? partyTokenActionLabel(party) : 'DCC.PartyTokenGather')
   const control = document.createElement('button')
   control.type = 'button'
-  control.classList.add('control-icon', 'dcc-party-token')
+  control.classList.add('control-icon')
   control.dataset.action = 'partyTokenAction'
   control.setAttribute('aria-label', label)
   control.setAttribute('title', label)
@@ -181,7 +184,15 @@ function renderPartyTokenHUD (hud, html) {
       notifyPartyTokenError(error)
     }
   })
-  html.querySelector('.col.right')?.append(control)
+  const column = html.querySelector('.col.right')
+  if (column) column.append(control)
+  else {
+    if (!warnedMissingHudColumn) {
+      warnedMissingHudColumn = true
+      console.warn('DCC | Party token HUD control attached to the HUD root: .col.right column not found')
+    }
+    html.append(control)
+  }
 }
 
 function gatherHudParties (scene, selection, token) {

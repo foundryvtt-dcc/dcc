@@ -2,6 +2,7 @@
 import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest'
 import { isDeepStrictEqual } from 'node:util'
 import { EventEmitter } from 'node:events'
+import { readFileSync } from 'node:fs'
 
 let registerPartyTokenHooks
 let hooks
@@ -1003,7 +1004,7 @@ describe('party token UI controller', () => {
     party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
     expect(service.partyTokenActionLabel(party)).toBe('DCC.PartyTokenDeploy')
     await service.togglePartyTokens({ party, scene })
-    expect(ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyTokenMissingPartyToken')
+    expect(ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyTokenMissingPartyTokenOnScene')
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
   })
 
@@ -1027,7 +1028,7 @@ describe('party token UI controller', () => {
 
   test.each([
     ['unauthorized', 'Unauthorized'], ['invalid-request', 'InvalidRequest'], ['invalid-party', 'InvalidParty'],
-    ['missing-scene', 'MissingScene'], ['missing-party-token-id', 'MissingPartyToken'], ['missing-party-token', 'MissingPartyToken'],
+    ['missing-scene', 'MissingScene'], ['missing-party-token-id', 'MissingPartyToken'], ['missing-party-token', 'MissingPartyTokenOnScene'],
     ['ambiguous-party-token', 'AmbiguousPartyToken'], ['party-token-in-combat', 'PartyInCombat'], ['party-blocked', 'Blocked'],
     ['snapshot-open', 'SnapshotOpen'], ['missing-snapshot', 'MissingSnapshot'], ['unlinked-party-token', 'UnlinkedToken'],
     ['unlinked-party-prototype', 'UnlinkedPrototype'], ['invalid-gather-level', 'InvalidGatherLevel'], ['invalid-deploy-level', 'InvalidDeployLevel'],
@@ -1042,6 +1043,23 @@ describe('party token UI controller', () => {
     await expect(service.requestPartyTokenAction(payload)).resolves.toEqual({ error: { code } })
     expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith(`DCC.PartyToken${suffix}`)
     expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+  })
+
+  test('missing party token on scene uses its own neutral notice, distinct from the deploy target notice', async () => {
+    const { payload } = await fixture()
+    // 'missing-party-token' also reaches the gather path, so it must not claim a deploy step.
+    game.users.get = () => { throw Object.assign(new Error('missing-party-token'), { code: 'missing-party-token' }) }
+    await expect(service.requestPartyTokenAction(payload)).resolves.toEqual({ error: { code: 'missing-party-token' } })
+    expect(ui.notifications.warn).toHaveBeenCalledExactlyOnceWith('DCC.PartyTokenMissingPartyTokenOnScene')
+    game.users.get = () => { throw Object.assign(new Error('missing-party-token-id'), { code: 'missing-party-token-id' }) }
+    await expect(service.requestPartyTokenAction(payload)).resolves.toEqual({ error: { code: 'missing-party-token-id' } })
+    expect(ui.notifications.warn).toHaveBeenLastCalledWith('DCC.PartyTokenMissingPartyToken')
+  })
+
+  test('missing-snapshot notice is emitted after a deploy click and points at deploying, not gathering again', () => {
+    const lang = JSON.parse(readFileSync(new URL('../../lang/en.json', import.meta.url), 'utf8'))
+    const text = lang['DCC.PartyTokenMissingSnapshot']
+    expect(text).toMatch(/deploy/i)
   })
 
   test('failed rollback reports manual inspection, never retry/reload as repair', async () => {
@@ -1092,12 +1110,13 @@ describe('party token UI controller', () => {
     expect(game.socket.emit.mock.calls[0][1].payload).toMatchObject({ action: 'gather', partyTokenId: second.id })
   })
 
-  function hudElement () {
+  function hudElement ({ withColumn = true } = {}) {
     const controls = []
     const column = { append: element => controls.push(element) }
     const html = {
       querySelectorAll: () => [...controls],
-      querySelector: () => column
+      querySelector: () => (withColumn ? column : null),
+      append: element => controls.push(element)
     }
     vi.stubGlobal('document', {
       createElement: () => {
@@ -1129,10 +1148,30 @@ describe('party token UI controller', () => {
     hooks.renderTokenHUD({ document: token }, html)
     expect(controls).toHaveLength(1)
     expect(controls[0].dataset.action).toBe('partyTokenAction')
+    expect(controls[0].classList.add).toHaveBeenCalledWith('control-icon')
+    expect(controls[0].classList.add).not.toHaveBeenCalledWith('dcc-party-token')
     expect(controls[0].setAttribute).toHaveBeenCalledWith('aria-label', 'DCC.PartyTokenDeploy')
     await controls[0].click({ preventDefault: vi.fn(), stopPropagation: vi.fn() })
     expect(game.socket.emit).toHaveBeenCalledTimes(1)
     expect(game.socket.emit.mock.calls[0][1].payload).toEqual({ action: 'deploy', partyId: party.id, sceneId: scene.id, partyTokenId: token.id })
+  })
+
+  test('missing right HUD column falls back to the HUD root and warns in the console only once', async () => {
+    const { party, scene, make, otherGM } = await fixture()
+    const token = make('1111111111111111', party.id, { actorLink: true })
+    scene.tokens.push(token)
+    canvas.tokens = { controlled: [] }
+    game.user = otherGM
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { html, controls } = hudElement({ withColumn: false })
+    registerPartyTokenHooks()
+    hooks.renderTokenHUD({ document: token }, html)
+    expect(controls).toHaveLength(1)
+    expect(controls[0].dataset.action).toBe('partyTokenAction')
+    expect(warn).toHaveBeenCalledTimes(1)
+    hooks.renderTokenHUD({ document: token }, html)
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(ui.notifications.warn).not.toHaveBeenCalled()
   })
 
   test('legacy HUD uses world snapshot state and reports Link Actor Data configuration without mutation', async () => {
