@@ -6,7 +6,7 @@ import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
 import { togglePartyTokens, partyTokenActionLabel } from '../party-token.mjs'
 
-vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn(), partyTokenActionLabel: vi.fn() }))
+vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn(), partyTokenActionLabel: vi.fn(), partyTokenActionIcon: vi.fn() }))
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 

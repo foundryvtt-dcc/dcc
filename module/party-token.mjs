@@ -103,8 +103,18 @@ function notifyPartyTokenResult (result) {
   if (result.skipped) ui.notifications?.warn(game.i18n.format('DCC.PartyTokenSkippedMembers', { count: result.skipped }))
 }
 
+/** Single source of truth for the toggle state: an open snapshot means "deploy" is pending. */
+function hasCollectedMembers (party) {
+  return party.flags?.dcc?.partyTokenSnapshots != null
+}
+
 export function partyTokenActionLabel (party) {
-  return party.flags?.dcc?.partyTokenSnapshots != null ? 'DCC.PartyTokenDeploy' : 'DCC.PartyTokenGather'
+  return hasCollectedMembers(party) ? 'DCC.PartyTokenDeploy' : 'DCC.PartyTokenGather'
+}
+
+/** Decorative counterpart of the label; derived from the same predicate so both stay in sync. */
+export function partyTokenActionIcon (party) {
+  return hasCollectedMembers(party) ? 'fa-people-arrows-left-right' : 'fa-people-group'
 }
 
 /** Initiator-only controller: freeze the action and selection before any asynchronous work. */
@@ -157,7 +167,7 @@ function renderPartyTokenHUD (hud, html) {
   control.setAttribute('aria-label', label)
   control.setAttribute('title', label)
   const icon = document.createElement('i')
-  icon.classList.add('fas', 'fa-users')
+  icon.classList.add('fas', party ? partyTokenActionIcon(party) : 'fa-people-group')
   icon.setAttribute('aria-hidden', 'true')
   control.append(icon)
   control.addEventListener('click', async event => {
