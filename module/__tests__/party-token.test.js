@@ -416,6 +416,33 @@ describe('gather workflow', () => {
     expect(scene.tokens.get(a.id).toObject()).toEqual(a.toObject())
     expect(scene.tokens.get(b.id).toObject()).toEqual(b.toObject())
   })
+
+  test('rollback verifies restored originals against documents Foundry normalized on create', async () => {
+    const { party, scene, a, b, gather } = gatherWorkflowFixture()
+    // The gathered token had moved and stood inside a region, so its snapshot
+    // source carries a non-empty movement history and region set.
+    const base = a.toObject()
+    a.toObject = () => ({ ...structuredClone(base), _movementHistory: [{ x: 100, y: 0, elevation: 0, cost: 1, action: 'walk' }], _regions: ['region-a'] })
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    // Foundry's TokenDocument._preCreateOperation wipes the movement history and
+    // recomputes _regions, so a restored document never byte-matches its source.
+    scene.createEmbeddedDocuments.mockImplementation(async (type, data, options) => {
+      const documents = await create(type, data, options)
+      for (const document of documents) {
+        const source = document.toObject()
+        document.toObject = () => ({ ...source, _movementHistory: [], _regions: [] })
+      }
+      return documents
+    })
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (type, ids) => { await remove(type, ids); throw new Error('after-delete') })
+    await expect(gather()).rejects.toMatchObject({ code: 'member-delete-failed', rollbackComplete: true })
+    expect(scene.tokens.get(a.id)).toBeDefined()
+    expect(scene.tokens.get(b.id)).toBeDefined()
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+    await expect(gather()).resolves.toMatchObject({ gathered: 2 })
+  })
 })
 
 afterEach(() => vi.unstubAllGlobals())

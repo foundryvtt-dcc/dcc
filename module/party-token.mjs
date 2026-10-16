@@ -358,7 +358,10 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
           await scene.createEmbeddedDocuments('Token', missing.map(member => member.tokenData), { keepId: true })
         } catch (_) { /* Verification below decides whether restoration is certain. */ }
       }
-      if (snapshot.members.some(member => !foundry.utils.equals(scene.tokens.get(member.tokenData._id)?.toObject(), member.tokenData))) {
+      if (snapshot.members.some(member => {
+        const document = scene.tokens.get(member.tokenData._id)
+        return !document || !foundry.utils.equals(comparable(document.toObject()), comparable(member.tokenData))
+      })) {
         rollbackIssues.push('original-restore-failed')
       }
     }
@@ -410,15 +413,16 @@ function assertOriginalTokensAbsent (snapshot) {
 }
 
 /** Foundry resets movement history and recalculates regions when creating a Token. */
+function comparable (data) {
+  const copy = structuredClone(data)
+  delete copy._movementHistory
+  delete copy._regions
+  return copy
+}
+
 function sameTokenSource (document, source) {
   if (!document) return false
   if (['actorId', 'actorLink', 'level'].some(key => document[key] !== source[key])) return false
-  const comparable = data => {
-    const copy = structuredClone(data)
-    delete copy._movementHistory
-    delete copy._regions
-    return copy
-  }
   return foundry.utils.equals(comparable(document.toObject()), comparable(source))
 }
 
