@@ -24,6 +24,7 @@ vi.mock('../welcomeDialog.js', () => {
 })
 vi.mock('../table-loading.mjs', () => ({ registerTables: vi.fn(), setupCoreBookCompendiumLinks: vi.fn() }))
 vi.mock('../adapter/foundry-data-loader.mjs', () => ({ registerClassProgressionsFromPacks: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../party-token.mjs', () => ({ registerPartyTokenSocket: vi.fn() }))
 
 const migrations = await import('../migrations.js')
 const ReleaseNotes = (await import('../release-notes.js')).default
@@ -32,6 +33,7 @@ const settings = await import('../settings.js')
 const welcomeDialogModule = await import('../welcomeDialog.js')
 const tableLoading = await import('../table-loading.mjs')
 const foundryDataLoader = await import('../adapter/foundry-data-loader.mjs')
+const partyToken = await import('../party-token.mjs')
 
 const { checkReleaseNotes, onReady, registerReadyHook } = await import('../ready-hook.mjs')
 
@@ -100,6 +102,13 @@ describe('checkReleaseNotes', () => {
 })
 
 describe('onReady', () => {
+  test('registers the private Party socket handler once after the system socket is available', async () => {
+    await onReady()
+    expect(partyToken.registerPartyTokenSocket).toHaveBeenCalledTimes(1)
+    expect(globalThis.game.socket.on.mock.invocationCallOrder[0]).toBeLessThan(partyToken.registerPartyTokenSocket.mock.invocationCallOrder[0])
+    expect(globalThis.game.dcc.gatherPartyTokens).toBeUndefined()
+    expect(globalThis.game.dcc.deployPartyTokens).toBeUndefined()
+  })
   test('registers system settings and seeds the KeyState tracker', async () => {
     await onReady()
     expect(settings.registerSystemSettings).toHaveBeenCalledTimes(1)

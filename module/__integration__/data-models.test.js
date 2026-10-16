@@ -6,10 +6,11 @@
  * to validate that our data model schemas work correctly with real Foundry validation,
  * coercion, and migration logic.
  */
-import { describe, test, expect, beforeEach } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import { BaseActorData } from '../data/actor/base-actor.mjs'
 import { PlayerData } from '../data/actor/player-data.mjs'
 import { NPCData } from '../data/actor/npc-data.mjs'
+import { PartyData } from '../data/actor/party-data.mjs'
 import { BaseItemData, PhysicalItemData } from '../data/item/base-item.mjs'
 import { WeaponData } from '../data/item/weapon-data.mjs'
 import { ArmorData } from '../data/item/armor-data.mjs'
@@ -193,6 +194,44 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
   test('SpellData constructs with defaults', () => {
     const data = new SpellData({})
     expect(data.description).toBeDefined()
+  })
+})
+
+// ============================================================================
+// Party aggregate getter and serialization
+// ============================================================================
+
+describe('PartyData live aggregate (real Foundry TypeDataModel)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  test('reads live members through a DataModel parent without serializing aggregate', () => {
+    // The integration environment has no client Actor class. Foundry requires
+    // a DataModel parent; this fixture supplies only its flag-reading contract.
+    class PartyParent extends foundry.abstract.DataModel {
+      static TYPES = []
+      static defineSchema () { return {} }
+      getFlag (scope, key) { return this.flags[scope][key] }
+    }
+    const parent = new PartyParent({})
+    parent.flags = { dcc: { partyMembers: [{ id: 'first' }, { id: 'second' }, { id: 'first' }, { id: 'missing' }] } }
+    const first = new PlayerData({ attributes: { hp: { value: 5, max: 8 } } })
+    const second = new PlayerData({ attributes: { hp: { value: 2, max: 4 } } })
+    vi.stubGlobal('game', { ...globalThis.game, actors: new Map([['first', { system: first }], ['second', { system: second }]]) })
+    const data = new PartyData({}, { parent })
+    const source = data.toObject()
+
+    expect(data.aggregate).toEqual({ hp: { value: 7, max: 12 } })
+    first.updateSource({ 'attributes.hp.value': 2 })
+    expect(data.aggregate.hp).toEqual({ value: 4, max: 12 })
+    expect(PartyData.schema.fields.aggregate).toBeUndefined()
+    expect(data.toObject().aggregate).toBeUndefined()
+    expect(data.toObject(false).aggregate).toBeUndefined()
+    expect(data.toObject()).toEqual(source)
+  })
+
+  test('constructs without a parent before world actors exist', () => {
+    vi.stubGlobal('game', { ...globalThis.game, actors: undefined })
+    expect(new PartyData({}).aggregate).toEqual({ hp: { value: 0, max: 0 } })
   })
 })
 

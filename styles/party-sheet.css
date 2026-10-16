@@ -5,6 +5,7 @@
 .dcc .party-name {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
 
@@ -25,7 +26,15 @@
   }
 
   input {
-    flex: 1;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .party-token-action {
+    flex: 0 1 auto;
+    width: auto;
+    height: auto;
+    white-space: normal;
   }
 
   .party-initiative {
@@ -155,4 +164,3 @@
     }
   }
 }
-

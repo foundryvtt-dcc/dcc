@@ -1,10 +1,26 @@
 /**
  * Data model for Party actors
- * Party actors only use the common template
+ * Party actors use the common template and derive live member hit points
  */
 import { BaseActorData } from './base-actor.mjs'
 
 export class PartyData extends BaseActorData {
+  /** Current world-member HP, derived on access and never persisted. */
+  get aggregate () {
+    const aggregate = { value: 0, max: 0 }
+    const members = this.parent?.getFlag('dcc', 'partyMembers') ?? []
+    const actors = globalThis.game?.actors
+    const ids = new Set(members.map(member => member.id))
+    for (const id of ids) {
+      const hp = actors?.get(id)?.system?.attributes?.hp
+      const value = Number(hp?.value)
+      const max = Number(hp?.max)
+      aggregate.value += Number.isFinite(value) ? value : 0
+      aggregate.max += Number.isFinite(max) ? max : 0
+    }
+    return { hp: aggregate }
+  }
+
   static defineSchema () {
     return {
       ...super.defineSchema()
