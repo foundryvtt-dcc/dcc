@@ -80,7 +80,13 @@ test('sheet gathers selected individualized members; moved party HUD restores th
       const scene = game.scenes.get(ids.scene)
       return { snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), remaining: scene.tokens.map(token => token.id) }
     }, ids)
-    expect(gathered.snapshot.members.map(member => member.tokenData)).toEqual(ids.originals.slice(0, 2))
+    // scene.tokens order depends on the generated token ids, so match members by
+    // id instead of trusting the snapshot order.
+    const snapshot = gathered.snapshot.members.map(member => member.tokenData)
+    expect(snapshot.map(data => data._id).sort()).toEqual(ids.originals.slice(0, 2).map(data => data._id).sort())
+    for (const original of ids.originals.slice(0, 2)) {
+      expect(snapshot.find(data => data._id === original._id)).toEqual(original)
+    }
     expect(gathered.remaining).toContain(ids.tokens[2])
     expect(gathered.remaining).toContain(ids.tokens[3])
     await expect(page.locator(sheetSwap)).toHaveAccessibleName('Deploy')
