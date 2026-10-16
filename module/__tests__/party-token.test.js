@@ -961,6 +961,250 @@ describe('deploy workflow', () => {
   })
 })
 
+/**
+ * Fresh scene: only the party anchor, no member tokens at all. The member actors
+ * are plain stubs whose prototype token drives the created documents.
+ */
+function prototypeDeployFixture ({ unlinked = [], failTokenDocument = false } = {}) {
+  const fixture = gatherWorkflowFixture()
+  const { party, scene, partyToken, events } = fixture
+  game.user = { id: 'gm', isGM: true }
+  scene.tokens.splice(0)
+  scene.tokens.push(partyToken)
+  const actors = new Map()
+  for (const { id } of party.flags.dcc.partyMembers) {
+    const prototypeToken = {
+      actorLink: !unlinked.includes(id),
+      width: 2,
+      height: 1,
+      elevation: 7,
+      hidden: false,
+      texture: { src: `prototype-${id}.webp` },
+      sight: { enabled: true, range: 30 },
+      light: { bright: 10 },
+      flags: { dcc: { prototype: id } }
+    }
+    const actor = {
+      id,
+      type: 'Player',
+      prototypeToken,
+      getTokenDocument: vi.fn(async (position = {}, { parent } = {}) => {
+        expect(parent).toBe(scene)
+        if (failTokenDocument) throw new Error('prototype-unavailable')
+        const data = { actorId: id, ...structuredClone(prototypeToken), ...position }
+        return { actorId: id, actorLink: data.actorLink, toObject: () => structuredClone(data) }
+      })
+    }
+    actors.set(id, actor)
+    game.actors.push(actor)
+  }
+  const deploy = (options = {}) => service.deployPartyTokens({ party, scene, partyTokenId: partyToken.id, ...options })
+  events.length = 0
+  scene.createEmbeddedDocuments.mockClear()
+  scene.deleteEmbeddedDocuments.mockClear()
+  partyToken.update.mockClear()
+  return { ...fixture, actors, deploy }
+}
+
+/** Expected created document for a member, mirroring the fixture's prototype and placements. */
+function prototypePayload (actor, { x, y, index }) {
+  return {
+    ...structuredClone(actor.prototypeToken),
+    actorId: actor.id,
+    level: 'ground',
+    x,
+    y,
+    _id: `generated${String(index).padStart(7, '0')}`
+  }
+}
+
+describe('prototype deploy workflow', () => {
+  test('a fresh scene creates one prototype token per member around the anchor and hides it', async () => {
+    const { party, scene, partyToken, actors, deploy, events } = prototypeDeployFixture()
+    const result = await deploy()
+    expect(result).toMatchObject({ deployed: 2, skipped: 0, skippedMemberIds: [] })
+    const created = scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))
+    expect(created.map(token => token.toObject())).toEqual([
+      prototypePayload(actors.get('a'), { x: 200, y: 0, index: 1 }),
+      prototypePayload(actors.get('b'), { x: 200, y: 100, index: 2 })
+    ])
+    // Prototype values, not the gathered ones: the anchor is kept and hidden.
+    expect(created[0].toObject()).toMatchObject({ actorLink: true, width: 2, height: 1, elevation: 7 })
+    expect(scene.tokens.get(partyToken.id)).toBe(partyToken)
+    expect(partyToken.hidden).toBe(true)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(events).toEqual(['create', 'party-update'])
+  })
+
+  test('prototype preflight is read-only, lists the missing members and refuses an open snapshot', () => {
+    const { party, scene, partyToken, actors } = prototypeDeployFixture()
+    const before = scene.tokens.map(token => token.toObject())
+    const context = service.resolvePrototypeDeployContext(party, scene, { partyTokenId: partyToken.id })
+    expect(context.members).toEqual([actors.get('a'), actors.get('b')])
+    expect(context.skippedMemberIds).toEqual([])
+    expect(context.partyToken).toBe(partyToken)
+    expect(scene.tokens.map(token => token.toObject())).toEqual(before)
+    expect(() => service.resolvePrototypeDeployContext(party, scene, {})).toThrow('missing-party-token-id')
+    party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
+    expect(() => service.resolvePrototypeDeployContext(party, scene, { partyTokenId: partyToken.id })).toThrow('snapshot-open')
+  })
+
+  test('an unlinked prototype aborts before any mutation, never partially creating members', async () => {
+    const { party, scene, partyToken, deploy, actors, events } = prototypeDeployFixture({ unlinked: ['b'] })
+    const before = scene.tokens.map(token => token.toObject())
+    await expect(deploy()).rejects.toMatchObject({ code: 'unlinked-party-prototype' })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(partyToken.hidden).toBe(false)
+    expect(scene.tokens.map(token => token.toObject())).toEqual(before)
+    expect(actors.get('b').getTokenDocument).not.toHaveBeenCalled()
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+  })
+
+  test('an unlinked prototype of a member that already has a token does not block the deploy', async () => {
+    const { scene, deploy, make, partyToken } = prototypeDeployFixture({ unlinked: ['b'] })
+    // A legacy unlinked member token is not a gather candidate, so it is skipped
+    // instead of duplicated, and its own prototype link never matters.
+    const existing = make('bbbbbbbbbbbbbbbb', 'b', { actorLink: false })
+    scene.tokens.push(existing)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['b'] })
+    expect(scene.tokens.get(existing.id)).toBe(existing)
+    expect(scene.tokens.filter(token => token.actorId === 'a')).toHaveLength(1)
+    expect(partyToken.hidden).toBe(true)
+  })
+
+  test('existing member tokens are never duplicated and count as skipped', async () => {
+    const { scene, deploy, make, partyToken } = prototypeDeployFixture()
+    // A combatant token is protected: not a gather candidate, not a duplicate.
+    const existing = make('aaaaaaaaaaaaaaaa', 'a', { texture: { src: 'existing.webp' } })
+    scene.tokens.push(existing)
+    game.combats = [{ scene, started: true, combatants: [{ tokenId: existing.id }] }]
+    const before = existing.toObject()
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['a'] })
+    expect(scene.tokens.get(existing.id)).toBe(existing)
+    expect(existing.toObject()).toEqual(before)
+    expect(scene.tokens.filter(token => token.actorId === 'a')).toHaveLength(1)
+    expect(scene.tokens.filter(token => token.actorId === 'b')).toHaveLength(1)
+    expect(partyToken.hidden).toBe(true)
+  })
+
+  test('the prototype path refuses to deploy while eligible member tokens stand on the scene', async () => {
+    const { party, scene, deploy, make, partyToken } = prototypeDeployFixture()
+    const existing = make('aaaaaaaaaaaaaaaa', 'a')
+    scene.tokens.push(existing)
+    expect(() => service.resolvePrototypeDeployContext(party, scene, { partyTokenId: partyToken.id })).toThrow('missing-snapshot')
+    await expect(deploy()).rejects.toMatchObject({ code: 'missing-snapshot' })
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(scene.tokens.get(existing.id)).toBe(existing)
+    expect(partyToken.hidden).toBe(false)
+  })
+
+  test('a roster member whose actor is gone is skipped and never created', async () => {
+    const { scene, deploy } = prototypeDeployFixture()
+    game.actors.splice(game.actors.findIndex(actor => actor.id === 'b'), 1)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['b'] })
+    expect(scene.tokens.filter(token => token.actorId === 'b')).toHaveLength(0)
+    expect(scene.tokens.filter(token => token.actorId === 'a')).toHaveLength(1)
+  })
+
+  test.each(['missing-party-token', 'missing-party-token-id', 'level', 'combat', 'blocked', 'legacy', 'world'])('prototype deploy guards %s before mutations', async mode => {
+    const { party, scene, partyToken, events } = prototypeDeployFixture()
+    const codes = { 'missing-party-token': 'missing-party-token', 'missing-party-token-id': 'missing-party-token-id', level: 'invalid-deploy-level', combat: 'party-token-in-combat', blocked: 'party-blocked', legacy: 'unlinked-party-token', world: 'invalid-party' }
+    const input = { party, scene }
+    if (mode === 'missing-party-token') scene.tokens.splice(scene.tokens.indexOf(partyToken), 1)
+    if (mode === 'level') scene.levels.splice(0)
+    if (mode === 'combat') game.combats = [{ scene, started: true, combatants: [{ tokenId: partyToken.id }] }]
+    if (mode === 'blocked') service.blockedPartyIds.add(party.id)
+    if (mode === 'legacy') partyToken.actorLink = false
+    if (mode === 'world') game.actors.splice(0, 1)
+    if (mode !== 'missing-party-token-id') input.partyTokenId = partyToken.id
+    await expect(service.deployPartyTokens(input)).rejects.toMatchObject({ code: codes[mode] })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    if (mode === 'level' || mode === 'blocked') expect(partyToken.hidden).toBe(false)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+  })
+
+  test.each(['throw', 'silent', 'partial', 'wrong-data'])('prototype deploy verifies creation (%s), rolls back its own tokens and permits retry', async mode => {
+    const { party, scene, partyToken, deploy } = prototypeDeployFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (type, data, options) => {
+      if (mode === 'throw') throw new Error('create')
+      if (mode === 'silent') return []
+      const result = await create(type, mode === 'partial' ? data.slice(0, 1) : data, options)
+      if (mode === 'wrong-data') result[0].toObject = () => ({ ...data[0], _id: result[0].id, elevation: 999 })
+      return result
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: true })
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toHaveLength(0)
+    expect(partyToken.hidden).toBe(false)
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toHaveLength(2)
+    expect(partyToken.hidden).toBe(true)
+  })
+
+  test('prototype deploy keeps an unattributed same-actor addition and blocks on unknown attribution', async () => {
+    const { party, scene, make, deploy } = prototypeDeployFixture()
+    const external = make('eeeeeeeeeeeeeeee', 'a')
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      await create(...args)
+      scene.tokens.push(external)
+      throw new Error('uncertain-create')
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: false })
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(external.id)
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+  })
+
+  test('a failed hidden update rolls back the created members and keeps the anchor visible', async () => {
+    const { party, scene, partyToken, deploy } = prototypeDeployFixture()
+    partyToken.update.mockRejectedValueOnce(new Error('hide'))
+    await expect(deploy()).rejects.toMatchObject({ code: 'party-delete-failed', rollbackComplete: true })
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toHaveLength(0)
+    expect(partyToken.hidden).toBe(false)
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+    expect(partyToken.hidden).toBe(true)
+  })
+
+  test('an unreadable prototype token aborts before any mutation and blocks nothing', async () => {
+    const { party, scene, deploy, events } = prototypeDeployFixture({ failTokenDocument: true })
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed' })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+  })
+
+  test.each(['member-appears', 'roster', 'snapshot'])('prototype deploy rechecks awaited creation changes (%s) and removes only its own tokens', async mode => {
+    const { party, scene, make, deploy, partyToken } = prototypeDeployFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    let concurrent
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (...args) => {
+      const result = await create(...args)
+      if (mode === 'member-appears') {
+        concurrent = make('cccccccccccccccc', 'a')
+        scene.tokens.push(concurrent)
+      }
+      if (mode === 'roster') party.flags.dcc.partyMembers = []
+      if (mode === 'snapshot') party.flags.dcc.partyTokenSnapshots = { sceneId: scene.id, members: [] }
+      return result
+    })
+    await expect(deploy()).rejects.toMatchObject({ code: 'deploy-context-changed' })
+    expect(partyToken.hidden).toBe(false)
+    if (mode === 'snapshot') expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual({ sceneId: scene.id, members: [] })
+    else expect(party.getFlag('dcc', 'partyTokenSnapshots') ?? null).toBe(null)
+    if (concurrent) {
+      expect(scene.tokens.get(concurrent.id)).toBe(concurrent)
+      expect(scene.deleteEmbeddedDocuments.mock.calls.flatMap(([, ids]) => ids)).not.toContain(concurrent.id)
+    }
+  })
+})
+
 test('registers synchronous setup and client lifecycle hooks once at entry point', async () => {
   registerPartyTokenHooks()
   expect(Hooks.once).toHaveBeenCalledWith('setup', expect.any(Function))

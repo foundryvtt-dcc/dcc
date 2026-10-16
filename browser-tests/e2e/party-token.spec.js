@@ -174,6 +174,94 @@ test('gather falls back to the whole scene when only the freshly dropped party t
   }
 })
 
+test('a fresh scene deploys the members from their prototype tokens, then gather and lossless deploy cycle', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+    // Fresh scene: only a linked party anchor remains, no member tokens at all.
+    await page.evaluate(async ids => {
+      const scene = game.scenes.get(ids.scene)
+      await scene.deleteEmbeddedDocuments('Token', [ids.tokens[0], ids.tokens[1], ids.tokens[2]])
+      const document = await game.actors.get(ids.party).getTokenDocument({ x: 1400, y: 1400, level: canvas.level.id }, { parent: scene })
+      await scene.createEmbeddedDocuments('Token', [document.toObject()])
+      canvas.tokens.releaseAll()
+    }, ids)
+    await page.evaluate(async ids => { await game.actors.get(ids.party).sheet.render(true) }, ids)
+
+    // Click 1: prototype deploy — one token per member around the anchor, anchor hidden.
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => ids.members.every(actorId => canvas.scene.tokens.some(token => token.actorId === actorId)) &&
+      canvas.scene.tokens.some(token => token.actorId === ids.party && token.hidden), ids)
+    const deployed = await page.evaluate(ids => ({
+      snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') ?? null,
+      marker: canvas.scene.tokens.filter(token => token.actorId === ids.party).map(token => ({ hidden: token.hidden, x: token.x, y: token.y })),
+      members: canvas.scene.tokens.filter(token => ids.members.includes(token.actorId)).map(token => {
+        const prototype = game.actors.get(token.actorId).prototypeToken.toObject()
+        return {
+          actorId: token.actorId,
+          x: token.x,
+          y: token.y,
+          level: token.level,
+          actorLink: token.actorLink,
+          width: token.width,
+          height: token.height,
+          sight: token.sight,
+          light: token.light,
+          probe: token.flags?.dcc?.partyTokenProbe ?? null,
+          prototype: { width: prototype.width, height: prototype.height, sight: prototype.sight, light: prototype.light }
+        }
+      })
+    }), ids)
+    // Prototype deployment is deliberately not lossless: prototype values, fresh positions.
+    expect(deployed.snapshot).toBeNull()
+    expect(deployed.marker).toEqual([expect.objectContaining({ hidden: true, x: 1400, y: 1400 })])
+    expect(deployed.members).toHaveLength(3)
+    for (const member of deployed.members) {
+      expect(member.actorLink).toBe(true)
+      expect(member.level).toBe(await page.evaluate(() => canvas.level.id))
+      // Prototype values, not the individualized values of the removed tokens.
+      expect(member.width).toBe(member.prototype.width)
+      expect(member.height).toBe(member.prototype.height)
+      expect(member.sight).toMatchObject(member.prototype.sight)
+      expect(member.light).toMatchObject(member.prototype.light)
+      expect(member.probe).toBeNull()
+      // Placed around the anchor, never on it.
+      expect([member.x, member.y]).not.toEqual([1400, 1400])
+    }
+
+    // Click 2: gather — the prototype tokens are saved, the anchor shows again.
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 &&
+      ids.members.every(actorId => !canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
+    const gathered = await page.evaluate(ids => ({
+      marker: canvas.scene.tokens.filter(token => token.actorId === ids.party).map(token => ({ hidden: token.hidden })),
+      sources: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots').members
+    }), ids)
+    expect(gathered.marker).toEqual([{ hidden: false }])
+    expect(gathered.sources.map(member => member.actorId).sort()).toEqual([...ids.members].sort())
+
+    // Click 3: lossless deploy from the saved prototype tokens, anchor hidden again.
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') &&
+      ids.members.every(actorId => canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
+    const restored = await page.evaluate(ids => ({
+      marker: canvas.scene.tokens.filter(token => token.actorId === ids.party).map(token => ({ hidden: token.hidden })),
+      members: canvas.scene.tokens.filter(token => ids.members.includes(token.actorId)).map(token => token.toObject())
+    }), ids)
+    expect(restored.marker).toEqual([{ hidden: true }])
+    expect(restored.members).toHaveLength(3)
+    for (const source of gathered.sources) {
+      const token = restored.members.find(token => token.actorId === source.actorId)
+      expect(token._id).not.toBe(source.tokenData._id)
+      for (const key of ['actorLink', 'width', 'height', 'elevation', 'sight', 'light', 'flags', 'level']) {
+        expect(token[key]).toEqual(source.tokenData[key])
+      }
+    }
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
+
 test('UI travel requires target token, blocks combat and skips departed or deleted saved members', async ({ page }) => {
   const ids = await createSwapFixture(page)
   let combatId

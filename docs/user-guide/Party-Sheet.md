@@ -56,18 +56,37 @@ You can use the topmost box when you right-click a token to edit their hp - you 
 
 ## Gathering and Deploying Party Tokens
 
-The party sheet header has a **Gather / Deploy** button (only a GM sees it). What it does is decided when you click, based on the party's saved state: with no gathered members it collects the party's member tokens from the current scene and replaces them with a single party token, so you can move the whole group at once; with members already gathered, it puts them back down. The button label and icon never change — only the action does.
+The party sheet header has a **Gather / Deploy** button (only a GM sees it). What it does is decided when you click, from the party's saved state and the current scene — the label and icon never change.
+
+The party token stays on the scene as the party's **anchor** and doubles as the token you travel with. This button never deletes it, it only changes its visibility:
+
+- **Visible** – the members are gathered (travelling mode). Only the anchor stands on the scene.
+- **Hidden** – the members stand on the scene. The anchor stays where it was gathered and marks that spot.
+
+The saved state decides, not the visibility: if you show or hide the party token yourself in its token configuration, the button behaves exactly the same. The next successful gather or deploy simply sets the visibility again.
+
+A click does one of these:
+
+- **Member tokens are on the scene** (nothing gathered yet) – it gathers them (see below).
+- **Members are gathered** – it deploys them back **losslessly** from the saved tokens: each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
+- **No member tokens and nothing gathered** – it deploys from the members' **prototype tokens**: every party member without a token on the scene gets one around the anchor, and the anchor is hidden. This is deliberately **not** lossless — the new tokens use each member's prototype values (own image, size, vision, light) at a fresh position, and nothing is restored from an earlier gather.
+- **Neither member tokens nor a party token here** – nothing happens beyond a notice.
+
+When gathering:
 
 - When you have member tokens selected, gathering takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
 - A party token that Foundry left selected after you dropped it onto the scene does not count as a selection: gathering still takes every member token on the scene.
 - Foreign tokens in the selection are left untouched.
 - Member tokens without **Link Actor Data** are skipped: the party token can only stand in for linked members, so an unlinked member token stays where it is.
-- The next click then deploys: it places the members back around the party token. Each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
-- Gathering and deploying need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
+- The anchor is moved onto the middle of the gathered members and made visible, so you can move the whole group at once.
+
+When deploying from prototype tokens, one member whose prototype token lacks **Link Actor Data** stops the whole action before anything is created — enable **Link Actor Data** in that member's prototype token configuration first. Members that already have a token on the scene are always left untouched and never duplicated.
+
+Gathering and deploying need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
 
 ### Travelling between scenes
 
-You can gather the party on one scene and deploy it on another: gather on the first scene, move the party to the target scene, place a **linked** party token of this party there, and press Deploy. The system only removes the party token and never touches other scenes.
+You can gather the party on one scene and deploy it on another: gather on the first scene, move the party to the target scene, place a **linked** party token of this party there, and press Deploy. Only the scene you are viewing is changed: the anchors on other scenes are left as they are.
 
 ### Things to know
 
