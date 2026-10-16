@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
+import { togglePartyTokens, partyTokenActionLabel } from '../party-token.mjs'
+
+vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn(), partyTokenActionLabel: vi.fn() }))
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -13,6 +16,39 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 // form-data instance methods by invoking them with a faked `this`.
 
 const proto = DCCPartySheet.prototype
+
+describe('party token sheet control', () => {
+  test('static action passes initiating scene, level and unchanged selection to the controller', async () => {
+    const actor = { id: 'party' }
+    const scene = { id: 'source' }
+    const selection = [{ document: { id: 'member' } }, { document: { id: 'foreign' } }]
+    globalThis.canvas = { scene, level: { id: 'upstairs' }, tokens: { controlled: selection } }
+    await DCCPartySheet.DEFAULT_OPTIONS.actions.togglePartyTokens.call({ actor })
+    expect(togglePartyTokens).toHaveBeenCalledWith({ party: actor, scene, levelId: 'upstairs', selection })
+  })
+
+  test('header button is GM-only, accessible and localized', () => {
+    const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
+    expect(template).toMatch(/{{#if canManagePartyTokens}}[\s\S]*data-action="togglePartyTokens"[\s\S]*{{\/if}}/)
+    expect(template).toContain('aria-label="{{localize partyTokenActionLabel}}"')
+    expect(template).toContain('title="{{localize partyTokenActionLabel}}"')
+  })
+
+  test.each([true, false])('prepared sheet context exposes management only for GM=%s', async isGM => {
+    const parent = Object.getPrototypeOf(proto)
+    const prepare = vi.spyOn(parent, '_prepareContext').mockResolvedValue({})
+    const actor = { getFlag: () => [], system: { details: { notes: { value: '' } } } }
+    globalThis.game.user = { isGM }
+    partyTokenActionLabel.mockReturnValue('DCC.PartyTokenGather')
+    try {
+      const sheet = new DCCPartySheet({ document: actor, dragDrop: [] })
+      const context = await sheet._prepareContext({})
+      expect(context.canManagePartyTokens).toBe(isGM)
+      expect(context.partyTokenActionLabel).toBe('DCC.PartyTokenGather')
+      expect(partyTokenActionLabel).toHaveBeenCalledWith(actor)
+    } finally { prepare.mockRestore() }
+  })
+})
 
 beforeEach(() => {
   globalThis.foundry = globalThis.foundry || {}

@@ -1,7 +1,244 @@
 /* eslint-disable no-undef -- Foundry globals used in page.evaluate callbacks */
-const { expect, createSessionTest } = require('./fixtures')
+const { expect, createSessionTest, significantConsoleErrors } = require('./fixtures')
 
-const test = createSessionTest()
+const consoleErrors = []
+const test = createSessionTest({ onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) } })
+
+test.beforeEach(() => { consoleErrors.length = 0 })
+test.afterEach(() => { expect(significantConsoleErrors(consoleErrors)).toEqual([]) })
+
+async function createSwapFixture (page) {
+  return page.evaluate(async () => {
+    const members = []
+    for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
+    const foreign = await Actor.create({ name: 'PARTY TOKEN UI Foreign', type: 'NPC' })
+    const party = await Actor.create({ name: 'PARTY TOKEN UI Party', type: 'Party', flags: { dcc: { partyMembers: members.map(member => ({ id: member.id })) } } })
+    const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: 1 } })
+    await scene.view()
+    const data = []
+    for (const [i, actor] of [...members, foreign].entries()) {
+      data.push((await actor.getTokenDocument({
+        actorLink: true,
+        level: canvas.level.id,
+        x: 400 + i * 300,
+        y: 600,
+        width: i === 0 ? 2 : 1,
+        height: i === 1 ? 2 : 1,
+        elevation: 11 + i,
+        sight: { enabled: true, range: 30 + i },
+        light: { bright: 10 + i, dim: 20 + i },
+        flags: { dcc: { partyTokenProbe: `individual-${i}` } }
+      }, { parent: scene })).toObject())
+    }
+    const tokens = await scene.createEmbeddedDocuments('Token', data)
+    await party.sheet.render(true)
+    return {
+      party: party.id,
+      actors: [...members, foreign, party].map(actor => actor.id),
+      members: members.map(actor => actor.id),
+      scene: scene.id,
+      scenes: [scene.id],
+      tokens: tokens.map(token => token.id),
+      originals: tokens.map(token => token.toObject())
+    }
+  })
+}
+
+async function cleanSwapFixture (page, ids) {
+  await page.evaluate(async ids => {
+    await canvas.hud.token.clear()
+    for (const id of ids.scenes) await game.scenes.get(id)?.delete()
+    for (const id of ids.actors) await game.actors.get(id)?.delete()
+    document.querySelectorAll('#notifications .notification').forEach(element => element.remove())
+  }, ids)
+}
+
+const sheetSwap = '.dcc.actor.party [data-action="togglePartyTokens"]'
+const hudSwap = '#token-hud [data-action="partyTokenAction"]'
+
+/**
+ * Select exactly `tokenIds` on the canvas and resolve once the selection holds.
+ *
+ * The canvas draws asynchronously (and `Scene#view` can leave a previous
+ * Scene's placeables briefly in the layer), so a one-shot `control()` call can
+ * either be dropped or select a placeable whose document belongs to another
+ * Scene. The Party helpers read `canvas.tokens.controlled` and ignore
+ * placeables outside the current Scene, so an unverified selection silently
+ * degrades to "no selection" or "one member". Re-apply the selection across
+ * polls until every requested Token is controlled *and* belongs to the
+ * currently viewed Scene.
+ */
+async function selectTokens (page, tokenIds) {
+  await page.waitForFunction(ids => {
+    const scene = canvas.scene
+    const controlled = canvas.tokens?.controlled ?? []
+    // Drop Tokens that should no longer be selected (never release a Token we
+    // keep: releasing the HUD's bound Token would close the HUD).
+    for (const token of controlled) if (!ids.includes(token.id)) token.release()
+    // (Re)claim the requested Tokens, replacing any stale placeable that still
+    // points at a different Scene.
+    for (const id of ids) {
+      const current = (canvas.tokens?.controlled ?? []).find(token => token.id === id)
+      if (!current || current.document.parent?.id !== scene.id) canvas.tokens?.get(id)?.control({ releaseOthers: false })
+    }
+    const now = canvas.tokens?.controlled ?? []
+    return ids.length === now.length &&
+      ids.every(id => now.some(token => token.id === id && token.document.parent?.id === scene.id))
+  }, tokenIds, { timeout: 15000 })
+}
+
+/** Release the canvas selection and resolve once nothing is controlled. */
+async function releaseTokens (page) {
+  await page.waitForFunction(() => {
+    if (!(canvas.tokens?.controlled?.length)) return true
+    canvas.tokens?.releaseAll()
+    return false
+  }, null, { timeout: 10000 })
+}
+
+test('sheet gathers selected individualized members; moved party HUD restores them with fresh IDs', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+    await selectTokens(page, [ids.tokens[0], ids.tokens[1], ids.tokens[3]])
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather')
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => {
+      const scene = game.scenes.get(ids.scene)
+      return game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 2 &&
+        !scene.tokens.has(ids.tokens[0]) && !scene.tokens.has(ids.tokens[1])
+    }, ids)
+    const gathered = await page.evaluate(ids => {
+      const scene = game.scenes.get(ids.scene)
+      return { snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), remaining: scene.tokens.map(token => token.id) }
+    }, ids)
+    expect(gathered.snapshot.members.map(member => member.tokenData)).toEqual(ids.originals.slice(0, 2))
+    expect(gathered.remaining).toContain(ids.tokens[2])
+    expect(gathered.remaining).toContain(ids.tokens[3])
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Deploy')
+    const partyTokenId = await page.evaluate(async ids => {
+      const token = canvas.scene.tokens.find(token => token.actorId === ids.party)
+      // Displace, don't walk: v14 token movement is animated by default and its
+      // completion depends on the canvas ticker, which is unreliable in headless
+      // CI. `displace` teleports instantly so the ring is computed around the
+      // token's final position.
+      await token.move({ x: 1600, y: 1600, action: 'displace' })
+      return token.id
+    }, ids)
+    expect(await page.evaluate(id => {
+      const token = canvas.scene.tokens.get(id)
+      return { x: token.x, y: token.y }
+    }, partyTokenId)).toEqual({ x: 1600, y: 1600 })
+    await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, partyTokenId)
+    await expect(page.locator(hudSwap)).toHaveAccessibleName('Deploy')
+    await page.evaluate(async () => { await canvas.hud.token.render(true); await canvas.hud.token.render(true) })
+    await expect(page.locator(hudSwap)).toHaveCount(1)
+    await page.locator(hudSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
+    const restored = await page.evaluate(ids => ({
+      tokens: canvas.scene.tokens.map(token => token.toObject()),
+      snapshots: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') ?? null
+    }), ids)
+    expect(restored.snapshots).toBeNull()
+    expect(restored.tokens.some(token => token._id === partyTokenId)).toBe(false)
+    for (const original of ids.originals.slice(0, 2)) {
+      const token = restored.tokens.find(token => token.actorId === original.actorId)
+      expect(token._id).not.toBe(original._id)
+      for (const key of ['actorLink', 'width', 'height', 'elevation', 'sight', 'light', 'flags', 'level']) expect(token[key]).toEqual(original[key])
+      expect(token.x).toBeGreaterThan(1200)
+      expect(token.y).toBeGreaterThan(1200)
+    }
+    expect(restored.tokens.find(token => token._id === ids.tokens[3])).toEqual(ids.originals[3])
+    await expect(page.locator(sheetSwap)).toHaveAccessibleName('Gather')
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
+
+test('UI travel requires target token, blocks combat and skips departed or deleted saved members', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  let combatId
+  try {
+    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+    await releaseTokens(page)
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 && canvas.scene.tokens.size === 2, ids)
+    const targetId = await page.evaluate(async () => {
+      const target = await Scene.create({ name: 'PARTY TOKEN UI Target', width: 3000, height: 3000, grid: { size: 100, type: 1 } })
+      await target.view()
+      return target.id
+    })
+    ids.scenes.push(targetId)
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await expect(page.locator('#notifications')).toContainText('Place a linked token')
+    expect(await page.evaluate(() => canvas.scene.tokens.size)).toBe(0)
+    const targetTokenId = await page.evaluate(async ids => {
+      const party = game.actors.get(ids.party)
+      await party.update({ 'flags.dcc.partyMembers': [{ id: ids.members[0] }, { id: ids.members[2] }] })
+      await game.actors.get(ids.members[2]).delete()
+      const [token] = await canvas.scene.createEmbeddedDocuments('Token', [(await party.getTokenDocument({ x: 1700, y: 1700, level: canvas.level.id }, { parent: canvas.scene })).toObject()])
+      return token.id
+    }, ids)
+    combatId = await page.evaluate(async id => {
+      const combat = await Combat.create({ scene: canvas.scene.id, active: true, round: 1 })
+      await combat.createEmbeddedDocuments('Combatant', [{ tokenId: id, sceneId: canvas.scene.id, actorId: canvas.scene.tokens.get(id).actorId }])
+      return combat.id
+    }, targetTokenId)
+    await page.waitForFunction(id => canvas.tokens.get(id), targetTokenId)
+    await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, targetTokenId)
+    await page.locator(hudSwap).evaluate(element => element.click())
+    await expect(page.locator('#notifications')).toContainText('party token is in running combat')
+    expect(await page.evaluate(() => canvas.scene.tokens.size)).toBe(1)
+    await page.evaluate(async id => { await game.combats.get(id).delete() }, combatId)
+    combatId = null
+    await page.locator(hudSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
+    await expect(page.locator('#notifications')).toContainText('Skipped 2 saved members')
+    const result = await page.evaluate(ids => ({
+      target: canvas.scene.tokens.map(token => token.toObject()),
+      source: game.scenes.get(ids.scene).tokens.map(token => token.actorId)
+    }), ids)
+    expect(result.target).toHaveLength(1)
+    expect(result.target[0].actorId).toBe(ids.members[0])
+    expect(result.target[0].x).toBeGreaterThan(1300)
+    expect(result.target[0].level).toBe(await page.evaluate(() => canvas.level.id))
+    expect(result.source).not.toContain(ids.members[0])
+  } finally {
+    if (combatId) await page.evaluate(async id => { await game.combats.get(id)?.delete() }, combatId)
+    await cleanSwapFixture(page, ids)
+  }
+})
+
+test('member HUD offers gather for two controlled members with a cancellable party chooser', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    const other = await page.evaluate(async ids => {
+      const other = await Actor.create({ name: 'PARTY TOKEN UI Other', type: 'Party', flags: { dcc: { partyMembers: ids.members.map(id => ({ id })) } } })
+      await game.actors.get(ids.party).sheet.close()
+      return other.id
+    }, ids)
+    ids.actors.push(other)
+    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+    await selectTokens(page, [ids.tokens[0]])
+    await page.evaluate(async id => { await canvas.hud.token.bind(canvas.tokens.get(id)) }, ids.tokens[0])
+    await expect(page.locator(hudSwap)).toHaveCount(0)
+    await selectTokens(page, [ids.tokens[0], ids.tokens[1]])
+    await page.evaluate(async () => { await canvas.hud.token.render(true) })
+    await expect(page.locator(hudSwap)).toHaveAccessibleName('Gather')
+    await page.locator(hudSwap).evaluate(element => element.click())
+    const dialog = page.locator('.dialog').filter({ hasText: 'Which party should gather' })
+    await expect(dialog).toBeVisible()
+    await dialog.locator('[data-action="close"]').evaluate(element => element.click())
+    expect(await page.evaluate(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') ?? null, ids)).toBeNull()
+    expect(await page.evaluate(() => canvas.scene.tokens.size)).toBe(4)
+    await page.locator(hudSwap).evaluate(element => element.click())
+    await dialog.locator(`[data-action="${ids.party}"]`).evaluate(element => element.click())
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 2 && !canvas.scene.tokens.has(ids.tokens[0]), ids)
+    expect(await page.evaluate(id => game.actors.get(id).getFlag('dcc', 'partyTokenSnapshots') ?? null, other)).toBeNull()
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
 
 test('party aggregate reads live world actor HP without persisting it', async ({ page }) => {
   const result = await page.evaluate(async () => {

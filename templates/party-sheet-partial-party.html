@@ -13,6 +13,12 @@
        title="{{localize 'DCC.RollPartyInitiativeHint'}}">
       <i class="fas fa-dice-d20"></i>{{localize "DCC.RollPartyInitiative"}}
     </a>
+    {{#if canManagePartyTokens}}
+      <button type="button" class="party-token-action" data-action="togglePartyTokens"
+              title="{{localize partyTokenActionLabel}}" aria-label="{{localize partyTokenActionLabel}}">
+        <i class="fas fa-users" aria-hidden="true"></i>{{localize partyTokenActionLabel}}
+      </button>
+    {{/if}}
   </div>
 
   <div class="party-body">

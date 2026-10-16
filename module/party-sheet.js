@@ -1,8 +1,9 @@
-/* global game, foundry, ui */
+/* global game, foundry, ui, canvas */
 
 import DCCActorSheet from './actor-sheet.js'
 import { handlePartyItemDrop } from './actor-sheet/drop.mjs'
 import HitPointsConfig from './hit-points-config.js'
+import { togglePartyTokens, partyTokenActionLabel } from './party-token.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -35,6 +36,7 @@ class DCCPartySheet extends DCCActorSheet {
       rollSave: this.#rollSave,
       rollAttack: this.#rollAttack,
       rollPartyInitiative: this.#rollPartyInitiative,
+      togglePartyTokens: this.#togglePartyTokens,
       adjustHitPoints: this.#adjustHitPoints
     },
     dragDrop: [{
@@ -111,6 +113,8 @@ class DCCPartySheet extends DCCActorSheet {
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
+    context.canManagePartyTokens = !!game.user.isGM
+    context.partyTokenActionLabel = partyTokenActionLabel(this.actor)
 
     // Prepare party-specific data
     this.#preparePartyMembers(context)
@@ -122,6 +126,15 @@ class DCCPartySheet extends DCCActorSheet {
     })
 
     return context
+  }
+
+  static async #togglePartyTokens () {
+    return togglePartyTokens({
+      party: this.actor,
+      scene: canvas.scene,
+      levelId: canvas.level?.id,
+      selection: [...(canvas.tokens?.controlled ?? [])]
+    })
   }
 
   /**

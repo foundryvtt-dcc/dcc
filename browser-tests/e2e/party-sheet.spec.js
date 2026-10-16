@@ -26,6 +26,33 @@ const test = createSessionTest({
   onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
 })
 
+test('party token control follows replicated snapshot state in the existing sheet', async ({ page }) => {
+  await cleanProbeState(page)
+  consoleErrors.length = 0
+  const { partyId } = await createParty(page)
+  try {
+    await openActorSheet(page, 'PARTY Test Party')
+    const button = page.locator('.party-name [data-action="togglePartyTokens"]')
+    await expect(button).toBeVisible()
+    await expect(button).toHaveAccessibleName('Gather')
+    await page.evaluate(async id => {
+      await game.actors.get(id).setFlag('dcc', 'partyTokenSnapshots', { sceneId: 'unavailable', members: [] })
+    }, partyId)
+    await expect(button).toHaveAccessibleName('Deploy')
+    await page.evaluate(async id => { await game.actors.get(id).unsetFlag('dcc', 'partyTokenSnapshots') }, partyId)
+    await expect(button).toHaveAccessibleName('Gather')
+    const layout = await button.evaluate(element => {
+      const header = element.closest('.party-name')
+      return { width: header.getBoundingClientRect().width, overflow: header.scrollWidth > header.clientWidth }
+    })
+    expect(layout.width).toBeLessThan(800)
+    expect(layout.overflow).toBe(false)
+    expect(significantConsoleErrors(consoleErrors)).toEqual([])
+  } finally {
+    await cleanProbeState(page)
+  }
+})
+
 /** Delete probe actors, combats, and open windows left over from a test. */
 async function cleanProbeState (page) {
   await page.evaluate(async () => {

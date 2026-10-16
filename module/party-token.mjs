@@ -1,4 +1,4 @@
-/* global CONFIG, game, TokenDocument, canvas, Hooks, foundry */
+/* global CONFIG, game, TokenDocument, canvas, Hooks, foundry, ui, document */
 
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
 
@@ -40,8 +40,11 @@ export function registerPartyTokenSocket () {
     // Socket event emitters ignore promises: contain every Party failure here,
     // including authorization before the workflow acquires its lock.
     try {
-      return await onPartyTokenAction(payload, senderId)
+      const result = await onPartyTokenAction(payload, senderId)
+      notifyPartyTokenResult(result)
+      return result
     } catch (error) {
+      notifyPartyTokenError(error)
       return { error: { ...error, code: error.code ?? error.message } }
     }
   })
@@ -50,6 +53,140 @@ export function registerPartyTokenSocket () {
 /** Same socket/lock path for every UI caller. Local failures return { error: { code, ... } }; remote calls are fire-and-forget. */
 export function requestPartyTokenAction (payload) {
   return executeAsGM('partyTokenAction', payload)
+}
+
+const partyTokenErrors = {
+  unauthorized: 'Unauthorized',
+  'invalid-request': 'InvalidRequest',
+  'invalid-party': 'InvalidParty',
+  'missing-scene': 'MissingScene',
+  'missing-party-token-id': 'MissingPartyToken',
+  'missing-party-token': 'MissingPartyToken',
+  'ambiguous-party-token': 'AmbiguousPartyToken',
+  'party-token-in-combat': 'PartyInCombat',
+  'party-blocked': 'Blocked',
+  'snapshot-open': 'SnapshotOpen',
+  'missing-snapshot': 'MissingSnapshot',
+  'unlinked-party-token': 'UnlinkedToken',
+  'unlinked-party-prototype': 'UnlinkedPrototype',
+  'invalid-gather-level': 'InvalidGatherLevel',
+  'invalid-deploy-level': 'InvalidDeployLevel',
+  'missing-source-scene': 'MissingSourceScene',
+  'invalid-snapshot-token-id': 'InvalidSnapshot',
+  'original-token-exists': 'OriginalsPresent',
+  'snapshot-save-failed': 'SnapshotSaveFailed',
+  'party-create-failed': 'PartyCreateFailed',
+  'gather-context-changed': 'GatherContextChanged',
+  'member-delete-failed': 'MemberDeleteFailed',
+  'deploy-context-changed': 'DeployContextChanged',
+  'member-create-failed': 'MemberCreateFailed',
+  'party-delete-failed': 'PartyDeleteFailed',
+  'snapshot-clear-failed': 'SnapshotClearFailed'
+}
+
+function notifyPartyTokenError (error) {
+  const code = error.code ?? error.message
+  const key = error.rollbackComplete === false ? 'RollbackFailed' : partyTokenErrors[code]
+  if (!key || error.cause || error.rollbackIssues?.length) console.error('DCC | Party token action failed', error)
+  ui.notifications?.warn(game.i18n.localize(`DCC.PartyToken${key ?? 'UnexpectedError'}`))
+}
+
+function notifyPartyTokenResult (result) {
+  if (!result) return
+  if (result.gathered) ui.notifications?.info(game.i18n.format('DCC.PartyTokenGathered', { count: result.gathered }))
+  if (result.gathered === 0) ui.notifications?.warn(game.i18n.localize('DCC.PartyTokenNoMembers'))
+  if (result.skippedCombatTokenIds?.length) ui.notifications?.warn(game.i18n.format('DCC.PartyTokenSkippedCombat', { count: result.skippedCombatTokenIds.length }))
+  if (result.deployed) ui.notifications?.info(game.i18n.format('DCC.PartyTokenDeployed', { count: result.deployed }))
+  if (result.skipped) ui.notifications?.warn(game.i18n.format('DCC.PartyTokenSkippedMembers', { count: result.skipped }))
+}
+
+export function partyTokenActionLabel (party) {
+  return party.flags?.dcc?.partyTokenSnapshots != null ? 'DCC.PartyTokenDeploy' : 'DCC.PartyTokenGather'
+}
+
+/** Initiator-only controller: freeze the action and selection before any asynchronous work. */
+export async function togglePartyTokens ({ party, scene, levelId, selection = [], partyTokenId, action }) {
+  try {
+    if (!game.user.isGM) throw new Error('unauthorized')
+    // Never read or write a legacy token's synthetic Actor snapshot.
+    party = game.actors.get(party?.id)
+    if (party?.type !== 'Party' || party.isToken || party.pack) throw new Error('invalid-party')
+    if (!scene) throw new Error('missing-scene')
+    action ??= party.flags?.dcc?.partyTokenSnapshots != null ? 'deploy' : 'gather'
+    const payload = { action, partyId: party.id, sceneId: scene.id }
+    if (action === 'gather') {
+      payload.levelId = levelId
+      // Keep foreign/combat/stale IDs: only the executing service filters them.
+      payload.tokenIds = selection.map(token => (token.document ?? token).id)
+    }
+    if (partyTokenId !== undefined) payload.partyTokenId = partyTokenId
+    else {
+      const tokens = [...scene.tokens].filter(token => token.actorId === party.id)
+      const selected = new Set(selection.map(token => (token.document ?? token).id))
+      const contextual = tokens.filter(token => selected.has(token.id))
+      const target = contextual.length === 1 ? contextual[0] : tokens.length === 1 ? tokens[0] : null
+      if (tokens.length > 1 && !target) throw new Error('ambiguous-party-token')
+      if (action === 'deploy' && !target) throw new Error('missing-party-token')
+      if (target) payload.partyTokenId = target.id
+    }
+    return await requestPartyTokenAction(payload)
+  } catch (error) {
+    notifyPartyTokenError(error)
+  }
+}
+
+/** v14 ApplicationV2 render hook: HTMLElement, never an AppV1 jQuery wrapper. */
+function renderPartyTokenHUD (hud, html) {
+  for (const control of html.querySelectorAll('[data-action="partyTokenAction"]')) control.remove()
+  if (!game.user.isGM) return
+  const token = hud.document ?? hud.object?.document
+  const scene = token?.parent
+  if (!scene) return
+  const actor = game.actors.get(token.actorId)
+  const party = actor?.type === 'Party' ? actor : null
+  const selection = canvas.tokens?.controlled ?? []
+  if (!party && !gatherHudParties(scene, selection, token).length) return
+  const label = game.i18n.localize(party ? partyTokenActionLabel(party) : 'DCC.PartyTokenGather')
+  const control = document.createElement('button')
+  control.type = 'button'
+  control.classList.add('control-icon', 'dcc-party-token')
+  control.dataset.action = 'partyTokenAction'
+  control.setAttribute('aria-label', label)
+  control.setAttribute('title', label)
+  const icon = document.createElement('i')
+  icon.classList.add('fas', 'fa-users')
+  icon.setAttribute('aria-hidden', 'true')
+  control.append(icon)
+  control.addEventListener('click', async event => {
+    event.preventDefault()
+    event.stopPropagation()
+    try {
+      // Capture the initiating client's context before opening a chooser.
+      const selection = [...(canvas.tokens?.controlled ?? [])]
+      const levelId = canvas.level?.id
+      if (party) return await togglePartyTokens({ party, scene, levelId, selection, partyTokenId: token.id })
+      const candidates = gatherHudParties(scene, selection, token)
+      let chosen = candidates[0]
+      if (candidates.length > 1) {
+        const id = await foundry.applications.api.DialogV2.wait({
+          window: { title: game.i18n.localize('DCC.PartyTokenChooseParty') },
+          content: `<p>${game.i18n.localize('DCC.PartyTokenChoosePartyHint')}</p>`,
+          buttons: candidates.map(candidate => ({ action: candidate.id, label: candidate.name, callback: () => candidate.id })),
+          rejectClose: false
+        })
+        chosen = candidates.find(candidate => candidate.id === id)
+      }
+      if (chosen) return await togglePartyTokens({ party: chosen, scene, levelId, selection, action: 'gather' })
+    } catch (error) {
+      notifyPartyTokenError(error)
+    }
+  })
+  html.querySelector('.col.right')?.append(control)
+}
+
+function gatherHudParties (scene, selection, token) {
+  return findPartyCandidates(scene, selection).filter(party => isGatherHudEligible(party, scene, selection) &&
+    resolveGatherTokens(party, scene, [token]).length)
 }
 
 /** All started, still-present encounters in the supplied scene, not just the active tracker. */
@@ -308,7 +445,13 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
     return data
   })
   const placements = computeDeployPlacements(scene, originalParty.getCenterPoint(), payloads)
-  for (const [i, data] of payloads.entries()) Object.assign(data, placements[i])
+  for (const [i, data] of payloads.entries()) {
+    Object.assign(data, placements[i])
+    // Foundry does not guarantee that created documents come back in the order
+    // they were passed. Assign the fresh IDs ourselves and create with keepId
+    // so each created Token stays mapped to its own payload.
+    data._id = foundry.utils.randomID()
+  }
   const expectedPayloads = structuredClone(payloads)
   const ownMembers = new Map()
   let uncertainCreation = false
@@ -341,13 +484,16 @@ export async function deployPartyTokens ({ party, scene, partyTokenId }) {
       try {
         // This guard must precede every create, including rollback Party restoration.
         assertOriginalTokensAbsent(snapshot)
-        created = await scene.createEmbeddedDocuments('Token', payloads)
+        created = await scene.createEmbeddedDocuments('Token', payloads, { keepId: true })
       } finally {
         // Scene additions alone never establish ownership: another client can
         // create even the only new same-Actor Token while our create aborts.
-        for (const [i, token] of (created ?? []).entries()) {
-          if (!before.has(token.id) && scene.tokens.get(token.id) === token) {
-            ownMembers.set(token.id, { document: token, source: { ...expectedPayloads[i], _id: token.id } })
+        // Match by the ID we assigned: the batch return order is not guaranteed.
+        const byId = new Map((created ?? []).map(token => [token.id, token]))
+        for (const source of expectedPayloads) {
+          const token = byId.get(source._id)
+          if (token && !before.has(token.id) && scene.tokens.get(token.id) === token) {
+            ownMembers.set(token.id, { document: token, source })
           }
         }
         if (created?.length !== payloads.length || ownMembers.size !== payloads.length) {
@@ -530,5 +676,6 @@ export function registerPartyTokenHooks () {
   Hooks.once('setup', registerPartyHealthBar)
   Hooks.on('updateActor', refreshPartyTokens)
   Hooks.on('deleteActor', refreshPartyTokens)
+  Hooks.on('renderTokenHUD', renderPartyTokenHUD)
   for (const hook of ['createActiveEffect', 'updateActiveEffect', 'deleteActiveEffect']) Hooks.on(hook, onMemberEffectChange)
 }
