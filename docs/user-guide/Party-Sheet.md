@@ -68,6 +68,8 @@ Only member tokens with **Link Actor Data** enabled can be gathered; unlinked to
 
 After gathering, move the party token where you want the members to appear and click **Gather / Deploy**. Their tokens reappear around it with their gathered token details, such as size, vision, and light. They are placed around the party token at its **current** location, not at their former map coordinates. The party token stays on the scene but is hidden.
 
+If a member's token already stands on the destination scene, saved tokens cannot be restored until the GM moves that token to another scene or removes it.
+
 If you have not gathered anyone and place a party token on a scene without eligible member tokens, clicking **Gather / Deploy** instead creates member tokens around it from each member's prototype token settings. This does **not** restore placements or token changes from an earlier scene. Members who already have tokens on this scene are not duplicated. If a member who needs a token has **Link Actor Data** disabled on their prototype token, no new member tokens are created; enable it there before trying again. If there is neither a party token nor member tokens on the scene, you get a notice instead.
 
 ### Travel between scenes

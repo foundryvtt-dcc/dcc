@@ -174,6 +174,67 @@ test('gather falls back to the whole scene when only the freshly dropped party t
   }
 })
 
+test('saved deploy refuses an independent member token without changing the scene and succeeds on retry', async ({ page }) => {
+  const ids = await createSwapFixture(page)
+  try {
+    await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+    await page.evaluate(() => canvas.tokens.releaseAll())
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 &&
+      ids.members.every(actorId => !canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
+
+    const before = await page.evaluate(async ids => {
+      const scene = game.scenes.get(ids.scene)
+      const document = await game.actors.get(ids.members[0]).getTokenDocument({ actorLink: true, x: 2200, y: 2200, level: canvas.level.id }, { parent: scene })
+      const [independent] = await scene.createEmbeddedDocuments('Token', [document.toObject()])
+      return {
+        independent: independent.toObject(),
+        snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'),
+        marker: scene.tokens.find(token => token.actorId === ids.party).toObject(),
+        tokens: scene.tokens.map(token => token.toObject()),
+        notice: game.i18n.localize('DCC.PartyTokenMemberAlreadyPresent')
+      }
+    }, ids)
+    expect(before.independent._id).not.toBe(ids.tokens[0])
+    expect(before.snapshot.members.map(member => member.actorId).sort()).toEqual([...ids.members].sort())
+    expect(before.marker.hidden).toBe(false)
+
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await expect(page.locator('#notifications')).toContainText(before.notice)
+    const blocked = await page.evaluate(ids => ({
+      snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'),
+      tokens: canvas.scene.tokens.map(token => token.toObject())
+    }), ids)
+    expect(blocked.snapshot).toEqual(before.snapshot)
+    expect(blocked.tokens).toEqual(before.tokens)
+    expect(blocked.tokens.find(token => token._id === before.independent._id)).toEqual(before.independent)
+    expect(blocked.tokens.find(token => token._id === before.marker._id)).toEqual(before.marker)
+    expect(blocked.tokens.filter(token => ids.members.includes(token.actorId))).toHaveLength(1)
+
+    await page.evaluate(async id => { await canvas.scene.deleteEmbeddedDocuments('Token', [id]) }, before.independent._id)
+    await page.locator(sheetSwap).evaluate(element => element.click())
+    await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') &&
+      ids.members.every(actorId => canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
+    const restored = await page.evaluate(ids => ({
+      snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') ?? null,
+      tokens: canvas.scene.tokens.map(token => token.toObject())
+    }), ids)
+    expect(restored.snapshot).toBeNull()
+    expect(restored.tokens.find(token => token._id === before.marker._id)).toMatchObject({ actorId: ids.party, hidden: true })
+    expect(restored.tokens.some(token => token._id === before.independent._id)).toBe(false)
+    expect(restored.tokens.filter(token => ids.members.includes(token.actorId))).toHaveLength(3)
+    for (const member of before.snapshot.members) {
+      const token = restored.tokens.find(token => token.actorId === member.actorId)
+      expect(token._id).not.toBe(member.tokenData._id)
+      for (const key of ['actorLink', 'width', 'height', 'elevation', 'sight', 'light', 'flags', 'level']) {
+        expect(token[key]).toEqual(member.tokenData[key])
+      }
+    }
+  } finally {
+    await cleanSwapFixture(page, ids)
+  }
+})
+
 test('a fresh scene deploys the members from their prototype tokens, then gather and lossless deploy cycle', async ({ page }) => {
   const ids = await createSwapFixture(page)
   try {
