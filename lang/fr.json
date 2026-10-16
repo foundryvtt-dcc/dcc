@@ -618,6 +618,7 @@
   "DCC.PartyTokenMissingSourceScene": "La scène source sauvegardée manque. Vérifiez les instantanés manuellement ; rien n'a été effacé.",
   "DCC.PartyTokenInvalidSnapshot": "Données sauvegardées invalides. Vérifiez les instantanés manuellement avant le déploiement ; rien n'a été effacé.",
   "DCC.PartyTokenOriginalsPresent": "Des pions originaux existent encore sur la scène source. Vérifiez-les et les instantanés manuellement pour éviter les doublons.",
+  "DCC.PartyTokenMemberAlreadyPresent": "Un membre sauvegardé a déjà un pion sur la scène cible. Vérifiez-le ou retirez-le avant de déployer ; aucun pion ni instantané n'a été modifié.",
   "DCC.PartyTokenSnapshotSaveFailed": "Échec de sauvegarde des instantanés. Rassemblement non terminé ; vérifiez les droits et l'état du groupe.",
   "DCC.PartyTokenPartyCreateFailed": "Impossible de créer le pion du groupe. Modifications annulées ; vérifiez les droits de création et la configuration.",
   "DCC.PartyTokenGatherContextChanged": "Le groupe ou ses membres ont changé pendant le rassemblement. Modifications annulées ; vérifiez la sélection et la scène.",

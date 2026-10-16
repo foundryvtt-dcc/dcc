@@ -631,6 +631,7 @@
   "DCC.PartyTokenMissingSourceScene": "Die gespeicherte Ursprungsszene fehlt. Prüfe die Snapshots manuell; nichts wurde gelöscht.",
   "DCC.PartyTokenInvalidSnapshot": "Gespeicherte Token-Daten sind ungültig. Prüfe die Snapshots vor dem Aufstellen manuell; nichts wurde gelöscht.",
   "DCC.PartyTokenOriginalsPresent": "Gesammelte Original-Tokens existieren noch auf der Ursprungsszene. Prüfe sie und die Snapshots manuell, um Duplikate zu vermeiden.",
+  "DCC.PartyTokenMemberAlreadyPresent": "Ein gespeichertes Mitglied hat bereits ein Token auf der Zielszene. Prüfe oder entferne es vor dem Aufstellen; Tokens und Snapshots wurden nicht verändert.",
   "DCC.PartyTokenSnapshotSaveFailed": "Mitglieder-Snapshots konnten nicht gespeichert werden. Sammeln nicht abgeschlossen; prüfe Rechte und Gruppenstatus.",
   "DCC.PartyTokenPartyCreateFailed": "Gruppen-Token konnte nicht erstellt werden. Änderungen wurden zurückgenommen; prüfe Erstellungsrechte und Token-Konfiguration.",
   "DCC.PartyTokenGatherContextChanged": "Mitglieder oder Gruppe haben sich beim Sammeln geändert. Änderungen wurden zurückgenommen; prüfe Auswahl und Szene.",

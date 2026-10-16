@@ -631,6 +631,7 @@
   "DCC.PartyTokenMissingSourceScene": "Falta la escena de origen guardada. Revisa las copias manualmente; no se borró nada.",
   "DCC.PartyTokenInvalidSnapshot": "Datos de ficha guardados inválidos. Revisa las copias manualmente antes de desplegar; no se borró nada.",
   "DCC.PartyTokenOriginalsPresent": "Aún existen fichas originales en la escena de origen. Revísalas y las copias manualmente para evitar duplicados.",
+  "DCC.PartyTokenMemberAlreadyPresent": "Un miembro guardado ya tiene una ficha en la escena de destino. Revísala o retírala antes de desplegar; no se modificaron fichas ni instantáneas.",
   "DCC.PartyTokenSnapshotSaveFailed": "No se pudieron guardar las copias de miembros. Reunión incompleta; revisa permisos y estado del grupo.",
   "DCC.PartyTokenPartyCreateFailed": "No se pudo crear la ficha del grupo. Cambios revertidos; revisa permisos de creación y configuración.",
   "DCC.PartyTokenGatherContextChanged": "El grupo o sus miembros cambiaron al reunir. Cambios revertidos; revisa selección y escena.",

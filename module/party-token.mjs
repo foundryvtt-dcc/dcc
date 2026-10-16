@@ -77,6 +77,7 @@ const partyTokenErrors = {
   'missing-source-scene': 'MissingSourceScene',
   'invalid-snapshot-token-id': 'InvalidSnapshot',
   'original-token-exists': 'OriginalsPresent',
+  'member-token-already-present': 'MemberAlreadyPresent',
   'snapshot-save-failed': 'SnapshotSaveFailed',
   'party-create-failed': 'PartyCreateFailed',
   'gather-context-changed': 'GatherContextChanged',
@@ -525,6 +526,14 @@ function currentDeployMembers (party, snapshot) {
   return snapshot.members.filter(member => roster.has(member.actorId) && game.actors.has(member.actorId))
 }
 
+/** Only proven, object-identical documents created by this deploy can be ignored. */
+function assertNoIndependentMemberTokens (scene, members, ownMembers = new Map()) {
+  const actors = new Set(members.map(member => member.actorId))
+  if ([...scene.tokens].some(token => actors.has(token.actorId) && ownMembers.get(token.id)?.document !== token)) {
+    throw new Error('member-token-already-present')
+  }
+}
+
 /** Roster actors that need a token on this scene, plus the roster ids left untouched. */
 function prototypeDeployMembers (party, scene) {
   const onScene = new Set([...scene.tokens].map(token => token.actorId))
@@ -594,6 +603,12 @@ async function deploySnapshotPartyTokens (party, scene, partyTokenId) {
   // party's anchor while its members are placed around it.
   const markerSource = { ...structuredClone(partySource), hidden: true }
   const members = currentDeployMembers(party, snapshot)
+  try {
+    assertNoIndependentMemberTokens(scene, members)
+  } catch (error) {
+    error.code ??= error.message
+    throw error
+  }
   const skippedMemberIds = snapshot.members.filter(member => !members.includes(member)).map(member => member.actorId)
   const result = { deployed: members.length, skipped: skippedMemberIds.length, skippedMemberIds }
   const payloads = members.map(member => {
@@ -644,6 +659,7 @@ async function deploySnapshotPartyTokens (party, scene, partyTokenId) {
       try {
         // This guard must precede every create, including rollback Party restoration.
         assertOriginalTokensAbsent(snapshot)
+        assertNoIndependentMemberTokens(scene, members, ownMembers)
         created = await scene.createEmbeddedDocuments('Token', payloads, { keepId: true })
       } finally {
         // Scene additions alone never establish ownership: another client can
@@ -687,6 +703,7 @@ async function deploySnapshotPartyTokens (party, scene, partyTokenId) {
     if (!sameTokenSource(scene.tokens.get(originalParty.id), markerSource)) throw new Error(code)
     return result
   } catch (cause) {
+    if (cause.message === 'member-token-already-present') code = cause.message
     const rollbackIssues = uncertainCreation ? ['member-create-uncertain'] : []
     // A rejected flag clear can already have persisted. Retain the deep-cloned
     // original snapshot on every failed completion, regardless of cleanup outcome.

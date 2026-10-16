@@ -631,6 +631,7 @@
   "DCC.PartyTokenMissingSourceScene": "Manca la scena di origine salvata. Controlla manualmente le istantanee; nulla è stato cancellato.",
   "DCC.PartyTokenInvalidSnapshot": "Dati delle pedine salvati non validi. Controlla manualmente le istantanee prima di schierare; nulla è stato cancellato.",
   "DCC.PartyTokenOriginalsPresent": "Le pedine originali esistono ancora nella scena di origine. Controllale insieme alle istantanee per evitare duplicati.",
+  "DCC.PartyTokenMemberAlreadyPresent": "Un membro salvato ha già una pedina sulla scena di destinazione. Controllala o rimuovila prima dello schieramento; pedine e istantanee non sono state modificate.",
   "DCC.PartyTokenSnapshotSaveFailed": "Impossibile salvare le istantanee dei membri. Raduno non completato; controlla permessi e stato del gruppo.",
   "DCC.PartyTokenPartyCreateFailed": "Impossibile creare la pedina del gruppo. Modifiche annullate; controlla permessi di creazione e configurazione.",
   "DCC.PartyTokenGatherContextChanged": "Gruppo o membri cambiati durante il raduno. Modifiche annullate; controlla selezione e scena.",

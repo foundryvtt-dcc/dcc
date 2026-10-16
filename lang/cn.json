@@ -631,6 +631,7 @@
   "DCC.PartyTokenMissingSourceScene": "保存的来源场景缺失。请手动检查快照；未清除任何数据。",
   "DCC.PartyTokenInvalidSnapshot": "保存的棋子数据无效。展开前请手动检查快照；未清除任何数据。",
   "DCC.PartyTokenOriginalsPresent": "来源场景仍存在原始成员棋子。请手动检查棋子和快照，避免产生副本。",
+  "DCC.PartyTokenMemberAlreadyPresent": "目标场景上已有待恢复成员的棋子。请先检查或移除该棋子，再展开队伍；棋子和快照均未更改。",
   "DCC.PartyTokenSnapshotSaveFailed": "无法保存成员快照。集合未完成；请检查权限和队伍状态。",
   "DCC.PartyTokenPartyCreateFailed": "无法创建队伍棋子。已回滚更改；请检查创建权限和棋子配置。",
   "DCC.PartyTokenGatherContextChanged": "集合期间队伍或成员发生变化。已回滚更改；请检查选择和场景。",

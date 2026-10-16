@@ -631,6 +631,7 @@
   "DCC.PartyTokenMissingSourceScene": "Brak zapisanej sceny źródłowej. Ręcznie sprawdź migawki; niczego nie usunięto.",
   "DCC.PartyTokenInvalidSnapshot": "Zapisane dane żetonu są nieprawidłowe. Ręcznie sprawdź migawki przed rozstawieniem; niczego nie usunięto.",
   "DCC.PartyTokenOriginalsPresent": "Oryginalne żetony nadal istnieją na scenie źródłowej. Ręcznie sprawdź je i migawki, aby uniknąć duplikatów.",
+  "DCC.PartyTokenMemberAlreadyPresent": "Zapisany członek ma już żeton na scenie docelowej. Sprawdź lub usuń ten żeton przed rozstawieniem; żetony i migawki pozostały bez zmian.",
   "DCC.PartyTokenSnapshotSaveFailed": "Nie udało się zapisać migawek członków. Zbieranie nieukończone; sprawdź uprawnienia i stan drużyny.",
   "DCC.PartyTokenPartyCreateFailed": "Nie udało się utworzyć żetonu drużyny. Zmiany cofnięto; sprawdź uprawnienia tworzenia i konfigurację.",
   "DCC.PartyTokenGatherContextChanged": "Drużyna lub członkowie zmienili się podczas zbierania. Zmiany cofnięto; sprawdź zaznaczenie i scenę.",

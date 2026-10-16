@@ -618,6 +618,7 @@
   "DCC.PartyTokenMissingSourceScene": "The saved source scene is missing. Manually inspect the saved snapshots; nothing was cleared.",
   "DCC.PartyTokenInvalidSnapshot": "Saved token data is invalid. Manually inspect the snapshots before deploying; nothing was cleared.",
   "DCC.PartyTokenOriginalsPresent": "Original gathered tokens still exist on the source scene. Manually inspect them and the snapshots to avoid duplicates.",
+  "DCC.PartyTokenMemberAlreadyPresent": "A saved member already has a token on the target scene. Inspect or remove that token before deploying; no tokens or snapshots were changed.",
   "DCC.PartyTokenSnapshotSaveFailed": "Could not save member snapshots. No gathering completed; check permissions and the party state.",
   "DCC.PartyTokenPartyCreateFailed": "Could not create the party token. Changes were rolled back; check token creation permissions and configuration.",
   "DCC.PartyTokenGatherContextChanged": "Members or the party changed while gathering. Changes were rolled back; check the current selection and scene.",

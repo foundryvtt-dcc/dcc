@@ -678,6 +678,71 @@ describe('deploy workflow', () => {
     expect(scene.tokens.filter(t => t.actorId === 'a')).toHaveLength(1)
   })
 
+  test.each([
+    ['same scene', false, {}],
+    ['other scene', true, {}],
+    ['other level', true, { level: 'upper' }],
+    ['unlinked', true, { actorLink: false }],
+    ['in combat', true, { combat: true }]
+  ])('snapshot deploy refuses an independent saved-member token on the target (%s)', async (label, crossScene, options) => {
+    const { party, scene, partyToken, make, snapshot, deploy, events } = await deployWorkflowFixture({ crossScene })
+    const { combat, ...data } = options
+    const existing = make('eeeeeeeeeeeeeeee', 'a', data)
+    scene.tokens.push(existing)
+    if (combat) game.combats = [{ scene, started: true, combatants: [{ tokenId: existing.id }] }]
+    const before = existing.toObject()
+    const marker = partyToken.toObject()
+    const liveSnapshot = party.getFlag('dcc', 'partyTokenSnapshots')
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-token-already-present' })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(partyToken.update).not.toHaveBeenCalled()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+    expect(scene.tokens.get(existing.id)).toBe(existing)
+    expect(existing.toObject()).toEqual(before)
+    expect(partyToken.toObject()).toEqual(marker)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBe(liveSnapshot)
+    expect(liveSnapshot).toEqual(snapshot)
+  })
+
+  test.each(['departed', 'deleted'])('existing token for a %s saved actor does not prevent other members deploying', async mode => {
+    const { party, scene, make, deploy } = await deployWorkflowFixture({ crossScene: true })
+    const existing = make('eeeeeeeeeeeeeeee', 'a')
+    scene.tokens.push(existing)
+    if (mode === 'departed') party.flags.dcc.partyMembers = [{ id: 'b' }]
+    else game.actors.splice(game.actors.findIndex(actor => actor.id === 'a'), 1)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 1, skipped: 1, skippedMemberIds: ['a'] })
+    expect(scene.tokens.filter(token => token.actorId === 'a')).toEqual([existing])
+    expect(scene.tokens.filter(token => token.actorId === 'b')).toHaveLength(1)
+  })
+
+  test('multiple saved tokens of one actor deploy when no independent token exists', async () => {
+    const { party, scene, deploy } = await deployWorkflowFixture({ crossScene: true })
+    const snapshot = party.getFlag('dcc', 'partyTokenSnapshots')
+    snapshot.members.push({ actorId: 'a', tokenData: { ...structuredClone(snapshot.members[0].tokenData), _id: 'cccccccccccccccc', x: 400 } })
+    await expect(deploy()).resolves.toMatchObject({ deployed: 3, skipped: 0 })
+    expect(scene.tokens.filter(token => token.actorId === 'a')).toHaveLength(2)
+    expect(scene.tokens.filter(token => token.actorId === 'b')).toHaveLength(1)
+  })
+
+  test('snapshot deploy rechecks saved-member tokens immediately before creation', async () => {
+    const { party, scene, partyToken, make, snapshot, deploy, events } = await deployWorkflowFixture({ crossScene: true })
+    const existing = make('eeeeeeeeeeeeeeee', 'a')
+    const center = partyToken.getCenterPoint()
+    partyToken.getCenterPoint = () => { scene.tokens.push(existing); return center }
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-token-already-present' })
+    expect(events).toEqual([])
+    expect(scene.createEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(scene.deleteEmbeddedDocuments).not.toHaveBeenCalled()
+    expect(partyToken.update).not.toHaveBeenCalled()
+    expect(party.setFlag).not.toHaveBeenCalled()
+    expect(party.unsetFlag).not.toHaveBeenCalled()
+    expect(scene.tokens.get(existing.id)).toBe(existing)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toEqual(snapshot)
+  })
+
   test('deploy skips a deleted world member even if its ID remains on the roster', async () => {
     const { scene, deploy } = await deployWorkflowFixture()
     game.actors.splice(game.actors.findIndex(actor => actor.id === 'a'), 1)
@@ -1453,6 +1518,7 @@ describe('party token UI controller', () => {
     ['snapshot-open', 'SnapshotOpen'], ['missing-snapshot', 'MissingSnapshot'], ['unlinked-party-token', 'UnlinkedToken'],
     ['unlinked-party-prototype', 'UnlinkedPrototype'], ['invalid-gather-level', 'InvalidGatherLevel'], ['invalid-deploy-level', 'InvalidDeployLevel'],
     ['missing-source-scene', 'MissingSourceScene'], ['invalid-snapshot-token-id', 'InvalidSnapshot'], ['original-token-exists', 'OriginalsPresent'],
+    ['member-token-already-present', 'MemberAlreadyPresent'],
     ['snapshot-save-failed', 'SnapshotSaveFailed'], ['party-create-failed', 'PartyCreateFailed'], ['gather-context-changed', 'GatherContextChanged'],
     ['member-delete-failed', 'MemberDeleteFailed'], ['deploy-context-changed', 'DeployContextChanged'], ['member-create-failed', 'MemberCreateFailed'],
     ['party-delete-failed', 'PartyDeleteFailed'], ['snapshot-clear-failed', 'SnapshotClearFailed']
