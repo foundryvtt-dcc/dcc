@@ -41,7 +41,7 @@ The party sheet has a **Notes** tab for free-form text about the party. It has n
 ## Using the Party Actor on the map
 You can drag the Party Actor onto the map, and it will create a token for the party. You can then move the token around the map to represent the position of the party.
 
-By default only the GM can move that token: a new Party actor grants players no permission. Give a player **Owner** permission on the Party actor (Actor Configuration → Permissions) if they should move the party token during travel — Owner also makes the token count as a vision source for that player under **Vision From All Owned Tokens**.
+By default, only the GM can move the party token. To let a player move it during travel, give them **Owner** permission on the Party actor in Actor Configuration → Permissions. With **Vision From All Owned Tokens** enabled, that also lets the player see through the party token.
 
 You can then double-click this to see the party sheet. You can use the gear on the token on the map to set it's icon.
 
@@ -56,48 +56,31 @@ You can use the topmost box when you right-click a token to edit their hp - you 
 
 ## Gathering and Deploying Party Tokens
 
-The party sheet header has a **Gather / Deploy** button (only a GM sees it). What it does is decided when you click, from the party's saved state and the current scene — the label and icon never change.
+The **Gather / Deploy** button in the party sheet header is for GMs only. Its label stays the same: click it to gather member tokens on the current scene, or to deploy members when they have already been gathered. The party token remains on the scene throughout; gathering shows it, and deploying hides it. If you manually show or hide the party token, that does not change what the button does next.
 
-The party token stays on the scene as the party's **anchor** and doubles as the token you travel with. This button never deletes it, it only changes its visibility:
+### Gather
 
-- **Visible** – the members are gathered (travelling mode). Only the anchor stands on the scene.
-- **Hidden** – the members stand on the scene. The anchor stays where it was gathered and marks that spot.
+Select the member tokens you want to gather, then click **Gather / Deploy**. With nothing selected, the GM gathers all eligible party member tokens on the scene. This also works if Foundry has left only the party token selected after you placed it. Selected tokens from other actors are left alone; selecting only those tokens does not gather the whole party.
 
-The saved state decides, not the visibility: if you show or hide the party token yourself in its token configuration, the button behaves exactly the same. The next successful gather or deploy simply sets the visibility again.
+Only member tokens with **Link Actor Data** enabled can be gathered; unlinked tokens stay on the scene. To include one, enable **Link Actor Data** in its token configuration first. The party token moves to the center of the gathered members and becomes visible, ready to move as a group.
 
-A click does one of these:
+### Deploy
 
-- **Member tokens are on the scene** (nothing gathered yet) – it gathers them (see below).
-- **Members are gathered** – it deploys them back **losslessly** from the saved tokens: each member gets a fresh token id, but its vision, light, size, elevation, flags and actor link are preserved.
-- **No member tokens and nothing gathered** – it deploys from the members' **prototype tokens**: every party member without a token on the scene gets one around the anchor, and the anchor is hidden. This is deliberately **not** lossless — the new tokens use each member's prototype values (own image, size, vision, light) at a fresh position, and nothing is restored from an earlier gather.
-- **Neither member tokens nor a party token here** – nothing happens beyond a notice.
+After gathering, move the party token where you want the members to appear and click **Gather / Deploy**. Their tokens reappear around it with their gathered token details, such as size, vision, and light. They are placed around the party token at its **current** location, not at their former map coordinates. The party token stays on the scene but is hidden.
 
-When gathering:
+If you have not gathered anyone and place a party token on a scene without eligible member tokens, clicking **Gather / Deploy** instead creates member tokens around it from each member's prototype token settings. This does **not** restore placements or token changes from an earlier scene. Members who already have tokens on this scene are not duplicated. If a member who needs a token has **Link Actor Data** disabled on their prototype token, no new member tokens are created; enable it there before trying again. If there is neither a party token nor member tokens on the scene, you get a notice instead.
 
-- When you have member tokens selected, gathering takes exactly those. If you have nothing selected, it takes every party member token on the current scene.
-- A party token that Foundry left selected after you dropped it onto the scene does not count as a selection: gathering still takes every member token on the scene.
-- Foreign tokens in the selection are left untouched.
-- Member tokens without **Link Actor Data** are skipped: the party token can only stand in for linked members, so an unlinked member token stays where it is.
-- The anchor is moved onto the middle of the gathered members and made visible, so you can move the whole group at once.
+### Travel between scenes
 
-When deploying from prototype tokens, one member whose prototype token lacks **Link Actor Data** stops the whole action before anything is created — enable **Link Actor Data** in that member's prototype token configuration first. Members that already have a token on the scene are always left untouched and never duplicated.
+Gather the members on the first scene, then place a party token for the same Party actor on the destination scene with **Link Actor Data** enabled. Click **Gather / Deploy** there to place the gathered members around that party token. The party token on the first scene is left alone. For a fresh party token without a prior gather, the members instead appear from their prototype settings, as described above.
 
-Gathering and deploying need at least a linked party token (or linked members) to work with; both follow the party's normal visibility and ownership.
+### Practical caveats
 
-### Travelling between scenes
-
-You can gather the party on one scene and deploy it on another: gather on the first scene, move the party to the target scene, place a **linked** party token of this party there, and press Deploy. Only the scene you are viewing is changed: the anchors on other scenes are left as they are.
-
-### Things to know
-
-- **GM only.** Players never see the button and cannot start a swap.
-- **Movement and vision follow the party actor's permissions.** The party token is GM-only out of the box; give a player **Owner** on the Party actor if they should move it (and see through it) while the party travels.
-- **Deploy needs a linked party token on the scene you are viewing.** If the party has an older token created before actor data linking — an *unlinked* token — enable **Link Actor Data** in that token's configuration first. The system reports the situation and stops; it will not rewrite or duplicate the token for you.
-- **One gather at a time.** Gather again only after deploying; the action follows the saved state.
-- **Combat is protected.** Member tokens in a running combat are skipped, and you cannot deploy while the party token is in a running combat.
-- **Levels must match.** Gathering uses the scene level you are currently viewing. If the remaining member tokens or the party token sit on a different level, the action stops without changing anything. Deploying always uses the party token's current level.
-- **A failed swap may need a manual look.** If an operation fails partway, the system restores what it can and warns you. Inspect the tokens and the saved snapshots manually before trying again — reloading the page does not repair the state.
+- Use a party token with **Link Actor Data** enabled. If an older party token is unlinked, enable **Link Actor Data** in that token's configuration before trying again; the action will not replace it for you.
+- You cannot gather again until you have deployed the gathered members. Member tokens in an active combat are skipped during gathering, and you cannot deploy while the party token is in an active combat.
+- Gather tokens on the level you are viewing. If an eligible member token or the party token is on a different level, gathering stops without moving them. Deployment places members on the party token's level.
+- If an action warns that it failed partway, check the party token and member tokens on the affected scenes before trying again.
 
 ## The party token's health bar
 
-The party token shows a read-only health bar that sums the current hit points of the party's members. It updates live as members take damage or heal, and as you add or remove members. It is display only: editing the bar never distributes damage or healing to the members.
+The party token's health bar shows the members' combined current and maximum hit points. It updates when members take damage or heal, or when you add or remove members. The bar is read-only: change a member's HP on their own token or sheet, not on the party token.
