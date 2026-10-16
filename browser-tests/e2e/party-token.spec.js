@@ -7,13 +7,13 @@ const test = createSessionTest({ onConsole: msg => { if (msg.type() === 'error')
 test.beforeEach(() => { consoleErrors.length = 0 })
 test.afterEach(() => { expect(significantConsoleErrors(consoleErrors)).toEqual([]) })
 
-async function createSwapFixture (page) {
-  return page.evaluate(async () => {
+async function createSwapFixture (page, gridType = 1) {
+  return page.evaluate(async gridType => {
     const members = []
     for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
     const foreign = await Actor.create({ name: 'PARTY TOKEN UI Foreign', type: 'NPC' })
     const party = await Actor.create({ name: 'PARTY TOKEN UI Party', type: 'Party', flags: { dcc: { partyMembers: members.map(member => ({ id: member.id })) } } })
-    const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: 1 } })
+    const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: gridType } })
     await scene.view()
     const data = []
     for (const [i, actor] of [...members, foreign].entries()) {
@@ -46,7 +46,7 @@ async function createSwapFixture (page) {
       tokens: ordered.map(token => token.id),
       originals: ordered.map(token => token.toObject())
     }
-  })
+  }, gridType)
 }
 
 async function cleanSwapFixture (page, ids) {
@@ -303,6 +303,40 @@ test('deploy after a same-scene level switch restores members on the party token
     await cleanSwapFixture(page, ids)
   }
 })
+
+// CONST.GRID_TYPES: 0 = gridless, 2 = hexagonal (odd rows).
+for (const [label, gridType] of [['hexagonal', 2], ['gridless', 0]]) {
+  test(`deploy places members on a ${label} scene without overlap and keeps the party centre free`, async ({ page }) => {
+    const ids = await createSwapFixture(page, gridType)
+    try {
+      await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
+      await page.evaluate(() => canvas.tokens.releaseAll())
+      await page.locator(sheetSwap).evaluate(element => element.click())
+      await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3, ids)
+      const center = await page.evaluate(ids => {
+        const partyToken = canvas.scene.tokens.find(token => token.actorId === ids.party)
+        return partyToken.getCenterPoint()
+      }, ids)
+      await page.locator(sheetSwap).evaluate(element => element.click())
+      await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
+      const members = await page.evaluate(ids => {
+        const { sizeX, sizeY } = canvas.scene.grid
+        return canvas.scene.tokens
+          .filter(token => ids.members.includes(token.actorId))
+          .map(token => ({ x: token.x, y: token.y, w: token.width * sizeX, h: token.height * sizeY }))
+      }, ids)
+      expect(members).toHaveLength(3)
+      const overlaps = (a, b) => !(a.x >= b.x + b.w || b.x >= a.x + a.w || a.y >= b.y + b.h || b.y >= a.y + a.h)
+      for (const [i, rect] of members.entries()) {
+        // The party token stood at the centre; no member may cover it.
+        expect(center.x > rect.x && center.x < rect.x + rect.w && center.y > rect.y && center.y < rect.y + rect.h).toBe(false)
+        for (let j = 0; j < i; j++) expect(overlaps(rect, members[j])).toBe(false)
+      }
+    } finally {
+      await cleanSwapFixture(page, ids)
+    }
+  })
+}
 
 test('a legacy unlinked party token on the viewed scene is reported without any change', async ({ page }) => {
   const ids = await createSwapFixture(page)
