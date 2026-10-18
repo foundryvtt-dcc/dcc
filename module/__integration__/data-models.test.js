@@ -48,7 +48,7 @@ describe('Schema Definition (real Foundry fields)', () => {
     expect(schema.config).toBeDefined()
   })
 
-  test('PlayerData declares class.spellCheckOverrideDie and preserves a write to it (#1052)', () => {
+  test('PlayerData declares class.spellCheckOverrideDie and preserves a write to it', () => {
     // The sheet form and every consumer read `system.class.spellCheckOverrideDie`;
     // the schema must declare that exact name or Foundry's prune drops the write.
     const field = PlayerData.defineSchema().class.fields.spellCheckOverrideDie
