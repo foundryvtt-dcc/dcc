@@ -561,7 +561,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
 
       // Item from sidebar, compendium, or another actor — create on actor inside the container
-      const itemData = item.toObject ? item.toObject() : data.data
+      const itemData = item.toObject()
       if (!itemData) return false
       // Validate capacity (circularity checks don't apply for items not yet on the actor)
       if (this.document.availableItemCapacity !== null) {
@@ -623,7 +623,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _onDropActiveEffect (event, data) {
     if (!this.document.isOwner) return false
 
-    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    // The payload carries either `data` (a document without an id, see
+    // `ClientDocument#toDragData`) or `uuid` (a stored effect from the sidebar
+    // or a compendium), so resolve whichever is present.
     let effectData = data.data
     if (!effectData && data.uuid) {
       const effect = await fromUuid(data.uuid)
