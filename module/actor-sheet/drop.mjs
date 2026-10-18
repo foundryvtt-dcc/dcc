@@ -93,7 +93,7 @@ export async function handleContainerDrop (actor, event, data, deps = {}) {
   }
 
   // Item from sidebar, compendium, or another actor — create on actor inside the container
-  const itemData = item.toObject ? item.toObject() : data.data
+  const itemData = item.toObject()
   if (!itemData) return undefined
   // Validate capacity (circularity checks don't apply for items not yet on the actor)
   if (container.availableItemCapacity !== null) {

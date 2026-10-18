@@ -964,9 +964,24 @@ class ActorSheetV2Mock extends DocumentSheetV2Mock {
   }
 }
 
+/**
+ * ItemSheetV2 - base class for v2 item sheets.
+ *
+ * In real Foundry `foundry.applications.sheets.ItemSheetV2 extends
+ * DocumentSheetV2` and adds the item header controls; item sheets declare
+ * their own drag/drop handles through `DEFAULT_OPTIONS`, so the plain
+ * subclass is enough for tests that prepare a sheet context (#1043).
+ */
+class ItemSheetV2Mock extends DocumentSheetV2Mock {
+  // Mirrors the real base class, which item sheet context code relies on
+  // (`this.actor` gates the mercurial tab, `data.actor` and the LCK bonus).
+  get actor () { return this.document.actor }
+}
+
 // Export mocks to global scope for test access
 global.DocumentSheetV2 = DocumentSheetV2Mock
 global.ActorSheetV2 = ActorSheetV2Mock
+global.ItemSheetV2 = ItemSheetV2Mock
 
 // Additional Foundry constants used by DocumentSheetV2
 global.CONST = {
@@ -1708,6 +1723,8 @@ global.foundry = {
     sheets: {
       // ActorSheetV2 - export the mock for import statements
       ActorSheetV2: global.ActorSheetV2,
+      // ItemSheetV2 - export the mock for import statements
+      ItemSheetV2: global.ItemSheetV2,
       // DocumentSheetV2 - export the mock for import statements
       DocumentSheetV2: global.DocumentSheetV2
     },

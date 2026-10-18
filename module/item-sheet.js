@@ -252,6 +252,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const data = await super._prepareContext(options)
     data.actor = this.actor
 
+    // Display-only stand-in for missing or placeholder artwork (#225): the
+    // header portrait renders this field, so the document keeps its own `img`
+    // and a render cycle never writes back to it (see the actor-side
+    // `prepareImage` for the same reasoning).
+    data.img = (!data.document.img || data.document.img === 'icons/svg/mystery-man.svg')
+      ? EntityImages.imageForItem(data.document.type)
+      : data.document.img
+
     if (data.document.type === 'weapon') {
       this.position.height = 730
       // Range is editable for missile weapons and thrown melee weapons (#595)
@@ -297,10 +305,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (data.document.type === 'weapon' && this.actor) {
       data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
-    }
-
-    if (!data.document.img || data.document.img === 'icons/svg/mystery-man.svg') {
-      data.data.img = EntityImages.imageForItem(data.document.type)
     }
 
     // Format Description HTML
@@ -566,7 +570,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
 
       // Item from sidebar, compendium, or another actor — create on actor inside the container
-      const itemData = item.toObject ? item.toObject() : data.data
+      const itemData = item.toObject()
       if (!itemData) return false
       // Validate capacity (circularity checks don't apply for items not yet on the actor)
       if (this.document.availableItemCapacity !== null) {
@@ -628,7 +632,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _onDropActiveEffect (event, data) {
     if (!this.document.isOwner) return false
 
-    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    // The payload carries either `data` (a document without an id, see
+    // `ClientDocument#toDragData`) or `uuid` (a stored effect from the sidebar
+    // or a compendium), so resolve whichever is present.
     let effectData = data.data
     if (!effectData && data.uuid) {
       const effect = await fromUuid(data.uuid)
