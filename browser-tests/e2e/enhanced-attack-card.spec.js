@@ -5,8 +5,10 @@ const { expect, createSessionTest } = require('./fixtures')
  * Enhanced attack cards (module/chat/enhanced-attack-card.mjs) end-to-end
  * against live Foundry. With enhancedAttackCards on and automation off, a PC
  * attacks a targeted, low-AC NPC. The rendered chat message must carry the
- * enhanced card with the hit banner, the hit/miss flags must be stored on the
- * message, and (automation off) the Roll Damage button must be present.
+ * enhanced card with the hit banner, its header artwork must resolve to the
+ * weapon type icon when the weapon only has placeholder art, the hit/miss flags
+ * must be stored on the message, and (automation off) the Roll Damage button
+ * must be present.
  */
 const test = createSessionTest()
 
@@ -29,6 +31,9 @@ test.describe('Enhanced attack cards', () => {
       const [weapon] = await attacker.createEmbeddedDocuments('Item', [{
         name: 'Probe Blade',
         type: 'weapon',
+        // Placeholder artwork on purpose: the card must show the weapon type
+        // icon instead of the mystery-man silhouette (#225).
+        img: 'icons/svg/mystery-man.svg',
         system: { damage: '1d6', toHit: '+10', melee: true, actionDie: '1d20', equipped: true }
       }])
 
@@ -41,12 +46,18 @@ test.describe('Enhanced attack cards', () => {
 
       // Poll the chat log DOM for the rendered enhanced card.
       let cardHTML = null
+      let weaponImgSrc = null
       let message = null
       const deadline = Date.now() + 5000
       while (Date.now() < deadline && !cardHTML) {
         message = game.messages.contents.filter(m => m.getFlag('dcc', 'isToHit')).at(-1)
         const el = message ? document.querySelector(`.message[data-message-id="${message.id}"] .dcc-enhanced-card`) : null
-        if (el) cardHTML = el.outerHTML
+        if (el) {
+          cardHTML = el.outerHTML
+          // Direct child of the header: the backstab icon is nested inside the
+          // <h3>, so a bare `img` read would pick the wrong one on that layout.
+          weaponImgSrc = el.querySelector('.card-header > img')?.getAttribute('src') ?? null
+        }
         if (!cardHTML) await new Promise(resolve => setTimeout(resolve, 100))
       }
 
@@ -54,6 +65,7 @@ test.describe('Enhanced attack cards', () => {
         hasCard: !!cardHTML,
         isHitBanner: !!cardHTML && cardHTML.includes('attack-hit'),
         hasDamageButton: !!cardHTML && cardHTML.includes('data-action="roll-damage"'),
+        weaponImgSrc,
         hasTargetFlag: !!message?.getFlag('dcc', 'hasTarget'),
         hitsTargetFlag: !!message?.getFlag('dcc', 'hitsTarget'),
         crit: !!message?.getFlag('dcc', 'isCrit')
@@ -76,5 +88,7 @@ test.describe('Enhanced attack cards', () => {
     expect(result.hitsTargetFlag).toBe(true)
     // A hit — crit or not — always offers Roll Damage.
     expect(result.hasDamageButton).toBe(true)
+    // The weapon's placeholder artwork is replaced by the type icon (#225).
+    expect(result.weaponImgSrc).toBe('systems/dcc/styles/images/weapon.webp')
   })
 })

@@ -30,6 +30,7 @@ import { executeAsGM, registerSocketHandler } from '../socket.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import { wantsModifierDialog } from '../utilities.js'
 import { applyCardDamage } from '../auto-apply-damage.mjs'
+import EntityImages from '../entity-images.js'
 
 const UPDATE_FLAGS_ACTION = 'dcc.updateMessageFlags'
 const TEMPLATE = 'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -150,7 +151,14 @@ export async function buildEnhancedCardData (message, actor, weapon) {
     actorName: actor?.name ?? '',
     actorImg: actor?.img ?? '',
     weaponName: weapon?.name ?? sys.weaponName ?? '',
-    weaponImg: weapon?.img ?? '',
+    // Same display-only artwork fallback the sheet uses (#225): a missing image
+    // or the mystery-man placeholder shows the weapon's type icon instead. A
+    // weapon that no longer exists keeps the empty image.
+    weaponImg: !weapon
+      ? ''
+      : ((!weapon.img || weapon.img === 'icons/svg/mystery-man.svg')
+          ? EntityImages.imageForItem(weapon.type)
+          : weapon.img),
     flavorText,
     hasDescription: !!weaponDescription,
     weaponDescription,
