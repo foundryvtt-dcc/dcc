@@ -36,13 +36,18 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
   spec asserting the old behavior. Concretely, before you consider a change
   done: `grep` `browser-tests/e2e/` (and `module/**/__tests__/`) for assertions
   on the output you changed — old DOM classes/text, button selectors, chat-card
-  shape, flags, roll formulas — and rewrite them to the new contract, **plus**
-  add at least one assertion covering the new behavior. Changing a chat card,
-  roll, sheet, data model, or any user-visible output without touching a spec is
-  almost always a sign you missed one. The full E2E suite is slow, so it's fine
-  to run only the affected spec(s) while iterating, but run the **full
-  `browser-tests/e2e` suite before pushing** anything that touches the
-  attack / card / roll / sheet paths.
+  shape, flags, roll formulas — and rewrite them to the new contract. Changing
+  a chat card, roll, sheet, data model, or any user-visible output without
+  checking the specs is almost always a sign you missed one. The full E2E
+  suite is slow, so it's fine to run only the affected spec(s) while
+  iterating, but run the **full `browser-tests/e2e` suite before pushing**
+  anything that touches the attack / card / roll / sheet paths.
+- **Keep new tests proportionate**: A fix gets one regression test at the
+  cheapest layer that can see the bug (unit → integration → E2E). Add E2E
+  only for bugs that need live Foundry to show up, and extend an existing
+  spec before building new scene/actor setup. No variant loops over the same
+  code path, no fixed sleeps. See
+  [Keep tests proportionate](docs/dev/TESTING.md#keep-tests-proportionate).
 - **FoundryVTT v14**: Target version (v14-only, ApplicationV2 API)
 - **Check dependent modules**: Before PRs, verify no breakage in `../../modules/dcc-qol`, `../../modules/xcc`, `../../modules/mcc-classes`, `../../modules/dcc-crawl-classes`
 
