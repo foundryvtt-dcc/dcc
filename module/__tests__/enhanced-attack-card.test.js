@@ -7,6 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { defaultItemImages } from '../config/images.mjs'
 
 vi.mock('../integrations.mjs', () => ({ qolHandlingCombat: vi.fn(() => false) }))
 vi.mock('../socket.mjs', () => ({ executeAsGM: vi.fn(), registerSocketHandler: vi.fn() }))
@@ -22,6 +23,7 @@ const {
 } = await import('../chat/enhanced-attack-card.mjs')
 
 let originalGame
+let originalConfig
 let originalChatMessage
 let settings
 
@@ -46,6 +48,10 @@ beforeEach(() => {
   settings = { enhancedAttackCards: true, automateDamageFumblesCrits: false, showHitMissOnCard: true, attackCardFormat: 'full' }
   originalGame = globalThis.game
   originalChatMessage = globalThis.ChatMessage
+  originalConfig = globalThis.CONFIG
+  // `EntityImages.imageForItem` reads CONFIG.DCC at call time; hand it the real
+  // map so the tests assert the selection, not a copied literal.
+  globalThis.CONFIG = { DCC: { defaultItemImages } }
   globalThis.ChatMessage = { getSpeakerActor: vi.fn(() => null), getSpeaker: vi.fn(() => ({})) }
   globalThis.game = {
     user: { isGM: false },
@@ -57,7 +63,11 @@ beforeEach(() => {
   }
 })
 
-afterEach(() => { globalThis.game = originalGame; globalThis.ChatMessage = originalChatMessage })
+afterEach(() => {
+  globalThis.game = originalGame
+  globalThis.ChatMessage = originalChatMessage
+  globalThis.CONFIG = originalConfig
+})
 
 describe('shouldRenderEnhancedAttackCard', () => {
   test('true for an attack message with the setting on and dcc-qol inactive', () => {
@@ -182,6 +192,30 @@ describe('buildEnhancedCardData', () => {
     const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), npc, withDesc)
     expect(data.isPC).toBe(false)
     expect(data.hasDescription).toBe(false)
+  })
+
+  test('weapon artwork keeps a stored image verbatim (#225)', async () => {
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, weapon)
+    expect(data.weaponImg).toBe('bow.png')
+  })
+
+  test('the mystery-man placeholder falls back to the weapon type icon (#225)', async () => {
+    const mysteryMan = { ...weapon, type: 'weapon', img: 'icons/svg/mystery-man.svg' }
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, mysteryMan)
+    expect(data.weaponImg).toBe(defaultItemImages.weapon)
+  })
+
+  test('a missing weapon image falls back to the weapon type icon (#225)', async () => {
+    for (const img of ['', null, undefined]) {
+      const imgless = { ...weapon, type: 'weapon', img }
+      const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, imgless)
+      expect(data.weaponImg, `img: ${String(img)}`).toBe('systems/dcc/styles/images/weapon.webp')
+    }
+  })
+
+  test('a weapon that no longer exists keeps the empty image (#225)', async () => {
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, null)
+    expect(data.weaponImg).toBe('')
   })
 })
 
