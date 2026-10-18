@@ -85,16 +85,26 @@ export const RollDataMixin = (Base) => class extends Base {
   /**
    * The last rolled deed die, or 0 when none counts (#1041). A deed rolled
    * during combat counts only for the round it was rolled in, and not after
-   * that combat ends; one rolled outside combat counts until the next deed.
+   * that combat ends. One rolled outside combat counts until the next deed,
+   * but not while the actor is fighting in a started combat.
    * @param {Object} [details]  The actor's system.details
    * @return {Number}
    */
   getLastDeedDie (details = this.system.details) {
     const die = parseInt(details?.lastRolledAttackBonus) || 0
+    if (!die) return 0
     const combatId = details?.lastRolledAttackBonusCombat
-    if (!die || !combatId) return die
+    if (!combatId) return this._deedCombat() ? 0 : die
     const combat = game.combats?.get(combatId)
     return combat?.round === details.lastRolledAttackBonusRound ? die : 0
+  }
+
+  /**
+   * The started combat this actor is fighting in, if any (#1041)
+   * @return {Combat|undefined}
+   */
+  _deedCombat () {
+    return game.combats?.find(c => c.started && c.getCombatantsByActor(this).length > 0)
   }
 
   /**
@@ -131,7 +141,7 @@ export const RollDataMixin = (Base) => class extends Base {
    */
   async rememberDeedDie (die) {
     if (this.pack || !this.isOwner) return
-    const combat = game.combats?.find(c => c.started && c.getCombatantsByActor(this).length > 0)
+    const combat = this._deedCombat()
     await this.update({
       'system.details.lastRolledAttackBonus': die,
       'system.details.lastRolledAttackBonusCombat': combat?.id ?? '',

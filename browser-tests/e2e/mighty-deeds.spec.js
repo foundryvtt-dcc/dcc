@@ -483,10 +483,14 @@ test.describe('Mighty Deeds E2E Tests', () => {
     })
   }
 
-  test('a deed rolled in combat counts only for that round (#1041)', async ({ page }) => {
+  test('in combat only a deed from the current round counts (#1041)', async ({ page }) => {
     const ids = await createDeedFixtures(page)
     await page.evaluate(({ actorId }) => game.actors.get(actorId).update({ 'system.details.attackBonus': '+d4+1' }), ids)
     const abNow = () => page.evaluate(({ actorId }) => game.actors.get(actorId).getRollData().ab, ids)
+
+    // A deed rolled before the fight counts until the actor is fighting
+    await page.evaluate(({ actorId }) => game.actors.get(actorId).rememberDeedDie(2), ids)
+    expect(await abNow()).toBe(3)
 
     const combatId = await page.evaluate(async ({ actorId }) => {
       for (const combat of game.combats.filter(c => c.combatants.some(cb => cb.actor?.name?.startsWith('E2E ')))) {
@@ -499,6 +503,8 @@ test.describe('Mighty Deeds E2E Tests', () => {
     }, ids)
 
     try {
+      expect(await abNow()).toBe(1) // in a started combat: the pre-combat deed no longer counts
+
       const attack = await rollPinnedDeed(page, ids, { uniform: 0.45 })
       expect(attack?.deedDieRollResult).toBe(3)
       const stamp = await page.evaluate(({ actorId }) => {

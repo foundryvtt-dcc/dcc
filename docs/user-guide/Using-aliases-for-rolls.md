@@ -34,5 +34,5 @@ For Player type actors only:
 If the Attack Bonus Mode is Roll Per Attack, the deed die in each of these is
 replaced by the last deed die roll, from an attack or the Attack Bonus macro.
 For example, a warrior with a +d4+1 attack bonus and Str +2 who rolled a 3 has
-@ab 4 and @mab 6. A deed rolled during combat only counts for that round; with
-no deed counting, the deed die counts as 0.
+@ab 4 and @mab 6. While the character is fighting in a started combat, only a
+deed rolled that round counts; with no deed counting, the deed die counts as 0.

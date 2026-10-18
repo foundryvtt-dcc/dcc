@@ -119,19 +119,38 @@ describe('RollDataMixin extraction', () => {
       expect(shorthands(data)).toEqual({ ab: 1, mab: 3, mad: 3, rab: 2, rad: 1 })
     })
 
+    // Collection-like stand-in for game.combats: find() plus get(id)
+    const combats = (...list) => Object.assign(list, { get: (id) => list.find(c => c.id === id) })
+    const combat = (id, round, { started = true, fighting = [] } = {}) =>
+      ({ id, round, started, getCombatantsByActor: (actor) => fighting.includes(actor) ? [{}] : [] })
+
     test('a deed rolled in a combat counts only in that round', () => {
-      globalThis.game.combats = new Map([['c1', { round: 2 }]])
+      const c1 = combat('c1', 2)
+      globalThis.game.combats = combats(c1)
       const details = deedDetails({ lastRolledAttackBonusCombat: 'c1', lastRolledAttackBonusRound: 2 })
       expect(warrior(details).getRollData().ab).toBe(4)
 
-      globalThis.game.combats.get('c1').round = 3
+      c1.round = 3
       expect(warrior(details).getRollData().ab).toBe(1)
 
-      globalThis.game.combats.get('c1').round = 2 // stepped back
+      c1.round = 2 // stepped back
       expect(warrior(details).getRollData().ab).toBe(4)
 
-      globalThis.game.combats.delete('c1') // combat ended
+      globalThis.game.combats = combats() // combat ended
       expect(warrior(details).getRollData().ab).toBe(1)
+    })
+
+    test('a deed rolled outside combat does not count while the actor is fighting', () => {
+      const inst = warrior(deedDetails())
+      globalThis.game.combats = combats(combat('c1', 1, { fighting: [inst] }))
+      expect(inst.getRollData().ab).toBe(1)
+      expect(inst.getLastDeedBonus()).toBe(0)
+
+      globalThis.game.combats = combats(combat('c1', 0, { started: false, fighting: [inst] }))
+      expect(inst.getRollData().ab).toBe(4) // combat not started yet
+
+      globalThis.game.combats = combats(combat('c1', 1))
+      expect(inst.getRollData().ab).toBe(4) // a combat the actor isn't in
     })
 
     test('a value with dice other than the deed die keeps the formula', () => {

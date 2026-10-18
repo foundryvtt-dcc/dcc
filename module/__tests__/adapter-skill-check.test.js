@@ -1,4 +1,4 @@
-/* global rollToMessageMock, ChatMessage */
+/* global rollToMessageMock, ChatMessage, game */
 /**
  * Adapter round-trip test — Phase 1 (skill check).
  *
@@ -13,7 +13,7 @@
  * Mirrors adapter-saving-throw.test.js / adapter-ability-check.test.js.
  */
 
-import { expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
@@ -405,4 +405,61 @@ test('rollSkillCheck warns and returns when the skill is unknown', async () => {
   expect(msg).toContain('thisSkillDoesNotExist')
 
   global.itemTypesMock.mockReset()
+})
+
+describe('useDeed skills add the last deed roll (#1041)', () => {
+  // Shield bash on a +d4+1 warrior who last rolled a 3 on the deed die
+  function deedActor (detailOverrides = {}) {
+    // noinspection JSCheckFunctionSignatures
+    const deedUser = new DCCActor()
+    deedUser.system.skills.deedSkill = { label: 'Deed Skill', die: '1d14', useDeed: true }
+    Object.assign(deedUser.system.details, {
+      attackBonus: '+d4+1',
+      lastRolledAttackBonus: 3,
+      lastRolledAttackBonusCombat: '',
+      lastRolledAttackBonusRound: 0,
+      ...detailOverrides
+    })
+    return deedUser
+  }
+  const deedModifier = () => rollToMessageMock.mock.calls[0][0].flags['dcc.libResult'].modifiers
+    .find((m) => m.origin?.id === 'mighty-deed')
+
+  afterEach(() => { delete game.combats })
+
+  test('adds the deed roll plus the flat part', async () => {
+    rollToMessageMock.mockClear()
+    await deedActor().rollSkillCheck('deedSkill')
+    expect(deedModifier()).toEqual(expect.objectContaining({ kind: 'add', value: 4 }))
+  })
+
+  test('adds nothing for a deed from an earlier combat round', async () => {
+    rollToMessageMock.mockClear()
+    const combat = { id: 'c1', round: 2, started: true, getCombatantsByActor: () => [] }
+    game.combats = Object.assign([combat], { get: (id) => id === 'c1' ? combat : undefined })
+    await deedActor({ lastRolledAttackBonusCombat: 'c1', lastRolledAttackBonusRound: 1 }).rollSkillCheck('deedSkill')
+    expect(deedModifier()).toBeUndefined()
+  })
+
+  test('the modifier dialog offers the deed roll as its own term', async () => {
+    rollToMessageMock.mockClear()
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+      formula: '1d14+4',
+      total: 11,
+      dice: [{ results: [7], total: 7, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d14', number: 1, faces: 14 },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 4 }
+      ],
+      _evaluated: true
+    }))
+
+    await deedActor().rollSkillCheck('deedSkill', { showModifierDialog: true })
+
+    const [termsArg] = global.dccRollCreateRollMock.mock.calls[0]
+    expect(termsArg).toContainEqual({ type: 'Modifier', label: 'DeedRoll', formula: 4 })
+  })
 })

@@ -721,6 +721,16 @@ describe('rollAttackBonus (#1041)', () => {
     expect(uiNotificationsInfoMock).toHaveBeenCalledWith('AttackBonusNoDeedDie')
   })
 
+  test('dice that are not a deed die are rolled and posted but not stored', async () => {
+    const { roll, result } = await rollWith('-1d3', withAttackBonusRoll(-2))
+
+    const [terms] = dccRollCreateRollMock.mock.calls[0]
+    expect(terms).toEqual([{ type: 'Die', label: 'AttackBonus', formula: '-1d3' }])
+    expect(result).toEqual(expect.objectContaining({ rolled: true, attackBonus: -2 }))
+    expect(roll.toMessage).toHaveBeenCalled()
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+  })
+
   test('a cancelled dialog stores nothing', async () => {
     const previous = dccRollCreateRollMock.getMockImplementation()
     dccRollCreateRollMock.mockImplementation(() => Promise.reject(new RollCancelledError()))

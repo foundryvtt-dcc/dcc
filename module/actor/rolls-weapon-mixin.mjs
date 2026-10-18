@@ -54,7 +54,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
    * Roll the attack bonus on its own (the Attack Bonus hotbar macro) and
    * remember its deed die for @ab and useDeed skills (#1041). Returns the
    * whole bonus rolled, die plus flat part. A flat bonus has nothing to roll,
-   * so it is only returned.
+   * so it is only returned; dice that aren't a deed die are rolled but not
+   * remembered.
    * @param {Object} options     Roll options
    * @returns {Promise<{rolled: boolean, roll?: Roll, formula?: string, attackBonus: number}|undefined>}
    *   undefined if the roll dialog is cancelled
@@ -87,7 +88,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       roll.dice[0].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
     }
 
-    await this.rememberDeedDie(deed ? roll.dice[0]?.total ?? 0 : roll.total)
+    // Only a deed die is remembered; other dice aren't a deed roll
+    if (deed) await this.rememberDeedDie(roll.dice[0]?.total ?? 0)
 
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
