@@ -484,6 +484,51 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.waitForSelector('dialog.application', { timeout: 2000 })
       await page.click('button[data-action="yes"]')
     })
+
+    test('item sheet opens for an item with an empty or mystery-man image', async ({ page }) => {
+      // Regression (#1043): `_prepareContext` wrote a display fallback into the
+      // V1 `data.data` property, which does not exist in an ApplicationV2
+      // context. Every item whose image was empty or the mystery-man
+      // placeholder threw inside `_prepareContext`, so no sheet window opened
+      // at all (and the afterEach console-error gate below saw the TypeError).
+      const result = await page.evaluate(async () => {
+        const observed = {}
+        const item = await Item.create({
+          name: 'Image Fallback Probe',
+          type: 'equipment',
+          img: 'icons/svg/aura.svg'
+        })
+        try {
+          for (const [label, img] of [
+            ['storedImage', 'icons/svg/aura.svg'],
+            ['emptyImage', ''],
+            ['mysteryMan', 'icons/svg/mystery-man.svg']
+          ]) {
+            await item.update({ img })
+            await item.sheet.close().catch(() => {})
+            await item.sheet.render(true).catch(() => {})
+            observed[label] = {
+              rendered: item.sheet.rendered,
+              window: Boolean(item.sheet.element),
+              imgSrc: item.sheet.element?.querySelector('img[data-edit="img"]')?.getAttribute('src') ?? null
+            }
+          }
+        } finally {
+          await item.sheet.close().catch(() => {})
+          await item.delete().catch(() => {})
+        }
+        return observed
+      })
+
+      for (const [label, state] of Object.entries(result)) {
+        expect(state.window, `${label}: no sheet window appeared`).toBe(true)
+        expect(state.rendered, `${label}: sheet is not marked as rendered`).toBe(true)
+      }
+      // The sheet renders the stored value (the templates read `document.img`);
+      // the placeholder is not rewritten behind the user's back.
+      expect(result.storedImage.imgSrc).toBe('icons/svg/aura.svg')
+      expect(result.mysteryMan.imgSrc).toBe('icons/svg/mystery-man.svg')
+    })
   })
 
   test.describe('Data Persistence', () => {
