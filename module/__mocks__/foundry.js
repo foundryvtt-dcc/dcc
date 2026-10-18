@@ -972,7 +972,13 @@ class ActorSheetV2Mock extends DocumentSheetV2Mock {
  * their own drag/drop handles through `DEFAULT_OPTIONS`, so the plain
  * subclass is enough for tests that prepare a sheet context (#1043).
  */
-class ItemSheetV2Mock extends DocumentSheetV2Mock {}
+class ItemSheetV2Mock extends DocumentSheetV2Mock {
+  // Mirrors the real base class, which item sheet context code relies on
+  // (`this.actor` gates the mercurial tab, `data.actor` and the LCK bonus).
+  get item () { return this.document }
+
+  get actor () { return this.document.actor }
+}
 
 // Export mocks to global scope for test access
 global.DocumentSheetV2 = DocumentSheetV2Mock

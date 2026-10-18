@@ -26,6 +26,9 @@ function makeItem (overrides = {}) {
   }
 }
 
+// The Foundry mock does not merge `static DEFAULT_OPTIONS` (the real
+// constructor does), so the sheet's drag/drop handles have to be passed in
+// explicitly here - same shape as `module/__tests__/actor-sheet.test.js`.
 const prepareContext = (item) => new DCCItemSheet({
   document: item,
   dragDrop: [{ dragSelector: '[data-drag="true"]', dropSelector: '.dcc.item' }]
@@ -42,11 +45,13 @@ test('prepareContext returns the item document for a plain item', async () => {
  * whose image is empty or the mystery-man placeholder made the sheet throw, so
  * the sheet could not be opened at all. */
 test('prepareContext does not throw for an item without an image', async () => {
-  const context = await prepareContext(makeItem({ img: '' }))
-  expect(context.document.name).toBe('Test Weapon')
+  // `img: ''` is cleaned to the item default icon by the document schema, so
+  // `null` is the reachable "no image" state.
+  const context = await prepareContext(makeItem({ img: null }))
+  expect(context.document.img).toBeNull()
 })
 
 test('prepareContext does not throw for the mystery-man placeholder', async () => {
   const context = await prepareContext(makeItem({ img: 'icons/svg/mystery-man.svg' }))
-  expect(context.document.name).toBe('Test Weapon')
+  expect(context.document.img).toBe('icons/svg/mystery-man.svg')
 })

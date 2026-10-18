@@ -501,7 +501,9 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
         try {
           for (const [label, img] of [
             ['storedImage', 'icons/svg/aura.svg'],
-            ['emptyImage', ''],
+            // `img: ''` is cleaned to the item default icon by the document
+            // schema, so `null` is the reachable "no image" state.
+            ['emptyImage', null],
             ['mysteryMan', 'icons/svg/mystery-man.svg']
           ]) {
             await item.update({ img })
@@ -527,6 +529,7 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       // The sheet renders the stored value (the templates read `document.img`);
       // the placeholder is not rewritten behind the user's back.
       expect(result.storedImage.imgSrc).toBe('icons/svg/aura.svg')
+      expect(result.emptyImage.imgSrc).toBe('')
       expect(result.mysteryMan.imgSrc).toBe('icons/svg/mystery-man.svg')
     })
   })
