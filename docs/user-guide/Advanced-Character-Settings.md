@@ -12,7 +12,7 @@ This will open a dialog with advanced settings:
 
 **Attack Bonus Mode** allows for Mighty Deeds.
 * Flat Bonus is the default mode used by classes without access to Mighty Deeds.
-* Roll Per Attack will automatically roll the Deed Die with every attack, the resulting deed roll is available as `@ab`.
+* Roll Per Attack will automatically roll the Deed Die with every attack, the resulting deed roll is available as `@ab` (and in `@mab`, `@mad`, `@rab` and `@rad`). During combat it counts only for the round it was rolled in.
 
 The Deed Die itself is set via the **Attack Bonus** field on the Character tab of the sheet.
 

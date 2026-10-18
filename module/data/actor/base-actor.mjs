@@ -234,8 +234,11 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           })
         }),
         birthAugur: new StringField({ initial: '' }),
-        // Last rolled deed die, read by @ab and useDeed skills (#1041)
+        // Last rolled deed die (die only), read by @ab and useDeed skills, and
+        // the combat and round it was rolled in, if any (#1041)
         lastRolledAttackBonus: new NumberField({ initial: 0, integer: true }),
+        lastRolledAttackBonusCombat: new StringField({ initial: '' }),
+        lastRolledAttackBonusRound: new NumberField({ initial: 0, integer: true }),
         birthAugurLuckMod: new NumberField({ initial: 0, integer: true }),
         critRange: new NumberField({ initial: 20, integer: true, min: 1 }),
         sheetClass: new StringField({ initial: '' }),

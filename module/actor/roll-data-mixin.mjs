@@ -1,6 +1,8 @@
 /* global game, ui, foundry */
 
 import { actionMatchesUse } from '../vendor/dcc-core-lib/index.js'
+import { parseDeedAttackBonus } from '../adapter/attack-input.mjs'
+import { ensurePlus, substituteDeedDieResult } from '../utilities.js'
 
 /**
  * Roll-input accessor mixin for {@link DCCActor}.
@@ -61,12 +63,16 @@ export const RollDataMixin = (Base) => class extends Base {
       }
     )
 
-    // Get the relevant attack bonus (direct or rolled)
-    customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
-    customData.mab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.melee.value
-    customData.mad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.melee.value
-    customData.rab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.missile.value
-    customData.rad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.missile.value
+    // Get the relevant attack bonus: the flat values, or with a rolled attack
+    // bonus the same values with the deed die replaced by its last roll (#1041)
+    const attackValue = (this.getAttackBonusMode() !== 'flat')
+      ? (value) => this.withLastDeedDie(value, data.details)
+      : (value) => value
+    customData.ab = attackValue(data.details.attackBonus)
+    customData.mab = attackValue(data.details.attackHitBonus.melee.value)
+    customData.mad = attackValue(data.details.attackDamageBonus.melee.value)
+    customData.rab = attackValue(data.details.attackHitBonus.missile.value)
+    customData.rad = attackValue(data.details.attackDamageBonus.missile.value)
 
     // Player only data
     if (this.type === 'Player') {
@@ -74,6 +80,61 @@ export const RollDataMixin = (Base) => class extends Base {
     }
 
     return customData
+  }
+
+  /**
+   * The last rolled deed die, or 0 when none counts (#1041). A deed rolled
+   * during combat counts only for the round it was rolled in, and not after
+   * that combat ends; one rolled outside combat counts until the next deed.
+   * @param {Object} [details]  The actor's system.details
+   * @return {Number}
+   */
+  getLastDeedDie (details = this.system.details) {
+    const die = parseInt(details?.lastRolledAttackBonus) || 0
+    const combatId = details?.lastRolledAttackBonusCombat
+    if (!die || !combatId) return die
+    const combat = game.combats?.get(combatId)
+    return combat?.round === details.lastRolledAttackBonusRound ? die : 0
+  }
+
+  /**
+   * An attack bonus value with its deed die replaced by the last deed roll,
+   * e.g. '+d4+3' with a 2 rolled gives 5. With no deed counting the die is 0.
+   * @param {String|Number} value  An attack bonus value, e.g. attackHitBonus.melee.value
+   * @param {Object} [details]     The actor's system.details
+   * @return {Number|String}  The total, or the substituted formula if other dice remain
+   */
+  withLastDeedDie (value, details = this.system.details) {
+    const deed = parseDeedAttackBonus(String(details?.attackBonus ?? ''))
+    if (!deed) return value
+    const formula = substituteDeedDieResult(ensurePlus(String(value ?? '+0')), deed.deedDie, this.getLastDeedDie(details)).replace(/\s/g, '')
+    if (!/^[\d+-]+$/.test(formula)) return formula
+    return (formula.match(/[+-]?\d+/g) || []).reduce((total, term) => total + parseInt(term), 0)
+  }
+
+  /**
+   * The deed bonus for skills that use the deed die: the last deed roll plus
+   * the attack bonus's flat part, or 0 when no deed counts (#1041)
+   * @return {Number}
+   */
+  getLastDeedBonus () {
+    const die = this.getLastDeedDie()
+    if (!die) return 0
+    return die + (parseDeedAttackBonus(String(this.system.details.attackBonus))?.attackBonus || 0)
+  }
+
+  /**
+   * Remember a deed die roll, with the combat round it was rolled in if the
+   * actor is fighting in a started combat (#1041)
+   * @param {Number} die  The deed die result
+   */
+  async rememberDeedDie (die) {
+    const combat = game.combats?.find(c => c.started && c.getCombatantsByActor(this).length > 0)
+    await this.update({
+      'system.details.lastRolledAttackBonus': die,
+      'system.details.lastRolledAttackBonusCombat': combat?.id ?? '',
+      'system.details.lastRolledAttackBonusRound': combat?.round ?? 0
+    })
   }
 
   /**

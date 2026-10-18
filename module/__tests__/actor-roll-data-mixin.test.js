@@ -8,7 +8,7 @@ import { RollDataMixin } from '../actor/roll-data-mixin.mjs'
 // (which exercises them through live DCCActor instances and passes unchanged,
 // proving transparent composition).
 
-const MEMBERS = ['getRollData', 'getAttackBonusMode', 'getActionDice']
+const MEMBERS = ['getRollData', 'getAttackBonusMode', 'getActionDice', 'getLastDeedDie', 'withLastDeedDie', 'getLastDeedBonus', 'rememberDeedDie']
 
 // Minimal Base supplying the `super.getRollData()` the mixin augments.
 class Base {
@@ -50,7 +50,7 @@ describe('RollDataMixin extraction', () => {
     globalThis.game = { i18n: { localize: (k) => k } }
   })
 
-  test('is a mixin factory carrying all three accessors', () => {
+  test('is a mixin factory carrying the roll-input accessors', () => {
     expect(typeof RollDataMixin).toBe('function')
     expect(Object.getPrototypeOf(Mixed)).toBe(Base)
     for (const name of MEMBERS) {
@@ -72,16 +72,99 @@ describe('RollDataMixin extraction', () => {
     expect(data.xp).toBe(10) // Player only
   })
 
-  test('getRollData ab/mab use flat field when mode is flat, rolled bonus otherwise', () => {
+  test('getRollData ab/mab use flat field when mode is flat', () => {
     const flat = new Mixed()
     flat.type = 'Player'
     flat.system = { config: { attackBonusMode: 'flat' } }
     expect(flat.getRollData().mab).toBe('+2') // flat -> melee hit value
+  })
 
+  test('getRollData without a deed die keeps the values as they are', () => {
     const rolled = new Mixed()
     rolled.type = 'Player'
-    rolled.system = { config: { attackBonusMode: 'manual' } }
-    expect(rolled.getRollData().mab).toBe(3) // non-flat -> lastRolledAttackBonus
+    rolled.system = { config: { attackBonusMode: 'autoPerAttack' } }
+    expect(rolled.getRollData().mab).toBe('+2') // attackBonus '+0' has no deed die
+  })
+
+  describe('deed die in the attack shorthands (#1041)', () => {
+    // Warrior: +d4+1 attack bonus, Str +2, Agl +1
+    const deedDetails = (overrides = {}) => ({
+      level: { value: 3 },
+      attackBonus: '+d4+1',
+      lastRolledAttackBonus: 3,
+      lastRolledAttackBonusCombat: '',
+      lastRolledAttackBonusRound: 0,
+      attackHitBonus: { melee: { value: '+d4+3' }, missile: { value: '+d4+2' } },
+      attackDamageBonus: { melee: { value: '+d4+3' }, missile: { value: '+d4+1' } },
+      xp: { value: 10 },
+      ...overrides
+    })
+    const warrior = (details) => {
+      class DeedBase extends Base {
+        getRollData () { return { ...super.getRollData(), details } }
+      }
+      const inst = new (RollDataMixin(DeedBase))()
+      inst.type = 'Player'
+      inst.system = { config: { attackBonusMode: 'autoPerAttack' }, details }
+      return inst
+    }
+    const shorthands = (data) => ({ ab: data.ab, mab: data.mab, mad: data.mad, rab: data.rab, rad: data.rad })
+
+    test('each shorthand is its own value with the last deed roll in place of the die', () => {
+      expect(shorthands(warrior(deedDetails()).getRollData())).toEqual({ ab: 4, mab: 6, mad: 6, rab: 5, rad: 4 })
+    })
+
+    test('with no deed rolled the die counts as 0', () => {
+      const data = warrior(deedDetails({ lastRolledAttackBonus: 0 })).getRollData()
+      expect(shorthands(data)).toEqual({ ab: 1, mab: 3, mad: 3, rab: 2, rad: 1 })
+    })
+
+    test('a deed rolled in a combat counts only in that round', () => {
+      globalThis.game.combats = new Map([['c1', { round: 2 }]])
+      const details = deedDetails({ lastRolledAttackBonusCombat: 'c1', lastRolledAttackBonusRound: 2 })
+      expect(warrior(details).getRollData().ab).toBe(4)
+
+      globalThis.game.combats.get('c1').round = 3
+      expect(warrior(details).getRollData().ab).toBe(1)
+
+      globalThis.game.combats.get('c1').round = 2 // stepped back
+      expect(warrior(details).getRollData().ab).toBe(4)
+
+      globalThis.game.combats.delete('c1') // combat ended
+      expect(warrior(details).getRollData().ab).toBe(1)
+    })
+
+    test('a value with dice other than the deed die keeps the formula', () => {
+      const details = deedDetails({ attackHitBonus: { melee: { value: '+d4+1d6' }, missile: { value: '+d4+2' } } })
+      expect(warrior(details).getRollData().mab).toBe('+3+1d6')
+    })
+
+    test('getLastDeedBonus is the deed roll plus the flat part, or 0 with no deed', () => {
+      expect(warrior(deedDetails()).getLastDeedBonus()).toBe(4)
+      expect(warrior(deedDetails({ lastRolledAttackBonus: 0 })).getLastDeedBonus()).toBe(0)
+    })
+
+    test('rememberDeedDie stamps the started combat the actor is fighting in', async () => {
+      const inst = warrior(deedDetails())
+      inst.update = vi.fn()
+      const fighting = { id: 'c2', round: 4, started: true, getCombatantsByActor: (a) => a === inst ? [{}] : [] }
+      const other = { id: 'c3', round: 1, started: true, getCombatantsByActor: () => [] }
+      globalThis.game.combats = [other, fighting]
+      await inst.rememberDeedDie(2)
+      expect(inst.update).toHaveBeenCalledWith({
+        'system.details.lastRolledAttackBonus': 2,
+        'system.details.lastRolledAttackBonusCombat': 'c2',
+        'system.details.lastRolledAttackBonusRound': 4
+      })
+
+      globalThis.game.combats = [other]
+      await inst.rememberDeedDie(1)
+      expect(inst.update).toHaveBeenLastCalledWith({
+        'system.details.lastRolledAttackBonus': 1,
+        'system.details.lastRolledAttackBonusCombat': '',
+        'system.details.lastRolledAttackBonusRound': 0
+      })
+    })
   })
 
   test('getRollData omits xp for non-Player actors', () => {

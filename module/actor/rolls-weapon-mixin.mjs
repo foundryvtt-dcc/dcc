@@ -52,9 +52,9 @@ const { TextEditor } = foundry.applications.ux
 export const RollsWeaponMixin = (Base) => class extends Base {
   /**
    * Roll the attack bonus on its own (the Attack Bonus hotbar macro) and
-   * remember it for @ab and useDeed skills (#1041). With a deed die the
-   * remembered value is the die plus the bonus's flat part, matching what an
-   * attack adds. A flat bonus has nothing to roll, so it is only returned.
+   * remember its deed die for @ab and useDeed skills (#1041). Returns the
+   * whole bonus rolled, die plus flat part. A flat bonus has nothing to roll,
+   * so it is only returned.
    * @param {Object} options     Roll options
    * @returns {Promise<{rolled: boolean, roll?: Roll, formula?: string, attackBonus: number}|undefined>}
    *   undefined if the roll dialog is cancelled
@@ -87,7 +87,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       roll.dice[0].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
     }
 
-    await this.update({ 'system.details.lastRolledAttackBonus': roll.total })
+    await this.rememberDeedDie(deed ? roll.dice[0]?.total ?? 0 : roll.total)
 
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
@@ -829,11 +829,9 @@ export const RollsWeaponMixin = (Base) => class extends Base {
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
 
-    // Remember the deed die plus the attack bonus's flat part, as the attack
-    // applies it, for @ab/@mab/@mad/@rab/@rad and useDeed skills (#1041)
+    // Remember the deed die for @ab/@mab/@mad/@rab/@rad and useDeed skills (#1041)
     if (deedDieRollResult !== '') {
-      const flatPart = parseDeedAttackBonus(String(this.system.details.attackBonus))?.attackBonus || 0
-      await this.update({ 'system.details.lastRolledAttackBonus': deedDieRollResult + flatPart })
+      await this.rememberDeedDie(deedDieRollResult)
     }
 
     return {

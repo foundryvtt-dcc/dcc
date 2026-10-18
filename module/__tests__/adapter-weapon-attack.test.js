@@ -597,6 +597,13 @@ test('adapter path fires when actor + weapon both carry a deed-die formula (sess
   expect(assertDispatched('legacy')).toBe(false)
 })
 
+// Out of combat: no combat or round stamped with the deed
+const storedDeed = (die) => ({
+  'system.details.lastRolledAttackBonus': die,
+  'system.details.lastRolledAttackBonusCombat': '',
+  'system.details.lastRolledAttackBonusRound': 0
+})
+
 describe('lastRolledAttackBonus write-back (#1041)', () => {
   async function attackWith (attackBonus, toHit, deedNatural) {
     const restore = withAutomate(true)
@@ -615,12 +622,12 @@ describe('lastRolledAttackBonus write-back (#1041)', () => {
 
   test('a deed attack stores the deed die', async () => {
     await attackWith('+1d3', '+1d3+0', 3)
-    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+    expect(actorUpdateMock).toHaveBeenCalledWith(storedDeed(3))
   })
 
-  test('a deed attack stores the deed die plus the flat part, as the attack applies it', async () => {
+  test('a deed attack stores only the die, not the flat part', async () => {
     await attackWith('+d4+1', '+1d4+1', 2)
-    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+    expect(actorUpdateMock).toHaveBeenCalledWith(storedDeed(2))
   })
 
   test('a flat attack leaves it alone', async () => {
@@ -661,7 +668,7 @@ describe('rollAttackBonus (#1041)', () => {
     }
   }
 
-  test('rolls the deed die and flat part, stores and returns the total, and posts it to chat', async () => {
+  test('rolls the deed die and flat part, stores the die, returns the total, and posts it to chat', async () => {
     const { roll, result } = await rollWith('+1d4+1', withAttackBonusRoll(2, 1))
 
     const [terms] = dccRollCreateRollMock.mock.calls[0]
@@ -670,7 +677,7 @@ describe('rollAttackBonus (#1041)', () => {
       { type: 'Modifier', label: 'AttackBonus', formula: '+1' }
     ])
     expect(roll.dice[0].options.dcc).toEqual({ lowerThreshold: 2, upperThreshold: 3 })
-    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+    expect(actorUpdateMock).toHaveBeenCalledWith(storedDeed(2))
     expect(result).toEqual(expect.objectContaining({ rolled: true, roll, attackBonus: 3 }))
     expect(roll.toMessage).toHaveBeenCalledWith(expect.objectContaining({
       flags: { 'dcc.RollType': 'AttackBonus' }
