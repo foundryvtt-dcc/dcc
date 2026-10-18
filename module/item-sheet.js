@@ -2,7 +2,6 @@
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
-import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
 import { setupResponsiveTabs } from './responsive-tabs.mjs'
 // eslint-disable-next-line no-unused-vars
@@ -297,10 +296,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     if (data.document.type === 'weapon' && this.actor) {
       data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
-    }
-
-    if (!data.document.img || data.document.img === 'icons/svg/mystery-man.svg') {
-      data.data.img = EntityImages.imageForItem(data.document.type)
     }
 
     // Format Description HTML
