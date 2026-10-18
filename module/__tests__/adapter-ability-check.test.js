@@ -502,3 +502,31 @@ test('dialog path keeps the note when the ability modifier equals the penalty', 
   )
   expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -1, total: 9 })
 })
+
+/* #1048: a plain ability check must roll the actor's action die. A Dice Chain
+ * effect on `system.attributes.actionDice.value` applies to ability checks
+ * (docs/user-guide/Active-Effects.md), and the sibling skill/spell paths read
+ * the sheet die, but the adapter used to rely on the lib's hard d20 default. */
+test('plain ability checks roll the actor action die, not a hard d20 (#1048)', async () => {
+  rollToMessageMock.mockClear()
+  const bumped = new DCCActor()
+  bumped.system.attributes.actionDice.value = '1d24'
+
+  await bumped.rollAbilityCheck('str')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].die).toBe('d24')
+  expect(messageData.flags['dcc.libResult'].formula).toContain('1d24')
+})
+
+test('a d20 action die keeps the previous ability-check formula (#1048)', async () => {
+  rollToMessageMock.mockClear()
+  const plain = new DCCActor()
+  plain.system.attributes.actionDice.value = '1d20'
+
+  await plain.rollAbilityCheck('str')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].die).toBe('d20')
+  expect(messageData.flags['dcc.libResult'].formula).toContain('1d20')
+})

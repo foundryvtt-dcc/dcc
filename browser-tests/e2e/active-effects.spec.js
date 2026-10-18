@@ -644,6 +644,40 @@ test.describe('DCC Active Effects', () => {
       expect(result.formula).toContain('1d24')
     })
 
+    test('action die chain effect drives ability checks', async ({ page }) => {
+      // Reported bug (#1048): an "Action Die +1d" effect bumped the sheet die
+      // to 1d24, but a plain click on an ability label still rolled 1d20. The
+      // lib's ability-check default is a hard d20, so the adapter has to pass
+      // the sheet die explicitly (the dialog and skill paths already do).
+      const result = await page.evaluate(async () => {
+        let actor
+        try {
+          actor = await Actor.create({ name: 'V14 Dice Chain Check', type: 'Player' })
+          await actor.createEmbeddedDocuments('ActiveEffect', [{
+            name: 'Action Die Upgrade',
+            img: 'icons/svg/aura.svg',
+            changes: [{
+              key: 'system.attributes.actionDice.value',
+              value: '1',
+              type: 'add'
+            }],
+            disabled: false
+          }])
+          const message = await actor.rollAbilityCheck('str')
+          return {
+            sheetDie: actor.system.attributes.actionDice.value,
+            formula: message?.rolls?.[0]?.formula ?? null
+          }
+        } finally {
+          if (actor) await actor.delete().catch(() => {})
+        }
+      })
+
+      // The sheet die is bumped AND the ability check actually uses it.
+      expect(result.sheetDie).toBe('1d24')
+      expect(result.formula).toContain('1d24')
+    })
+
     test('action die chain effect drives weapon attack rolls', async ({ page }) => {
       // Owned weapons re-derive `system.actionDie` from the actor's
       // `attributes.actionDice.value` during the post-effect item re-prep
