@@ -11,6 +11,7 @@ import { RollsWeaponMixin } from '../actor/rolls-weapon-mixin.mjs'
 // live DCCActor instances and passes unchanged, proving transparent composition).
 
 const MEMBERS = [
+  'rollAttackBonus',
   'rollWeaponAttack',
   '_rollWeaponAttackDispatch',
   'rollToHit',

@@ -443,6 +443,57 @@ test.describe('Mighty Deeds E2E Tests', () => {
     }
   })
 
+  // u = 0.45 pins the d4 deed die to a 3 on the attack; u = 0.7 pins it to a 2
+  // on rollAttackBonus. @ab carries the die plus the bonus's flat part (#1041).
+  for (const [attackBonus, flat] of [['+d4', 0], ['+d4+1', 1]]) {
+    test(`${attackBonus}: @ab carries the last deed roll, from an attack or rollAttackBonus (#1041)`, async ({ page }) => {
+      const ids = await createDeedFixtures(page)
+      await page.evaluate(({ actorId, attackBonus }) => game.actors.get(actorId).update({ 'system.details.attackBonus': attackBonus }), { ...ids, attackBonus })
+
+      const attack = await rollPinnedDeed(page, ids, { uniform: 0.45 })
+      expect(attack?.deedDieRollResult).toBe(3)
+
+      const afterAttack = await page.evaluate(({ actorId }) => {
+        const actor = game.actors.get(actorId)
+        return { stored: actor.system.details.lastRolledAttackBonus, ab: actor.getRollData().ab }
+      }, ids)
+      expect(afterAttack).toEqual({ stored: 3 + flat, ab: 3 + flat })
+
+      const standalone = await page.evaluate(async ({ actorId }) => {
+        const actor = game.actors.get(actorId)
+        const origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.7
+        let result
+        try {
+          result = await actor.rollAttackBonus()
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+        }
+        const msg = game.messages.contents.findLast(m => m.getFlag('dcc', 'RollType') === 'AttackBonus')
+        return {
+          returned: result.attackBonus,
+          stored: actor.system.details.lastRolledAttackBonus,
+          ab: actor.getRollData().ab,
+          messageTotal: msg?.rolls[0]?.total,
+          deedDie: msg?.rolls[0]?.dice[0]?.total
+        }
+      }, ids)
+      expect(standalone).toEqual({ returned: 2 + flat, stored: 2 + flat, ab: 2 + flat, messageTotal: 2 + flat, deedDie: 2 })
+    })
+  }
+
+  test('rollAttackBonus with a flat bonus returns it without rolling or storing (#1041)', async ({ page }) => {
+    const ids = await createDeedFixtures(page)
+    const result = await page.evaluate(async ({ actorId }) => {
+      const actor = game.actors.get(actorId)
+      await actor.update({ 'system.details.attackBonus': '+2', 'system.details.lastRolledAttackBonus': 4 })
+      const before = game.messages.size
+      const returned = await actor.rollAttackBonus()
+      return { returned, stored: actor.system.details.lastRolledAttackBonus, newMessages: game.messages.size - before }
+    }, ids)
+    expect(result).toEqual({ returned: { rolled: false, attackBonus: 2 }, stored: 4, newMessages: 0 })
+  })
+
   // A deed needs a 3+ AND a hit (#1018). u = 0.45 pins the action die to a
   // natural 11 and the d4 deed die to a 3: total 14, so AC 30 misses and AC 10 hits.
   for (const enhanced of [false, true]) {

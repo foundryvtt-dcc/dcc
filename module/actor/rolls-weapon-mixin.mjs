@@ -14,7 +14,7 @@ import { qolHandlingCombat } from '../integrations.mjs'
 import { highestPcTargetLuckMod } from '../combat-targeting.mjs'
 import { applyAutomatedCardDamage, attackHitsTarget, DAMAGE_INLINE_FLAVOR } from '../auto-apply-damage.mjs'
 import { maybeFriendlyFire } from '../friendly-fire.mjs'
-import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie, parseDeedAttackBonus } from '../adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
@@ -41,8 +41,8 @@ const { TextEditor } = foundry.applications.ux
  * `this.getRollData` / `this.classId` resolve up the prototype chain to
  * the mixin or class that defines them).
  *
- * Public surface unchanged: `actor.rollWeaponAttack()` and
- * `actor.rollCritical()` are the documented entry points; the rest are
+ * Public surface: `actor.rollWeaponAttack()`, `actor.rollCritical()` and
+ * `actor.rollAttackBonus()` are the documented entry points; the rest are
  * internal. Self-contained: depends only on the attack/damage adapter
  * imports above and the Foundry globals.
  *
@@ -50,6 +50,60 @@ const { TextEditor } = foundry.applications.ux
  * @returns {typeof Base} a subclass carrying the weapon-attack dispatchers.
  */
 export const RollsWeaponMixin = (Base) => class extends Base {
+  /**
+   * Roll the attack bonus on its own (the Attack Bonus hotbar macro) and
+   * remember it for @ab and useDeed skills (#1041). With a deed die the
+   * remembered value is the die plus the bonus's flat part, matching what an
+   * attack adds. A flat bonus has nothing to roll, so it is only returned.
+   * @param {Object} options     Roll options
+   * @returns {Promise<{rolled: boolean, roll?: Roll, formula?: string, attackBonus: number}|undefined>}
+   *   undefined if the roll dialog is cancelled
+   */
+  async rollAttackBonus (options = {}) {
+    const attackBonus = String(this.system.details.attackBonus || '+0')
+    if (!/d\d/.test(attackBonus)) {
+      const flatBonus = parseInt(attackBonus) || 0
+      ui.notifications.info(game.i18n.format('DCC.AttackBonusNoDeedDie', { name: this.name, bonus: ensurePlus(flatBonus) }))
+      return { rolled: false, attackBonus: flatBonus }
+    }
+
+    const flavor = game.i18n.localize('DCC.AttackBonus')
+    options.title = flavor
+
+    // Split a deed die from its flat part so the die can be colored on its own
+    const deed = parseDeedAttackBonus(attackBonus)
+    const terms = deed
+      ? [
+          { type: 'Die', label: game.i18n.localize('DCC.DeedDie'), formula: `1${deed.deedDie}` },
+          { type: 'Modifier', label: game.i18n.localize('DCC.AttackBonus'), formula: ensurePlus(deed.attackBonus) }
+        ]
+      : [{ type: 'Die', label: flavor, formula: attackBonus }]
+
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    if (!roll) return
+
+    await roll.evaluate()
+    if (deed && roll.dice.length > 0) {
+      roll.dice[0].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
+    }
+
+    await this.update({ 'system.details.lastRolledAttackBonus': roll.total })
+
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor,
+      flags: {
+        'dcc.RollType': 'AttackBonus'
+      }
+    })
+    return {
+      rolled: true,
+      roll,
+      formula: game.dcc.DCCRoll.cleanFormula(roll.terms),
+      attackBonus: roll.total
+    }
+  }
+
   /**
    * Roll a weapon's attack, damage, and handle any crits
    * @param {string} weaponId    The weapon name or slot id (e.g. "m1", "r1")
@@ -774,6 +828,13 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     const deedNeedsHit = deedSucceed && libResult.isHit === undefined && !autoHit
 
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
+
+    // Remember the deed die plus the attack bonus's flat part, as the attack
+    // applies it, for @ab/@mab/@mad/@rab/@rad and useDeed skills (#1041)
+    if (deedDieRollResult !== '') {
+      const flatPart = parseDeedAttackBonus(String(this.system.details.attackBonus))?.attackBonus || 0
+      await this.update({ 'system.details.lastRolledAttackBonus': deedDieRollResult + flatPart })
+    }
 
     return {
       d20RollResult,

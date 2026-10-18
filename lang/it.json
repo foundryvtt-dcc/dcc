@@ -159,6 +159,7 @@
   "DCC.AttachedSpellHint": "Trascina un incantesimo su questa scheda per collegarlo a questo oggetto",
   "DCC.Attack": "Attacco",
   "DCC.AttackBonus": "Bonus di Attacco",
+  "DCC.AttackBonusNoDeedDie": "{name} ha un bonus di attacco fisso di {bonus}, senza Dado Cimento da tirare",
   "DCC.AttackBonusConfigMode": "Modalità Bonus di Attacco",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Tiro per Colpire",
   "DCC.AttackBonusConfigModeFlat": "Normale",

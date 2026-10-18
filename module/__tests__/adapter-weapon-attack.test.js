@@ -1,4 +1,4 @@
-/* global Hooks, gameSettingsGetMock, dccRollCreateRollMock, Roll */
+/* global Hooks, gameSettingsGetMock, dccRollCreateRollMock, actorUpdateMock, uiNotificationsInfoMock, Roll */
 /**
  * Adapter round-trip test — weapon attack (Phase 3 sessions 2–14,
  * D1 session 15).
@@ -595,6 +595,122 @@ test('adapter path fires when actor + weapon both carry a deed-die formula (sess
 
   expect(assertDispatched('adapter')).toBe(true)
   expect(assertDispatched('legacy')).toBe(false)
+})
+
+describe('lastRolledAttackBonus write-back (#1041)', () => {
+  async function attackWith (attackBonus, toHit, deedNatural) {
+    const restore = withAutomate(true)
+    const restoreRoll = deedNatural ? withDeedDiceRoll(10, deedNatural) : () => {}
+    actorUpdateMock.mockClear()
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.details.attackBonus = attackBonus
+    try {
+      await actor.rollToHit(makeSimpleWeapon({ toHit }), {})
+    } finally {
+      restoreRoll()
+      restore()
+    }
+  }
+
+  test('a deed attack stores the deed die', async () => {
+    await attackWith('+1d3', '+1d3+0', 3)
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+  })
+
+  test('a deed attack stores the deed die plus the flat part, as the attack applies it', async () => {
+    await attackWith('+d4+1', '+1d4+1', 2)
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+  })
+
+  test('a flat attack leaves it alone', async () => {
+    await attackWith('+2', '+2', null)
+    expect(actorUpdateMock.mock.calls.some(([data]) => 'system.details.lastRolledAttackBonus' in data)).toBe(false)
+  })
+})
+
+describe('rollAttackBonus (#1041)', () => {
+  function withAttackBonusRoll (dieTotal, flat = 0) {
+    const previous = dccRollCreateRollMock.getMockImplementation()
+    const roll = {
+      total: dieTotal + flat,
+      dice: [{ total: dieTotal, options: {} }],
+      terms: [],
+      evaluate: vi.fn(async () => {}),
+      toMessage: vi.fn(async () => {})
+    }
+    dccRollCreateRollMock.mockImplementation(() => roll)
+    return {
+      roll,
+      restore: () => dccRollCreateRollMock.mockImplementation(previous)
+    }
+  }
+
+  async function rollWith (attackBonus, rollSetup) {
+    const { roll, restore } = rollSetup
+    dccRollCreateRollMock.mockClear()
+    actorUpdateMock.mockClear()
+    uiNotificationsInfoMock.mockClear()
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.details.attackBonus = attackBonus
+    try {
+      return { roll, result: await actor.rollAttackBonus() }
+    } finally {
+      restore()
+    }
+  }
+
+  test('rolls the deed die and flat part, stores and returns the total, and posts it to chat', async () => {
+    const { roll, result } = await rollWith('+1d4+1', withAttackBonusRoll(2, 1))
+
+    const [terms] = dccRollCreateRollMock.mock.calls[0]
+    expect(terms).toEqual([
+      { type: 'Die', label: 'DeedDie', formula: '1d4' },
+      { type: 'Modifier', label: 'AttackBonus', formula: '+1' }
+    ])
+    expect(roll.dice[0].options.dcc).toEqual({ lowerThreshold: 2, upperThreshold: 3 })
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.details.lastRolledAttackBonus': 3 })
+    expect(result).toEqual(expect.objectContaining({ rolled: true, roll, attackBonus: 3 }))
+    expect(roll.toMessage).toHaveBeenCalledWith(expect.objectContaining({
+      flags: { 'dcc.RollType': 'AttackBonus' }
+    }))
+  })
+
+  test('a deed die with no flat part rolls a +0 modifier', async () => {
+    const { result } = await rollWith('+d3', withAttackBonusRoll(2))
+
+    const [terms] = dccRollCreateRollMock.mock.calls[0]
+    expect(terms[1]).toEqual({ type: 'Modifier', label: 'AttackBonus', formula: '+0' })
+    expect(result.attackBonus).toBe(2)
+  })
+
+  test('a flat bonus returns the bonus without rolling, storing or posting', async () => {
+    const { roll, result } = await rollWith('+2', withAttackBonusRoll(0))
+
+    expect(result).toEqual({ rolled: false, attackBonus: 2 })
+    expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+    expect(roll.toMessage).not.toHaveBeenCalled()
+    expect(uiNotificationsInfoMock).toHaveBeenCalledWith('AttackBonusNoDeedDie')
+  })
+
+  test('a cancelled dialog stores nothing', async () => {
+    const previous = dccRollCreateRollMock.getMockImplementation()
+    dccRollCreateRollMock.mockImplementation(() => Promise.reject(new RollCancelledError()))
+    actorUpdateMock.mockClear()
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.system.details.attackBonus = '+1d3'
+
+    try {
+      expect(await actor.rollAttackBonus()).toBeUndefined()
+    } finally {
+      dccRollCreateRollMock.mockImplementation(previous)
+    }
+
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+  })
 })
 
 test('adapter path throws when deedDie is set but Roll has no dice[1] (session 11 hardening)', async () => {

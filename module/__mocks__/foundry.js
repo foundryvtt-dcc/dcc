@@ -1216,7 +1216,7 @@ class ActorMock {
                 adjustment: '+0'
               }
             },
-            lastRolledAttackBonus: '',
+            lastRolledAttackBonus: 0,
             level: {
               value: 1
             }
@@ -1593,8 +1593,10 @@ global.CONFIG.ChatMessage = {
  */
 global.uiNotificationsWarnMock = vi.fn((message, options) => {}).mockName('ui.notifications.warn')
 global.uiNotificationsErrorMock = vi.fn((message, type, permanent) => {}).mockName('ui.notifications.error')
+global.uiNotificationsInfoMock = vi.fn((message, options) => {}).mockName('ui.notifications.info')
 
 class Notifications {
+  info = global.uiNotificationsInfoMock
   warn = global.uiNotificationsWarnMock
   error = global.uiNotificationsErrorMock
 }
