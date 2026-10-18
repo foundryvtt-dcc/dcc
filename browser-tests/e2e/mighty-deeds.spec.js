@@ -16,7 +16,7 @@ const { FOUNDRY_URL } = require('./fixtures')
  * The tests will automatically log in as Gamemaster (no password).
  */
 
-/* global game, ui, Actor, RollTable, Scene, CONFIG, CONST, document */
+/* global game, ui, Actor, Combat, RollTable, Scene, CONFIG, CONST, document */
 
 /**
  * Create the test fixtures in the live world: a Mighty Deed roll table
@@ -441,6 +441,129 @@ test.describe('Mighty Deeds E2E Tests', () => {
     } finally {
       await page.evaluate((value) => game.settings.set('dcc', 'automateDamageFumblesCrits', value), previousAutomate)
     }
+  })
+
+  // u = 0.45 pins the d4 deed die to a 3 on the attack; u = 0.7 pins it to a 2
+  // on rollAttackBonus. Only the die is stored; each shorthand is its own
+  // attack value with the die replaced by that roll (#1041). Str 16 = +2.
+  for (const [attackBonus, flat] of [['+d4', 0], ['+d4+1', 1]]) {
+    test(`${attackBonus}: the attack shorthands carry the last deed roll, from an attack or rollAttackBonus (#1041)`, async ({ page }) => {
+      const ids = await createDeedFixtures(page)
+      await page.evaluate(({ actorId, attackBonus }) => game.actors.get(actorId).update({
+        'system.details.attackBonus': attackBonus,
+        'system.abilities.str.value': 16
+      }), { ...ids, attackBonus })
+
+      const shorthands = () => page.evaluate(({ actorId }) => {
+        const actor = game.actors.get(actorId)
+        const { ab, mab, mad, rab, rad } = actor.getRollData()
+        return { stored: actor.system.details.lastRolledAttackBonus, ab, mab, mad, rab, rad }
+      }, ids)
+      const expected = (die) => ({ stored: die, ab: die + flat, mab: die + 2 + flat, mad: die + 2 + flat, rab: die + flat, rad: die + flat })
+
+      const attack = await rollPinnedDeed(page, ids, { uniform: 0.45 })
+      expect(attack?.deedDieRollResult).toBe(3)
+      expect(await shorthands()).toEqual(expected(3))
+
+      const standalone = await page.evaluate(async ({ actorId }) => {
+        const actor = game.actors.get(actorId)
+        const origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.7
+        let result
+        try {
+          result = await actor.rollAttackBonus()
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+        }
+        const msg = game.messages.contents.findLast(m => m.getFlag('dcc', 'RollType') === 'AttackBonus')
+        return { returned: result.attackBonus, messageTotal: msg?.rolls[0]?.total, deedDie: msg?.rolls[0]?.dice[0]?.total }
+      }, ids)
+      expect(standalone).toEqual({ returned: 2 + flat, messageTotal: 2 + flat, deedDie: 2 })
+      expect(await shorthands()).toEqual(expected(2))
+    })
+  }
+
+  test('in combat only a deed from the current round counts (#1041)', async ({ page }) => {
+    const ids = await createDeedFixtures(page)
+    await page.evaluate(({ actorId }) => game.actors.get(actorId).update({ 'system.details.attackBonus': '+d4+1' }), ids)
+    const abNow = () => page.evaluate(({ actorId }) => game.actors.get(actorId).getRollData().ab, ids)
+
+    // A deed rolled before the fight counts until the actor is fighting
+    await page.evaluate(({ actorId }) => game.actors.get(actorId).rememberDeedDie(2), ids)
+    expect(await abNow()).toBe(3)
+
+    const combatId = await page.evaluate(async ({ actorId }) => {
+      for (const combat of game.combats.filter(c => c.combatants.some(cb => cb.actor?.name?.startsWith('E2E ')))) {
+        await combat.delete()
+      }
+      const combat = await Combat.create({})
+      await combat.createEmbeddedDocuments('Combatant', [{ actorId }])
+      await combat.startCombat()
+      return combat.id
+    }, ids)
+
+    try {
+      expect(await abNow()).toBe(1) // in a started combat: the pre-combat deed no longer counts
+
+      const attack = await rollPinnedDeed(page, ids, { uniform: 0.45 })
+      expect(attack?.deedDieRollResult).toBe(3)
+      const stamp = await page.evaluate(({ actorId }) => {
+        const { lastRolledAttackBonusCombat, lastRolledAttackBonusRound } = game.actors.get(actorId).system.details
+        return { combat: lastRolledAttackBonusCombat, round: lastRolledAttackBonusRound }
+      }, ids)
+      expect(stamp).toEqual({ combat: combatId, round: 1 })
+      expect(await abNow()).toBe(4)
+
+      await page.evaluate((id) => game.combats.get(id).nextRound(), combatId)
+      expect(await abNow()).toBe(1) // next round: no deed, flat part only
+
+      await page.evaluate((id) => game.combats.get(id).previousRound(), combatId)
+      expect(await abNow()).toBe(4) // stepped back: the deed counts again
+    } finally {
+      await page.evaluate((id) => game.combats.get(id)?.delete(), combatId)
+    }
+    expect(await abNow()).toBe(1) // combat over: the deed no longer counts
+  })
+
+  test('a useDeed skill adds the last deed roll plus the flat part (#1041)', async ({ page }) => {
+    const ids = await createDeedFixtures(page)
+    const totals = await page.evaluate(async ({ actorId }) => {
+      const actor = game.actors.get(actorId)
+      await actor.update({ 'system.details.attackBonus': '+d4+1', 'system.skills.shieldBash.useDeed': true })
+      const origRandomUniform = CONFIG.Dice.randomUniform
+      const rollShieldBash = async (die) => {
+        await actor.rememberDeedDie(die)
+        const before = new Set(game.messages.contents.map(m => m.id))
+        CONFIG.Dice.randomUniform = () => 0.5
+        try {
+          await actor.rollSkillCheck('shieldBash')
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+        }
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents.find(m => !before.has(m.id) && m.rolls.length)
+          if (msg) return msg.rolls[0].total
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      }
+      return { withDeed: await rollShieldBash(3), withoutDeed: await rollShieldBash(0) }
+    }, ids)
+    expect(totals.withDeed).not.toBeNull()
+    expect(totals.withDeed - totals.withoutDeed).toBe(4)
+  })
+
+  test('rollAttackBonus with a flat bonus returns it without rolling or storing (#1041)', async ({ page }) => {
+    const ids = await createDeedFixtures(page)
+    const result = await page.evaluate(async ({ actorId }) => {
+      const actor = game.actors.get(actorId)
+      await actor.update({ 'system.details.attackBonus': '+2', 'system.details.lastRolledAttackBonus': 4 })
+      const before = game.messages.size
+      const returned = await actor.rollAttackBonus()
+      return { returned, stored: actor.system.details.lastRolledAttackBonus, newMessages: game.messages.size - before }
+    }, ids)
+    expect(result).toEqual({ returned: { rolled: false, attackBonus: 2 }, stored: 4, newMessages: 0 })
   })
 
   // A deed needs a 3+ AND a hit (#1018). u = 0.45 pins the action die to a
