@@ -48,6 +48,20 @@ describe('Schema Definition (real Foundry fields)', () => {
     expect(schema.config).toBeDefined()
   })
 
+  test('PlayerData declares class.spellCheckOverrideDie and preserves a write to it', () => {
+    // The sheet form and every consumer read `system.class.spellCheckOverrideDie`;
+    // the schema must declare that exact name or Foundry's prune drops the write.
+    const field = PlayerData.defineSchema().class.fields.spellCheckOverrideDie
+    expect(field).toBeInstanceOf(foundry.data.fields.StringField)
+    expect(field.options.nullable).toBe(true)
+
+    const cleaned = PlayerData.cleanData(
+      { class: { spellCheckOverrideDie: '1d24' }, skills: {} },
+      { prune: true }
+    )
+    expect(cleaned.class.spellCheckOverrideDie).toBe('1d24')
+  })
+
   test('NPCData extends BaseActorData schema with overrides', () => {
     const schema = NPCData.defineSchema()
     expect(schema.abilities).toBeDefined()
