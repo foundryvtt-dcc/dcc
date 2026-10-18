@@ -144,8 +144,19 @@ describe('RollDataMixin extraction', () => {
       expect(warrior(deedDetails({ lastRolledAttackBonus: 0 })).getLastDeedBonus()).toBe(0)
     })
 
+    test('rememberDeedDie skips actors the user cannot update', async () => {
+      globalThis.game.combats = []
+      for (const [isOwner, pack] of [[false, null], [true, 'dcc-core-book.pregens']]) {
+        const inst = warrior(deedDetails())
+        Object.assign(inst, { isOwner, pack, update: vi.fn() })
+        await inst.rememberDeedDie(2)
+        expect(inst.update).not.toHaveBeenCalled()
+      }
+    })
+
     test('rememberDeedDie stamps the started combat the actor is fighting in', async () => {
       const inst = warrior(deedDetails())
+      inst.isOwner = true
       inst.update = vi.fn()
       const fighting = { id: 'c2', round: 4, started: true, getCombatantsByActor: (a) => a === inst ? [{}] : [] }
       const other = { id: 'c3', round: 1, started: true, getCombatantsByActor: () => [] }

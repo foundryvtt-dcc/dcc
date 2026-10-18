@@ -630,6 +630,25 @@ describe('lastRolledAttackBonus write-back (#1041)', () => {
     expect(actorUpdateMock).toHaveBeenCalledWith(storedDeed(2))
   })
 
+  test('a deed attack by a user who cannot update the actor still resolves', async () => {
+    const restore = withAutomate(true)
+    const restoreRoll = withDeedDiceRoll(10, 3)
+    actorUpdateMock.mockClear()
+    // noinspection JSCheckFunctionSignatures
+    const actor = new DCCActor()
+    actor.isOwner = false
+    actor.system.details.attackBonus = '+1d3'
+    let result
+    try {
+      result = await actor.rollToHit(makeSimpleWeapon({ toHit: '+1d3+0' }), {})
+    } finally {
+      restoreRoll()
+      restore()
+    }
+    expect(result.deedDieRollResult).toBe(3)
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+  })
+
   test('a flat attack leaves it alone', async () => {
     await attackWith('+2', '+2', null)
     expect(actorUpdateMock.mock.calls.some(([data]) => 'system.details.lastRolledAttackBonus' in data)).toBe(false)

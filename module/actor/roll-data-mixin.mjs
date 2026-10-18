@@ -125,10 +125,12 @@ export const RollDataMixin = (Base) => class extends Base {
 
   /**
    * Remember a deed die roll, with the combat round it was rolled in if the
-   * actor is fighting in a started combat (#1041)
+   * actor is fighting in a started combat (#1041). Skipped for a compendium
+   * actor or one the user can't update, so the roll itself still goes ahead.
    * @param {Number} die  The deed die result
    */
   async rememberDeedDie (die) {
+    if (this.pack || !this.isOwner) return
     const combat = game.combats?.find(c => c.started && c.getCombatantsByActor(this).length > 0)
     await this.update({
       'system.details.lastRolledAttackBonus': die,
