@@ -40,6 +40,11 @@ test('prepareContext returns the item document for a plain item', async () => {
   expect(context.document).toBe(item)
 })
 
+test('prepareContext passes a stored image through to the portrait', async () => {
+  const context = await prepareContext(makeItem({ img: 'icons/svg/aura.svg' }))
+  expect(context.img).toBe('icons/svg/aura.svg')
+})
+
 /* Regression (#1043): `_prepareContext` wrote a display fallback into the V1
  * `data.data` property, which does not exist in an AppV2 context. Every item
  * whose image is empty or the mystery-man placeholder made the sheet throw, so
@@ -48,10 +53,25 @@ test('prepareContext does not throw for an item without an image', async () => {
   // `img: ''` is cleaned to the item default icon by the document schema, so
   // `null` is the reachable "no image" state.
   const context = await prepareContext(makeItem({ img: null }))
+  // The portrait gets the type's entity icon (#225); the document is untouched.
+  expect(context.img).toBe('systems/dcc/styles/images/weapon.webp')
   expect(context.document.img).toBeNull()
 })
 
 test('prepareContext does not throw for the mystery-man placeholder', async () => {
   const context = await prepareContext(makeItem({ img: 'icons/svg/mystery-man.svg' }))
+  expect(context.img).toBe('systems/dcc/styles/images/weapon.webp')
   expect(context.document.img).toBe('icons/svg/mystery-man.svg')
+})
+
+test('prepareContext uses the default item icon for types without artwork', async () => {
+  // `equipment` has no entry in CONFIG.DCC.defaultItemImages.
+  const context = await prepareContext(makeItem({ type: 'equipment', img: null }))
+  expect(context.img).toBe('systems/dcc/styles/images/item.webp')
+})
+
+test('prepareContext keeps a core placeholder that is not the mystery-man icon', async () => {
+  // Only an empty image and the mystery-man placeholder are replaced (#225).
+  const context = await prepareContext(makeItem({ img: 'icons/svg/item-bag.svg' }))
+  expect(context.img).toBe('icons/svg/item-bag.svg')
 })

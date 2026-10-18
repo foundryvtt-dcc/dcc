@@ -2,6 +2,7 @@
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
+import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
 import { setupResponsiveTabs } from './responsive-tabs.mjs'
 // eslint-disable-next-line no-unused-vars
@@ -250,6 +251,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _prepareContext (options) {
     const data = await super._prepareContext(options)
     data.actor = this.actor
+
+    // Display-only stand-in for missing or placeholder artwork (#225): the
+    // header portrait renders this field, so the document keeps its own `img`
+    // and a render cycle never writes back to it (see the actor-side
+    // `prepareImage` for the same reasoning).
+    data.img = (!data.document.img || data.document.img === 'icons/svg/mystery-man.svg')
+      ? EntityImages.imageForItem(data.document.type)
+      : data.document.img
 
     if (data.document.type === 'weapon') {
       this.position.height = 730

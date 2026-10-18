@@ -491,6 +491,8 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       // context. Every item whose image was empty or the mystery-man
       // placeholder threw inside `_prepareContext`, so no sheet window opened
       // at all (and the afterEach console-error gate below saw the TypeError).
+      // The sheet now shows the type's entity icon instead (#225) without
+      // writing it back to the document.
       const result = await page.evaluate(async () => {
         const observed = {}
         const item = await Item.create({
@@ -512,7 +514,8 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
             observed[label] = {
               rendered: item.sheet.rendered,
               window: Boolean(item.sheet.element),
-              imgSrc: item.sheet.element?.querySelector('img[data-edit="img"]')?.getAttribute('src') ?? null
+              imgSrc: item.sheet.element?.querySelector('img[data-edit="img"]')?.getAttribute('src') ?? null,
+              documentImg: item.img
             }
           }
         } finally {
@@ -526,11 +529,16 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
         expect(state.window, `${label}: no sheet window appeared`).toBe(true)
         expect(state.rendered, `${label}: sheet is not marked as rendered`).toBe(true)
       }
-      // The sheet renders the stored value (the templates read `document.img`);
-      // the placeholder is not rewritten behind the user's back.
+      // A stored image is rendered verbatim; a missing one and the mystery-man
+      // placeholder fall back to the entity icon for the item type (`equipment`
+      // has no dedicated icon, so the default item artwork is used).
       expect(result.storedImage.imgSrc).toBe('icons/svg/aura.svg')
-      expect(result.emptyImage.imgSrc).toBe('')
-      expect(result.mysteryMan.imgSrc).toBe('icons/svg/mystery-man.svg')
+      expect(result.emptyImage.imgSrc).toBe('systems/dcc/styles/images/item.webp')
+      expect(result.mysteryMan.imgSrc).toBe('systems/dcc/styles/images/item.webp')
+      // The fallback is display-only: the document keeps what it had.
+      expect(result.storedImage.documentImg).toBe('icons/svg/aura.svg')
+      expect(result.emptyImage.documentImg).toBeNull()
+      expect(result.mysteryMan.documentImg).toBe('icons/svg/mystery-man.svg')
     })
   })
 
