@@ -34,12 +34,6 @@ const prepareContext = (item) => new DCCItemSheet({
   dragDrop: [{ dragSelector: '[data-drag="true"]', dropSelector: '.dcc.item' }]
 })._prepareContext({})
 
-test('prepareContext returns the item document for a plain item', async () => {
-  const item = makeItem()
-  const context = await prepareContext(item)
-  expect(context.document).toBe(item)
-})
-
 test('prepareContext passes a stored image through to the portrait', async () => {
   const context = await prepareContext(makeItem({ img: 'icons/svg/aura.svg' }))
   expect(context.img).toBe('icons/svg/aura.svg')

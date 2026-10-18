@@ -975,8 +975,6 @@ class ActorSheetV2Mock extends DocumentSheetV2Mock {
 class ItemSheetV2Mock extends DocumentSheetV2Mock {
   // Mirrors the real base class, which item sheet context code relies on
   // (`this.actor` gates the mercurial tab, `data.actor` and the LCK bonus).
-  get item () { return this.document }
-
   get actor () { return this.document.actor }
 }
 
