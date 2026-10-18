@@ -5,9 +5,9 @@
  * Exercises the full adapter flow for a non-legacy ability check:
  *   DCCActor._rollAbilityCheckViaAdapter →
  *   actorToCharacter →
- *   libRollAbilityCheck pass 1 ({mode:'formula'}) →
+ *   libRollCheck({ ability, die }) pass 1 ({mode:'formula'}) →
  *   inline `new Roll(plan.formula).evaluate()` (Foundry owns the dice) →
- *   libRollAbilityCheck pass 2 ({mode:'evaluate', roller: () => natural}) →
+ *   libRollCheck({ ability, die }) pass 2 ({mode:'evaluate', roller: () => natural}) →
  *   chat-renderer (builds ChatMessage).
  *
  * Locks the contract between the Foundry adapter and dcc-core-lib
@@ -330,6 +330,8 @@ test('non-zero armor check penalty (str) shows the labeled check penalty note', 
 
   // The mock Roll hardcodes `total = 10`: 10 + (-2) = 8.
   expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -2, total: 8 })
+  // The default path still rolls the d20 the lib used to hardcode (#1048).
+  expect(messageData.flags['dcc.libResult'].die).toBe('d20')
   expect(messageData.content).toContain(PENALTY_NOTE_HTML)
 
   // No bare secondary roll: the message carries only the check roll.
@@ -501,4 +503,20 @@ test('dialog path keeps the note when the ability modifier equals the penalty', 
     () => actor.rollAbilityCheck('str', { showModifierDialog: true })
   )
   expect(messageData.flags['dcc.checkPenalty']).toEqual({ penalty: -1, total: 9 })
+})
+
+/* #1048: a plain ability check must roll the actor's action die. A Dice Chain
+ * effect on `system.attributes.actionDice.value` applies to ability checks
+ * (docs/user-guide/Active-Effects.md), and the sibling skill/spell paths read
+ * the sheet die, but the adapter used to rely on the lib's hard d20 default. */
+test('plain ability checks roll the actor action die, not a hard d20 (#1048)', async () => {
+  rollToMessageMock.mockClear()
+  const bumped = new DCCActor()
+  bumped.system.attributes.actionDice.value = '1d24'
+
+  await bumped.rollAbilityCheck('str')
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].die).toBe('d24')
+  expect(messageData.flags['dcc.libResult'].formula).toContain('1d24')
 })
