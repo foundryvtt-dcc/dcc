@@ -5,8 +5,10 @@ const { expect, createSessionTest } = require('./fixtures')
  * Enhanced attack cards (module/chat/enhanced-attack-card.mjs) end-to-end
  * against live Foundry. With enhancedAttackCards on and automation off, a PC
  * attacks a targeted, low-AC NPC. The rendered chat message must carry the
- * enhanced card with the hit banner, the hit/miss flags must be stored on the
- * message, and (automation off) the Roll Damage button must be present.
+ * enhanced card with the hit banner, its header artwork must resolve to the
+ * weapon type icon when the weapon only has placeholder art, the hit/miss flags
+ * must be stored on the message, and (automation off) the Roll Damage button
+ * must be present.
  */
 const test = createSessionTest()
 
@@ -52,7 +54,9 @@ test.describe('Enhanced attack cards', () => {
         const el = message ? document.querySelector(`.message[data-message-id="${message.id}"] .dcc-enhanced-card`) : null
         if (el) {
           cardHTML = el.outerHTML
-          weaponImgSrc = el.querySelector('img')?.getAttribute('src') ?? null
+          // Direct child of the header: the backstab icon is nested inside the
+          // <h3>, so a bare `img` read would pick the wrong one on that layout.
+          weaponImgSrc = el.querySelector('.card-header > img')?.getAttribute('src') ?? null
         }
         if (!cardHTML) await new Promise(resolve => setTimeout(resolve, 100))
       }

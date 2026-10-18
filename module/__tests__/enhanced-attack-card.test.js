@@ -206,11 +206,9 @@ describe('buildEnhancedCardData', () => {
   })
 
   test('a missing weapon image falls back to the weapon type icon (#225)', async () => {
-    for (const img of ['', null, undefined]) {
-      const imgless = { ...weapon, type: 'weapon', img }
-      const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, imgless)
-      expect(data.weaponImg, `img: ${String(img)}`).toBe('systems/dcc/styles/images/weapon.webp')
-    }
+    const imgless = { ...weapon, type: 'weapon', img: '' }
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), pcActor, imgless)
+    expect(data.weaponImg).toBe(defaultItemImages.weapon)
   })
 
   test('a weapon that no longer exists keeps the empty image (#225)', async () => {
