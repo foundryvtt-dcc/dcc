@@ -63,7 +63,7 @@ const FOREIGN_CLASS_FIELDS = {
     corruption: '<p>x</p>',
     spellCheckOtherMod: '+1',
     spellCheckOverride: '',
-    spellCheckDieOverride: '',
+    spellCheckOverrideDie: '',
     // thief / warrior
     luckDie: '1d4',
     backstab: '+2',

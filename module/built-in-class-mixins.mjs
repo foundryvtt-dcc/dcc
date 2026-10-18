@@ -30,7 +30,7 @@ function attachWizardFields (schema) {
   schema.class.fields.knownSpells = new fields.NumberField({ initial: 0, integer: true, min: 0 })
   schema.class.fields.maxSpellLevel = new fields.NumberField({ initial: 0, integer: true, min: 0 })
   schema.class.fields.spellCheckOtherMod = new fields.StringField({ nullable: true, initial: null })
-  schema.class.fields.spellCheckDieOverride = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.spellCheckOverrideDie = new fields.StringField({ nullable: true, initial: null })
   schema.class.fields.spellCheckOverride = new fields.StringField({ nullable: true, initial: null })
   schema.class.fields.patron = new fields.StringField({ nullable: true, initial: null })
   schema.class.fields.patronTaintChance = new fields.StringField({ initial: '1%' })

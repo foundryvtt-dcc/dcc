@@ -186,6 +186,50 @@ test.describe('DCC Sheet UI', () => {
     }
   })
 
+  // ── Override die (#1052) ─────────────────────────────────────────────
+
+  test.describe('Override die', () => {
+    test('cleric sheet Override die survives save and re-render', async ({ page }) => {
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'V14 Override Die',
+          type: 'Player',
+          flags: { core: { sheetClass: 'dcc.DCCActorSheetCleric' } }
+        })
+      })
+      await openActorSheet(page, 'V14 Override Die')
+
+      await page.click('.dcc.actor.sheet nav [data-tab="cleric"]')
+      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="cleric"]')).toHaveClass(/active/)
+
+      const input = page.locator('input[name="system.class.spellCheckOverrideDie"]')
+      await expect(input).toBeVisible()
+      await input.fill('1d24')
+      await input.press('Tab') // submitOnChange saves on change/blur
+
+      // The write must land on the actor, not be pruned by the schema.
+      await expect.poll(
+        () => page.evaluate(() => game.actors.getName('V14 Override Die')?.system.class.spellCheckOverrideDie),
+        { timeout: 10000 }
+      ).toBe('1d24')
+
+      // After the sheet re-renders the input keeps the saved value and the
+      // class tab's die display (the `.value-display` above the Override
+      // input) reads it instead of the action die.
+      await expect(input).toHaveValue('1d24')
+      // Web-first assertions on purpose: the save triggers an un-awaited sheet
+      // re-render, so a one-shot textContent() read can observe the old DOM.
+      const dieDisplay = input
+        .locator('xpath=ancestor::div[contains(@class,"box-border")]//div[contains(@class,"value-display")]')
+        .first()
+      await expect(dieDisplay).toContainText('1d24')
+      await expect(dieDisplay).not.toContainText('1d20')
+
+      await page.evaluate(async () => { await game.actors.getName('V14 Override Die')?.delete() })
+    })
+  })
+
   // ── Sheet Tab Navigation ─────────────────────────────────────────────
 
   test.describe('Sheet Tab Navigation', () => {
