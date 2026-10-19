@@ -40,6 +40,10 @@ These are the paths most commonly requested by modules:
 | Maximum HP | `system.attributes.hp.max` | |
 | Minimum HP | `system.attributes.hp.min` | Usually 0 |
 | Temporary HP | `system.attributes.hp.temp` | |
+| Party Current HP | `system.aggregate.hp.value` | Read-only, summed from the party's members; not persisted |
+| Party Maximum HP | `system.aggregate.hp.max` | Read-only, summed from the party's members; not persisted |
+
+Party tokens display this derived value with the token bar attribute `aggregate.hp` (Bar 1 on newly created parties). Modules reading a Party token's bar should use `token.bar1.value` and `token.bar1.max`; the actor's `system.aggregate.hp` is the same derived pair.
 
 ## Armor Class
 

@@ -56,7 +56,7 @@ You can use the topmost box when you right-click a token to edit their hp - you 
 
 ## Gathering and Deploying Party Tokens
 
-The **Gather / Deploy** button in the party sheet header is for GMs only. Its label stays the same: click it to gather member tokens on the current scene, or to deploy members when they have already been gathered. The party token remains on the scene throughout; gathering shows it, and deploying hides it. If you manually show or hide the party token, that does not change what the button does next.
+The **Gather / Deploy** button in the party sheet header is for GMs only. Its label stays the same: click it to gather member tokens on the current scene, or to deploy members when they have already been gathered. The party token remains on the scene throughout; gathering shows it, and a deploy that places members hides it. If you manually show or hide the party token, that does not change what the button does next. When more than one GM is logged in, only the active GM performs the change: another GM's click shows "Request sent to the active GM", and the gather and deploy notices appear on the active GM's screen.
 
 ### Gather
 
@@ -70,7 +70,7 @@ After gathering, move the party token where you want the members to appear and c
 
 If a member's token already stands on the destination scene, saved tokens cannot be restored until the GM moves that token to another scene or removes it.
 
-If you have not gathered anyone and place a party token on a scene without eligible member tokens, clicking **Gather / Deploy** instead creates member tokens around it from each member's prototype token settings. This does **not** restore placements or token changes from an earlier scene. Members who already have tokens on this scene are not duplicated. If a member who needs a token has **Link Actor Data** disabled on their prototype token, no new member tokens are created; enable it there before trying again. If there is neither a party token nor member tokens on the scene, you get a notice instead.
+If you have not gathered anyone and place a party token on a scene without eligible member tokens, clicking **Gather / Deploy** instead creates member tokens around it from each member's prototype token settings. This does **not** restore placements or token changes from an earlier scene. Members who already have tokens on this scene are not duplicated. Member tokens that are present but cannot be gathered — for example, because they are all in running combat — make the click a gather, so you get the skipped-combat notice instead of new tokens. If there is nothing to create at all, the party token stays visible and a notice says there is nothing to deploy. If a member who needs a token has **Link Actor Data** disabled on their prototype token, no new member tokens are created; enable it there before trying again. If there is neither a party token nor member tokens on the scene, you get a notice instead.
 
 ### Travel between scenes
 
@@ -79,7 +79,7 @@ Gather the members on the first scene, then place a party token for the same Par
 ### Practical caveats
 
 - Use a party token with **Link Actor Data** enabled. If an older party token is unlinked, enable **Link Actor Data** in that token's configuration before trying again; the action will not replace it for you. To gather without a party token already on the scene, enable **Link Actor Data** in the Party actor's prototype token configuration first.
-- You cannot gather again until you have deployed the gathered members. Member tokens in an active combat are skipped during gathering. If the party token is in a running combat, end that combat before gathering or deploying.
+- You cannot gather again until you have deployed the gathered members. Member tokens in any started combat on the scene are skipped during gathering, even when that combat is not linked to the scene. If the party token is in a running combat, end that combat before gathering or deploying.
 - Gather tokens on the level you are viewing. If a member token being gathered or the party token is on a different level, gathering stops without moving them. Deployment places members on the party token's level.
 - Deployment keeps each member's saved elevation when it stays on the same level; on a different level it places them at that level's base elevation. The party token's own elevation does not affect where members appear.
 - If an action warns that it failed partway, check the party token and member tokens on the affected scenes before trying again.
