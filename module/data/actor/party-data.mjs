@@ -8,7 +8,8 @@ export class PartyData extends BaseActorData {
   /** Current world-member HP, derived on access and never persisted. */
   get aggregate () {
     const aggregate = { value: 0, max: 0 }
-    const members = this.parent?.getFlag('dcc', 'partyMembers') ?? []
+    const roster = this.parent?.getFlag('dcc', 'partyMembers')
+    const members = Array.isArray(roster) ? roster : []
     const actors = globalThis.game?.actors
     const ids = new Set(members.map(member => member.id))
     for (const id of ids) {

@@ -33,7 +33,7 @@ describe('PartyData aggregate hit points', () => {
     expect(parent.getFlag).toHaveBeenCalledWith('dcc', 'partyMembers')
   })
 
-  test.each([{ roster: [] }, { roster: undefined }])('returns zero for an empty or missing roster ($roster)', ({ roster }) => {
+  test.each([{ roster: [] }, { roster: undefined }, { roster: {} }, { roster: 'nope' }])('returns zero for an empty or missing roster ($roster)', ({ roster }) => {
     parent.flags.dcc.partyMembers = roster
     expect(party.aggregate.hp).toEqual({ value: 0, max: 0 })
   })
