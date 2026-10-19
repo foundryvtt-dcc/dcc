@@ -1122,7 +1122,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // "around the same time," not strictly last.
     // Gated like the range bump in `spell-events.mjs`: legacy
     // `processSpellCheck` drew the disapproval table only when
-    // `automateClericDisapproval` was on, and it defaults to FALSE (#923).
+    // `automateClericDisapproval` was on, and a GM can turn it off (#923).
     // `rollDisapproval` is the shared lib-backed roll (#961).
     // The range is the pre-cast snapshot the lib checked against; the
     // actor's own range may already have been raised by the cast.
