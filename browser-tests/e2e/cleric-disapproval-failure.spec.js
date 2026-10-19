@@ -62,9 +62,11 @@ const castWithNaturalFn = `async ({ disapproval, natural }) => {
 
     // The spell-result ChatMessage.create is awaited by rollSpellCheck, but
     // poll briefly anyway to dodge any render race (see e2e-chat-message-race).
+    // Search from the end: with automateClericDisapproval on (the default),
+    // the disapproval roll posts its own card after the spell card.
     for (let i = 0; i < 40; i++) {
-      const message = game.messages.contents[game.messages.contents.length - 1]
-      if (message?.getFlag('dcc', 'SpellCheck')) {
+      const message = game.messages.contents.findLast(m => m.speaker?.actor === actor.id && m.getFlag('dcc', 'SpellCheck'))
+      if (message) {
         observed.content = message.content
         const roll = message.rolls?.[0]
         observed.natural = roll?.dice?.[0]?.total

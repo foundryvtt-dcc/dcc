@@ -314,15 +314,16 @@ export const registerSystemSettings = async function () {
 
   /**
    * Enable the Mighty Deed table prompt on attack cards (issue #319).
-   * Off by default — when disabled the attack card never offers the deed
-   * table dropdown, regardless of which deed tables exist in the world.
+   * On by default (#962) — it only offers a dropdown, and with no deed
+   * tables in the world it offers nothing. When disabled the attack card
+   * never offers the deed table dropdown.
    */
   game.settings.register('dcc', 'mightyDeedsEnabled', {
     name: 'DCC.SettingMightyDeedsEnabled',
     hint: 'DCC.SettingMightyDeedsEnabledHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
@@ -507,7 +508,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingAutomateClericDisapprovalHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
@@ -519,7 +520,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingAutomateWizardSpellLossHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
@@ -594,14 +595,14 @@ export const registerSystemSettings = async function () {
   /**
    * Automate the RAW rule that a targeted PC's Luck modifier alters an incoming
    * monster critical hit (positive Luck lowers the monster's roll, negative
-   * raises it). Off by default; inert while the dcc-qol module is active.
+   * raises it). On by default (#962); inert while the dcc-qol module is active.
    */
   game.settings.register('dcc', 'playerLuckVsMonsterCrits', {
     name: 'DCC.SettingPlayerLuckVsMonsterCrits',
     hint: 'DCC.SettingPlayerLuckVsMonsterCritsHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: false
   })
 
@@ -648,15 +649,15 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Automatically apply the "dead" status to an NPC that drops to 0 HP. Off by
-   * default; inert while the dcc-qol module is active.
+   * Automatically apply the "dead" status to an NPC that drops to 0 HP. On by
+   * default (#962); inert while the dcc-qol module is active.
    */
   game.settings.register('dcc', 'autoApplyDeadStatus', {
     name: 'DCC.SettingAutoApplyDeadStatus',
     hint: 'DCC.SettingAutoApplyDeadStatusHint',
     scope: 'world',
     type: Boolean,
-    default: false,
+    default: true,
     config: false
   })
 

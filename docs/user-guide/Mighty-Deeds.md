@@ -30,14 +30,14 @@ You can use `+@ab` in your weapon's to hit and damage fields to include the deed
 
 See [Advanced Character Settings](Advanced-Character-Settings.md) for more details on the Attack Bonus Mode setting.
 
-## Mighty Deed Table Prompt (optional)
+## Mighty Deed Table Prompt
 
 When enabled, a successful deed (a deed die of **3 or higher**) adds a prompt to the attack chat card: a dropdown of available Mighty Deed tables plus a **Roll Deed** button. Pick the table for the deed you declared and click **Roll Deed** to look the deed die result up on that table and post the outcome to chat.
 
-This feature is **off by default**. To turn it on:
+This feature is **on by default**. To turn it off:
 
 1. Open **Game Settings → Configure Settings → Dungeon Crawl Classics**
-2. Enable **Enable Mighty Deed Tables**
+2. Uncheck **Enable Mighty Deed Tables**
 
 Tables are gathered from two places:
 

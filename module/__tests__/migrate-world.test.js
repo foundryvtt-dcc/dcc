@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
-import { migrateWorld, NEEDS_MIGRATION_VERSION } from '../migrations.js'
+import { migrateWorld, NEEDS_MIGRATION_VERSION, SETTINGS_DEFAULTED_ON_962 } from '../migrations.js'
 
 // migrations.js orchestration backfill (audit 2026-06-08). The pure migrationOutcome
 // policy + the per-document migrateActorData/migrateItemData transforms are tested in
@@ -142,5 +142,23 @@ describe('migrateWorld orchestration', () => {
     expect(result).toEqual({ migrationComplete: false })
     expect(settingsSet).toHaveBeenCalledWith('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
     expect(warn.mock.calls[0][0]).toContain('"count":1')
+  })
+
+  // #962 flipped five rules-automation defaults to on. Foundry stores only
+  // saved values, so an existing world must get the old `false` written for
+  // the ones it never saved; a fresh world takes the new defaults.
+  test('existing worlds keep the old automation defaults; saved values and fresh worlds are left alone', async () => {
+    const saved = new Set(['dcc.mightyDeedsEnabled'])
+    globalThis.game.settings.storage = new Map([['world', { getSetting: (key) => saved.has(key) ? { key } : undefined }]])
+
+    await migrateWorld(0.73)
+    const pinned = settingsSet.mock.calls.filter(([, key]) => SETTINGS_DEFAULTED_ON_962.includes(key))
+    expect(pinned).toEqual(SETTINGS_DEFAULTED_ON_962
+      .filter(key => key !== 'mightyDeedsEnabled')
+      .map(key => ['dcc', key, false]))
+
+    settingsSet.mockClear()
+    await migrateWorld(0)
+    expect(settingsSet.mock.calls.some(([, key]) => SETTINGS_DEFAULTED_ON_962.includes(key))).toBe(false)
   })
 })

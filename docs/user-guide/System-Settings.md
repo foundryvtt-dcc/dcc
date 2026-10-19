@@ -24,9 +24,9 @@ Click the **Enhanced Combat** button to configure the enhanced attack cards and 
 
 **Check weapon is equipped** will check if the weapon is equipped before rolling an attack, and show an error if it is not equipped.
 
-The remaining settings add automated combat rules to the system. They are **all off by default**, and each can be turned on independently. They act on the **targeted** token, so for the target-based options (range, firing into melee, damage, monster Luck) you must target a token when you attack — hover over it and press **T**.
+The remaining settings add automated combat rules to the system. Each can be turned on or off independently. **Player Luck vs monster crits** and **Auto-apply dead status to NPCs** are on by default; the rest are off by default, because they depend on where tokens sit on the map or make changes that are hard to undo. They act on the **targeted** token, so for the target-based options (range, firing into melee, damage, monster Luck) you must target a token when you attack — hover over it and press **T**.
 
-> **Using the DCC Quality of Life (dcc-qol) module?** Leave these off. While dcc-qol is active it provides this automation, and the system steps aside so the two never apply a rule twice. These built-in settings are intended for tables that do **not** run dcc-qol.
+> **Using the DCC Quality of Life (dcc-qol) module?** These settings have no effect while it is active. While dcc-qol is active it provides this automation, and the system steps aside so the two never apply a rule twice. These built-in settings are intended for tables that do **not** run dcc-qol.
 
 **Check missile weapon range** applies the DCC range penalties to a ranged (missile) attack against a targeted token, based on the distance between the attacker and the target (DCC core rulebook, p. 96):
 
@@ -92,9 +92,9 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Show rolls as emotes** will change rolls made from character sheets in to compact emotes in the chat log. An attack emote reads as a miss (with no damage) when the attack misses its selected target or fumbles, matching what the enhanced attack card shows.
 
-**Automate Cleric Disapproval** will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
+**Automate Cleric Disapproval** (on by default) will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
 
-**Automated Wizard/Elf Spell Loss** will automatically mark a spell as lost if the spell fails.
+**Automated Wizard/Elf Spell Loss** (on by default) will automatically mark a spell as lost if the spell fails.
 
 **Show the Modify Roll dialog by default** will show the Modify Roll dialog when you roll from the character sheet. If this is unchecked, you will need to cmd/ctrl click to show the Modify Roll dialog.
 
