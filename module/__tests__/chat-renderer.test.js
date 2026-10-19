@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { actionDiceLineHtml, applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml, dcResultSuffix } from '../adapter/chat-renderer.mjs'
+import { actionDiceLineHtml, applyFleetingLuck, buildLibResultFlag, buildModifierBreakdownHtml, checkPenaltyNoteHtml, dcResultSuffix } from '../adapter/chat-renderer.mjs'
 
 // A representative lib SkillCheckResult-shaped object. Carries every
 // core field the flag projects plus the spell-only extras so the
@@ -289,5 +289,19 @@ describe('actionDiceLineHtml', () => {
     // the Handlebars-escaped attack-card templates (review M1).
     expect(actionDiceLineHtml('<img src=x onerror=alert(1)> & "q"'))
       .toBe('<div class="dcc-action-dice-line">&lt;img src=x onerror=alert(1)&gt; &amp; &quot;q&quot;</div>')
+  })
+})
+
+describe('checkPenaltyNoteHtml', () => {
+  afterEach(() => {
+    delete globalThis.game
+  })
+
+  test('escapes the translated note so a translation cannot inject HTML (#955)', () => {
+    globalThis.game = {
+      i18n: { format: vi.fn((key, data) => `<b>Penalty</b> & co (${data.penalty}): ${data.total}`) }
+    }
+    expect(checkPenaltyNoteHtml({ penalty: -2, total: 8 }))
+      .toBe('<p class="dcc-check-penalty-note">&lt;b&gt;Penalty&lt;/b&gt; &amp; co (-2): 8</p>')
   })
 })
