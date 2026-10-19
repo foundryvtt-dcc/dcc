@@ -53,6 +53,7 @@ import { registerTokenVision } from './token-vision.mjs'
 import { getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
 import { processSpellCheck } from './spell-check-processor.mjs'
 import { applySpellburn, buildSpellburnTerm } from './spellburn.mjs'
+import { buildLuckBurnTerm } from './luck-burn.mjs'
 import { getSkillTable } from './table-loading.mjs'
 import { attachMightyDeedListeners, buildMightyDeedPrompt } from './chat.js'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
@@ -116,6 +117,7 @@ export const TEMPLATE_PATHS = Object.freeze([
   'systems/dcc/templates/roll-modifier-partial-none.html',
   'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
   'systems/dcc/templates/roll-modifier-partial-spellburn.html',
+  'systems/dcc/templates/roll-modifier-partial-luck-burn.html',
   'systems/dcc/templates/party-sheet-partial-party.html',
   'systems/dcc/templates/party-sheet-partial-tabs.html',
   'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -254,6 +256,9 @@ export function assembleGameDccNamespace () {
     // See docs/dev/EXTENSION_API.md.
     buildSpellburnTerm,
     applySpellburn,
+    // Luck burn (#963) — the Roll Modifier dialog's LuckBurn term, which
+    // spends the Luck on submit. See docs/dev/EXTENSION_API.md.
+    buildLuckBurnTerm,
     processSpellCheck,
     getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
     getClassTraits, // Stable extension API — see docs/dev/EXTENSION_API.md

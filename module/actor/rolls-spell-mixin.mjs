@@ -15,6 +15,7 @@ import { renderSpellCheck, renderMercurialEffect } from '../adapter/chat-rendere
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
+import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
@@ -23,6 +24,22 @@ import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRol
 import { formatMercurialDescriptionHTML } from '../utilities.js'
 import { getClassTrait } from '../extension-api.mjs'
 import { disapprovalIncreasesOnFailure } from '../adapter/disapproval-traits.mjs'
+
+/**
+ * Split the dialog's Luck Burn (#963) out of its `dialog-modifier`
+ * situational line so the spell-check card shows it on its own line.
+ *
+ * @param {Object} options  Dispatch options carrying `dialogLuckBurn`
+ * @param {{source: string, value: number, label: string}} dialogLine
+ * @returns {Array<Object>} the non-zero situational lines
+ */
+function spellDialogLuckBurnLines (options, dialogLine) {
+  const luckBurn = Number(options.dialogLuckBurn) || 0
+  return [
+    { ...dialogLine, value: dialogLine.value - luckBurn },
+    { source: 'luck-burn', value: luckBurn, label: game.i18n.localize('DCC.RollModifierLuckBurnTerm') }
+  ].filter(line => line.value !== 0)
+}
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -358,6 +375,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
       })
     }
 
+    const luckBurnTerm = buildLuckBurnTerm(this, {
+      source: spellItem?.name || game.i18n.localize('DCC.SpellCheck')
+    })
+    if (luckBurnTerm) terms.push(luckBurnTerm)
+
     const promptOptions = {
       rollData: this.getRollData(),
       title: spellItem
@@ -398,6 +420,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     if (prompt.spellburn) options.spellburn = prompt.spellburn
     if (prompt.actionDie) options.actionDieOverride = prompt.actionDie
     options.dialogModifierTotal = prompt.modifierTotal
+    options.dialogLuckBurn = prompt.luckBurn
   }
 
   /**
@@ -600,11 +623,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
       // them in the Compound + CheckPenalty terms). Lib level + ability
       // get zeroed out below so the rolled total = die + dialogTotal +
       // spellburn (matches the legacy "trust the user's total" contract).
-      situationalModifiers.push({
+      situationalModifiers.push(...spellDialogLuckBurnLines(options, {
         source: 'dialog-modifier',
         value: dialogModifierTotal,
         label: game.i18n.localize('DCC.RollModifierTitle')
-      })
+      }))
     } else if (this.system.class.spellCheckOverride) {
       // Legacy parity: when this class-level override is set, level +
       // abilityMod + otherMod are SUPPRESSED and a single bonus replaces
@@ -1502,11 +1525,17 @@ export const RollsSpellMixin = (Base) => class extends Base {
     const flatTotal = fromDialog
       ? options.dialogModifierTotal
       : this._authoredSpellCheckTotal(spellItem)
-    if (typeof flatTotal === 'number' && flatTotal !== libAutoTotal) {
-      mods.push({
-        source: fromDialog ? 'dialog-modifier' : 'authored-spell-check',
+    if (fromDialog) {
+      mods.push(...spellDialogLuckBurnLines(options, {
+        source: 'dialog-modifier',
         value: flatTotal - libAutoTotal,
-        label: game.i18n.localize(fromDialog ? 'DCC.RollModifierTitle' : 'DCC.SpellCheck')
+        label: game.i18n.localize('DCC.RollModifierTitle')
+      }))
+    } else if (typeof flatTotal === 'number' && flatTotal !== libAutoTotal) {
+      mods.push({
+        source: 'authored-spell-check',
+        value: flatTotal - libAutoTotal,
+        label: game.i18n.localize('DCC.SpellCheck')
       })
     }
 

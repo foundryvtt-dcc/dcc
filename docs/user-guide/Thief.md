@@ -30,4 +30,4 @@ This will add a backstab icon next to the weapon on the Equipment tab. Backstab 
 
 You can roll Thief skills (Pick Lock, Sneak Silently, Hide in Shadows, etc.) from the **Thief** tab. Each skill shows the dice and modifier used for the roll.
 
-The Luck Die field in the Thief tab sets the die used for spending Luck on rolls (thieves can add their Luck die to any roll by spending 1 point of Luck).
+The Luck Die field in the Thief tab sets the die used for spending Luck on rolls (thieves can add their Luck die to any roll by spending 1 point of Luck). To burn Luck on a roll, Ctrl/Command-click it and use the Luck Burn term: each point burned rolls the Luck Die. See [Modifying Rolls](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md#burning-luck).

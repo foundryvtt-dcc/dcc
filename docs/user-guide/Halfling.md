@@ -18,3 +18,7 @@ The Halfling tab shows the **Sneak and Hide** skill that Halflings can roll.
 Halflings are natural two-weapon fighters. To set up two-weapon fighting, create two weapon items and configure them with the **2-Weap. Prim.** and **2-Weap. Off** checkboxes.
 
 See [Two-Weapon Fighting](Two-Weapon-Fighting.md) for detailed instructions.
+
+## Good Luck Charm
+
+When a halfling burns Luck through the roll dialog (Ctrl/Command-click a roll), each point burned adds +2 instead of +1. See [Modifying Rolls](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md#burning-luck). Burning Luck for another character is not automated yet; lower the halfling's Luck by hand and add the bonus to the ally's roll.
