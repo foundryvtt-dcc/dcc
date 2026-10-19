@@ -31,6 +31,7 @@ import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import { wantsModifierDialog } from '../utilities.js'
 import { applyCardDamage } from '../auto-apply-damage.mjs'
 import EntityImages from '../entity-images.js'
+import { prepareImage } from '../actor-sheet/presentation.mjs'
 
 const UPDATE_FLAGS_ACTION = 'dcc.updateMessageFlags'
 const TEMPLATE = 'systems/dcc/templates/chat-card-attack-enhanced.html'
@@ -149,7 +150,9 @@ export async function buildEnhancedCardData (message, actor, weapon) {
     targetName: flag('targetName') ?? '',
     hitsAc: sys.hitsAc,
     actorName: actor?.name ?? '',
-    actorImg: actor?.img ?? '',
+    // Same display-only artwork fallback the sheet uses (#225): a missing actor
+    // image or the mystery-man placeholder shows the actor type's default art.
+    actorImg: actor ? prepareImage(actor) : '',
     weaponName: weapon?.name ?? sys.weaponName ?? '',
     // Same display-only artwork fallback the sheet uses (#225): a missing image
     // or the mystery-man placeholder shows the weapon's type icon instead. A

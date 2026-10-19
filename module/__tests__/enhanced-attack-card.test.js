@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { defaultItemImages } from '../config/images.mjs'
+import { defaultActorImages, defaultItemImages } from '../config/images.mjs'
 
 vi.mock('../integrations.mjs', () => ({ qolHandlingCombat: vi.fn(() => false) }))
 vi.mock('../socket.mjs', () => ({ executeAsGM: vi.fn(), registerSocketHandler: vi.fn() }))
@@ -49,9 +49,9 @@ beforeEach(() => {
   originalGame = globalThis.game
   originalChatMessage = globalThis.ChatMessage
   originalConfig = globalThis.CONFIG
-  // `EntityImages.imageForItem` reads CONFIG.DCC at call time; hand it the real
-  // map so the tests assert the selection, not a copied literal.
-  globalThis.CONFIG = { DCC: { defaultItemImages } }
+  // `prepareImage` / `EntityImages` read CONFIG.DCC at call time; hand them the
+  // real maps so the tests assert the selection, not a copied literal.
+  globalThis.CONFIG = { DCC: { defaultActorImages, defaultItemImages } }
   globalThis.ChatMessage = { getSpeakerActor: vi.fn(() => null), getSpeaker: vi.fn(() => ({})) }
   globalThis.game = {
     user: { isGM: false },
@@ -192,6 +192,12 @@ describe('buildEnhancedCardData', () => {
     const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), npc, withDesc)
     expect(data.isPC).toBe(false)
     expect(data.hasDescription).toBe(false)
+  })
+
+  test('the mystery-man placeholder falls back to the actor default artwork (#225)', async () => {
+    const npc = { ...pcActor, type: 'NPC', img: 'icons/svg/mystery-man.svg' }
+    const data = await buildEnhancedCardData(makeMessage({ isToHit: true }), npc, weapon)
+    expect(data.actorImg).toBe(defaultActorImages.default)
   })
 
   test('weapon artwork keeps a stored image verbatim (#225)', async () => {
