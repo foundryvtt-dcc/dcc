@@ -1,7 +1,8 @@
-/* global console, game, ui */
+/* global ChatMessage, console, game, ui */
 
 import { logAbilityChange } from './ability-score-log.js'
 import { getClassTrait } from './extension-api.mjs'
+import { rollOrNullOnCancel } from './roll-cancellation.mjs'
 
 /**
  * Luck burn in the Roll Modifier dialog (#963).
@@ -15,6 +16,11 @@ import { getClassTrait } from './extension-api.mjs'
  * (see `RollModifierDialog#_constructRoll`), so every roll path — the
  * Foundry-evaluated attack roll and the adapter paths that fold the
  * dialog's flat total into a lib pass — takes it without special handling.
+ *
+ * Luck can also be burned after seeing the roll, from the roll card's
+ * context menu (`burnLuckAfterRoll`). That posts a follow-up card with the
+ * bonus and the new total rather than rewriting the original card, whose
+ * outcome (hit, save, spell result) the judge then reads off the new total.
  */
 
 /**
@@ -62,7 +68,7 @@ export function luckBurnFormula (points, { luckDie = null, multiplier = 1 } = {}
  * @param {string} [source]  Roll name, for the log entry
  * @returns {Promise<void>}
  */
-export async function applyLuckBurn (actor, points, source = '') {
+export async function applyLuckBurn (actor, points, source = '', { announce = true } = {}) {
   if (!(points > 0)) return
   try {
     await logAbilityChange(actor, {
@@ -70,7 +76,7 @@ export async function applyLuckBurn (actor, points, source = '') {
       change: -points,
       type: 'luckSpend',
       source: source || game.i18n.localize('DCC.RollModifierLuckBurnTerm')
-    }, { announce: true })
+    }, { announce })
   } catch (err) {
     console.error('[DCC] luck burn apply rejected', { actor: actor?.name, points, err })
     ui.notifications?.error?.(game.i18n.localize('DCC.LuckBurnApplyFailed'))
@@ -86,9 +92,14 @@ export async function applyLuckBurn (actor, points, source = '') {
  * @param {Object} actor
  * @param {Object} [options]
  * @param {string} [options.source]  Roll name, for the log entry
+ * @param {boolean} [options.announce=true]  Post the ability score log's
+ *   Luck-spend card
+ * @param {function(number, number): void} [options.onBurn]  Observer called
+ *   with the points burned and the bonus they bought (a luck die's rolled
+ *   total) when a non-zero burn is submitted
  * @returns {Object|null} a `LuckBurn` term descriptor for `DCCRoll.createRoll`
  */
-export function buildLuckBurnTerm (actor, { source = '' } = {}) {
+export function buildLuckBurnTerm (actor, { source = '', announce = true, onBurn } = {}) {
   const descriptor = luckBurnDescriptor(actor)
   if (!descriptor) return null
   return {
@@ -99,7 +110,70 @@ export function buildLuckBurnTerm (actor, { source = '' } = {}) {
     // again on submit; only the submit carries points, so the open-time
     // call spends nothing.
     callback: (_formula, term) => {
-      applyLuckBurn(actor, Number(term?.points) || 0, source)
+      const points = Number(term?.points) || 0
+      if (points <= 0) return
+      onBurn?.(points, Number(term.bonus) || 0)
+      applyLuckBurn(actor, points, source, { announce })
     }
   }
+}
+
+/** Card roll types Luck can be burned on after the roll (plus attack cards). */
+const LUCK_BURN_ROLL_TYPES = new Set(['AbilityCheck', 'SavingThrow', 'SkillCheck', 'SpellCheck'])
+
+/**
+ * The actor who can burn Luck on a chat card after the roll, or null: the
+ * card must be an attack, check, save, skill or spell check card, and its
+ * speaker a PC this user owns with Luck left.
+ *
+ * @param {ChatMessage} message
+ * @returns {Object|null}
+ */
+export function luckBurnMessageActor (message) {
+  if (!message?.rolls?.length) return null
+  const isLuckRoll = message.getFlag?.('dcc', 'isToHit') ||
+    LUCK_BURN_ROLL_TYPES.has(message.getFlag?.('dcc', 'RollType'))
+  if (!isLuckRoll) return null
+  const actor = message.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null
+  if (!actor?.isOwner || !luckBurnDescriptor(actor)) return null
+  return actor
+}
+
+/**
+ * Burn Luck on a roll already in chat: open the Roll Modifier dialog with
+ * just the Luck Burn term, spend the Luck, and post a card with the bonus
+ * and the roll's new total.
+ *
+ * @param {ChatMessage} message  The roll card
+ * @returns {Promise<void>}
+ */
+export async function burnLuckAfterRoll (message) {
+  const actor = luckBurnMessageActor(message)
+  if (!actor) return
+  let burn = null
+  const term = buildLuckBurnTerm(actor, {
+    source: message.flavor || game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
+    // This card already says what was burned
+    announce: false,
+    onBurn: (points, bonus) => { burn = { points, bonus } }
+  })
+  const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll([term], {}, {
+    showModifierDialog: true,
+    title: game.i18n.localize('DCC.LuckBurnAfterRollTitle'),
+    rollLabel: game.i18n.localize('DCC.ChatContextBurnLuck')
+  }))
+  if (!roll || !burn) return
+
+  const before = Number(message.rolls[0].total) || 0
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    content: `<p>${game.i18n.format('DCC.LuckBurnAfterRoll', {
+      name: actor.name,
+      points: burn.points,
+      bonus: `+${burn.bonus}`,
+      before,
+      after: before + burn.bonus
+    })}</p>`,
+    flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id } }
+  })
 }

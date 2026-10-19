@@ -1,4 +1,4 @@
-/* global foundry, game */
+/* global ChatMessage, foundry, game */
 /**
  * Luck burn in the Roll Modifier dialog (#963): the helper in
  * module/luck-burn.mjs and the dialog's LuckBurn term.
@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import { logAbilityChange } from '../ability-score-log.js'
-import { buildLuckBurnTerm, luckBurnDescriptor, luckBurnFormula } from '../luck-burn.mjs'
+import * as luckBurn from '../luck-burn.mjs'
 
 // The Luck write itself (log entry, announcement) is covered in
 // ability-score-log.test.js; here we only check what the term hands it.
@@ -18,6 +18,8 @@ vi.mock('../ability-score-log.js', async (importOriginal) => ({
   logAbilityChange: vi.fn()
 }))
 
+const { buildLuckBurnTerm, luckBurnDescriptor, luckBurnFormula } = luckBurn
+globalThis.__luckBurn = luckBurn
 const { RollModifierDialog } = await import('../roll-modifier.js')
 const proto = RollModifierDialog.prototype
 
@@ -115,5 +117,53 @@ describe('LuckBurn dialog term', () => {
     await click('+1')
     expect(fields['#term-1'].value).toBe('+1')
     expect(t.terms[1].points).toBe(1)
+  })
+})
+
+describe('burning Luck after the roll', () => {
+  const card = (actor, flags) => ({
+    id: 'msg1',
+    flavor: 'Fortitude Save',
+    rolls: [{ total: 13 }],
+    speaker: { actor: 'a1' },
+    getFlag: (_scope, key) => flags[key]
+  })
+
+  beforeEach(() => {
+    ChatMessage.create = vi.fn()
+  })
+
+  test('is offered on an owned PC check card, not on other cards or unowned actors', () => {
+    const actor = { ...makeActor('warrior'), isOwner: true }
+    ChatMessage.getSpeakerActor = vi.fn(() => actor)
+    const { luckBurnMessageActor } = globalThis.__luckBurn
+    expect(luckBurnMessageActor(card(actor, { RollType: 'SavingThrow' }))).toBe(actor)
+    expect(luckBurnMessageActor(card(actor, { isToHit: true }))).toBe(actor)
+    expect(luckBurnMessageActor(card(actor, { RollType: 'HitDice' }))).toBeNull()
+    actor.isOwner = false
+    expect(luckBurnMessageActor(card(actor, { RollType: 'SavingThrow' }))).toBeNull()
+  })
+
+  test('spends the Luck once and posts the new total', async () => {
+    const actor = { ...makeActor('halfling'), isOwner: true }
+    ChatMessage.getSpeakerActor = vi.fn(() => actor)
+    // Stand in for the dialog: the player burns 2 points and submits
+    game.dcc.DCCRoll = {
+      createRoll: vi.fn(async ([term]) => {
+        term.points = 2
+        term.bonus = 4
+        term.callback('+4', term)
+        return {}
+      })
+    }
+    const format = vi.spyOn(game.i18n, 'format')
+    await globalThis.__luckBurn.burnLuckAfterRoll(card(actor, { RollType: 'SavingThrow' }))
+    expect(logAbilityChange).toHaveBeenCalledTimes(1)
+    expect(logAbilityChange).toHaveBeenCalledWith(actor,
+      { ability: 'lck', change: -2, type: 'luckSpend', source: 'Fortitude Save' }, { announce: false })
+    expect(ChatMessage.create).toHaveBeenCalledTimes(1)
+    expect(format).toHaveBeenCalledWith('DCC.LuckBurnAfterRoll',
+      { name: 'Burner', points: 2, bonus: '+4', before: 13, after: 17 })
+    format.mockRestore()
   })
 })

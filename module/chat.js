@@ -3,6 +3,7 @@
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog } from './utilities.js'
 import ApplyDamageDialog from './apply-damage-dialog.js'
+import { burnLuckAfterRoll, luckBurnMessageActor } from './luck-burn.mjs'
 import { checkPenaltyNoteHtml } from './adapter/chat-renderer.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -99,6 +100,16 @@ export const addChatMessageContextOptions = function (html, options) {
       icon: 'fas fa-user-plus',
       visible: canApply,
       onClick: (event, li) => applyChatCardDamage(li, -1, event)
+    }
+  )
+  // Burn Luck after seeing the roll (#963)
+  const cardMessage = (li) => game.messages.get(li.closest('[data-message-id]')?.dataset.messageId)
+  options.push(
+    {
+      label: 'DCC.ChatContextBurnLuck',
+      icon: 'fas fa-clover',
+      visible: (li) => !!luckBurnMessageActor(cardMessage(li)),
+      onClick: (event, li) => burnLuckAfterRoll(cardMessage(li))
     }
   )
   return options

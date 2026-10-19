@@ -266,18 +266,23 @@ function DCCCompoundTerm (options) {
  * submit, and its total written in with the dice in the flavor
  * (`+5[Luck Burn 2d3]`) — the adapter paths keep only the action die and
  * flat numbers from the dialog's roll, so a die left in the formula would
- * be dropped.
+ * be dropped. The bonus is also left on `term.bonus` for the callback.
  * @param term {Object}
  * @return {string}
  * @private
  */
 function _luckBurnPiece (term) {
   const points = Number(term.points) || 0
+  term.bonus = 0
   if (points <= 0) return '+0'
   const label = game.i18n.localize('DCC.RollModifierLuckBurnTerm')
   const bonus = luckBurnFormula(points, term)
-  if (!term.luckDie) return `${bonus}[${label}]`
+  if (!term.luckDie) {
+    term.bonus = parseInt(bonus)
+    return `${bonus}[${label}]`
+  }
   const roll = new Roll(bonus.slice(1)).evaluateSync()
+  term.bonus = roll.total
   return `+${roll.total}[${label} ${bonus.slice(1)}]`
 }
 
