@@ -68,7 +68,7 @@ Only member tokens with **Link Actor Data** enabled can be gathered; unlinked to
 
 ### Deploy
 
-After gathering, move the party token where you want the members to appear and click **Gather / Deploy**. Their tokens reappear around it with their gathered token details, such as size, vision, and light. They are placed around the party token at its **current** location, not at their former map coordinates. The party token stays on the scene but is hidden.
+After gathering, move the party token where you want the members to appear and click **Gather / Deploy**. Their tokens reappear around it with their gathered token details, such as size, vision, and light. They are placed around the party token at its **current** location, not at their former map coordinates. The party token stays on the scene but is hidden. Members who were removed from the party or whose actor was deleted before the deploy are skipped and not restored; their saved token data is discarded once the deploy succeeds.
 
 If a member's token already stands on the destination scene, saved tokens cannot be restored until the GM moves that token to another scene or removes it.
 
