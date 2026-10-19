@@ -78,6 +78,8 @@ export declare function checkDisapproval(natural: number, disapprovalRange: numb
  * fails depends on the spell's result table, so that increase is left to
  * the caller.
  *
+ * Returns 0 when the profile sets `disapprovalIncreasesOnFailure: false`.
+ *
  * @param natural - The natural spell-check roll
  * @param profile - The caster profile
  * @param disapprovalRange - Current disapproval range. When omitted, only a

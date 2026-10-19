@@ -238,13 +238,17 @@ export function checkDisapproval(natural, disapprovalRange) {
  * fails depends on the spell's result table, so that increase is left to
  * the caller.
  *
+ * Returns 0 when the profile sets `disapprovalIncreasesOnFailure: false`.
+ *
  * @param natural - The natural spell-check roll
  * @param profile - The caster profile
  * @param disapprovalRange - Current disapproval range. When omitted, only a
  *   natural 1 counts (the range is always at least 1).
  */
 export function calculateDisapprovalIncrease(natural, profile, disapprovalRange = 1) {
-    if (!profile.usesDisapproval || natural === undefined) {
+    if (!profile.usesDisapproval ||
+        profile.disapprovalIncreasesOnFailure === false ||
+        natural === undefined) {
         return 0;
     }
     return natural <= Math.max(1, disapprovalRange) ? 1 : 0;
