@@ -13,7 +13,14 @@ async function createSwapFixture (page, gridType = 1) {
     for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
     const party = await Actor.create({ name: 'PARTY TOKEN UI Party', type: 'Party', flags: { dcc: { partyMembers: members.map(member => ({ id: member.id })) } } })
     const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: gridType } })
-    await scene.view()
+    // A previous test's scene delete starts an un-awaited blank re-draw; view()
+    // is refused while the canvas is loading, so retry until the scene is current.
+    const deadline = Date.now() + 15000
+    while (Date.now() < deadline && canvas.scene?.id !== scene.id) {
+      try { await scene.view() } catch { /* canvas still loading */ }
+      if (canvas.scene?.id !== scene.id) await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    if (canvas.scene?.id !== scene.id) throw new Error('probe scene never became the viewed scene')
     const data = []
     for (const [i, actor] of members.entries()) {
       data.push((await actor.getTokenDocument({
@@ -168,7 +175,14 @@ test('party HP bar shows the live member sum and never persists it', async ({ pa
     const second = await Actor.create({ name: 'PARTY TOKEN Bar NPC', type: 'NPC', system: { attributes: { hp: { value: 2, max: 4 } } } })
     const party = await Actor.create({ name: 'PARTY TOKEN Bars', type: 'Party', flags: { dcc: { partyMembers: [{ id: first.id }, { id: second.id }] } } })
     const scene = await Scene.create({ name: 'PARTY TOKEN Bars Scene', width: 2000, height: 2000, grid: { size: 100, type: 1 } })
-    await scene.view()
+    // A previous test's scene delete starts an un-awaited blank re-draw; view()
+    // is refused while the canvas is loading, so retry until the scene is current.
+    const deadline = Date.now() + 15000
+    while (Date.now() < deadline && canvas.scene?.id !== scene.id) {
+      try { await scene.view() } catch { /* canvas still loading */ }
+      if (canvas.scene?.id !== scene.id) await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    if (canvas.scene?.id !== scene.id) throw new Error('probe scene never became the viewed scene')
     const [token] = await scene.createEmbeddedDocuments('Token', [(await party.getTokenDocument({ x: 500, y: 500 })).toObject()])
     return { first: first.id, second: second.id, party: party.id, scene: scene.id, token: token.id }
   })

@@ -38,12 +38,18 @@ test('party token control stays state-neutral in the existing sheet', async ({ p
     // The icon is neutral too; capture it so the snapshot state cannot change it.
     const iconClass = await button.locator('i').evaluate(element => element.className)
     await page.evaluate(async id => {
-      await game.actors.get(id).setFlag('dcc', 'partyTokenSnapshots', { sceneId: 'unavailable', members: [] })
+      const actor = game.actors.get(id)
+      await actor.setFlag('dcc', 'partyTokenSnapshots', { sceneId: 'unavailable', members: [] })
+      await actor.sheet.render(true)
     }, partyId)
     // Neither label nor icon follow the saved snapshot state.
     await expect(button).toHaveAccessibleName('Gather / Deploy')
     await expect(button.locator('i')).toHaveClass(iconClass)
-    await page.evaluate(async id => { await game.actors.get(id).unsetFlag('dcc', 'partyTokenSnapshots') }, partyId)
+    await page.evaluate(async id => {
+      const actor = game.actors.get(id)
+      await actor.unsetFlag('dcc', 'partyTokenSnapshots')
+      await actor.sheet.render(true)
+    }, partyId)
     await expect(button).toHaveAccessibleName('Gather / Deploy')
     await expect(button.locator('i')).toHaveClass(iconClass)
     const layout = await button.evaluate(element => {
