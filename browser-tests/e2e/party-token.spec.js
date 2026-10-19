@@ -16,7 +16,7 @@ async function createSwapFixture (page, gridType = 1) {
     // A previous test's scene delete starts an un-awaited blank re-draw; view()
     // is refused while the canvas is loading, so retry until the scene is current.
     const deadline = Date.now() + 15000
-    while (Date.now() < deadline && canvas.scene?.id !== scene.id) {
+    while (Date.now() < deadline && (canvas.scene?.id !== scene.id || !canvas.ready || canvas.loading)) {
       try { await scene.view() } catch { /* canvas still loading */ }
       if (canvas.scene?.id !== scene.id) await new Promise(resolve => setTimeout(resolve, 100))
     }
@@ -62,7 +62,7 @@ async function cleanSwapFixture (page, ids) {
   }, ids)
 }
 
-const sheetSwap = '.dcc.actor.party [data-action="togglePartyTokens"]'
+const sheetSwap = party => `#DCCPartySheet-Actor-${party} [data-action="togglePartyTokens"]`
 const hudSwap = '#token-hud [data-action="partyTokenAction"]'
 const click = (page, selector) => page.locator(selector).evaluate(element => element.click())
 const LOSSY_KEYS = ['actorLink', 'width', 'height', 'elevation', 'sight', 'light', 'flags', 'level']
@@ -75,7 +75,7 @@ test('gather and lossless deploy round-trip keeps individualized member data', a
       canvas.tokens.releaseAll()
       for (const id of ids.tokens.slice(0, 2)) canvas.tokens.get(id).control({ releaseOthers: false })
     }, ids)
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 2 &&
       !canvas.scene.tokens.has(ids.tokens[0]) && !canvas.scene.tokens.has(ids.tokens[1]), ids)
     const gathered = await page.evaluate(ids => ({
@@ -126,7 +126,7 @@ test('fresh scene deploys prototypes once and leaves the marker visible when not
     await page.evaluate(async ids => { await game.actors.get(ids.party).sheet.render(true) }, ids)
 
     // An empty roster deploys nothing: the visible anchor must stay visible.
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await expect(page.locator('#notifications')).toContainText('Nothing to deploy')
     expect(await page.evaluate(ids => ({
       snapshot: game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots') ?? null,
@@ -136,7 +136,7 @@ test('fresh scene deploys prototypes once and leaves the marker visible when not
     await page.evaluate(async ids => {
       await game.actors.get(ids.party).update({ 'flags.dcc.partyMembers': ids.members.map(id => ({ id })) })
     }, ids)
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await page.waitForFunction(ids => ids.members.every(actorId => canvas.scene.tokens.some(token => token.actorId === actorId)) &&
       canvas.scene.tokens.some(token => token.actorId === ids.party && token.hidden), ids)
     const { members, marker, snapshot, level } = await page.evaluate(ids => ({
@@ -178,7 +178,7 @@ test('party HP bar shows the live member sum and never persists it', async ({ pa
     // A previous test's scene delete starts an un-awaited blank re-draw; view()
     // is refused while the canvas is loading, so retry until the scene is current.
     const deadline = Date.now() + 15000
-    while (Date.now() < deadline && canvas.scene?.id !== scene.id) {
+    while (Date.now() < deadline && (canvas.scene?.id !== scene.id || !canvas.ready || canvas.loading)) {
       try { await scene.view() } catch { /* canvas still loading */ }
       if (canvas.scene?.id !== scene.id) await new Promise(resolve => setTimeout(resolve, 100))
     }
@@ -252,10 +252,10 @@ test('hex deploy keeps members apart and snaps the reused anchor to integers', a
   try {
     await page.waitForFunction(ids => ids.tokens.every(id => canvas.tokens.get(id)), ids)
     await page.evaluate(() => canvas.tokens.releaseAll())
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3, ids)
     const center = await page.evaluate(ids => canvas.scene.tokens.find(token => token.actorId === ids.party).getCenterPoint(), ids)
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await page.waitForFunction(ids => !game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots'), ids)
     const members = await page.evaluate(ids => {
       const { sizeX, sizeY } = canvas.scene.grid // integer snap only reproduced live
@@ -268,7 +268,7 @@ test('hex deploy keeps members apart and snaps the reused anchor to integers', a
       expect(center.x > rect.x && center.x < rect.x + rect.w && center.y > rect.y && center.y < rect.y + rect.h).toBe(false)
       for (let j = 0; j < i; j++) expect(overlaps(rect, members[j])).toBe(false)
     }
-    await click(page, sheetSwap)
+    await click(page, sheetSwap(ids.party))
     await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 3 &&
       ids.members.every(actorId => !canvas.scene.tokens.some(token => token.actorId === actorId)), ids)
     expect(await page.evaluate(ids => {
