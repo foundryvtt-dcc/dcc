@@ -5,19 +5,19 @@
  * the range by one.
  */
 
-import { getClassTrait } from '../extension-api.mjs'
+import { DISAPPROVAL_DIE_PATTERN, getClassTrait } from '../extension-api.mjs'
 
 /**
  * Faces of the actor's disapproval die, from the `disapprovalDie` class
- * trait (`'d4'`, `'d10'`, …). Anything that isn't a `dN` die falls back to 4.
+ * trait (`'d4'`, `'d10'`, `'1d10'`, …). Registration rejects anything else;
+ * a missing trait means the core d4.
  *
  * @param {Object} actor - DCCActor (or anything with `classId`).
  * @returns {number}
  */
 export function disapprovalDieFaces (actor) {
-  const match = String(getClassTrait(actor, 'disapprovalDie') ?? '').trim().match(/^d(\d+)$/i)
-  const faces = match ? Number(match[1]) : 0
-  return faces > 0 ? faces : 4
+  const match = String(getClassTrait(actor, 'disapprovalDie') ?? '').trim().match(DISAPPROVAL_DIE_PATTERN)
+  return match ? Number(match[1]) : 4
 }
 
 /**

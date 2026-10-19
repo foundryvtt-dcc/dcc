@@ -211,10 +211,16 @@ describe('disapproval traits (#1001)', () => {
 
   test('the disapproval die defaults to d4 and follows disapprovalDie', () => {
     registerClassTraits('dwarven-priest', { idolMagic: true, disapprovalDie: 'd10' })
-    registerClassTraits('odd-priest', { disapprovalDie: 'd0' })
+    registerClassTraits('odd-priest', { disapprovalDie: '1d6' })
     expect(disapprovalDieFaces(actorOf('dwarven-priest'))).toBe(10)
+    expect(disapprovalDieFaces(actorOf('odd-priest'))).toBe(6)
     expect(disapprovalDieFaces(actorOf('cleric'))).toBe(4)
-    expect(disapprovalDieFaces(actorOf('odd-priest'))).toBe(4)
+  })
+
+  test('registration rejects a disapprovalDie that is not one die', () => {
+    for (const die of ['2d6', 'd0', '10', 'd4+1']) {
+      expect(() => registerClassTraits('odd-priest', { disapprovalDie: die })).toThrow(/one die/)
+    }
   })
 
   test('failures widen the range unless the class opts out', () => {

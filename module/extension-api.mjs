@@ -751,6 +751,11 @@ export const CLASS_TRAIT_TYPES = Object.freeze({
 })
 
 /**
+ * A `disapprovalDie` trait value: one die, `d10` or `1d10` (#1001).
+ */
+export const DISAPPROVAL_DIE_PATTERN = /^1?d([1-9]\d*)$/i
+
+/**
  * Register a class's rule traits (#998). Rules that used to check for a
  * built-in class ID (`'halfling'`, `'cleric'`, …) read these instead, so a
  * homebrew or sibling-module class can opt in to the same rule, e.g.
@@ -792,6 +797,9 @@ export function registerClassTraits (classId, traits, deps = {}) {
     }
     if (typeof value !== type) { // eslint-disable-line valid-typeof
       throw new Error(`registerClassTraits: trait "${name}" must be a ${type}`)
+    }
+    if (name === 'disapprovalDie' && !DISAPPROVAL_DIE_PATTERN.test(value.trim())) {
+      throw new Error(`registerClassTraits: trait "disapprovalDie" must be one die like "d10", got "${value}"`)
     }
   }
   if (!CONFIGImpl?.DCC) {
