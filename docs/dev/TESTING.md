@@ -316,6 +316,13 @@ Tests run automatically on:
 
 All PRs must pass tests before merging.
 
+The Playwright E2E suite also runs on PRs, on a self-hosted runner with a
+real Foundry server, and reports as the **E2E (self-hosted)** commit status.
+PRs from outside contributors go through an automated safety review first
+(`e2e-gate.yml`). A maintainer can override it with the `e2e-approved` label.
+Setup, security model and maintenance:
+[deploy/e2e-runner/README.md](../../deploy/e2e-runner/README.md).
+
 ## Browser tests (Playwright)
 
 End-to-end tests that drive a live Foundry instance live in `browser-tests/e2e/` — five functional specs, all Playwright against a real Foundry server (no mocks, no Vitest):

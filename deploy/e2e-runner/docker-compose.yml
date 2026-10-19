@@ -1,0 +1,39 @@
+# Coolify: add this as a Docker Compose resource with base directory
+# /deploy/e2e-runner. Set GH_RUNNER_PAT in Coolify's environment variables
+# (mark it as a secret). See README.md for the host paths below.
+services:
+  runner:
+    build: .
+    restart: always
+    environment:
+      GH_RUNNER_PAT: ${GH_RUNNER_PAT:?}
+      GH_REPO: foundryvtt-dcc/dcc
+      RUNNER_NAME: ${RUNNER_NAME:-coolify-dcc-e2e}
+      RUNNER_LABELS: dcc-e2e
+      DCC_E2E_PORT: '30100'
+    # A job may leave nothing behind outside /work, which the entrypoint
+    # wipes before each registration.
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    volumes:
+      - work:/work
+      - ${FOUNDRY_INSTALL_DIR:-/srv/dcc-e2e/foundryvtt}:/opt/foundryvtt:ro
+      - ${FOUNDRY_USERDATA_DIR:-/srv/dcc-e2e/userdata}:/opt/foundry-userdata:ro
+    # Chromium needs more than Docker's 64 MB default /dev/shm.
+    shm_size: 1gb
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      # Root-phase entrypoint only: wipe and chown /work, then drop to `runner`.
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    # No ports published: Foundry listens inside the container only.
+
+volumes:
+  work:

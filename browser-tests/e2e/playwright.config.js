@@ -11,7 +11,7 @@ module.exports = defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker for Foundry
-  reporter: process.env.CI ? 'html' : [['list', { printSteps: true }]],
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list', { printSteps: true }]],
   timeout: 60000, // 60 seconds per test
   use: {
     baseURL: process.env.FOUNDRY_URL || 'http://localhost:30000',
@@ -20,7 +20,11 @@ module.exports = defineConfig({
       // Hardware-accelerated WebGL in headless Chromium (Metal on macOS).
       // Without it Foundry detects SwiftShader and shows a permanent
       // "hardware acceleration" banner that intercepts clicks in tests.
-      args: process.platform === 'darwin' ? ['--use-angle=metal'] : []
+      // The GPU-less Linux E2E runner (deploy/e2e-runner/) has only
+      // SwiftShader, which Chromium no longer enables for WebGL by default.
+      args: process.platform === 'darwin'
+        ? ['--use-angle=metal']
+        : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     }
   },
   projects: [

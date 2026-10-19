@@ -42,3 +42,6 @@ jobs:
 
     - name: Run Tests
       run: pnpm test
+
+    - name: Run E2E gate script tests
+      run: node --test .github/scripts/e2e-triage.test.mjs
