@@ -17,6 +17,7 @@ import { expect, test, describe, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import { RollCancelledError } from '../roll-cancellation.mjs'
 import {
+  dialogModifierLines,
   parseRollIntoDieAndModifier,
   promptRollModifierDialog
 } from '../adapter/roll-dialog.mjs'
@@ -74,14 +75,33 @@ describe('parseRollIntoDieAndModifier', () => {
     expect(result.modifierTotal).toBe(5)
   })
 
+  test('splits a Luck Burn out of the dialog total onto its own line (#963)', () => {
+    const label = game.i18n.localize('DCC.RollModifierLuckBurnTerm')
+    const roll = {
+      terms: [
+        { class: 'Die', formula: '1d20' },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 2 },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 5, options: { flavor: `${label} 2d3` } }
+      ]
+    }
+    const result = parseRollIntoDieAndModifier(roll)
+    expect(result).toEqual({ actionDie: '1d20', modifierTotal: 7, luckBurn: 5 })
+    expect(dialogModifierLines(result, 'Reflex Save').map(line => [line.origin.id, line.value]))
+      .toEqual([['dialog-modifier', 2], ['luck-burn', 5]])
+  })
+
   test('handles falsy / missing terms array', () => {
     expect(parseRollIntoDieAndModifier({ terms: [] })).toEqual({
       actionDie: null,
-      modifierTotal: 0
+      modifierTotal: 0,
+      luckBurn: 0
     })
     expect(parseRollIntoDieAndModifier({})).toEqual({
       actionDie: null,
-      modifierTotal: 0
+      modifierTotal: 0,
+      luckBurn: 0
     })
   })
 

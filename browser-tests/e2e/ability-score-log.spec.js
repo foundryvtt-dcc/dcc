@@ -323,6 +323,87 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     expect(afterHeal.hpChange).toBe(0)
   })
 
+  test('burning Luck in the roll dialog adds the halfling bonus and logs the spend (#963)', async ({ page }) => {
+    await page.evaluate(async () => {
+      await Actor.create({
+        name: 'ASL Luck Halfling',
+        type: 'Player',
+        system: {
+          abilities: { lck: { value: 10, max: 10 } },
+          details: { sheetClass: 'Halfling' }
+        },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetHalfling' } }
+      })
+      game.actors.getName('ASL Luck Halfling').rollSavingThrow('frt', { showModifierDialog: true })
+    })
+    await page.waitForSelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"]', { timeout: 10000 })
+    for (let i = 0; i < 2; i++) {
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"][data-mod="+1"]').click()
+      })
+    }
+    // Good luck charm: 2 points burned buy +4
+    const luckField = page.locator('.dcc-roll-modifier [id^="luck-burn-lck-"]')
+    await expect(luckField).toHaveValue('8')
+    await expect(page.locator('.dcc-roll-modifier input.term-field[readonly]')).toHaveValue('+4')
+
+    await page.evaluate(() => {
+      document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+    })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Halfling')?.system.abilities.lck.value === 8, { timeout: 10000 })
+
+    const after = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Luck Halfling')
+      return { log: actor.system.abilityLog }
+    })
+    expect(after.log).toHaveLength(1)
+    expect(after.log[0]).toMatchObject({ ability: 'lck', change: -2, type: 'luckSpend' })
+    // The save card's roll carries the +4 on top of the save bonus
+    await expect.poll(() => page.evaluate(() => {
+      const actor = game.actors.getName('ASL Luck Halfling')
+      const message = game.messages.contents.findLast(m => m.speaker?.actor === actor.id && m.rolls?.length)
+      const roll = message?.rolls[0]
+      return roll ? roll.total - roll.dice[0].total - (parseInt(actor.system.saves.frt.value) || 0) : null
+    }), { timeout: 10000 }).toBe(4)
+  })
+
+  test('a thief\'s Luck burn rolls the luck die in live Foundry (#963)', async ({ page }) => {
+    await page.evaluate(async () => {
+      await Actor.create({
+        name: 'ASL Luck Thief',
+        type: 'Player',
+        system: {
+          abilities: { lck: { value: 10, max: 10 } },
+          class: { luckDie: '1d3' },
+          details: { sheetClass: 'Thief' }
+        },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetThief' } }
+      })
+      game.actors.getName('ASL Luck Thief').rollSavingThrow('ref', { showModifierDialog: true })
+    })
+    await page.waitForSelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"]', { timeout: 10000 })
+    await page.evaluate(() => {
+      document.querySelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"][data-mod="+1"]').click()
+    })
+    await expect(page.locator('.dcc-roll-modifier input.term-field[readonly]')).toHaveValue('+1d3')
+    await page.evaluate(() => {
+      document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+    })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 9, { timeout: 10000 })
+    // One d3: the save card's roll carries 1-3 on top of the save bonus
+    await page.waitForFunction(() => {
+      const actor = game.actors.getName('ASL Luck Thief')
+      return game.messages.contents.some(m => m.speaker?.actor === actor.id && m.rolls?.length)
+    }, { timeout: 10000 })
+    const bonus = await page.evaluate(() => {
+      const actor = game.actors.getName('ASL Luck Thief')
+      const roll = game.messages.contents.findLast(m => m.speaker?.actor === actor.id && m.rolls?.length).rolls[0]
+      return roll.total - roll.dice[0].total - (parseInt(actor.system.saves.ref.value) || 0)
+    })
+    expect(bonus).toBeGreaterThanOrEqual(1)
+    expect(bonus).toBeLessThanOrEqual(3)
+  })
+
   test('unchecking the spellburn HP box burns Stamina without touching hit points (#921)', async ({ page }) => {
     await createSpellburnActor(page)
     await openSpellburnDialog(page, 2)

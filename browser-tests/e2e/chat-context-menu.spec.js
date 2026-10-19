@@ -146,6 +146,60 @@ test.describe('Chat card Apply Damage / Apply Healing context menu', () => {
     }
   })
 
+  test('Burn Luck on a save card spends the Luck and posts the new total (#963)', async ({ page }) => {
+    const setup = await page.evaluate(async () => {
+      const actor = await Actor.create({
+        name: 'DCC ChatCtx Luck Halfling',
+        type: 'Player',
+        system: { abilities: { lck: { value: 10, max: 10 } }, details: { sheetClass: 'Halfling' } },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetHalfling' } }
+      })
+      const before = new Set(game.messages.contents.map(m => m.id))
+      await actor.rollSavingThrow('ref')
+      const deadline = Date.now() + 5000
+      let message
+      while (!message && Date.now() < deadline) {
+        message = game.messages.contents.find(m => !before.has(m.id) && m.getFlag('dcc', 'RollType') === 'SavingThrow')
+        if (!message) await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      return { actorId: actor.id, messageId: message?.id, total: message?.rolls[0]?.total }
+    })
+    try {
+      expect(setup.messageId).toBeTruthy()
+      const card = await revealCard(page, setup.messageId)
+      await card.click({ button: 'right' })
+      const burnLuck = page.locator('#context-menu li.context-item:has-text("Burn Luck")')
+      await expect(burnLuck).toBeVisible()
+      await expect(burnLuck.locator('i.fas.fa-clover')).toBeAttached()
+      await page.evaluate(() => {
+        const item = [...document.querySelectorAll('#context-menu li.context-item')]
+          .find(li => li.textContent.includes(game.i18n.localize('DCC.ChatContextBurnLuck')))
+        item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+      })
+
+      // The roll dialog opens with just the Luck Burn term; burn 1 (halfling: +2)
+      await page.waitForSelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"]', { timeout: 10000 })
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"][data-mod="+1"]').click()
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      })
+
+      await expect.poll(() =>
+        page.evaluate((id) => game.actors.get(id).system.abilities.lck.value, setup.actorId)
+      ).toBe(9)
+      await expect.poll(() => page.evaluate((id) =>
+        game.messages.contents.find(m => m.getFlag('dcc', 'luckBurnFor') === id)?.content ?? '', setup.messageId)
+      ).toContain(`${setup.total + 2}`)
+    } finally {
+      await page.evaluate(async ({ actorId, messageId }) => {
+        for (const m of game.messages.contents.filter(m => m.id === messageId || m.getFlag('dcc', 'luckBurnFor') === messageId)) {
+          await m.delete()
+        }
+        await game.actors.get(actorId)?.delete()
+      }, setup)
+    }
+  })
+
   test('entries are hidden when no token is controlled', async ({ page }) => {
     const setup = await setupDamageCard(page)
     try {

@@ -747,7 +747,9 @@ export const CLASS_TRAIT_TYPES = Object.freeze({
   detectSecretDoorsBonus: 'string',
   luckRecovers: 'boolean',
   disapprovalDie: 'string',
-  disapprovalIncreasesOnFailure: 'boolean'
+  disapprovalIncreasesOnFailure: 'boolean',
+  luckBurnDie: 'boolean',
+  luckBurnMultiplier: 'number'
 })
 
 /**

@@ -74,6 +74,7 @@ import { spellburnTermFromDescriptor } from '../spellburn.mjs'
  * @returns {Promise<{
  *   actionDie: string | null,
  *   modifierTotal: number,
+ *   luckBurn: number,
  *   formula: string,
  *   roll: Roll,
  *   spellburn: {str: number, agl: number, sta: number, adjustHP: boolean} | null
@@ -81,7 +82,9 @@ import { spellburnTermFromDescriptor } from '../spellburn.mjs'
  *   Returns `null` if the user cancelled (closed without submitting).
  *   Otherwise returns the user's final action die (e.g. `'1d20'`,
  *   `'1d24'`), the signed flat sum of every non-die / non-spellburn
- *   term in the resulting roll, the underlying Foundry Roll for
+ *   term in the resulting roll (`luckBurn` is the Luck Burn share of
+ *   it, so callers can show it as its own line — see
+ *   `dialogModifierLines`), the underlying Foundry Roll for
  *   callers that want the raw formula, and (when `options.spellburn`
  *   was requested) the chosen burn commitment.
  */
@@ -159,6 +162,7 @@ export async function promptRollModifierDialog (terms, options = {}) {
   return {
     actionDie: parsed.actionDie,
     modifierTotal,
+    luckBurn: parsed.luckBurn,
     formula: roll.formula,
     roll,
     spellburn: spellburnResult
@@ -188,7 +192,10 @@ export function parseRollIntoDieAndModifier (roll) {
 
   let actionDie = null
   let modifierTotal = 0
+  let luckBurn = 0
   let sign = 1
+  // The dialog flavors its flattened Luck Burn as `+N[Luck Burn …]`
+  const luckBurnLabel = game.i18n?.localize?.('DCC.RollModifierLuckBurnTerm')
 
   for (const term of roll.terms ?? []) {
     if (matches(term, Die, 'Die')) {
@@ -204,12 +211,42 @@ export function parseRollIntoDieAndModifier (roll) {
     }
     if (matches(term, Numeric, 'NumericTerm')) {
       const value = Number(term.number)
-      if (Number.isFinite(value)) modifierTotal += sign * value
+      if (Number.isFinite(value)) {
+        modifierTotal += sign * value
+        const flavor = term.flavor ?? term.options?.flavor ?? ''
+        if (luckBurnLabel && flavor.startsWith(luckBurnLabel)) luckBurn += sign * value
+      }
       sign = 1
       continue
     }
     sign = 1
   }
 
-  return { actionDie, modifierTotal }
+  return { actionDie, modifierTotal, luckBurn }
+}
+
+/**
+ * The lib modifier lines for a dialog result: the flat total as one
+ * `dialog-modifier` line, with any Luck Burn split out as its own
+ * `luck-burn` line so the roll card shows what the burn bought.
+ *
+ * @param {{modifierTotal: number, luckBurn: (number|undefined)}} prompt
+ * @param {string} label  Label for the `dialog-modifier` line
+ * @returns {Array<Object>} lib `RollModifier` entries
+ */
+export function dialogModifierLines (prompt, label) {
+  const luckBurn = Number(prompt.luckBurn) || 0
+  const rest = prompt.modifierTotal - luckBurn
+  const lines = []
+  if (rest !== 0) {
+    lines.push({ kind: 'add', value: rest, origin: { category: 'other', id: 'dialog-modifier', label } })
+  }
+  if (luckBurn !== 0) {
+    lines.push({
+      kind: 'add',
+      value: luckBurn,
+      origin: { category: 'luck-burn', id: 'luck-burn', label: game.i18n.localize('DCC.RollModifierLuckBurnTerm') }
+    })
+  }
+  return lines
 }
