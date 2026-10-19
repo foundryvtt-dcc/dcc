@@ -59,6 +59,24 @@ describe('_constructRoll (terms-array branch)', () => {
   })
 })
 
+describe('CheckPenalty term callback wiring (#954)', () => {
+  test('the callback built through constructDCCTerm sees the unchecked then checked formula', async () => {
+    const callback = vi.fn()
+    const t = { options: {}, _state: 1, getTermByIndex: proto.getTermByIndex }
+    t._terms = t.terms = proto._constructTermsFromArray.call(t, [
+      { type: 'CheckPenalty', formula: '-5', apply: false, callback }
+    ])
+    const field = { value: t._terms[0].formula }
+    t.element = { querySelector: (selector) => (selector === '#term-0' ? field : null) }
+
+    proto._constructRoll.call(t)
+    await RollModifierDialog.DEFAULT_OPTIONS.actions.checkboxChange.call(t, {}, { dataset: { term: '0' }, checked: true })
+    proto._constructRoll.call(t)
+
+    expect(callback.mock.calls.map(([formula]) => formula)).toEqual(['-0', '-5'])
+  })
+})
+
 describe('_constructDamageFormula (terms-array branch)', () => {
   test('joins damage-term formulas with + and fires each callback', () => {
     const cb = vi.fn()
