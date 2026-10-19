@@ -38,6 +38,11 @@ describe('PartyData aggregate hit points', () => {
     expect(party.aggregate.hp).toEqual({ value: 0, max: 0 })
   })
 
+  test('treats an empty roster as empty', () => {
+    parent.flags.dcc.partyMembers = []
+    expect(party.aggregate.hp).toEqual({ value: 0, max: 0 })
+  })
+
   test('ignores missing actors and counts duplicate IDs once', () => {
     parent.flags.dcc.partyMembers.push({ id: 'missing' }, { id: 'first' })
     expect(party.aggregate.hp).toEqual({ value: 7, max: 12 })
@@ -55,6 +60,11 @@ describe('PartyData aggregate hit points', () => {
 
   test('treats missing HP as zero', () => {
     actors.set('first', member(undefined, undefined))
+    expect(party.aggregate.hp).toEqual({ value: 2, max: 4 })
+  })
+
+  test('treats non-finite HP as zero', () => {
+    actors.set('first', member(Infinity, -Infinity))
     expect(party.aggregate.hp).toEqual({ value: 2, max: 4 })
   })
 
