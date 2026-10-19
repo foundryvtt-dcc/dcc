@@ -622,7 +622,7 @@
   "DCC.PartyTokenUnauthorized": "Tylko MG może zbierać lub rozstawiać żetony drużyny.",
   "DCC.PartyTokenInvalidRequest": "Nieprawidłowe żądanie żetonów. Sprawdź oglądaną scenę, poziom i zaznaczenie, a następnie ponów próbę.",
   "DCC.PartyTokenInvalidParty": "Aktor drużyny świata jest niedostępny. Otwórz istniejącą kartę drużyny świata.",
-  "DCC.PartyTokenMissingScene": "Otwórz scenę przed zebraniem lub rozstawieniem drużyny.",
+  "DCC.PartyTokenMissingScene": "Otwórz scenę przed zebraniem lub rozstawieniem żetonów drużyny.",
   "DCC.PartyTokenMissingPartyToken": "Przed rozstawieniem umieść powiązany żeton tej drużyny na oglądanej scenie docelowej.",
   "DCC.PartyTokenMissingPartyTokenOnScene": "Na oglądanej scenie nie ma żetonu drużyny. Umieść powiązany żeton drużyny i spróbuj ponownie.",
   "DCC.PartyTokenAmbiguousPartyToken": "Istnieje tu kilka żetonów tej drużyny. Wybierz dokładnie jeden żeton docelowy lub użyj jego HUD.",

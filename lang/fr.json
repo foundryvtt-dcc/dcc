@@ -609,7 +609,7 @@
   "DCC.PartyTokenUnauthorized": "Seul un MJ peut rassembler ou déployer les pions du groupe.",
   "DCC.PartyTokenInvalidRequest": "Demande de pions invalide. Vérifiez la scène affichée, le niveau et la sélection, puis réessayez.",
   "DCC.PartyTokenInvalidParty": "Acteur de groupe du monde indisponible. Ouvrez sa feuille de groupe existante.",
-  "DCC.PartyTokenMissingScene": "Affichez une scène avant de rassembler ou déployer le groupe.",
+  "DCC.PartyTokenMissingScene": "Ouvrez une scène avant de rassembler ou de déployer les pions du groupe.",
   "DCC.PartyTokenMissingPartyToken": "Placez un pion lié de ce groupe sur la scène cible affichée avant le déploiement.",
   "DCC.PartyTokenMissingPartyTokenOnScene": "Aucun pion de groupe n'existe sur la scène affichée. Placez un pion de groupe lié et réessayez.",
   "DCC.PartyTokenAmbiguousPartyToken": "Plusieurs pions de ce groupe sont présents. Sélectionnez un seul pion cible ou utilisez son HUD.",
