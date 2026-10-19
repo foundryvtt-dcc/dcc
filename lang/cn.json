@@ -159,6 +159,7 @@
   "DCC.AttachedSpellHint": "将法术拖到此页签上以附加到该物品",
   "DCC.Attack": "攻击",
   "DCC.AttackBonus": "攻击奖励",
+  "DCC.AttackBonusNoDeedDie": "{name} 的攻击奖励为固定值 {bonus}，没有可投掷的壮举骰",
   "DCC.AttackBonusConfigMode": "攻击奖励模式",
   "DCC.AttackBonusConfigModeAutoPerAttack": "投骰每攻击",
   "DCC.AttackBonusConfigModeFlat": "平直奖励",

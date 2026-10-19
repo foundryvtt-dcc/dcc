@@ -29,7 +29,7 @@
         {{/if}}
         {{#if system.config.useLevel}}
           <label title="{{localize 'DCC.SkillLevelHint'}}">{{localize "DCC.Level"}}</label>
-          <div class="value-display" title="{{localize 'DCC.SkillUseLevelHint'}}" data-dtype="String">{{actor.system.details.level}}</div>
+          <div class="value-display" title="{{localize 'DCC.SkillUseLevelHint'}}" data-dtype="String">{{actor.system.details.level.value}}</div>
         {{/if}}
         {{#if system.config.applyCheckPenalty}}
           <label title="{{localize 'DCC.SkillApplyCheckPenaltyHint'}}">{{localize "DCC.CheckPenalty"}}</label>
@@ -58,7 +58,7 @@
     <div class="box-border grid-col-span-3" style="max-height: 127px; overflow: hidden;">
       <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="p-5">
-        <img class="item-img" src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
+        <img class="item-img" src="{{img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
       </div>
     </div>
   </div>

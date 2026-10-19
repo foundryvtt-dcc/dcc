@@ -57,7 +57,7 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
     // Cleaning up + settling + clearing here scopes the gate to the test body.
     await page.evaluate(async () => {
       document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
-      const testNames = ['Test Player', 'Test NPC', 'Persistence Test', 'Action Die Test', 'Test Weapon', 'Test Armor', 'Test Treasure']
+      const testNames = ['Test Player', 'Test NPC', 'Persistence Test', 'Action Die Test', 'Test Weapon', 'Test Armor', 'Test Treasure', 'Test Item Image']
       for (const app of Object.values(ui.windows)) {
         try { await app.close() } catch {}
       }
@@ -483,6 +483,43 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.click('#context-menu li:has-text("Delete")')
       await page.waitForSelector('dialog.application', { timeout: 2000 })
       await page.click('button[data-action="yes"]')
+    })
+
+    test('item sheet opens for an item with the mystery-man placeholder image', async ({ page }) => {
+      // Regression (#1043): `_prepareContext` wrote a display fallback into the
+      // V1 `data.data` property, which does not exist in an ApplicationV2
+      // context. Every item whose image was empty or the mystery-man
+      // placeholder threw inside `_prepareContext`, so no sheet window opened
+      // at all (and the afterEach console-error gate below saw the TypeError).
+      // The sheet now shows the type's entity icon instead (#225) without
+      // writing it back to the document.
+      const result = await page.evaluate(async () => {
+        const item = await Item.create({
+          name: 'Test Item Image',
+          type: 'equipment',
+          img: 'icons/svg/mystery-man.svg'
+        })
+        try {
+          await item.sheet.render(true).catch(() => {})
+          return {
+            rendered: item.sheet.rendered,
+            window: Boolean(item.sheet.element),
+            imgSrc: item.sheet.element?.querySelector('img[data-edit="img"]')?.getAttribute('src') ?? null,
+            documentImg: item.img
+          }
+        } finally {
+          await item.sheet.close().catch(() => {})
+          await item.delete().catch(() => {})
+        }
+      })
+
+      expect(result.window, 'no sheet window appeared').toBe(true)
+      expect(result.rendered).toBe(true)
+      // The placeholder is replaced on display by the entity icon for the item
+      // type (`equipment` has no dedicated icon, so the default item artwork is
+      // used); the document keeps what it had.
+      expect(result.imgSrc).toBe('systems/dcc/styles/images/item.webp')
+      expect(result.documentImg).toBe('icons/svg/mystery-man.svg')
     })
   })
 

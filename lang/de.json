@@ -159,6 +159,7 @@
   "DCC.AttachedSpellHint": "Ziehe einen Zauber auf diesen Bogen, um ihn mit diesem Gegenstand zu verbinden",
   "DCC.Attack": "Angriff",
   "DCC.AttackBonus": "Angriffsbonus",
+  "DCC.AttackBonusNoDeedDie": "{name} hat einen festen Angriffsbonus von {bonus} und keinen Kriegerwürfel zum Würfeln",
   "DCC.AttackBonusConfigMode": "Modus Angriffsbonus",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Wurf pro Angriff",
   "DCC.AttackBonusConfigModeFlat": "Konstanter Wert",

@@ -2,12 +2,12 @@
 
 import { ensurePlus } from '../utilities.js'
 import {
-  rollAbilityCheck as libRollAbilityCheck,
   rollCheck as libRollCheck,
   rollLuckCheck as libRollLuckCheck,
   rollSavingThrow as libRollSavingThrow
 } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from '../adapter/character-accessors.mjs'
+import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
@@ -52,7 +52,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
    *
    * Single-path through the adapter (legacy fully decommissioned for
    * this dispatcher): every flavour — the simple two-pass
-   * `libRollAbilityCheck` flow, the roll-under (Luck) flow, the
+   * lib-backed ability-check flow, the roll-under (Luck) flow, the
    * modifier dialog, and the non-zero armor check-penalty display — is
    * handled adapter-side in `_rollAbilityCheckViaAdapter`. The former
    * `_rollAbilityCheckLegacy` body was deleted at Phase 7 session 25.
@@ -101,18 +101,20 @@ export const RollsCheckMixin = (Base) => class extends Base {
     }
 
     // Multiple action dice (Phase 3) — plan the next eligible slot for this
-    // check (off-path `null` ⇒ today's behavior). An *extra* die (slot index
-    // > 0) overrides the d20 the ability-check default uses, routing through
-    // `libRollCheck({ ability, die })` instead of `libRollAbilityCheck`
-    // (which always defaults to d20); slot 0 and the off-path stay on the
-    // unchanged call. A wizard's spells-only die is ineligible for a check.
+    // check (off-path `null` ⇒ no plan). A planned *extra* die (slot index
+    // > 0) wins over the sheet die; a wizard's spells-only die is ineligible
+    // for a check. Otherwise the roll uses the actor's action die, like the
+    // skill and spell paths do: a Dice Chain effect on
+    // `system.attributes.actionDice.value` applies to ability checks too
+    // (docs/user-guide/Active-Effects.md, #1048). The lib's ability-check
+    // default is a hard d20, so the die has to be passed explicitly.
     const actionDicePlan = planActionDie(this, 'check')
     const overrideDie = (actionDicePlan?.choice && actionDicePlan.choice.index > 0)
       ? actionDicePlan.choice.slot.die
       : null
-    const runCheck = (mode, roller) => overrideDie
-      ? libRollCheck({ ability: abilityId, die: overrideDie }, character, { mode, roller, luckBurn: options.luckBurn })
-      : libRollAbilityCheck(abilityId, character, { mode, roller, luckBurn: options.luckBurn })
+    const die = overrideDie || normalizeLibDie(this.system.attributes.actionDice?.value || '1d20')
+    const runCheck = (mode, roller) =>
+      libRollCheck({ ability: abilityId, die }, character, { mode, roller, luckBurn: options.luckBurn })
 
     // Pass 1: ask the lib for the formula it wants rolled (no evaluation).
     const plan = runCheck('formula')

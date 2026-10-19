@@ -728,19 +728,17 @@ export const RollsSkillMixin = (Base) => class extends Base {
       }
     }
 
-    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
-      const deedNum = parseInt(String(this.system.details.lastRolledAttackBonus), 10)
-      if (Number.isFinite(deedNum) && deedNum !== 0) {
-        modifiers.push({
-          kind: 'add',
-          value: deedNum,
-          origin: {
-            category: 'class-feature',
-            id: 'mighty-deed',
-            label: game.i18n.localize('DCC.DeedRoll')
-          }
-        })
-      }
+    const deedBonus = skill.useDeed ? this.getLastDeedBonus() : 0
+    if (deedBonus) {
+      modifiers.push({
+        kind: 'add',
+        value: deedBonus,
+        origin: {
+          category: 'class-feature',
+          id: 'mighty-deed',
+          label: game.i18n.localize('DCC.DeedRoll')
+        }
+      })
     }
 
     const checkPenaltyCouldApply =
@@ -873,11 +871,12 @@ export const RollsSkillMixin = (Base) => class extends Base {
       })
     }
 
-    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
+    const deedBonus = skill.useDeed ? this.getLastDeedBonus() : 0
+    if (deedBonus) {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.DeedRoll'),
-        formula: parseInt(this.system.details.lastRolledAttackBonus)
+        formula: deedBonus
       })
     }
 

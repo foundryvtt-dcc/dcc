@@ -159,6 +159,7 @@
   "DCC.AttachedSpellHint": "Przeciągnij czar na tę kartę, aby powiązać go z tym przedmiotem",
   "DCC.Attack": "Atak",
   "DCC.AttackBonus": "Bonus do Ataku",
+  "DCC.AttackBonusNoDeedDie": "{name} ma stały bonus do ataku {bonus}, bez Kostki Czynu do rzutu",
   "DCC.AttackBonusConfigMode": "Tryb Bonusu do Ataku",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Rzut na Atak",
   "DCC.AttackBonusConfigModeFlat": "Stały Bonus",

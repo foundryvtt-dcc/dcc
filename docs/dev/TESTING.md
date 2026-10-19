@@ -240,6 +240,37 @@ describe('ComponentName', () => {
 5. **Use fixtures**: Store complex test data in `fixtures/` directory
 6. **Don't trust a unit test for schema-bound behavior**: `min`/`max`/coercion live in real Foundry fields the unit mock doesn't implement. If a change is "value X should now be reachable/rejected," cover it with an integration test (real fields) or a browser test — see the callout under [Integration Tests](#integration-tests-real-foundry).
 
+### Keep tests proportionate
+
+Tests should be about as big as the change they cover. A bug fix needs
+**one regression test that fails before the fix and passes after** — not a
+matrix. Reviewers will trim tests that cost more to maintain than they
+protect.
+
+1. **Pick the cheapest layer that can see the bug.** Unit first, then
+   integration (real Foundry fields), then E2E. Add a new E2E test only when
+   the bug can only be seen in a live Foundry instance: template rendering,
+   a sheet round-trip, a chat card, a dialog.
+2. **Extend before you build.** If an existing spec already sets up the
+   actor, scene, token or card you need, add an assertion to it rather than
+   copying the setup into a new test.
+3. **One case per code path.** Don't loop over `''` / `null` / `undefined`
+   when they all take the same branch, and don't add a "control" case that
+   existing tests already cover.
+4. **Don't add mocks for one test.** If a fix needs new mock infrastructure,
+   say why in the PR — it's often a sign the test belongs at a different
+   layer.
+5. **E2E hygiene.** Poll for state (`expect.poll`, `waitForFunction`)
+   instead of fixed `waitForTimeout` sleeps; clean up created documents in
+   `try/finally` so a failure doesn't leak actors into the shared world;
+   prefer role/CSS locators over XPath.
+6. **Name tests for behavior.** No internal ticket labels ("B3", "probe")
+   or version tags in test names or created-document names.
+
+Updating existing assertions that your change makes stale is **not**
+optional (see CLAUDE.md) — this section is about how much *new* coverage to
+add.
+
 ## Coverage Goals
 
 See [Test Coverage](TEST_COVERAGE.md) for:

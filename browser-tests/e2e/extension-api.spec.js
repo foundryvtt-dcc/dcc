@@ -2453,7 +2453,7 @@ test.describe('DCC Extension API', () => {
         knownSpells: cls.knownSpells,
         maxSpellLevel: cls.maxSpellLevel,
         spellCheckOtherMod: cls.spellCheckOtherMod,
-        spellCheckDieOverride: cls.spellCheckDieOverride,
+        spellCheckOverrideDie: cls.spellCheckOverrideDie,
         spellCheckOverride: cls.spellCheckOverride,
         patron: cls.patron,
         patronTaintChance: cls.patronTaintChance ?? null,
@@ -2469,7 +2469,7 @@ test.describe('DCC Extension API', () => {
     expect(result.knownSpells).toBe(0)
     expect(result.maxSpellLevel).toBe(0)
     expect(result.spellCheckOtherMod).toBeNull()
-    expect(result.spellCheckDieOverride).toBeNull()
+    expect(result.spellCheckOverrideDie).toBeNull()
     expect(result.spellCheckOverride).toBeNull()
     expect(result.patron).toBeNull()
     expect(result.patronTaintChance).toBe('1%')

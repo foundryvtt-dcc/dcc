@@ -751,4 +751,51 @@ test.describe('DCC Sheet UI', () => {
       expect(result.effectImg).toBeTruthy()
     })
   })
+
+  // ── Item sheet: SchemaField rendering (#1050) ───────────────────────
+  test.describe('Skill Item Sheet Level Cell', () => {
+    test('a useLevel skill renders the owner level, not [object Object]', async ({ page }) => {
+      // #1050: templates/item-sheet-skill.html rendered
+      // `{{actor.system.details.level}}`, a SchemaField, so Handlebars produced
+      // "[object Object]" instead of the owner's level. Pin the rendered cell so
+      // the raw-field form cannot return.
+      let actorId = null
+      try {
+        actorId = await page.evaluate(async () => {
+          const actor = await Actor.create({
+            name: 'DCC Skill Level',
+            type: 'Player',
+            system: { details: { level: { value: 3 } } }
+          })
+          return actor.id
+        })
+        await page.evaluate(async (id) => {
+          const actor = game.actors.get(id)
+          const [skill] = await actor.createEmbeddedDocuments('Item', [{
+            name: 'DCC Level Skill',
+            type: 'skill',
+            system: {
+              value: '+0',
+              ability: 'str',
+              // Only useLevel is on, so the skill tab has a single
+              // `.value-display` and the assertion cannot drift to another row.
+              config: { useLevel: true, useDie: false, useValue: false, useAbility: false }
+            }
+          }])
+          await skill.sheet.render(true)
+        }, actorId)
+
+        await expect(page.locator('.dcc.sheet.item section[data-tab="skill"] .value-display')).toHaveText('3')
+        await expect(page.locator('.dcc.sheet.item')).not.toContainText('[object Object]')
+      } finally {
+        await page.evaluate(async (id) => {
+          const actor = game.actors.get(id)
+          for (const item of actor?.items ?? []) {
+            try { await item.sheet?.close() } catch {}
+          }
+          await actor?.delete().catch(() => {})
+        }, actorId).catch(() => {})
+      }
+    })
+  })
 })

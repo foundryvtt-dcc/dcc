@@ -131,6 +131,7 @@
   "DCC.AttachedSpellHint": "Glissez un sort sur cette fiche pour le lier à cet objet",
   "DCC.Attack": "Attaque",
   "DCC.AttackBonus": "Mod. attaque",
+  "DCC.AttackBonusNoDeedDie": "{name} a un modificateur d'attaque fixe de {bonus}, sans dé de haut fait à lancer",
   "DCC.AttackBonusConfigMode": "Mode du bonus d'attaque",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Jet par attaque",
   "DCC.AttackBonusConfigModeFlat": "Bonus fixe",

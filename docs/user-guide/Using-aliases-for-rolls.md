@@ -25,4 +25,14 @@ You can reference any attribute of an actor with its full path (e.g. data.abliti
 For Player type actors only:
 
         @xp: Current XP (data.details.xp.value)
-        @ab: Attack Bonus or last Deed Die roll (data.details.attackBonus if Attack Bonus Mode is 'Flat' otherwise data.details.lastRolledAttackBonus)
+        @ab: Attack Bonus (data.details.attackBonus)
+        @mab: Melee Attack Bonus (data.details.attackHitBonus.melee.value)
+        @mad: Melee Damage Bonus (data.details.attackDamageBonus.melee.value)
+        @rab: Missile Attack Bonus (data.details.attackHitBonus.missile.value)
+        @rad: Missile Damage Bonus (data.details.attackDamageBonus.missile.value)
+
+If the Attack Bonus Mode is Roll Per Attack, the deed die in each of these is
+replaced by the last deed die roll, from an attack or the Attack Bonus macro.
+For example, a warrior with a +d4+1 attack bonus and Str +2 who rolled a 3 has
+@ab 4 and @mab 6. While the character is fighting in a started combat, only a
+deed rolled that round counts; with no deed counting, the deed die counts as 0.

@@ -159,6 +159,7 @@
   "DCC.AttachedSpellHint": "Arrastra un hechizo a esta hoja para vincularlo a este objeto",
   "DCC.Attack": "Ataque",
   "DCC.AttackBonus": "B.Ataque",
+  "DCC.AttackBonusNoDeedDie": "{name} tiene un bonificador de ataque fijo de {bonus}, sin dado de acción que tirar",
   "DCC.AttackBonusConfigMode": "Modo de bono de ataque",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Tirar por ataque",
   "DCC.AttackBonusConfigModeFlat": "Bono fijo",

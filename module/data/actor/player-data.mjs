@@ -67,7 +67,7 @@ export class PlayerData extends BaseActorData {
       // respective `CONFIG.DCC.classMixins` entry — only `className`
       // (the cross-class identity field) remains in the static body.
       // Wizard + elf class fields (knownSpells / maxSpellLevel /
-      // spellCheckOtherMod / spellCheckDieOverride / spellCheckOverride
+      // spellCheckOtherMod / spellCheckOverrideDie / spellCheckOverride
       // / patron / patronTaintChance / familiar / corruption) are
       // attached by the `'wizard'` and `'elf'` mixins; cleric /
       // thief / warrior fields by their respective mixins. See
