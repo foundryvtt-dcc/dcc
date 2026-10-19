@@ -1,6 +1,6 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, ui, etc.) used in page.evaluate callbacks */
 const { test, expect } = require('@playwright/test')
-const { FOUNDRY_URL } = require('./fixtures')
+const { FOUNDRY_URL, markWelcomeTourDone } = require('./fixtures')
 
 /**
  * E2E tests for the Ability Score Change Log
@@ -53,6 +53,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     if (!isInGame) {
       const userSelect = page.locator('select[name="userId"]')
       await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await markWelcomeTourDone(page)
       await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
       await page.click('button[name="join"]')
       await page.waitForSelector('.game.system-dcc', { timeout: 30000 })

@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test')
-const { FOUNDRY_URL } = require('./fixtures')
+const { FOUNDRY_URL, markWelcomeTourDone } = require('./fixtures')
 
 /**
  * E2E tests for charged magic items (issue #500)
@@ -131,6 +131,7 @@ test.describe('Charged Magic Items E2E Tests', () => {
     if (!isInGame) {
       const userSelect = page.locator('select[name="userId"]')
       await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await markWelcomeTourDone(page)
       await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
       await page.click('button[name="join"]')
       await page.waitForSelector('.game.system-dcc', { timeout: 30000 })

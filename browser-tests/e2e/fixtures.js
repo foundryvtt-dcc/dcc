@@ -42,6 +42,26 @@ async function assertFoundryUp () {
   }
 }
 
+/**
+ * Keep Foundry's welcome tour from starting. Core starts it on the first login
+ * to a world with no documents (a fresh `e2e:env` world), and its overlay then
+ * intercepts clicks in whichever spec runs first. Progress lives in the
+ * client-scoped `core.tourProgress` setting (localStorage), so mark the tour
+ * completed before joining, unless this browser already has progress for it.
+ * Runs on the /join page, which shares the game's origin.
+ */
+async function markWelcomeTourDone (page) {
+  await page.evaluate(async () => {
+    const key = 'core.tourProgress'
+    const progress = JSON.parse(localStorage.getItem(key) || '{}')
+    if (progress.core?.welcome !== undefined) return
+    const tour = await fetch('/tours/welcome.json').then(r => r.json()).catch(() => null)
+    if (!tour?.steps?.length) return
+    progress.core = { ...progress.core, welcome: tour.steps.length }
+    localStorage.setItem(key, JSON.stringify(progress))
+  }).catch(() => {})
+}
+
 /** Log into the running world as Gamemaster and wait for the DCC system to be ready. */
 async function login (page) {
   await page.goto(`${FOUNDRY_URL}/join`)
@@ -67,6 +87,7 @@ async function login (page) {
         'only one GM session is allowed at a time.'
       )
     }
+    await markWelcomeTourDone(page)
     await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
     await page.click('button[name="join"]')
     await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
@@ -189,6 +210,7 @@ module.exports = {
   expect,
   createSessionTest,
   login,
+  markWelcomeTourDone,
   assertFoundryUp,
   openActorSheet,
   significantConsoleErrors,
