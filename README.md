@@ -10,7 +10,7 @@ Join us on the [dcc channel on the FoundryVTT Discord](https://discord.gg/foundr
 
 This system is the **rules engine**: character sheets and the dice for attacks, critical hits and fumbles, Mighty Deeds, two-weapon fighting, saving throws, spell checks, spellburn, patron taint, cleric disapproval and spell duels.
 
-It contains **no content from copyrighted DCC products**. The rules tables, class level data, spells, equipment and monsters are in the paid **DCC Core Book** module, available from the [Goodman Games Web Store](https://goodman-games.com/store/product/foundryvtt-dcc-compendium-license-key/).
+It contains **no content from copyrighted DCC products**. The rules tables, class level data, spells, equipment and monsters are in the paid **DCC Core Book** module, available from [DriveThruRPG](https://www.drivethrurpg.com/en/product/395496/dungeon-crawl-classics-core-book-compendium-for-foundry-vtt?affiliate_id=64555).
 
 Without the core book module, the rolls still work, but you look results up in your rulebook or enter the content yourself:
 
