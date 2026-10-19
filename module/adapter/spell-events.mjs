@@ -84,7 +84,7 @@ export function createSpellEvents ({ actor, spellItem, adjustSpellburnHP = false
       // actors bail before updating or posting chat.
       if (actor.isNPC) return
       // Same setting gate as spell loss above (#923): `processSpellCheck`
-      // required `automateClericDisapproval`, which defaults to FALSE.
+      // required `automateClericDisapproval`, which a GM can turn off.
       if (!game.settings?.get?.('dcc', 'automateClericDisapproval')) return
 
       Promise.resolve(actor.update({ 'system.class.disapproval': newRange })).catch((err) => {

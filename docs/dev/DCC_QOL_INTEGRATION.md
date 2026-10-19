@@ -131,7 +131,7 @@ driving (§7).
 
 | Setting key | Type | Default | Effect |
 |-------------|------|---------|--------|
-| `playerLuckVsMonsterCrits` | Boolean | `false` | Automate the (always-on RAW) rule that a target PC's Luck mod alters an incoming monster crit. |
+| `playerLuckVsMonsterCrits` | Boolean | `true` (#962) | Automate the (always-on RAW) rule that a target PC's Luck mod alters an incoming monster crit. |
 | `monsterFumbles` | Boolean | `false` | Enable the optional **DCC Yearbook #8** Monster Fumbles rule: a targeted PC's Luck steps the monster's fumble die along the dice chain (base `1d10`). |
 
 The crit half is **strict RAW**, not a house rule: "A PC's Luck modifier always
@@ -166,7 +166,7 @@ when disabled, the shipped flat-`1d10` behaviour is unchanged.
 | Setting key | Type | Default | Effect |
 |-------------|------|---------|--------|
 | `autoApplyDamage` | Boolean | `false` | Auto-apply rolled damage to the targeted token, with scrolling-text feedback. |
-| `autoApplyDeadStatus` | Boolean | `false` | Auto-apply the `dead` status to NPCs reaching ≤0 HP. |
+| `autoApplyDeadStatus` | Boolean | `true` (#962) | Auto-apply the `dead` status to NPCs reaching ≤0 HP. |
 
 **Scope note:** dcc-qol registers all of its settings at **world** scope.
 `autoApplyDamage` / `autoApplyDeadStatus` must be world-scoped (the GM decides
@@ -436,7 +436,10 @@ that's undesirable, add the setting-visibility gate later.
 
 ## 10. Open questions
 
-- **Defaults / on-by-default — DECIDED: all off for this release.** All six
+- **Defaults / on-by-default — superseded by #962.** #962 (2026-10-19) turned
+  `playerLuckVsMonsterCrits` and `autoApplyDeadStatus` on by default for new
+  worlds; existing worlds are pinned to `false` by migration 0.74. The rest
+  stay off. The original decision follows. **DECIDED: all off for this release.** All six
   settings ship **off** (opt-in) to preserve existing-world behavior on a
   system update; advertise them in release notes / the welcome dialog. Revisit
   defaulting the **RAW subset** (`checkWeaponRange`, `firingIntoMeleePenalty`,

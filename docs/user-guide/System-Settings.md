@@ -24,7 +24,7 @@ Click the **Enhanced Combat** button to configure the enhanced attack cards and 
 
 **Check weapon is equipped** will check if the weapon is equipped before rolling an attack, and show an error if it is not equipped.
 
-The remaining settings add automated combat rules to the system. Each can be turned on or off independently. **Player Luck vs monster crits** and **Auto-apply dead status to NPCs** are on by default; the rest are off by default, because they depend on where tokens sit on the map or make changes that are hard to undo. They act on the **targeted** token, so for the target-based options (range, firing into melee, damage, monster Luck) you must target a token when you attack — hover over it and press **T**.
+The remaining settings add automated combat rules to the system. Each can be turned on or off independently. **Player Luck vs monster crits** and **Auto-apply dead status to NPCs** are on by default; the rest are off by default, because they depend on where tokens sit on the map or make changes that are hard to undo. Worlds created before these defaults changed keep these settings as they were, so turn them on here if you want them. They act on the **targeted** token, so for the target-based options (range, firing into melee, damage, monster Luck) you must target a token when you attack — hover over it and press **T**.
 
 > **Using the DCC Quality of Life (dcc-qol) module?** These settings have no effect while it is active. While dcc-qol is active it provides this automation, and the system steps aside so the two never apply a rule twice. These built-in settings are intended for tables that do **not** run dcc-qol.
 
@@ -38,13 +38,13 @@ The remaining settings add automated combat rules to the system. Each can be tur
 
 **Automate friendly fire** — when a missile attack into melee misses, there is a 50% chance the stray shot is directed at a random ally engaged with the target, who is then attacked normally (DCC core rulebook, p. 96).
 
-**Player Luck vs monster crits** applies a targeted player character's Luck modifier to a monster's critical hit against them, per DCC rules: a positive Luck modifier reduces the monster's crit roll, a negative one increases it. (When several PCs are targeted, the highest Luck applies.)
+**Player Luck vs monster crits** (on by default in new worlds) applies a targeted player character's Luck modifier to a monster's critical hit against them, per DCC rules: a positive Luck modifier reduces the monster's crit roll, a negative one increases it. (When several PCs are targeted, the highest Luck applies.)
 
 **Monster fumbles (Yearbook #8)** is the optional rule from DCC Yearbook #8: when a monster fumbles against player characters, its fumble die is stepped along the dice chain by the highest targeted PC's Luck modifier (base 1d10 → e.g. 1d14 for a +2-Luck target, 1d6 for a −3-Luck target). With this off, monster fumbles use the standard flat 1d10.
 
 **Auto-apply damage to target** automatically applies a hit's rolled damage to the targeted token. The application is performed by the GM, so it works even when a player attacks a monster they don't own. Damage is only applied when the attack hits (the attack total meets the target's AC, or the die shows its highest face); a miss or fumble applies nothing. It works whether or not **Automate Damage/Crits/Fumbles** is on: with automation off, the damage is applied when you roll it from the attack card (the Roll Damage button, or the inline damage roll), once per attack.
 
-**Auto-apply dead status to NPCs** automatically adds the "dead" status effect to a non-player character whose hit points drop to 0 or below. Player characters are left alone (at 0 HP they are dying and may recover per DCC rules). The status is added automatically but not removed automatically — a GM can clear it if the creature is healed or revived.
+**Auto-apply dead status to NPCs** (on by default in new worlds) automatically adds the "dead" status effect to a non-player character whose hit points drop to 0 or below. Player characters are left alone (at 0 HP they are dying and may recover per DCC rules). The status is added automatically but not removed automatically — a GM can clear it if the creature is healed or revived.
 
 **Enable death clock for PCs** implements the DCC death and dying rules for player characters: a PC dropping to 0 hit points begins bleeding out with their level in rounds to be healed (tracked in the combat tracker and the sidebar Death Clock tool), death applied like the tracker's skull button, the permanent Stamina cost of a bleed-out save, and the Roll the Body recovery check. See the [Death Clock](Death-Clock.md) guide for the full feature.
 
@@ -86,15 +86,15 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Active Variant** selects the active ruleset variant. Variant modules (XCC, MCC, etc.) register themselves with the system; their styles and class lists apply when their variant is selected. Leave this on **Dungeon Crawl Classics** unless a variant module tells you otherwise.
 
-**Enable Mighty Deed Tables** offers a Mighty Deed table prompt on attack cards when a warrior's deed die succeeds (3 or higher). See [Mighty Deeds](Mighty-Deeds.md).
+**Enable Mighty Deed Tables** (on by default in new worlds) offers a Mighty Deed table prompt on attack cards when a warrior's deed die succeeds (3 or higher). See [Mighty Deeds](Mighty-Deeds.md).
 
 **Prompt for Item Deletion** asks for confirmation before deleting equipment, spells, or custom skills from character sheets.
 
 **Show rolls as emotes** will change rolls made from character sheets in to compact emotes in the chat log. An attack emote reads as a miss (with no damage) when the attack misses its selected target or fumbles, matching what the enhanced attack card shows.
 
-**Automate Cleric Disapproval** (on by default) will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
+**Automate Cleric Disapproval** (on by default in new worlds) will automatically increase the Cleric's Disapproval score when they roll a 1 on a spell casting roll (or under their current disapproval). If this is unchecked, it will not automatically increase the Disapproval score.
 
-**Automated Wizard/Elf Spell Loss** (on by default) will automatically mark a spell as lost if the spell fails.
+**Automated Wizard/Elf Spell Loss** (on by default in new worlds) will automatically mark a spell as lost if the spell fails.
 
 **Show the Modify Roll dialog by default** will show the Modify Roll dialog when you roll from the character sheet. If this is unchecked, you will need to cmd/ctrl click to show the Modify Roll dialog.
 

@@ -177,6 +177,7 @@ async function setMightyDeedsEnabled (page, enabled) {
 
 test.describe('Mighty Deeds E2E Tests', () => {
   let consoleErrors = []
+  let priorDeedsEnabled
 
   test.beforeAll(async () => {
     let serverUp
@@ -239,7 +240,9 @@ test.describe('Mighty Deeds E2E Tests', () => {
       }
     })
 
-    // Start each test with the deed prompt off for isolation (issue #319)
+    // Start each test with the deed prompt off for isolation (issue #319);
+    // afterEach restores the world's value
+    priorDeedsEnabled = await page.evaluate(() => game.settings.get('dcc', 'mightyDeedsEnabled'))
     await setMightyDeedsEnabled(page, false)
 
     // Close any welcome dialogs
@@ -252,7 +255,8 @@ test.describe('Mighty Deeds E2E Tests', () => {
     }
   })
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ page }) => {
+    await setMightyDeedsEnabled(page, priorDeedsEnabled)
     const significantErrors = consoleErrors.filter(err => !err.includes('favicon.ico'))
     expect(significantErrors, `Console errors detected: ${significantErrors.join('\n')}`).toHaveLength(0)
   })

@@ -1365,7 +1365,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // cast costs a wizard the spell — so `_applySpellFailureAutomation`
       // applies it through `actor.loseSpell`, gated on
       // `automateWizardSpellLoss` exactly as `processSpellCheck` was. The
-      // setting defaults to FALSE, so this test has to turn it on.
+      // world may have it off, so this test turns it on.
       //
       // Deterministic failure: `spellCheck.die` is a DiceField and must be a
       // valid chain die (`1d1` coerces to 1d20), so use `1d3`. With INT 3

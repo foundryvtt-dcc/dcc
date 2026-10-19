@@ -32,12 +32,12 @@ See [Advanced Character Settings](Advanced-Character-Settings.md) for more detai
 
 ## Mighty Deed Table Prompt
 
-When enabled, a successful deed (a deed die of **3 or higher**) adds a prompt to the attack chat card: a dropdown of available Mighty Deed tables plus a **Roll Deed** button. Pick the table for the deed you declared and click **Roll Deed** to look the deed die result up on that table and post the outcome to chat.
+When enabled, a successful deed (a deed die of **3 or higher**) adds a prompt to the attack chat card: a dropdown of available Mighty Deed tables. Pick the table for the deed you declared to look the deed die result up on that table; the result shows on the same card.
 
-This feature is **on by default**. To turn it off:
+This feature is **on by default** in new worlds (worlds created before it became the default keep it off). To change it:
 
 1. Open **Game Settings → Configure Settings → Dungeon Crawl Classics**
-2. Uncheck **Enable Mighty Deed Tables**
+2. Check or uncheck **Enable Mighty Deed Tables**
 
 Tables are gathered from two places:
 

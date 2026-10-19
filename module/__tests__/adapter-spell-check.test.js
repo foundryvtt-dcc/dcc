@@ -916,7 +916,7 @@ test('createSpellEvents without spellItem does not wire onSpellLost (naked path)
 
 test('createSpellEvents onDisapprovalIncreased updates system.class.disapproval', () => {
   actorUpdateMock.mockClear()
-  // `automateClericDisapproval` also defaults to FALSE (#923).
+  // `automateClericDisapproval` is a setting too, so turn it on here (#923).
   gameSettingsGetMock.mockImplementation((module, key) =>
     module === 'dcc' && key === 'automateClericDisapproval')
   const actor = {
@@ -3598,7 +3598,7 @@ test('#923 a cast with no results table still reports a null result to listeners
 
 // ---- #923 review: parity gaps against the legacy orchestrator ----
 
-test('#923 disapproval respects automateClericDisapproval (default OFF)', () => {
+test('#923 disapproval respects automateClericDisapproval when off', () => {
   const actor = { isNPC: false, update: vi.fn(), system: { abilities: {} } }
 
   gameSettingsGetMock.mockImplementation(() => false)
@@ -3737,7 +3737,7 @@ test('#923 a generic cast reports suppressPatronTaint on the result hook', async
 test('#923 the disapproval table draw respects automateClericDisapproval', async () => {
   // Legacy `processSpellCheck` gated `actor.rollDisapproval` on the setting
   // alongside the range bump. The adapter posted the draw unconditionally, so
-  // a default-configured world (the setting defaults to FALSE) started seeing
+  // a world with the setting off started seeing
   // disapproval cards on every low cleric roll once the sheet routed here.
   const cast = async (automate) => {
     gameSettingsGetMock.mockImplementation((module, key) => {
