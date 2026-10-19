@@ -29,7 +29,8 @@ describe('party token sheet control', () => {
 
   test('header button is GM-only, accessible and neutral', () => {
     const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
-    expect(template).toMatch(/{{#if canManagePartyTokens}}[\s\S]*data-action="togglePartyTokens"[\s\S]*{{\/if}}/)
+    const guarded = template.match(/{{#if canManagePartyTokens}}([\s\S]*?){{\/if}}/)
+    expect(guarded?.[1]).toContain('data-action="togglePartyTokens"')
     // The label, tooltip and accessible name all resolve the same fixed key:
     // the button never derives its text from the party's snapshot state.
     expect(template).toContain('aria-label="{{localize \'DCC.PartyTokenGatherDeploy\'}}"')
