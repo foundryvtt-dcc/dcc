@@ -269,9 +269,10 @@ export function isTokenInRunningCombat (token, scene) {
       (combatant.sceneId || combat.scene?.id) === scene.id))
 }
 
-/** World-actor IDs of the party roster, deduplicated. */
+/** World-actor IDs of the party roster, deduplicated. A non-array flag reads as empty. */
 function partyMemberIds (party) {
-  return new Set((party.flags?.dcc?.partyMembers ?? []).map(member => member.id))
+  const roster = party.flags?.dcc?.partyMembers
+  return new Set((Array.isArray(roster) ? roster : []).map(member => member.id))
 }
 
 /** Resolve documents in the explicit scene. A foreign-only selection is never a fallback to all. */
@@ -1044,8 +1045,7 @@ function refreshPartyTokens (actor) {
   for (const document of canvas.scene?.tokens ?? []) {
     const party = document.actor
     if (party?.type !== 'Party') continue
-    const members = party.flags?.dcc?.partyMembers ?? []
-    if (party.id !== actor.id && !members.some(member => member.id === actor.id)) continue
+    if (party.id !== actor.id && !partyMemberIds(party).has(actor.id)) continue
     // Reinitialize from source before preparation: prepareData alone reapplies
     // additive Token ActiveEffects to their already-modified values in v14.
     document.reset()

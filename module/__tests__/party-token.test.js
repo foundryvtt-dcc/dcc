@@ -546,6 +546,27 @@ describe('action derivation and geometry', () => {
   })
 })
 
+describe('legacy roster flag', () => {
+  test('a non-array roster reads as empty for gather and action derivation', () => {
+    const { party, scene, partyToken } = gatherFixture()
+    party.flags.dcc.partyMembers = {}
+    expect(service.resolveGatherTokens(party, scene)).toEqual([])
+    expect(service.derivePartyTokenAction(party, scene)).toBe(null)
+    scene.tokens.push(partyToken)
+    expect(service.derivePartyTokenAction(party, scene)).toBe('deploy')
+  })
+
+  test('the updateActor hook ignores a non-array roster', () => {
+    const { party, scene } = gatherFixture()
+    party.flags.dcc.partyMembers = {}
+    scene.tokens.splice(0)
+    scene.tokens.push({ actor: party })
+    canvas.scene = scene
+    registerPartyTokenHooks()
+    expect(() => hooks.updateActor({ id: 'some-member' })).not.toThrow()
+  })
+})
+
 function placementFixture (type) {
   const sizeY = type === 'hexagonal' ? 100 * 2 / Math.sqrt(3) : 100
   const grid = { size: 100, sizeX: 100, sizeY, distance: 5, isHexagonal: type === 'hexagonal', isGridless: type === 'gridless' }
