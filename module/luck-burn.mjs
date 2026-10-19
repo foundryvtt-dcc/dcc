@@ -158,7 +158,8 @@ export async function burnLuckAfterRoll (message) {
   if (!actor) return
   let burn = null
   // Flavor can carry markup; the log entry wants plain text
-  const flavor = String(message.flavor ?? '').replace(/<[^>]*>/g, '').trim()
+  // (stray angle brackets from malformed tags go too)
+  const flavor = String(message.flavor ?? '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim()
   const term = buildLuckBurnTerm(actor, {
     source: flavor || game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
     // This card already says what was burned
