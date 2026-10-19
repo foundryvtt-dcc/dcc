@@ -109,7 +109,10 @@ export const addChatMessageContextOptions = function (html, options) {
       label: 'DCC.ChatContextBurnLuck',
       icon: 'fas fa-clover',
       visible: (li) => !!luckBurnMessageActor(cardMessage(li)),
-      onClick: (event, li) => burnLuckAfterRoll(cardMessage(li))
+      onClick: (event, li) => burnLuckAfterRoll(cardMessage(li)).catch(err => {
+        console.error('[DCC] Burn Luck failed', err)
+        ui.notifications.error(game.i18n.localize('DCC.LuckBurnApplyFailed'))
+      })
     }
   )
   return options

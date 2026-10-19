@@ -261,9 +261,25 @@ function DCCCompoundTerm (options) {
 }
 
 /**
+ * Roll each Luck burn term's luck dice (thief) ahead of `_constructRoll`,
+ * leaving the total on `term.rolledBonus`. Asynchronous because v14's
+ * `Roll#evaluateSync` can never evaluate a dice term (#848).
+ * @param terms {Array<Object>}
+ * @return {Promise<void>}
+ * @private
+ */
+async function _rollLuckBurnDice (terms) {
+  for (const term of terms) {
+    if (term.type !== 'LuckBurn' || !term.luckDie || !(term.points > 0)) continue
+    const roll = await new Roll(luckBurnFormula(term.points, term).slice(1)).evaluate()
+    term.rolledBonus = roll.total
+  }
+}
+
+/**
  * The roll-formula piece for a Luck burn term: flat and flavored, so every
- * roll path reads it as a plain modifier. A luck die is rolled here, on
- * submit, and its total written in with the dice in the flavor
+ * roll path reads it as a plain modifier. A luck die's total (rolled by
+ * `_rollLuckBurnDice`) is written in with the dice in the flavor
  * (`+5[Luck Burn 2d3]`) — the adapter paths keep only the action die and
  * flat numbers from the dialog's roll, so a die left in the formula would
  * be dropped. The bonus is also left on `term.bonus` for the callback.
@@ -281,9 +297,8 @@ function _luckBurnPiece (term) {
     term.bonus = parseInt(bonus)
     return `${bonus}[${label}]`
   }
-  const roll = new Roll(bonus.slice(1)).evaluateSync()
-  term.bonus = roll.total
-  return `+${roll.total}[${label} ${bonus.slice(1)}]`
+  term.bonus = Number(term.rolledBonus) || 0
+  return `+${term.bonus}[${label} ${bonus.slice(1)}]`
 }
 
 // Array of constructors for DCC term objects by type
@@ -473,8 +488,15 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
+    // A second submit (double-click, Enter during the close) would re-run
+    // the term callbacks and spend a Luck or spellburn commitment twice
+    if (this._submitted) return
+    this._submitted = true
 
+    await _rollLuckBurnDice(this.terms)
     this._roll = this._constructRoll()
+    // Let a term's spend (Luck burn) land before the caller reads the actor
+    await Promise.all(this.terms.map(term => term.pending).filter(Boolean))
     // If damage terms exist, construct the damage formula and store it on the roll
     if (this._damageTerms) {
       const damageFormula = this._constructDamageFormula()
@@ -735,8 +757,10 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const points = Math.min(Math.max((term.points || 0) + parseInt(target.dataset.mod), 0), term.lckStart)
     term.points = points
     term.lck = term.lckStart - points
+    // Kept on the term too, so a re-render shows the burn rather than +0
+    term.formula = luckBurnFormula(points, term)
     const formField = this.element.querySelector('#term-' + index)
-    if (formField) formField.value = luckBurnFormula(points, term)
+    if (formField) formField.value = term.formula
     const luckField = this.element.querySelector(`#luck-burn-lck-${index}`)
     if (luckField) luckField.value = term.lck
   }

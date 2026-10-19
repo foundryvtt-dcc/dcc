@@ -1,4 +1,4 @@
-/* global ChatMessage, console, game, ui */
+/* global ChatMessage, console, foundry, game, ui */
 
 import { logAbilityChange } from './ability-score-log.js'
 import { getClassTrait } from './extension-api.mjs'
@@ -61,12 +61,14 @@ export function luckBurnFormula (points, { luckDie = null, multiplier = 1 } = {}
 /**
  * Spend burned Luck through the ability score log (logged as a Luck spend,
  * so the `luckRecovers` classes regain it). Always resolves, so a
- * synchronous term callback can fire-and-forget it.
+ * synchronous term callback can hand it to the dialog to await.
  *
  * @param {Object} actor
  * @param {number} points
  * @param {string} [source]  Roll name, for the log entry
- * @returns {Promise<void>}
+ * @param {Object} [options]
+ * @param {boolean} [options.announce=true]  Post the Luck-spend card
+ * @returns {Promise<boolean>} whether the Luck was spent
  */
 export async function applyLuckBurn (actor, points, source = '', { announce = true } = {}) {
   if (!(points > 0)) return
@@ -77,9 +79,11 @@ export async function applyLuckBurn (actor, points, source = '', { announce = tr
       type: 'luckSpend',
       source: source || game.i18n.localize('DCC.RollModifierLuckBurnTerm')
     }, { announce })
+    return true
   } catch (err) {
     console.error('[DCC] luck burn apply rejected', { actor: actor?.name, points, err })
     ui.notifications?.error?.(game.i18n.localize('DCC.LuckBurnApplyFailed'))
+    return false
   }
 }
 
@@ -108,12 +112,14 @@ export function buildLuckBurnTerm (actor, { source = '', announce = true, onBurn
     ...descriptor,
     // The dialog builds its roll once on open (nothing burned yet) and
     // again on submit; only the submit carries points, so the open-time
-    // call spends nothing.
+    // call spends nothing. The dialog awaits `term.pending` before handing
+    // the roll back, so the caller reads the post-burn Luck.
     callback: (_formula, term) => {
       const points = Number(term?.points) || 0
       if (points <= 0) return
-      onBurn?.(points, Number(term.bonus) || 0)
-      applyLuckBurn(actor, points, source, { announce })
+      const bonus = Number(term.bonus) || 0
+      term.pending = applyLuckBurn(actor, points, source, { announce })
+        .then(spent => { if (spent) onBurn?.(points, bonus) })
     }
   }
 }
@@ -151,8 +157,10 @@ export async function burnLuckAfterRoll (message) {
   const actor = luckBurnMessageActor(message)
   if (!actor) return
   let burn = null
+  // Flavor can carry markup; the log entry wants plain text
+  const flavor = String(message.flavor ?? '').replace(/<[^>]*>/g, '').trim()
   const term = buildLuckBurnTerm(actor, {
-    source: message.flavor || game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
+    source: flavor || game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
     // This card already says what was burned
     announce: false,
     onBurn: (points, bonus) => { burn = { points, bonus } }
@@ -162,18 +170,23 @@ export async function burnLuckAfterRoll (message) {
     title: game.i18n.localize('DCC.LuckBurnAfterRollTitle'),
     rollLabel: game.i18n.localize('DCC.ChatContextBurnLuck')
   }))
+  // `burn` is only set once the Luck was actually spent
   if (!roll || !burn) return
 
-  const before = Number(message.rolls[0].total) || 0
+  // A second burn on the same card builds on the earlier ones
+  const earlier = (game.messages?.contents ?? [])
+    .filter(m => m.getFlag?.('dcc', 'luckBurnFor') === message.id)
+    .reduce((sum, m) => sum + (Number(m.getFlag('dcc', 'luckBurnBonus')) || 0), 0)
+  const before = (Number(message.rolls[0].total) || 0) + earlier
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<p>${game.i18n.format('DCC.LuckBurnAfterRoll', {
-      name: actor.name,
+      name: foundry.utils.escapeHTML(actor.name),
       points: burn.points,
       bonus: `+${burn.bonus}`,
       before,
       after: before + burn.bonus
     })}</p>`,
-    flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id } }
+    flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id, luckBurnBonus: burn.bonus } }
   })
 }

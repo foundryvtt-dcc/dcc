@@ -77,8 +77,8 @@ describe('LuckBurn dialog term', () => {
   beforeEach(() => {
     globalThis.foundry.applications.api.ApplicationV2.RENDER_STATES = { NONE: 0 }
     globalThis.Roll = class {
-      constructor (formula) { this.formula = String(formula) }
-      evaluateSync () { this.total = 5; return this }
+      constructor (formula) { this.formula = String(formula); this.options = {} }
+      async evaluate () { this.total = 5; return this }
     }
   })
 
@@ -101,12 +101,21 @@ describe('LuckBurn dialog term', () => {
     )
   })
 
-  test('a thief rolls the luck dice on submit and the roll carries the flat total', async () => {
+  test('a thief rolls the luck dice on submit, and a double submit spends once', async () => {
     const { t, click } = openDialog(makeActor('thief'))
     await click('+1')
     await click('+1')
-    const roll = proto._constructRoll.call(t)
-    expect(roll.formula).toBe(`1d20+5[${game.i18n.localize('DCC.RollModifierLuckBurnTerm')} 2d4]`)
+    t._resolve = vi.fn()
+    t.close = vi.fn()
+    t._constructRoll = proto._constructRoll
+    Object.defineProperty(t, 'roll', { get () { return this._roll } })
+    const submit = RollModifierDialog.DEFAULT_OPTIONS.form.handler
+    const event = { preventDefault () {} }
+    await Promise.all([submit.call(t, event), submit.call(t, event)])
+    expect(t._resolve).toHaveBeenCalledTimes(1)
+    expect(t._resolve.mock.calls[0][0].formula)
+      .toBe(`1d20+5[${game.i18n.localize('DCC.RollModifierLuckBurnTerm')} 2d4]`)
+    expect(logAbilityChange).toHaveBeenCalledTimes(1)
   })
 
   test('the burn cannot go below 0 or above the Luck score', async () => {
@@ -153,6 +162,7 @@ describe('burning Luck after the roll', () => {
         term.points = 2
         term.bonus = 4
         term.callback('+4', term)
+        await term.pending
         return {}
       })
     }
