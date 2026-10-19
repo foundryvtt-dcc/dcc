@@ -81,6 +81,7 @@ Gather the members on the first scene, then place a party token for the same Par
 - Use a party token with **Link Actor Data** enabled. If an older party token is unlinked, enable **Link Actor Data** in that token's configuration before trying again; the action will not replace it for you. To gather without a party token already on the scene, enable **Link Actor Data** in the Party actor's prototype token configuration first.
 - You cannot gather again until you have deployed the gathered members. Member tokens in an active combat are skipped during gathering. If the party token is in a running combat, end that combat before gathering or deploying.
 - Gather tokens on the level you are viewing. If a member token being gathered or the party token is on a different level, gathering stops without moving them. Deployment places members on the party token's level.
+- Deployment keeps each member's saved elevation when it stays on the same level; on a different level it places them at that level's base elevation. The party token's own elevation does not affect where members appear.
 - If an action warns that it failed partway, check the party token and member tokens on the affected scenes before trying again.
 
 ## The party token's health bar
