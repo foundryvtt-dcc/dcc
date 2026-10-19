@@ -7,7 +7,7 @@
  * this through `DCCActor.rollDisapproval`. Foundry evaluates the dice so
  * the roll-modifier dialog, Dice So Nice and the chat card show real
  * dice; the lib's `rollDisapproval` owns the rules: (natural)d4 − Luck
- * modifier, the clamp to row 1 when Luck pushes the roll below 1, and the
+ * modifier (or the class's `disapprovalDie`, #1001), the clamp to row 1 when Luck pushes the roll below 1, and the
  * table lookup.
  */
 
@@ -19,20 +19,23 @@ import { renderDisapprovalRoll } from './chat-renderer.mjs'
  * Split an evaluated disapproval Roll into the parts the lib needs.
  *
  * The dialog lets the player edit the formula, so the roll is read rather
- * than assumed: the first die term's count is the number of d4s (the
- * natural roll), every die term is "the dice", and whatever else the
+ * than assumed: the first die term's count is the number of disapproval
+ * dice (the natural roll), every die term is "the dice", and whatever else the
  * formula adds or subtracts is treated as the Luck adjustment. That keeps
- * the lib's result equal to the Foundry total for any formula.
+ * the lib's result equal to the Foundry total for any formula. The first die
+ * term's faces are the disapproval die (d4 unless the class sets
+ * `disapprovalDie`, #1001).
  *
  * @param {Roll} roll - An evaluated Foundry Roll.
- * @returns {{ diceCount: number, diceTotal: number, luckModifier: number }}
+ * @returns {{ diceCount: number, dieFaces: number, diceTotal: number, luckModifier: number }}
  */
 export function readDisapprovalRoll (roll) {
   const dice = roll.dice ?? []
   const diceTotal = dice.reduce((sum, die) => sum + (Number(die.total) || 0), 0)
   const diceCount = Number(dice[0]?.number) || 1
+  const dieFaces = Number(dice[0]?.faces) || 4
   const luckModifier = diceTotal - (Number(roll.total) || 0)
-  return { diceCount, diceTotal, luckModifier }
+  return { diceCount, dieFaces, diceTotal, luckModifier }
 }
 
 /**
@@ -44,7 +47,8 @@ export function readDisapprovalRoll (roll) {
  *
  * @param {Object} params
  * @param {Object} params.actor - The cleric DCCActor.
- * @param {Roll} params.roll - The evaluated `Nd4 − Luck` Foundry Roll.
+ * @param {Roll} params.roll - The evaluated `NdX − Luck` Foundry Roll (X is
+ *   the class's disapproval die, d4 by default).
  * @param {number} [params.disapprovalRange] - The range the triggering check
  *   was made against. Defaults to the actor's current range, which a spell
  *   cast may already have raised.
@@ -52,7 +56,7 @@ export function readDisapprovalRoll (roll) {
  *   no table is configured.
  */
 export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange }) {
-  const { diceCount, diceTotal, luckModifier } = readDisapprovalRoll(roll)
+  const { diceCount, dieFaces, diceTotal, luckModifier } = readDisapprovalRoll(roll)
   const table = await loadDisapprovalTable(actor)
 
   let disapprovalResult = null
@@ -62,7 +66,7 @@ export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange })
       Number(disapprovalRange ?? actor.system?.class?.disapproval) || 1,
       table,
       luckModifier,
-      { roller: () => diceTotal }
+      { roller: () => diceTotal, dieFaces }
     )
   }
 

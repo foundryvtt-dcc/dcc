@@ -3990,6 +3990,48 @@ test('#923 a cleric who fails the threshold gains a point of disapproval', async
   findSpy.mockRestore()
 })
 
+test('#1001 a class registered with disapprovalIncreasesOnFailure: false gains no disapproval on a failed cast', async () => {
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+  CONFIG.DCC.classTraits = { cleric: { idolMagic: true, disapprovalIncreasesOnFailure: false } }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 9
+      this._total = 9
+      this._formula = String(formula)
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+    delete CONFIG.DCC.classTraits
+  }
+
+  expect(applySpy).not.toHaveBeenCalled()
+  findSpy.mockRestore()
+})
+
 test('#979 a level-3 cleric spell totalling 14 gains disapproval and reports failure', async () => {
   // Legacy applied +1 disapproval for ANY failed cleric check. The adapter
   // only bumped via the lib event, which fires on an in-range natural.

@@ -47,6 +47,7 @@
  */
 
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
+import { disapprovalDieFaces, disapprovalIncreasesOnFailure } from './disapproval-traits.mjs'
 import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
@@ -243,10 +244,18 @@ function resolveCasterProfile (actor) {
  * @returns {Object|null}
  */
 export function buildSpellCheckArgs (actor, spellItem, options = {}) {
-  const profile = options.castingModeOverride
+  const baseProfile = options.castingModeOverride
     ? (getCasterProfile(options.castingModeOverride) ?? null)
     : resolveCasterProfile(actor)
-  if (!profile) return null
+  if (!baseProfile) return null
+  // The actor's class traits tune the lib's disapproval rules (#1001).
+  const profile = baseProfile.usesDisapproval
+    ? {
+        ...baseProfile,
+        disapprovalDieFaces: disapprovalDieFaces(actor),
+        disapprovalIncreasesOnFailure: disapprovalIncreasesOnFailure(actor)
+      }
+    : baseProfile
 
   const spell = buildSpellDefinition(spellItem)
   const spellbookEntry = buildSpellbookEntry(spellItem, spell.id)

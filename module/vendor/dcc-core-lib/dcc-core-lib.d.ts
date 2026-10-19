@@ -1532,6 +1532,22 @@ export interface CasterProfile {
 	 * omitted, casters that use disapproval keep the spell and all others lose it.
 	 */
 	losesSpellOnFailure?: boolean;
+	/**
+	 * Does an in-range natural (an automatic failure) widen the disapproval
+	 * range? DCC RAW: true for clerics. Set false for homebrew classes that
+	 * raise the range only through their own mechanics; the roll still fails
+	 * automatically. Only gates the lib's own increase
+	 * (`calculateDisapprovalIncrease`); failures on the total are left to the
+	 * caller, which should read this flag too. Ignored unless `usesDisapproval`
+	 * is true; defaults to true.
+	 */
+	disapprovalIncreasesOnFailure?: boolean;
+	/**
+	 * Faces of the die rolled per point of the natural roll on a disapproval
+	 * roll. Defaults to 4, the core rule. Ignored unless `usesDisapproval` is
+	 * true.
+	 */
+	disapprovalDieFaces?: number;
 }
 /**
  * Standard caster profiles for DCC classes
@@ -6200,14 +6216,15 @@ export declare function resetDisapprovalRange(): number;
  */
 export interface DisapprovalResult {
 	/**
-	 * The disapproval roll: (natural)d4 minus the cleric's Luck modifier.
+	 * The disapproval roll: (natural)d4 minus the cleric's Luck modifier
+	 * (another die when `dieFaces` is passed).
 	 * Not clamped — may be below 1 when Luck is high. The table lookup
 	 * clamps to row 1 (see `rollDisapproval`).
 	 */
 	roll: number;
 	/** The dice expression rolled, e.g. "3d4" */
 	formula: string;
-	/** Number of d4s rolled (equals the triggering natural roll) */
+	/** Number of dice rolled (equals the triggering natural roll) */
 	diceCount: number;
 	/** The natural spell-check roll that triggered disapproval */
 	naturalRoll: number;
@@ -6231,6 +6248,18 @@ export interface DisapprovalResult {
 	disapprovalRange: number;
 }
 /**
+ * Roll options for disapproval rolls.
+ */
+export interface DisapprovalRollOptions extends RollOptions {
+	/**
+	 * Faces of the die rolled per point of the natural roll. Defaults to 4,
+	 * the core rule; anything other than a positive integer also falls back
+	 * to 4. Homebrew classes that roll another die pass it here (see
+	 * `CasterProfile.disapprovalDieFaces`).
+	 */
+	dieFaces?: number;
+}
+/**
  * Roll for disapproval effect.
  *
  * DCC RAW (core rulebook, Table 5-7): the cleric rolls 1d4 for every point
@@ -6247,10 +6276,11 @@ export interface DisapprovalResult {
  * @param disapprovalRange - Current disapproval range (reported only)
  * @param disapprovalTable - Table to look up the result
  * @param luckModifier - The cleric's Luck modifier (default 0)
- * @param options - Roll options. A custom roller receives "Nd4".
+ * @param options - Roll options. A custom roller receives "Nd4" (or
+ *   "Nd{dieFaces}" when `dieFaces` is set).
  * @returns The disapproval result
  */
-export declare function rollDisapproval(naturalRoll: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: RollOptions): DisapprovalResult;
+export declare function rollDisapproval(naturalRoll: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: DisapprovalRollOptions): DisapprovalResult;
 /**
  * Combined check and roll for disapproval.
  * Returns undefined if disapproval was not triggered.
@@ -6259,17 +6289,18 @@ export declare function rollDisapproval(naturalRoll: number, disapprovalRange: n
  * @param disapprovalRange - Current disapproval range
  * @param disapprovalTable - Table to look up the result
  * @param luckModifier - The cleric's Luck modifier (default 0)
- * @param options - Roll options
+ * @param options - Roll options, including an optional `dieFaces`
  * @returns DisapprovalResult if triggered, undefined otherwise
  */
-export declare function checkAndRollDisapproval(natural: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: RollOptions): DisapprovalResult | undefined;
+export declare function checkAndRollDisapproval(natural: number, disapprovalRange: number, disapprovalTable: SimpleTable, luckModifier?: number, options?: DisapprovalRollOptions): DisapprovalResult | undefined;
 /**
  * Disapproval severity level
  */
 export type DisapprovalSeverity = "minor" | "moderate" | "major" | "severe" | "catastrophic";
 /**
  * Get the severity level of a disapproval roll.
- * Based on typical DCC disapproval table structure.
+ * Based on typical DCC disapproval table structure. The table is read by the
+ * roll total, so this holds whatever die was rolled.
  */
 export declare function getDisapprovalSeverity(roll: number): DisapprovalSeverity;
 /**
@@ -6280,8 +6311,13 @@ export declare function getDisapprovalSeverity(roll: number): DisapprovalSeverit
  * (natural)d4 − Luck modifier, so the best case is a natural 1 rolling a 1
  * and the worst case is a natural equal to the range rolling all 4s.
  * The average assumes each triggering natural is equally likely.
+ *
+ * @param disapprovalRange - Current disapproval range
+ * @param luckModifier - The cleric's Luck modifier (default 0)
+ * @param dieFaces - Faces of the die rolled per point of the natural roll
+ *   (default 4; see `CasterProfile.disapprovalDieFaces`)
  */
-export declare function getExpectedSeverity(disapprovalRange: number, luckModifier?: number): {
+export declare function getExpectedSeverity(disapprovalRange: number, luckModifier?: number, dieFaces?: number): {
 	minimum: DisapprovalSeverity;
 	maximum: DisapprovalSeverity;
 	average: DisapprovalSeverity;
@@ -6494,6 +6530,8 @@ export declare function checkDisapproval(natural: number, disapprovalRange: numb
  * (outside the range) also raises the range under RAW, but whether a total
  * fails depends on the spell's result table, so that increase is left to
  * the caller.
+ *
+ * Returns 0 when the profile sets `disapprovalIncreasesOnFailure: false`.
  *
  * @param natural - The natural spell-check roll
  * @param profile - The caster profile

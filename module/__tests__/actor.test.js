@@ -1,4 +1,4 @@
-/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll, Hooks */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll, Hooks, CONFIG */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -2448,6 +2448,19 @@ test('rollSkillCheck routes spell-like cleric skills through the adapter with di
   expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
   expect(dccRollCreateRollMock).toHaveBeenCalled()
   expect(applyDisapprovalSpy).toHaveBeenCalled()
+
+  // #1001: a class that opts out of failure disapproval gains none
+  applyDisapprovalSpy.mockClear()
+  const originalSheetClass = actor.system.details.sheetClass
+  actor.system.details.sheetClass = 'Dwarven-Priest'
+  CONFIG.DCC.classTraits = { 'dwarven-priest': { disapprovalIncreasesOnFailure: false } }
+  try {
+    await actor.rollSkillCheck('Invoke Ancestors')
+  } finally {
+    delete CONFIG.DCC.classTraits
+    actor.system.details.sheetClass = originalSheetClass
+  }
+  expect(applyDisapprovalSpy).not.toHaveBeenCalled()
 
   applyDisapprovalSpy.mockRestore()
   global.itemTypesMock.mockReset()

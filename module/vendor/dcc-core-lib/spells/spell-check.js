@@ -264,7 +264,9 @@ export function calculateSpellCheck(character, input, options = {}, events) {
     if (profile.usesDisapproval &&
         baseResult.natural !== undefined &&
         castInput.disapprovalRange !== undefined) {
-        const disapproval = handleClericDisapproval(baseResult.natural, castInput.disapprovalRange, input.disapprovalTable, getDisapprovalLuckModifier(castInput), options);
+        const disapproval = handleClericDisapproval(baseResult.natural, castInput.disapprovalRange, input.disapprovalTable, getDisapprovalLuckModifier(castInput), profile.disapprovalDieFaces === undefined
+            ? options
+            : { ...options, dieFaces: profile.disapprovalDieFaces });
         if (disapproval) {
             result.disapprovalResult = disapproval;
         }
