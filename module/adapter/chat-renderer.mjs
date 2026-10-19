@@ -803,7 +803,8 @@ function buildNakedSpellResultHtml (result) {
  * Render a cleric disapproval roll as a Foundry ChatMessage: the roll plus
  * the drawn Table 5-7 entry as the flavor.
  *
- * `roll` is the evaluated Foundry `Nd4 − Luck` Roll from
+ * `roll` is the evaluated Foundry `Nd4 − Luck` Roll (or the class's
+ * `disapprovalDie`, #1001) from
  * `DCCActor.rollDisapproval` (issue #961), posted as-is so the card and
  * Dice So Nice show the real dice. Without one, a deterministic
  * `${total}d1` Roll stands in for the lib's total.

@@ -89,10 +89,50 @@ async function buildClassNameLookup () {
  * untouched elf values (#1000) — the elf schema mixin used to give every
  * Player the elf's +4 Heightened Senses.
  *
- * 0.74: Party prototype tokens and placed Party tokens adopt the
+ * 0.74: five rules-automation settings now default on (#962). Existing
+ * worlds that never saved a value get the old `false` written explicitly,
+ * so the new defaults only reach new worlds (see `pinPreviousSettingDefaults`).
+ *
+ * 0.75: Party prototype tokens and placed Party tokens adopt the
  * `aggregate.hp` bar (#911) when their bar1 is still the system default.
+ * A separate ceiling from 0.74 so worlds already swept for #962 still adopt
+ * the bar.
  */
-export const NEEDS_MIGRATION_VERSION = 0.74
+export const NEEDS_MIGRATION_VERSION = 0.75
+
+/**
+ * World settings whose default changed from `false` to `true` in 0.74
+ * (#962). Foundry stores only values someone saved, so without a migration
+ * an existing world would silently pick up the new default.
+ */
+export const SETTINGS_DEFAULTED_ON_962 = [
+  'automateWizardSpellLoss',
+  'automateClericDisapproval',
+  'mightyDeedsEnabled',
+  'playerLuckVsMonsterCrits',
+  'autoApplyDeadStatus'
+]
+
+/**
+ * Keep an existing world on the setting values it already played with when
+ * a default changes: write the old default for every listed setting the
+ * world never saved. A fresh world (stored version 0 / null) gets the new
+ * defaults, as does a world already migrated past 0.74.
+ *
+ * @param {number|null} currentVersion  The stored `systemMigrationVersion`
+ * @returns {Promise<string[]>} The setting keys that were pinned
+ */
+export async function pinPreviousSettingDefaults (currentVersion) {
+  if (!currentVersion || currentVersion >= 0.74) return []
+  const worldStorage = game.settings.storage?.get('world')
+  const pinned = []
+  for (const key of SETTINGS_DEFAULTED_ON_962) {
+    if (worldStorage?.getSetting(`dcc.${key}`)) continue
+    await game.settings.set('dcc', key, false)
+    pinned.push(key)
+  }
+  return pinned
+}
 
 /**
  * Floor below which a world must first pass through a pre-V14 DCC release.
@@ -179,6 +219,8 @@ export function migrationOutcome (failures) {
 /**
  * Migrate the current world to the current version of the system
  *
+ * @param {number|null} currentVersion  The stored `systemMigrationVersion`
+ *   before this run (0 / null for a fresh world)
  * @return {Promise<{ migrationComplete: boolean }>}  Resolves once the
  *   migration finishes. `migrationComplete` is `true` for a clean run and
  *   `false` if any document failed. Either way the stored version is now
@@ -187,13 +229,20 @@ export function migrationOutcome (failures) {
  *   need manual repair", not "will re-run next load". The flag is threaded
  *   onto the `dcc.ready` payload via `checkMigrations`.
  */
-export const migrateWorld = async function () {
+export const migrateWorld = async function (currentVersion = null) {
   ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
 
   // Per-document failures accumulate here so the run can report them as a
   // group and gate version-stamping (see `migrationOutcome`). Each catch
   // still logs the stack to the console for debugging.
   const failures = []
+
+  try {
+    await pinPreviousSettingDefaults(currentVersion)
+  } catch (err) {
+    console.error(err)
+    failures.push({ type: 'Setting', name: 'rules-automation defaults' })
+  }
 
   // Migrate World Actors
   for (const a of game.actors) {
@@ -310,7 +359,7 @@ export const checkMigrations = async function () {
     )
     return { migrationComplete: false }
   }
-  return migrateWorld()
+  return migrateWorld(currentVersion)
 }
 
 /* -------------------------------------------- */

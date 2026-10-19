@@ -14,6 +14,14 @@ The *module* content is all copyrighted material, so it is not free.
 
 Since there is significant work in translating this content to FoundryVTT format, it must be purchased separately even if you own the paper or PDF rulebook. DriveThruRPG regularly has sales, so keep an eye out if the price is a factor for you.
 
-To activate modules you have purchased, follow the instructions in [Installing the Paid Foundry Modules](
+## What works without the module
 
+The system is the rules engine, so every roll works on its own. What's missing is the book content those rolls look up:
 
+- **Critical hits and fumbles** roll the right die. For crits, the chat card tells you which table to look the result up on in your rulebook; for fumbles, look the roll up on the fumble table.
+- **Spell checks** show success or failure, but not the spell's result text.
+- **Leveling up** only changes the level number. The hit point roll, attack bonus, saves and other class values for the new level come from level data, which you can [enter yourself](Adding-Level-Up-Data.md).
+- **Cleric disapproval** rolls the disapproval die, but shows no result text unless you add a disapproval table.
+- **Spells, equipment and monsters** have to be created by hand.
+
+To activate modules you have purchased, follow the instructions in [Installing the Paid Foundry Modules](Installing-the-Paid-Foundry-Modules.md).

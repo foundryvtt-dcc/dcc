@@ -115,6 +115,22 @@ export interface CasterProfile {
      * omitted, casters that use disapproval keep the spell and all others lose it.
      */
     losesSpellOnFailure?: boolean;
+    /**
+     * Does an in-range natural (an automatic failure) widen the disapproval
+     * range? DCC RAW: true for clerics. Set false for homebrew classes that
+     * raise the range only through their own mechanics; the roll still fails
+     * automatically. Only gates the lib's own increase
+     * (`calculateDisapprovalIncrease`); failures on the total are left to the
+     * caller, which should read this flag too. Ignored unless `usesDisapproval`
+     * is true; defaults to true.
+     */
+    disapprovalIncreasesOnFailure?: boolean;
+    /**
+     * Faces of the die rolled per point of the natural roll on a disapproval
+     * roll. Defaults to 4, the core rule. Ignored unless `usesDisapproval` is
+     * true.
+     */
+    disapprovalDieFaces?: number;
 }
 /**
  * Standard caster profiles for DCC classes

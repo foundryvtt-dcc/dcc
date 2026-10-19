@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test')
-const { FOUNDRY_URL } = require('./fixtures')
+const { FOUNDRY_URL, markWelcomeTourDone } = require('./fixtures')
 
 /**
  * E2E tests for Mighty Deed table prompts (issue #319; inline-lookup rework #786)
@@ -167,7 +167,7 @@ async function rollPinnedDeed (page, ids, { uniform, targetAC = null, enhanced =
 }
 
 /**
- * Toggle the off-by-default `mightyDeedsEnabled` world setting (issue #319).
+ * Toggle the `mightyDeedsEnabled` world setting (issue #319, on by default since #962).
  * @param {import('@playwright/test').Page} page
  * @param {boolean} enabled
  */
@@ -177,6 +177,7 @@ async function setMightyDeedsEnabled (page, enabled) {
 
 test.describe('Mighty Deeds E2E Tests', () => {
   let consoleErrors = []
+  let priorDeedsEnabled
 
   test.beforeAll(async () => {
     let serverUp
@@ -214,6 +215,7 @@ test.describe('Mighty Deeds E2E Tests', () => {
     if (!isInGame) {
       const userSelect = page.locator('select[name="userId"]')
       await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await markWelcomeTourDone(page)
       await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
       await page.click('button[name="join"]')
       await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
@@ -238,7 +240,9 @@ test.describe('Mighty Deeds E2E Tests', () => {
       }
     })
 
-    // Reset the deed prompt to its off-by-default state for test isolation (issue #319)
+    // Start each test with the deed prompt off for isolation (issue #319);
+    // afterEach restores the world's value
+    priorDeedsEnabled = await page.evaluate(() => game.settings.get('dcc', 'mightyDeedsEnabled'))
     await setMightyDeedsEnabled(page, false)
 
     // Close any welcome dialogs
@@ -251,7 +255,8 @@ test.describe('Mighty Deeds E2E Tests', () => {
     }
   })
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ page }) => {
+    await setMightyDeedsEnabled(page, priorDeedsEnabled)
     const significantErrors = consoleErrors.filter(err => !err.includes('favicon.ico'))
     expect(significantErrors, `Console errors detected: ${significantErrors.join('\n')}`).toHaveLength(0)
   })
@@ -361,9 +366,9 @@ test.describe('Mighty Deeds E2E Tests', () => {
     expect(failure.contentHasPrompt).toBe(false)
   })
 
-  test('with the setting disabled (default), a successful deed shows no prompt', async ({ page }) => {
+  test('with the setting disabled, a successful deed shows no prompt', async ({ page }) => {
     const fixtures = await createDeedFixtures(page)
-    // mightyDeedsEnabled is left at its default (false) by beforeEach.
+    // mightyDeedsEnabled is left off by beforeEach.
     // The table is still registered, but the attack card must not offer it.
     expect(fixtures.registryEntry).toEqual({ name: 'E2E Deed Table', path: 'E2E Deed Table' })
 

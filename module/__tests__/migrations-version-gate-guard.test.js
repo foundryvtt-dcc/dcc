@@ -45,7 +45,7 @@ const antiPattern = /currentVersion\s*(?:<=?|>=?|===?|!==?)\s*0\.(?:0\d|1\d|2[01
 describe('classifyMigrationDecision', () => {
   test('exported floor + ceiling constants', () => {
     expect(MINIMUM_SUPPORTED_VERSION).toBe(0.22)
-    expect(NEEDS_MIGRATION_VERSION).toBe(0.74)
+    expect(NEEDS_MIGRATION_VERSION).toBe(0.75)
   })
 
   test('fresh world (default: 0) runs migrateWorld', () => {
@@ -95,12 +95,16 @@ describe('classifyMigrationDecision', () => {
     expect(classifyMigrationDecision(0.72)).toBe('run')
   })
 
-  test('previous ceiling (0.73) re-runs for the 0.74 Party bar default', () => {
+  test('previous ceiling (0.73) re-runs to pin the #962 setting defaults', () => {
     expect(classifyMigrationDecision(0.73)).toBe('run')
   })
 
-  test('already migrated (0.74) skips', () => {
-    expect(classifyMigrationDecision(0.74)).toBe('skip')
+  test('previous ceiling (0.74) re-runs for the 0.75 Party bar default', () => {
+    expect(classifyMigrationDecision(0.74)).toBe('run')
+  })
+
+  test('already migrated (0.75) skips', () => {
+    expect(classifyMigrationDecision(0.75)).toBe('skip')
   })
 
   test('above ceiling skips', () => {

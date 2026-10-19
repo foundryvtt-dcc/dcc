@@ -16,13 +16,16 @@ export function stringify (object) {
   return JSON.stringify(object)
 }
 
+/**
+ * Format a stored distance for display: a single number (with or without a
+ * foot mark) renders as `30'`. Anything else, such as `25/50/100`, `fly 40'`
+ * or `none`, is returned unchanged. Inputs that submit on change use this as
+ * their value, so dropping the rest of the text would delete it (#1044).
+ */
 export function distanceFormat (object) {
-  const fields = String(object).match(/(-?\d+)'?/)
-  if (fields) {
-    return fields[1] + '\''
-  } else {
-    return ''
-  }
+  const text = String(object ?? '').trim()
+  const single = text.match(/^(-?\d+)\s*['’]?$/)
+  return single ? single[1] + '\'' : text
 }
 
 export function dccPackExists (pack, options) {

@@ -29,9 +29,9 @@ const table = {
 }
 
 /** An evaluated Foundry Roll for `${count}d4 ± luck` with the given dice total. */
-function fakeRoll ({ count, diceTotal, luckModifier = 0 }) {
+function fakeRoll ({ count, diceTotal, luckModifier = 0, faces = 4 }) {
   return {
-    dice: [{ number: count, faces: 4, total: diceTotal }],
+    dice: [{ number: count, faces, total: diceTotal }],
     total: diceTotal - luckModifier
   }
 }
@@ -48,12 +48,12 @@ beforeEach(() => {
 describe('readDisapprovalRoll', () => {
   test('reads the d4 count, the dice total, and the Luck adjustment', () => {
     expect(readDisapprovalRoll(fakeRoll({ count: 3, diceTotal: 9, luckModifier: 2 })))
-      .toEqual({ diceCount: 3, diceTotal: 9, luckModifier: 2 })
+      .toEqual({ diceCount: 3, dieFaces: 4, diceTotal: 9, luckModifier: 2 })
   })
 
   test('a negative Luck modifier adds to the total', () => {
     expect(readDisapprovalRoll(fakeRoll({ count: 2, diceTotal: 5, luckModifier: -1 })))
-      .toEqual({ diceCount: 2, diceTotal: 5, luckModifier: -1 })
+      .toEqual({ diceCount: 2, dieFaces: 4, diceTotal: 5, luckModifier: -1 })
   })
 
   test('a dialog-edited formula with several dice terms sums every die', () => {
@@ -61,16 +61,25 @@ describe('readDisapprovalRoll', () => {
       dice: [{ number: 2, total: 5 }, { number: 1, total: 3 }],
       total: 7 // 2d4 + 1d4 − 1
     }
-    expect(readDisapprovalRoll(roll)).toEqual({ diceCount: 2, diceTotal: 8, luckModifier: 1 })
+    expect(readDisapprovalRoll(roll)).toEqual({ diceCount: 2, dieFaces: 4, diceTotal: 8, luckModifier: 1 })
   })
 
   test('a formula with no dice treats the whole total as the adjustment', () => {
     expect(readDisapprovalRoll({ dice: [], total: 4 }))
-      .toEqual({ diceCount: 1, diceTotal: 0, luckModifier: -4 })
+      .toEqual({ diceCount: 1, dieFaces: 4, diceTotal: 0, luckModifier: -4 })
   })
 })
 
 describe('resolveDisapprovalRoll', () => {
+  test("a class's d10 disapproval die reaches the lib (#1001)", async () => {
+    loadDisapprovalTable.mockResolvedValue(table)
+    const roll = fakeRoll({ count: 2, diceTotal: 13, faces: 10 })
+
+    const result = await resolveDisapprovalRoll({ actor: cleric(3), roll })
+
+    expect(result).toMatchObject({ formula: '2d10', roll: 13 })
+  })
+
   test('the lib result matches the Foundry total and looks up that row', async () => {
     loadDisapprovalTable.mockResolvedValue(table)
     const roll = fakeRoll({ count: 3, diceTotal: 9, luckModifier: 2 })

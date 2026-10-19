@@ -118,8 +118,9 @@ Notes:
   that spans an edit mixes code versions into one green summary. Batch edits
   between runs.
 - Known flakes: rerun standalone before blaming the change —
-  `v14-features` effect toggle, two-weapon primary in `adapter-dispatch.spec.js`
-  (#867), and a tour overlay on the first run against a fresh world.
+  `v14-features` effect toggle and two-weapon primary in `adapter-dispatch.spec.js`
+  (#867). (The fresh-world welcome-tour overlay is now suppressed at login by
+  `markWelcomeTourDone` in `browser-tests/e2e/fixtures.js`.)
 - If you push **without** running the suite on one of these paths, say so
   explicitly in the final summary.
 

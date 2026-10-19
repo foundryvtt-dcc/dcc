@@ -414,6 +414,25 @@ describe('check penalty note in emote mode (#951)', () => {
     expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
   })
 
+  it('shows no note when checkPenaltyRollIndex points past the rolls (#955)', () => {
+    const html = makeEmoteHtml()
+    emoteAbilityRoll(
+      makeMessage({ flags: { isAbilityCheck: true }, system: { checkPenaltyRollIndex: 1 } }),
+      html,
+      { alias: 'Hero' }
+    )
+    expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
+  })
+
+  it.each([
+    [{ penalty: 'x', total: 8 }],
+    [{ penalty: -2, total: NaN }]
+  ])('shows no note for bad flag data %o (#955)', (checkPenalty) => {
+    const html = makeEmoteHtml()
+    emoteAbilityRoll(makeMessage({ flags: { isAbilityCheck: true, checkPenalty } }), html, { alias: 'Hero' })
+    expect(html.messageContent.innerHTML).not.toContain('dcc-check-penalty-note')
+  })
+
   it('appends the labeled note to a Reflex save emote from the flag', () => {
     const html = makeEmoteHtml()
     emoteSavingThrowRoll(

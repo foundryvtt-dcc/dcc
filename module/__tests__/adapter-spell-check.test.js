@@ -916,7 +916,7 @@ test('createSpellEvents without spellItem does not wire onSpellLost (naked path)
 
 test('createSpellEvents onDisapprovalIncreased updates system.class.disapproval', () => {
   actorUpdateMock.mockClear()
-  // `automateClericDisapproval` also defaults to FALSE (#923).
+  // `automateClericDisapproval` is a setting too, so turn it on here (#923).
   gameSettingsGetMock.mockImplementation((module, key) =>
     module === 'dcc' && key === 'automateClericDisapproval')
   const actor = {
@@ -3598,7 +3598,7 @@ test('#923 a cast with no results table still reports a null result to listeners
 
 // ---- #923 review: parity gaps against the legacy orchestrator ----
 
-test('#923 disapproval respects automateClericDisapproval (default OFF)', () => {
+test('#923 disapproval respects automateClericDisapproval when off', () => {
   const actor = { isNPC: false, update: vi.fn(), system: { abilities: {} } }
 
   gameSettingsGetMock.mockImplementation(() => false)
@@ -3737,7 +3737,7 @@ test('#923 a generic cast reports suppressPatronTaint on the result hook', async
 test('#923 the disapproval table draw respects automateClericDisapproval', async () => {
   // Legacy `processSpellCheck` gated `actor.rollDisapproval` on the setting
   // alongside the range bump. The adapter posted the draw unconditionally, so
-  // a default-configured world (the setting defaults to FALSE) started seeing
+  // a world with the setting off started seeing
   // disapproval cards on every low cleric roll once the sheet routed here.
   const cast = async (automate) => {
     gameSettingsGetMock.mockImplementation((module, key) => {
@@ -3987,6 +3987,48 @@ test('#923 a cleric who fails the threshold gains a point of disapproval', async
   }
 
   expect(applySpy).toHaveBeenCalledTimes(1)
+  findSpy.mockRestore()
+})
+
+test('#1001 a class registered with disapprovalIncreasesOnFailure: false gains no disapproval on a failed cast', async () => {
+  gameSettingsGetMock.mockImplementation((module, key) =>
+    module === 'dcc' && key === 'automateClericDisapproval')
+  CONFIG.DCC.classTraits = { cleric: { idolMagic: true, disapprovalIncreasesOnFailure: false } }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  const applySpy = vi.spyOn(actor, 'applyDisapproval').mockResolvedValue(undefined)
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  const OriginalRoll = globalThis.Roll
+  class FixedRoll extends OriginalRoll {
+    constructor (formula, data) {
+      super(formula, data)
+      this.total = 9
+      this._total = 9
+      this._formula = String(formula)
+      this.dice = [{ total: 10, results: [10], options: {}, faces: 20 }]
+    }
+  }
+  FixedRoll.safeEval = OriginalRoll.safeEval
+  FixedRoll.replaceFormulaData = OriginalRoll.replaceFormulaData
+  FixedRoll.validate = OriginalRoll.validate
+  globalThis.Roll = FixedRoll
+  try {
+    await actor.rollSpellCheck({ spellItem })
+  } finally {
+    globalThis.Roll = OriginalRoll
+    gameSettingsGetMock.mockReset()
+    delete CONFIG.DCC.classTraits
+  }
+
+  expect(applySpy).not.toHaveBeenCalled()
   findSpy.mockRestore()
 })
 

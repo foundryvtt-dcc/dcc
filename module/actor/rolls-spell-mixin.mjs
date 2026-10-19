@@ -22,6 +22,7 @@ import { emitAfterSpellCheckResult, sumSpellburn } from './spell-result-hook.mjs
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, slotRollFormula, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import { formatMercurialDescriptionHTML } from '../utilities.js'
 import { getClassTrait } from '../extension-api.mjs'
+import { disapprovalIncreasesOnFailure } from '../adapter/disapproval-traits.mjs'
 
 /**
  * Spell-check dispatch mixin for {@link DCCActor}.
@@ -751,7 +752,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
       if (inRange) {
         await this.rollDisapproval(natural, { disapprovalRange })
       }
-      if (!success) {
+      if (!success && disapprovalIncreasesOnFailure(this)) {
         await this.applyDisapproval()
       }
     }
@@ -1121,7 +1122,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
     // "around the same time," not strictly last.
     // Gated like the range bump in `spell-events.mjs`: legacy
     // `processSpellCheck` drew the disapproval table only when
-    // `automateClericDisapproval` was on, and it defaults to FALSE (#923).
+    // `automateClericDisapproval` was on, and a GM can turn it off (#923).
     // `rollDisapproval` is the shared lib-backed roll (#961).
     // The range is the pre-cast snapshot the lib checked against; the
     // actor's own range may already have been raised by the cast.
@@ -1347,6 +1348,7 @@ export const RollsSpellMixin = (Base) => class extends Base {
 
     if (profile?.type === 'cleric') {
       if (!game.settings.get('dcc', 'automateClericDisapproval')) return
+      if (!disapprovalIncreasesOnFailure(this)) return
       // An in-range natural already raised the range through the lib's
       // `onDisapprovalIncreased`; legacy applied exactly one point per failed
       // cast, so a second here would double it.

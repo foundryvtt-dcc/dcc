@@ -33,7 +33,7 @@ describe('stringify', () => {
 })
 
 describe('distanceFormat', () => {
-  test('strips trailing apostrophe and re-adds it', () => {
+  test('keeps a single foot-marked number', () => {
     expect(distanceFormat("30'")).toBe("30'")
   })
 
@@ -45,8 +45,20 @@ describe('distanceFormat', () => {
     expect(distanceFormat("-10'")).toBe("-10'")
   })
 
-  test('returns empty string when no integer matches', () => {
-    expect(distanceFormat('abc')).toBe('')
+  test('normalizes a curly foot mark and numeric input', () => {
+    expect(distanceFormat('40’')).toBe("40'")
+    expect(distanceFormat(30)).toBe("30'")
+  })
+
+  test('returns empty string for missing values', () => {
+    expect(distanceFormat(undefined)).toBe('')
+    expect(distanceFormat('')).toBe('')
+  })
+
+  test('keeps multi-rate and text speeds intact so sheet submits do not truncate them (#1044)', () => {
+    expect(distanceFormat('25/50/100')).toBe('25/50/100')
+    expect(distanceFormat("5', fly 40'")).toBe("5', fly 40'")
+    expect(distanceFormat('none')).toBe('none')
   })
 })
 

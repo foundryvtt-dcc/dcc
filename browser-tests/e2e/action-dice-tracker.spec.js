@@ -542,6 +542,10 @@ test.describe('Action-dice combat tracker pips', () => {
     const result = await page.evaluate(async () => {
       const prevMaster = game.settings.get('dcc', 'multipleActionDice')
       await game.settings.set('dcc', 'multipleActionDice', true)
+      // A natural 1 would post a disapproval card after the skill card; this
+      // test reads the last message, so keep disapproval automation out of it.
+      const prevDisapproval = game.settings.get('dcc', 'automateClericDisapproval')
+      await game.settings.set('dcc', 'automateClericDisapproval', false)
 
       let actor, combat, table
       const createdMessageIds = []
@@ -602,6 +606,7 @@ test.describe('Action-dice combat tracker pips', () => {
         if (actor) await actor.delete()
         if (table) await table.delete()
         await game.settings.set('dcc', 'multipleActionDice', prevMaster)
+        await game.settings.set('dcc', 'automateClericDisapproval', prevDisapproval)
       }
     })
 

@@ -25,6 +25,10 @@
  *   Doors skill, e.g. `'+4'`.
  * - `luckRecovers` (boolean): spent Luck recovers rather than being lost
  *   for good (ability score log recovery class).
+ * - `disapprovalDie` (string): the die rolled per point of the natural roll
+ *   on a disapproval roll, e.g. `'d10'`. Default `'d4'` (#1001).
+ * - `disapprovalIncreasesOnFailure` (boolean): set `false` for a class whose
+ *   failed checks don't widen the disapproval range. Default true (#1001).
  */
 
 export const BUILT_IN_CLASS_TRAITS = {
