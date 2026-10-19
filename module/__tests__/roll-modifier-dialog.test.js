@@ -60,20 +60,25 @@ describe('_constructRoll (terms-array branch)', () => {
 })
 
 describe('CheckPenalty term callback wiring (#954)', () => {
-  test('the callback built through constructDCCTerm sees the unchecked then checked formula', async () => {
-    const callback = vi.fn()
+  test('the dialog reports the checkbox state to _checkPenaltyDialogTerm through constructDCCTerm', async () => {
+    const { RollsCheckMixin } = await import('../actor/rolls-check-mixin.mjs')
+    const { term, state } = RollsCheckMixin(class {}).prototype._checkPenaltyDialogTerm.call(
+      { _getCheckPenalty: () => -5 }, 'str'
+    )
     const t = { options: {}, _state: 1, getTermByIndex: proto.getTermByIndex }
-    t._terms = t.terms = proto._constructTermsFromArray.call(t, [
-      { type: 'CheckPenalty', formula: '-5', apply: false, callback }
-    ])
+    t._terms = t.terms = proto._constructTermsFromArray.call(t, [term])
     const field = { value: t._terms[0].formula }
     t.element = { querySelector: (selector) => (selector === '#term-0' ? field : null) }
+    const toggle = async (checked) => {
+      await RollModifierDialog.DEFAULT_OPTIONS.actions.checkboxChange.call(t, {}, { dataset: { term: '0' }, checked })
+      proto._constructRoll.call(t)
+      return state.applied
+    }
 
     proto._constructRoll.call(t)
-    await RollModifierDialog.DEFAULT_OPTIONS.actions.checkboxChange.call(t, {}, { dataset: { term: '0' }, checked: true })
-    proto._constructRoll.call(t)
-
-    expect(callback.mock.calls.map(([formula]) => formula)).toEqual(['-0', '-5'])
+    expect(state.applied).toBe(false)
+    expect(await toggle(true)).toBe(true)
+    expect(await toggle(false)).toBe(false)
   })
 })
 
