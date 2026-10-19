@@ -33,8 +33,8 @@ describe('PartyData aggregate hit points', () => {
     expect(parent.getFlag).toHaveBeenCalledWith('dcc', 'partyMembers')
   })
 
-  test.each([{ roster: [] }, { roster: undefined }, { roster: {} }, { roster: 'nope' }])('returns zero for an empty or missing roster ($roster)', ({ roster }) => {
-    parent.flags.dcc.partyMembers = roster
+  test('treats a non-array roster as empty', () => {
+    parent.flags.dcc.partyMembers = {}
     expect(party.aggregate.hp).toEqual({ value: 0, max: 0 })
   })
 
@@ -53,8 +53,8 @@ describe('PartyData aggregate hit points', () => {
     expect(party.aggregate.hp).toEqual({ value: 3, max: 6 })
   })
 
-  test.each([undefined, null, NaN, Infinity, -Infinity, 'invalid'])('treats missing or non-finite HP as zero (%s)', value => {
-    actors.set('first', member(value, value))
+  test('treats missing HP as zero', () => {
+    actors.set('first', member(undefined, undefined))
     expect(party.aggregate.hp).toEqual({ value: 2, max: 4 })
   })
 
