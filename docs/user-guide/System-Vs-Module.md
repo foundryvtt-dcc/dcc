@@ -20,7 +20,7 @@ The system is the rules engine, so every roll works on its own. What's missing i
 
 - **Critical hits and fumbles** roll the right die. For crits, the chat card tells you which table to look the result up on in your rulebook; for fumbles, look the roll up on the fumble table.
 - **Spell checks** show success or failure, but not the spell's result text.
-- **Leveling up** only rolls hit points. The attack bonus, saves and other class values for the new level come from level data, which you can [enter yourself](Adding-Level-Up-Data.md).
+- **Leveling up** only changes the level number. The hit point roll, attack bonus, saves and other class values for the new level come from level data, which you can [enter yourself](Adding-Level-Up-Data.md).
 - **Cleric disapproval** rolls the disapproval die, but shows no result text unless you add a disapproval table.
 - **Spells, equipment and monsters** have to be created by hand.
 
