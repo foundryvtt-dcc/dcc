@@ -1,5 +1,5 @@
 # Coolify: add this as a Docker Compose resource with base directory
-# /deploy/e2e-runner. Set GH_RUNNER_PAT and FELDDY_DATA_VOLUME in Coolify's
+# /deploy/e2e-runner. Set GH_RUNNER_PAT and FELDDY_DATA_PATH in Coolify's
 # environment variables (mark the PAT as a secret). See README.md.
 services:
   runner:
@@ -23,9 +23,9 @@ services:
       # Unpacked Foundry build + compiled dcc-core-book, root-owned so jobs
       # can read but not alter them.
       - cache:/cache
-      # felddy/foundryvtt's /data volume: only container_cache/*.zip and
-      # Config/license.json are read.
-      - felddy-data:/mnt/felddy:ro
+      # felddy/foundryvtt's /data directory on the host: only
+      # container_cache/*.zip and Config/license.json are read.
+      - ${FELDDY_DATA_PATH:?set to the host directory felddy mounts at /data}:/mnt/felddy:ro
     # Chromium needs more than Docker's 64 MB default /dev/shm.
     shm_size: 1gb
     security_opt:
@@ -45,6 +45,3 @@ services:
 volumes:
   work:
   cache:
-  felddy-data:
-    external: true
-    name: ${FELDDY_DATA_VOLUME:?set to the felddy container's data volume name (docker volume ls)}

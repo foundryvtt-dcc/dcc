@@ -60,7 +60,7 @@ Nothing is copied to the host by hand:
 - **Foundry and the license** come from your existing **felddy/foundryvtt**
   container. It already uses your foundryvtt.com login (set in Coolify) to
   download the Foundry zip into `/data/container_cache` and to write
-  `/data/Config/license.json`. The runner mounts that volume **read-only**,
+  `/data/Config/license.json`. The runner mounts that directory **read-only**,
   unpacks the newest cached zip into its own cache volume (once per version)
   and copies the license into each job. Your Foundry credentials never reach
   the runner.
@@ -69,23 +69,19 @@ Nothing is copied to the host by hand:
   compiled module lives in the root-owned cache volume, so jobs can read it
   but can't change it.
 
-Find the name of felddy's data volume on the Coolify host:
+Find the host directory felddy mounts at `/data` (Coolify services use a
+bind mount, e.g. `/data/foundryvtte2e`):
 
 ```bash
-docker volume ls | grep -i foundry          # e.g. abc123_foundry-data
-docker inspect <felddy-container> --format '{{range .Mounts}}{{.Name}} -> {{.Destination}}{{"\n"}}{{end}}'
+docker inspect <felddy-container> --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
 ```
 
-You want the volume mounted at `/data`. Check that its download cache is
-populated (`CONTAINER_CACHE` is on by default in felddy):
+Check that its download cache is populated (`CONTAINER_CACHE` is on by
+default in felddy):
 
 ```bash
-docker run --rm -v <volume>:/data:ro alpine ls /data/container_cache /data/Config
+ls <path>/container_cache <path>/Config
 ```
-
-If felddy uses a host bind mount instead of a named volume, replace the
-`felddy-data` volume in `docker-compose.yml` with that path:
-`- /path/on/host:/mnt/felddy:ro`.
 
 ### 2. Personal access token
 
@@ -105,7 +101,8 @@ Set a calendar reminder for its expiry.
 1. **New Resource → Docker Compose**, source: the `foundryvtt-dcc/dcc` repo,
    branch `main`, base directory `/deploy/e2e-runner`, compose file
    `docker-compose.yml`.
-2. Environment variables: `GH_RUNNER_PAT` (secret) and `FELDDY_DATA_VOLUME`.
+2. Environment variables: `GH_RUNNER_PAT` (secret) and `FELDDY_DATA_PATH`
+   (e.g. `/data/foundryvtte2e`).
    Optionally set `RUNNER_NAME`, and `FOUNDRY_VERSION` to pin a specific
    cached build (e.g. `14.369`) instead of the newest one.
 3. Deploy. **Settings → Actions → Runners** on the repo should show the runner
