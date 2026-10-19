@@ -13,6 +13,7 @@ import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
 import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
 import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
 import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
+import { disapprovalDieFaces } from './adapter/disapproval-traits.mjs'
 import { multipleActionDiceEnabled } from './action-dice-tracker.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from './roll-cancellation.mjs'
 import { getClassTrait } from './extension-api.mjs'
@@ -555,7 +556,8 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    *
    * The single disapproval roll for every caller (issue #961): spell casts,
    * skill-table checks, `processSpellCheck`, and the sheet button / macro.
-   * Foundry rolls `(natural)d4 − Luck modifier` (through the roll-modifier
+   * Foundry rolls `(natural)d4 − Luck modifier` (the class's
+   * `disapprovalDie` in place of the d4, #1001) (through the roll-modifier
    * dialog when the natural roll is unknown); the lib resolves the result
    * and table entry.
    * @param {Number} naturalRoll   Optional - the natural roll for the last spell check
@@ -572,7 +574,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     const terms = [
       {
         type: 'DisapprovalDie',
-        formula: `${naturalRoll || 1}d4`
+        formula: `${naturalRoll || 1}d${disapprovalDieFaces(this)}`
       },
       {
         type: 'Modifier',

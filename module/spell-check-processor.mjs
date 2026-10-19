@@ -32,6 +32,7 @@ import { isPatronSpellItem, loadPatronTaintTable } from './adapter/spell-input.m
 import { applyPatronTaintAcquisition, rollPatronTaintChanceCheck, rollTriggersDisapproval } from './vendor/dcc-core-lib/index.js'
 import { spellCheckSucceeded } from './spell-check-success.mjs'
 import { getClassTrait } from './extension-api.mjs'
+import { disapprovalIncreasesOnFailure } from './adapter/disapproval-traits.mjs'
 
 /**
  * Roll a patron-based cast's patron taint check and persist the new chance
@@ -336,7 +337,7 @@ export async function processSpellCheck (actor, spellData) {
       }
 
       // Check for a failure to cast
-      if (automate && !success) {
+      if (automate && !success && disapprovalIncreasesOnFailure(actor)) {
         // Add a point of disapproval
         await actor.applyDisapproval()
       }

@@ -3,6 +3,7 @@
 import { ensurePlus } from '../utilities.js'
 import { rollCheck as libRollCheck, rollTriggersDisapproval } from '../vendor/dcc-core-lib/index.js'
 import { spellCheckSucceeded } from '../spell-check-success.mjs'
+import { disapprovalIncreasesOnFailure } from '../adapter/disapproval-traits.mjs'
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
 import { renderSkillCheck, actionDiceLineHtml } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
@@ -595,7 +596,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
           await this.rollDisapproval(naturalRoll, { disapprovalRange })
           success = false
         }
-        if (!success) {
+        if (!success && disapprovalIncreasesOnFailure(this)) {
           await this.applyDisapproval()
         }
       }

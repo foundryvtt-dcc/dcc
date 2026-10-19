@@ -745,7 +745,9 @@ export const CLASS_TRAIT_TYPES = Object.freeze({
   twoWeaponFumbleBothOnes: 'boolean',
   idolMagic: 'boolean',
   detectSecretDoorsBonus: 'string',
-  luckRecovers: 'boolean'
+  luckRecovers: 'boolean',
+  disapprovalDie: 'string',
+  disapprovalIncreasesOnFailure: 'boolean'
 })
 
 /**

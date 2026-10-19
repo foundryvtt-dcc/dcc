@@ -12,6 +12,8 @@ import { BUILT_IN_CLASS_TRAITS, registerBuiltInClassTraits } from '../built-in-c
 import { CLASS_TRAIT_TYPES, getClassTrait, getClassTraits, registerClassTraits } from '../extension-api.mjs'
 import { getRecoveryClass } from '../ability-score-log.js'
 import { isHalflingTwoWeaponAttack } from '../two-weapon-fumble.mjs'
+import { disapprovalDieFaces, disapprovalIncreasesOnFailure } from '../adapter/disapproval-traits.mjs'
+import { buildSpellCheckArgs } from '../adapter/spell-input.mjs'
 
 vi.mock('../actor-level-change.js')
 
@@ -201,5 +203,42 @@ describe('luckRecovers', () => {
     expect(getRecoveryClass('luckSpend', actorOf('elven-rogue'))).toBe('luckRegen')
     expect(getRecoveryClass('luckSpend', actorOf('thief'))).toBe('luckRegen')
     expect(getRecoveryClass('luckSpend', actorOf('warrior'))).toBe('permanent')
+  })
+})
+
+describe('disapproval traits (#1001)', () => {
+  const actorOf = classId => ({ classId })
+
+  test('the disapproval die defaults to d4 and follows disapprovalDie', () => {
+    registerClassTraits('dwarven-priest', { idolMagic: true, disapprovalDie: 'd10' })
+    registerClassTraits('odd-priest', { disapprovalDie: 'd0' })
+    expect(disapprovalDieFaces(actorOf('dwarven-priest'))).toBe(10)
+    expect(disapprovalDieFaces(actorOf('cleric'))).toBe(4)
+    expect(disapprovalDieFaces(actorOf('odd-priest'))).toBe(4)
+  })
+
+  test('failures widen the range unless the class opts out', () => {
+    registerClassTraits('dwarven-priest', { disapprovalIncreasesOnFailure: false })
+    expect(disapprovalIncreasesOnFailure(actorOf('dwarven-priest'))).toBe(false)
+    expect(disapprovalIncreasesOnFailure(actorOf('cleric'))).toBe(true)
+  })
+
+  test('rollDisapproval rolls the class die', async () => {
+    registerClassTraits('dwarven-priest', { idolMagic: true, disapprovalDie: 'd10' })
+    const actor = new DCCActor()
+    actor.system.details.sheetClass = 'Dwarven-Priest'
+    const onRoll = vi.spyOn(actor, '_onRollDisapproval').mockResolvedValue(null)
+    await actor.rollDisapproval(3)
+    expect(onRoll.mock.calls[0][0][0].formula).toBe('3d10')
+  })
+
+  test("a cleric cast's lib profile carries the class's disapproval traits", () => {
+    registerClassTraits('cleric', { idolMagic: true, disapprovalDie: 'd6', disapprovalIncreasesOnFailure: false })
+    const actor = new DCCActor()
+    actor.system.class.className = 'Cleric'
+    actor.system.details.sheetClass = 'Cleric'
+    const spellItem = new DCCItem({ name: 'Blessing', type: 'spell', system: { level: 1, castingMode: 'cleric' } })
+    const { profile } = buildSpellCheckArgs(actor, spellItem)
+    expect(profile).toMatchObject({ type: 'cleric', disapprovalDieFaces: 6, disapprovalIncreasesOnFailure: false })
   })
 })

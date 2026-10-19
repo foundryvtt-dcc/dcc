@@ -7,7 +7,7 @@
  * this through `DCCActor.rollDisapproval`. Foundry evaluates the dice so
  * the roll-modifier dialog, Dice So Nice and the chat card show real
  * dice; the lib's `rollDisapproval` owns the rules: (natural)d4 − Luck
- * modifier, the clamp to row 1 when Luck pushes the roll below 1, and the
+ * modifier (or the class's `disapprovalDie`, #1001), the clamp to row 1 when Luck pushes the roll below 1, and the
  * table lookup.
  */
 
@@ -31,8 +31,9 @@ export function readDisapprovalRoll (roll) {
   const dice = roll.dice ?? []
   const diceTotal = dice.reduce((sum, die) => sum + (Number(die.total) || 0), 0)
   const diceCount = Number(dice[0]?.number) || 1
+  const dieFaces = Number(dice[0]?.faces) || 4
   const luckModifier = diceTotal - (Number(roll.total) || 0)
-  return { diceCount, diceTotal, luckModifier }
+  return { diceCount, dieFaces, diceTotal, luckModifier }
 }
 
 /**
@@ -52,7 +53,7 @@ export function readDisapprovalRoll (roll) {
  *   no table is configured.
  */
 export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange }) {
-  const { diceCount, diceTotal, luckModifier } = readDisapprovalRoll(roll)
+  const { diceCount, dieFaces, diceTotal, luckModifier } = readDisapprovalRoll(roll)
   const table = await loadDisapprovalTable(actor)
 
   let disapprovalResult = null
@@ -62,7 +63,7 @@ export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange })
       Number(disapprovalRange ?? actor.system?.class?.disapproval) || 1,
       table,
       luckModifier,
-      { roller: () => diceTotal }
+      { roller: () => diceTotal, dieFaces }
     )
   }
 
