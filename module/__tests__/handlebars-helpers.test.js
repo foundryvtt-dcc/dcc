@@ -33,7 +33,7 @@ describe('stringify', () => {
 })
 
 describe('distanceFormat', () => {
-  test('strips trailing apostrophe and re-adds it', () => {
+  test('keeps a single foot-marked number', () => {
     expect(distanceFormat("30'")).toBe("30'")
   })
 
