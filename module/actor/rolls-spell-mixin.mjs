@@ -15,6 +15,7 @@ import { renderSpellCheck, renderMercurialEffect } from '../adapter/chat-rendere
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable, loadSpellResultsTable } from '../adapter/spell-input.mjs'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
+import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
@@ -357,6 +358,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
         formula: otherBonus
       })
     }
+
+    const luckBurnTerm = buildLuckBurnTerm(this, {
+      source: spellItem?.name || game.i18n.localize('DCC.SpellCheck')
+    })
+    if (luckBurnTerm) terms.push(luckBurnTerm)
 
     const promptOptions = {
       rollData: this.getRollData(),

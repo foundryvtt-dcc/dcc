@@ -7,6 +7,7 @@ import { disapprovalIncreasesOnFailure } from '../adapter/disapproval-traits.mjs
 import { actorToCharacter } from '../adapter/character-accessors.mjs'
 import { renderSkillCheck, actionDiceLineHtml } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
+import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { applyForceCritToFoundryRoll } from './force-crit.mjs'
@@ -266,6 +267,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     if (options.showModifierDialog) {
       const dialogTerms = this._buildSkillCheckRollTerms(skillId, resolved)
+      const luckBurnTerm = buildLuckBurnTerm(this, { source: options.title || game.i18n.localize(skill?.label || '') })
+      if (luckBurnTerm) dialogTerms.push(luckBurnTerm)
       const prompt = await promptRollModifierDialog(dialogTerms, {
         rollData: this.getRollData(),
         title: options.title,
@@ -433,6 +436,10 @@ export const RollsSkillMixin = (Base) => class extends Base {
     // the reconcile guard.
     const defaultActionDieFaces = parseInt(String(dieTerm?.formula || '').match(/d(\d+)/i)?.[1] || '') || null
 
+    if (options.showModifierDialog) {
+      const luckBurnTerm = buildLuckBurnTerm(this, { source: options.title || game.i18n.localize(skill?.label || '') })
+      if (luckBurnTerm) terms.push(luckBurnTerm)
+    }
     const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
     if (!roll) return // Dialog cancelled — post no skill-check card
 

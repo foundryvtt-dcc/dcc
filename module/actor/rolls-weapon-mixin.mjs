@@ -19,6 +19,7 @@ import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, par
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent, withRollErrorBoundary } from '../adapter/debug.mjs'
 import { isRollCancellation, rollOrNullOnCancel } from '../roll-cancellation.mjs'
+import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { buildDamageBreakdown } from './damage-breakdown.mjs'
 import { planActionDie, slotRollFormula, spendPlannedActionDie, formatActionDiceChatLine, noEligibleActionDieWarning, twoWeaponRoleForWeapon, actionDicePresetsFromPlan, reconcilePlannedActionDie } from '../action-dice-tracker.mjs'
 import DiceChain from '../dice-chain.js'
@@ -648,6 +649,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         label: game.i18n.localize('DCC.Bonus'),
         formula: '+0'
       })
+      // Luck burn (#963), like the bonus above, is a dialog-only term whose
+      // flat value lands in the authoritative Foundry roll total.
+      const luckBurnTerm = buildLuckBurnTerm(this, { source: weapon.name })
+      if (luckBurnTerm) terms.push(luckBurnTerm)
     }
 
     const termsLengthBefore = terms.length

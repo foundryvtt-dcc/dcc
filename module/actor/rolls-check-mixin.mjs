@@ -10,6 +10,7 @@ import { actorToCharacter, foundrySaveIdToLib } from '../adapter/character-acces
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } from '../adapter/chat-renderer.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
+import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
@@ -281,6 +282,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
     ]
     const checkPenaltyTerm = this._checkPenaltyDialogTerm(abilityId)
     if (checkPenaltyTerm) terms.push(checkPenaltyTerm.term)
+    const luckBurnTerm = buildLuckBurnTerm(this, { source: flavor })
+    if (luckBurnTerm) terms.push(luckBurnTerm)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
@@ -853,6 +856,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
     ]
     const checkPenaltyTerm = this._checkPenaltyDialogTerm(saveId)
     if (checkPenaltyTerm) terms.push(checkPenaltyTerm.term)
+    const luckBurnTerm = buildLuckBurnTerm(this, { source: flavor })
+    if (luckBurnTerm) terms.push(luckBurnTerm)
 
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),

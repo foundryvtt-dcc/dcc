@@ -2,17 +2,21 @@
 
 import { RollCancelledError } from './roll-cancellation.mjs'
 import { staminaHpDeltaForLevel } from './ability-score-log.js'
+import { luckBurnFormula } from './luck-burn.mjs'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
  * Clean a formula by stripping any spaces and duplicate signs
+ *
+ * Spaces inside a `[flavor]` are kept, so a multi-word label such as
+ * `+4[Luck Burn]` reaches chat as written.
  * @param formula {Object}
  * @return {Object}
  */
 function _cleanFormula (formula) {
   if (formula) {
-    return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-').replace(/\+$/, '')
+    return formula.toString().replace(/\s+(?![^[]*\])/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-').replace(/\+$/, '')
   }
   return ''
 }
@@ -159,6 +163,32 @@ function DCCSpellburnTerm (options) {
 }
 
 /**
+ * Construct a DCC Luck Burn term object (#963)
+ *
+ * The bonus field is read-only: the +/- buttons set how many points are
+ * burned, and the field shows what they buy (`+2`, `+4`, `+2d3`).
+ * `points` is mutated in place as the buttons are clicked, so the submit
+ * callback reads the final burn off the term.
+ * @params options {Object}
+ * @return {Object}
+ */
+function DCCLuckBurnTerm (options) {
+  const lck = parseInt(options.lck) || 0
+  return [{
+    type: 'LuckBurn',
+    label: game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
+    partial: 'systems/dcc/templates/roll-modifier-partial-luck-burn.html',
+    formula: '+0',
+    lck,
+    lckStart: lck,
+    luckDie: options.luckDie || null,
+    multiplier: Number(options.multiplier) || 1,
+    points: 0,
+    callback: options.callback
+  }]
+}
+
+/**
  * Construct a DCC Fleeting Luck term object
  * @params options {Object}
  * @return {Object}
@@ -230,6 +260,27 @@ function DCCCompoundTerm (options) {
   return terms
 }
 
+/**
+ * The roll-formula piece for a Luck burn term: flat and flavored, so every
+ * roll path reads it as a plain modifier. A luck die is rolled here, on
+ * submit, and its total written in with the dice in the flavor
+ * (`+5[Luck Burn 2d3]`) — the adapter paths keep only the action die and
+ * flat numbers from the dialog's roll, so a die left in the formula would
+ * be dropped.
+ * @param term {Object}
+ * @return {string}
+ * @private
+ */
+function _luckBurnPiece (term) {
+  const points = Number(term.points) || 0
+  if (points <= 0) return '+0'
+  const label = game.i18n.localize('DCC.RollModifierLuckBurnTerm')
+  const bonus = luckBurnFormula(points, term)
+  if (!term.luckDie) return `${bonus}[${label}]`
+  const roll = new Roll(bonus.slice(1)).evaluateSync()
+  return `+${roll.total}[${label} ${bonus.slice(1)}]`
+}
+
 // Array of constructors for DCC term objects by type
 const DCCTerms = {
   Die: DCCDieTerm,
@@ -238,6 +289,7 @@ const DCCTerms = {
   Modifier: DCCModifierTerm,
   CheckPenalty: DCCCheckPenaltyTerm,
   Spellburn: DCCSpellburnTerm,
+  LuckBurn: DCCLuckBurnTerm,
   Compound: DCCCompoundTerm,
   FleetingLuck: DCCFleetingLuckTerm
 }
@@ -325,6 +377,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       modifyBonus: RollModifierDialog.#modifyBonus,
       applyPreset: RollModifierDialog.#applyPreset,
       modifySpellburn: RollModifierDialog.#modifySpellburn,
+      modifyLuckBurn: RollModifierDialog.#modifyLuckBurn,
       spellburnAdjustHP: RollModifierDialog.#spellburnAdjustHP,
       resetTerm: RollModifierDialog.#resetTerm,
       checkboxChange: RollModifierDialog.#checkboxChange
@@ -448,6 +501,9 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const flavored = function (piece, term) {
       if (term.type === 'Spellburn' && piece && parseInt(piece) !== 0) {
         return `${piece}[${game.i18n.localize('DCC.RollModifierSpellburnTerm')}]`
+      }
+      if (term.type === 'LuckBurn') {
+        return _luckBurnPiece(term)
       }
       return piece
     }
@@ -656,6 +712,28 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         this._updateSpellburnHpRow(index)
       }
     }
+  }
+
+  /**
+   * Modify a Luck burn term: one point more or less, between 0 and the
+   * actor's Luck
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #modifyLuckBurn (event, target) {
+    event.preventDefault()
+    const index = target.dataset.term
+    const term = this.getTermByIndex(index)
+    if (!term) return
+    const points = Math.min(Math.max((term.points || 0) + parseInt(target.dataset.mod), 0), term.lckStart)
+    term.points = points
+    term.lck = term.lckStart - points
+    const formField = this.element.querySelector('#term-' + index)
+    if (formField) formField.value = luckBurnFormula(points, term)
+    const luckField = this.element.querySelector(`#luck-burn-lck-${index}`)
+    if (luckField) luckField.value = term.lck
   }
 
   /**
