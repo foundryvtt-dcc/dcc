@@ -47,62 +47,73 @@ read the code before it runs.
   on from the approved SHA.
 
 **Container hardening:** read-only root filesystem, `/work` wiped before every
-job, ephemeral runner registration (one job per registration), no sudo,
+job, Foundry and dcc-core-book in a root-owned cache that jobs can't modify, ephemeral runner registration (one job per registration), no sudo,
 dropped capabilities, and a job environment with no credentials. The
 registration PAT stays in the root phase of the entrypoint.
 
 ## One-time setup
 
-### 1. Files on the Coolify host
+### 1. Where Foundry, the license and dcc-core-book come from
 
-The container mounts two host directories read-only. Defaults are below;
-override them with `FOUNDRY_INSTALL_DIR` / `FOUNDRY_USERDATA_DIR` in Coolify.
+Nothing is copied to the host by hand:
 
-```
-/srv/dcc-e2e/foundryvtt/                     Foundry v14 "Node.js" build (main.js, package.json, …)
-/srv/dcc-e2e/userdata/Config/license.json    a signed license.json
-/srv/dcc-e2e/userdata/Data/modules/dcc-core-book/   module with COMPILED packs
-```
+- **Foundry and the license** come from your existing **felddy/foundryvtt**
+  container. It already uses your foundryvtt.com login (set in Coolify) to
+  download the Foundry zip into `/data/container_cache` and to write
+  `/data/Config/license.json`. The runner mounts that volume **read-only**,
+  unpacks the newest cached zip into its own cache volume (once per version)
+  and copies the license into each job. Your Foundry credentials never reach
+  the runner.
+- **dcc-core-book** is cloned from GitHub when the container starts and
+  compiled (`pnpm install` + `pnpm run todb`) only when `main` has moved. The
+  compiled module lives in the root-owned cache volume, so jobs can read it
+  but can't change it.
 
-From the Mac, with the live install as the source:
+Find the name of felddy's data volume on the Coolify host:
 
 ```bash
-HOST=coolify-box   # ssh alias
-ssh $HOST 'sudo mkdir -p /srv/dcc-e2e/userdata/Config /srv/dcc-e2e/userdata/Data/modules && sudo chown -R $USER /srv/dcc-e2e'
-rsync -a --delete ~/Applications/foundry-14/ $HOST:/srv/dcc-e2e/foundryvtt/
-rsync -a ~/FoundryVTT-Next/Config/license.json $HOST:/srv/dcc-e2e/userdata/Config/
-rsync -a --delete ~/FoundryVTT-Next/Data/modules/dcc-core-book/ $HOST:/srv/dcc-e2e/userdata/Data/modules/dcc-core-book/
-# The container's `runner` user is uid 1001 and needs read access
-ssh $HOST 'sudo chown -R 1001:1001 /srv/dcc-e2e && sudo chmod -R go-rwx /srv/dcc-e2e'
+docker volume ls | grep -i foundry          # e.g. abc123_foundry-data
+docker inspect <felddy-container> --format '{{range .Mounts}}{{.Name}} -> {{.Destination}}{{"\n"}}{{end}}'
 ```
 
-The Foundry Node.js build is platform-independent, so the Mac copy works on
-Linux. You can also download the Linux/Node.js zip from foundryvtt.com. Make
-sure `dcc-core-book` has its LevelDB packs compiled (`npm run todb` in the
-module); the compiled files are gitignored.
+You want the volume mounted at `/data`. Check that its download cache is
+populated (`CONTAINER_CACHE` is on by default in felddy):
 
-### 2. Registration token
+```bash
+docker run --rm -v <volume>:/data:ro alpine ls /data/container_cache /data/Config
+```
+
+If felddy uses a host bind mount instead of a named volume, replace the
+`felddy-data` volume in `docker-compose.yml` with that path:
+`- /path/on/host:/mnt/felddy:ro`.
+
+### 2. Personal access token
 
 Create a **fine-grained personal access token** with:
 
-- Resource owner `foundryvtt-dcc`, repository access limited to `dcc`
-- Repository permissions: **Administration: Read and write** (needed to mint
-  runner registration tokens; nothing else)
+- Resource owner `foundryvtt-dcc`, repository access limited to `dcc` and
+  `dcc-core-book`
+- Repository permissions: **Administration: Read and write** (to mint runner
+  registration tokens for `dcc`) and **Contents: Read** (to clone
+  `dcc-core-book`)
 
-It's used only by the entrypoint's root phase to fetch a one-hour
-registration token on each restart. Set a calendar reminder for its expiry.
+Only the entrypoint's root phase uses it, before it drops to the job user.
+Set a calendar reminder for its expiry.
 
 ### 3. Coolify resource
 
 1. **New Resource → Docker Compose**, source: the `foundryvtt-dcc/dcc` repo,
    branch `main`, base directory `/deploy/e2e-runner`, compose file
    `docker-compose.yml`.
-2. Environment variables: `GH_RUNNER_PAT` (secret). Optionally set
-   `RUNNER_NAME`, `FOUNDRY_INSTALL_DIR` and `FOUNDRY_USERDATA_DIR`.
+2. Environment variables: `GH_RUNNER_PAT` (secret) and `FELDDY_DATA_VOLUME`.
+   Optionally set `RUNNER_NAME`, and `FOUNDRY_VERSION` to pin a specific
+   cached build (e.g. `14.369`) instead of the newest one.
 3. Deploy. **Settings → Actions → Runners** on the repo should show the runner
    as *Idle* with the `dcc-e2e` label.
 
-The host needs about 4 GB RAM free for Foundry plus headless Chromium, and a
+The first start takes a few minutes: it unpacks Foundry and installs and
+compiles dcc-core-book. Later restarts (one per job) take seconds unless
+something changed. The host needs about 4 GB RAM free for Foundry plus headless Chromium, and a
 few GB of disk for the work volume. Both amd64 and arm64 hosts work.
 
 ### 4. GitHub repository settings
@@ -137,8 +148,8 @@ Things that may need attention on the first Linux run:
 |------|------|-----|
 | Runner version | Monthly, or when GitHub warns the runner is outdated | Bump the `FROM` tag in `Dockerfile`, redeploy |
 | Playwright | When `@playwright/test` changes in the lockfile | Bump `PLAYWRIGHT_VERSION` in `Dockerfile` to match, redeploy. Until then the e2e job fails with "Executable doesn't exist" |
-| Foundry | After a Foundry update you want CI to test against | Re-rsync `/srv/dcc-e2e/foundryvtt` (and the license if re-signed) |
-| dcc-core-book | When the module changes | Re-rsync it with compiled packs |
+| Foundry | When felddy updates | Nothing, unless `FOUNDRY_VERSION` is pinned: the runner picks up the newest zip in felddy's cache on its next restart |
+| dcc-core-book | When the module changes | Nothing: recompiled automatically when `main` moves |
 | PAT | Before expiry | New token → update `GH_RUNNER_PAT` in Coolify → restart |
 | Claude token | If triage starts reporting "Claude run failed" | Re-run `claude setup-token`, update the secret |
 

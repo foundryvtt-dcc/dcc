@@ -1,8 +1,8 @@
 # Self-hosted GitHub Actions runner for the DCC E2E suite. See README.md.
 #
-# The image holds tools only. Foundry itself, the license and the
-# dcc-core-book module are mounted read-only at runtime, so nothing licensed
-# ends up in an image layer.
+# The image holds tools only. Foundry and the license come from the
+# felddy/foundryvtt container's data volume at runtime, and dcc-core-book is
+# cloned from GitHub, so nothing licensed ends up in an image layer.
 
 # Bump at least monthly: the runner runs with --disableupdate (its install dir
 # is read-only), and GitHub stops sending jobs to runners that fall too far
@@ -20,7 +20,7 @@ ARG PLAYWRIGHT_VERSION=1.63.0
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl git jq procps util-linux \
+ && apt-get install -y --no-install-recommends ca-certificates curl git jq procps rsync unzip util-linux \
  && curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && npm install -g "pnpm@${PNPM_VERSION}" \

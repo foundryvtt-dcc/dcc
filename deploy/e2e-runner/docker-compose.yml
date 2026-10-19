@@ -1,6 +1,6 @@
 # Coolify: add this as a Docker Compose resource with base directory
-# /deploy/e2e-runner. Set GH_RUNNER_PAT in Coolify's environment variables
-# (mark it as a secret). See README.md for the host paths below.
+# /deploy/e2e-runner. Set GH_RUNNER_PAT and FELDDY_DATA_VOLUME in Coolify's
+# environment variables (mark the PAT as a secret). See README.md.
 services:
   runner:
     build: .
@@ -11,6 +11,8 @@ services:
       RUNNER_NAME: ${RUNNER_NAME:-coolify-dcc-e2e}
       RUNNER_LABELS: dcc-e2e
       DCC_E2E_PORT: '30100'
+      # Pin a Foundry build from felddy's cache; default is the newest zip.
+      FOUNDRY_VERSION: ${FOUNDRY_VERSION:-}
     # A job may leave nothing behind outside /work, which the entrypoint
     # wipes before each registration.
     read_only: true
@@ -18,8 +20,12 @@ services:
       - /tmp:size=2g,mode=1777
     volumes:
       - work:/work
-      - ${FOUNDRY_INSTALL_DIR:-/srv/dcc-e2e/foundryvtt}:/opt/foundryvtt:ro
-      - ${FOUNDRY_USERDATA_DIR:-/srv/dcc-e2e/userdata}:/opt/foundry-userdata:ro
+      # Unpacked Foundry build + compiled dcc-core-book, root-owned so jobs
+      # can read but not alter them.
+      - cache:/cache
+      # felddy/foundryvtt's /data volume: only container_cache/*.zip and
+      # Config/license.json are read.
+      - felddy-data:/mnt/felddy:ro
     # Chromium needs more than Docker's 64 MB default /dev/shm.
     shm_size: 1gb
     security_opt:
@@ -27,7 +33,8 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      # Root-phase entrypoint only: wipe and chown /work, then drop to `runner`.
+      # Root-phase entrypoint only: provision /work and /cache, then drop to
+      # `runner`.
       - CHOWN
       - DAC_OVERRIDE
       - FOWNER
@@ -37,3 +44,7 @@ services:
 
 volumes:
   work:
+  cache:
+  felddy-data:
+    external: true
+    name: ${FELDDY_DATA_VOLUME:?set to the felddy container's data volume name (docker volume ls)}
