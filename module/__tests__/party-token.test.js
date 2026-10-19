@@ -51,6 +51,7 @@ function gatherFixture (events = []) {
         events.push(actorId === party.id ? 'party-move' : 'member-move')
         // TokenDocument.x/y are integer fields: Foundry rounds them on save.
         const rounded = { x: Math.round(waypoint.x), y: Math.round(waypoint.y) }
+        if (waypoint.elevation !== undefined) rounded.elevation = waypoint.elevation
         Object.assign(data, rounded)
         Object.assign(token, rounded)
         return true
@@ -200,6 +201,51 @@ describe('gather workflow', () => {
     expect(partyToken.update).toHaveBeenCalledExactlyOnceWith({ hidden: false })
     expect(partyToken.toObject()).toEqual({ ...before, x: 200, y: 100, hidden: false })
   })
+
+  test('places a fresh anchor on the target level base elevation', async () => {
+    const { scene, a, b, gather } = gatherWorkflowFixture()
+    a.level = 'upper'
+    b.level = 'upper'
+    const result = await gather({ levelId: 'upper' })
+    const anchor = scene.tokens.get(result.partyTokenId)
+    expect(anchor.level).toBe('upper')
+    expect(anchor.elevation).toBe(10)
+  })
+
+  test('keeps the reused anchor elevation when gathering', async () => {
+    const { scene, partyToken, gather } = gatherWorkflowFixture()
+    await partyToken.update({ elevation: 17 })
+    scene.tokens.push(partyToken)
+    partyToken.move.mockClear()
+    await expect(gather()).resolves.toMatchObject({ gathered: 2 })
+    expect(partyToken.move).toHaveBeenCalledWith({ x: 200, y: 100, action: 'displace', snapped: true })
+    expect(partyToken.elevation).toBe(17)
+  })
+
+  test('restores the reused anchor position and elevation after a failed gather', async () => {
+    const { party, scene, partyToken, gather } = gatherWorkflowFixture()
+    await partyToken.update({ x: 700, y: 800, hidden: true, elevation: 17 })
+    scene.tokens.push(partyToken)
+    const remove = scene.deleteEmbeddedDocuments.getMockImplementation()
+    scene.deleteEmbeddedDocuments.mockImplementationOnce(async (...args) => { await remove(...args); throw new Error('after-delete') })
+    await expect(gather()).rejects.toMatchObject({ code: 'member-delete-failed', rollbackComplete: true })
+    const anchor = scene.tokens.get(partyToken.id)
+    expect(anchor.x).toBe(700)
+    expect(anchor.y).toBe(800)
+    expect(anchor.elevation).toBe(17)
+    expect(anchor.hidden).toBe(true)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
+  })
+
+  test('retains an unattributed same-actor creation and blocks until inspection', async () => {
+    const { party, scene, make, gather } = gatherWorkflowFixture()
+    const external = make('eeeeeeeeeeeeeeee', party.id)
+    scene.createEmbeddedDocuments.mockImplementationOnce(async () => { scene.tokens.push(external); return [] })
+    await expect(gather()).rejects.toMatchObject({ code: 'party-create-failed', rollbackComplete: false })
+    expect(scene.tokens.get(external.id)).toBe(external)
+    expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeDefined()
+    expect(service.blockedPartyIds.has(party.id)).toBe(true)
+  })
 })
 
 async function deployWorkflowFixture () {
@@ -245,6 +291,16 @@ describe('snapshot deploy workflow', () => {
     expect(party.getFlag('dcc', 'partyTokenSnapshots')).toBeUndefined()
     // Without a snapshot the prototype path needs a scene free of member tokens.
     await expect(deploy()).rejects.toMatchObject({ code: 'member-tokens-present' })
+  })
+
+  test('keeps saved elevation when deploying on the same level', async () => {
+    const { scene, snapshot, deploy } = await deployWorkflowFixture()
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+    for (const member of snapshot.members) {
+      const created = scene.tokens.filter(token => token.actorId === member.actorId)
+      expect(created).toHaveLength(1)
+      expect(created[0].elevation).toBe(member.tokenData.elevation)
+    }
   })
 
   test('rejects a missing snapshot in the snapshot preflight', async () => {
@@ -412,6 +468,26 @@ describe('prototype deploy workflow', () => {
     expect(service.blockedPartyIds.has(party.id)).toBe(false)
   })
 
+  test('a partial prototype creation rolls back its own tokens and keeps the marker visible', async () => {
+    const { party, scene, partyToken, deploy } = prototypeDeployFixture()
+    const create = scene.createEmbeddedDocuments.getMockImplementation()
+    scene.createEmbeddedDocuments.mockImplementationOnce(async (type, data, options) => create(type, data.slice(0, 1), options))
+    await expect(deploy()).rejects.toMatchObject({ code: 'member-create-failed', rollbackComplete: true })
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toHaveLength(0)
+    expect(partyToken.hidden).toBe(false)
+    expect(service.blockedPartyIds.has(party.id)).toBe(false)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+  })
+
+  test('a failed marker hide rolls back the created members and keeps the anchor visible', async () => {
+    const { scene, partyToken, deploy } = prototypeDeployFixture()
+    partyToken.update.mockRejectedValueOnce(new Error('hide'))
+    await expect(deploy()).rejects.toMatchObject({ code: 'party-hide-failed', rollbackComplete: true })
+    expect(scene.tokens.filter(token => ['a', 'b'].includes(token.actorId))).toHaveLength(0)
+    expect(partyToken.hidden).toBe(false)
+    await expect(deploy()).resolves.toMatchObject({ deployed: 2 })
+  })
+
   test('refuses the prototype path while eligible member tokens stand on the scene', async () => {
     const { party, scene, partyToken, make, deploy } = prototypeDeployFixture()
     const existing = make('aaaaaaaaaaaaaaaa', 'a')
@@ -445,6 +521,15 @@ describe('action derivation and geometry', () => {
     expect(service.derivePartyTokenAction(party, scene)).toBe('deploy')
   })
 
+  test('matches only started combats attached to the scene', () => {
+    const { scene, a } = gatherFixture()
+    const check = combat => { game.combats = [combat]; return service.isTokenInRunningCombat(a, scene) }
+    expect(check({ started: true, scene: null, combatants: [{ tokenId: a.id, sceneId: scene.id }] })).toBe(true)
+    expect(check({ started: true, scene: { id: scene.id }, combatants: [{ tokenId: a.id }] })).toBe(true)
+    expect(check({ started: true, scene: { id: 'other' }, combatants: [{ tokenId: a.id }] })).toBe(false)
+    expect(check({ started: false, combatants: [{ tokenId: a.id, sceneId: scene.id }] })).toBe(false)
+  })
+
   test.each(['square', 'hexagonal', 'gridless'])('computeDeployPlacements delegates %s snapping and keeps cells unique', type => {
     const scene = placementFixture(type)
     const members = [{ width: 2, height: 1 }, { width: 1, height: 2 }, { width: 1, height: 1 }]
@@ -463,7 +548,7 @@ describe('action derivation and geometry', () => {
 
 function placementFixture (type) {
   const sizeY = type === 'hexagonal' ? 100 * 2 / Math.sqrt(3) : 100
-  const grid = { size: 100, sizeX: 100, sizeY, isHexagonal: type === 'hexagonal', isGridless: type === 'gridless' }
+  const grid = { size: 100, sizeX: 100, sizeY, distance: 5, isHexagonal: type === 'hexagonal', isGridless: type === 'gridless' }
   grid.getSnappedPoint = vi.fn(({ x, y }) => {
     if (grid.isGridless) return { x, y }
     const step = grid.isHexagonal ? 75 : 100
@@ -471,14 +556,17 @@ function placementFixture (type) {
   })
   const scene = { grid }
   vi.stubGlobal('TokenDocument', class {
-    constructor (data, { parent }) { Object.assign(this, data); this.parent = parent }
+    constructor (data, { parent }) { Object.assign(this, data); this.parent = parent; this.elevation ??= 0 }
     getSize () { return { width: (this.width ?? 1) * this.parent.grid.sizeX, height: (this.height ?? 1) * this.parent.grid.sizeY } }
     getCenterPoint ({ x = 0, y = 0 } = {}) {
       const { width, height } = this.getSize()
       return { x: x + width / 2, y: y + height / 2 }
     }
 
-    getSnappedPosition (position) { return this.parent.grid.getSnappedPoint(position) }
+    getSnappedPosition (position) {
+      const { grid } = this.parent
+      return { ...grid.getSnappedPoint(position), elevation: grid.isGridless ? this.elevation : Math.round(this.elevation / grid.distance) * grid.distance }
+    }
   })
   return scene
 }

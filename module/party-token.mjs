@@ -397,7 +397,10 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       const document = await party.getTokenDocument({ ...center, level: levelId }, { parent: scene })
       if (!document.actorLink || document.actorId !== party.id) throw new Error(code)
       const pivot = document.getCenterPoint({ x: 0, y: 0 })
-      document.updateSource(document.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y }))
+      const snapped = document.getSnappedPosition({ x: center.x - pivot.x, y: center.y - pivot.y })
+      // A level band can start above 0: the anchor belongs on the target level's
+      // floor, like every other token this module creates.
+      document.updateSource({ x: snapped.x, y: snapped.y, elevation: scene.levels.get(levelId).elevation.base })
       document.updateSource({ hidden: false })
       const before = new Set([...scene.tokens].map(token => token.id))
       let created
@@ -426,7 +429,9 @@ export async function gatherPartyTokens ({ party, scene, levelId, tokenIds = [],
       // TokenDocument.x/y are integer fields and Foundry rounds them on save, so
       // round here too: a fractional hex snap would never match the persisted
       // document and the verification below would abort.
-      const position = { ...snapped, x: Math.round(snapped.x), y: Math.round(snapped.y) }
+      // Only x/y: `snapped` also carries a grid-rounded elevation, and spreading it
+      // into the waypoint would move the anchor vertically on every gather.
+      const position = { x: Math.round(snapped.x), y: Math.round(snapped.y) }
       // A plain position update runs through v14's animated movement pipeline and
       // does not reliably reach the target. The supported way to relocate the
       // anchor deterministically is the movement API with an explicit `displace`
