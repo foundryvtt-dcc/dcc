@@ -173,7 +173,7 @@ describe('burning Luck after the roll', () => {
       { ability: 'lck', change: -2, type: 'luckSpend', source: 'Fortitude Save' }, { announce: false })
     expect(ChatMessage.create).toHaveBeenCalledTimes(1)
     expect(format).toHaveBeenCalledWith('DCC.LuckBurnAfterRoll',
-      { name: 'Burner', points: 2, bonus: '+4', before: 13, after: 17 })
+      { name: 'Burner', roll: 'Fortitude Save', points: 2, bonus: '+4', before: 13, after: 17 })
     format.mockRestore()
   })
 })

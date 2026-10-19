@@ -9,7 +9,7 @@ import {
 import { actorToCharacter, foundrySaveIdToLib } from '../adapter/character-accessors.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
 import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } from '../adapter/chat-renderer.mjs'
-import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
+import { dialogModifierLines, promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine } from '../action-dice-tracker.mjs'
@@ -302,18 +302,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
       roll: { die: libDie }
     }
 
-    const modifiers = []
-    if (prompt.modifierTotal !== 0) {
-      modifiers.push({
-        kind: 'add',
-        value: prompt.modifierTotal,
-        origin: {
-          category: 'other',
-          id: 'dialog-modifier',
-          label: options.title || flavor
-        }
-      })
-    }
+    const modifiers = dialogModifierLines(prompt, options.title || flavor)
 
     logDispatch('rollAbilityCheck', 'adapter', {
       abilityId,
@@ -875,18 +864,7 @@ export const RollsCheckMixin = (Base) => class extends Base {
       roll: { die: libDie }
     }
 
-    const modifiers = []
-    if (prompt.modifierTotal !== 0) {
-      modifiers.push({
-        kind: 'add',
-        value: prompt.modifierTotal,
-        origin: {
-          category: 'other',
-          id: 'dialog-modifier',
-          label: options.title || flavor
-        }
-      })
-    }
+    const modifiers = dialogModifierLines(prompt, options.title || flavor)
 
     logDispatch('rollSavingThrow', 'adapter', {
       saveId,

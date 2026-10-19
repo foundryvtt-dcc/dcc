@@ -116,6 +116,14 @@
        spill over the neighboring buttons. Let these grow instead. */
     height: auto;
     min-height: var(--button-size, 2em);
+
+    /* Core's hover swaps in light text for a dark fill, but the pale
+       background above wins, leaving near-white text on parchment in the
+       light theme. Keep the resting text color and darken the fill. */
+    &:hover {
+      background: rgba(0, 0, 0, 0.12);
+      color: var(--button-text-color);
+    }
   }
 }
 

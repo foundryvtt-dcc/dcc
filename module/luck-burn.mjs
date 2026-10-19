@@ -182,6 +182,7 @@ export async function burnLuckAfterRoll (message) {
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<p>${game.i18n.format('DCC.LuckBurnAfterRoll', {
       name: foundry.utils.escapeHTML(actor.name),
+      roll: foundry.utils.escapeHTML(flavor || message.rolls[0].formula),
       points: burn.points,
       bonus: `+${burn.bonus}`,
       before,

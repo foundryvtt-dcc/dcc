@@ -3,8 +3,8 @@
 <div class="term-controls button-row">
   <div class="button-stack">
     <label for="luck-burn-lck-{{index}}">{{localize 'DCC.AbilityLckShort'}}</label>
-    <button data-action="modifyLuckBurn" class="flat-button" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <button data-action="modifyLuckBurn" class="flat-button" data-term="{{index}}" data-mod="+1" aria-label="{{localize 'DCC.LuckBurnMore'}}" data-tooltip="DCC.LuckBurnMore">{{localize 'DCC.RollModifierAddBonus'}}</button>
     <input class="mb-8 mt-5" id="luck-burn-lck-{{index}}" value="{{lck}}" readonly/>
-    <button data-action="modifyLuckBurn" class="flat-button" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+    <button data-action="modifyLuckBurn" class="flat-button" data-term="{{index}}" data-mod="-1" aria-label="{{localize 'DCC.LuckBurnLess'}}" data-tooltip="DCC.LuckBurnLess">{{localize 'DCC.RollModifierSubBonus'}}</button>
   </div>
 </div>
