@@ -86,3 +86,5 @@ Gather the members on the first scene, then place a party token for the same Par
 ## The party token's health bar
 
 The party token's health bar shows the members' combined current and maximum hit points. It updates when members take damage or heal, or when you add or remove members. The bar is read-only: change a member's HP on their own token or sheet, not on the party token.
+
+Existing Party actors and party tokens already placed on a scene get the combined HP bar automatically when the world migrates on the next system update. A Bar 1 attribute the GM configured themselves (anything other than the system default) is left untouched.
