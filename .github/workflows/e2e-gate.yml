@@ -9,7 +9,10 @@
 #
 # Routes:
 #   - maintainer adds the `e2e-approved` label   -> run (human override)
+#   - only docs/, deploy/, .github/ or *.md      -> pass, no run
 #   - same-repo PR by a member/collaborator      -> run, no triage
+#   - Dependabot bump of Playwright or the CLI   -> run, no triage
+#   - other Dependabot bumps, drafts             -> nothing
 #   - anyone else                                -> Claude triage decides
 # A new push drops `e2e-approved` and goes through the gate again.
 
@@ -56,6 +59,7 @@ jobs:
       ACTION: ${{ github.event.action }}
       SENDER: ${{ github.event.sender.login }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
     steps:
       - name: Checkout base branch (trusted code only)
         uses: actions/checkout@v7.0.1
@@ -78,14 +82,32 @@ jobs:
                 gh api -X DELETE "repos/$REPO/issues/$PR/labels/$APPROVAL_LABEL" >/dev/null 2>&1 || true
                 route=skip ;;
             esac
-          elif [ "$IS_DRAFT" = "true" ] || [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
-            # Dependabot runs get no Actions secrets, and its PRs only touch
-            # dependency files a maintainer must approve anyway.
+          elif [ "$IS_DRAFT" = "true" ]; then
             route=skip
+          elif [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            # Bumps to the tools the suite runs on get an E2E run, without a
+            # triage (the branch is Dependabot's own). Other bumps don't.
+            if printf '%s' "$PR_TITLE" | grep -qE '^chore\(deps(-dev)?\): bump (@playwright/test|@foundryvtt/foundryvtt-cli) from '; then
+              route=trusted
+            else
+              route=skip
+            fi
           elif [ "$HEAD_REPO" = "$REPO" ] && { [ "$AUTHOR_ASSOCIATION" = "OWNER" ] || [ "$AUTHOR_ASSOCIATION" = "MEMBER" ] || [ "$AUTHOR_ASSOCIATION" = "COLLABORATOR" ]; }; then
             route=trusted
           else
             route=triage
+          fi
+          # Docs, deploy files and workflows aren't something a PR's E2E run
+          # can exercise (workflows always run from main), so a PR touching
+          # only those passes without a run or a triage.
+          if [ "$route" = "trusted" ] || [ "$route" = "triage" ]; then
+            code_files=$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" --jq '.[].filename' \
+              | grep -cvE '^(docs/|deploy/|\.github/)|\.md$' || true)
+            if [ "$code_files" = "0" ]; then
+              route=nocode
+              gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=success -f context="$STATUS_CONTEXT" \
+                -f description="Skipped: only docs, deploy or workflow files changed" >/dev/null
+            fi
           fi
           echo "route=$route" | tee -a "$GITHUB_OUTPUT"
 
@@ -134,7 +156,7 @@ jobs:
 
       - name: Record decision
         id: decision
-        if: steps.route.outputs.route != 'skip'
+        if: steps.route.outputs.route != 'skip' && steps.route.outputs.route != 'nocode'
         env:
           ROUTE: ${{ steps.route.outputs.route }}
           DECISION: ${{ steps.triage.outputs.decision }}
