@@ -29,6 +29,7 @@ import { registerSocket } from './socket.mjs'
 import { registerAutoApplyDamageHandler } from './auto-apply-damage.mjs'
 import { registerEnhancedCardSocket } from './chat/enhanced-attack-card.mjs'
 import { registerActionDiceSocketHandler } from './action-dice-tracker.mjs'
+import { registerPartyTokenSocket } from './party-token.mjs'
 
 /**
  * Determine whether to show the Release Notes/Credits chat card for this user,
@@ -88,6 +89,7 @@ export async function onReady () {
   registerAutoApplyDamageHandler()
   registerEnhancedCardSocket()
   registerActionDiceSocketHandler()
+  registerPartyTokenSocket()
 
   checkReleaseNotes()
   // Await world migration before continuing the ready chain so

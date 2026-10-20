@@ -1,4 +1,4 @@
-/* global foundry, game, ui */
+/* global CONST, foundry, game, ui */
 
 import { getSingleActionDie, inferWeaponDie } from './utilities.js'
 import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
@@ -92,8 +92,13 @@ async function buildClassNameLookup () {
  * 0.74: five rules-automation settings now default on (#962). Existing
  * worlds that never saved a value get the old `false` written explicitly,
  * so the new defaults only reach new worlds (see `pinPreviousSettingDefaults`).
+ *
+ * 0.75: Party prototype tokens and placed Party tokens adopt the
+ * `aggregate.hp` bar (#911) when their bar1 is still the system default.
+ * A separate ceiling from 0.74 so worlds already swept for #962 still adopt
+ * the bar.
  */
-export const NEEDS_MIGRATION_VERSION = 0.74
+export const NEEDS_MIGRATION_VERSION = 0.75
 
 /**
  * World settings whose default changed from `false` to `true` in 0.74
@@ -420,6 +425,27 @@ const migrateCompendium = async function (pack) {
 /* -------------------------------------------- */
 
 /**
+ * Default bar for Party tokens (#911). Only replaces the system default (or an
+ * empty value), never a deliberately chosen attribute, and only enables bars
+ * when the display mode is still NONE. Returns token-document keys; callers
+ * prefix `prototypeToken.` for actor data.
+ *
+ * @param {{ type?: string, barAttribute?: string|null, displayBars?: number }} token
+ * @returns {Object|null}
+ */
+export function partyTokenBarUpdate ({ type, barAttribute, displayBars }) {
+  if (type !== 'Party' || barAttribute === 'aggregate.hp') return null
+  const systemDefault = game.system?.primaryTokenAttribute ?? 'attributes.hp'
+  const isEmpty = barAttribute === undefined || barAttribute === null || barAttribute === ''
+  if (!isEmpty && barAttribute !== systemDefault) return null
+  const update = { 'bar1.attribute': 'aggregate.hp' }
+  if (displayBars === CONST.TOKEN_DISPLAY_MODES.NONE) {
+    update.displayBars = CONST.TOKEN_DISPLAY_MODES.HOVER
+  }
+  return update
+}
+
+/**
  * Migrate a single Actor document to incorporate latest data model changes
  * Return an Object of updateData to be applied
  *
@@ -577,6 +603,22 @@ export const migrateActorData = async function (actor) {
     }
   }
 
+  // Adopt the Party aggregate bar on the prototype token (#911), mirroring
+  // what new Party actors get in `onPreCreateActor`. Synthetic actors of
+  // unlinked tokens have no prototype; the scene sweep below handles the token.
+  const partyBarUpdate = actor.isToken
+    ? null
+    : partyTokenBarUpdate({
+      type: actor.type,
+      barAttribute: actor._source?.prototypeToken?.bar1?.attribute,
+      displayBars: actor._source?.prototypeToken?.displayBars
+    })
+  if (partyBarUpdate) {
+    for (const [key, value] of Object.entries(partyBarUpdate)) {
+      updateData[`prototypeToken.${key}`] = value
+    }
+  }
+
   // Migrate Owned Items
   // Player actors pass their current damage bonuses so the legacy weapon-die
   // split can attribute a matching baked-in modifier (#907); NPC (and Party)
@@ -700,10 +742,15 @@ export const migrateItemData = function (item, options = {}) {
  * tokens whose base actor is missing have no synthetic actor and are
  * skipped.
  *
+ * Also sweeps placed Party tokens (#911) at the token-document level, since a
+ * token's bar1 does not inherit from `prototypeToken`. Exported for unit
+ * testing (internal migration helper).
+ *
  * @param {Scene} scene  The Scene whose tokens to migrate
- * @return {Promise<number>}  The number of token actors that were updated
+ * @return {Promise<number>}  The number of tokens (actor or token document)
+ *   that were updated
  */
-const migrateSceneData = async function (scene) {
+export const migrateSceneData = async function (scene) {
   let migrated = 0
   for (const token of scene.tokens) {
     if (token.actorLink || !token.actor) continue
@@ -713,5 +760,26 @@ const migrateSceneData = async function (scene) {
       migrated++
     }
   }
+
+  // Placed Party tokens keep their own bar1 (linked tokens are skipped above,
+  // and token documents don't inherit prototypeToken). Sweep them separately.
+  // Compendium scenes are read-only here: their Party prototypes are covered by
+  // `migrateActorData`, and writing embedded documents would target the world.
+  if (scene.pack) return migrated
+  const tokenUpdates = []
+  for (const token of scene.tokens) {
+    if (token.actor?.type !== 'Party') continue
+    const update = partyTokenBarUpdate({
+      type: token.actor.type,
+      barAttribute: token._source?.bar1?.attribute,
+      displayBars: token._source?.displayBars
+    })
+    if (update) tokenUpdates.push({ _id: token.id, ...update })
+  }
+  if (tokenUpdates.length > 0) {
+    await scene.updateEmbeddedDocuments('Token', tokenUpdates)
+    migrated += tokenUpdates.length
+  }
+
   return migrated
 }

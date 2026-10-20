@@ -26,6 +26,44 @@ const test = createSessionTest({
   onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
 })
 
+test('party token control stays state-neutral in the existing sheet', async ({ page }) => {
+  await cleanProbeState(page)
+  consoleErrors.length = 0
+  const { partyId } = await createParty(page)
+  try {
+    await openActorSheet(page, 'PARTY Test Party')
+    const button = page.locator('.party-name [data-action="togglePartyTokens"]')
+    await expect(button).toBeVisible()
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    // The icon is neutral too; capture it so the snapshot state cannot change it.
+    const iconClass = await button.locator('i').evaluate(element => element.className)
+    await page.evaluate(async id => {
+      const actor = game.actors.get(id)
+      await actor.setFlag('dcc', 'partyTokenSnapshots', { sceneId: 'unavailable', members: [] })
+      await actor.sheet.render(true)
+    }, partyId)
+    // Neither label nor icon follow the saved snapshot state.
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    await expect(button.locator('i')).toHaveClass(iconClass)
+    await page.evaluate(async id => {
+      const actor = game.actors.get(id)
+      await actor.unsetFlag('dcc', 'partyTokenSnapshots')
+      await actor.sheet.render(true)
+    }, partyId)
+    await expect(button).toHaveAccessibleName('Gather / Deploy')
+    await expect(button.locator('i')).toHaveClass(iconClass)
+    const layout = await button.evaluate(element => {
+      const header = element.closest('.party-name')
+      return { width: header.getBoundingClientRect().width, overflow: header.scrollWidth > header.clientWidth }
+    })
+    expect(layout.width).toBeLessThan(800)
+    expect(layout.overflow).toBe(false)
+    expect(significantConsoleErrors(consoleErrors)).toEqual([])
+  } finally {
+    await cleanProbeState(page)
+  }
+})
+
 /** Delete probe actors, combats, and open windows left over from a test. */
 async function cleanProbeState (page) {
   await page.evaluate(async () => {

@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCPartySheet from '../party-sheet.js'
+import { togglePartyTokens } from '../party-token.mjs'
+
+vi.mock('../party-token.mjs', () => ({ togglePartyTokens: vi.fn() }))
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -13,6 +16,45 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 // form-data instance methods by invoking them with a faked `this`.
 
 const proto = DCCPartySheet.prototype
+
+describe('party token sheet control', () => {
+  test('static action passes initiating scene, level and unchanged selection to the controller', async () => {
+    const actor = { id: 'party' }
+    const scene = { id: 'source' }
+    const selection = [{ document: { id: 'member' } }, { document: { id: 'foreign' } }]
+    globalThis.canvas = { scene, level: { id: 'upstairs' }, tokens: { controlled: selection } }
+    await DCCPartySheet.DEFAULT_OPTIONS.actions.togglePartyTokens.call({ actor })
+    expect(togglePartyTokens).toHaveBeenCalledWith({ party: actor, scene, levelId: 'upstairs', selection })
+  })
+
+  test('header button is GM-only, accessible and neutral', () => {
+    const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
+    const guarded = template.match(/{{#if canManagePartyTokens}}([\s\S]*?){{\/if}}/)
+    expect(guarded?.[1]).toContain('data-action="togglePartyTokens"')
+    // The label, tooltip and accessible name all resolve the same fixed key:
+    // the button never derives its text from the party's snapshot state.
+    expect(template).toContain('aria-label="{{localize \'DCC.PartyTokenGatherDeploy\'}}"')
+    expect(template).toContain('title="{{localize \'DCC.PartyTokenGatherDeploy\'}}"')
+    expect(template).toContain("{{localize 'DCC.PartyTokenGatherDeploy'}}")
+    expect(template).toContain('class="fas fa-people-group"')
+    expect(template).not.toContain('partyTokenActionLabel')
+  })
+
+  test.each([true, false])('prepared sheet context exposes management only for GM=%s', async isGM => {
+    const parent = Object.getPrototypeOf(proto)
+    const prepare = vi.spyOn(parent, '_prepareContext').mockResolvedValue({})
+    const actor = { getFlag: () => [], system: { details: { notes: { value: '' } } } }
+    globalThis.game.user = { isGM }
+    try {
+      const sheet = new DCCPartySheet({ document: actor, dragDrop: [] })
+      const context = await sheet._prepareContext({})
+      expect(context.canManagePartyTokens).toBe(isGM)
+      // State-dependent label/icon contexts are gone: the template is fixed.
+      expect(context).not.toHaveProperty('partyTokenActionLabel')
+      expect(context).not.toHaveProperty('partyTokenActionIcon')
+    } finally { prepare.mockRestore() }
+  })
+})
 
 beforeEach(() => {
   globalThis.foundry = globalThis.foundry || {}
