@@ -483,7 +483,9 @@ function ensureBuildArtifacts () {
   }
   // Idempotent + fast when the machine cache already has this Playwright
   // version's browsers; a fresh worktree may pin a newer revision than the
-  // main checkout ever downloaded.
+  // main checkout ever downloaded. The self-hosted CI runner bakes its
+  // browsers into a read-only image (deploy/e2e-runner/) and opts out.
+  if (process.env.DCC_E2E_SKIP_BROWSER_INSTALL) return
   execSync('pnpm exec playwright install chromium chromium-headless-shell', { cwd: E2E_DIR, stdio: 'inherit' })
 }
 
