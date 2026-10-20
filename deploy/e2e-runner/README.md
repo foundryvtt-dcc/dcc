@@ -152,7 +152,7 @@ Things that may need attention on the first Linux run:
 | What | When | How |
 |------|------|-----|
 | Runner version | Monthly, or when GitHub warns the runner is outdated | Bump the `FROM` tag in `Dockerfile`, redeploy |
-| Playwright | When `@playwright/test` changes in the lockfile | Bump `PLAYWRIGHT_VERSION` in `Dockerfile` to match, redeploy. Until then the e2e job fails with "Executable doesn't exist" |
+| Playwright | When `@playwright/test` changes in the lockfile | Nothing: the runner installs the browsers `main`'s lockfile pins on its next restart. A PR that bumps Playwright downloads its browsers for that job |
 | Foundry | When felddy updates | Nothing, unless `FOUNDRY_VERSION` is pinned: the runner picks up the newest zip in felddy's cache on its next restart |
 | dcc-core-book | When the module changes | Nothing: recompiled automatically when `main` moves |
 | PAT | Before expiry | New token → update `GH_RUNNER_PAT` in Coolify → restart |

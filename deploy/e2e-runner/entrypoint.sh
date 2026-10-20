@@ -25,7 +25,7 @@ log() { echo "[e2e-runner] $*"; }
 find /work -mindepth 1 -delete
 mkdir -p /work/runner /work/home /work/_work /work/userdata/Config /work/userdata/Data
 cp -a /home/runner/. /work/runner/
-mkdir -p /cache/foundry /cache/modules /cache/root-home
+mkdir -p /cache/foundry /cache/modules /cache/root-home /cache/pw-browsers
 
 # --- Foundry build, from felddy's download cache ---------------------------
 zip="${FOUNDRY_VERSION:+$FELDDY/container_cache/foundryvtt-$FOUNDRY_VERSION.zip}"
@@ -48,6 +48,27 @@ find /cache/foundry -mindepth 1 -maxdepth 1 ! -name "$version" -exec rm -rf {} +
 # Older zips nest the app under resources/app
 [ -f "$foundry_dir/main.js" ] || foundry_dir="$foundry_dir/resources/app"
 [ -f "$foundry_dir/main.js" ] || { echo "No main.js in the unpacked Foundry $version" >&2; exit 1; }
+
+# --- Playwright browsers, matching main's lockfile ------------------------
+# Dependabot auto-merges @playwright/test bumps, so the version comes from
+# main rather than the image.
+pw_version=$(curl -fsSL "https://raw.githubusercontent.com/${GH_REPO}/main/pnpm-lock.yaml" \
+  | sed -nE "s/^  '?@playwright\/test@([0-9][^:']*)'?:.*/\1/p" | head -n1)
+[ -n "$pw_version" ] || { echo "Could not read @playwright/test's version from main's pnpm-lock.yaml" >&2; exit 1; }
+pw_dir="/cache/pw-browsers/$pw_version"
+if [ ! -d "$pw_dir" ]; then
+  log "Installing Playwright $pw_version browsers"
+  rm -rf /cache/pw-browsers/.install
+  HOME=/cache/root-home PLAYWRIGHT_BROWSERS_PATH=/cache/pw-browsers/.install \
+    npm exec --yes "playwright@${pw_version}" -- install chromium chromium-headless-shell
+  mv /cache/pw-browsers/.install "$pw_dir"
+fi
+find /cache/pw-browsers -mindepth 1 -maxdepth 1 ! -name "$pw_version" -exec rm -rf {} +
+# Jobs get a writable browsers dir of links into the cache. A PR on main's
+# Playwright finds everything installed; one that bumps Playwright downloads
+# the new build into /work for that job.
+mkdir -p /work/pw-browsers
+for b in "$pw_dir"/*; do ln -s "$b" /work/pw-browsers/; done
 
 # --- License ---------------------------------------------------------------
 cp "$FELDDY/Config/license.json" /work/userdata/Config/license.json
@@ -73,7 +94,7 @@ if [ "$(cat /cache/modules/.core-book-head 2>/dev/null)" != "$head" ]; then
   echo "$head" > /cache/modules/.core-book-head
 fi
 
-chown -R runner:runner /work
+chown -hR runner:runner /work   # -h: never through the links into /cache
 
 # --- Register and run ------------------------------------------------------
 token=$(curl -fsSL -X POST \
@@ -91,8 +112,7 @@ as_runner=(env -i
   DCC_FOUNDRY_USERDATA=/work/userdata
   DCC_MODULE_SOURCE=/cache/modules
   DCC_E2E_PORT="${DCC_E2E_PORT:-30100}"
-  DCC_E2E_SKIP_BROWSER_INSTALL=1
-  PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+  PLAYWRIGHT_BROWSERS_PATH=/work/pw-browsers
   setpriv --reuid=runner --regid=runner --init-groups --no-new-privs --)
 
 cd /work/runner
@@ -105,5 +125,5 @@ cd /work/runner
   --ephemeral --unattended --replace --disableupdate
 unset token GH_RUNNER_PAT
 
-log "Runner up (Foundry $version, dcc-core-book ${head:0:7})"
+log "Runner up (Foundry $version, dcc-core-book ${head:0:7}, Playwright $pw_version)"
 exec "${as_runner[@]}" ./run.sh
