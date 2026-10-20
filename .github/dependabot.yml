@@ -34,3 +34,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+
+  # Base image of the self-hosted E2E runner (deploy/e2e-runner/). The runner
+  # can't self-update, so this keeps it within GitHub's support window.
+  - package-ecosystem: "docker"
+    directory: "/deploy/e2e-runner"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7

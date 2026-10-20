@@ -1,0 +1,137 @@
+# Runs the Playwright E2E suite for one PR commit on the self-hosted runner
+# (deploy/e2e-runner/). Dispatched by e2e-gate.yml once the commit is approved;
+# a maintainer can also start it by hand from the Actions tab.
+#
+# Being workflow_dispatch, this file always runs from main, so a PR cannot
+# change how it is run. The self-hosted job holds no write token: status
+# updates happen in the GitHub-hosted jobs before and after it.
+
+name: E2E (self-hosted)
+run-name: "E2E PR #${{ inputs.pr }} @ ${{ inputs.sha }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
+        required: true
+        type: string
+      sha:
+        description: Full head commit SHA that was approved
+        required: true
+        type: string
+      approved_by:
+        description: Who or what approved this run
+        required: false
+        type: string
+
+permissions: {}
+
+# One run per PR: a newer approved commit replaces a queued or running one.
+# Across PRs the single runner serializes jobs on its own.
+concurrency:
+  group: e2e-pr-${{ inputs.pr }}
+  cancel-in-progress: true
+
+env:
+  STATUS_CONTEXT: E2E (self-hosted)
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      statuses: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ inputs.pr }}
+      SHA: ${{ inputs.sha }}
+    steps:
+      - name: Validate inputs and that the PR still points at the approved commit
+        run: |
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::bad pr input"; exit 1; }
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::sha must be a full 40-char commit SHA"; exit 1; }
+          head=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          if [ "$head" != "$SHA" ]; then
+            echo "::error::PR #$PR head is now $head, not the approved $SHA; the new push goes through the gate again"
+            exit 1
+          fi
+      - name: Mark running
+        run: |
+          gh api "repos/$REPO/statuses/$SHA" -f state=pending -f context="$STATUS_CONTEXT" \
+            -f description="Running on the self-hosted runner" \
+            -f target_url="$GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null
+
+  e2e:
+    needs: start
+    runs-on: [self-hosted, dcc-e2e]
+    # The full suite takes ~55 min on the runner's CPU-only host.
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+    steps:
+      # Step limits so a stalled download fails fast instead of holding the
+      # single runner until the job limit.
+      - name: Checkout PR head
+        timeout-minutes: 5
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/pull/${{ inputs.pr }}/head
+          persist-credentials: false
+
+      - name: Confirm the checkout is the approved commit
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          actual=$(git rev-parse HEAD)
+          [ "$actual" = "$SHA" ] || { echo "::error::checked out $actual, approved $SHA"; exit 1; }
+
+      - name: Install dependencies
+        timeout-minutes: 10
+        run: pnpm install --frozen-lockfile
+
+      - name: Run E2E suite
+        run: pnpm run e2e:env test
+
+      - name: Stop Foundry
+        if: always()
+        run: pnpm run e2e:env down || true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: e2e-report-pr${{ inputs.pr }}
+          path: |
+            browser-tests/e2e/playwright-report/
+            browser-tests/e2e/test-results/
+            .foundry-server/logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  report:
+    needs: [start, e2e]
+    if: always() && needs.start.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      statuses: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ inputs.sha }}
+      RESULT: ${{ needs.e2e.result }}
+    steps:
+      - name: Report result on the commit
+        run: |
+          case "$RESULT" in
+            success)   state=success; desc="E2E suite passed" ;;
+            cancelled) state=error;   desc="E2E run cancelled (superseded or timed out)" ;;
+            *)         state=failure; desc="E2E suite failed; report is attached to the run" ;;
+          esac
+          gh api "repos/$REPO/statuses/$SHA" -f state="$state" -f context="$STATUS_CONTEXT" \
+            -f description="$desc" -f target_url="$GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null

@@ -1,0 +1,198 @@
+# Decides whether a PR's code may run on the self-hosted E2E runner, then
+# dispatches e2e.yml for that exact commit. See deploy/e2e-runner/README.md.
+#
+# pull_request_target so fork PRs get the token and secrets this needs — which
+# is only safe because NOTHING here executes PR code: the checkout is the base
+# branch (trusted scripts and prompt), and the PR head is only fetched as git
+# objects for .github/scripts/e2e-triage.mjs to read. Never add a step that
+# installs, builds or runs anything from the PR.
+#
+# Routes:
+#   - maintainer adds the `e2e-approved` label   -> run (human override)
+#   - only docs/, deploy/, .github/ or *.md      -> pass, no run
+#   - same-repo PR by a member/collaborator      -> run, no triage
+#   - Dependabot bump of Playwright or the CLI   -> run, no triage
+#   - other Dependabot bumps, drafts             -> nothing
+#   - anyone else                                -> Claude triage decides
+# A new push drops `e2e-approved` and goes through the gate again.
+
+name: E2E Gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    branches: [main]
+
+permissions: {}
+
+# Other labels get their own group, so adding one never cancels a triage.
+concurrency:
+  group: e2e-gate-${{ github.event.pull_request.number }}-${{ github.event.action == 'labeled' && github.event.label.name || 'push' }}
+  cancel-in-progress: true
+
+env:
+  STATUS_CONTEXT: E2E (self-hosted)
+  APPROVAL_LABEL: e2e-approved
+  # Pinned (and at least a week old, per pnpm-workspace.yaml's quarantine
+  # policy): the triage depends on --restricted and --json-schema.
+  CLAUDE_CLI_VERSION: 2.1.296
+
+jobs:
+  gate:
+    if: github.event.action != 'labeled' || github.event.label.name == 'e2e-approved'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      statuses: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+      AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+      IS_DRAFT: ${{ github.event.pull_request.draft }}
+      ACTION: ${{ github.event.action }}
+      SENDER: ${{ github.event.sender.login }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Checkout base branch (trusted code only)
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drop approval from the previous commit
+        if: github.event.action == 'synchronize'
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/$APPROVAL_LABEL" >/dev/null 2>&1 || true
+
+      - name: Choose route
+        id: route
+        run: |
+          if [ "$ACTION" = "labeled" ]; then
+            perm=$(gh api "repos/$REPO/collaborators/$SENDER/permission" --jq .permission 2>/dev/null || echo none)
+            case "$perm" in
+              admin|maintain|write) route=maintainer ;;
+              *)
+                echo "::warning::$SENDER ($perm) cannot approve E2E; removing the label"
+                gh api -X DELETE "repos/$REPO/issues/$PR/labels/$APPROVAL_LABEL" >/dev/null 2>&1 || true
+                route=skip ;;
+            esac
+          elif [ "$IS_DRAFT" = "true" ]; then
+            route=skip
+          elif [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            # Bumps to the tools the suite runs on get an E2E run, without a
+            # triage (the branch is Dependabot's own). Other bumps don't.
+            if printf '%s' "$PR_TITLE" | grep -qE '^chore\(deps(-dev)?\): bump (@playwright/test|@foundryvtt/foundryvtt-cli) from '; then
+              route=trusted
+            else
+              route=skip
+            fi
+          elif [ "$HEAD_REPO" = "$REPO" ] && { [ "$AUTHOR_ASSOCIATION" = "OWNER" ] || [ "$AUTHOR_ASSOCIATION" = "MEMBER" ] || [ "$AUTHOR_ASSOCIATION" = "COLLABORATOR" ]; }; then
+            route=trusted
+          else
+            route=triage
+          fi
+          # Docs, deploy files and workflows aren't something a PR's E2E run
+          # can exercise (workflows always run from main), so a PR touching
+          # only those passes without a run or a triage.
+          if [ "$route" = "trusted" ] || [ "$route" = "triage" ]; then
+            code_files=$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" --jq '.[].filename' \
+              | grep -cvE '^(docs/|deploy/|\.github/)|\.md$' || true)
+            if [ "$code_files" = "0" ]; then
+              route=nocode
+              gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=success -f context="$STATUS_CONTEXT" \
+                -f description="Skipped: only docs, deploy or workflow files changed" >/dev/null
+            fi
+          fi
+          echo "route=$route" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Mark pending
+        if: steps.route.outputs.route == 'triage'
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=pending -f context="$STATUS_CONTEXT" \
+            -f description="Automated safety review in progress" >/dev/null
+
+      - name: Fetch PR head as objects (not checked out, not executed)
+        if: steps.route.outputs.route == 'triage'
+        # By SHA, not refs/pull/N/head: a ref can move after this run's checks.
+        run: git fetch --no-tags --depth=1 origin "$HEAD_SHA"
+
+      - name: Install Claude Code CLI
+        if: steps.route.outputs.route == 'triage'
+        run: npm install --silent --no-save --prefix "$RUNNER_TEMP/claude-cli" "@anthropic-ai/claude-code@$CLAUDE_CLI_VERSION"
+
+      - name: Claude triage
+        id: triage
+        if: steps.route.outputs.route == 'triage'
+        env:
+          # Same auth switch as the credit-cards pipeline: vars.CLAUDE_AUTH_MODE
+          # set to exactly `api` bills ANTHROPIC_API_KEY; anything else bills the
+          # subscription token from `claude setup-token`. Exactly one is non-empty.
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ vars.CLAUDE_AUTH_MODE == 'api' && '' || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ vars.CLAUDE_AUTH_MODE == 'api' && secrets.ANTHROPIC_API_KEY || '' }}
+          CLAUDE_BIN: ${{ runner.temp }}/claude-cli/node_modules/.bin/claude
+          TRIAGE_DIR: ${{ runner.temp }}/e2e-triage
+          TRIAGE_MODEL: ${{ vars.E2E_TRIAGE_MODEL || 'claude-opus-5-5' }}
+          TRIAGE_EFFORT: ${{ vars.E2E_TRIAGE_EFFORT || 'high' }}
+        run: node .github/scripts/e2e-triage.mjs
+
+      - name: Post triage comment
+        if: steps.triage.outputs.decision != ''
+        env:
+          COMMENT_FILE: ${{ runner.temp }}/e2e-triage/comment.md
+        run: |
+          existing=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- e2e-triage -->")))][0].id // empty' | head -n1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -F body=@"$COMMENT_FILE" >/dev/null
+          else
+            gh api "repos/$REPO/issues/$PR/comments" -F body=@"$COMMENT_FILE" >/dev/null
+          fi
+
+      - name: Record decision
+        id: decision
+        if: steps.route.outputs.route != 'skip' && steps.route.outputs.route != 'nocode'
+        env:
+          ROUTE: ${{ steps.route.outputs.route }}
+          DECISION: ${{ steps.triage.outputs.decision }}
+        run: |
+          case "$ROUTE:$DECISION" in
+            maintainer:*|trusted:*|triage:approve) run=true ;;
+            triage:needs_human)
+              run=false
+              gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=pending -f context="$STATUS_CONTEXT" \
+                -f description="Needs a maintainer: add the $APPROVAL_LABEL label to run" >/dev/null ;;
+            triage:reject)
+              run=false
+              gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=failure -f context="$STATUS_CONTEXT" \
+                -f description="Not run: triage flagged unsafe changes (see PR comment)" >/dev/null ;;
+            *)
+              # Triage didn't produce a decision (step failed): fail closed.
+              run=false
+              gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=error -f context="$STATUS_CONTEXT" \
+                -f description="Triage failed; a maintainer can add the $APPROVAL_LABEL label" \
+                -f target_url="$GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null ;;
+          esac
+          echo "run=$run" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Dispatch E2E run
+        if: steps.decision.outputs.run == 'true'
+        env:
+          APPROVED_BY: ${{ steps.route.outputs.route == 'maintainer' && github.event.sender.login || steps.route.outputs.route }}
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=pending -f context="$STATUS_CONTEXT" \
+            -f description="Queued on the self-hosted runner" >/dev/null
+          gh workflow run e2e.yml --repo "$REPO" --ref main \
+            -f pr="$PR" -f sha="$HEAD_SHA" -f approved_by="$APPROVED_BY"
+
+      - name: Fail closed on errors
+        if: (failure() || cancelled()) && steps.route.outputs.route == 'triage'
+        run: |
+          gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=error -f context="$STATUS_CONTEXT" \
+            -f description="Triage failed; a maintainer can add the $APPROVAL_LABEL label" \
+            -f target_url="$GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null || true

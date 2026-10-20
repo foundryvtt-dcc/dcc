@@ -120,7 +120,7 @@ Notes:
 - Known flakes: rerun standalone before blaming the change —
   `v14-features` effect toggle and two-weapon primary in `adapter-dispatch.spec.js`
   (#867). (The fresh-world welcome-tour overlay is now suppressed at login by
-  `markWelcomeTourDone` in `browser-tests/e2e/fixtures.js`.)
+  `prepareClientSettings` in `browser-tests/e2e/fixtures.js`.)
 - If you push **without** running the suite on one of these paths, say so
   explicitly in the final summary.
 

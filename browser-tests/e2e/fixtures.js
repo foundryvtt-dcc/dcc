@@ -43,15 +43,30 @@ async function assertFoundryUp () {
 }
 
 /**
- * Keep Foundry's welcome tour from starting. Core starts it on the first login
- * to a world with no documents (a fresh `e2e:env` world), and its overlay then
- * intercepts clicks in whichever spec runs first. Progress lives in the
- * client-scoped `core.tourProgress` setting (localStorage), so mark the tour
- * completed before joining, unless this browser already has progress for it.
+ * Prepare this browser's client-scoped settings (localStorage) before joining.
  * Runs on the /join page, which shares the game's origin.
+ *
+ * - Keep Foundry's welcome tour from starting. Core starts it on the first
+ *   login to a world with no documents (a fresh `e2e:env` world), and its
+ *   overlay then intercepts clicks in whichever spec runs first. Mark it
+ *   completed unless this browser already has progress for it.
+ * - On CI, render the canvas as cheaply as possible. The self-hosted runner
+ *   (deploy/e2e-runner/) has no GPU, and at Foundry's defaults software
+ *   WebGL ran at ~1 FPS, timing out canvas-bound specs.
  */
-async function markWelcomeTourDone (page) {
-  await page.evaluate(async () => {
+async function prepareClientSettings (page) {
+  await page.evaluate(async (ci) => {
+    if (ci) {
+      const cheap = {
+        'core.performanceMode': 0, // CONST.CANVAS_PERFORMANCE_MODES.LOW
+        'core.maxFPS': 10,
+        'core.pixelRatioResolutionScaling': false,
+        'core.mipmap': false,
+        'core.lightAnimation': false,
+        'core.visionAnimation': false
+      }
+      for (const [key, value] of Object.entries(cheap)) localStorage.setItem(key, JSON.stringify(value))
+    }
     const key = 'core.tourProgress'
     const progress = JSON.parse(localStorage.getItem(key) || '{}')
     if (progress.core?.welcome !== undefined) return
@@ -59,7 +74,7 @@ async function markWelcomeTourDone (page) {
     if (!tour?.steps?.length) return
     progress.core = { ...progress.core, welcome: tour.steps.length }
     localStorage.setItem(key, JSON.stringify(progress))
-  }).catch(() => {})
+  }, !!process.env.CI).catch(() => {})
 }
 
 /** Log into the running world as Gamemaster and wait for the DCC system to be ready. */
@@ -87,7 +102,7 @@ async function login (page) {
         'only one GM session is allowed at a time.'
       )
     }
-    await markWelcomeTourDone(page)
+    await prepareClientSettings(page)
     await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
     await page.click('button[name="join"]')
     await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
@@ -210,7 +225,7 @@ module.exports = {
   expect,
   createSessionTest,
   login,
-  markWelcomeTourDone,
+  prepareClientSettings,
   assertFoundryUp,
   openActorSheet,
   significantConsoleErrors,
