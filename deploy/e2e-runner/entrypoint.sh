@@ -51,8 +51,7 @@ find /cache/foundry -mindepth 1 -maxdepth 1 ! -name "$version" -exec rm -rf {} +
 
 # --- Playwright browsers, matching main's lockfile ------------------------
 # Dependabot auto-merges @playwright/test bumps, so the version comes from
-# main rather than the image. A PR that bumps Playwright itself fails until
-# it lands on main and the runner restarts.
+# main rather than the image.
 pw_version=$(curl -fsSL "https://raw.githubusercontent.com/${GH_REPO}/main/pnpm-lock.yaml" \
   | sed -nE "s/^  '?@playwright\/test@([0-9][^:']*)'?:.*/\1/p" | head -n1)
 [ -n "$pw_version" ] || { echo "Could not read @playwright/test's version from main's pnpm-lock.yaml" >&2; exit 1; }
@@ -65,6 +64,11 @@ if [ ! -d "$pw_dir" ]; then
   mv /cache/pw-browsers/.install "$pw_dir"
 fi
 find /cache/pw-browsers -mindepth 1 -maxdepth 1 ! -name "$pw_version" -exec rm -rf {} +
+# Jobs get a writable browsers dir of links into the cache. A PR on main's
+# Playwright finds everything installed; one that bumps Playwright downloads
+# the new build into /work for that job.
+mkdir -p /work/pw-browsers
+for b in "$pw_dir"/*; do ln -s "$b" /work/pw-browsers/; done
 
 # --- License ---------------------------------------------------------------
 cp "$FELDDY/Config/license.json" /work/userdata/Config/license.json
@@ -90,7 +94,7 @@ if [ "$(cat /cache/modules/.core-book-head 2>/dev/null)" != "$head" ]; then
   echo "$head" > /cache/modules/.core-book-head
 fi
 
-chown -R runner:runner /work
+chown -hR runner:runner /work   # -h: never through the links into /cache
 
 # --- Register and run ------------------------------------------------------
 token=$(curl -fsSL -X POST \
@@ -108,8 +112,7 @@ as_runner=(env -i
   DCC_FOUNDRY_USERDATA=/work/userdata
   DCC_MODULE_SOURCE=/cache/modules
   DCC_E2E_PORT="${DCC_E2E_PORT:-30100}"
-  DCC_E2E_SKIP_BROWSER_INSTALL=1
-  PLAYWRIGHT_BROWSERS_PATH="$pw_dir"
+  PLAYWRIGHT_BROWSERS_PATH=/work/pw-browsers
   setpriv --reuid=runner --regid=runner --init-groups --no-new-privs --)
 
 cd /work/runner
