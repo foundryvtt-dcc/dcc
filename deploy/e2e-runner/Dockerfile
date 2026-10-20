@@ -13,19 +13,16 @@ USER root
 
 ARG NODE_MAJOR=24
 ARG PNPM_VERSION=11.25.0
-# Keep in step with @playwright/test in pnpm-lock.yaml — jobs skip
-# `playwright install` and use these baked browsers.
-ARG PLAYWRIGHT_VERSION=1.63.0
-
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+# Only Chromium's system libraries are baked in. The browsers themselves are
+# installed at startup for the version main's lockfile pins (entrypoint.sh).
+ARG PLAYWRIGHT_VERSION=1.64.0
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl git jq procps rsync unzip util-linux \
  && curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && npm install -g "pnpm@${PNPM_VERSION}" \
- && npx -y "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium chromium-headless-shell \
- && chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH" \
+ && npx -y "playwright@${PLAYWRIGHT_VERSION}" install-deps chromium chromium-headless-shell \
  && rm -rf /var/lib/apt/lists/* /root/.npm
 
 # The base image gives `runner` passwordless sudo. Jobs run PR code, so take
