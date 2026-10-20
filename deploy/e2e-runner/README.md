@@ -10,7 +10,9 @@ Jobs queue and run one at a time.
 ```
 PR opened / pushed
   └─ e2e-gate.yml   (GitHub-hosted, pull_request_target, never runs PR code)
+       ├─ only docs/, deploy/, .github/, *.md → status passes, no run
        ├─ member/collaborator branch in this repo ──────────────┐
+       ├─ Dependabot bump of @playwright/test or foundryvtt-cli ┤
        ├─ maintainer adds the `e2e-approved` label ─────────────┤
        └─ anyone else → Claude reads the diff                   │
             ├─ approve ─────────────────────────────────────────┤
