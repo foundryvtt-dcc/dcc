@@ -46,6 +46,14 @@ read the code before it runs.
   through the gate again. `e2e.yml` refuses to run if the PR's head has moved
   on from the approved SHA.
 
+**What the gate can't stop:** Playwright specs, fixtures and helpers under
+`browser-tests/e2e/` run as plain Node on the runner, as the job user. They
+can read the license and dcc-core-book, and they could carry them out over the
+network or inside the uploaded test report. For an outside contributor's PR,
+Claude's review is the only thing standing in the way. A process a job leaves
+running could also read the Actions runtime token of a later step in the same
+job (same user). Watch the triage comments on outside PRs that change specs.
+
 **Container hardening:** read-only root filesystem, `/work` wiped before every
 job, Foundry and dcc-core-book in a root-owned cache that jobs can't modify, ephemeral runner registration (one job per registration), no sudo,
 dropped capabilities, and a job environment with no credentials. The

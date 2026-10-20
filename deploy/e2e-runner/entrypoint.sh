@@ -66,7 +66,9 @@ unset auth
 head=$(git -C "$src" rev-parse HEAD)
 if [ "$(cat /cache/modules/.core-book-head 2>/dev/null)" != "$head" ]; then
   log "Compiling dcc-core-book $head"
-  (cd "$src" && HOME=/cache/root-home CI=true pnpm install --frozen-lockfile && HOME=/cache/root-home pnpm run todb)
+  # dcc-core-book's install scripts never see the PAT.
+  (cd "$src" && export HOME=/cache/root-home CI=true && unset GH_RUNNER_PAT &&
+    pnpm install --frozen-lockfile && pnpm run todb)
   rsync -a --delete --exclude .git --exclude node_modules "$src/" /cache/modules/dcc-core-book/
   echo "$head" > /cache/modules/.core-book-head
 fi
