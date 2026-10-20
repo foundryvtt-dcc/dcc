@@ -97,13 +97,8 @@ jobs:
 
       - name: Fetch PR head as objects (not checked out, not executed)
         if: steps.route.outputs.route == 'triage'
-        run: |
-          git fetch --no-tags --depth=1 origin "+refs/pull/$PR/head:refs/remotes/pr/head"
-          fetched=$(git rev-parse refs/remotes/pr/head)
-          if [ "$fetched" != "$HEAD_SHA" ]; then
-            echo "::notice::PR moved on to $fetched; the newer push has its own gate run"
-            exit 1
-          fi
+        # By SHA, not refs/pull/N/head: a ref can move after this run's checks.
+        run: git fetch --no-tags --depth=1 origin "$HEAD_SHA"
 
       - name: Install Claude Code CLI
         if: steps.route.outputs.route == 'triage'
