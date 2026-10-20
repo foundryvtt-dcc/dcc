@@ -109,8 +109,8 @@ Set a calendar reminder for its expiry.
 1. **New Resource → Docker Compose**, source: the `foundryvtt-dcc/dcc` repo,
    branch `main`, base directory `/deploy/e2e-runner`, compose file
    `docker-compose.yml`.
-2. Environment variables: `GH_RUNNER_PAT` (secret) and `FELDDY_DATA_PATH`
-   (e.g. `/data/foundryvtte2e`).
+2. Environment variables: `GH_RUNNER_PAT` (secret), and `FELDDY_DATA_PATH` if
+   felddy's data is somewhere other than `/data/foundryvtte2e`.
    Optionally set `RUNNER_NAME`, and `FOUNDRY_VERSION` to pin a specific
    cached build (e.g. `14.369`) instead of the newest one.
 3. Deploy. **Settings → Actions → Runners** on the repo should show the runner
