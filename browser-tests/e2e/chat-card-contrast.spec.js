@@ -332,7 +332,8 @@ test.describe('Chat card contrast sweep', () => {
 
   for (const themeCase of THEME_CASES) {
     test(`every gallery card passes WCAG contrast: ${themeCase.name}`, async ({ page }, testInfo) => {
-      test.setTimeout(120000)
+      // The GPU-less CI runner renders the gallery much more slowly.
+      test.setTimeout(process.env.CI ? 240000 : 120000)
       await page.mouse.move(0, 0)
       const gallery = await postGallery(page)
       const ids = gallery.map(g => g.id)
