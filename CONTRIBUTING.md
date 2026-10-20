@@ -55,10 +55,13 @@ running E2E against an isolated Foundry server.
 
 Batches of small fixes are fine, as long as each one can merge on its own:
 
-- **PRs that touch the same files must not conflict.** Either combine them
-  into one PR or stack them (open the second against the first's branch and
-  say so in the description). Two independent PRs that edit the same lines
-  can't both merge as submitted.
+- **PRs that touch the same files must not conflict.** Two independent PRs
+  that edit the same lines can't both merge as submitted. Either combine
+  them into one PR, or open the second as a **draft** against `main` that
+  builds on the first's branch and says "Depends on #N" in the description.
+  (GitHub only lets a PR target a branch in this repository, so a fork can't
+  stack a PR on another PR's branch.) Once #N merges, rebase the draft onto
+  `main` and mark it ready for review.
 - After one of your PRs merges, rebase the others onto `main` before asking
   for review again.
 

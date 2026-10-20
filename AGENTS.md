@@ -14,4 +14,5 @@ Claude Code. Contributed PRs are merged as submitted, so also read
   proportionate — see [Keep tests proportionate](docs/dev/TESTING.md#keep-tests-proportionate).
 - Don't bump `version.txt` in a PR.
 - One issue per PR, up to date with `main`; open PRs that touch the same
-  files must be combined or stacked so each merges cleanly.
+  files must be combined, or the later one opened as a draft that says
+  "Depends on #N" and is rebased once #N merges (forks can't stack PRs).
