@@ -200,7 +200,20 @@ function runClaude (dir, promptPath) {
     '--max-turns', '60',
     '--output-format', 'json',
     '--json-schema', JSON.stringify(VERDICT_SCHEMA)
-  ], { cwd: dir, encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 })
+  ], {
+    cwd: dir,
+    // Only what the CLI needs: the job's GH_TOKEN can dispatch e2e.yml, so it
+    // must not be reachable from the model's process.
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      CLAUDE_CODE_OAUTH_TOKEN: process.env.CLAUDE_CODE_OAUTH_TOKEN || '',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || ''
+    },
+    encoding: 'utf-8',
+    maxBuffer: 64 * 1024 * 1024,
+    timeout: 15 * 60 * 1000
+  })
   if (result.error) return { error: `Claude CLI did not run: ${result.error.message}` }
   return parseClaudeResult(result.stdout)
 }
@@ -210,7 +223,17 @@ async function main () {
   if (!REPO || !/^\d+$/.test(PR || '') || !/^[0-9a-f]{40}$/.test(HEAD_SHA || '') || !TRIAGE_DIR) {
     throw new Error('REPO, PR, HEAD_SHA and TRIAGE_DIR are required')
   }
-  const pr = JSON.parse(gh(['api', `repos/${REPO}/pulls/${PR}`]))
+  // The file list and diff come from the API's current view of the PR, so
+  // check it still describes the commit this run approves, against main,
+  // both before and after reading them.
+  const fetchPr = () => {
+    const pr = JSON.parse(gh(['api', `repos/${REPO}/pulls/${PR}`]))
+    if (pr.head.sha !== HEAD_SHA || pr.base.ref !== 'main') {
+      throw new Error(`PR is now ${pr.head.sha} against ${pr.base.ref}, not ${HEAD_SHA} against main`)
+    }
+    return pr
+  }
+  const pr = fetchPr()
   const files = JSON.parse(gh(['api', '--paginate', '--slurp', `repos/${REPO}/pulls/${PR}/files?per_page=100`])).flat()
 
   const blockers = []
@@ -231,6 +254,7 @@ async function main () {
   if (prot.length) blockers.push(`Changes runner tooling or dependencies: ${prot.map(f => `\`${f}\``).join(', ')}`)
   const special = specialModeFiles(diff)
   if (special.length) blockers.push(`Adds a symlink or submodule: ${special.map(f => `\`${f}\``).join(', ')}`)
+  fetchPr()
 
   // Always ask Claude when the diff fits — even with blockers, a `reject` is
   // worth surfacing and the summary helps the maintainer review.

@@ -22,8 +22,9 @@ on:
 
 permissions: {}
 
+# Other labels get their own group, so adding one never cancels a triage.
 concurrency:
-  group: e2e-gate-${{ github.event.pull_request.number }}
+  group: e2e-gate-${{ github.event.pull_request.number }}-${{ github.event.action == 'labeled' && github.event.label.name || 'push' }}
   cancel-in-progress: true
 
 env:
@@ -173,7 +174,7 @@ jobs:
             -f pr="$PR" -f sha="$HEAD_SHA" -f approved_by="$APPROVED_BY"
 
       - name: Fail closed on errors
-        if: failure() && steps.route.outputs.route == 'triage'
+        if: (failure() || cancelled()) && steps.route.outputs.route == 'triage'
         run: |
           gh api "repos/$REPO/statuses/$HEAD_SHA" -f state=error -f context="$STATUS_CONTEXT" \
             -f description="Triage failed; a maintainer can add the $APPROVAL_LABEL label" \
