@@ -67,13 +67,17 @@ jobs:
   e2e:
     needs: start
     runs-on: [self-hosted, dcc-e2e]
-    timeout-minutes: 60
+    # The full suite takes ~55 min on the runner's CPU-only host.
+    timeout-minutes: 120
     permissions:
       contents: read
     env:
       CI: 'true'
     steps:
+      # Step limits so a stalled download fails fast instead of holding the
+      # single runner until the job limit.
       - name: Checkout PR head
+        timeout-minutes: 5
         uses: actions/checkout@v7.0.1
         with:
           ref: refs/pull/${{ inputs.pr }}/head
@@ -87,6 +91,7 @@ jobs:
           [ "$actual" = "$SHA" ] || { echo "::error::checked out $actual, approved $SHA"; exit 1; }
 
       - name: Install dependencies
+        timeout-minutes: 10
         run: pnpm install --frozen-lockfile
 
       - name: Run E2E suite
