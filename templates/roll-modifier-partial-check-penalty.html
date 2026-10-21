@@ -1,7 +1,7 @@
-<label class="term-label" for="term-{{index}}" title="{{localize 'DCC.RollModifierCheckPenaltyHint'}}">{{label}}</label>
+<label class="term-label" for="term-{{index}}" data-tooltip="DCC.RollModifierCheckPenaltyHint">{{label}}</label>
 <input class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{checkedFormula}}" value="{{#if startsChecked}}{{formula}}{{/if}}"/>
 <div class="term-controls button-row">
-  <label class="checkbox-label" for="check-penalty" title="{{localize 'DCC.RollModifierCheckPenaltyHint'}}">{{localize 'DCC.RollModifierCheckPenaltyApply'}}</label>
+  <label class="checkbox-label" for="check-penalty" data-tooltip="DCC.RollModifierCheckPenaltyHint">{{localize 'DCC.RollModifierCheckPenaltyApply'}}</label>
   <input type="checkbox" data-action="checkboxChange" id="check-penalty" data-term="{{index}}"
          {{#if startsChecked}}checked{{/if}}/>
 </div>
