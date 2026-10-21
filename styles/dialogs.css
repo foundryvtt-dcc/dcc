@@ -36,6 +36,24 @@
     .term-controls {
       margin: 8px 1px 0 0;
     }
+
+    /*
+     * The check-penalty term pairs a label with its checkbox. The shared
+     * button-row grid would put each in its own half of the column, so the
+     * two read as separate controls; a flex row keeps them together.
+     */
+    .check-penalty-controls {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+
+      input[type='checkbox'] {
+        flex: 0 0 auto;
+        margin: 0;
+        width: auto;
+      }
+    }
   }
 
   /*
