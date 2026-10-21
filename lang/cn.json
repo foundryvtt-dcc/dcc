@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "取消",
   "DCC.RollModifierCheckPenaltyApply": "应用",
-  "DCC.RollModifierCheckPenaltyHint": "来自你穿戴的护甲。适用于攀爬、潜行等体能行动、法师和精灵的法术检定，以及裁判要求时的反射豁免。不勾选时掷骰不计入，聊天中仍会显示附带惩罚的总计。",
+  "DCC.RollModifierCheckPenaltyHint": "来自你穿戴的护甲。适用于体能行动、法师和精灵的法术检定，以及裁判要求时的反射豁免。不勾选时，聊天中仍会显示附带惩罚的总计。",
   "DCC.RollModifierCheckPenaltyTerm": "护甲检定惩罚",
   "DCC.RollModifierDieTerm": "骰子",
   "DCC.RollModifierDisapprovalDieTerm": "不悦骰",

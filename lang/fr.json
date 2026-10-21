@@ -679,7 +679,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Annuler",
   "DCC.RollModifierCheckPenaltyApply": "Appliquer",
-  "DCC.RollModifierCheckPenaltyHint": "Vient de l'armure que vous portez. Compte pour les tâches physiques comme grimper ou se déplacer discrètement, pour les tests de sort des magiciens et des elfes, et pour les jets de sauvegarde de Réflexe quand le Juge le demande. Décoché, le jet l'ignore et le chat affiche quand même le total avec le malus.",
+  "DCC.RollModifierCheckPenaltyHint": "Vient de l'armure que vous portez. Compte pour les tâches physiques, les tests de sort des magiciens et des elfes et les jets de sauvegarde de Réflexe si le Juge le demande. Décoché, le chat affiche quand même le total avec le malus.",
   "DCC.RollModifierCheckPenaltyTerm": "Malus d'armure",
   "DCC.RollModifierDieTerm": "dé",
   "DCC.RollModifierDisapprovalDieTerm": "dé de défaveur",

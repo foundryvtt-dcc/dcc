@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Cancel",
   "DCC.RollModifierCheckPenaltyApply": "Apply",
-  "DCC.RollModifierCheckPenaltyHint": "Comes from the armor you wear. Counts for physical tasks like climbing or sneaking, for wizard and elf spell checks, and for Reflex saves when the judge calls for it. Unticked, the roll ignores it and the chat card shows the total with the penalty anyway.",
+  "DCC.RollModifierCheckPenaltyHint": "Comes from the armor you wear. Counts for physical tasks, Wizard and Elf spell checks, and Reflex saves if the judge says so. Unticked, the chat still shows the total with the penalty.",
   "DCC.RollModifierCheckPenaltyTerm": "Armor Check Penalty",
   "DCC.RollModifierDieTerm": "Die",
   "DCC.RollModifierDisapprovalDieTerm": "Disapproval Die",

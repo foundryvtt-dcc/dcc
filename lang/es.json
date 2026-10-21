@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Cancelar",
   "DCC.RollModifierCheckPenaltyApply": "Aplicar",
-  "DCC.RollModifierCheckPenaltyHint": "Viene de la armadura que llevas. Cuenta en tareas físicas como trepar o colarse, en las tiradas de conjuro de magos y elfos y en las salvaciones de Reflejos cuando el juez lo pida. Sin marcar, la tirada no lo incluye y el chat muestra igualmente el total con la penalización.",
+  "DCC.RollModifierCheckPenaltyHint": "Viene de la armadura que llevas. Cuenta en tareas físicas, en las tiradas de conjuro de magos y elfos y en las salvaciones de Reflejos si el juez lo pide. Sin marcar, el chat muestra igualmente el total con la penalización.",
   "DCC.RollModifierCheckPenaltyTerm": "Penaliz. de armadura",
   "DCC.RollModifierDieTerm": "Dado",
   "DCC.RollModifierDisapprovalDieTerm": "Dado de desaprobación",
