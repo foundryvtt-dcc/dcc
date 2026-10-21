@@ -18,10 +18,11 @@ const { expect, createSessionTest } = require('./fixtures')
  *   or its fill, whichever stands out more from the card.
  * - Both again with each enabled button hovered.
  *
- * Every card is also screenshotted per theme and attached to the report, so a
- * reviewer can SEE the gallery (`pnpm exec playwright show-report`) instead of
- * trusting numbers alone. On CI the screenshots are taken only when a test
- * fails: the GPU-less runner spends 7-12 s on each one (#1081).
+ * Locally, every card is also screenshotted per theme and attached to the
+ * report, so a reviewer can SEE the gallery (`pnpm exec playwright
+ * show-report`) instead of trusting numbers alone. On CI the screenshots are
+ * taken only when a test fails: the GPU-less runner spends 7-12 s on each one
+ * (#1081).
  *
  * Adding a new chat card with buttons or links? Add it to `postGallery` — the
  * assertions are generic and need no per-card expectations.
@@ -329,13 +330,22 @@ test.describe('Chat card contrast sweep', () => {
   let posted = null
 
   test.afterEach(async ({ page }, testInfo) => {
-    if (process.env.CI && posted && testInfo.status !== testInfo.expectedStatus) {
-      await captureGallery(page, posted.gallery, posted.themeCase, testInfo).catch(() => {})
-    }
-    posted = null
     await page.mouse.move(0, 0)
-    await removeGallery(page)
-    await restoreTheme(page)
+    try {
+      if (process.env.CI && posted && testInfo.status !== testInfo.expectedStatus) {
+        // Hooks share the test's timeout, and a late failure leaves too little
+        // of it for ~2 min of CI screenshots. A hook timeout would also skip
+        // the theme restore below, on a session later spec files reuse.
+        testInfo.setTimeout(testInfo.timeout + 180000)
+        await captureGallery(page, posted.gallery, posted.themeCase, testInfo).catch(error => {
+          testInfo.annotations.push({ type: 'gallery capture failed', description: String(error) })
+        })
+      }
+    } finally {
+      posted = null
+      await removeGallery(page)
+      await restoreTheme(page)
+    }
   })
 
   for (const themeCase of THEME_CASES) {
