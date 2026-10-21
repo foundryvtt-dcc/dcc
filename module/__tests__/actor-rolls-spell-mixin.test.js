@@ -160,6 +160,19 @@ describe('RollsSpellMixin extraction', () => {
 
       expect(dieTerm().formula).toBe('1d20')
     })
+
+    // With no spell item the term used to read `+0`, and the dialog total
+    // then replaced the naked path's own penalty modifier (#1078).
+    test('with no spell item the check penalty term uses the actor\'s penalty', async () => {
+      inst.system.attributes.ac.checkPenalty = '-4'
+
+      await inst._promptSpellCheckDialog(null, {})
+
+      const penaltyTerm = promptRollModifierDialog.mock.calls[0][0]
+        .find(term => term.type === 'CheckPenalty')
+      expect(penaltyTerm.formula).toBe(-4)
+      expect(penaltyTerm.apply).toBe(true)
+    })
   })
 
   // The spend has to follow the die actually rolled, not the auto-picked slot,
