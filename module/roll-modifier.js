@@ -543,11 +543,14 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const term of this.terms) {
         const element = this.element.querySelector(`#term-${term.index}`)
         if (element) {
+          // An empty field counts as zero: the unticked CheckPenalty term has
+          // no text but its callback must still see a zero ("not applied").
+          const value = element.value || '0'
           if (termIndex > 0) {
             formula += '+'
           }
-          formula += flavored(element.value, term)
-          resolveTerm(element.value, term)
+          formula += flavored(value, term)
+          resolveTerm(value, term)
           termIndex++
         }
       }
@@ -840,7 +843,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const term = this.getTermByIndex(index)
     const formField = this.element.querySelector('#term-' + index)
     const checked = target.checked
-    formField.value = checked ? term.checkedFormula : '+0'
+    formField.value = checked ? term.checkedFormula : ''
   }
 
   /**
