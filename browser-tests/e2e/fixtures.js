@@ -121,6 +121,8 @@ async function reloadSession (page) {
   await page.reload()
   await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
   await waitForGameReady(page)
+  // The reload redraws the scene; don't hand the next test a canvas mid-draw.
+  await page.waitForFunction(() => !game.canvas?.scene || (game.canvas.ready && !game.canvas.loading), null, { timeout: 30000 }).catch(() => {})
 }
 
 async function waitForGameReady (page) {
@@ -139,7 +141,8 @@ async function waitForGameReady (page) {
  * The one session-reuse `test` every spec shares. Playwright starts a new
  * worker for each distinct fixture set, so a `base.extend` per spec file meant
  * a fresh worker, browser and login for every file: 35 of them, ~25 s each on
- * the CPU-only runner (#1081). Built once here, the whole run logs in once.
+ * the CPU-only runner (#1081). Built once here, every spec that uses it
+ * shares one worker and one login.
  */
 const sessionTest = base.extend({
   sessionPage: [async ({ browser }, use) => {
