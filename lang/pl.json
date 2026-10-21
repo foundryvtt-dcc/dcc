@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Anuluj",
   "DCC.RollModifierCheckPenaltyApply": "Zastosuj",
-  "DCC.RollModifierCheckPenaltyHint": "Kara za zbroję do testów fizycznych, testów czarów magów i elfów oraz rzutów obronnych na Refleks (decyzja Sędziego). Niezaznaczone: rzut pozostaje czysty; testy cech i rzuty obronne pokazują wtedy w czacie sumę z karą.",
+  "DCC.RollModifierCheckPenaltyHint": "Pochodzi z noszonej zbroi. Liczy się przy czynnościach fizycznych, takich jak wspinaczka czy skradanie, przy testach czarów magów i elfów oraz przy rzutach obronnych na Refleks, gdy Sędzia tak zdecyduje. Bez zaznaczenia rzut go pomija, a czat i tak pokazuje sumę z karą.",
   "DCC.RollModifierCheckPenaltyTerm": "Kara za Zbroję do Testów",
   "DCC.RollModifierDieTerm": "Kostka",
   "DCC.RollModifierDisapprovalDieTerm": "Kostka Dezaprobaty",

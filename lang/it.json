@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Annulla",
   "DCC.RollModifierCheckPenaltyApply": "Applica",
-  "DCC.RollModifierCheckPenaltyHint": "Penalità dell'armatura per prove fisiche, prove di incantesimo di maghi ed elfi e tiri salvezza su Riflessi (a discrezione del Giudice). Se non selezionato, il tiro resta pulito; le prove di caratteristica e i tiri salvezza mostrano allora in chat il totale con la penalità.",
+  "DCC.RollModifierCheckPenaltyHint": "Viene dall'armatura che indossi. Conta per le attività fisiche come arrampicarsi o muoversi furtivamente, per le prove di incantesimo di maghi ed elfi e per i tiri salvezza su Riflessi quando il Giudice lo chiede. Se non selezionato, il tiro lo ignora e la chat mostra comunque il totale con la penalità.",
   "DCC.RollModifierCheckPenaltyTerm": "Penalità dell'armatura",
   "DCC.RollModifierDieTerm": "Dado",
   "DCC.RollModifierDisapprovalDieTerm": "Dado Disapprovazione",

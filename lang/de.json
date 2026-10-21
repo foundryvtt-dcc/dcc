@@ -701,7 +701,7 @@
   "DCC.RollModifierAddDie": "+ <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierCancel": "Abbrechen",
   "DCC.RollModifierCheckPenaltyApply": "Anwenden",
-  "DCC.RollModifierCheckPenaltyHint": "Rüstungsmalus für körperliche Proben, Zauberproben von Magiern und Elfen sowie Reflex-Rettungswürfe (Entscheidung des Spielleiters). Nicht angekreuzt bleibt der Wurf unverändert; bei Attributsproben und Rettungswürfen zeigt der Chat dann das Ergebnis mit Malus.",
+  "DCC.RollModifierCheckPenaltyHint": "Kommt von der Rüstung, die du trägst. Zählt bei körperlichen Aufgaben wie Klettern oder Schleichen, bei Zauberproben von Magiern und Elfen und bei Reflex-Rettungswürfen, wenn der Spielleiter es so entscheidet. Ohne Haken würfelt ihr ohne den Malus, der Chat zeigt das Ergebnis dann trotzdem mit Abzug.",
   "DCC.RollModifierCheckPenaltyTerm": "Rüstungsmalus",
   "DCC.RollModifierDieTerm": "Würfel",
   "DCC.RollModifierDisapprovalDieTerm": "Ungnadewürfel",
