@@ -1,6 +1,10 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, ui, etc.) used in page.evaluate callbacks */
-const { test, expect } = require('@playwright/test')
-const { FOUNDRY_URL, prepareClientSettings } = require('./fixtures')
+const { expect, createSessionTest, closeWindows, FOUNDRY_URL } = require('./fixtures')
+
+let consoleErrors = []
+const test = createSessionTest({
+  onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
+})
 
 /**
  * E2E tests for the Ability Score Change Log
@@ -15,8 +19,6 @@ const { FOUNDRY_URL, prepareClientSettings } = require('./fixtures')
  */
 
 test.describe('DCC Ability Score Log E2E Tests', () => {
-  let consoleErrors = []
-
   test.beforeAll(async () => {
     let serverUp
     try {
@@ -36,67 +38,27 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    consoleErrors = []
-
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        consoleErrors.push(msg.text())
-      }
-    })
-
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto(`${FOUNDRY_URL}/join`)
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userId"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await prepareClientSettings(page)
-      await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
+    await closeWindows(page)
 
     // Remove notification banners
     await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
 
-    // Wait for DCC system ready hook to complete (settings register in the async ready hook)
-    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined, { timeout: 10000 })
-
-    // Clean up leftover test data, close windows, and enable the setting
+    // Clean up leftover test data and enable the setting
     await page.evaluate(async () => {
-      for (const app of Object.values(ui.windows)) {
-        await app.close()
-      }
       for (const actor of game.actors.filter(a => a.name.startsWith('ASL '))) {
         await actor.delete()
       }
       await game.settings.set('dcc', 'enableAbilityScoreLog', true)
     })
 
-    // Close welcome dialogs
-    const dccDialog = page.locator('#dcc-welcome-dialog')
-    if (await dccDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-    }
-    const coreBookDialog = page.locator('#dcc-core-book-welcome-dialog')
-    if (await coreBookDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
-    }
+    // Last, so cleanup above (and the previous test's teardown) can't fail this test
+    consoleErrors = []
   })
 
   test.afterEach(async ({ page }) => {
     // Clean up test data and disable the setting again
+    await closeWindows(page).catch(() => {})
     await page.evaluate(async () => {
-      for (const app of Object.values(ui.windows)) {
-        await app.close()
-      }
       for (const actor of game.actors.filter(a => a.name.startsWith('ASL '))) {
         await actor.delete()
       }
