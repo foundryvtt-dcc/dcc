@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
+const { expect, createSessionTest, reloadSession, FOUNDRY_URL } = require('./fixtures')
 
 // No console capture needed — this spec asserts on returned state, not a
 // zero-console-error gate.
@@ -35,6 +35,13 @@ test.describe('DCC Extension API', () => {
         '2. Run tests again: npm test'
       )
     }
+  })
+
+  // These tests register sheets (some as the type's default) and other
+  // extension points the way a sibling module would, and leave them in
+  // place. Reload so later spec files on the shared session start clean.
+  test.afterAll(async ({ sessionPage }) => {
+    await reloadSession(sessionPage)
   })
 
   test.beforeEach(async ({ page }) => {
