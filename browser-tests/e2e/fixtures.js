@@ -243,6 +243,24 @@ function significantConsoleErrors (consoleErrors) {
 }
 
 /**
+ * Close every open window (sheets, dialogs) on the session page. `ui.windows`
+ * is the AppV1 registry and is empty under V14, so walk the AppV2 registry.
+ * Framed apps only: the core UI (sidebar, hotbar, chat) has no frame.
+ */
+async function closeWindows (page) {
+  await page.evaluate(async () => {
+    for (const app of [...foundry.applications.instances.values()]) {
+      if (app.rendered && app.hasFrame) await app.close()
+    }
+    // A dialog closed mid-render can reach CLOSED with its element still
+    // attached, and later document-level queries hit it (#958). Drop those.
+    document.querySelectorAll('.application').forEach(el => {
+      if (el.querySelector(':scope > .window-header') && !foundry.applications.instances.get(el.id)?.rendered) el.remove()
+    })
+  })
+}
+
+/**
  * Open an actor's sheet by clicking its name in the Actors sidebar, then wait
  * for the body to render. `_prepareContext` does async class setup + a
  * re-render; wait for the nav tabs (structural signal the body rendered) then
@@ -266,6 +284,7 @@ module.exports = {
   reloadSession,
   prepareClientSettings,
   assertFoundryUp,
+  closeWindows,
   openActorSheet,
   significantConsoleErrors,
   TRANSIENT_NETWORK_ERRORS,

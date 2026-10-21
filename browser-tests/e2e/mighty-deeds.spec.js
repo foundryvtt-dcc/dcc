@@ -1,5 +1,9 @@
-const { test, expect } = require('@playwright/test')
-const { FOUNDRY_URL, prepareClientSettings } = require('./fixtures')
+const { expect, createSessionTest, closeWindows, FOUNDRY_URL } = require('./fixtures')
+
+let consoleErrors = []
+const test = createSessionTest({
+  onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }
+})
 
 /**
  * E2E tests for Mighty Deed table prompts (issue #319; inline-lookup rework #786)
@@ -176,7 +180,6 @@ async function setMightyDeedsEnabled (page, enabled) {
 }
 
 test.describe('Mighty Deeds E2E Tests', () => {
-  let consoleErrors = []
   let priorDeedsEnabled
 
   test.beforeAll(async () => {
@@ -199,33 +202,7 @@ test.describe('Mighty Deeds E2E Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     consoleErrors = []
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        consoleErrors.push(msg.text())
-      }
-    })
-
-    await page.setViewportSize({ width: 1280, height: 800 })
-
-    await page.goto(`${FOUNDRY_URL}/join`)
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userId"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await prepareClientSettings(page)
-      await page.selectOption('select[name="userId"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-
-    // System settings register in the async ready hook on every client
-    // load - sheet renders read them, so wait until registration is done
-    await page.waitForFunction(() => game.settings?.settings?.has('dcc.coinWeight'), { timeout: 15000 })
+    await closeWindows(page)
 
     // Remove any Foundry notification banners
     await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
@@ -244,15 +221,6 @@ test.describe('Mighty Deeds E2E Tests', () => {
     // afterEach restores the world's value
     priorDeedsEnabled = await page.evaluate(() => game.settings.get('dcc', 'mightyDeedsEnabled'))
     await setMightyDeedsEnabled(page, false)
-
-    // Close any welcome dialogs
-    for (const selector of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(selector)
-      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-        await page.waitForTimeout(300)
-      }
-    }
   })
 
   test.afterEach(async ({ page }) => {
