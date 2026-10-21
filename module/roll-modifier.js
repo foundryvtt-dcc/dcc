@@ -101,12 +101,15 @@ function DCCLuckDieTerm (options) {
  * @return {Object}
  */
 function DCCModifierTerm (options) {
-  return [{
+  const term = {
     type: 'Modifier',
     label: game.i18n.localize('DCC.RollModifierModifierTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     formula: _prependSign(_cleanFormula(options.formula))
-  }]
+  }
+  // Optional inline flavor for the final roll formula (see `_constructRoll`)
+  if (options.flavor) term.flavor = options.flavor
+  return [term]
 }
 
 /**
@@ -531,6 +534,11 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       if (term.type === 'LuckBurn') {
         return _luckBurnPiece(term)
+      }
+      // A Modifier term built with a `flavor` (e.g. a crit/fumble
+      // adjustment, #1079) is tagged the same way, so chat shows its source.
+      if (term.type === 'Modifier' && term.flavor && piece && parseInt(piece) !== 0) {
+        return `${piece}[${term.flavor}]`
       }
       return piece
     }

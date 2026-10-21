@@ -5241,6 +5241,48 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.fumbleFormula).toMatch(/d\d+/)
       expect(result.damageDefined, 'damage route produced a Roll under the new signature').toBe(true)
     })
+
+    test('birth-augur crit and fumble adjustments reach the live rolls (#1079)', async ({ page }) => {
+      // Warrior's Arm / The Broken Star: an Active Effect adds the birth
+      // augur Luck modifier to critical.otherMod / fumble.otherMod. Checks
+      // the @-reference resolves and real Foundry rolls the flavored term.
+      const result = await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Augur Adjust', type: 'Player', system: { details: { birthAugurLuckMod: 2 } } })
+        await actor.createEmbeddedDocuments('ActiveEffect', [{
+          name: 'Augur adjustments',
+          img: 'icons/svg/aura.svg',
+          disabled: false,
+          changes: [
+            { key: 'system.attributes.critical.otherMod', value: '@system.details.birthAugurLuckMod', type: 'add' },
+            { key: 'system.attributes.fumble.otherMod', value: '@system.details.birthAugurLuckMod', type: 'add' }
+          ]
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        const weapon = { name: 'P1-AugurWeapon', system: {} }
+        const luckMod = actor.system.abilities.lck.mod
+        const crit = await actor._rollCritical(weapon, { automate: true, luckMod: '+' + luckMod, critTableName: 'III' })
+        const fumble = await actor._rollFumble(weapon, {
+          automate: true, luckMod: '+' + luckMod, inverseLuckMod: '-' + luckMod, useNPCFumbles: false, fumbleTableName: 'Table 4-2: Fumbles', originalFumbleTableName: 'Table 4-2: Fumbles'
+        })
+        return {
+          luckMod,
+          critMod: actor.system.attributes.critical.otherMod,
+          fumbleMod: actor.system.attributes.fumble.otherMod,
+          critFormula: crit.critRoll.formula,
+          critOffset: crit.critRoll.total - crit.critRoll.dice[0].total,
+          fumbleFormula: fumble.fumbleRoll.formula,
+          fumbleOffset: fumble.fumbleRoll.total - fumble.fumbleRoll.dice[0].total
+        }
+      })
+
+      expect(result.luckMod, 'default Player Luck must be modifier 0 for the offsets below').toBe(0)
+      expect(result.critMod).toBe(2)
+      expect(result.fumbleMod).toBe(2)
+      expect(result.critFormula).toContain('[Crit Adjustment]')
+      expect(result.critOffset).toBe(2)
+      expect(result.fumbleFormula).toContain('[Fumble Adjustment]')
+      expect(result.fumbleOffset).toBe(-2)
+    })
   })
 
   test.describe('rollFumble', () => {

@@ -249,6 +249,12 @@ Notes:
 - `system.attributes.ac.otherMod` - AC Modifier (requires auto-calculate AC, which is on by default for PCs; also works for NPCs)
 - `system.attributes.speed.otherMod` - Movement Speed Modifier (PCs)
 - `system.attributes.init.otherMod` - Initiative Modifier
+- `system.attributes.critical.otherMod` - Crit Adjustment: added to critical hit rolls, on top of Luck
+- `system.attributes.fumble.otherMod` - Fumble Adjustment: applied to fumble rolls, on top of Luck
+
+Both adjustments work like Luck: a positive value is better. A crit adjustment of +1 adds 1 to the crit roll; a fumble adjustment of +1 *subtracts* 1 from the fumble roll, since lower fumble results are better. The term shows in the roll's chat output labeled "Crit Adjustment" or "Fumble Adjustment". NPC fumbles rolled on the NPC fumble tables ignore Luck, so they ignore the fumble adjustment too.
+
+These are how the Warrior's Arm and The Broken Star birth augurs are built: an Add effect with the value `@system.details.birthAugurLuckMod` on the crit or fumble adjustment.
 
 Hit Points (`system.attributes.hp.*`) have no modifier field — apply damage, healing, and maximum-HP changes directly on the sheet rather than through an Active Effect. Likewise, if you have turned auto-calculate AC off on a PC, adjust the AC number directly instead of using an effect.
 
