@@ -252,10 +252,15 @@ async function closeWindows (page) {
     for (const app of [...foundry.applications.instances.values()]) {
       if (app.rendered && app.hasFrame) await app.close()
     }
-    // A dialog closed mid-render can reach CLOSED with its element still
-    // attached, and later document-level queries hit it (#958). Drop those.
+    // A closed dialog can keep its element attached, and later document-level
+    // queries hit it (#958). In the headless page the close animation can also
+    // stall, leaving the app CLOSING for good. Drop any framed element whose
+    // app is gone or no longer open (ERROR, CLOSING, CLOSED are all < NONE).
+    const { NONE } = foundry.applications.api.ApplicationV2.RENDER_STATES
     document.querySelectorAll('.application').forEach(el => {
-      if (el.querySelector(':scope > .window-header') && !foundry.applications.instances.get(el.id)?.rendered) el.remove()
+      if (!el.querySelector(':scope > .window-header')) return
+      const app = foundry.applications.instances.get(el.id)
+      if (!app || app.state < NONE) el.remove()
     })
   })
 }

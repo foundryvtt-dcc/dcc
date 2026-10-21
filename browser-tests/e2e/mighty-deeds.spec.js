@@ -201,7 +201,6 @@ test.describe('Mighty Deeds E2E Tests', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    consoleErrors = []
     await closeWindows(page)
 
     // Remove any Foundry notification banners
@@ -221,6 +220,14 @@ test.describe('Mighty Deeds E2E Tests', () => {
     // afterEach restores the world's value
     priorDeedsEnabled = await page.evaluate(() => game.settings.get('dcc', 'mightyDeedsEnabled'))
     await setMightyDeedsEnabled(page, false)
+
+    // Last, so cleanup above (and the previous test's teardown) can't fail this test
+    consoleErrors = []
+  })
+
+  // The session page outlives this file; don't hand the next one our windows.
+  test.afterAll(async ({ sessionPage }) => {
+    await closeWindows(sessionPage).catch(() => {})
   })
 
   test.afterEach(async ({ page }) => {

@@ -38,7 +38,6 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    consoleErrors = []
     await closeWindows(page)
 
     // Remove notification banners
@@ -51,6 +50,9 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       }
       await game.settings.set('dcc', 'enableAbilityScoreLog', true)
     })
+
+    // Last, so cleanup above (and the previous test's teardown) can't fail this test
+    consoleErrors = []
   })
 
   test.afterEach(async ({ page }) => {
