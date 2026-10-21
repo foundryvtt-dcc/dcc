@@ -5264,6 +5264,10 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         const fumble = await actor._rollFumble(weapon, {
           automate: true, luckMod: '+' + luckMod, inverseLuckMod: '-' + luckMod, useNPCFumbles: false, fumbleTableName: 'Table 4-2: Fumbles', originalFumbleTableName: 'Table 4-2: Fumbles'
         })
+        // The enhanced card's manual Roll Fumble button replays the stored
+        // formula as a single Compound term
+        const replay = game.dcc.DCCRoll.createRoll([{ type: 'Compound', formula: fumble.fumbleRollFormula }])
+        await replay.evaluate()
         return {
           luckMod,
           critMod: actor.system.attributes.critical.otherMod,
@@ -5271,7 +5275,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           critFormula: crit.critRoll.formula,
           critOffset: crit.critRoll.total - crit.critRoll.dice[0].total,
           fumbleFormula: fumble.fumbleRoll.formula,
-          fumbleOffset: fumble.fumbleRoll.total - fumble.fumbleRoll.dice[0].total
+          fumbleOffset: fumble.fumbleRoll.total - fumble.fumbleRoll.dice[0].total,
+          replayDice: replay.dice.length,
+          replayOffset: replay.total - replay.dice[0].total
         }
       })
 
@@ -5282,6 +5288,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       expect(result.critOffset).toBe(2)
       expect(result.fumbleFormula).toContain('[Fumble Adjustment]')
       expect(result.fumbleOffset).toBe(-2)
+      expect(result.replayDice, 'replayed formula rolls the fumble die once').toBe(1)
+      expect(result.replayOffset).toBe(-2)
     })
   })
 

@@ -125,5 +125,14 @@ describe('Roll Modifier - Compound Term Parsing', () => {
       ], {})
       expect(zero.formula).not.toContain('[Fumble Adjustment]')
     })
+
+    it('re-rolls a stored flavored formula through a Compound term without duplicating it', () => {
+      // The enhanced card's manual crit/fumble buttons replay critRollFormula /
+      // fumbleRollFormula as one Compound term; the label may contain a hyphen (de)
+      const roll = RollModifierModule.createRollFromTerms([
+        { type: 'Compound', formula: '1d8-2-2[Patzer-Anpassung]' }
+      ], {})
+      expect(roll.formula).toBe('1d8-2-2[Patzer-Anpassung]')
+    })
   })
 })
