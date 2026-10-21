@@ -114,7 +114,9 @@ function DCCModifierTerm (options) {
 
 /**
  * Construct a DCC Check Penalty term object
- * @params options {Object}
+ * @params options {Object}  `hint` names the tooltip key: the partial is shared
+ *                           by the ability/save, skill and spell dialogs, and
+ *                           what unticking does differs between them.
  * @return {Object}
  */
 function DCCCheckPenaltyTerm (options) {
@@ -123,6 +125,7 @@ function DCCCheckPenaltyTerm (options) {
     type: 'CheckPenalty',
     label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
+    hint: options.hint || 'DCC.RollModifierCheckPenaltyHint',
     formula: options.apply ? formula : '-0',
     checkedFormula: formula,
     startsChecked: options.apply,
@@ -578,11 +581,15 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const term of this.terms) {
         const element = this.element.querySelector(`#term-${term.index}`)
         if (element) {
+          // An empty field counts as zero for every term. That is what lets the
+          // unticked CheckPenalty term, whose field is blank, still submit a
+          // "0" to its callback (meaning "not applied").
+          const value = element.value || '0'
           if (termIndex > 0) {
             formula += '+'
           }
-          formula += flavored(element.value, term)
-          resolveTerm(element.value, term)
+          formula += flavored(value, term)
+          resolveTerm(value, term)
           termIndex++
         }
       }
@@ -875,7 +882,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const term = this.getTermByIndex(index)
     const formField = this.element.querySelector('#term-' + index)
     const checked = target.checked
-    formField.value = checked ? term.checkedFormula : '+0'
+    formField.value = checked ? term.checkedFormula : ''
   }
 
   /**

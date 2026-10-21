@@ -204,7 +204,8 @@ export const RollsCheckMixin = (Base) => class extends Base {
 
   /**
    * The modifier-dialog CheckPenalty term (off by default) for a roll
-   * that carries the check penalty note, or null for any other roll.
+   * that carries the check penalty note, or null for any other roll or
+   * an actor with no check penalty (a zero toggle is an empty column).
    *
    * The dialog reports each term's submitted value through `callback`,
    * so `state.applied` says whether the penalty went into the roll. A
@@ -217,13 +218,16 @@ export const RollsCheckMixin = (Base) => class extends Base {
    */
   _checkPenaltyDialogTerm (rollId) {
     if (!CHECK_PENALTY_ROLL_IDS.has(rollId)) return null
+    const penalty = this._getCheckPenalty()
+    if (!penalty) return null
     const state = { applied: false }
     const term = {
       type: 'CheckPenalty',
-      formula: ensurePlus(this._getCheckPenalty()),
+      formula: ensurePlus(penalty),
       apply: false,
-      // Unchecked the term submits '+0' (or '-0'); anything else — the
-      // penalty, or a hand-edited expression like '-(2)' — is in the roll.
+      hint: 'DCC.RollModifierCheckPenaltyHint',
+      // Unticked, the field is empty and `_constructRoll` submits '0'; the
+      // penalty itself, or a hand-edited expression like '-(2)', is in the roll.
       callback: formula => { state.applied = !/^[+-]?0$/.test(String(formula).trim()) }
     }
     return { term, state }

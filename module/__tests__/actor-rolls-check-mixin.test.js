@@ -42,3 +42,23 @@ describe('RollsCheckMixin extraction', () => {
     }
   })
 })
+
+describe('_checkPenaltyDialogTerm', () => {
+  // A zero term would only add an empty column with a checkbox that does
+  // nothing, which is why the skill-check dialog already skips it.
+  test('leaves the term out when the actor has no check penalty', () => {
+    const term = Mixed.prototype._checkPenaltyDialogTerm.call(
+      { _getCheckPenalty: () => 0 }, 'str'
+    )
+    expect(term).toBeNull()
+  })
+
+  // The partial is shared with the skill and spell dialogs, where unticking
+  // drops the penalty without a chat note.
+  test('asks for the ability/save hint', () => {
+    const { term } = Mixed.prototype._checkPenaltyDialogTerm.call(
+      { _getCheckPenalty: () => -2 }, 'str'
+    )
+    expect(term.hint).toBe('DCC.RollModifierCheckPenaltyHint')
+  })
+})
