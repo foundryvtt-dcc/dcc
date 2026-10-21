@@ -164,10 +164,17 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
         }),
         critical: new SchemaField({
           die: new DiceField({ initial: '1d4' }),
-          table: new StringField({ initial: 'I' })
+          table: new StringField({ initial: 'I' }),
+          // Active Effect target: extra adjustment to crit rolls, on top of
+          // Luck (e.g. the Warrior's Arm birth augur). Positive = better.
+          otherMod: new NumberField({ initial: 0, integer: true })
         }),
         fumble: new SchemaField({
-          die: new DiceField({ initial: '1d4' })
+          die: new DiceField({ initial: '1d4' }),
+          // Active Effect target: extra adjustment to fumble rolls, on top of
+          // Luck (e.g. The Broken Star birth augur). Luck-style sign:
+          // positive = better, so it is subtracted from the fumble roll.
+          otherMod: new NumberField({ initial: 0, integer: true })
         }),
         hitDice: new SchemaField({
           value: new DiceField({ initial: '1d4' })

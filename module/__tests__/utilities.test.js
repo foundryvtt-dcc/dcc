@@ -577,6 +577,15 @@ describe('Utilities', () => {
       expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(15)
     })
 
+    it('reads the lowest row when the total falls below the table (Crit Table I starts at 0)', async () => {
+      mockRoll.total = -3
+      mockTable.results = new Map([['a', { range: [0, 0] }], ['b', { range: [1, 1] }]])
+      mockTable.getResultsForRoll = vi.fn((total) => total === 0 ? [{ text: 'Lowest row' }] : [])
+      const result = await getCritTableResult(mockRoll, 'Crit Table I')
+      expect(result).toEqual({ text: 'Lowest row' })
+      expect(mockTable.getResultsForRoll).toHaveBeenLastCalledWith(0)
+    })
+
     it('handles localized crit table names (French)', async () => {
       global.game.i18n.localize.mockReturnValue('Table de Critique')
       const result = await getCritTableResult(mockRoll, 'Table de Critique III')

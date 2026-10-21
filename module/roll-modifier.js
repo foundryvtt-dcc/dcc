@@ -101,12 +101,15 @@ function DCCLuckDieTerm (options) {
  * @return {Object}
  */
 function DCCModifierTerm (options) {
-  return [{
+  const term = {
     type: 'Modifier',
     label: game.i18n.localize('DCC.RollModifierModifierTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     formula: _prependSign(_cleanFormula(options.formula))
-  }]
+  }
+  // Optional inline flavor for the final roll formula (see `_constructRoll`)
+  if (options.flavor) term.flavor = options.flavor
+  return [term]
 }
 
 /**
@@ -205,6 +208,31 @@ function DCCFleetingLuckTerm (options) {
 }
 
 /**
+ * Split a cleaned formula into signed terms at top-level `+` / `-`, leaving
+ * `[flavor]` text intact (a localized label such as "Patzer-Anpassung" can
+ * contain a hyphen)
+ * @param formula {String}
+ * @return {Array<String>}
+ */
+function _splitFormulaTerms (formula) {
+  const terms = []
+  let current = ''
+  let depth = 0
+  for (const char of formula) {
+    if (char === '[') depth++
+    if (char === ']') depth = Math.max(0, depth - 1)
+    if (depth === 0 && (char === '+' || char === '-')) {
+      if (current) terms.push(current)
+      current = char === '-' ? '-' : ''
+      continue
+    }
+    current += char
+  }
+  if (current) terms.push(current)
+  return terms
+}
+
+/**
  * Construct DCC term objects from a compound term
  * @params options {Object}
  * @return {Object}
@@ -212,12 +240,13 @@ function DCCFleetingLuckTerm (options) {
 function DCCCompoundTerm (options) {
   const dieExpression = /^-?\d+d\d+(\[.+\])?$/
   const dieLabel = options.dieLabel || null
-  const modifierExpression = /^-?\d+$/
+  // A flavored modifier (e.g. "-2[Fumble Adjustment]", #1079) keeps its flavor
+  const modifierExpression = /^(-?\d+)(?:\[([^\]]+)\])?$/
   const modifierLabel = options.modifierLabel || null
   const variableExpression = /@(\w+)/
   const terms = []
-  // Clean formula, then stick some duplicate pluses back in, so they can be used to split the formula neatly
-  const inputTerms = _cleanFormula(options.formula).replace(/-/g, '+-').replace(/^\+/, '').split('+')
+  // Clean formula, then split it into signed terms
+  const inputTerms = _splitFormulaTerms(_cleanFormula(options.formula))
   let rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
 
   // If the raw and input terms arrays don't match fall back to just using inputTerms
@@ -241,7 +270,8 @@ function DCCCompoundTerm (options) {
         terms.push(term)
       }
     } else if (inputTerm.match(modifierExpression)) {
-      for (const term of DCCModifierTerm({ formula: inputTerm })) {
+      const [, modifier, flavor] = inputTerm.match(modifierExpression)
+      for (const term of DCCModifierTerm({ formula: modifier, flavor })) {
         if (rawTerm.match(variableExpression)) {
           term.label = rawTerm
         } else if (modifierLabel) {
@@ -531,6 +561,11 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       if (term.type === 'LuckBurn') {
         return _luckBurnPiece(term)
+      }
+      // A Modifier term built with a `flavor` (e.g. a crit/fumble
+      // adjustment, #1079) is tagged the same way, so chat shows its source.
+      if (term.type === 'Modifier' && term.flavor && piece && parseInt(piece) !== 0) {
+        return `${piece}[${term.flavor}]`
       }
       return piece
     }

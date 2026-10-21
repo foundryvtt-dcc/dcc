@@ -110,4 +110,29 @@ describe('Roll Modifier - Compound Term Parsing', () => {
       expect(roll.formula).toContain('[fire]')
     })
   })
+
+  describe('createRollFromTerms with a flavored Modifier term (#1079)', () => {
+    it('tags a non-zero Modifier term with its flavor, and leaves a zero one bare', () => {
+      const flavored = RollModifierModule.createRollFromTerms([
+        { type: 'Compound', formula: '1d8-1' },
+        { type: 'Modifier', formula: '-2', flavor: 'Fumble Adjustment' }
+      ], {})
+      expect(flavored.formula).toBe('1d8-1-2[Fumble Adjustment]')
+
+      const zero = RollModifierModule.createRollFromTerms([
+        { type: 'Compound', formula: '1d8-1' },
+        { type: 'Modifier', formula: '+0', flavor: 'Fumble Adjustment' }
+      ], {})
+      expect(zero.formula).not.toContain('[Fumble Adjustment]')
+    })
+
+    it('re-rolls a stored flavored formula through a Compound term without duplicating it', () => {
+      // The enhanced card's manual crit/fumble buttons replay critRollFormula /
+      // fumbleRollFormula as one Compound term; the label may contain a hyphen (de)
+      const roll = RollModifierModule.createRollFromTerms([
+        { type: 'Compound', formula: '1d8-2-2[Patzer-Anpassung]' }
+      ], {})
+      expect(roll.formula).toBe('1d8-2-2[Patzer-Anpassung]')
+    })
+  })
 })

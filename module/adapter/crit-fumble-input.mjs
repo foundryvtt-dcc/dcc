@@ -46,16 +46,29 @@ const FUMBLE_ARMOR_TYPE_PLACEHOLDER = 'unarmored'
  * scored against them — per RAW it reduces (positive) or boosts (negative) the
  * monster's crit roll. Only set when truthy so ordinary crits are unchanged.
  *
- * @param {{critDie: string, luckModifier: number, defenderLuckModifier?: number, critTableName: string}} args
+ * `critAdjustment` (optional) is the actor's `attributes.critical.otherMod`
+ * (#1079, e.g. the Warrior's Arm birth augur), passed as a lib `bonuses`
+ * entry. Only set when non-zero.
+ *
+ * @param {{critDie: string, luckModifier: number, defenderLuckModifier?: number, critAdjustment?: number, critTableName: string}} args
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').CriticalInput}
  */
-export function buildCriticalInput ({ critDie, luckModifier, defenderLuckModifier, critTableName }) {
+export function buildCriticalInput ({ critDie, luckModifier, defenderLuckModifier, critAdjustment, critTableName }) {
   const input = {
     critTable: critTableName || DEFAULT_CRIT_TABLE,
     critDie: normalizeLibDie(critDie),
     luckModifier
   }
   if (defenderLuckModifier) input.defenderLuckModifier = defenderLuckModifier
+  if (critAdjustment) {
+    input.bonuses = [{
+      id: 'other:crit-adjustment',
+      label: 'Crit adjustment',
+      source: { type: 'other' },
+      category: 'other',
+      effect: { type: 'modifier', value: critAdjustment }
+    }]
+  }
   return input
 }
 
@@ -73,13 +86,19 @@ export function buildCriticalInput ({ critDie, luckModifier, defenderLuckModifie
  * → lower, better result). That matches the Foundry-side formula
  * `${fumbleDie}${-luck}` built in `rollWeaponAttack`.
  *
- * @param {{fumbleDie: string, luckModifier: number}} args
+ * `fumbleAdjustment` (optional) is the actor's `attributes.fumble.otherMod`
+ * (#1079, e.g. The Broken Star birth augur). It uses Luck's sign (positive
+ * = better), and the lib's `FumbleInput` has no other modifier slot, so it
+ * is folded into `luckModifier`. The lib then subtracts the sum, matching
+ * the extra term in the Foundry formula.
+ *
+ * @param {{fumbleDie: string, luckModifier: number, fumbleAdjustment?: number}} args
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').FumbleInput}
  */
-export function buildFumbleInput ({ fumbleDie, luckModifier }) {
+export function buildFumbleInput ({ fumbleDie, luckModifier, fumbleAdjustment = 0 }) {
   return {
     armorType: FUMBLE_ARMOR_TYPE_PLACEHOLDER,
-    luckModifier,
+    luckModifier: luckModifier + fumbleAdjustment,
     fumbleDieOverride: normalizeLibDie(fumbleDie)
   }
 }

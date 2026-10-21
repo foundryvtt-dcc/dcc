@@ -119,7 +119,7 @@ describe('RollsSpellMixin extraction', () => {
       inst = new Mixed()
       inst.system = {
         class: {},
-        attributes: { actionDice: { value: '1d20' }, ac: { checkPenalty: '0' } }
+        attributes: { actionDice: { value: '1d20' }, ac: { checkPenalty: 0 } }
       }
       inst.getRollData = () => ({})
     })
@@ -159,6 +159,40 @@ describe('RollsSpellMixin extraction', () => {
       await inst._promptSpellCheckDialog(null, {})
 
       expect(dieTerm().formula).toBe('1d20')
+    })
+
+    // With no spell item the term used to read `+0`, and the dialog total
+    // then replaced the naked path's own penalty modifier (#1078).
+    const penaltyTerm = () => promptRollModifierDialog.mock.calls[0][0]
+      .find(term => term.type === 'CheckPenalty')
+
+    test('with no spell item the check penalty term uses the actor\'s penalty', async () => {
+      inst.system.attributes.ac.checkPenalty = -4
+
+      await inst._promptSpellCheckDialog(null, {})
+
+      expect(penaltyTerm().formula).toBe(-4)
+      expect(penaltyTerm().apply).toBe(true)
+    })
+
+    test('idol magic skips the check penalty term on a naked cast', async () => {
+      inst.system.attributes.ac.checkPenalty = -4
+
+      await inst._promptSpellCheckDialog(null, { isIdolMagic: true })
+
+      expect(penaltyTerm()).toBeUndefined()
+    })
+
+    test('a spell item that inherits the check penalty uses the actor\'s penalty', async () => {
+      inst.system.attributes.ac.checkPenalty = -4
+      const inheriting = {
+        ...spellItem,
+        system: { ...spellItem.system, config: { inheritCheckPenalty: true } }
+      }
+
+      await inst._promptSpellCheckDialog(inheriting, {})
+
+      expect(penaltyTerm().formula).toBe(-4)
     })
   })
 
