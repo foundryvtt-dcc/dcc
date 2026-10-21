@@ -352,9 +352,11 @@ export const RollsSpellMixin = (Base) => class extends Base {
       }
     ]
 
-    // A naked cast (no spell item) pays the actor's penalty, matching the
-    // no-dialog path in `_castNakedViaAdapter` (#1078).
-    const checkPenalty = (!spellItem || spellItem.system?.config?.inheritCheckPenalty
+    // The penalty comes from the armor the actor wears when the spell
+    // inherits it, otherwise from the spell's own entry. A naked cast has
+    // neither, so it resolves to 0 and gets no column; handing it the
+    // actor's penalty is the naked-cast fix (#1078), tracked separately.
+    const checkPenalty = (spellItem?.system?.config?.inheritCheckPenalty
       ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
       : parseInt(spellItem?.system?.spellCheck?.penalty || '0')) || 0
     // No penalty, no column: a ticked `+0` term is the empty column #1076

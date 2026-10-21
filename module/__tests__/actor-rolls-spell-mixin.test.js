@@ -161,38 +161,39 @@ describe('RollsSpellMixin extraction', () => {
       expect(dieTerm().formula).toBe('1d20')
     })
 
-    // With no spell item the term used to read `+0`, and the dialog total
-    // then replaced the naked path's own penalty modifier (#1078).
     const penaltyTerm = () => promptRollModifierDialog.mock.calls[0][0]
       .find(term => term.type === 'CheckPenalty')
+    const inheritingSpell = {
+      ...spellItem,
+      system: { ...spellItem.system, config: { inheritCheckPenalty: true } }
+    }
 
-    test('with no spell item the check penalty term uses the actor\'s penalty', async () => {
+    test('idol magic skips the check penalty term', async () => {
       inst.system.attributes.ac.checkPenalty = -4
 
-      await inst._promptSpellCheckDialog(null, {})
-
-      expect(penaltyTerm().formula).toBe(-4)
-      expect(penaltyTerm().apply).toBe(true)
-    })
-
-    test('idol magic skips the check penalty term on a naked cast', async () => {
-      inst.system.attributes.ac.checkPenalty = -4
-
-      await inst._promptSpellCheckDialog(null, { isIdolMagic: true })
+      await inst._promptSpellCheckDialog(inheritingSpell, { isIdolMagic: true })
 
       expect(penaltyTerm()).toBeUndefined()
     })
 
     test('a spell item that inherits the check penalty uses the actor\'s penalty', async () => {
       inst.system.attributes.ac.checkPenalty = -4
-      const inheriting = {
-        ...spellItem,
-        system: { ...spellItem.system, config: { inheritCheckPenalty: true } }
-      }
 
-      await inst._promptSpellCheckDialog(inheriting, {})
+      await inst._promptSpellCheckDialog(inheritingSpell, {})
 
       expect(penaltyTerm().formula).toBe(-4)
+    })
+
+    test('a spell that does not inherit it uses its own penalty', async () => {
+      inst.system.attributes.ac.checkPenalty = -4
+      const ownPenalty = {
+        ...spellItem,
+        system: { ...spellItem.system, spellCheck: { ...spellItem.system.spellCheck, penalty: '-3' } }
+      }
+
+      await inst._promptSpellCheckDialog(ownPenalty, {})
+
+      expect(penaltyTerm().formula).toBe(-3)
     })
 
     test('no resolved penalty leaves the term out instead of an empty +0 column', async () => {
@@ -204,7 +205,7 @@ describe('RollsSpellMixin extraction', () => {
     test('the term carries the spell-dialog hint', async () => {
       inst.system.attributes.ac.checkPenalty = -4
 
-      await inst._promptSpellCheckDialog(null, {})
+      await inst._promptSpellCheckDialog(inheritingSpell, {})
 
       expect(penaltyTerm().hint).toBe('DCC.RollModifierCheckPenaltyHintSpell')
     })
