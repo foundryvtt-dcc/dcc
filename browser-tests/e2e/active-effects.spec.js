@@ -15,7 +15,7 @@ const { expect, createSessionTest, openActorSheet, significantConsoleErrors, FOU
  */
 
 // Module-scoped console-error capture (cleared in beforeEach, asserted in
-// afterEach). The fixture attaches the listener once per worker.
+// afterEach). The listener is attached for this file's tests only.
 const consoleErrors = []
 const test = createSessionTest({
   onConsole: msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()) }

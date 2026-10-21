@@ -3,8 +3,8 @@ const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
 
 const ADAPTER_TAG = '[DCC adapter]'
 
-// Module-scoped capture arrays. The fixture attaches the console listener ONCE
-// per worker (via onConsole below): `adapterLogs` collects the
+// Module-scoped capture arrays. The console listener (onConsole below) is
+// attached for this file's tests only: `adapterLogs` collects the
 // `[DCC adapter] …` dispatch lines this spec asserts on, `consoleErrors`
 // collects errors. beforeEach clears both. Safe with workers:1; if we ever
 // parallelize, move them onto the fixture object.

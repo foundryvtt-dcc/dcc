@@ -15,8 +15,8 @@ const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
  * join-page select option and the spec will time out.
  */
 
-// Module-scoped console-error capture. The fixture attaches the listener ONCE
-// per worker (via onConsole below); beforeEach clears this array and afterEach
+// Module-scoped console-error capture. The listener (onConsole below) is
+// attached for this file's tests only; beforeEach clears this array and afterEach
 // asserts on it. Safe as a module global with workers:1 (playwright.config.js).
 const consoleErrors = []
 const test = createSessionTest({
