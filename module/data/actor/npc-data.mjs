@@ -27,7 +27,8 @@ export class NPCData extends BaseActorData {
     // Override default critical table for NPCs (Monster table M instead of I)
     schema.attributes.fields.critical = new SchemaField({
       die: new DiceField({ initial: '1d4' }),
-      table: new StringField({ initial: 'M' })
+      table: new StringField({ initial: 'M' }),
+      otherMod: new NumberField({ initial: 0, integer: true })
     })
 
     // Override default hit dice for NPCs (1d6 instead of 1d4)

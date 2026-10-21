@@ -1110,7 +1110,15 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // A defending PC's Luck is subtracted from the monster's crit roll (RAW):
     // +Luck lowers the result, -Luck raises it.
     const defenderLuckTerm = defenderLuckMod ? ensurePlus((-defenderLuckMod).toString(), false) : ''
-    const critRollFormula = `${critDie}${luckMod}${defenderLuckTerm}`
+    const baseCritFormula = `${critDie}${luckMod}${defenderLuckTerm}`
+    // Extra crit adjustment from Active Effects (#1079, e.g. Warrior's Arm),
+    // flavored so chat shows where the term comes from.
+    const critAdjustment = parseInt(this.system.attributes.critical?.otherMod) || 0
+    const critAdjustmentLabel = game.i18n.localize('DCC.CritAdjustment')
+    const critAdjustmentFormula = critAdjustment ? ensurePlus(critAdjustment.toString()) : ''
+    const critRollFormula = critAdjustment
+      ? `${baseCritFormula}${critAdjustmentFormula}[${critAdjustmentLabel}]`
+      : baseCritFormula
     const criticalText = game.i18n.localize('DCC.Critical')
     const critTableText = game.i18n.localize('DCC.CritTable')
     const critTableDisplayText = `${critTableText} ${critTableName}`
@@ -1130,13 +1138,22 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     }
 
     const critPrompt = criticalText
-    const critRoll = game.dcc.DCCRoll.createRoll([
+    const critTerms = [
       {
         type: 'Compound',
         dieLabel: criticalText,
-        formula: critRollFormula
+        formula: baseCritFormula
       }
-    ])
+    ]
+    if (critAdjustment) {
+      critTerms.push({
+        type: 'Modifier',
+        label: critAdjustmentLabel,
+        formula: critAdjustmentFormula,
+        flavor: critAdjustmentLabel
+      })
+    }
+    const critRoll = game.dcc.DCCRoll.createRoll(critTerms)
     await critRoll.evaluate()
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
     const critRollTotal = critRoll.total
@@ -1146,6 +1163,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       critDie,
       luckModifier: parseInt(this.system.abilities.lck.mod) || 0,
       defenderLuckModifier: defenderLuckMod,
+      critAdjustment,
       critTableName
     })
     const libResult = libRollCritical(critInput, () => naturalCrit)
@@ -1213,10 +1231,18 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     // NPC fumble die: flat 1d10, or — under the optional Monster Fumbles rule
     // (Yearbook #8) — stepped along the dice chain by the targeted PC's Luck.
     const npcFumbleDie = monsterFumbleLuckMod !== null ? getMonsterFumbleDie(monsterFumbleLuckMod) : '1d10'
-    let fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
-    if (this.isNPC && useNPCFumbles) {
-      fumbleRollFormula = npcFumbleDie
-    }
+    // The NPC fumble tables ignore the roller's Luck, so they also ignore the
+    // fumble adjustment and the Luck passed to the lib below.
+    const npcFumbleTable = this.isNPC && useNPCFumbles
+    // Extra fumble adjustment from Active Effects (#1079, e.g. The Broken
+    // Star). Luck-style sign: positive = better, so it is subtracted.
+    const fumbleAdjustment = npcFumbleTable ? 0 : (parseInt(this.system.attributes.fumble?.otherMod) || 0)
+    const fumbleAdjustmentLabel = game.i18n.localize('DCC.FumbleAdjustment')
+    const fumbleAdjustmentFormula = fumbleAdjustment ? ensurePlus((-fumbleAdjustment).toString()) : ''
+    const baseFumbleFormula = npcFumbleTable ? npcFumbleDie : `${this.system.attributes.fumble.die}${inverseLuckMod}`
+    const fumbleRollFormula = fumbleAdjustment
+      ? `${baseFumbleFormula}${fumbleAdjustmentFormula}[${fumbleAdjustmentLabel}]`
+      : baseFumbleFormula
 
     if (!automate) {
       const fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
@@ -1233,22 +1259,32 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     }
 
     const fumblePrompt = game.i18n.localize('DCC.Fumble')
-    const fumbleRoll = game.dcc.DCCRoll.createRoll([
+    const fumbleTerms = [
       {
         type: 'Compound',
         dieLabel: fumblePrompt,
-        formula: fumbleRollFormula
+        formula: baseFumbleFormula
       }
-    ])
+    ]
+    if (fumbleAdjustment) {
+      fumbleTerms.push({
+        type: 'Modifier',
+        label: fumbleAdjustmentLabel,
+        formula: fumbleAdjustmentFormula,
+        flavor: fumbleAdjustmentLabel
+      })
+    }
+    const fumbleRoll = game.dcc.DCCRoll.createRoll(fumbleTerms)
     await fumbleRoll.evaluate()
     foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
     const fumbleRollTotal = fumbleRoll.total
 
     const naturalFumble = fumbleRoll.dice[0]?.total ?? fumbleRoll.total
-    const fumbleDie = this.isNPC && useNPCFumbles ? npcFumbleDie : this.system.attributes.fumble.die
+    const fumbleDie = npcFumbleTable ? npcFumbleDie : this.system.attributes.fumble.die
     const fumbleInput = buildFumbleInput({
       fumbleDie,
-      luckModifier: parseInt(this.system.abilities.lck.mod) || 0
+      luckModifier: npcFumbleTable ? 0 : (parseInt(this.system.abilities.lck.mod) || 0),
+      fumbleAdjustment
     })
     const libResult = libRollFumble(fumbleInput, () => naturalFumble)
 
@@ -1307,6 +1343,17 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         formula: ensurePlus(this.system.abilities.lck.mod)
       }
     ]
+    // Extra crit adjustment from Active Effects (#1079, e.g. Warrior's Arm)
+    const critAdjustment = parseInt(this.system.attributes.critical?.otherMod) || 0
+    if (critAdjustment) {
+      const critAdjustmentLabel = game.i18n.localize('DCC.CritAdjustment')
+      terms.push({
+        type: 'Modifier',
+        label: critAdjustmentLabel,
+        formula: ensurePlus(critAdjustment.toString()),
+        flavor: critAdjustmentLabel
+      })
+    }
 
     const critRoll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
     if (!critRoll) return // Dialog cancelled — post no crit card

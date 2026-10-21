@@ -338,7 +338,13 @@ export async function getCritTableResult (roll, critTableName) {
   }
 
   if (critTable) {
-    const critResult = critTable.getResultsForRoll(roll.total)
+    let critResult = critTable.getResultsForRoll(roll.total)
+    // A total below the table's lowest row reads that row (Crit Table I starts
+    // at 0, so a 0-level or wizard crit with a Luck penalty can roll under it)
+    if (!critResult.length && critTable.results?.size) {
+      const lowest = Math.min(...Array.from(critTable.results.values(), r => r.range[0]))
+      if (roll.total < lowest) critResult = critTable.getResultsForRoll(lowest)
+    }
     return critResult[0] || 'Unable to find crit result'
   }
 }

@@ -1,4 +1,4 @@
-/* global gameSettingsGetMock */
+/* global gameSettingsGetMock, game */
 /**
  * Adapter round-trip test — Phase 3 session 16 (D2 crit + fumble
  * retirement).
@@ -360,4 +360,81 @@ test('adapter fumble path swaps to NPC fumble die when actor is NPC + useNPCFumb
   expect(result.fumbleRollFormula).toBe('1d10')
   expect(result.isNPCFumble).toBe(true)
   expect(result.libFumbleResult.fumbleDie).toBe('d10')
+})
+
+// ============================================================================
+// Crit / fumble adjustment keys (#1079: Warrior's Arm, The Broken Star)
+// ============================================================================
+
+test('buildCriticalInput / buildFumbleInput carry the crit and fumble adjustments', () => {
+  // Crit adjustment rides the lib's `bonuses`; zero leaves the input unchanged
+  expect(buildCriticalInput({ critDie: '1d12', luckModifier: 1, critAdjustment: 0, critTableName: 'III' }))
+    .not.toHaveProperty('bonuses')
+  expect(buildCriticalInput({ critDie: '1d12', luckModifier: 1, critAdjustment: 1, critTableName: 'III' }).bonuses)
+    .toEqual([expect.objectContaining({ effect: { type: 'modifier', value: 1 } })])
+  // Fumble adjustment has Luck's sign, so it folds into luckModifier
+  expect(buildFumbleInput({ fumbleDie: '1d8', luckModifier: 2, fumbleAdjustment: 2 }).luckModifier).toBe(4)
+})
+
+test('crit adjustment adds a labeled term to the crit roll and the lib total agrees', async () => {
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 9, natural: 7 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.attributes = { critical: { die: '1d12', table: 'III', otherMod: 1 } }
+  actor.system.abilities = { lck: { mod: '+1' } }
+
+  let result
+  try {
+    result = await actor._rollCritical({ name: 'longsword' }, { automate: true, luckMod: '+1', critTableName: 'III' })
+    // The existing compound term is unchanged; the adjustment is its own flavored Modifier term
+    expect(game.dcc.DCCRoll.createRoll).toHaveBeenCalledWith([
+      expect.objectContaining({ type: 'Compound', formula: '1d12+1' }),
+      expect.objectContaining({ type: 'Modifier', formula: '+1', flavor: 'CritAdjustment' })
+    ])
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(result.critRollFormula).toBe('1d12+1+1[CritAdjustment]')
+  expect(result.libCritResult.total).toBe(9) // natural 7 + luck 1 + adjustment 1
+})
+
+test('fumble adjustment lowers a PC fumble, but NPC fumble tables ignore it and Luck', async () => {
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const pc = new DCCActor()
+  pc.isPC = true
+  pc.isNPC = false
+  pc.system.attributes = { critical: { die: '1d10', table: 'III' }, fumble: { die: '1d8', otherMod: 2 } }
+  pc.system.abilities = { lck: { mod: '+2' } }
+  // noinspection JSCheckFunctionSignatures
+  const npc = new DCCActor()
+  npc.isPC = false
+  npc.isNPC = true
+  npc.system.attributes = { critical: { die: '1d10', table: 'M' }, fumble: { die: '1d4', otherMod: 2 } }
+  npc.system.abilities = { lck: { mod: '+2' } }
+  const ctx = { automate: true, luckMod: '+2', inverseLuckMod: '-2', useNPCFumbles: true, fumbleTableName: 'Table 4-2: Fumbles', originalFumbleTableName: 'Table 4-2: Fumbles' }
+
+  let pcResult, npcResult
+  let restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 2, natural: 6 }))
+  try {
+    pcResult = await pc._rollFumble({ name: 'longsword' }, ctx)
+  } finally {
+    restoreRoll()
+  }
+  restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 6, natural: 6 }))
+  try {
+    npcResult = await npc._rollFumble({ name: 'claws' }, ctx)
+  } finally {
+    restoreRoll()
+    restore()
+  }
+
+  expect(pcResult.fumbleRollFormula).toBe('1d8-2-2[FumbleAdjustment]')
+  expect(pcResult.libFumbleResult.total).toBe(2) // natural 6 - luck 2 - adjustment 2
+  expect(npcResult.fumbleRollFormula).toBe('1d10')
+  expect(npcResult.libFumbleResult.total).toBe(6) // flat NPC table die: no Luck, no adjustment
 })
