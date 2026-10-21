@@ -20,7 +20,8 @@ const { expect, createSessionTest } = require('./fixtures')
  *
  * Every card is also screenshotted per theme and attached to the report, so a
  * reviewer can SEE the gallery (`pnpm exec playwright show-report`) instead of
- * trusting numbers alone.
+ * trusting numbers alone. On CI the screenshots are taken only when a test
+ * fails: the GPU-less runner spends 7-12 s on each one (#1081).
  *
  * Adding a new chat card with buttons or links? Add it to `postGallery` — the
  * assertions are generic and need no per-card expectations.
@@ -324,7 +325,14 @@ async function captureGallery (page, gallery, themeCase, testInfo) {
 }
 
 test.describe('Chat card contrast sweep', () => {
-  test.afterEach(async ({ page }) => {
+  // The gallery under test, so a CI failure can still capture its evidence.
+  let posted = null
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (process.env.CI && posted && testInfo.status !== testInfo.expectedStatus) {
+      await captureGallery(page, posted.gallery, posted.themeCase, testInfo).catch(() => {})
+    }
+    posted = null
     await page.mouse.move(0, 0)
     await removeGallery(page)
     await restoreTheme(page)
@@ -338,9 +346,11 @@ test.describe('Chat card contrast sweep', () => {
       const gallery = await postGallery(page)
       const ids = gallery.map(g => g.id)
       await applyTheme(page, themeCase, ids)
+      posted = { gallery, themeCase }
 
       // Screenshots first, so a failing audit still leaves the evidence.
-      await captureGallery(page, gallery, themeCase, testInfo)
+      // CI captures in afterEach, and only on failure.
+      if (!process.env.CI) await captureGallery(page, gallery, themeCase, testInfo)
 
       const resting = await auditGallery(page, ids)
       // Guard against the audit silently matching nothing.
