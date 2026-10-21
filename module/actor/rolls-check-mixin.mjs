@@ -225,8 +225,9 @@ export const RollsCheckMixin = (Base) => class extends Base {
       type: 'CheckPenalty',
       formula: ensurePlus(penalty),
       apply: false,
-      // Unchecked the term submits '+0' (or '-0'); anything else — the
-      // penalty, or a hand-edited expression like '-(2)' — is in the roll.
+      hint: 'DCC.RollModifierCheckPenaltyHint',
+      // Unticked, the field is empty and `_constructRoll` submits '0'; the
+      // penalty itself, or a hand-edited expression like '-(2)', is in the roll.
       callback: formula => { state.applied = !/^[+-]?0$/.test(String(formula).trim()) }
     }
     return { term, state }

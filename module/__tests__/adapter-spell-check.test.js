@@ -3271,6 +3271,9 @@ test('#923 a generic cast does not tick the check penalty by default', async () 
   const actor = new DCCActor()
   actor.system.class.patron = ''
   actor.system.details.sheetClass = 'Wizard'
+  // A zero penalty now leaves the term out entirely (#1076), so the flag
+  // needs a penalty to be observable.
+  actor.system.attributes.ac.checkPenalty = '-4'
 
   const spellItem = makeGenericSpellItem()
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)

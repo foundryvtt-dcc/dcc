@@ -52,4 +52,13 @@ describe('_checkPenaltyDialogTerm', () => {
     )
     expect(term).toBeNull()
   })
+
+  // The partial is shared with the skill and spell dialogs, where unticking
+  // drops the penalty without a chat note.
+  test('asks for the ability/save hint', () => {
+    const { term } = Mixed.prototype._checkPenaltyDialogTerm.call(
+      { _getCheckPenalty: () => -2 }, 'str'
+    )
+    expect(term.hint).toBe('DCC.RollModifierCheckPenaltyHint')
+  })
 })

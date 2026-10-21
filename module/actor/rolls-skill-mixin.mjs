@@ -885,7 +885,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       terms.push({
         type: 'CheckPenalty',
         formula: checkPenalty,
-        apply: checkPenaltyCouldApply
+        apply: checkPenaltyCouldApply,
+        hint: 'DCC.RollModifierCheckPenaltyHintSkill'
       })
     }
 

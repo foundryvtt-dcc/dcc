@@ -194,6 +194,20 @@ describe('RollsSpellMixin extraction', () => {
 
       expect(penaltyTerm().formula).toBe(-4)
     })
+
+    test('no resolved penalty leaves the term out instead of an empty +0 column', async () => {
+      await inst._promptSpellCheckDialog(null, {})
+
+      expect(penaltyTerm()).toBeUndefined()
+    })
+
+    test('the term carries the spell-dialog hint', async () => {
+      inst.system.attributes.ac.checkPenalty = -4
+
+      await inst._promptSpellCheckDialog(null, {})
+
+      expect(penaltyTerm().hint).toBe('DCC.RollModifierCheckPenaltyHintSpell')
+    })
   })
 
   // The spend has to follow the die actually rolled, not the auto-picked slot,

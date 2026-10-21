@@ -289,9 +289,10 @@ export const RollsSpellMixin = (Base) => class extends Base {
    * drives the CheckPenalty `apply` flag — `castingMode === 'wizard'`
    * applies it by default (matches legacy DCCItem.rollSpellCheck:307).
    * `ctx.isIdolMagic` skips the CheckPenalty term entirely (idol-magic
-   * clerics don't pay check penalty in any form). `ctx.spellburnEligible`
-   * adds the Spellburn descriptor so the user can allocate burn in the
-   * same dialog (clerics / NPCs are ineligible).
+   * clerics don't pay check penalty in any form), as does a resolved
+   * penalty of 0 — an empty column with a checkbox that does nothing.
+   * `ctx.spellburnEligible` adds the Spellburn descriptor so the user can
+   * allocate burn in the same dialog (clerics / NPCs are ineligible).
    * @private
    */
   async _promptSpellCheckDialog (spellItem, ctx = {}) {
@@ -351,15 +352,18 @@ export const RollsSpellMixin = (Base) => class extends Base {
       }
     ]
 
-    if (!isIdolMagic) {
-      // A naked cast (no spell item) pays the actor's penalty, matching the
-      // no-dialog path in `_castNakedViaAdapter` (#1078).
-      const checkPenalty = !spellItem || spellItem.system?.config?.inheritCheckPenalty
-        ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
-        : parseInt(spellItem?.system?.spellCheck?.penalty || '0')
+    // A naked cast (no spell item) pays the actor's penalty, matching the
+    // no-dialog path in `_castNakedViaAdapter` (#1078).
+    const checkPenalty = (!spellItem || spellItem.system?.config?.inheritCheckPenalty
+      ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
+      : parseInt(spellItem?.system?.spellCheck?.penalty || '0')) || 0
+    // No penalty, no column: a ticked `+0` term is the empty column #1076
+    // removes from the other dialogs.
+    if (!isIdolMagic && checkPenalty) {
       terms.push({
         type: 'CheckPenalty',
         formula: checkPenalty,
+        hint: 'DCC.RollModifierCheckPenaltyHintSpell',
         // Legacy parity (`DCCItem.rollSpellCheck`): only a wizard-castingMode
         // cast pays the armor check penalty by default. Idol magic skips the
         // term entirely (`isIdolMagic`); a generic cast — a wand, say — gets
