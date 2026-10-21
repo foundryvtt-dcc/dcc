@@ -352,7 +352,9 @@ export const RollsSpellMixin = (Base) => class extends Base {
     ]
 
     if (!isIdolMagic) {
-      const checkPenalty = spellItem?.system?.config?.inheritCheckPenalty
+      // A naked cast (no spell item) pays the actor's penalty, matching the
+      // no-dialog path in `_castNakedViaAdapter` (#1078).
+      const checkPenalty = !spellItem || spellItem.system?.config?.inheritCheckPenalty
         ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
         : parseInt(spellItem?.system?.spellCheck?.penalty || '0')
       terms.push({
