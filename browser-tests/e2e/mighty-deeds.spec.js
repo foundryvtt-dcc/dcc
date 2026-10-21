@@ -271,7 +271,7 @@ test.describe('Mighty Deeds E2E Tests', () => {
     // Bring the card into view
     await page.evaluate(() => ui.sidebar.expand())
     await page.click('button[data-tab="chat"]')
-    await page.waitForTimeout(500)
+    await expect(page.locator('#chat')).toHaveClass(/active/)
     await page.evaluate(() => ui.chat.scrollBottom({ immediate: true }))
     const card = page.locator(`#chat .chat-message[data-message-id="${success.messageId}"]`)
 
@@ -313,13 +313,12 @@ test.describe('Mighty Deeds E2E Tests', () => {
     // whereas the old "Roll Deed" flow posted a separate chat message. The
     // unchanged message count proves nothing new was posted (a global
     // isMightyDeed scan would false-positive on stale messages from old runs).
-    await page.waitForTimeout(500)
+    // The choice is persisted on the message (shared with other viewers / GM).
+    // The change handler renders the result and writes this flag; with both
+    // done, anything it would have posted has posted.
+    await expect.poll(() => page.evaluate((id) => game.messages.get(id).getFlag('dcc', 'deedSelectedTable'), success.messageId))
+      .toBe('E2E Deed Table')
     expect(await page.evaluate(() => game.messages.size)).toBe(messagesBefore)
-
-    // The choice is persisted on the message (shared with other viewers / GM)
-    expect(
-      await page.evaluate((id) => game.messages.get(id).getFlag('dcc', 'deedSelectedTable'), success.messageId)
-    ).toBe('E2E Deed Table')
 
     // ...and survives a re-render (as clicking Damage/Crit later would trigger):
     // the picker reflects the stored choice and the result is re-derived from it.

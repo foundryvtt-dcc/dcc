@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
+const { expect, createSessionTest, waitForAppSettled, FOUNDRY_URL } = require('./fixtures')
 
 const ADAPTER_TAG = '[DCC adapter]'
 
@@ -221,12 +221,20 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     }
   }
 
-  /** Fire-and-forget: kicks off an async action, dismisses any modal it raises. */
+  /**
+   * Fire-and-forget: kicks off a roll that raises the roll modifier dialog,
+   * then dismisses the dialog. Closed in-page once it's up, not with a blind
+   * Escape: with no window open, Escape shows the main menu.
+   */
   async function fireAndForget (page, bodyFn, arg) {
     await page.evaluate(bodyFn, arg)
-    await page.waitForTimeout(150)
-    await page.keyboard.press('Escape')
-    await page.waitForTimeout(100)
+    await page.waitForSelector('.dcc-roll-modifier', { timeout: 10000 })
+    await page.evaluate(async () => {
+      const { RENDERED } = foundry.applications.api.ApplicationV2.RENDER_STATES
+      for (const app of [...foundry.applications.instances.values()]) {
+        if (app.state === RENDERED && app.element?.matches('.dcc-roll-modifier')) await app.close()
+      }
+    })
   }
 
   async function makePlayer (page, name, extraSystem = {}) {
@@ -1708,7 +1716,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       await waitForAdapterLog('rollSpellCheck')
 
       // Let the onPatronTaint chat message post.
-      await page.waitForTimeout(300)
+      await page.waitForFunction(n => game.messages.contents.slice(n).some(m => m.flags?.dcc?.isPatronTaint === true), before, { timeout: 10000 }).catch(() => {})
 
       const { taintMessageContent, isPatronTaintFlag, afterChance } = await page.evaluate((beforeCount) => {
         const newMessages = game.messages.contents.slice(beforeCount)
@@ -1983,8 +1991,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         }])
         actor.sheet.render(true)
       })
-      await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
-      await page.waitForTimeout(2500)
+      await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 15000 })
 
       await page.evaluate(() => {
         window.__p923Before = new Set(game.messages.contents.map(m => m.id))
@@ -1994,7 +2001,6 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
         app?.changeTab?.('clericSpells', 'sheet')
       })
-      await page.waitForTimeout(1000)
 
       // A plain click on the sheet's cast button — no modifier dialog.
       await page.evaluate(() => {
@@ -2054,14 +2060,12 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         }])
         actor.sheet.render(true)
       })
-      await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
-      await page.waitForTimeout(2500)
+      await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 15000 })
       await page.evaluate(() => {
         const app = [...foundry.applications.instances.values()]
           .find(a => a.document?.name === 'P1 NPC Sheet Caster')
         app?.changeTab?.('wizardSpells', 'sheet')
       })
-      await page.waitForTimeout(1000)
 
       await page.evaluate(() => {
         window.__p1NpcBefore = new Set(game.messages.contents.map(m => m.id))
@@ -2288,8 +2292,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-Spellburn-Spell', mode: 'wizard' })
 
-      // Allow async actor.update to land (onSpellburnApplied bridge).
-      await page.waitForTimeout(300)
+      // Wait for the async actor.update to land (onSpellburnApplied bridge).
+      await page.waitForFunction(() => game.actors.getName('P1 Spell Spellburn')?.system.abilities.str.value === 12, null, { timeout: 10000 })
 
       const { str, agl, sta } = await page.evaluate(() => {
         const actor = game.actors.getName('P1 Spell Spellburn')
@@ -2431,8 +2435,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-Mercurial-Spell', mode: 'wizard' })
 
-      // Allow the async item.update to land.
-      await page.waitForTimeout(400)
+      // Wait for the async item.update to land.
+      await page.waitForFunction(() => Number(game.actors.getName('P1 Spell Mercurial')?.items.getName('P1-Mercurial-Spell')?.system?.mercurialEffect?.value) > 0, null, { timeout: 10000 }).catch(() => {})
 
       const mercurialValue = await page.evaluate(() => {
         const actor = game.actors.getName('P1 Spell Mercurial')
@@ -2761,7 +2765,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
         assertPath(line, 'adapter', { spell: 'P1-Registry-Wizard-Spell', mode: 'wizard' })
 
         // Let the async item.update land before reading mercurialEffect.
-        await page.waitForTimeout(400)
+        await page.waitForFunction(() => Number(game.actors.getName('P1 Spell RegistryWizard')?.items.getName('P1-Registry-Wizard-Spell')?.system?.mercurialEffect?.value) > 0, null, { timeout: 10000 }).catch(() => {})
         const mercurialValue = await page.evaluate(() => {
           const actor = game.actors.getName('P1 Spell RegistryWizard')
           const item = actor.items.getName('P1-Registry-Wizard-Spell')
@@ -2898,7 +2902,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
           })
         })
 
-        await page.waitForTimeout(300)
+        // ChatMessage.create is fire-and-forget; the card and the burn land after the cast resolves
+        await page.waitForFunction(n => game.messages.size > n && game.actors.getName('P1 Spell LostProbe')?.system.abilities.str.value === 12, before, { timeout: 10000 }).catch(() => {})
 
         // The cast went ahead: a spell-check card posted.
         const after = await page.evaluate(() => game.messages.size)

@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals (game, ui, Actor, Item) used in page.evaluate callbacks */
-const { expect, createSessionTest, FOUNDRY_URL } = require('./fixtures')
+const { expect, createSessionTest, closeWelcomeDialogs, waitForAppSettled, FOUNDRY_URL } = require('./fixtures')
 
 /**
  * E2E tests for DCC TypeDataModels
@@ -71,12 +71,7 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
 
     // Welcome dialogs are dismissed once in the fixture; re-dismiss only if one
     // reappeared.
-    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(sel)
-      if (await dialog.isVisible({ timeout: 300 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-      }
-    }
+    await closeWelcomeDialogs(page)
 
     // Let prior-test teardown re-renders drain, THEN clear — so the zero-error
     // gate in afterEach measures only this test's body.
@@ -371,7 +366,6 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       const specialInput = page.locator('input[name="system.attributes.special.value"]')
       if (await specialInput.isVisible()) {
         await specialInput.fill('Bite +2 (1d6)')
-        await page.waitForTimeout(500)
         const specialValue = await specialInput.inputValue()
         expect(specialValue).toBe('Bite +2 (1d6)')
       }
@@ -405,7 +399,6 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
 
       // Set weapon damage (base damage die)
       await page.fill('input[name="system.damageWeapon"]', '1d8')
-      await page.waitForTimeout(500)
 
       // Verify it saved (no error)
       const damageValue = await page.locator('input[name="system.damageWeapon"]').inputValue()
@@ -439,7 +432,6 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       const fumbleDieInput = page.locator('input[name="system.fumbleDie"]')
       if (await fumbleDieInput.isVisible()) {
         await fumbleDieInput.fill('1d8')
-        await page.waitForTimeout(500)
         const fumbleValue = await fumbleDieInput.inputValue()
         expect(fumbleValue).toBe('1d8')
       }
@@ -472,7 +464,6 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       const gpInput = page.locator('input[name="system.value.gp"]')
       if (await gpInput.isVisible()) {
         await gpInput.fill('100')
-        await page.waitForTimeout(500)
         const gpValue = await gpInput.inputValue()
         expect(gpValue).toBe('100')
       }
@@ -533,18 +524,17 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.fill('input[name="name"]', 'Persistence Test')
       await page.selectOption('select[name="type"]', 'Player')
       await page.click('button[data-action="ok"]')
-      await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
-      await page.waitForTimeout(500) // Wait for sheet to fully render
+      await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 5000 })
 
       // Edit strength - fill then submit the form explicitly
       const strInput = page.locator('input[name="system.abilities.str.value"]')
       await strInput.fill('18')
       await page.evaluate(() => document.querySelector('form.dcc.actor.sheet')?.requestSubmit())
-      await page.waitForTimeout(1000) // Wait for save and re-render
+      await page.waitForFunction(() => game.actors.getName('Persistence Test')?.system.abilities.str.value === 18, null, { timeout: 10000 })
 
       // Close the sheet
       await page.click('.dcc.actor.sheet button[data-action="close"]')
-      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet')).toHaveCount(0)
 
       // Reopen the sheet
       await page.click('.entry-name:has-text("Persistence Test")')
@@ -571,18 +561,17 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.fill('input[name="name"]', 'Action Die Test')
       await page.selectOption('select[name="type"]', 'Player')
       await page.click('button[data-action="ok"]')
-      await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
-      await page.waitForTimeout(500) // Wait for sheet to fully render
+      await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 5000 })
 
       // Edit action die (string field) - fill then submit the form explicitly
       const actionDieInput = page.locator('input[name="system.attributes.actionDice.value"]')
       await actionDieInput.fill('1d24')
       await page.evaluate(() => document.querySelector('form.dcc.actor.sheet')?.requestSubmit())
-      await page.waitForTimeout(1000)
+      await page.waitForFunction(() => game.actors.getName('Action Die Test')?.system.attributes.actionDice.value === '1d24', null, { timeout: 10000 })
 
       // Close and reopen
       await page.click('.dcc.actor.sheet button[data-action="close"]')
-      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet')).toHaveCount(0)
       await page.click('.entry-name:has-text("Action Die Test")')
       await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
 
