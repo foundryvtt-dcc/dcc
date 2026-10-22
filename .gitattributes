@@ -11,6 +11,7 @@ package-lock.json export-ignore
 .github export-ignore
 .husky export-ignore
 scripts export-ignore
+tools export-ignore
 
 # Entity Metadata
 metadata export-ignore

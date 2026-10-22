@@ -1,11 +1,13 @@
-/* global game, Actor, ChatMessage, CONFIG, ui, foundry */
+/* global game, Actor, ChatMessage, CONFIG, ui, foundry, window */
 /**
- * Named world setups for storyboards. Each runs in the page and returns the
- * ids of everything it created, so the runner can delete them after the take
- * (camera-named documents escape the specs' `E2E ` cleanup).
+ * Named world setups for storyboards. Each runs in the page and records what
+ * it creates in `window.videoCreated` as it goes, so teardown can undo a setup
+ * that failed partway (camera-named documents escape the specs' `E2E `
+ * cleanup).
  */
 export const setups = {
   'mighty-deeds': async (page) => page.evaluate(async () => {
+    const created = window.videoCreated
     const actor = await Actor.create({
       name: 'Brannoc the Bold',
       type: 'Player',
@@ -18,22 +20,22 @@ export const setups = {
         abilities: { str: { value: 16 } }
       }
     })
+    created.actorIds.push(actor.id)
     await actor.createEmbeddedDocuments('Item', [{
       name: 'Longsword',
       type: 'weapon',
       system: { actionDie: '1d20', toHit: '@ab', damage: '1d8+@ab', melee: true, equipped: true }
     }])
     const swapSetting = async (ns, key, value) => {
-      const previous = game.settings.get(ns, key)
+      created.settings[`${ns}.${key}`] ??= game.settings.get(ns, key)
       await game.settings.set(ns, key, value)
-      return previous
     }
+    await swapSetting('dcc', 'enhancedAttackCards', true)
     // Offer the core book's deed tables on the card (the card captures the list
     // at roll time), and drop any table a spec run left behind.
     for (const table of game.tables.filter(t => t.name.startsWith('E2E '))) await table.delete()
-    const deedCompendium = await swapSetting('dcc', 'mightyDeedsCompendium', 'dcc-core-book.dcc-core-deed-tables')
-    const deadlineTables = Date.now() + 5000
-    while (Date.now() < deadlineTables && !Object.keys(CONFIG.DCC.mightyDeedsTables).length) await new Promise(resolve => setTimeout(resolve, 50))
+    await swapSetting('dcc', 'mightyDeedsCompendium', 'dcc-core-book.dcc-core-deed-tables')
+    await waitFor(() => Object.keys(CONFIG.DCC.mightyDeedsTables).length, 5000, 'core book deed tables (is dcc-core-book active?)')
     // A targeted foe, so the card reports a hit instead of "only if it hits".
     const goblin = await Actor.create({
       name: 'Goblin',
@@ -43,29 +45,60 @@ export const setups = {
       system: { attributes: { hp: { value: 5, max: 5 }, ac: { value: 10 } } },
       prototypeToken: { actorLink: true }
     })
+    created.actorIds.push(goblin.id)
     const scene = game.canvas.scene
+    if (!scene) throw new Error('no scene is being viewed to place the target token on')
+    created.sceneId = scene.id
     const [tokenDoc] = await scene.createEmbeddedDocuments('Token', [{ name: 'Goblin', actorId: goblin.id, actorLink: true, x: 800, y: 300, width: 1, height: 1, disposition: -1 }])
-    const deadline = Date.now() + 3000
-    while (Date.now() < deadline && !game.canvas.tokens.get(tokenDoc.id)) await new Promise(resolve => setTimeout(resolve, 50))
+    created.tokenIds.push(tokenDoc.id)
+    await waitFor(() => game.canvas.tokens.get(tokenDoc.id), 3000, 'the Goblin token on the canvas')
     game.canvas.tokens.get(tokenDoc.id).setTarget(true, { releaseOthers: true })
-    return { actorIds: [actor.id, goblin.id], tokenIds: [tokenDoc.id], settings: { 'dcc.enhancedAttackCards': await swapSetting('dcc', 'enhancedAttackCards', true), 'dcc.mightyDeedsCompendium': deedCompendium } }
+
+    async function waitFor (test, ms, what) {
+      const deadline = Date.now() + ms
+      while (!test()) {
+        if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`)
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
   })
 }
 
-/** Delete what a setup created, plus chat from the take. */
-export async function teardown (page, created) {
-  await page.evaluate(async ({ actorIds, tokenIds, settings }) => {
-    game.user.targets.forEach(t => t.setTarget(false, { releaseOthers: false }))
-    if (tokenIds?.length) await game.canvas.scene.deleteEmbeddedDocuments('Token', tokenIds.filter(id => game.canvas.scene.tokens.has(id)))
-    for (const [key, value] of Object.entries(settings ?? {})) await game.settings.set(...key.split(/\.(.*)/s, 2), value)
-    for (const id of actorIds ?? []) await game.actors.get(id)?.delete()
-    for (const actor of game.actors.filter(a => a.getFlag('dcc', 'videoFixture'))) await actor.delete()
-  }, created)
+/**
+ * Undo what prepareStage and the setup recorded. Every step runs even if an
+ * earlier one fails; the failures are thrown together afterwards.
+ */
+export async function teardown (page) {
+  const failures = await page.evaluate(async () => {
+    const { actorIds = [], tokenIds = [], sceneId, settings = {}, paused } = window.videoCreated ?? {}
+    const scene = game.scenes.get(sceneId)
+    const steps = [
+      () => game.user.targets.forEach(t => t.setTarget(false, { releaseOthers: false })),
+      () => scene?.deleteEmbeddedDocuments('Token', tokenIds.filter(id => scene.tokens.has(id))),
+      ...Object.entries(settings).map(([key, value]) => () => game.settings.set(...key.split(/\.(.*)/s, 2), value)),
+      ...actorIds.map(id => () => game.actors.get(id)?.delete()),
+      () => Promise.all(game.actors.filter(a => a.getFlag('dcc', 'videoFixture')).map(a => a.delete())),
+      () => paused && !game.paused && game.togglePause(true, { broadcast: true })
+    ]
+    const failures = []
+    for (const step of steps) {
+      try { await step() } catch (e) { failures.push(e.message) }
+    }
+    return failures
+  })
+  if (failures.length) throw new Error(`teardown left the world dirty: ${failures.join('; ')}`)
 }
 
-/** Put the client in a camera-ready state: chat open, nothing stray on screen. */
+/**
+ * Put the client in a camera-ready state: chat open and empty, nothing stray
+ * on screen, unpaused. Deletes every chat message in the world, which is why
+ * capture refuses to run against the live world.
+ */
 export async function prepareStage (page) {
   await page.evaluate(async () => {
+    window.videoCreated = { actorIds: [], tokenIds: [], settings: {}, paused: game.paused }
+    // Clear fixtures a failed run left behind, so getName finds this run's.
+    await Promise.all(game.actors.filter(a => a.getFlag('dcc', 'videoFixture')).map(a => a.delete()))
     for (const app of foundry.applications.instances.values()) {
       if (app.id !== 'sidebar' && app.hasFrame) await app.close()
     }

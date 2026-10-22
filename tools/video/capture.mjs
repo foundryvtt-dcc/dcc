@@ -24,6 +24,14 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const require = createRequire(import.meta.url)
 const { login } = require('../../browser-tests/e2e/fixtures.js')
 
+// prepareStage deletes every chat message, so never fall back to the live
+// world on 30000 the way the specs do.
+const foundryUrl = process.env.FOUNDRY_URL
+if (!foundryUrl || new URL(foundryUrl).port === '30000') {
+  console.error('Set FOUNDRY_URL to an isolated e2e:env server (pnpm run e2e:env status), not the live world on 30000.')
+  process.exit(1)
+}
+
 // Foundry warns below 1024x768; 16:9 above that.
 const VIEWPORT = { width: 1440, height: 810 }
 const SCALE = 2
@@ -46,7 +54,6 @@ const browser = await chromium.launch({
 })
 const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: storyboard.theme ?? 'dark' })
 const page = await context.newPage()
-let created = {}
 // Cursor path and clicks, in CSS px and wall-clock ms (rebased to the footage below).
 const pointer = { samples: [], clicks: [] }
 let mouse = { x: VIEWPORT.width * 0.42, y: VIEWPORT.height * 0.55 }
@@ -56,7 +63,7 @@ let actionAt = null
 try {
   await login(page)
   await prepareStage(page)
-  created = await setups[storyboard.setup](page)
+  await setups[storyboard.setup](page)
   // Let the sidebar and chat settle before the first frame.
   await page.waitForFunction(() => document.querySelector('#chat')?.offsetParent !== null)
 
@@ -146,7 +153,10 @@ try {
   fs.writeFileSync(path.join(outDir, 'timeline.json'), JSON.stringify(timeline, null, 2))
   console.log(`Wrote ${frames.length} frames, ${(timeline.durationMs / 1000).toFixed(1)} s → ${path.relative(process.cwd(), outDir)}`)
 } finally {
-  await teardown(page, created).catch(e => console.warn('teardown failed:', e.message))
+  await teardown(page).catch(e => {
+    console.error(e.message)
+    process.exitCode = 1
+  })
   await browser.close()
 }
 

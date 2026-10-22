@@ -149,7 +149,9 @@ the runner should honour `FOUNDRY_URL` exactly as the specs do.
 - **Cleanup.** Spec cleanup deletes documents whose names start with `E2E `
   (e.g. `mighty-deeds.spec.js` `beforeEach`). Camera-named actors escape
   that, so the runner tracks what it creates (a `flags.dcc.videoFixture`
-  flag or an id list) and deletes it after the take.
+  flag or an id list) and deletes it after the take. The PoC records each
+  document, setting and the pause state as setup goes, so a setup that fails
+  partway is still undone, and every teardown step runs even if one fails.
 - **Cursor.** x11grab draws the real cursor. Ease mouse moves over 300–500 ms
   with `page.mouse.move(x, y, { steps })`; a teleporting cursor reads as a
   bug.
@@ -210,6 +212,9 @@ node compose.mjs mighty-deeds                    # out/mighty-deeds/short.mp4
 node contact-sheet.mjs mighty-deeds short.mp4    # stills of the short
 ```
 
+Capture clears the world's chat log for a clean stage, so it refuses to run
+without `FOUNDRY_URL` or against the live world on port 30000.
+
 What it differs on, and what it taught:
 
 - **Capture is the CDP screencast, not x11grab,** so it runs on macOS (no
@@ -235,7 +240,8 @@ What it differs on, and what it taught:
   listbox; `selectOption` glides to an option, picks it and fires `change`.
 - **The e2e world's `mightyDeedsCompendium` is empty,** so the card offered
   only a leftover spec table. The setup points it at the core book's deed
-  tables (restored afterwards); the card captures the list at roll time.
+  tables (the setting is restored afterwards, though other connected clients
+  keep the tables registered until they reload); the card captures the list at roll time.
 - **The screencast only emits on repaint.** A still UI gave 31 frames for
   16 s and dropped every animation in between. A 1px near-transparent
   element repainted each animation frame keeps it at display rate; x11grab
