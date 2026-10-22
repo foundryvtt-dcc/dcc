@@ -125,7 +125,7 @@ async function applyTheme (page, themeCase, ids) {
     globalThis.__dccSavedUiConfig ??= cfg
     globalThis.__dccSavedUseUiClass ??= document.body.classList.contains('chat-cards-use-ui-theme')
     document.body.classList.toggle('chat-cards-use-ui-theme', useUi)
-    await game.settings.set('core', 'uiConfig', {
+    await dccSetUiConfig({
       ...cfg,
       colorScheme: { ...(cfg.colorScheme || {}), applications, interface: interfaceTheme }
     })
@@ -158,7 +158,7 @@ async function restoreTheme (page) {
     }
     const saved = globalThis.__dccSavedUiConfig
     if (saved) {
-      await game.settings.set('core', 'uiConfig', saved)
+      await dccSetUiConfig(saved)
       delete globalThis.__dccSavedUiConfig
     }
   }).catch(() => {})

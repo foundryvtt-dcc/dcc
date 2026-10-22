@@ -156,6 +156,26 @@ async function closeWelcomeDialogs (page) {
 }
 
 /**
+ * Page init script: defines `globalThis.dccSetUiConfig(value)`, which sets
+ * `core.uiConfig` without the redraw. The setting's onChange restyles the UI
+ * and then starts an unawaited `canvas.draw()` of the viewed scene, which takes
+ * 5-12 s under the runner's software WebGL and is the bulk of the theme specs'
+ * time (#1081). They only need the restyle. A client setting's onChange runs
+ * inside `set`, so stubbing `draw` for the call skips only the redraw, and the
+ * stored value stays real for apps that read it when they render.
+ */
+function installUiConfigSetter () {
+  globalThis.dccSetUiConfig = async value => {
+    canvas.draw = async () => canvas
+    try {
+      return await game.settings.set('core', 'uiConfig', value)
+    } finally {
+      delete canvas.draw
+    }
+  }
+}
+
+/**
  * The one session-reuse `test` every spec shares. Playwright starts a new
  * worker for each distinct fixture set, so a `base.extend` per spec file meant
  * a fresh worker, browser and login for every file: 35 of them, ~25 s each on
@@ -165,6 +185,7 @@ async function closeWelcomeDialogs (page) {
 const sessionTest = base.extend({
   sessionPage: [async ({ browser }, use) => {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    await context.addInitScript(installUiConfigSetter)
     const page = await context.newPage()
     await login(page)
     await use(page)

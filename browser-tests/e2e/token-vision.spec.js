@@ -136,9 +136,15 @@ test.describe('Owned-token vision (issue #872)', () => {
     expect(info.extendsCoreToken).toBe(true)
   })
 
-  test('an owned token keeps providing vision while another token is controlled', async ({ page }) => {
-    const setup = await setupTokens(page)
-    try {
+  test.describe('with a probe scene', () => {
+    // One scene for both probes: each scene switch is a full canvas draw,
+    // 5-10 s under the CI runner's software WebGL (#1081)
+    let setup
+    test.beforeAll(async ({ sessionPage }) => { setup = await setupTokens(sessionPage) })
+    test.afterAll(async ({ sessionPage }) => { if (setup) await cleanupTokens(sessionPage, setup) })
+    test.afterEach(async ({ page }) => { await page.evaluate(() => game.settings.set('dcc', 'ownedTokenVision', true)) })
+
+    test('an owned token keeps providing vision while another token is controlled', async ({ page }) => {
       const result = await probeVisionSources(page, setup)
       expect(result.controllerControlled).toBe(true)
       expect(result.companionControlled).toBe(false)
@@ -146,19 +152,12 @@ test.describe('Owned-token vision (issue #872)', () => {
       expect(result.coreVisionSource).toBe(false)
       // The DCC override keeps it a vision source, so it stays rendered and clickable
       expect(result.dccVisionSource).toBe(true)
-    } finally {
-      await cleanupTokens(page, setup)
-    }
-  })
+    })
 
-  test('standard Foundry vision applies while the setting is off', async ({ page }) => {
-    const setup = await setupTokens(page)
-    try {
+    test('standard Foundry vision applies while the setting is off', async ({ page }) => {
       await page.evaluate(() => game.settings.set('dcc', 'ownedTokenVision', false))
       const result = await probeVisionSources(page, setup)
       expect(result.dccVisionSource).toBe(false)
-    } finally {
-      await cleanupTokens(page, setup)
-    }
+    })
   })
 })

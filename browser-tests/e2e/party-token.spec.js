@@ -7,15 +7,19 @@ const test = createSessionTest({ onConsole: msg => { if (msg.type() === 'error')
 test.beforeEach(() => { consoleErrors.length = 0 })
 test.afterEach(() => { expect(significantConsoleErrors(consoleErrors)).toEqual([]) })
 
-async function createSwapFixture (page, gridType = 1) {
-  return page.evaluate(async gridType => {
-    const members = []
-    for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
-    const party = await Actor.create({ name: 'PARTY TOKEN UI Party', type: 'Party', flags: { dcc: { partyMembers: members.map(member => ({ id: member.id })) } } })
-    const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: gridType } })
-    // A previous test's scene delete starts an un-awaited blank re-draw, and a
-    // fresh world's first draw is slow; view() is refused while the canvas is
-    // loading, so retry until the scene is current and fully drawn.
+// Shared by the square-grid tests: every scene view, and every delete of the
+// viewed scene, is a full canvas draw, 5-10 s each under the CI runner's
+// software WebGL (#1081). Tests clear its tokens instead (cleanSwapFixture).
+let sharedScene = null
+
+/**
+ * View `sceneId` and wait until it is fully drawn. A previous scene
+ * delete starts an un-awaited re-draw, and a fresh world's first draw is slow;
+ * view() is refused while the canvas is loading, so retry.
+ */
+async function viewScene (page, sceneId) {
+  await page.evaluate(async sceneId => {
+    const scene = game.scenes.get(sceneId)
     const deadline = Date.now() + 30000
     while (Date.now() < deadline && (canvas.scene?.id !== scene.id || !canvas.ready || canvas.loading)) {
       if (canvas.scene?.id !== scene.id && !canvas.loading) {
@@ -24,6 +28,32 @@ async function createSwapFixture (page, gridType = 1) {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
     if (canvas.scene?.id !== scene.id || !canvas.ready) throw new Error('probe scene never finished drawing')
+  }, sceneId)
+}
+
+test.beforeAll(async ({ sessionPage }) => {
+  sharedScene = await sessionPage.evaluate(async () => {
+    const scene = await Scene.create({ name: 'PARTY TOKEN UI Source', width: 3000, height: 3000, grid: { size: 100, type: 1 } })
+    return { id: scene.id, previous: canvas.scene?.id ?? null }
+  })
+})
+
+test.afterAll(async ({ sessionPage }) => {
+  if (!sharedScene) return
+  if (sharedScene.previous) await viewScene(sessionPage, sharedScene.previous).catch(() => {})
+  await sessionPage.evaluate(id => game.scenes.get(id)?.delete(), sharedScene.id)
+})
+
+async function createSwapFixture (page, gridType = 1) {
+  const sceneId = gridType === 1
+    ? sharedScene.id
+    : await page.evaluate(async gridType => (await Scene.create({ name: 'PARTY TOKEN UI Hex', width: 3000, height: 3000, grid: { size: 100, type: gridType } })).id, gridType)
+  await viewScene(page, sceneId)
+  return page.evaluate(async ({ sceneId, ownScene }) => {
+    const members = []
+    for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
+    const party = await Actor.create({ name: 'PARTY TOKEN UI Party', type: 'Party', flags: { dcc: { partyMembers: members.map(member => ({ id: member.id })) } } })
+    const scene = game.scenes.get(sceneId)
     const data = []
     for (const [i, actor] of members.entries()) {
       data.push((await actor.getTokenDocument({
@@ -49,20 +79,22 @@ async function createSwapFixture (page, gridType = 1) {
       actors: [...members, party].map(actor => actor.id),
       members: members.map(actor => actor.id),
       scene: scene.id,
-      scenes: [scene.id],
+      scenes: ownScene ? [scene.id] : [],
       tokens: ordered.map(token => token.id),
       originals: ordered.map(token => token.toObject())
     }
-  }, gridType)
+  }, { sceneId, ownScene: gridType !== 1 })
 }
 
 async function cleanSwapFixture (page, ids) {
-  await page.evaluate(async ids => {
+  await page.evaluate(async ({ ids, sharedSceneId }) => {
     await canvas.hud.token.clear()
     for (const id of ids.scenes) await game.scenes.get(id)?.delete()
+    const shared = game.scenes.get(sharedSceneId)
+    if (shared?.tokens.size) await shared.deleteEmbeddedDocuments('Token', shared.tokens.map(token => token.id))
     for (const id of ids.actors) await game.actors.get(id)?.delete()
     document.querySelectorAll('#notifications .notification').forEach(element => element.remove())
-  }, ids)
+  }, { ids, sharedSceneId: sharedScene?.id })
 }
 
 const sheetSwap = party => `#DCCPartySheet-Actor-${party} [data-action="togglePartyTokens"]`
@@ -173,25 +205,15 @@ test('fresh scene deploys prototypes once and leaves the marker visible when not
 })
 
 test('party HP bar shows the live member sum and never persists it', async ({ page }) => {
-  const ids = await page.evaluate(async () => {
+  await viewScene(page, sharedScene.id)
+  const ids = await page.evaluate(async sceneId => {
     const first = await Actor.create({ name: 'PARTY TOKEN Bar Member', type: 'Player', system: { attributes: { hp: { value: 5, max: 8 } } } })
     const second = await Actor.create({ name: 'PARTY TOKEN Bar NPC', type: 'NPC', system: { attributes: { hp: { value: 2, max: 4 } } } })
     const party = await Actor.create({ name: 'PARTY TOKEN Bars', type: 'Party', flags: { dcc: { partyMembers: [{ id: first.id }, { id: second.id }] } } })
-    const scene = await Scene.create({ name: 'PARTY TOKEN Bars Scene', width: 2000, height: 2000, grid: { size: 100, type: 1 } })
-    // A previous test's scene delete starts an un-awaited blank re-draw, and a
-    // fresh world's first draw is slow; view() is refused while the canvas is
-    // loading, so retry until the scene is current and fully drawn.
-    const deadline = Date.now() + 30000
-    while (Date.now() < deadline && (canvas.scene?.id !== scene.id || !canvas.ready || canvas.loading)) {
-      if (canvas.scene?.id !== scene.id && !canvas.loading) {
-        try { await scene.view() } catch { /* canvas still loading */ }
-      }
-      await new Promise(resolve => setTimeout(resolve, 100))
-    }
-    if (canvas.scene?.id !== scene.id || !canvas.ready) throw new Error('probe scene never finished drawing')
+    const scene = game.scenes.get(sceneId)
     const [token] = await scene.createEmbeddedDocuments('Token', [(await party.getTokenDocument({ x: 500, y: 500 })).toObject()])
-    return { first: first.id, second: second.id, party: party.id, scene: scene.id, token: token.id }
-  })
+    return { first: first.id, second: second.id, party: party.id, token: token.id, actors: [first.id, second.id, party.id], scenes: [] }
+  }, sharedScene.id)
   try {
     await page.waitForFunction(ids => canvas.tokens?.get(ids.token)?.bars, ids)
     const bar = () => page.evaluate(ids => {
@@ -216,11 +238,7 @@ test('party HP bar shows the live member sum and never persists it', async ({ pa
     expect(final.aggregatePersisted).toBe(false)
     expect(final.first).toMatchObject({ value: 3, max: 10 })
   } finally {
-    await page.evaluate(async ids => {
-      await canvas.hud.token.clear()
-      await game.scenes.get(ids.scene)?.delete()
-      for (const id of [ids.party, ids.first, ids.second]) await game.actors.get(id)?.delete()
-    }, ids)
+    await cleanSwapFixture(page, ids)
   }
 })
 
@@ -246,7 +264,10 @@ test('member token HUD gathers the controlled members through the party chooser'
     const dialog = page.locator('.dialog').filter({ hasText: 'Which party should gather' })
     await expect(dialog).toBeVisible()
     await dialog.locator(`[data-action="${ids.party}"]`).evaluate(element => element.click())
-    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 2, ids)
+    // The snapshot is saved before the member tokens are deleted: wait for both,
+    // or the cleanup's token delete races the end of the gather
+    await page.waitForFunction(ids => game.actors.get(ids.party).getFlag('dcc', 'partyTokenSnapshots')?.members.length === 2 &&
+      !canvas.scene.tokens.has(ids.tokens[0]) && !canvas.scene.tokens.has(ids.tokens[1]), ids)
     expect(await page.evaluate(id => game.actors.get(id).getFlag('dcc', 'partyTokenSnapshots') ?? null, other)).toBeNull()
   } finally {
     await cleanSwapFixture(page, ids)

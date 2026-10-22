@@ -86,7 +86,7 @@ async function auditChatCardContrast (page, scopeSelectors, fallbackBg = 'rgb(11
     // self-contained evaluate arms the theme, waits out the re-render, then
     // walks the cards it can still see.
     const cfg = game.settings.get('core', 'uiConfig')
-    await game.settings.set('core', 'uiConfig', {
+    await dccSetUiConfig({
       ...cfg,
       colorScheme: { ...(cfg.colorScheme || {}), interface: 'dark', applications: 'dark' }
     })
@@ -167,7 +167,7 @@ test.describe('Chat card text color', () => {
     await page.evaluate(async () => {
       const saved = globalThis.__dccSavedUiConfig
       if (saved) {
-        await game.settings.set('core', 'uiConfig', saved)
+        await dccSetUiConfig(saved)
         delete globalThis.__dccSavedUiConfig
       }
     }).catch(() => {})
@@ -184,7 +184,7 @@ test.describe('Chat card text color', () => {
       const msgs = []
 
       const measure = async (scheme) => {
-        await game.settings.set('core', 'uiConfig', {
+        await dccSetUiConfig({
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
@@ -375,7 +375,7 @@ test.describe('Chat card text color', () => {
       } finally {
         for (const m of msgs) { if (m) await m.delete() }
         if (actor) await actor.delete()
-        await game.settings.set('core', 'uiConfig', cfg)
+        await dccSetUiConfig(cfg)
       }
       return out
     })
@@ -486,7 +486,7 @@ test.describe('Chat card text color', () => {
       globalThis.__dccSavedUiConfig = cfg
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
       const setScheme = async (scheme) => {
-        await game.settings.set('core', 'uiConfig', {
+        await dccSetUiConfig({
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
@@ -662,7 +662,7 @@ test.describe('Chat card text color', () => {
         delete globalThis.__dccAuditScopes
         delete globalThis.__dccAuditMsgs
         delete globalThis.__dccAuditActorId
-        await game.settings.set('core', 'uiConfig', cfg)
+        await dccSetUiConfig(cfg)
         throw err
       }
     })
@@ -756,7 +756,7 @@ test.describe('Chat card text color', () => {
       const msgs = []
       const q = (msg, sel) => document.querySelector(`#chat [data-message-id="${msg.id}"] ${sel}`)
       const measure = async (scheme) => {
-        await game.settings.set('core', 'uiConfig', {
+        await dccSetUiConfig({
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
@@ -790,7 +790,7 @@ test.describe('Chat card text color', () => {
         out.light = await measure('light')
       } finally {
         for (const m of msgs) await m.delete().catch(() => {})
-        await game.settings.set('core', 'uiConfig', cfg)
+        await dccSetUiConfig(cfg)
       }
       return out
     })
@@ -824,7 +824,7 @@ test.describe('Chat card text color', () => {
       document.body.classList.add('chat-cards-use-ui-theme')
       let msg
       const measure = async (applications, ui) => {
-        await game.settings.set('core', 'uiConfig', {
+        await dccSetUiConfig({
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: ui, applications }
         })
@@ -855,7 +855,7 @@ test.describe('Chat card text color', () => {
       } finally {
         if (!hadClass) document.body.classList.remove('chat-cards-use-ui-theme')
         await msg?.delete().catch(() => {})
-        await game.settings.set('core', 'uiConfig', cfg)
+        await dccSetUiConfig(cfg)
       }
       return out
     })
