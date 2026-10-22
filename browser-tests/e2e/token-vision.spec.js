@@ -77,17 +77,22 @@ async function setupTokens (page) {
 
 /** Restore the setting, view the previous scene, and delete the probe docs. */
 async function cleanupTokens (page, setup) {
+  // The probe actors predate each test's cleanWorldState baseline, so nothing
+  // else deletes them: the deletes run even if the scene switch fails
   await page.evaluate(async ({ prevSceneId, sceneId, actorIds }) => {
-    await game.settings.set('dcc', 'ownedTokenVision', true)
-    game.canvas.tokens.releaseAll()
-    // Scene switches are refused while the canvas is still loading
-    const deadline = Date.now() + 10000
-    while (Date.now() < deadline && !game.canvas.ready) {
-      await new Promise(resolve => setTimeout(resolve, 100))
+    try {
+      await game.settings.set('dcc', 'ownedTokenVision', true)
+      game.canvas.tokens?.releaseAll()
+      // Scene switches are refused while the canvas is still loading
+      const deadline = Date.now() + 10000
+      while (Date.now() < deadline && !game.canvas.ready) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      if (prevSceneId) await game.scenes.get(prevSceneId)?.view()
+    } finally {
+      await game.scenes.get(sceneId)?.delete()
+      for (const id of actorIds) await game.actors.get(id)?.delete()
     }
-    if (prevSceneId) await game.scenes.get(prevSceneId)?.view()
-    await game.scenes.get(sceneId)?.delete()
-    for (const id of actorIds) await game.actors.get(id)?.delete()
   }, setup)
 }
 
@@ -136,9 +141,15 @@ test.describe('Owned-token vision (issue #872)', () => {
     expect(info.extendsCoreToken).toBe(true)
   })
 
-  test('an owned token keeps providing vision while another token is controlled', async ({ page }) => {
-    const setup = await setupTokens(page)
-    try {
+  test.describe('with a probe scene', () => {
+    // One scene for both probes: each scene switch is a full canvas draw,
+    // 5-10 s under the CI runner's software WebGL (#1081)
+    let setup
+    test.beforeAll(async ({ sessionPage }) => { setup = await setupTokens(sessionPage) })
+    test.afterAll(async ({ sessionPage }) => { if (setup) await cleanupTokens(sessionPage, setup) })
+    test.afterEach(async ({ page }) => { await page.evaluate(() => game.settings.set('dcc', 'ownedTokenVision', true)) })
+
+    test('an owned token keeps providing vision while another token is controlled', async ({ page }) => {
       const result = await probeVisionSources(page, setup)
       expect(result.controllerControlled).toBe(true)
       expect(result.companionControlled).toBe(false)
@@ -146,19 +157,12 @@ test.describe('Owned-token vision (issue #872)', () => {
       expect(result.coreVisionSource).toBe(false)
       // The DCC override keeps it a vision source, so it stays rendered and clickable
       expect(result.dccVisionSource).toBe(true)
-    } finally {
-      await cleanupTokens(page, setup)
-    }
-  })
+    })
 
-  test('standard Foundry vision applies while the setting is off', async ({ page }) => {
-    const setup = await setupTokens(page)
-    try {
+    test('standard Foundry vision applies while the setting is off', async ({ page }) => {
       await page.evaluate(() => game.settings.set('dcc', 'ownedTokenVision', false))
       const result = await probeVisionSources(page, setup)
       expect(result.dccVisionSource).toBe(false)
-    } finally {
-      await cleanupTokens(page, setup)
-    }
+    })
   })
 })
