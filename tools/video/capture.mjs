@@ -29,7 +29,6 @@ const VIEWPORT = { width: 1440, height: 810 }
 const SCALE = 2
 const FPS = 30
 const MOVE_MS = 550 // one cursor glide
-const LEAD_MS = 450 // pause before a click glide, so the composed camera can pan to the target
 
 const storyboardPath = process.argv[2]
 if (!storyboardPath) {
@@ -51,6 +50,8 @@ let created = {}
 // Cursor path and clicks, in CSS px and wall-clock ms (rebased to the footage below).
 const pointer = { samples: [], clicks: [] }
 let mouse = { x: VIEWPORT.width * 0.42, y: VIEWPORT.height * 0.55 }
+// When the current step's click glide began; the composed camera pans with it.
+let actionAt = null
 
 try {
   await login(page)
@@ -88,6 +89,7 @@ try {
   const steps = []
   for (const step of storyboard.steps) {
     const start = Date.now()
+    actionAt = null
     const clickBox = await runAction(page, step)
     await page.waitForTimeout(400) // let close/open animations finish before measuring
     const ready = Date.now() // the step's result is on screen; captions and camera key off this
@@ -101,7 +103,7 @@ try {
       await glide(page, b.x + b.width + 14, b.y + b.height * 0.7)
     }
     await page.waitForTimeout(Math.max(0, holdUntil - Date.now()))
-    steps.push({ id: step.id, start, ready, end: Date.now(), caption: step.caption, frame: step.frame, zoom: step.zoom, clickBox, ...boxes })
+    steps.push({ id: step.id, start, ready, end: Date.now(), caption: step.caption, frame: step.frame, zoom: step.zoom, clickBox, actionAt, ...boxes })
     console.log(`  ${step.id}: ${Date.now() - start} ms`)
   }
 
@@ -135,7 +137,7 @@ try {
     viewport: VIEWPORT,
     scale: SCALE,
     durationMs: endTs - t0,
-    steps: steps.map(s => ({ ...s, start: Math.max(0, s.start - t0), ready: s.ready - t0, end: s.end - t0 })),
+    steps: steps.map(s => ({ ...s, start: Math.max(0, s.start - t0), actionAt: s.actionAt && s.actionAt - t0, ready: s.ready - t0, end: s.end - t0 })),
     pointer: {
       samples: pointer.samples.map(p => ({ ...p, t: p.t - t0 })),
       clicks: pointer.clicks.map(c => ({ ...c, t: c.t - t0 }))
@@ -167,6 +169,7 @@ async function glide (page, x, y, ms = MOVE_MS) {
 async function clickAt (page, box) {
   const x = box.x + box.width / 2
   const y = box.y + box.height / 2
+  actionAt ??= Date.now()
   await glide(page, x, y)
   await page.waitForTimeout(150)
   pointer.clicks.push({ t: Date.now(), x, y })
@@ -204,7 +207,6 @@ async function runAction (page, step) {
           break
         }
         clickBox = await target.boundingBox()
-        await page.waitForTimeout(LEAD_MS)
         await clickAt(page, clickBox)
         // In-page click: pointer clicks can hang on Foundry overlays (see TESTING.md).
         await target.evaluate(el => el.click())
@@ -220,7 +222,6 @@ async function runAction (page, step) {
         const target = page.locator(action.selector).first()
         await target.waitFor({ state: 'visible' })
         clickBox = await target.boundingBox()
-        await page.waitForTimeout(LEAD_MS)
         await clickAt(page, clickBox)
         await target.evaluate(sel => {
           game.tooltip.deactivate() // the select's hover hint would cover the list

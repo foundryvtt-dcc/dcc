@@ -198,7 +198,7 @@ generated script is a small extra step per short.
 
 ## Proof of concept (no audio)
 
-`tools/video/` (its own workspace package) renders a 30 s 9:16 Mighty Deeds
+`tools/video/` (its own workspace package) renders a 33 s 9:16 Mighty Deeds
 short with title card, camera moves, cursor, spotlights, captions and end
 card, but no narration or music. Against a running `pnpm run e2e:env up`:
 
@@ -224,8 +224,10 @@ What it differs on, and what it taught:
 - **Click steps get an action shot.** A click on something off-camera (the
   sheet, while the chat card is framed) pans to bring it into view, pauses
   for the click, then moves to the result. Long moves pull back mid-pan
-  instead of whipping across empty canvas. The runner waits 450 ms before
-  each click glide so the pan lands first. After each step the cursor drifts
+  instead of whipping across empty canvas. The pan runs with the cursor's
+  glide (timeline `actionAt`) and the move to the result starts once the
+  result is on screen; starting either early (an earlier version panned at
+  step start, then waited for the glide) reads as a hiccup. After each step the cursor drifts
   beside its spotlight. A click with `"glide": false` skips the cursor trip,
   so the camera stays put (the second roll stays on the chat card).
 - **Native `<select>` popups are invisible to the screencast** (drawn

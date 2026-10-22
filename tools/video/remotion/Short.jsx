@@ -78,8 +78,10 @@ function useCamera (timeline, ms, fps) {
     const dip = Math.min(0.4, Math.hypot(b.cx - a.cx, b.cy - a.cy) / 5000) * Math.sin(Math.PI * t)
     return { zoom: (a.zoom + (b.zoom - a.zoom) * t) * (1 - dip), cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t }
   }
-  // Pan to the click target as the step starts, then arrive on the result as it lands.
-  const cam = mix(mix(prev, action, ease(step.start)), result, ease(step.ready - MOVE_FRAMES / fps * 1000))
+  // Pan with the cursor's glide to the click target, then move to the result
+  // once it is on screen. Starting either move early reads as a hiccup:
+  // the camera nudges, waits, then moves again.
+  const cam = mix(mix(prev, action, ease(step.actionAt ?? step.start)), result, ease(step.ready - 200))
   return { index: i, ...cam }
 }
 
