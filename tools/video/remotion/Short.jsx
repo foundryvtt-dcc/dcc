@@ -45,19 +45,94 @@ function stepCamera (step, timeline) {
   return { zoom, cx: lo > hi ? cx : Math.min(hi, Math.max(lo, spotX)), cy }
 }
 
+/**
+ * Camera while a step's action runs: hold the previous shot, panned just
+ * enough to bring the click target into view, so the cursor is seen clicking.
+ */
+function actionCamera (step, prev, timeline) {
+  if (!step.clickBox) return prev
+  const s = timeline.scale
+  const px = (step.clickBox.x + step.clickBox.width / 2) * s
+  const py = (step.clickBox.y + step.clickBox.height / 2) * s
+  const margin = 140 / prev.zoom
+  const halfW = WIDTH / 2 / prev.zoom - margin
+  const halfH = (STAGE.bottom - STAGE.top) / 2 / prev.zoom - margin
+  const clamp = (c, p, half) => Math.min(p + half, Math.max(p - half, c))
+  return { zoom: prev.zoom, cx: clamp(prev.cx, px, halfW), cy: clamp(prev.cy, py, halfH) }
+}
+
 function useCamera (timeline, ms, fps) {
   const { steps } = timeline
   let i = steps.findIndex(st => ms < st.end)
   if (i === -1) i = steps.length - 1
-  const to = stepCamera(steps[i], timeline)
-  const from = i > 0 ? stepCamera(steps[i - 1], timeline) : to
-  // Arrive just as the step's result lands, not while the action is running.
-  const sinceMove = (ms - steps[i].ready) / 1000 * fps + MOVE_FRAMES
-  const t = interpolate(sinceMove, [0, MOVE_FRAMES], [0, 1], {
+  const step = steps[i]
+  const result = stepCamera(step, timeline)
+  const prev = i > 0 ? stepCamera(steps[i - 1], timeline) : result
+  const action = actionCamera(step, prev, timeline)
+  const ease = (from) => interpolate((ms - from) / 1000 * fps, [0, MOVE_FRAMES], [0, 1], {
     extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic)
   })
-  const mix = (a, b) => a + (b - a) * t
-  return { index: i, zoom: mix(from.zoom, to.zoom), cx: mix(from.cx, to.cx), cy: mix(from.cy, to.cy) }
+  // Long moves pull back mid-pan, so the viewer sees where the camera is going
+  // instead of a whip across empty canvas.
+  const mix = (a, b, t) => {
+    const dip = Math.min(0.4, Math.hypot(b.cx - a.cx, b.cy - a.cy) / 5000) * Math.sin(Math.PI * t)
+    return { zoom: (a.zoom + (b.zoom - a.zoom) * t) * (1 - dip), cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t }
+  }
+  // Pan to the click target as the step starts, then arrive on the result as it lands.
+  const cam = mix(mix(prev, action, ease(step.start)), result, ease(step.ready - MOVE_FRAMES / fps * 1000))
+  return { index: i, ...cam }
+}
+
+/** Cursor position (CSS px) at ms, interpolated along the recorded path. */
+function pointerAt (samples, ms) {
+  if (!samples?.length) return null
+  if (ms <= samples[0].t) return samples[0]
+  const j = samples.findIndex(p => p.t > ms)
+  if (j === -1) return samples.at(-1)
+  const a = samples[j - 1]
+  const b = samples[j]
+  const t = (ms - a.t) / (b.t - a.t || 1)
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+}
+
+const CURSOR_PATH = 'M0 0 L0 23 L6 17.5 L10.5 27 L14.5 25.2 L10 16 L17.5 16 Z'
+
+const Cursor = ({ timeline, ms, left, top, zoom }) => {
+  const at = pointerAt(timeline.pointer?.samples, ms)
+  if (!at) return null
+  const k = timeline.scale * zoom
+  const x = left + at.x * k
+  const y = top + at.y * k
+  const size = 1.15 * k // the cursor scales with the footage, like a real one
+  const ripples = (timeline.pointer.clicks ?? []).filter(c => ms >= c.t && ms < c.t + 500)
+  return (
+    <>
+      {ripples.map(c => {
+        const p = (ms - c.t) / 500
+        const r = 14 * k * (0.4 + p)
+        return (
+          <div
+            key={c.t} style={{
+              position: 'absolute',
+              left: left + c.x * k - r,
+              top: top + c.y * k - r,
+              width: r * 2,
+              height: r * 2,
+              borderRadius: '50%',
+              border: `${4 * (1 - p) + 1}px solid ${GOLD}`,
+              opacity: 1 - p
+            }}
+          />
+        )
+      })}
+      <svg
+        width={20 * size} height={30 * size} viewBox='-1 -1 20 30'
+        style={{ position: 'absolute', left: x, top: y, filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.6))' }}
+      >
+        <path d={CURSOR_PATH} fill='white' stroke='black' strokeWidth='1.4' strokeLinejoin='round' />
+      </svg>
+    </>
+  )
 }
 
 const Footage = ({ timeline }) => {
@@ -106,6 +181,7 @@ const Footage = ({ timeline }) => {
         }}
         />
       )}
+      <Cursor timeline={timeline} ms={ms} left={left} top={top} zoom={cam.zoom} />
       <Header title={timeline.title} />
       <Caption step={step} sinceStep={sinceStep} />
     </AbsoluteFill>

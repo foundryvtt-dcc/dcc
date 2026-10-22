@@ -8,7 +8,9 @@
  * Usage: FOUNDRY_URL=http://localhost:30343 node capture.mjs storyboards/mighty-deeds.json
  *
  * Proof of concept: CDP screencast instead of Xvfb + x11grab, so it runs on
- * macOS and there is no cursor in the footage.
+ * macOS. The screencast has no cursor, so the runner moves the real mouse
+ * along eased paths and records them (timeline `pointer`); the compositor
+ * draws the cursor.
  */
 import { chromium } from '@playwright/test'
 import { createRequire } from 'node:module'
@@ -26,6 +28,8 @@ const { login } = require('../../browser-tests/e2e/fixtures.js')
 const VIEWPORT = { width: 1440, height: 810 }
 const SCALE = 2
 const FPS = 30
+const MOVE_MS = 550 // one cursor glide
+const LEAD_MS = 450 // pause before a click glide, so the composed camera can pan to the target
 
 const storyboardPath = process.argv[2]
 if (!storyboardPath) {
@@ -44,6 +48,9 @@ const browser = await chromium.launch({
 const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: storyboard.theme ?? 'dark' })
 const page = await context.newPage()
 let created = {}
+// Cursor path and clicks, in CSS px and wall-clock ms (rebased to the footage below).
+const pointer = { samples: [], clicks: [] }
+let mouse = { x: VIEWPORT.width * 0.42, y: VIEWPORT.height * 0.55 }
 
 try {
   await login(page)
@@ -74,17 +81,26 @@ try {
     const loop = () => { tick.style.background = `rgba(0,0,0,${(n++ % 2) ? 0.01 : 0.02})`; requestAnimationFrame(loop) }
     loop()
   })
+  await page.mouse.move(mouse.x, mouse.y)
+  pointer.samples.push({ t: Date.now(), ...mouse })
   await page.waitForTimeout(300)
 
   const steps = []
   for (const step of storyboard.steps) {
     const start = Date.now()
-    await runAction(page, step)
+    const clickBox = await runAction(page, step)
     await page.waitForTimeout(400) // let close/open animations finish before measuring
     const ready = Date.now() // the step's result is on screen; captions and camera key off this
     const boxes = await measure(page, step)
-    await page.waitForTimeout(step.hold ?? 3000)
-    steps.push({ id: step.id, start, ready, end: Date.now(), caption: step.caption, frame: step.frame, zoom: step.zoom, ...boxes })
+    const holdUntil = Date.now() + (step.hold ?? 3000)
+    // No click to make: point at what the step is about, beside it so the cursor doesn't cover it.
+    if (!clickBox && boxes.spotlightBox) {
+      await page.waitForTimeout(300)
+      const b = boxes.spotlightBox
+      await glide(page, b.x + b.width + 14, b.y + b.height * 0.7)
+    }
+    await page.waitForTimeout(Math.max(0, holdUntil - Date.now()))
+    steps.push({ id: step.id, start, ready, end: Date.now(), caption: step.caption, frame: step.frame, zoom: step.zoom, clickBox, ...boxes })
     console.log(`  ${step.id}: ${Date.now() - start} ms`)
   }
 
@@ -118,7 +134,11 @@ try {
     viewport: VIEWPORT,
     scale: SCALE,
     durationMs: endTs - t0,
-    steps: steps.map(s => ({ ...s, start: Math.max(0, s.start - t0), ready: s.ready - t0, end: s.end - t0 }))
+    steps: steps.map(s => ({ ...s, start: Math.max(0, s.start - t0), ready: s.ready - t0, end: s.end - t0 })),
+    pointer: {
+      samples: pointer.samples.map(p => ({ ...p, t: p.t - t0 })),
+      clicks: pointer.clicks.map(c => ({ ...c, t: c.t - t0 }))
+    }
   }
   fs.writeFileSync(path.join(outDir, 'timeline.json'), JSON.stringify(timeline, null, 2))
   console.log(`Wrote ${frames.length} frames, ${(timeline.durationMs / 1000).toFixed(1)} s → ${path.relative(process.cwd(), outDir)}`)
@@ -127,6 +147,22 @@ try {
   await browser.close()
 }
 
+/** Move the real mouse along an eased path, recording where it was and when. */
+async function glide (page, x, y, ms = MOVE_MS) {
+  const from = { ...mouse }
+  const begin = Date.now()
+  for (;;) {
+    const t = Math.min(1, (Date.now() - begin) / ms)
+    const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+    mouse = { x: from.x + (x - from.x) * e, y: from.y + (y - from.y) * e }
+    await page.mouse.move(mouse.x, mouse.y)
+    pointer.samples.push({ t: Date.now(), ...mouse })
+    if (t === 1) return
+    await new Promise(resolve => setTimeout(resolve, 12))
+  }
+}
+
+/** Run a step's action; returns the clicked element's box (CSS px), if it clicked. */
 async function runAction (page, step) {
   const { action } = step
   const pinned = step.dice?.randomUniform
@@ -137,6 +173,7 @@ async function runAction (page, step) {
     }, pinned)
   }
   const messagesBefore = await page.evaluate(() => game.messages.size)
+  let clickBox = null
   try {
     switch (action.type) {
       case 'openActorSheet':
@@ -151,8 +188,13 @@ async function runAction (page, step) {
       case 'click': {
         const target = page.locator(action.selector).first()
         await target.waitFor({ state: 'visible' })
-        const box = await target.boundingBox()
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 20 })
+        clickBox = await target.boundingBox()
+        await page.waitForTimeout(LEAD_MS)
+        const x = clickBox.x + clickBox.width / 2
+        const y = clickBox.y + clickBox.height / 2
+        await glide(page, x, y)
+        await page.waitForTimeout(150)
+        pointer.clicks.push({ t: Date.now(), x, y })
         // In-page click: pointer clicks can hang on Foundry overlays (see TESTING.md).
         await target.evaluate(el => el.click())
         break
@@ -171,6 +213,7 @@ async function runAction (page, step) {
       await page.evaluate(() => { CONFIG.Dice.randomUniform = window.__videoUniform })
     }
   }
+  return clickBox
 }
 
 /** Bounding boxes in CSS px: the step's frame region and its spotlight target. */

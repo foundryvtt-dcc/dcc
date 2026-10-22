@@ -198,9 +198,9 @@ generated script is a small extra step per short.
 
 ## Proof of concept (no audio)
 
-`tools/video/` (its own workspace package) renders a 22 s 9:16 Mighty Deeds
-short with title card, camera moves, spotlights, captions and end card, but
-no narration or music. Against a running `pnpm run e2e:env up`:
+`tools/video/` (its own workspace package) renders a 24 s 9:16 Mighty Deeds
+short with title card, camera moves, cursor, spotlights, captions and end
+card, but no narration or music. Against a running `pnpm run e2e:env up`:
 
 ```sh
 cd tools/video
@@ -214,7 +214,19 @@ What it differs on, and what it taught:
 
 - **Capture is the CDP screencast, not x11grab,** so it runs on macOS (no
   Xvfb). 1440x810 at deviceScaleFactor 2 gives 2880x1620 frames, sharp
-  enough to zoom to 1.5x. There is no cursor in the footage.
+  enough to zoom to 1.5x.
+- **The cursor is drawn in compose, not captured.** The runner glides the
+  real mouse along eased paths (so hover states and tooltips are real) and
+  records the path and clicks in the timeline's `pointer`; Remotion draws an
+  arrow that scales with the footage plus a click ripple. Like the
+  spotlights, it can be restyled without recapturing. With x11grab this
+  could switch to the real cursor, but the drawn one is arguably better.
+- **Click steps get an action shot.** A click on something off-camera (the
+  sheet, while the chat card is framed) pans to bring it into view, pauses
+  for the click, then moves to the result. Long moves pull back mid-pan
+  instead of whipping across empty canvas. The runner waits 450 ms before
+  each click glide so the pan lands first. A step with no click points the
+  cursor beside its spotlight.
 - **The screencast only emits on repaint.** A still UI gave 31 frames for
   16 s and dropped every animation in between. A 1px near-transparent
   element repainted each animation frame keeps it at display rate; x11grab
@@ -235,7 +247,7 @@ What it differs on, and what it taught:
   without installing anything; `compose.mjs` copies two into Remotion's
   public dir for the title and cards.
 
-Not done yet: narration/TTS, music, cursor, `dice.uniforms`, storyboard
+Not done yet: narration/TTS, music, `dice.uniforms`, storyboard
 validation and its unit tests, a Linux/x11grab capture path.
 
 ## Pilot: Mighty Deeds
