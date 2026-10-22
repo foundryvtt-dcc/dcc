@@ -29,9 +29,9 @@ pilot to build first. Nothing described here exists in the repo yet.
 | Narration | Generate TTS **before** capture; each step holds for its narration length. Local engine (Kokoro or Piper) by default, ElevenLabs as the quality option (returns character timestamps). | Natural pacing. Voice is nearly free once scripted; see research notes for why to ship voice at all. |
 | Captions | From the storyboard text, never from transcription. Short keyword phrases, not a transcript. Forced alignment (WhisperX) only if the TTS engine gives no timestamps. | Redundancy principle: on-screen text must be shorter than narration. |
 | Music | Ducked hard or absent under speech. Fine at normal level over caption-only segments. | See research notes. |
-| Dice | Pin `CONFIG.Dice.randomUniform` inside the page for the step that needs a specific result, restore after. | Already used in `browser-tests/e2e/adapter-dispatch.spec.js` (~line 1300). |
-| Location | `tools/video/` in this repo; rendered output and audio outside git. | Storyboards change in the same PR as the UI they show; the runner imports the E2E fixtures. Split to a sibling repo only if tooling gets heavy. |
-| Pilot | One 45 s **Mighty Deeds** short. | Richest existing spec setup (`browser-tests/e2e/mighty-deeds.spec.js`), and the feature new players ask about most. |
+| Dice | Pin `CONFIG.Dice.randomUniform` inside the page for the step that needs a specific result, restore after. A die's natural is `ceil((1 - u) * faces)`. | Already used across the E2E specs; `browser-tests/e2e/attack-crit-confirm.spec.js` documents the formula and `rollPinnedDeed` in `mighty-deeds.spec.js` pins a whole attack. |
+| Location | `tools/video/` in this repo, as its own package (like `browser-tests/e2e/`) so Remotion and its dependencies stay out of the root `package.json`; pnpm's `minimumReleaseAge` applies. Rendered output and audio outside git. | Storyboards change in the same PR as the UI they show; the runner imports the E2E fixtures. Split to a sibling repo only if tooling gets heavy. |
+| Pilot | One 45 s **Mighty Deeds** short. | `browser-tests/e2e/mighty-deeds.spec.js` already builds a deed warrior, weapon, deed table and target token, and pins a whole attack. A core warrior mechanic that shows on both sheet and chat card. |
 
 ## Pipeline
 
@@ -76,16 +76,16 @@ storyboard.json ─► 1 narrate ─► 2 capture ─► 3 compose ─► 4 QA �
       "action": { "type": "openActorSheet", "actor": "Warrior" },
       "narration": "Warriors get a Deed Die on every attack.",
       "caption": "Deed Die: every attack",
-      "spotlight": ".deed-die",         // selector; runner exports its bounding box
+      "spotlight": "input[name='system.details.attackBonus']", // selector; runner exports its bounding box
       "frame": "sheet"                  // crop region hint for the compositor: sheet | chat | full
     },
     {
       "id": "roll-attack",
       "action": { "type": "click", "selector": "[data-action=rollWeaponAttack]" },
-      "dice": { "randomUniform": 0.55 }, // pinned for this step only
+      "dice": { "randomUniform": 0.25 }, // pinned for this step only: d20 → 15, d3 deed → 3
       "narration": "Roll three or higher and the deed succeeds.",
       "caption": "3+ = deed succeeds",
-      "spotlight": ".chat-message:last-child .deed-result",
+      "spotlight": "#chat .message:last-child .deed-result",
       "frame": "chat"
     }
   ],
@@ -93,6 +93,14 @@ storyboard.json ─► 1 narrate ─► 2 capture ─► 3 compose ─► 4 QA �
   "endCard": { "text": "More at dcc-rpg-foundry docs", "seconds": 3 }
 }
 ```
+
+`dice.randomUniform` pins every die in the step to the same `u`, which
+couples the results: a d3 deed of 3 needs `u < 1/3`, which forces the d20 to
+14 or higher. That covers most shots. When a step needs dice set
+independently (a deed success on a natural 2, say), add a `dice.uniforms`
+array consumed one value per die in evaluation order, falling back to the
+real generator once it runs out; confirm the evaluation order in the
+runner rather than assuming it.
 
 Actions should map to a small verb set (`openActorSheet`, `click`, `hover`,
 `type`, `drag`, `setSetting`, `evaluate`, `wait`). Reuse the actor/item/token
@@ -117,8 +125,10 @@ video job is a sibling container derived from it, adding:
   so captured text renders like a real client.
 - GPU optional, strongly recommended for canvas or Dice So Nice shots. DOM
   shots (sheets, chat) are fine on SwiftShader.
-- Foundry's licence permits one active server per key: do not run the video
-  container and a local dev server on the same key at once.
+- Licence: `e2e:env` already runs isolated servers on a copy of the live
+  licence alongside the live server, so a video server is no new exposure.
+  Check Foundry's licence terms for concurrent servers before running this
+  on shared or hosted infrastructure.
 
 Locally, `pnpm run e2e:env up` gives an isolated world and prints the URL;
 the runner should honour `FOUNDRY_URL` exactly as the specs do.
@@ -127,9 +137,18 @@ the runner should honour `FOUNDRY_URL` exactly as the specs do.
 
 - **Login reuse.** Use the worker-scoped session pattern from
   `browser-tests/e2e/fixtures.js`; a fresh login per short costs 6–13 s.
+- **CI client settings.** `prepareClientSettings` caps the canvas at
+  `core.maxFPS: 10` and LOW performance mode when `CI` is set. A container
+  derived from the E2E runner inherits that, and a 60 fps capture would
+  record a 10 fps canvas. Unset `CI` for capture or override those settings.
 - **Welcome tour / banners.** `prepareClientSettings` in fixtures already
-  suppresses the tour. Also hide the sidebar collapse state, set a plain
-  scene background, and name actors for the camera (no "E2E Deed Target").
+  suppresses the tour. Also pin the sidebar to a known open/collapsed state
+  per storyboard, set a plain scene background, and name actors for the
+  camera (no "E2E Deed Target").
+- **Cleanup.** Spec cleanup deletes documents whose names start with `E2E `
+  (e.g. `mighty-deeds.spec.js` `beforeEach`). Camera-named actors escape
+  that, so the runner tracks what it creates (a `flags.dcc.videoFixture`
+  flag or an id list) and deletes it after the take.
 - **Cursor.** x11grab draws the real cursor. Ease mouse moves over 300–500 ms
   with `page.mouse.move(x, y, { steps })`; a teleporting cursor reads as a
   bug.
@@ -185,7 +204,11 @@ mp4 with narration, captions, title and end card, from one command, against
 Suggested order of work:
 
 1. `tools/video/` skeleton: runner CLI, storyboard loader, named setup for
-   Mighty Deeds lifted from the spec's `beforeAll`.
+   Mighty Deeds lifted from the spec's helpers (`createDeedFixtures` for the
+   warrior, weapon and deed table; `rollPinnedDeed` for the scene, target
+   token and pinned attack). The spec's `beforeAll` is only a server probe.
+   The spec mostly tests deed-table prompts; the short covers the basic Deed
+   Die flow, so expect to trim, not copy.
 2. Capture stage against a static HTML page first (no Foundry) to prove
    Xvfb + x11grab + timeline sync, then against Foundry.
 3. Remotion project: crop/zoom from `frame` hints and spotlight boxes,
@@ -196,14 +219,19 @@ Suggested order of work:
    what was pilot-specific.
 
 Topics with ready-made spec setup to borrow from: Mighty Deeds, Fleeting
-Luck, Death Clock, Spell Duels, Roll Requests, Party Sheet, Ctrl-click roll
-modifier, Charged Magic Items.
+Luck, Death Clock, Spell Duels (`spell-duel-exchange.spec.js`), Roll
+Requests, Party Sheet, Charged Magic Items, and the Ctrl-click roll modifier
+(no spec of its own; see `adapter-dispatch.spec.js` and
+`ability-score-log.spec.js`).
 
 ## Rules that still apply
 
 - Nothing here touches `version.txt` or ships in a release; it is tooling.
 - Storyboards that quote rules text must stay out of
   `module/vendor/dcc-core-lib/` and any lib PR; the lib repo is public.
+- Published videos may quote rules text within fair use: less than a few
+  paragraphs per video, cited by table and page, with the rest in our own
+  words explaining the system's UI.
 - Keep rendered media, TTS audio and music out of git.
 - New runner code gets unit tests at the cheapest layer that can see the
   behaviour (storyboard validation, timeline math), per `docs/dev/TESTING.md`.
