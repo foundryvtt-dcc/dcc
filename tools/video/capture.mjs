@@ -199,6 +199,8 @@ async function runAction (page, step) {
         await target.evaluate(el => el.click())
         break
       }
+      case 'none': // a beat that only points at what is already on screen
+        break
       case 'evaluate':
         await page.evaluate(action.script)
         break

@@ -198,7 +198,7 @@ generated script is a small extra step per short.
 
 ## Proof of concept (no audio)
 
-`tools/video/` (its own workspace package) renders a 24 s 9:16 Mighty Deeds
+`tools/video/` (its own workspace package) renders a 30 s 9:16 Mighty Deeds
 short with title card, camera moves, cursor, spotlights, captions and end
 card, but no narration or music. Against a running `pnpm run e2e:env up`:
 
