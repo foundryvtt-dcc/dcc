@@ -4,7 +4,8 @@ Design brief for producing short tutorial videos (YouTube Shorts / TikTok /
 Reels, 9:16, 30–60 s) for the DCC system from code, so they can be
 regenerated when the UI changes. Written to hand off to a Claude Code
 session: it records the decisions already made, what was verified, and the
-pilot to build first. Nothing described here exists in the repo yet.
+pilot to build first. A no-audio proof of concept is in `tools/video/`; see
+[Proof of concept](#proof-of-concept-no-audio).
 
 ## Goals
 
@@ -194,6 +195,48 @@ analytics across four or five shorts each; that will say more about this
 audience than any source above. Open question: whether a synthetic voice
 reads as cheap to a hobby audience. A human voice recorded against the
 generated script is a small extra step per short.
+
+## Proof of concept (no audio)
+
+`tools/video/` (its own workspace package) renders a 22 s 9:16 Mighty Deeds
+short with title card, camera moves, spotlights, captions and end card, but
+no narration or music. Against a running `pnpm run e2e:env up`:
+
+```sh
+cd tools/video
+FOUNDRY_URL=http://localhost:30343 node capture.mjs storyboards/mighty-deeds.json
+node contact-sheet.mjs mighty-deeds              # stills of the raw footage
+node compose.mjs mighty-deeds                    # out/mighty-deeds/short.mp4
+node contact-sheet.mjs mighty-deeds short.mp4    # stills of the short
+```
+
+What it differs on, and what it taught:
+
+- **Capture is the CDP screencast, not x11grab,** so it runs on macOS (no
+  Xvfb). 1440x810 at deviceScaleFactor 2 gives 2880x1620 frames, sharp
+  enough to zoom to 1.5x. There is no cursor in the footage.
+- **The screencast only emits on repaint.** A still UI gave 31 frames for
+  16 s and dropped every animation in between. A 1px near-transparent
+  element repainted each animation frame keeps it at display rate; x11grab
+  would not need it.
+- **Foundry's stage needs setting.** Below 1024x768 Foundry shows a size
+  warning banner; the e2e world starts paused (animated overlay); the
+  default emote card has no `.deed-result`, so the setup turns on enhanced
+  attack cards and targets a token so the card reports the hit.
+- **Steps record `ready`,** the moment the action's result is on screen.
+  The camera, caption and spotlight key off it, not the step start, or
+  captions arrive while a roll is still in flight. The footage is trimmed to
+  start at the first step's `ready`, so it never opens on an empty stage.
+- **`frame` takes a CSS selector** as well as `sheet` / `chat` / `full`, and
+  a step can set `zoom` to crop past the fit, centred on the spotlight and
+  clamped to the frame. Whole sheets fit at ~0.9x and read small on a phone;
+  frame a block of the sheet instead.
+- The system's Duvall fonts are in `styles/fonts/`, so captures render them
+  without installing anything; `compose.mjs` copies two into Remotion's
+  public dir for the title and cards.
+
+Not done yet: narration/TTS, music, cursor, `dice.uniforms`, storyboard
+validation and its unit tests, a Linux/x11grab capture path.
 
 ## Pilot: Mighty Deeds
 

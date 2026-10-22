@@ -3,6 +3,7 @@
 # via the shared content-addressable store).
 packages:
   - 'browser-tests/e2e'
+  - 'tools/video'
 # Supply-chain quarantine: refuse to resolve a dependency version until it has
 # been public for seven days (10080 minutes). The threat this addresses is a
 # maintainer's npm account being compromised and a malicious release being
@@ -43,6 +44,9 @@ minimumReleaseAgeExclude:
 # classic-level backs e2e-env's world-settings edits.
 allowBuilds:
   classic-level: true
+  # esbuild (Remotion's bundler, tools/video) ships its binary as an optional
+  # platform package; its postinstall only re-verifies it, so keep it off.
+  esbuild: false
 # Accepted advisories — each entry needs a reason and a removal condition.
 #
 # GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, stack-exhaustion DoS on deeply nested

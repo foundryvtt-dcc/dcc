@@ -1,0 +1,20 @@
+{
+  "name": "dcc-video",
+  "version": "0.0.0",
+  "description": "Regenerable tutorial shorts from Playwright-driven Foundry + Remotion (docs/dev/VIDEO_PIPELINE.md)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "compose": "node compose.mjs",
+    "contact-sheet": "node contact-sheet.mjs",
+    "studio": "remotion studio remotion/index.jsx"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@remotion/cli": "4.0.535",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.535"
+  }
+}
