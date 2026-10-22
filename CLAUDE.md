@@ -146,6 +146,7 @@ All project skills live in `.claude/skills/<name>/SKILL.md` (there is no
 - [Rules Automation Policy](docs/dev/RULES_AUTOMATION.md) - Note / Offer / Decide tiers for automating rules
 - [Internationalization](docs/dev/I18N.md) - Translation system
 - [DCC-QOL Integration](docs/dev/DCC_QOL_INTEGRATION.md) - Analysis: folding dcc-qol features into core behind settings
+- [Tutorial Video Pipeline](docs/dev/VIDEO_PIPELINE.md) - Design brief: regenerable tutorial shorts from Playwright-driven Foundry + Remotion
 
 ### Reference Docs
 - [V14](docs/dev/V14.md) - V14 reference: data models, Active Effects V2, API changes
