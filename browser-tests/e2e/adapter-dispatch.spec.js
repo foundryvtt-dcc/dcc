@@ -131,8 +131,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
       // `ui.windows` is the AppV1 registry and is empty under V14, so a
-      // roll-modifier dialog a test left open (fireAndForget's Escape
-      // doesn't always land) survived into later tests and settled its
+      // roll-modifier dialog a test left open (fireAndForget's old Escape
+      // didn't always land) survived into later tests and settled its
       // promise there — the mechanism behind the #867 flake. Close them
       // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
       // the core UI apps in the same registry are left alone, and to
@@ -142,7 +142,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       for (const app of foundry.applications.instances.values()) {
         if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
-      // A dialog closed mid-render (fireAndForget's Escape at ~150ms) can
+      // A dialog closed mid-render (fireAndForget's old Escape at ~150ms) can
       // reach state CLOSED with its element still attached; later
       // document-level queries then hit the dead form (#958). Drop them.
       document.querySelectorAll('.application.roll-modifier').forEach(el => {
@@ -165,8 +165,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
       // `ui.windows` is the AppV1 registry and is empty under V14, so a
-      // roll-modifier dialog a test left open (fireAndForget's Escape
-      // doesn't always land) survived into later tests and settled its
+      // roll-modifier dialog a test left open (fireAndForget's old Escape
+      // didn't always land) survived into later tests and settled its
       // promise there — the mechanism behind the #867 flake. Close them
       // explicitly via the AppV2 registry. Scoped to `.roll-modifier` so
       // the core UI apps in the same registry are left alone, and to
@@ -176,7 +176,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       for (const app of foundry.applications.instances.values()) {
         if (app?.rendered && app?.options?.classes?.includes('roll-modifier')) await app.close()
       }
-      // A dialog closed mid-render (fireAndForget's Escape at ~150ms) can
+      // A dialog closed mid-render (fireAndForget's old Escape at ~150ms) can
       // reach state CLOSED with its element still attached; later
       // document-level queries then hit the dead form (#958). Drop them.
       document.querySelectorAll('.application.roll-modifier').forEach(el => {
@@ -232,7 +232,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     await page.evaluate(async () => {
       const { RENDERED } = foundry.applications.api.ApplicationV2.RENDER_STATES
       for (const app of [...foundry.applications.instances.values()]) {
-        if (app.state === RENDERED && app.element?.matches('.dcc-roll-modifier')) await app.close()
+        if (app.state === RENDERED && app.options.classes.includes('roll-modifier')) await app.close()
       }
     })
   }
@@ -366,7 +366,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     // via `promptRollModifierDialog`, then folds the user's choice into a
     // `rollCheck` pass. Dispatch fires at the start of
     // `_rollAbilityCheckViaAdapter` before the (blocking) dialog shows —
-    // fireAndForget dismisses it with Escape so the run continues. (No
+    // fireAndForget closes it so the run continues. (No
     // armor check penalty on a fresh player, so str stays on the adapter.)
     test('showModifierDialog flag → adapter (legacy-decom step 2)', async ({ page }) => {
       await makePlayer(page, 'P1 Ability Dialog')
@@ -615,7 +615,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     // Legacy-decom step 2: the modifier dialog no longer routes saves to
     // legacy. The adapter surfaces the RollModifierDialog and folds the
     // user's choice into a `rollCheck` pass; dispatch fires before the
-    // (blocking) dialog, fireAndForget dismisses it with Escape.
+    // (blocking) dialog, fireAndForget closes it.
     test('showModifierDialog flag → adapter (legacy-decom step 2)', async ({ page }) => {
       await makePlayer(page, 'P1 Save Dialog')
       await fireAndForget(page, async () => {
@@ -1027,8 +1027,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // `promptRollModifierDialog`, then folds the user's choice into
       // the lib pass. Dispatch fires at the start of
       // `_rollSkillCheckViaAdapter` before the (blocking) dialog
-      // shows — fireAndForget dismisses the dialog with Escape so
-      // the test run continues. The cancel resolves the prompt with
+      // shows — fireAndForget closes the dialog so the
+      // test run continues. The cancel resolves the prompt with
       // null and the adapter returns without rolling, which is fine
       // for this test — we're asserting on the dispatch path, not
       // the chat output.
@@ -2317,8 +2317,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // Spellburn) the legacy `DCCItem.rollSpellCheck` path showed —
       // adapter-side, with the user's choices threaded through the lib.
       // Dispatch fires at the start of `_rollSpellCheckViaAdapter`
-      // before the (blocking) dialog opens; fireAndForget dismisses the
-      // dialog with Escape so the test run continues.
+      // before the (blocking) dialog opens; fireAndForget closes the
+      // dialog so the test run continues.
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Spell Wizard Dialog',
@@ -2391,8 +2391,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
     test('naked cast with showModifierDialog → adapter unified prompt (session 27 / Q7-phase2)', async ({ page }) => {
       // Naked path mirrors the wizard / cleric branches — the adapter's
       // showModifierDialog clause now calls `promptRollModifierDialog`
-      // with a Spellburn descriptor for non-cleric actors. Cancel via
-      // Escape; the adapter returns without rolling.
+      // with a Spellburn descriptor for non-cleric actors. fireAndForget
+      // closes it; the adapter returns without rolling.
       await makePlayer(page, 'P1 Spell Naked Dialog')
       await fireAndForget(page, async () => {
         game.actors.getName('P1 Spell Naked Dialog').rollSpellCheck({
@@ -3443,8 +3443,8 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // A6: modifier-dialog case now routes via adapter with
       // `damageTerms` threaded into `DCCRoll.createRoll`. Dispatch log
       // fires at the start of `rollToHit` before the (blocking) dialog
-      // shows — fireAndForget dismisses the dialog with Escape so the
-      // test run continues.
+      // shows — fireAndForget closes the dialog so the test
+      // run continues.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon Dialog', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{

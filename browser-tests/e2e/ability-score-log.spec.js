@@ -309,7 +309,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForFunction(() => game.actors.getName('ASL Luck Halfling')?.system.abilities.lck.value === 8, { timeout: 10000 })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Halfling')?.system.abilities.lck.value === 8, null, { timeout: 10000 })
 
     const after = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Luck Halfling')
@@ -348,12 +348,12 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 9, { timeout: 10000 })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 9, null, { timeout: 10000 })
     // One d3: the save card's roll carries 1-3 on top of the save bonus
     await page.waitForFunction(() => {
       const actor = game.actors.getName('ASL Luck Thief')
       return game.messages.contents.some(m => m.speaker?.actor === actor.id && m.rolls?.length)
-    }, { timeout: 10000 })
+    }, null, { timeout: 10000 })
     const bonus = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Luck Thief')
       const roll = game.messages.contents.findLast(m => m.speaker?.actor === actor.id && m.rolls?.length).rolls[0]

@@ -132,8 +132,11 @@ async function waitForCanvasIdle (page) {
 
 async function waitForGameReady (page) {
   await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-  await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, { timeout: 30000 })
-
+  await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, null, { timeout: 30000 })
+  // The ready hook renders the welcome dialog only after migrations finish,
+  // so wait for it before closing it, or it opens over the first spec.
+  await page.waitForFunction(() => !game.user.isGM || !game.settings.get('dcc', 'showWelcomeDialog') ||
+    foundry.applications.instances.get('dcc-welcome-dialog')?.rendered, null, { timeout: 10000 }).catch(() => {})
   await closeWelcomeDialogs(page)
 }
 
@@ -192,15 +195,20 @@ const sessionTest = base.extend({
     // no main menu over the UI.
     await waitForCanvasIdle(page)
     await removeClosedWindows(page)
-    await page.evaluate(async () => {
-      if (ui.menu?.rendered) await ui.menu.toggle()
+    // Baseline first, on its own: a teardown without one would delete every
+    // actor in the world.
+    await page.evaluate(() => {
       globalThis.__dccBaseline = { actors: game.actors.contents.map(a => a.id) }
+    })
+    await page.evaluate(async () => {
+      if (ui.menu?.rendered) await ui.menu.close({ animate: false })
     }).catch(() => {})
 
     await use()
 
     await page.evaluate(async () => {
-      const baseline = globalThis.__dccBaseline || { actors: [] }
+      const baseline = globalThis.__dccBaseline
+      if (!baseline) return
       try { await game.user?.updateTokenTargets?.([]) } catch { /* best effort */ }
       try { game.canvas?.tokens?.releaseAll?.() } catch { /* best effort */ }
       try {
