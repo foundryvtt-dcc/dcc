@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, ui, CONFIG) used in page.evaluate callbacks */
-const { expect, createSessionTest, openActorSheet, significantConsoleErrors } = require('./fixtures')
+const { expect, createSessionTest, openActorSheet, waitForAppSettled, significantConsoleErrors } = require('./fixtures')
 
 /**
  * Sheet UI E2E tests — the click-through layer a player actually uses:
@@ -72,9 +72,7 @@ test.describe('DCC Sheet UI', () => {
     await page.click('button[data-tab="actors"]')
     await page.waitForSelector('#actors.active', { timeout: 5000 })
     await page.click(`.entry-name:has-text("${name}")`)
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    await page.waitForSelector('.dcc.actor.sheet [data-action]', { timeout: 10000 }).catch(() => {})
-    await page.waitForTimeout(750)
+    await waitForAppSettled(page)
   }
 
   /** Click a roll control and assert a new chat message carrying a roll appears. */
@@ -206,7 +204,6 @@ test.describe('DCC Sheet UI', () => {
 
       // Switch to Equipment tab
       await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
 
       // Issue #820: the currency inputs carry accessible names
@@ -217,7 +214,6 @@ test.describe('DCC Sheet UI', () => {
 
       // Switch to Cleric tab
       await page.click('.dcc.actor.sheet nav [data-tab="cleric"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="cleric"]')).toHaveClass(/active/)
 
       // Issue #820: no label on the sheet may reference a non-existent
@@ -232,22 +228,18 @@ test.describe('DCC Sheet UI', () => {
 
       // Switch to Spells tab
       await page.click('.dcc.actor.sheet nav [data-tab="clericSpells"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="clericSpells"]')).toHaveClass(/active/)
 
       // Switch to Effects tab
       await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="effects"]')).toHaveClass(/active/)
 
       // Switch to Notes tab
       await page.click('.dcc.actor.sheet nav [data-tab="notes"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.actor.sheet nav [data-tab="notes"]')).toHaveClass(/active/)
 
       // Switch back to Character tab and verify ability scores are visible
       await page.click('.dcc.actor.sheet nav [data-tab="character"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('input[name="system.abilities.str.value"]')).toBeVisible()
     })
 
@@ -269,7 +261,7 @@ test.describe('DCC Sheet UI', () => {
 
       await openActorSheet(page, 'V14 Thrown Probe')
       await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
       const sheet = page.locator('.dcc.actor.sheet')
 
       // Exactly one shadow row (the dagger's), directly in the melee list,
@@ -327,7 +319,7 @@ test.describe('DCC Sheet UI', () => {
 
       await openActorSheet(page, 'V14 Subtab Probe')
       await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
 
       const sheet = page.locator('.dcc.actor.sheet')
       const weaponsSubtab = sheet.locator('.equipment-subtabs [data-tab="weapons"]')
@@ -342,7 +334,6 @@ test.describe('DCC Sheet UI', () => {
 
       // Switching to Goods shows containers/treasure and hides the weapons page
       await goodsSubtab.click()
-      await page.waitForTimeout(300)
       await expect(goodsSubtab).toHaveClass(/active/)
       await expect(sheet.locator('.container-list')).toBeVisible()
       await expect(sheet.locator('.item-list-currency')).toBeVisible()
@@ -394,7 +385,7 @@ test.describe('DCC Sheet UI', () => {
 
       await openActorSheet(page, 'V14 NPC Equipment')
       await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
+      await expect(page.locator('.dcc.actor.sheet nav [data-tab="equipment"]')).toHaveClass(/active/)
 
       const sheet = page.locator('.dcc.actor.sheet')
       // No subtab nav on the NPC sheet

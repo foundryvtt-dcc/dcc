@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, Item, CONFIG, etc.) used in page.evaluate callbacks */
-const { expect, createSessionTest, openActorSheet, significantConsoleErrors, FOUNDRY_URL } = require('./fixtures')
+const { expect, createSessionTest, closeWelcomeDialogs, openActorSheet, waitForAppSettled, significantConsoleErrors, FOUNDRY_URL } = require('./fixtures')
 
 /**
  * Active Effects E2E tests (the V14 ActiveEffect V2 layer).
@@ -61,12 +61,7 @@ test.describe('DCC Active Effects', () => {
 
     // Welcome dialogs are dismissed once in the fixture; re-dismiss only if one
     // reappeared (e.g. after a setting change).
-    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-      const dialog = page.locator(sel)
-      if (await dialog.isVisible({ timeout: 300 }).catch(() => false)) {
-        await page.keyboard.press('Escape')
-      }
-    }
+    await closeWelcomeDialogs(page)
   })
 
   test.afterEach(async ({ page }) => {
@@ -101,14 +96,12 @@ test.describe('DCC Active Effects', () => {
 
       // Navigate to Effects tab
       await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
 
       // Verify empty state
       await expect(page.locator('.effects-empty')).toBeVisible()
 
       // Click create effect button
       await page.click('[data-action="effectCreate"]')
-      await page.waitForTimeout(1000)
 
       // Verify effect was created and appears in list
       await expect(page.locator('.effect-item')).toBeVisible()
@@ -132,7 +125,6 @@ test.describe('DCC Active Effects', () => {
 
       // Navigate to Effects tab
       await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
 
       // Verify toggle button is in enabled state (no disabled class)
       const toggleBtn = page.locator('[data-action="effectToggle"]')
@@ -141,7 +133,6 @@ test.describe('DCC Active Effects', () => {
 
       // Click toggle to disable
       await toggleBtn.click()
-      await page.waitForTimeout(500)
 
       // Verify it's now disabled
       await expect(page.locator('[data-action="effectToggle"]')).toHaveClass(/effect-disabled/)
@@ -149,7 +140,6 @@ test.describe('DCC Active Effects', () => {
 
       // Click toggle again to re-enable
       await page.click('[data-action="effectToggle"]')
-      await page.waitForTimeout(500)
 
       // Verify it's enabled again
       await expect(page.locator('[data-action="effectToggle"]')).not.toHaveClass(/effect-disabled/)
@@ -172,7 +162,6 @@ test.describe('DCC Active Effects', () => {
 
       // Navigate to Effects tab
       await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
 
       // Verify effect exists
       await expect(page.locator('.effect-item')).toBeVisible()
@@ -183,10 +172,9 @@ test.describe('DCC Active Effects', () => {
       // Confirm deletion dialog
       await page.waitForSelector('dialog.application', { timeout: 5000 })
       await page.click('button[data-action="yes"]')
-      await page.waitForTimeout(500)
 
       // Verify effect is gone
-      expect(await page.locator('.effect-item').count()).toBe(0)
+      await expect(page.locator('.effect-item')).toHaveCount(0)
 
       // Verify empty state is shown
       await expect(page.locator('.effects-empty')).toBeVisible()
@@ -220,7 +208,6 @@ test.describe('DCC Active Effects', () => {
 
       // Verify effect shows in Effects tab
       await page.click('.dcc.actor.sheet nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
       await expect(page.locator('.effect-name')).toContainText('STR +2')
 
       // Verify the effects summary shows the change
@@ -362,11 +349,11 @@ test.describe('DCC Active Effects', () => {
       const hpInput = page.locator('input[name="system.attributes.hp.value"]').first()
       await hpInput.fill('3')
       await hpInput.press('Enter')
-      await page.waitForTimeout(500)
+      await page.waitForFunction(name => game.actors.find(a => a.name.startsWith(name))?._source.system.attributes.hp.value === 3, actorName, { timeout: 10000 })
       const nameInput = page.locator('.dcc.actor.sheet input[name="name"]').first()
       await nameInput.fill(actorName + ' Renamed')
       await nameInput.press('Enter')
-      await page.waitForTimeout(500)
+      await page.waitForFunction(name => !!game.actors.getName(name + ' Renamed'), actorName, { timeout: 10000 })
 
       // The persisted base is still 12, the displayed value still 11 — the
       // effect applied exactly once and the unrelated edits went through.
@@ -421,7 +408,7 @@ test.describe('DCC Active Effects', () => {
       // limitation the otherMod field removes (contrast with .value targeting).
       await strInput.fill('11')
       await strInput.press('Enter')
-      await page.waitForTimeout(500)
+      await page.waitForFunction(name => game.actors.find(a => a.name.startsWith(name))?._source.system.abilities.str.value === 11, actorName, { timeout: 10000 })
 
       const result = await page.evaluate((name) => {
         const actor = game.actors.find(a => a.name.startsWith(name))
@@ -446,7 +433,6 @@ test.describe('DCC Active Effects', () => {
         const actor = game.actors.find(a => a.name.startsWith(name))
         await actor.effects.contents[0].update({ disabled: true })
       }, actorName)
-      await page.waitForTimeout(1000)
       await expect(page.locator('#str .ability-effective-value')).toHaveCount(0)
       expect(parseInt(await strInput.inputValue())).toBe(11)
     })
@@ -514,7 +500,7 @@ test.describe('DCC Active Effects', () => {
         const effect = actor.effects.contents[0]
         await effect.update({ disabled: true })
       }, actorId)
-      await page.waitForTimeout(1000)
+      await expect(page.locator('input[name="system.abilities.str.value"]')).toHaveValue('10')
 
       // Verify STR reverted to 10
       strValue = await page.locator('input[name="system.abilities.str.value"]').inputValue()
@@ -742,7 +728,7 @@ test.describe('DCC Active Effects', () => {
         const armor = actor.items.getName('V14 Magic Armor')
         await armor.update({ 'system.equipped': false })
       }, actorId)
-      await page.waitForTimeout(1000)
+      await expect(page.locator('input[name="system.abilities.str.value"]')).toHaveValue('10')
 
       // STR should revert to 10
       strValue = await page.locator('input[name="system.abilities.str.value"]').inputValue()
@@ -754,7 +740,7 @@ test.describe('DCC Active Effects', () => {
         const armor = actor.items.getName('V14 Magic Armor')
         await armor.update({ 'system.equipped': true })
       }, actorId)
-      await page.waitForTimeout(1000)
+      await expect(page.locator('input[name="system.abilities.str.value"]')).toHaveValue('12')
 
       // STR should be 12 again
       strValue = await page.locator('input[name="system.abilities.str.value"]').inputValue()
@@ -797,19 +783,16 @@ test.describe('DCC Active Effects', () => {
 
       // Navigate to equipment tab
       await page.click('.dcc.actor.sheet nav [data-tab="equipment"]')
-      await page.waitForTimeout(500)
 
       // Open the weapon's item sheet via edit button
       const itemId = await page.evaluate(() => {
         return game.actors.getName('V14 Transfer Test').items.getName('V14 Magic Sword')?.id
       })
       await page.click(`li[data-item-id="${itemId}"] [data-action="itemEdit"]`)
-      await page.waitForSelector('.dcc.sheet.item', { timeout: 5000 })
-      await page.waitForTimeout(500)
+      await waitForAppSettled(page, '.dcc.sheet.item')
 
       // Navigate to item's Effects tab
       await page.click('.dcc.sheet.item nav [data-tab="effects"]')
-      await page.waitForTimeout(500)
 
       // Verify effect appears on item with transfer status
       await expect(page.locator('.dcc.sheet.item .effect-item')).toBeVisible()
@@ -839,8 +822,7 @@ test.describe('DCC Active Effects', () => {
         return { itemId: weapon.id, effectUuid: effect.uuid, effectData: effect.toObject() }
       })
 
-      await page.waitForSelector('.dcc.sheet.item', { timeout: 5000 })
-      await page.waitForTimeout(500)
+      await waitForAppSettled(page, '.dcc.sheet.item')
 
       // Navigate to the item's Effects tab (via the sheet API to avoid pointer
       // interception from notification banners) and confirm it starts empty
@@ -849,7 +831,6 @@ test.describe('DCC Active Effects', () => {
           game.actors.getName('V14 AE Drop Target')?.items.get(id)
         item.sheet.changeTab('effects', 'sheet')
       }, itemId)
-      await page.waitForTimeout(500)
       await expect(page.locator('.dcc.sheet.item .effects-empty')).toBeVisible()
 
       // Simulate dropping the ActiveEffect onto the item's effects tab.
@@ -911,7 +892,6 @@ test.describe('DCC Active Effects', () => {
     test('DCC Effects compendium is visible in sidebar', async ({ page }) => {
       // Click the compendium tab
       await page.click('button[data-tab="compendium"]')
-      await page.waitForTimeout(500)
 
       // Find the DCC Effects compendium by data-pack attribute
       const packEntry = page.locator('[data-pack="dcc.dcc-effects"]')

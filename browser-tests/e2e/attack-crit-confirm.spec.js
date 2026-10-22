@@ -13,8 +13,17 @@ const test = createSessionTest()
 async function rollPinnedAttack (page, { name, uniform, critRange = 20, targetAC = null, backstab = false, enhanced = false, agility = 10, hand = null }) {
   return page.evaluate(async ({ name, uniform, critRange, targetAC, backstab, enhanced, agility, hand }) => {
     if (!game.canvas?.ready || !game.canvas?.scene) {
-      const scene = await Scene.create({ name: 'DCC Crit Confirm Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
-      await scene.view()
+      const probe = await Scene.create({ name: 'DCC Crit Confirm Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
+      // view() is refused while the canvas is loading, and a token deleted
+      // mid-draw throws in Token#destroy, so retry until it's fully drawn.
+      const deadline = Date.now() + 30000
+      while (Date.now() < deadline && (game.canvas.scene?.id !== probe.id || !game.canvas.ready || game.canvas.loading)) {
+        if (game.canvas.scene?.id !== probe.id && !game.canvas.loading) {
+          try { await probe.view() } catch { /* canvas still loading */ }
+        }
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      if (game.canvas.scene?.id !== probe.id || !game.canvas.ready) throw new Error('probe scene never finished drawing')
     }
     const scene = game.canvas.scene
     const prevAutomate = game.settings.get('dcc', 'automateDamageFumblesCrits')

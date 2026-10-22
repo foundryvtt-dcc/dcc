@@ -1,5 +1,5 @@
 /* eslint-disable no-undef -- Browser globals (game, Actor, ui, etc.) used in page.evaluate callbacks */
-const { expect, createSessionTest, closeWindows, FOUNDRY_URL } = require('./fixtures')
+const { expect, createSessionTest, closeWindows, waitForAppSettled, FOUNDRY_URL } = require('./fixtures')
 
 let consoleErrors = []
 const test = createSessionTest({
@@ -89,8 +89,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       })
       actor.sheet.render(true)
     })
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    await page.waitForTimeout(2000) // Wait for _prepareContext class setup + re-render
+    await waitForAppSettled(page)
   }
 
   test('spellburn via the edit dialog, then heal back through the log', async ({ page }) => {
@@ -107,7 +106,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.fill('.dcc.ability-score-config input[name="newValue"]', '9')
     await page.fill('.dcc.ability-score-config input[name="note"]', 'Invoke Patron')
     await page.click('.dcc.ability-score-config button[type="submit"]')
-    await page.waitForTimeout(500)
+    await page.waitForFunction(() => game.actors.getName('ASL Test Wizard')?.system.abilityLog.length === 1, null, { timeout: 10000 })
 
     // One update wrote the value and the typed log entry
     const afterApply = await page.evaluate(() => {
@@ -138,9 +137,9 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
 
     // Heal twice: one point per click
     await row.locator('.heal-button').click()
-    await page.waitForTimeout(400)
+    await page.waitForFunction(n => game.actors.getName('ASL Test Wizard')?.system.abilityLog[0]?.healedAmount === n, 1, { timeout: 10000 })
     await page.locator('.dcc.ability-score-log .heal-button').click()
-    await page.waitForTimeout(400)
+    await page.waitForFunction(n => game.actors.getName('ASL Test Wizard')?.system.abilityLog[0]?.healedAmount === n, 2, { timeout: 10000 })
 
     const afterTwoHeals = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Test Wizard')
@@ -155,7 +154,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
 
     // Third click fully heals and dims the row
     await page.locator('.dcc.ability-score-log .heal-button').click()
-    await page.waitForTimeout(400)
+    await page.waitForFunction(n => game.actors.getName('ASL Test Wizard')?.system.abilityLog[0]?.healedAmount === n, 3, { timeout: 10000 })
 
     const afterThirdHeal = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Test Wizard')
@@ -211,7 +210,6 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       await page.evaluate(() => {
         document.querySelector('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="sta"][data-mod="+1"]').click()
       })
-      await page.waitForTimeout(150)
     }
   }
 
@@ -239,7 +237,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForTimeout(1500)
+    await page.waitForFunction(() => game.actors.getName('ASL Spellburn Wizard')?.system.abilityLog.length === 1, null, { timeout: 10000 })
 
     const afterBurn = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Spellburn Wizard')
@@ -260,14 +258,13 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     // on the step that crosses the threshold again (12 -> 13 gives +2,
     // 13 -> 14 gives none)
     await page.evaluate(() => game.actors.getName('ASL Spellburn Wizard').sheet.render(true))
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    await page.waitForTimeout(2000)
+    await waitForAppSettled(page)
     await page.evaluate(() => document.querySelector('.dcc.actor.sheet .ability-log-button').click())
     await page.waitForSelector('.dcc.ability-score-log', { timeout: 5000 })
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 1; i <= 2; i++) {
       await page.evaluate(() => document.querySelector('.dcc.ability-score-log .heal-button').click())
-      await page.waitForTimeout(500)
+      await page.waitForFunction(n => game.actors.getName('ASL Spellburn Wizard')?.system.abilityLog[0]?.healedAmount === n, i, { timeout: 10000 })
     }
 
     const afterHeal = await page.evaluate(() => {
@@ -312,7 +309,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForFunction(() => game.actors.getName('ASL Luck Halfling')?.system.abilities.lck.value === 8, { timeout: 10000 })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Halfling')?.system.abilities.lck.value === 8, null, { timeout: 10000 })
 
     const after = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Luck Halfling')
@@ -351,12 +348,12 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 9, { timeout: 10000 })
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 9, null, { timeout: 10000 })
     // One d3: the save card's roll carries 1-3 on top of the save bonus
     await page.waitForFunction(() => {
       const actor = game.actors.getName('ASL Luck Thief')
       return game.messages.contents.some(m => m.speaker?.actor === actor.id && m.rolls?.length)
-    }, { timeout: 10000 })
+    }, null, { timeout: 10000 })
     const bonus = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Luck Thief')
       const roll = game.messages.contents.findLast(m => m.speaker?.actor === actor.id && m.rolls?.length).rolls[0]
@@ -381,7 +378,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await page.evaluate(() => {
       document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
     })
-    await page.waitForTimeout(1500)
+    await page.waitForFunction(() => game.actors.getName('ASL Spellburn Wizard')?.system.abilityLog.length === 1, null, { timeout: 10000 })
 
     const after = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Spellburn Wizard')
@@ -427,14 +424,12 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       }])
       actor.sheet.render(true)
     })
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
-    await page.waitForTimeout(2500)
+    await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 15000 })
     await page.evaluate(() => {
       const app = [...foundry.applications.instances.values()]
         .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
       app?.changeTab?.('clericSpells', 'sheet')
     })
-    await page.waitForTimeout(1000)
 
     // Meta-click the cast button — `fillRollOptions` reads ctrlKey || metaKey
     // to toggle the modifier dialog
@@ -454,7 +449,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     await expect(hpRow).toContainText('by -3')
 
     await page.locator('.dcc-roll-modifier button[type="submit"]').click()
-    await page.waitForTimeout(2000)
+    await page.waitForFunction(() => game.actors.getName('ASL Sheet Caster')?.system.abilityLog?.length === 1, null, { timeout: 10000 })
 
     const after = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Sheet Caster')
@@ -507,14 +502,12 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       }])
       actor.sheet.render(true)
     })
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 15000 })
-    await page.waitForTimeout(2500)
+    await waitForAppSettled(page, '.dcc.actor.sheet', { timeout: 15000 })
     await page.evaluate(() => {
       const app = [...foundry.applications.instances.values()]
         .find(a => a.constructor.name?.startsWith('DCCActorSheet'))
       app?.changeTab?.('clericSpells', 'sheet')
     })
-    await page.waitForTimeout(1000)
 
     await page.locator('.dcc.actor.sheet [data-action="rollSpellCheck"].spell-item-button')
       .first().click({ modifiers: ['Meta'] })
@@ -525,10 +518,11 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     for (let i = 0; i < 2; i++) {
       await page.locator('.dcc-roll-modifier button[data-action="modifySpellburn"][data-stat="str"][data-mod="+1"]')
         .click()
-      await page.waitForTimeout(150)
     }
     await page.locator('.dcc-roll-modifier button[type="submit"]').click()
-    await page.waitForTimeout(2000)
+    // The log entry and the burn's chat card land separately
+    await page.waitForFunction(() => game.actors.getName('ASL Sheet Logger')?.system.abilityLog?.length === 1 &&
+      game.messages.contents.some(m => (m.content ?? '').includes('ASL-Logged-Spell')), null, { timeout: 10000 })
 
     const after = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Sheet Logger')
@@ -566,8 +560,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
       })
       actor.sheet.render(true)
     })
-    await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-    await page.waitForTimeout(2000) // Wait for _prepareContext class setup + re-render
+    await waitForAppSettled(page)
 
     await page.evaluate(() => document.querySelector('.dcc.actor.sheet input[name="system.abilities.str.value"]').click())
     await page.waitForSelector('.dcc.ability-score-config', { timeout: 5000 })
@@ -629,9 +622,8 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     // Clicking Apply with an empty note warns, keeps the dialog open,
     // focuses the note field, and applies nothing
     await applyButton.click()
-    await page.waitForTimeout(400)
-    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
     await expect(page.locator('#notifications .notification.warning')).toHaveCount(1)
+    await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
     const blocked = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Test Wizard')
       return {
@@ -650,15 +642,15 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     // Enter-key implicit submission is intercepted the same way (the browser
     // dispatches a synthetic click on the default submit button)
     await page.press('.dcc.ability-score-config input[name="note"]', 'Enter')
-    await page.waitForTimeout(300)
+    await expect(page.locator('#notifications .notification.warning')).toHaveCount(1)
     await expect(page.locator('.dcc.ability-score-config')).toHaveCount(1)
     await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
 
     // Filling the note lets the change apply, raising value and max together
     await page.fill('.dcc.ability-score-config input[name="note"]', 'Quest reward')
     await applyButton.click()
-    await page.waitForTimeout(500)
     await expect(page.locator('.dcc.ability-score-config')).toHaveCount(0)
+    await page.waitForFunction(() => game.actors.getName('ASL Test Wizard')?.system.abilityLog.length === 1, null, { timeout: 10000 })
 
     const applied = await page.evaluate(() => {
       const actor = game.actors.getName('ASL Test Wizard')
@@ -692,7 +684,7 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     const messagesBefore = await page.evaluate(() => game.messages.size)
 
     await strTitle.click()
-    await page.waitForTimeout(600)
+    await page.waitForFunction(n => game.messages.size > n, messagesBefore, { timeout: 10000 })
 
     // The check rolled (a chat card was created) ...
     const messagesAfter = await page.evaluate(() => game.messages.size)

@@ -81,9 +81,10 @@ async function prepareClientSettings (page) {
 /** Log into the running world as Gamemaster and wait for the DCC system to be ready. */
 async function login (page) {
   await page.goto(`${FOUNDRY_URL}/join`)
-  await page.waitForTimeout(1000)
 
-  const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
+  // /join either redirects into a live session or renders the user picker
+  await page.locator('.game.system-dcc, select[name="userId"]').first().waitFor({ timeout: 15000 }).catch(() => {})
+  const isInGame = await page.locator('.game.system-dcc').isVisible().catch(() => false)
   if (!isInGame) {
     const userSelect = page.locator('select[name="userId"]')
     await userSelect.waitFor({ state: 'visible', timeout: 10000 })
@@ -125,16 +126,33 @@ async function reloadSession (page) {
   await page.waitForFunction(() => !game.canvas?.scene || (game.canvas.ready && !game.canvas.loading), null, { timeout: 30000 }).catch(() => {})
 }
 
+async function waitForCanvasIdle (page) {
+  await page.waitForFunction(() => !game.canvas?.loading, null, { timeout: 30000 }).catch(() => {})
+}
+
 async function waitForGameReady (page) {
   await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-  await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, { timeout: 30000 })
+  await page.waitForFunction(() => game?.dcc?.KeyState !== undefined && !!game?.user, null, { timeout: 30000 })
+  // The ready hook renders the welcome dialog only after migrations finish,
+  // so wait for it before closing it, or it opens over the first spec.
+  await page.waitForFunction(() => !game.user.isGM || !game.settings.get('dcc', 'showWelcomeDialog') ||
+    foundry.applications.instances.get('dcc-welcome-dialog')?.rendered, null, { timeout: 10000 }).catch(() => {})
+  await closeWelcomeDialogs(page)
+}
 
-  for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
-    const dialog = page.locator(sel)
-    if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
+/**
+ * Close the DCC welcome dialogs if they're open. In-page, not by pressing
+ * Escape per visible dialog: a closed dialog stays visible while its close
+ * animation runs, and an Escape with no window open shows the main menu,
+ * which then swallowed every click in the first spec (#1081).
+ */
+async function closeWelcomeDialogs (page) {
+  await page.evaluate(async () => {
+    for (const id of ['dcc-welcome-dialog', 'dcc-core-book-welcome-dialog']) {
+      const app = foundry.applications.instances.get(id)
+      if (app?.rendered) await app.close()
     }
-  }
+  })
 }
 
 /**
@@ -172,14 +190,25 @@ const sessionTest = base.extend({
   // is lightweight and does not churn the canvas. Best-effort: failures here
   // never fail the test.
   cleanWorldState: [async ({ page }, use) => {
+    // Start from a settled page: no canvas draw in flight (Scene#view() bails
+    // while one is, and a teardown mid-test destroys the test's tokens) and
+    // no main menu over the UI.
+    await waitForCanvasIdle(page)
+    await removeClosedWindows(page)
+    // Baseline first, on its own: a teardown without one would delete every
+    // actor in the world.
     await page.evaluate(() => {
       globalThis.__dccBaseline = { actors: game.actors.contents.map(a => a.id) }
+    })
+    await page.evaluate(async () => {
+      if (ui.menu?.rendered) await ui.menu.close({ animate: false })
     }).catch(() => {})
 
     await use()
 
     await page.evaluate(async () => {
-      const baseline = globalThis.__dccBaseline || { actors: [] }
+      const baseline = globalThis.__dccBaseline
+      if (!baseline) return
       try { await game.user?.updateTokenTargets?.([]) } catch { /* best effort */ }
       try { game.canvas?.tokens?.releaseAll?.() } catch { /* best effort */ }
       try {
@@ -200,7 +229,7 @@ const sessionTest = base.extend({
     // which may be in another spec file. A `core.uiConfig` change (the theme
     // specs) fires an unawaited `canvas.draw()`, and a redraw still in flight
     // drops the next test's controlled token and closes its context menu.
-    await page.waitForFunction(() => !game.canvas?.loading, null, { timeout: 30000 }).catch(() => {})
+    await waitForCanvasIdle(page)
   }, { auto: true }]
 })
 
@@ -252,33 +281,71 @@ async function closeWindows (page) {
     for (const app of [...foundry.applications.instances.values()]) {
       if (app.rendered && app.hasFrame) await app.close()
     }
-    // A closed dialog can keep its element attached, and later document-level
-    // queries hit it (#958). In the headless page the close animation can also
-    // stall, leaving the app CLOSING for good. Drop any framed element whose
-    // app is gone or no longer open (ERROR, CLOSING, CLOSED are all < NONE).
+  })
+  await removeClosedWindows(page)
+}
+
+/**
+ * Drop framed window elements whose app is gone or no longer open (ERROR,
+ * CLOSING, CLOSED are all < NONE). A closed window can keep its element
+ * attached (#958), and in the headless page its close animation can take
+ * seconds, so a document-level query in the next test (`querySelector`
+ * returns the first match) hits the old window. `cleanWorldState` runs this
+ * before every test.
+ */
+async function removeClosedWindows (page) {
+  await page.evaluate(() => {
     const { NONE } = foundry.applications.api.ApplicationV2.RENDER_STATES
     document.querySelectorAll('.application').forEach(el => {
       if (!el.querySelector(':scope > .window-header')) return
       const app = foundry.applications.instances.get(el.id)
       if (!app || app.state < NONE) el.remove()
     })
-  })
+  }).catch(() => {})
+}
+
+/**
+ * Wait until the app behind `selector` (the last match, the newest window) is
+ * rendered and has gone `quietMs` without rendering again. A class sheet's
+ * first `_prepareContext` stamps class defaults with `actor.update()`, which
+ * renders it a second time, and a click that lands between the two renders
+ * hits a detached part. This replaces the old fixed 0.75–2.5 s settles.
+ */
+async function waitForAppSettled (page, selector = '.dcc.actor.sheet', { quietMs = 250, timeout = 10000 } = {}) {
+  await page.waitForSelector(selector, { timeout })
+  await page.evaluate(async ({ selector, quietMs, timeout }) => {
+    // Skip closed-window husks still in the DOM (stuck CLOSING, see closeWindows)
+    const { RENDERING, RENDERED } = foundry.applications.api.ApplicationV2.RENDER_STATES
+    const app = [...document.querySelectorAll(selector)]
+      .map(el => foundry.applications.instances.get(el.closest('.application')?.id))
+      .filter(a => a?.state >= RENDERING)
+      .pop()
+    if (!app) return
+    let last = performance.now()
+    const onRender = () => { last = performance.now() }
+    app.addEventListener('render', onRender)
+    try {
+      const deadline = performance.now() + timeout
+      while (performance.now() < deadline) {
+        if (app.state !== RENDERED) last = performance.now()
+        else if (performance.now() - last >= quietMs) return
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    } finally {
+      app.removeEventListener('render', onRender)
+    }
+  }, { selector, quietMs, timeout })
 }
 
 /**
  * Open an actor's sheet by clicking its name in the Actors sidebar, then wait
- * for the body to render. `_prepareContext` does async class setup + a
- * re-render; wait for the nav tabs (structural signal the body rendered) then
- * settle 1.5 s for the re-render — a tighter 750 ms occasionally flaked, and
- * this still beats a blind 2 s sleep.
+ * for it to settle (see waitForAppSettled).
  */
 async function openActorSheet (page, actorName) {
   await page.click('button[data-tab="actors"]')
   await page.waitForSelector('#actors.active', { timeout: 5000 })
   await page.click(`.entry-name:has-text("${actorName}")`)
-  await page.waitForSelector('.dcc.actor.sheet', { timeout: 10000 })
-  await page.waitForSelector('.dcc.actor.sheet nav [data-tab]', { timeout: 10000 }).catch(() => {})
-  await page.waitForTimeout(1500)
+  await waitForAppSettled(page)
 }
 
 module.exports = {
@@ -290,7 +357,9 @@ module.exports = {
   prepareClientSettings,
   assertFoundryUp,
   closeWindows,
+  closeWelcomeDialogs,
   openActorSheet,
+  waitForAppSettled,
   significantConsoleErrors,
   TRANSIENT_NETWORK_ERRORS,
   FOUNDRY_URL
