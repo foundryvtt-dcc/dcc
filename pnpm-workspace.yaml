@@ -1,6 +1,7 @@
-# pnpm workspace: root system package + the Playwright e2e package share one
-# lockfile and one install (#893 — makes per-worktree bootstrap nearly free
-# via the shared content-addressable store).
+# pnpm workspace: root system package, the Playwright e2e package and the
+# tutorial video tools share one lockfile and one install (#893 — makes
+# per-worktree bootstrap nearly free via the shared content-addressable
+# store). Every root install therefore also installs Remotion for tools/video.
 packages:
   - 'browser-tests/e2e'
   - 'tools/video'

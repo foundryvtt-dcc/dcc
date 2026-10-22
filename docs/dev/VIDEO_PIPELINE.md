@@ -31,7 +31,7 @@ pilot to build first. A no-audio proof of concept is in `tools/video/`; see
 | Captions | From the storyboard text, never from transcription. Short keyword phrases, not a transcript. Forced alignment (WhisperX) only if the TTS engine gives no timestamps. | Redundancy principle: on-screen text must be shorter than narration. |
 | Music | Ducked hard or absent under speech. Fine at normal level over caption-only segments. | See research notes. |
 | Dice | Pin `CONFIG.Dice.randomUniform` inside the page for the step that needs a specific result, restore after. A die's natural is `ceil((1 - u) * faces)`. | Already used across the E2E specs; `browser-tests/e2e/attack-crit-confirm.spec.js` documents the formula and `rollPinnedDeed` in `mighty-deeds.spec.js` pins a whole attack. |
-| Location | `tools/video/` in this repo, as its own package (like `browser-tests/e2e/`) so Remotion and its dependencies stay out of the root `package.json`; pnpm's `minimumReleaseAge` applies. Rendered output and audio outside git. | Storyboards change in the same PR as the UI they show; the runner imports the E2E fixtures. Split to a sibling repo only if tooling gets heavy. |
+| Location | `tools/video/` in this repo, as its own package (like `browser-tests/e2e/`) so Remotion and its dependencies stay out of the root `package.json` (as a workspace member they are still installed by every root `pnpm install`, CI included); pnpm's `minimumReleaseAge` applies. Rendered output and audio outside git. | Storyboards change in the same PR as the UI they show; the runner imports the E2E fixtures. Split to a sibling repo only if tooling gets heavy. |
 | Pilot | One 45 s **Mighty Deeds** short. | `browser-tests/e2e/mighty-deeds.spec.js` already builds a deed warrior, weapon, deed table and target token, and pins a whole attack. A core warrior mechanic that shows on both sheet and chat card. |
 
 ## Pipeline
@@ -240,8 +240,8 @@ What it differs on, and what it taught:
   listbox; `selectOption` glides to an option, picks it and fires `change`.
 - **The e2e world's `mightyDeedsCompendium` is empty,** so the card offered
   only a leftover spec table. The setup points it at the core book's deed
-  tables (the setting is restored afterwards, though other connected clients
-  keep the tables registered until they reload); the card captures the list at roll time.
+  tables (restored afterwards; clearing it now drops the pack on every
+  client); the card captures the list at roll time.
 - **The screencast only emits on repaint.** A still UI gave 31 frames for
   16 s and dropped every animation in between. A 1px near-transparent
   element repainted each animation frame keeps it at display rate; x11grab

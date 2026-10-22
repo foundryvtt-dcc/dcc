@@ -73,7 +73,10 @@ try {
     const file = `${String(frames.length).padStart(5, '0')}.jpg`
     frames.push({ file, ts: metadata.timestamp * 1000 })
     fs.writeFileSync(path.join(framesDir, file), Buffer.from(data, 'base64'))
-    await cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
+    // An ack can race the screencast stopping at the end of the take.
+    await cdp.send('Page.screencastFrameAck', { sessionId }).catch(e => {
+      if (!/closed|detached|not started/i.test(e.message)) console.warn('screencast ack failed:', e.message)
+    })
   })
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92, everyNthFrame: 1 })
   // The screencast only emits frames on repaint, so a still UI yields a
@@ -246,6 +249,7 @@ async function runAction (page, step) {
         const target = page.locator(action.selector).first()
         const optionBox = await target.evaluate((sel, label) => {
           const option = [...sel.options].find(o => o.textContent.trim() === label)
+          if (!option) throw new Error(`option not found: "${label}" (have: ${[...sel.options].map(o => o.textContent.trim()).join(', ')})`)
           const r = option.getBoundingClientRect()
           return { x: r.x, y: r.y, width: r.width, height: r.height }
         }, action.label)

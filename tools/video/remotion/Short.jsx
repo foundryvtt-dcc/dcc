@@ -18,7 +18,10 @@ Promise.all([
 ]).then(faces => {
   faces.forEach(f => document.fonts.add(f))
   continueRender(fontHandle)
-}).catch(() => continueRender(fontHandle))
+}).catch(e => {
+  console.warn(`Duvall fonts failed to load, falling back to serif: ${e.message}`)
+  continueRender(fontHandle)
+})
 
 export function shortDuration (timeline) {
   const ms = TITLE_MS + timeline.durationMs + (timeline.endCard?.seconds ?? 0) * 1000
