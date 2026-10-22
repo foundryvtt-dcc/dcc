@@ -37,6 +37,7 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | [Module Conversion](MODULE_CONVERSION.md) | End-to-end guide for converting an adventure module |
 | [Rules Automation Policy](RULES_AUTOMATION.md) | Note / Offer / Decide tiers for automating rules, and guardrails for tracking across rolls |
 | [Check Penalty Investigation](CHECK_PENALTY_INVESTIGATION.md) | #951: how the armor check penalty flows through checks/skills/spells/saves, and open decisions |
+| [Tutorial Video Pipeline](VIDEO_PIPELINE.md) | Design brief: regenerable tutorial shorts from Playwright-driven Foundry + Remotion |
 
 ## User Documentation
 

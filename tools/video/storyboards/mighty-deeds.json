@@ -1,0 +1,102 @@
+{
+  "id": "mighty-deeds",
+  "title": "Mighty Deeds",
+  "subtitle": "DCC RPG on Foundry VTT",
+  "aspect": "9:16",
+  "setup": "mighty-deeds",
+  "theme": "dark",
+  "steps": [
+    {
+      "id": "open-sheet",
+      "action": {
+        "type": "openActorSheet",
+        "actor": "Brannoc the Bold"
+      },
+      "caption": "Warriors attack with a Deed Die",
+      "spotlight": "input[name='system.details.attackBonus']",
+      "frame": ".dcc.actor.sheet .combat-basics",
+      "hold": 3500
+    },
+    {
+      "id": "equipment-tab",
+      "action": {
+        "type": "click",
+        "selector": ".dcc.actor.sheet nav.sheet-tabs [data-tab='equipment']"
+      },
+      "caption": "It rolls with every attack",
+      "spotlight": ".dcc.actor.sheet li.weapon .weapon-button",
+      "frame": ".dcc.actor.sheet .weapon-list",
+      "zoom": 1.5,
+      "hold": 2500
+    },
+    {
+      "id": "roll-success",
+      "action": {
+        "type": "click",
+        "selector": ".dcc.actor.sheet li.weapon .weapon-button",
+        "awaitChatMessage": true
+      },
+      "dice": {
+        "randomUniform": 0.25
+      },
+      "caption": "3 or higher: the deed succeeds",
+      "spotlight": "#chat .chat-message:last-child .deed-result",
+      "frame": "chat",
+      "hold": 3000
+    },
+    {
+      "id": "deed-open",
+      "action": {
+        "type": "openSelect",
+        "selector": "#chat .chat-message:last-child .deed-table-select"
+      },
+      "caption": "Optionally pick a deed from the drop-down",
+      "spotlight": "#chat .chat-message:last-child .deed-table-select",
+      "frame": "chat",
+      "hold": 3000
+    },
+    {
+      "id": "deed-pick",
+      "action": {
+        "type": "selectOption",
+        "selector": "#chat .chat-message:last-child .deed-table-select",
+        "label": "Deed: Trips and Throws",
+        "awaitSelector": "#chat .chat-message:last-child .deed-table-result"
+      },
+      "caption": "The card looks up what your deed does",
+      "spotlight": "#chat .chat-message:last-child .deed-table-result",
+      "frame": "chat",
+      "hold": 3500
+    },
+    {
+      "id": "deed-damage",
+      "action": {
+        "type": "none"
+      },
+      "caption": "The Deed Die always adds to damage",
+      "spotlight": "#chat .chat-message:last-child .pt-8.centered:has(.inline-roll)",
+      "frame": "chat",
+      "hold": 3000
+    },
+    {
+      "id": "roll-fail",
+      "action": {
+        "type": "click",
+        "selector": ".dcc.actor.sheet li.weapon .weapon-button",
+        "awaitChatMessage": true,
+        "glide": false
+      },
+      "dice": {
+        "randomUniform": 0.6
+      },
+      "caption": "Under 3: no deed, but it still adds to damage",
+      "spotlight": "#chat .chat-message:last-child .deed-result",
+      "frame": "chat",
+      "hold": 4000
+    }
+  ],
+  "endCard": {
+    "text": "Mighty Deeds are on by default in the DCC system",
+    "seconds": 3
+  }
+}

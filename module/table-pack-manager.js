@@ -10,11 +10,8 @@ class TablePackManager {
   }
 
   addPack (newPack, fromSystemConfig = false) {
-    if (!newPack) {
-      return
-    }
-
-    // There can only ever be one pack from the system config
+    // There can only ever be one pack from the system config; clearing the
+    // setting (an empty value) drops it
     if (fromSystemConfig) {
       for (const key in this._packs) {
         const pack = this._packs[key]
@@ -22,6 +19,13 @@ class TablePackManager {
           delete this._packs[key]
         }
       }
+    }
+
+    if (!newPack) {
+      if (fromSystemConfig && this._updateHook) {
+        this._updateHook(this)
+      }
+      return
     }
 
     // Add the new pack if not already present
