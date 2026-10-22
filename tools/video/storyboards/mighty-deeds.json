@@ -45,14 +45,28 @@
       "hold": 3000
     },
     {
-      "id": "deed-choice",
+      "id": "deed-open",
       "action": {
-        "type": "none"
+        "type": "openSelect",
+        "selector": "#chat .chat-message:last-child .deed-table-select"
       },
       "caption": "Optionally pick a deed from the drop-down",
-      "spotlight": "#chat .chat-message:last-child .deed-table-prompt",
+      "spotlight": "#chat .chat-message:last-child .deed-table-select",
       "frame": "chat",
       "hold": 3000
+    },
+    {
+      "id": "deed-pick",
+      "action": {
+        "type": "selectOption",
+        "selector": "#chat .chat-message:last-child .deed-table-select",
+        "label": "Deed: Trips and Throws",
+        "awaitSelector": "#chat .chat-message:last-child .deed-table-result"
+      },
+      "caption": "The card looks up what your deed does",
+      "spotlight": "#chat .chat-message:last-child .deed-table-result",
+      "frame": "chat",
+      "hold": 3500
     },
     {
       "id": "deed-damage",
@@ -69,7 +83,8 @@
       "action": {
         "type": "click",
         "selector": ".dcc.actor.sheet li.weapon .weapon-button",
-        "awaitChatMessage": true
+        "awaitChatMessage": true,
+        "glide": false
       },
       "dice": {
         "randomUniform": 0.6

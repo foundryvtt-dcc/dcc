@@ -225,8 +225,15 @@ What it differs on, and what it taught:
   sheet, while the chat card is framed) pans to bring it into view, pauses
   for the click, then moves to the result. Long moves pull back mid-pan
   instead of whipping across empty canvas. The runner waits 450 ms before
-  each click glide so the pan lands first. A step with no click points the
-  cursor beside its spotlight.
+  each click glide so the pan lands first. After each step the cursor drifts
+  beside its spotlight. A click with `"glide": false` skips the cursor trip,
+  so the camera stays put (the second roll stays on the chat card).
+- **Native `<select>` popups are invisible to the screencast** (drawn
+  outside the page). `openSelect` shows the options in-page as an inline
+  listbox; `selectOption` glides to an option, picks it and fires `change`.
+- **The e2e world's `mightyDeedsCompendium` is empty,** so the card offered
+  only a leftover spec table. The setup points it at the core book's deed
+  tables (restored afterwards); the card captures the list at roll time.
 - **The screencast only emits on repaint.** A still UI gave 31 frames for
   16 s and dropped every animation in between. A 1px near-transparent
   element repainted each animation frame keeps it at display rate; x11grab

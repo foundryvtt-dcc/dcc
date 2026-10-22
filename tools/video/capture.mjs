@@ -1,4 +1,4 @@
-/* global game, CONFIG, document, window, requestAnimationFrame */
+/* global game, CONFIG, document, window, requestAnimationFrame, Event, ui */
 /**
  * Capture stage (docs/dev/VIDEO_PIPELINE.md): drive live Foundry through a
  * storyboard, record it with the CDP screencast, and write
@@ -93,8 +93,9 @@ try {
     const ready = Date.now() // the step's result is on screen; captions and camera key off this
     const boxes = await measure(page, step)
     const holdUntil = Date.now() + (step.hold ?? 3000)
-    // No click to make: point at what the step is about, beside it so the cursor doesn't cover it.
-    if (!clickBox && boxes.spotlightBox) {
+    // Then point at what the step is about, beside it so the cursor doesn't
+    // cover it (a click can leave it on top of the result it produced).
+    if (boxes.spotlightBox) {
       await page.waitForTimeout(300)
       const b = boxes.spotlightBox
       await glide(page, b.x + b.width + 14, b.y + b.height * 0.7)
@@ -162,6 +163,15 @@ async function glide (page, x, y, ms = MOVE_MS) {
   }
 }
 
+/** Glide to the middle of a box and record a click there (the caller performs it). */
+async function clickAt (page, box) {
+  const x = box.x + box.width / 2
+  const y = box.y + box.height / 2
+  await glide(page, x, y)
+  await page.waitForTimeout(150)
+  pointer.clicks.push({ t: Date.now(), x, y })
+}
+
 /** Run a step's action; returns the clicked element's box (CSS px), if it clicked. */
 async function runAction (page, step) {
   const { action } = step
@@ -188,19 +198,60 @@ async function runAction (page, step) {
       case 'click': {
         const target = page.locator(action.selector).first()
         await target.waitFor({ state: 'visible' })
+        if (action.glide === false) {
+          // Off-camera click: no cursor trip, so the composed camera stays put.
+          await target.evaluate(el => el.click())
+          break
+        }
         clickBox = await target.boundingBox()
         await page.waitForTimeout(LEAD_MS)
-        const x = clickBox.x + clickBox.width / 2
-        const y = clickBox.y + clickBox.height / 2
-        await glide(page, x, y)
-        await page.waitForTimeout(150)
-        pointer.clicks.push({ t: Date.now(), x, y })
+        await clickAt(page, clickBox)
         // In-page click: pointer clicks can hang on Foundry overlays (see TESTING.md).
         await target.evaluate(el => el.click())
         break
       }
       case 'none': // a beat that only points at what is already on screen
         break
+      case 'openSelect': {
+        // A native <select> popup is drawn outside the page, where the
+        // screencast can't see it. Show its options in-page instead, as an
+        // inline listbox (the card grows while it is open; floating it gets
+        // clipped by the chat message).
+        const target = page.locator(action.selector).first()
+        await target.waitFor({ state: 'visible' })
+        clickBox = await target.boundingBox()
+        await page.waitForTimeout(LEAD_MS)
+        await clickAt(page, clickBox)
+        await target.evaluate(sel => {
+          game.tooltip.deactivate() // the select's hover hint would cover the list
+          sel.dataset.videoTooltip = sel.dataset.tooltip ?? ''
+          delete sel.dataset.tooltip
+          sel.style.height = 'auto'
+          sel.size = Math.min(sel.options.length, 8)
+        })
+        break
+      }
+      case 'selectOption': {
+        const target = page.locator(action.selector).first()
+        const optionBox = await target.evaluate((sel, label) => {
+          const option = [...sel.options].find(o => o.textContent.trim() === label)
+          const r = option.getBoundingClientRect()
+          return { x: r.x, y: r.y, width: r.width, height: r.height }
+        }, action.label)
+        clickBox = optionBox
+        await clickAt(page, optionBox)
+        await target.evaluate((sel, label) => {
+          sel.value = [...sel.options].find(o => o.textContent.trim() === label).value
+          if (sel.size > 1) {
+            sel.size = 0
+            sel.style.height = ''
+            sel.dataset.tooltip = sel.dataset.videoTooltip
+          }
+          sel.dispatchEvent(new Event('change', { bubbles: true }))
+        }, action.label)
+        if (action.awaitSelector) await page.waitForSelector(action.awaitSelector)
+        break
+      }
       case 'evaluate':
         await page.evaluate(action.script)
         break
@@ -209,6 +260,7 @@ async function runAction (page, step) {
     }
     if (action.awaitChatMessage) {
       await page.waitForFunction((n) => game.messages.size > n && !!document.querySelector('#chat .chat-message:last-child .message-content'), messagesBefore, { timeout: 10000 })
+      await page.evaluate(() => ui.chat.scrollBottom({ waitImages: true }))
     }
   } finally {
     if (pinned !== undefined) {

@@ -1,4 +1,4 @@
-/* global game, Actor, ChatMessage, ui, foundry */
+/* global game, Actor, ChatMessage, CONFIG, ui, foundry */
 /**
  * Named world setups for storyboards. Each runs in the page and returns the
  * ids of everything it created, so the runner can delete them after the take
@@ -28,6 +28,12 @@ export const setups = {
       await game.settings.set(ns, key, value)
       return previous
     }
+    // Offer the core book's deed tables on the card (the card captures the list
+    // at roll time), and drop any table a spec run left behind.
+    for (const table of game.tables.filter(t => t.name.startsWith('E2E '))) await table.delete()
+    const deedCompendium = await swapSetting('dcc', 'mightyDeedsCompendium', 'dcc-core-book.dcc-core-deed-tables')
+    const deadlineTables = Date.now() + 5000
+    while (Date.now() < deadlineTables && !Object.keys(CONFIG.DCC.mightyDeedsTables).length) await new Promise(resolve => setTimeout(resolve, 50))
     // A targeted foe, so the card reports a hit instead of "only if it hits".
     const goblin = await Actor.create({
       name: 'Goblin',
@@ -42,7 +48,7 @@ export const setups = {
     const deadline = Date.now() + 3000
     while (Date.now() < deadline && !game.canvas.tokens.get(tokenDoc.id)) await new Promise(resolve => setTimeout(resolve, 50))
     game.canvas.tokens.get(tokenDoc.id).setTarget(true, { releaseOthers: true })
-    return { actorIds: [actor.id, goblin.id], tokenIds: [tokenDoc.id], settings: { 'dcc.enhancedAttackCards': await swapSetting('dcc', 'enhancedAttackCards', true) } }
+    return { actorIds: [actor.id, goblin.id], tokenIds: [tokenDoc.id], settings: { 'dcc.enhancedAttackCards': await swapSetting('dcc', 'enhancedAttackCards', true), 'dcc.mightyDeedsCompendium': deedCompendium } }
   })
 }
 
