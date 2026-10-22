@@ -157,7 +157,10 @@ async function closeWelcomeDialogs (page) {
 
 /**
  * Page init script: defines `globalThis.dccSetUiConfig(value)`, which sets
- * `core.uiConfig` without the redraw. The setting's onChange restyles the UI
+ * `core.uiConfig` without the redraw, and `globalThis.dccChatSettled(ids)`,
+ * which replaces the theme specs' fixed sleeps (below).
+ *
+ * `dccSetUiConfig` sets `core.uiConfig` without the redraw. The setting's onChange restyles the UI
  * and then starts an unawaited `canvas.draw()` of the viewed scene, which takes
  * 5-12 s under the runner's software WebGL and is the bulk of the theme specs'
  * time (#1081). They only need the restyle. A client setting's onChange runs
@@ -171,6 +174,26 @@ function installUiConfigSetter () {
       return await game.settings.set('core', 'uiConfig', value)
     } finally {
       delete canvas.draw
+    }
+  }
+
+  // Resolve once the stored color scheme is on the body and #interface and
+  // each message id is rendered in the chat sidebar (ChatMessage.create
+  // returns before the log renders it), then finish the theme's color
+  // transitions so computed styles are final.
+  globalThis.dccChatSettled = async (messageIds = [], timeout = 10000) => {
+    const { applications, interface: iface } = game.settings.get('core', 'uiConfig').colorScheme ?? {}
+    const ready = () =>
+      (!applications || document.body.classList.contains(`theme-${applications}`)) &&
+      (!iface || document.getElementById('interface')?.classList.contains(`theme-${iface}`)) &&
+      messageIds.every(id => document.querySelector(`#chat .chat-log [data-message-id="${id}"]`))
+    const deadline = Date.now() + timeout
+    while (!ready()) {
+      if (Date.now() > deadline) throw new Error(`chat never settled (theme ${applications}/${iface}, messages ${messageIds})`)
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    for (const animation of document.getAnimations()) {
+      try { animation.finish() } catch { /* infinite animations can't finish */ }
     }
   }
 }

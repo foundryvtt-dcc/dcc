@@ -90,7 +90,7 @@ async function auditChatCardContrast (page, scopeSelectors, fallbackBg = 'rgb(11
       ...cfg,
       colorScheme: { ...(cfg.colorScheme || {}), interface: 'dark', applications: 'dark' }
     })
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    await dccChatSettled(globalThis.__dccAuditMsgs || [])
     const parseRgb = (value) => {
       const m = /rgba?\(([^)]+)\)/.exec(value)
       if (!m) return null
@@ -188,8 +188,7 @@ test.describe('Chat card text color', () => {
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
-        // The theme swap re-renders the chat log; give it a beat to settle.
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await dccChatSettled(msgs.map(m => m.id))
         const read = (sel) => {
           const el = document.querySelector(sel)
           return el ? getComputedStyle(el).color : null
@@ -368,7 +367,6 @@ test.describe('Chat card text color', () => {
             { message: 'What is new in this release' }
           ) + '</div>'
         }))
-        await new Promise(resolve => setTimeout(resolve, 500))
 
         out.dark = await measure('dark')
         out.light = await measure('light')
@@ -484,13 +482,12 @@ test.describe('Chat card text color', () => {
       const out = { dark: {}, light: {} }
       const cfg = game.settings.get('core', 'uiConfig')
       globalThis.__dccSavedUiConfig = cfg
-      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
       const setScheme = async (scheme) => {
         await dccSetUiConfig({
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
-        await sleep(800)
+        await dccChatSettled()
       }
       const colors = (sel, tags) => {
         // GOTCHA: each rendered message ALSO flash-renders as a toast in
@@ -595,8 +592,8 @@ test.describe('Chat card text color', () => {
         await setScheme('dark')
         const idsBefore = new Set(game.messages.contents.map((m) => m.id))
         await table.draw()
-        await sleep(500)
         const tableMsgId = game.messages.contents.map((m) => m.id).find((id) => !idsBefore.has(id))
+        await dccChatSettled([tableMsgId])
 
         // A probe card mirroring the spell-check card's number-mod block
         // (`.spell-check-mod .critical/.fumble`) and a bare h3 like the core
@@ -612,7 +609,7 @@ test.describe('Chat card text color', () => {
             '</div>'
         })
         const welcomeMsg = await ChatMessage.create({ content: '<h3>Getting Started</h3>' })
-        await sleep(500)
+        await dccChatSettled([probeMsg.id, welcomeMsg.id])
         const probeMsgId = probeMsg.id
         const welcomeMsgId = welcomeMsg.id
 
@@ -760,7 +757,7 @@ test.describe('Chat card text color', () => {
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: scheme, applications: scheme }
         })
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await dccChatSettled(msgs.map(m => m.id))
         const [request, hit, miss] = msgs
         const cs = (el) => el ? getComputedStyle(el) : null
         return {
@@ -828,7 +825,7 @@ test.describe('Chat card text color', () => {
           ...cfg,
           colorScheme: { ...(cfg.colorScheme || {}), interface: ui, applications }
         })
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await dccChatSettled([msg.id])
         const read = (sel) => {
           const el = document.querySelector(`#chat [data-message-id="${msg.id}"] ${sel}`)
           return el ? getComputedStyle(el).color : null
