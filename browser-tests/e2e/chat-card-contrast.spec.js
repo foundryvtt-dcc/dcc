@@ -376,12 +376,22 @@ test.describe('Chat card contrast sweep', () => {
       const hoverFlags = []
       for (const { id, index } of buttons) {
         const button = page.locator(`#chat .chat-log [data-message-id="${id}"] .message-content button:not(:disabled):not(.disabled)`).nth(index)
-        await button.scrollIntoViewIfNeeded()
-        await button.hover()
-        await button.evaluate(el => {
+        // Scroll in-page and hover with a bare mouse move: locator.hover()'s
+        // stability checks wait on animation frames, ~2 s a button under the
+        // CI runner's software WebGL (#1081)
+        const { x, y } = await button.evaluate(el => {
+          el.scrollIntoView({ block: 'center' })
+          const rect = el.getBoundingClientRect()
+          return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+        })
+        await page.mouse.move(x, y)
+        const isHovered = await button.evaluate(el => {
+          if (!el.matches(':hover')) return false
           el.dataset.contrastHover = ''
           for (const a of el.getAnimations()) a.finish()
+          return true
         })
+        expect(isHovered, `button ${index} of ${id} is hovered`).toBe(true)
         const hovered = await auditGallery(page, [id], '[data-contrast-hover]')
         await button.evaluate(el => delete el.dataset.contrastHover)
         hoverFlags.push(...hovered.flags.map(f => ({ ...f, state: 'hover' })))
