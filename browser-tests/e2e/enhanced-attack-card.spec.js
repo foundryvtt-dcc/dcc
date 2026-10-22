@@ -24,6 +24,7 @@ test.describe('Enhanced attack cards', () => {
 
       const prevEnhanced = game.settings.get('dcc', 'enhancedAttackCards')
       const prevAutomate = game.settings.get('dcc', 'automateDamageFumblesCrits')
+      const origRandomUniform = CONFIG.Dice.randomUniform
       let target = null
       let attacker = null
       let monster = null
@@ -52,7 +53,14 @@ test.describe('Enhanced attack cards', () => {
         // Only cards posted by this attack count: the reused session page keeps
         // the chat log (and its already-rendered cards) from earlier runs.
         const seen = new Set(game.messages.contents.map(m => m.id))
-        await attacker.rollWeaponAttack(weapon.id, {})
+        // Pin the d20 to a natural 10 (natural = ceil((1 - u) * faces)): +10
+        // vs AC 1 hits on anything but a natural 1, which misses 1 run in 20
+        CONFIG.Dice.randomUniform = () => 0.5
+        try {
+          await attacker.rollWeaponAttack(weapon.id, {})
+        } finally {
+          CONFIG.Dice.randomUniform = origRandomUniform
+        }
 
         // Poll the chat log DOM for the rendered enhanced card.
         let cardHTML = null
@@ -116,6 +124,7 @@ test.describe('Enhanced attack cards', () => {
       } finally {
         // Restore state even when something above throws: the shared world must
         // not keep the flipped setting or the created documents.
+        CONFIG.Dice.randomUniform = origRandomUniform
         game.canvas.tokens.get(tokenDoc?.id)?.setTarget(false, { releaseOthers: true })
         await game.settings.set('dcc', 'enhancedAttackCards', prevEnhanced)
         await game.settings.set('dcc', 'automateDamageFumblesCrits', prevAutomate)
@@ -127,7 +136,7 @@ test.describe('Enhanced attack cards', () => {
     })
 
     expect(result.hasCard).toBe(true)
-    expect(result.isHitBanner).toBe(true) // AC 1 + toHit +10 always hits
+    expect(result.isHitBanner).toBe(true) // natural 10 + 10 vs AC 1
     expect(result.hasTargetFlag).toBe(true)
     expect(result.hitsTargetFlag).toBe(true)
     // A hit — crit or not — always offers Roll Damage.
