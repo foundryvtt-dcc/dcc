@@ -48,7 +48,13 @@ async function createSwapFixture (page, gridType = 1) {
   const sceneId = gridType === 1
     ? sharedScene.id
     : await page.evaluate(async gridType => (await Scene.create({ name: 'PARTY TOKEN UI Hex', width: 3000, height: 3000, grid: { size: 100, type: gridType } })).id, gridType)
-  await viewScene(page, sceneId)
+  try {
+    await viewScene(page, sceneId)
+  } catch (error) {
+    // The test's cleanup never runs without the fixture ids
+    if (gridType !== 1) await page.evaluate(id => game.scenes.get(id)?.delete(), sceneId).catch(() => {})
+    throw error
+  }
   return page.evaluate(async ({ sceneId, ownScene }) => {
     const members = []
     for (let i = 0; i < 3; i++) members.push(await Actor.create({ name: `PARTY TOKEN UI Member ${i}`, type: 'Player' }))
