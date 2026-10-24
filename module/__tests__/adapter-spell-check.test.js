@@ -2807,19 +2807,42 @@ test('loadMercurialMagicTable returns null when both compendium and world lookup
   game.tables = originalGameTables
 })
 
-test('loadMercurialMagicTable returns null when resolver finds no table name', async () => {
+test('loadMercurialMagicTable returns null when nothing is configured and no world table exists', async () => {
   const originalRegistry = CONFIG.DCC.mercurialMagicTables
   const originalLegacy = CONFIG.DCC.mercurialMagicTable
+  const originalGameTables = game.tables
   clearAllTableCaches()
   CONFIG.DCC.mercurialMagicTables = {}
   CONFIG.DCC.mercurialMagicTable = null
+  game.tables = { getName: () => null, find: () => null }
 
-  // resolveMercurialMagicTableName returns null → early return, no cache write.
   expect(await loadMercurialMagicTable('wizard')).toBeNull()
-  expect(mercurialMagicTableCache.size).toBe(0)
 
   CONFIG.DCC.mercurialMagicTables = originalRegistry
   CONFIG.DCC.mercurialMagicTable = originalLegacy
+  game.tables = originalGameTables
+})
+
+test('loadMercurialMagicTable uses a world "Table 5-2: Mercurial Magic" when nothing is configured', async () => {
+  const originalRegistry = CONFIG.DCC.mercurialMagicTables
+  const originalLegacy = CONFIG.DCC.mercurialMagicTable
+  const originalGameTables = game.tables
+  clearAllTableCaches()
+  CONFIG.DCC.mercurialMagicTables = {}
+  CONFIG.DCC.mercurialMagicTable = null
+  const worldTable = makeMercurialSourceTable('world-merc', 'Table 5-2: Mercurial Magic')
+  game.tables = {
+    getName: () => null,
+    find: (predicate) => (predicate(worldTable) ? worldTable : null)
+  }
+
+  const libTable = await loadMercurialMagicTable('wizard')
+  expect(libTable).not.toBeNull()
+  expect(mercurialMagicTableCache.has('Table 5-2: Mercurial Magic')).toBe(true)
+
+  CONFIG.DCC.mercurialMagicTables = originalRegistry
+  CONFIG.DCC.mercurialMagicTable = originalLegacy
+  game.tables = originalGameTables
 })
 
 test('loadMercurialMagicTable caches per resolved tableName — second call skips pack.getDocument', async () => {

@@ -1,6 +1,6 @@
 /* global game, ui, Roll, ChatMessage, CONFIG, console */
 
-import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates } from '../utilities.js'
+import { ensurePlus, findPackEntryByName, getMercurialSpecial, getNameCandidates, resolveMercurialMagicRollTable } from '../utilities.js'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 
 /**
@@ -293,40 +293,13 @@ export const SpellItemMixin = (Base) => class extends Base {
       if (!roll) return // Dialog cancelled — leave the mercurial effect unrolled
     }
 
-    // Lookup the mercurial magic table if available — per-class
-    // registry first (via `dcc.registerMercurialMagicTable`), then the
-    // `'default'` registration, then the legacy single-table mirror.
-    // Variants like XCC's blaster / gnome register their own tables
-    // and get class-keyed lookups; canonical DCC casters keep using
-    // the world-setting default.
-    let table = null
+    // Resolve the mercurial magic table. A world RollTable named after the
+    // configured table (or `Table 5-2: Mercurial Magic`) wins — the same
+    // world-first rule as the custom fumble table — then the per-class
+    // registry (`dcc.registerMercurialMagicTable`), the `'default'`
+    // registration, and the legacy single-table mirror.
     const classKey = actor.system?.details?.sheetClass || undefined
-    const registry = CONFIG.DCC.mercurialMagicTables || {}
-    const mercurialMagicTableName = (classKey && registry[classKey]) ||
-      registry.default ||
-      CONFIG.DCC.mercurialMagicTable
-    if (mercurialMagicTableName) {
-      const mercurialMagicTablePath = mercurialMagicTableName.split('.')
-      let pack
-      if (mercurialMagicTablePath.length === 3) {
-        pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
-      }
-      if (pack) {
-        // Tolerate a Babele-translated pack index (issue #799)
-        const entry = findPackEntryByName(pack, mercurialMagicTablePath[2])
-        if (entry) {
-          table = await pack.getDocument(entry._id)
-        }
-      }
-    }
-
-    // Fall back to searching world tables by name
-    if (!table) {
-      const worldTableName = mercurialMagicTableName
-        ? mercurialMagicTableName.split('.').pop()
-        : 'Table 5-2: Mercurial Magic'
-      table = game.tables.getName(worldTableName)
-    }
+    const table = await resolveMercurialMagicRollTable(classKey)
 
     let mercurialMagicResult = null
     if (table) {

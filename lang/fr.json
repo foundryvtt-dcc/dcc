@@ -789,7 +789,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Configuration Manuelle des Compendia",
   "DCC.SettingManualCompendiumConfigurationHint": "Si vous voulez construire vos propres compendia de recherche au lieu d'utiliser le Module Core Book - non recommandé",
   "DCC.SettingMercurialMagicTable": "Table de la magie mercurielle",
-  "DCC.SettingMercurialMagicTableHint": "Table à utiliser pour les effets de la magie mercurielle - doit être dans un compendium pack",
+  "DCC.SettingMercurialMagicTableHint": "Table à utiliser pour les effets de la magie mercurielle - doit être dans un compendium pack. Une table du monde nommée \"Table 5-2: Mercurial Magic\" (ou portant exactement le nom de la table choisie) est utilisée à la place si elle existe",
   "DCC.SettingMightyDeedsEnabled": "Activer les tables de hauts faits",
   "DCC.SettingMightyDeedsEnabledHint": "Propose une sélection de table de hauts faits sur les cartes d'attaque lorsque le dé de haut fait d'un guerrier réussit (3 ou plus).",
   "DCC.SettingMultipleActionDice": "Dés d'action multiples",

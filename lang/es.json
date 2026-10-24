@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Configurar compendios manualmente",
   "DCC.SettingManualCompendiumConfigurationHint": "Si quieres crear tus propios compendios de consulta en lugar de usar el módulo Core Book - no recomendado",
   "DCC.SettingMercurialMagicTable": "Tabla de Magia Mercurial",
-  "DCC.SettingMercurialMagicTableHint": "Tabla para usar en efectos de magia mercurial - debe estar en un paquete de compendio",
+  "DCC.SettingMercurialMagicTableHint": "Tabla para usar en efectos de magia mercurial - debe estar en un paquete de compendio. Si existe, se usa en su lugar una tabla del mundo llamada \"Table 5-2: Mercurial Magic\" (o con el mismo nombre exacto que la tabla seleccionada)",
   "DCC.SettingMightyDeedsEnabled": "Habilitar Tablas de Hazañas",
   "DCC.SettingMightyDeedsEnabledHint": "Ofrece una selección de tabla de Hazañas en las cartas de ataque cuando el dado de hazaña de un guerrero tiene éxito (3 o más).",
   "DCC.SettingMultipleActionDice": "Múltiples dados de acción",

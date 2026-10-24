@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "手动配置合集",
   "DCC.SettingManualCompendiumConfigurationHint": "不使用核心书模组，而是自行建立数据库合集——不推荐",
   "DCC.SettingMercurialMagicTable": "无常魔法表",
-  "DCC.SettingMercurialMagicTableHint": "为无常魔法投骰表格——必须在合集中存在",
+  "DCC.SettingMercurialMagicTableHint": "为无常魔法投骰表格——必须在合集中存在。如果世界中存在名为\"Table 5-2: Mercurial Magic\"（或与所选表格同名）的投骰表格，则优先使用该表格",
   "DCC.SettingMightyDeedsEnabled": "启用壮举表",
   "DCC.SettingMightyDeedsEnabledHint": "当战士的壮举骰成功（3 或更高）时，在攻击卡上提供壮举表提示。",
   "DCC.SettingMultipleActionDice": "多动作骰",

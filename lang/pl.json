@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Ręczna Konfiguracja Kompendiów",
   "DCC.SettingManualCompendiumConfigurationHint": "Jeśli chcesz zbudować własne kompendium wyszukiwania zamiast używać Modułu Core Book - nie zalecane",
   "DCC.SettingMercurialMagicTable": "Tabela Merkurialnej Magii",
-  "DCC.SettingMercurialMagicTableHint": "Tabela Rzutów do użycia dla efektów Merkurialnej Magii - musi być w pakiecie kompendium",
+  "DCC.SettingMercurialMagicTableHint": "Tabela Rzutów do użycia dla efektów Merkurialnej Magii - musi być w pakiecie kompendium. Jeśli istnieje, zamiast niej używana jest tabela świata o nazwie \"Table 5-2: Mercurial Magic\" (lub o dokładnie takiej nazwie jak wybrana tabela)",
   "DCC.SettingMightyDeedsEnabled": "Włącz Tabele Czynów",
   "DCC.SettingMightyDeedsEnabledHint": "Udostępnia wybór Tabeli Czynów na kartach ataku, gdy kość czynu wojownika odniesie sukces (3 lub więcej).",
   "DCC.SettingMultipleActionDice": "Wiele kości akcji",
