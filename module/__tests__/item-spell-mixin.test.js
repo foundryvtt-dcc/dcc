@@ -17,7 +17,9 @@ vi.mock('../utilities.js', async (importOriginal) => {
     // name-candidate helpers (#799)
     getMercurialSpecial: actual.getMercurialSpecial,
     getNameCandidates: actual.getNameCandidates,
-    findPackEntryByName: actual.findPackEntryByName
+    findPackEntryByName: actual.findPackEntryByName,
+    // Real world-first table resolution (custom world table overrides compendium)
+    resolveMercurialMagicRollTable: actual.resolveMercurialMagicRollTable
   }
 })
 

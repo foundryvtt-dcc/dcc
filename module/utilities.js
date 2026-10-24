@@ -1,4 +1,4 @@
-/* global foundry, game, CONFIG */
+/* global foundry, game, CONFIG, console */
 
 import { critTableDocCache, critTableLinkCache } from './adapter/table-cache.mjs'
 
@@ -457,6 +457,106 @@ export async function getTableFromPath (tablePath) {
   return game.tables.getName(tablePath) ||
     game.tables.find?.((entity) => docNameMatches(entity, tablePath)) ||
     null
+}
+
+/**
+ * Canonical name of the core-rules Mercurial Magic table. A world
+ * RollTable with this name overrides whatever compendium table is
+ * configured or registered — the same world-first rule the custom
+ * fumble table uses (`Table 4-2: Fumbles`).
+ */
+export const MERCURIAL_MAGIC_TABLE_NAME = 'Table 5-2: Mercurial Magic'
+
+/**
+ * Resolve the configured mercurial-magic table *name* for a caster
+ * class: per-class registry (`CONFIG.DCC.mercurialMagicTables[classKey]`,
+ * populated by `dcc.registerMercurialMagicTable`) first, then the
+ * `'default'` slot, then the legacy `CONFIG.DCC.mercurialMagicTable`
+ * world-setting mirror. The legacy-field fallback covers callers that
+ * pre-date the registry hook or worlds where only the setting is set.
+ *
+ * @param {string} [classKey] - Lowercase `system.details.sheetClass`
+ * @returns {string|null}
+ */
+export function resolveMercurialMagicTableName (classKey) {
+  if (typeof CONFIG === 'undefined') return null
+  const registry = CONFIG?.DCC?.mercurialMagicTables || {}
+  if (classKey && registry[classKey]) return registry[classKey]
+  if (registry.default) return registry.default
+  return CONFIG?.DCC?.mercurialMagicTable || null
+}
+
+/**
+ * Whether `classKey` has its own table in the per-class registry
+ * (`dcc.registerMercurialMagicTable`). Such a class is exempt from the
+ * canonical `Table 5-2` world override — see {@link resolveMercurialMagicRollTable}.
+ *
+ * @param {string} [classKey] - Lowercase `system.details.sheetClass`
+ * @returns {boolean}
+ */
+export function hasClassMercurialMagicTable (classKey) {
+  if (typeof CONFIG === 'undefined' || !classKey) return false
+  return !!CONFIG?.DCC?.mercurialMagicTables?.[classKey]
+}
+
+/**
+ * World-table names that override the configured mercurial-magic table:
+ * the bare name of the configured table (its compendium prefix stripped)
+ * plus, unless `includeCanonical` is false, the canonical
+ * `Table 5-2: Mercurial Magic`.
+ *
+ * @param {string|null} tableName - value from {@link resolveMercurialMagicTableName}
+ * @param {Object} [options]
+ * @param {boolean} [options.includeCanonical=true] - also match the canonical name
+ * @returns {Array<string>}
+ */
+export function mercurialMagicWorldTableNames (tableName, { includeCanonical = true } = {}) {
+  const names = includeCanonical ? [MERCURIAL_MAGIC_TABLE_NAME] : []
+  if (tableName) {
+    const parts = tableName.split('.')
+    const bare = parts.length >= 3 ? parts.slice(2).join('.') : tableName
+    if (bare && !names.includes(bare)) names.unshift(bare)
+  }
+  return names
+}
+
+/**
+ * Resolve the mercurial-magic RollTable document for a caster class.
+ *
+ * Order: a world RollTable whose name matches one of
+ * {@link mercurialMagicWorldTableNames} wins (so a Judge can drop a custom
+ * `Table 5-2: Mercurial Magic` into the world and have it used even with
+ * the Core Book module active); otherwise the configured compendium table
+ * from {@link resolveMercurialMagicTableName}. Returns `null` when nothing
+ * is found.
+ *
+ * A class with its own registered table (`dcc.registerMercurialMagicTable`,
+ * e.g. XCC's blaster / gnome) is only overridden by a world table named
+ * like that class table — the canonical `Table 5-2` name is the wizard's
+ * table and must not hijack a class-specific one.
+ *
+ * @param {string} [classKey] - Lowercase `system.details.sheetClass`
+ * @returns {Promise<Object|null>} the RollTable document, or null
+ */
+export async function resolveMercurialMagicRollTable (classKey) {
+  const tableName = resolveMercurialMagicTableName(classKey)
+  const classRegistered = hasClassMercurialMagicTable(classKey)
+
+  // Exact-name lookup first, then a Babele-aware scan (translated name or
+  // untranslated original) — see docNameMatches (#799).
+  const names = mercurialMagicWorldTableNames(tableName, { includeCanonical: !classRegistered })
+  const worldTable = names.map((name) => game.tables?.getName?.(name)).find(Boolean) ||
+    game.tables?.find?.((entity) => docNameMatches(entity, names))
+  if (worldTable) return worldTable
+
+  if (!tableName) return null
+  try {
+    return await getTableFromPath(tableName)
+  } catch (err) {
+    // A corrupted pack / permission / socket error must not crash the cast.
+    console.warn('DCC | resolveMercurialMagicRollTable: table lookup rejected', { tableName, err })
+    return null
+  }
 }
 
 /**

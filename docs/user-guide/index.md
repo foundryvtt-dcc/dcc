@@ -27,6 +27,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 
 ## Spells
 * [Creating a Spell](Creating-a-Spell.md)
+* [Custom Mercurial Magic Table](Custom-Mercurial-Magic-Table.md)
 
 ## Sheet Options
 * [Action Dice](Action-Dice.md)

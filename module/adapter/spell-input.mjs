@@ -22,8 +22,10 @@
  *     `SimpleTable` / `MercurialTable` loaded from a configured
  *     Foundry `RollTable` (compendium or world), or `null` when
  *     unavailable. `loadMercurialMagicTable` takes a lowercase class
- *     key (e.g. `'wizard'`, `'elf'`, `'gnome'`) and walks the
- *     per-class registry via `resolveMercurialMagicTableName` — see
+ *     key (e.g. `'wizard'`, `'elf'`, `'gnome'`); a world table named
+ *     after the configured table (or `Table 5-2: Mercurial Magic`)
+ *     wins, then the per-class registry via
+ *     `resolveMercurialMagicTableName` — see
  *     `dcc.registerMercurialMagicTable` (Group E session 1).
  *
  * Session 4 populates `wizard.patron` / `elf.patron` so
@@ -52,7 +54,10 @@ import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
 import { normalizeSpellLevel } from '../spell-check-success.mjs'
-import { docNameMatches, findPackEntryByName, getMercurialSpecial } from '../utilities.js'
+import { MERCURIAL_MAGIC_TABLE_NAME, docNameMatches, findPackEntryByName, getMercurialSpecial, hasClassMercurialMagicTable, resolveMercurialMagicRollTable, resolveMercurialMagicTableName } from '../utilities.js'
+
+// Re-exported so existing importers of the name resolver keep working.
+export { resolveMercurialMagicTableName }
 
 /**
  * Caster-type whitelist declared on spell definitions for the
@@ -533,91 +538,40 @@ async function resolveDisapprovalTable (tableName) {
 }
 
 /**
- * Resolve the mercurial-magic table name for a given class key, walking
- * the per-class registry → `'default'` registration → legacy single-table
- * field → null. `classKey` is the lowercase `system.details.sheetClass`
- * (`'wizard'`, `'elf'`, `'blaster'`, `'gnome'`, …) or `undefined` to
- * resolve only against the default. The legacy-field fallback covers
- * callers that pre-date the registry hook (`dcc.registerMercurialMagicTable`,
- * Group E session 1) or environments where only the world setting is
- * configured.
- *
- * @param {string} [classKey]
- * @returns {string|null}
- */
-export function resolveMercurialMagicTableName (classKey) {
-  if (typeof CONFIG === 'undefined') return null
-  const registry = CONFIG?.DCC?.mercurialMagicTables || {}
-  if (classKey && registry[classKey]) return registry[classKey]
-  if (registry.default) return registry.default
-  return CONFIG?.DCC?.mercurialMagicTable || null
-}
-
-/**
- * Load the configured mercurial magic table and convert it to the
- * lib's `MercurialTable` shape. Resolves via `resolveMercurialMagicTableName`
- * — per-class registry first (`CONFIG.DCC.mercurialMagicTables[classKey]`),
- * then the `'default'` slot, then the legacy `CONFIG.DCC.mercurialMagicTable`
- * world-setting mirror. Pack lookup then world-table fallback mirror
- * the legacy `DCCItem.rollMercurialMagic:531-558` walk.
+ * Load the mercurial magic table and convert it to the lib's
+ * `MercurialTable` shape. Resolution is `resolveMercurialMagicRollTable`
+ * in `utilities.js`: a world RollTable named after the configured table
+ * (or `Table 5-2: Mercurial Magic`) first, then the per-class registry /
+ * `'default'` slot / legacy world-setting compendium table. Shared with
+ * the item-sheet `DCCItem.rollMercurialMagic` path so both agree.
  *
  * Returns `null` when no table is resolvable (nothing registered, pack
  * missing, unit-test env). Callers should skip mercurial pre-rolling
  * in that case — matches legacy "fall back to just displaying the
- * roll" behavior at `DCCItem.rollMercurialMagic:564`.
+ * roll" behavior.
+ *
+ * Cached per resolved table name (the canonical name stands in when
+ * nothing is configured). A class-registered resolution is keyed
+ * separately (`class:` prefix) because the resolver skips the canonical
+ * world override for it, so the same name can map to a different table.
+ * World-RollTable lifecycle hooks clear the cache.
  *
  * @param {string} [classKey] - Lowercase `sheetClass` for per-class lookup.
  * @returns {Promise<Object|null>}
  */
 export async function loadMercurialMagicTable (classKey) {
-  const tableName = resolveMercurialMagicTableName(classKey)
-  if (!tableName) return null
+  if (typeof CONFIG === 'undefined') return null
+  const tableName = resolveMercurialMagicTableName(classKey) || MERCURIAL_MAGIC_TABLE_NAME
+  const cacheKey = hasClassMercurialMagicTable(classKey) ? `class:${tableName}` : tableName
 
-  // Cache hit — same resolved tableName returns the same lib
-  // MercurialTable until a world-RollTable lifecycle hook fires.
-  if (mercurialMagicTableCache.has(tableName)) {
-    return mercurialMagicTableCache.get(tableName)
+  if (mercurialMagicTableCache.has(cacheKey)) {
+    return mercurialMagicTableCache.get(cacheKey)
   }
 
-  const libTable = await resolveMercurialMagicTable(tableName)
-  mercurialMagicTableCache.set(tableName, libTable)
+  const doc = await resolveMercurialMagicRollTable(classKey)
+  const libTable = doc ? toLibMercurialTable(doc) : null
+  mercurialMagicTableCache.set(cacheKey, libTable)
   return libTable
-}
-
-async function resolveMercurialMagicTable (tableName) {
-  // Compendium lookup — `packId.collectionName.tableName` (3 parts).
-  const parts = tableName.split('.')
-  if (parts.length === 3) {
-    const pack = game.packs?.get?.(`${parts[0]}.${parts[1]}`)
-    if (pack) {
-      // Tolerate a Babele-translated pack index (issue #799)
-      const entry = findPackEntryByName(pack, parts[2])
-      if (entry) {
-        let doc
-        try {
-          doc = await pack.getDocument(entry._id)
-        } catch (err) {
-          // Fall through to the world-table branch rather than crash
-          // the cast on a corrupted pack / permission / socket error.
-          console.warn('[DCC adapter] loadMercurialMagicTable: pack.getDocument rejected', { pack: `${parts[0]}.${parts[1]}`, entryId: entry._id, err })
-        }
-        if (doc) {
-          const libTable = toLibMercurialTable(doc)
-          if (libTable) return libTable
-        }
-      }
-    }
-  }
-
-  // World-table fallback — strip the pack prefix if present.
-  const worldTableName = parts.length === 3 ? parts[2] : tableName
-  const worldTable = game.tables?.getName?.(worldTableName)
-  if (worldTable) {
-    const libTable = toLibMercurialTable(worldTable)
-    if (libTable) return libTable
-  }
-
-  return null
 }
 
 /**

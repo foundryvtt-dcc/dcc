@@ -66,11 +66,11 @@ Click the **Tables & Compendia** button to choose which compendia and roll table
 
 **Turn Unholy Table** is the compendium where you store Turn Unholy tables. The Cleric can choose their table from their character sheet.
 
-**Lay on Hands Table** is the table where you store Lay on Hands effects. The Cleric can choose their table from their character sheet.
+**Lay on Hands Table** is the table where you store Lay on Hands effects. When no table is configured, a world table named "Lay on Hands" (or its localized equivalent) is used — see [Cleric](Cleric.md).
 
-**Divine Aid Table** is the table where you store Divine Aid effects. The Cleric can choose their table from their character sheet.
+**Divine Aid Table** is the table where you store Divine Aid effects. When no table is configured, a world table named "Divine Aid" (or its localized equivalent) is used — see [Cleric](Cleric.md).
 
-**Mercurial Magic Table** is the table where you store Mercurial Magic effects. The Wizard can choose their table from their character sheet.
+**Mercurial Magic Table** is the compendium table used for Mercurial Magic effects. A world table named "Table 5-2: Mercurial Magic" overrides it — see [Custom Mercurial Magic Table](Custom-Mercurial-Magic-Table.md).
 
 ## Multiple Action Dice
 

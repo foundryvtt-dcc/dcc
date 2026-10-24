@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Configura manualmente i Compendi",
   "DCC.SettingManualCompendiumConfigurationHint": "Per quando si vuole costruire un proprio Compendio invece di usare il modulo Core Book, anche se non è consigliabile.",
   "DCC.SettingMercurialMagicTable": "Tabella Magia Mercuriale",
-  "DCC.SettingMercurialMagicTableHint": "Tabella da usare per Magia Mercuriale - deve trovarsi in un Compendio",
+  "DCC.SettingMercurialMagicTableHint": "Tabella del Compendio da usare per Magia Mercuriale. Una tabella del mondo chiamata \"Table 5-2: Mercurial Magic\" (o con esattamente lo stesso nome della tabella selezionata) ha la precedenza se presente",
   "DCC.SettingMightyDeedsEnabled": "Abilita le Tabelle dei Cimenti",
   "DCC.SettingMightyDeedsEnabledHint": "Offre una selezione della tabella dei Cimenti sulle carte di attacco quando il dado del cimento di un guerriero ha successo (3 o più).",
   "DCC.SettingMultipleActionDice": "Dadi azione multipli",

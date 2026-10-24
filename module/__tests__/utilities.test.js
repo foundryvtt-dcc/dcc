@@ -3,6 +3,8 @@
 import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
+  resolveMercurialMagicRollTable,
+  mercurialMagicWorldTableNames,
   docNameMatches,
   ensurePlus,
   findPackEntryByName,
@@ -839,6 +841,84 @@ describe('Utilities', () => {
 
       const result = await getTableFromPath('Deed: Trips and Throws')
       expect(result).toBe(worldTable)
+    })
+  })
+
+  describe('resolveMercurialMagicRollTable', () => {
+    let compendiumTable
+    let mockPack
+
+    beforeEach(() => {
+      compendiumTable = { id: 'pack-merc', name: 'Umerica Mercurial' }
+      mockPack = {
+        index: [{ _id: 'pack-merc', name: 'Umerica Mercurial' }],
+        getDocument: vi.fn().mockResolvedValue(compendiumTable)
+      }
+      global.CONFIG = { DCC: { mercurialMagicTables: {}, mercurialMagicTable: 'world.custom-tables.Umerica Mercurial' } }
+      global.game = {
+        packs: { get: vi.fn().mockReturnValue(mockPack) },
+        tables: {
+          getName: vi.fn().mockReturnValue(null),
+          find: vi.fn().mockReturnValue(null)
+        }
+      }
+    })
+
+    it('lists the bare configured name and the canonical name', () => {
+      expect(mercurialMagicWorldTableNames('dcc-core-book.dcc-core-tables.Table 5-2: Mercurial Magic')).toEqual(['Table 5-2: Mercurial Magic'])
+      expect(mercurialMagicWorldTableNames('world.custom-tables.Umerica Mercurial')).toEqual(['Umerica Mercurial', 'Table 5-2: Mercurial Magic'])
+      expect(mercurialMagicWorldTableNames(null)).toEqual(['Table 5-2: Mercurial Magic'])
+    })
+
+    it('prefers a world table named like the configured compendium table', async () => {
+      const worldTable = { id: 'world-merc', name: 'Umerica Mercurial' }
+      global.game.tables.find = vi.fn((predicate) => (predicate(worldTable) ? worldTable : null))
+
+      expect(await resolveMercurialMagicRollTable('wizard')).toBe(worldTable)
+      expect(mockPack.getDocument).not.toHaveBeenCalled()
+    })
+
+    it('uses a world "Table 5-2: Mercurial Magic" even when a compendium table is configured', async () => {
+      const worldTable = { id: 'world-merc', name: 'Table 5-2: Mercurial Magic' }
+      global.game.tables.find = vi.fn((predicate) => (predicate(worldTable) ? worldTable : null))
+
+      expect(await resolveMercurialMagicRollTable('wizard')).toBe(worldTable)
+      expect(mockPack.getDocument).not.toHaveBeenCalled()
+    })
+
+    it('falls back to the configured compendium table when no world table matches', async () => {
+      expect(await resolveMercurialMagicRollTable('wizard')).toBe(compendiumTable)
+      expect(global.game.packs.get).toHaveBeenCalledWith('world.custom-tables')
+    })
+
+    it('finds a world "Table 5-2: Mercurial Magic" when nothing is configured', async () => {
+      global.CONFIG.DCC.mercurialMagicTable = null
+      const worldTable = { id: 'world-merc', name: 'Table 5-2: Mercurial Magic' }
+      global.game.tables.find = vi.fn((predicate) => (predicate(worldTable) ? worldTable : null))
+
+      expect(await resolveMercurialMagicRollTable()).toBe(worldTable)
+    })
+
+    it('does not let a world "Table 5-2" hijack a class-registered table, but a same-named world table still wins', async () => {
+      global.CONFIG.DCC.mercurialMagicTables = { blaster: 'xcc-core-book.xcc-tables.Blaster Mercurial' }
+      mockPack.index = [{ _id: 'pack-merc', name: 'Blaster Mercurial' }]
+      const canonicalWorld = { id: 'world-merc', name: 'Table 5-2: Mercurial Magic' }
+      global.game.tables.getName = vi.fn((name) => (name === canonicalWorld.name ? canonicalWorld : null))
+
+      expect(await resolveMercurialMagicRollTable('blaster')).toBe(compendiumTable)
+
+      const blasterWorld = { id: 'world-blaster', name: 'Blaster Mercurial' }
+      global.game.tables.getName = vi.fn((name) => (name === blasterWorld.name ? blasterWorld : null))
+      expect(await resolveMercurialMagicRollTable('blaster')).toBe(blasterWorld)
+    })
+
+    it('warns and returns null when the pack document load rejects', async () => {
+      mockPack.getDocument.mockRejectedValue(new Error('socket dropped'))
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      expect(await resolveMercurialMagicRollTable('wizard')).toBeNull()
+      expect(warnSpy).toHaveBeenCalled()
+      warnSpy.mockRestore()
     })
   })
 
