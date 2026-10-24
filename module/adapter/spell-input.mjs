@@ -54,7 +54,7 @@ import { actorToCharacter } from './character-accessors.mjs'
 import { disapprovalTableCache, mercurialMagicTableCache } from './table-cache.mjs'
 import { normalizeLibDie } from './attack-input.mjs'
 import { normalizeSpellLevel } from '../spell-check-success.mjs'
-import { MERCURIAL_MAGIC_TABLE_NAME, docNameMatches, findPackEntryByName, getMercurialSpecial, resolveMercurialMagicRollTable, resolveMercurialMagicTableName } from '../utilities.js'
+import { MERCURIAL_MAGIC_TABLE_NAME, docNameMatches, findPackEntryByName, getMercurialSpecial, hasClassMercurialMagicTable, resolveMercurialMagicRollTable, resolveMercurialMagicTableName } from '../utilities.js'
 
 // Re-exported so existing importers of the name resolver keep working.
 export { resolveMercurialMagicTableName }
@@ -551,14 +551,18 @@ async function resolveDisapprovalTable (tableName) {
  * roll" behavior.
  *
  * Cached per resolved table name (the canonical name stands in when
- * nothing is configured); world-RollTable lifecycle hooks clear it.
+ * nothing is configured). A class-registered resolution is keyed
+ * separately (`class:` prefix) because the resolver skips the canonical
+ * world override for it, so the same name can map to a different table.
+ * World-RollTable lifecycle hooks clear the cache.
  *
  * @param {string} [classKey] - Lowercase `sheetClass` for per-class lookup.
  * @returns {Promise<Object|null>}
  */
 export async function loadMercurialMagicTable (classKey) {
   if (typeof CONFIG === 'undefined') return null
-  const cacheKey = resolveMercurialMagicTableName(classKey) || MERCURIAL_MAGIC_TABLE_NAME
+  const tableName = resolveMercurialMagicTableName(classKey) || MERCURIAL_MAGIC_TABLE_NAME
+  const cacheKey = hasClassMercurialMagicTable(classKey) ? `class:${tableName}` : tableName
 
   if (mercurialMagicTableCache.has(cacheKey)) {
     return mercurialMagicTableCache.get(cacheKey)

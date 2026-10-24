@@ -26,7 +26,8 @@
  *     for `loadMercurialMagicTable(classKey)`. Keyed on the resolved
  *     table name from `resolveMercurialMagicTableName(classKey)`, or
  *     the canonical `Table 5-2: Mercurial Magic` when none is configured
- *     (a world table by that name is still looked up).
+ *     (a world table by that name is still looked up). A class-registered
+ *     resolution carries a `class:` prefix since it resolves differently.
  *   - `critTableLinkCache: Map<critTableSuffix, uuidPrefix | null>` —
  *     for `getCritTableLink(suffix, displayText)` in `utilities.js`.
  *     Cached value is the `@UUID[Compendium...|RollTable...]` prefix

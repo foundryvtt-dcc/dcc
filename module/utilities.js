@@ -487,6 +487,19 @@ export function resolveMercurialMagicTableName (classKey) {
 }
 
 /**
+ * Whether `classKey` has its own table in the per-class registry
+ * (`dcc.registerMercurialMagicTable`). Such a class is exempt from the
+ * canonical `Table 5-2` world override — see {@link resolveMercurialMagicRollTable}.
+ *
+ * @param {string} [classKey] - Lowercase `system.details.sheetClass`
+ * @returns {boolean}
+ */
+export function hasClassMercurialMagicTable (classKey) {
+  if (typeof CONFIG === 'undefined' || !classKey) return false
+  return !!CONFIG?.DCC?.mercurialMagicTables?.[classKey]
+}
+
+/**
  * World-table names that override the configured mercurial-magic table:
  * the bare name of the configured table (its compendium prefix stripped)
  * plus, unless `includeCanonical` is false, the canonical
@@ -527,7 +540,7 @@ export function mercurialMagicWorldTableNames (tableName, { includeCanonical = t
  */
 export async function resolveMercurialMagicRollTable (classKey) {
   const tableName = resolveMercurialMagicTableName(classKey)
-  const classRegistered = !!(classKey && CONFIG?.DCC?.mercurialMagicTables?.[classKey])
+  const classRegistered = hasClassMercurialMagicTable(classKey)
 
   // Exact-name lookup first, then a Babele-aware scan (translated name or
   // untranslated original) — see docNameMatches (#799).
