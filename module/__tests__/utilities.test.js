@@ -898,6 +898,28 @@ describe('Utilities', () => {
 
       expect(await resolveMercurialMagicRollTable()).toBe(worldTable)
     })
+
+    it('does not let a world "Table 5-2" hijack a class-registered table, but a same-named world table still wins', async () => {
+      global.CONFIG.DCC.mercurialMagicTables = { blaster: 'xcc-core-book.xcc-tables.Blaster Mercurial' }
+      mockPack.index = [{ _id: 'pack-merc', name: 'Blaster Mercurial' }]
+      const canonicalWorld = { id: 'world-merc', name: 'Table 5-2: Mercurial Magic' }
+      global.game.tables.getName = vi.fn((name) => (name === canonicalWorld.name ? canonicalWorld : null))
+
+      expect(await resolveMercurialMagicRollTable('blaster')).toBe(compendiumTable)
+
+      const blasterWorld = { id: 'world-blaster', name: 'Blaster Mercurial' }
+      global.game.tables.getName = vi.fn((name) => (name === blasterWorld.name ? blasterWorld : null))
+      expect(await resolveMercurialMagicRollTable('blaster')).toBe(blasterWorld)
+    })
+
+    it('warns and returns null when the pack document load rejects', async () => {
+      mockPack.getDocument.mockRejectedValue(new Error('socket dropped'))
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      expect(await resolveMercurialMagicRollTable('wizard')).toBeNull()
+      expect(warnSpy).toHaveBeenCalled()
+      warnSpy.mockRestore()
+    })
   })
 
   describe('getFumbleTableResult', () => {

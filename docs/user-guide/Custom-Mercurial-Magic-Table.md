@@ -24,6 +24,6 @@ When a wizard rolls (or re-rolls) Mercurial Magic, either from the spell's Mercu
 
 A world table named exactly like the configured compendium table also takes precedence, so you can override a table you picked in the settings without renaming it.
 
-Modules that register a Mercurial Magic table for a specific class (for example an XCC blaster) are checked the same way: a world table matching that class table's name wins over the compendium copy.
+Modules that register a Mercurial Magic table for a specific class (for example an XCC blaster or gnome) are only overridden by a world table named exactly like that class table. A world "Table 5-2: Mercurial Magic" does not affect those classes.
 
 Spells that already have a mercurial effect recorded keep it. Use the **Reroll** option on the spell's Mercurial tab to draw a fresh result from the new table.

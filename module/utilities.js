@@ -489,13 +489,16 @@ export function resolveMercurialMagicTableName (classKey) {
 /**
  * World-table names that override the configured mercurial-magic table:
  * the bare name of the configured table (its compendium prefix stripped)
- * plus the canonical `Table 5-2: Mercurial Magic`.
+ * plus, unless `includeCanonical` is false, the canonical
+ * `Table 5-2: Mercurial Magic`.
  *
  * @param {string|null} tableName - value from {@link resolveMercurialMagicTableName}
+ * @param {Object} [options]
+ * @param {boolean} [options.includeCanonical=true] - also match the canonical name
  * @returns {Array<string>}
  */
-export function mercurialMagicWorldTableNames (tableName) {
-  const names = [MERCURIAL_MAGIC_TABLE_NAME]
+export function mercurialMagicWorldTableNames (tableName, { includeCanonical = true } = {}) {
+  const names = includeCanonical ? [MERCURIAL_MAGIC_TABLE_NAME] : []
   if (tableName) {
     const parts = tableName.split('.')
     const bare = parts.length >= 3 ? parts.slice(2).join('.') : tableName
@@ -514,15 +517,21 @@ export function mercurialMagicWorldTableNames (tableName) {
  * from {@link resolveMercurialMagicTableName}. Returns `null` when nothing
  * is found.
  *
+ * A class with its own registered table (`dcc.registerMercurialMagicTable`,
+ * e.g. XCC's blaster / gnome) is only overridden by a world table named
+ * like that class table — the canonical `Table 5-2` name is the wizard's
+ * table and must not hijack a class-specific one.
+ *
  * @param {string} [classKey] - Lowercase `system.details.sheetClass`
  * @returns {Promise<Object|null>} the RollTable document, or null
  */
 export async function resolveMercurialMagicRollTable (classKey) {
   const tableName = resolveMercurialMagicTableName(classKey)
+  const classRegistered = !!(classKey && CONFIG?.DCC?.mercurialMagicTables?.[classKey])
 
   // Exact-name lookup first, then a Babele-aware scan (translated name or
   // untranslated original) — see docNameMatches (#799).
-  const names = mercurialMagicWorldTableNames(tableName)
+  const names = mercurialMagicWorldTableNames(tableName, { includeCanonical: !classRegistered })
   const worldTable = names.map((name) => game.tables?.getName?.(name)).find(Boolean) ||
     game.tables?.find?.((entity) => docNameMatches(entity, names))
   if (worldTable) return worldTable
