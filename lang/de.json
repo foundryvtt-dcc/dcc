@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Kompendien manuell konfigurieren",
   "DCC.SettingManualCompendiumConfigurationHint": "Falls du deine eigenen Nachschlage-Kompendien erstellen möchtest, anstatt das Grundregelbuch-Modul zu verwenden - nicht empfohlen",
   "DCC.SettingMercurialMagicTable": "Tabelle Launenhafte Magie",
-  "DCC.SettingMercurialMagicTableHint": "Würfeltabelle für Launenhafte Magie - muss in einem Kompendium liegen. Eine Welt-Tabelle mit dem Namen \"Table 5-2: Mercurial Magic\" (oder genau dem Namen der gewählten Tabelle) wird stattdessen verwendet, wenn vorhanden",
+  "DCC.SettingMercurialMagicTableHint": "Kompendium-Würfeltabelle für Launenhafte Magie. Eine Welt-Tabelle mit dem Namen \"Table 5-2: Mercurial Magic\" (oder genau dem Namen der gewählten Tabelle) hat Vorrang, wenn vorhanden"Table 5-2: Mercurial Magic\" (oder genau dem Namen der gewählten Tabelle) wird stattdessen verwendet, wenn vorhanden",
   "DCC.SettingMightyDeedsEnabled": "Großtat-Tabellen aktivieren",
   "DCC.SettingMightyDeedsEnabledHint": "Bietet auf Angriffskarten eine Großtat-Tabellenauswahl an, wenn der Großtat-Würfel eines Kriegers erfolgreich ist (3 oder höher).",
   "DCC.SettingMultipleActionDice": "Mehrere Aktionswürfel",
