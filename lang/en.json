@@ -802,7 +802,7 @@
   "DCC.SettingManualCompendiumConfiguration": "Manually Configure Compendia",
   "DCC.SettingManualCompendiumConfigurationHint": "If you want to build your own lookup compendia instead of using the Core Book Module - not recommended",
   "DCC.SettingMercurialMagicTable": "Mercurial Magic Table",
-  "DCC.SettingMercurialMagicTableHint": "Compendium Roll Table to use for Mercurial Magic effects. A world Roll Table named \"Table 5-2: Mercurial Magic\" (or named exactly like the selected table) takes precedence when present"Table 5-2: Mercurial Magic\" (or named exactly like the selected table) is used instead when present",
+  "DCC.SettingMercurialMagicTableHint": "Compendium Roll Table to use for Mercurial Magic effects. A world Roll Table named \"Table 5-2: Mercurial Magic\" (or named exactly like the selected table) takes precedence when present",
   "DCC.SettingMightyDeedsEnabled": "Enable Mighty Deed Tables",
   "DCC.SettingMightyDeedsEnabledHint": "Offer a Mighty Deed table prompt on attack cards when a warrior's deed die succeeds (3 or higher).",
   "DCC.SettingMultipleActionDice": "Multiple Action Dice",
