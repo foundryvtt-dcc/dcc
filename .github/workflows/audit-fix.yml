@@ -107,6 +107,17 @@ jobs:
       - name: Create or update fix PR
         if: steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
+        # The action commits with plain `git commit`, which fires the husky
+        # pre-commit hook. That hook runs `pnpm run format` and `pnpm test`,
+        # and pnpm's verifyDepsBeforeRun re-installs WITHOUT the quarantine
+        # bypass above, so a fix published less than 7 days ago fails the
+        # commit with ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION and no PR is ever
+        # opened (fast-uri@3.1.9 did this on 2026-10-24/25). Formatting and
+        # tests already ran in the previous step, so skip the hook here; the
+        # quarantine still applies to the PR's own CI, which is where the
+        # "review note" below expects it to bite.
+        env:
+          HUSKY: 0
         with:
           branch: automated/npm-audit-fix
           delete-branch: true
