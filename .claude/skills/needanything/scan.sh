@@ -5,6 +5,7 @@
 # or pushes. Usage: .claude/skills/needanything/scan.sh
 set -euo pipefail
 export GH_PAGER=cat
+cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
 REPO=${REPO:-foundryvtt-dcc/dcc}
 LIB_REPO=${LIB_REPO:-moonloch/dcc-core-lib}
@@ -22,7 +23,7 @@ awaiting_reply() { # <repo>
     --json number,title,labels,author,createdAt,comments \
     | jq -r --arg me "$ME" "$AGE"'
       .[] | (.comments[-1] // null) as $c
-      | (if $c == null then .author.login else $c.author.login end) as $who
+      | ((if $c == null then .author.login else $c.author.login end) // "ghost") as $who
       | (if $c == null then .createdAt else $c.createdAt end) as $when
       | select($who != $me and ($who | test("\\[bot\\]|^app/|github-actions|dependabot") | not))
       | "#\(.number)\tlast=\($who)\(if $c == null then " (opened, no reply)" else "" end)\t\(age($when)) ago\tlabels=\([.labels[].name] | join(",") | if . == "" then "-" else . end)\t\(.title)"'
@@ -33,8 +34,8 @@ pr_lines() { # <repo>
     --json number,title,isDraft,labels,author,mergeStateStatus,reviewDecision,statusCheckRollup,autoMergeRequest,headRefName,baseRefName,updatedAt,body \
     | jq -r "$AGE"'
       .[]
-      | ([.statusCheckRollup[]? | select((.conclusion // .state // "") | test("^(FAILURE|CANCELLED|TIMED_OUT|ERROR|ACTION_REQUIRED)$")) | (.name // .context)]) as $failed
-      | ([.statusCheckRollup[]? | select(.status == "IN_PROGRESS" or .status == "QUEUED" or .state == "PENDING" or .state == "EXPECTED")] | length) as $pending
+      | ([.statusCheckRollup[]? | select((.conclusion // .state // "") | test("^(FAILURE|CANCELLED|TIMED_OUT|ERROR|ACTION_REQUIRED|STARTUP_FAILURE)$")) | (.name // .context)]) as $failed
+      | ([.statusCheckRollup[]? | select(.status == "IN_PROGRESS" or .status == "QUEUED" or .status == "PENDING" or .status == "WAITING" or .status == "REQUESTED" or .state == "PENDING" or .state == "EXPECTED")] | length) as $pending
       | ([.statusCheckRollup[]? | select(.context == "E2E (self-hosted)") | .state] | first // "-") as $e2e
       | ([(.body // "") | capture("[Dd]epends on #(?<n>[0-9]+)") | .n] | first // "-") as $dep
       | "#\(.number)\tdraft=\(.isDraft)\tauthor=\(.author.login)\tlabels=\([.labels[].name] | join(",") | if . == "" then "-" else . end)\tmerge=\(.mergeStateStatus)\treview=\(.reviewDecision | if . == "" or . == null then "-" else . end)\tautomerge=\(.autoMergeRequest != null)\tchecks_failed=\($failed | join("|") | if . == "" then "-" else . end)\tchecks_pending=\($pending)\te2e=\($e2e)\tdepends_on=\($dep)\tbranch=\(.headRefName)->\(.baseRefName)\tupdated=\(age(.updatedAt)) ago\t\(.title)"'
@@ -65,11 +66,13 @@ gh issue list -R "$REPO" --state open --limit 300 --json number,labels \
 echo
 
 echo "== RELEASE =="
-releases=$(gh release list -R "$REPO" --limit 10 --json tagName,isDraft,createdAt)
-echo "$releases" | jq -r '.[] | select(.isDraft) | "draft_release=\(.tagName)\tage=\(((now - (.createdAt | fromdateiso8601)) / 3600 | floor))h"'
-latest=$(echo "$releases" | jq -r '[.[] | select(.isDraft | not)] | .[0].tagName')
-main_version=$(gh api "repos/$REPO/contents/version.txt?ref=main" -q .content | base64 -d | tr -d '[:space:]')
-echo "latest_published=$latest	version_txt_on_main=$main_version"
+gh release list -R "$REPO" --limit 10 --json tagName,isDraft,createdAt \
+  | jq -r '.[] | select(.isDraft) | "draft_release=\(.tagName)\tage=\(((now - (.createdAt | fromdateiso8601)) / 3600 | floor))h"'
+latest=$(gh release list -R "$REPO" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName -q '.[0].tagName')
+main_version=$(gh api -H 'Accept: application/vnd.github.raw+json' "repos/$REPO/contents/version.txt?ref=main" | tr -d '[:space:]')
+# Tags carry a v prefix, version.txt doesn't; bump_unreleased=yes means main
+# was bumped but no published release carries that version yet.
+echo "latest_published=$latest	version_txt_on_main=$main_version	bump_unreleased=$([ "${latest#v}" = "$main_version" ] && echo no || echo yes)"
 # Feature commits on main that no release carries yet. The bump and the
 # release commit themselves don't count.
 unreleased=$(gh api "repos/$REPO/compare/$latest...main" \
@@ -84,14 +87,19 @@ echo "== NEWEST RUN PER WORKFLOW ON MAIN =="
 # bite: a dead "Create GitHub Release" means no draft; a dead "Foundry
 # Website Update" after a publish means Foundry's registry never heard of the
 # version (install-in-app freezes). See docs/dev/RELEASE_PROCESS.md.
-gh run list -R "$REPO" --branch main --limit 80 \
-  --json databaseId,workflowName,status,conclusion,createdAt,displayTitle,event \
-  | jq -r '
-    group_by(.workflowName) | map(sort_by(.createdAt) | reverse | .[0]) | sort_by(.workflowName) | .[]
-    | "\(.workflowName)\t\(.status)\t\(.conclusion // "-")\tage=\(((now - (.createdAt | fromdateiso8601)) / 3600 | floor))h\trun=\(.databaseId)\t\(.displayTitle)"'
-gh run list -R "$REPO" --branch main --limit 80 --json databaseId,workflowName,status,conclusion,createdAt \
-  | jq -r 'group_by(.workflowName) | map(sort_by(.createdAt) | reverse | .[0])
-    | .[] | select(.status == "completed" and .conclusion == "failure") | "\(.databaseId)\t\(.workflowName)"' \
+# The two `release: published` workflows run on the tag ref, so a `--branch
+# main` listing never shows them; they are fetched by name instead.
+runs=$( {
+  gh run list -R "$REPO" --branch main --limit 80 \
+    --json databaseId,workflowName,status,conclusion,createdAt,displayTitle
+  for wf in 'Foundry Website Update' 'Update Foundry Manifest Post-Release'; do
+    gh run list -R "$REPO" --workflow "$wf" --limit 3 \
+      --json databaseId,workflowName,status,conclusion,createdAt,displayTitle 2>/dev/null || echo '[]'
+  done
+} | jq -s 'add | group_by(.workflowName) | map(sort_by(.createdAt) | reverse | .[0]) | sort_by(.workflowName)')
+echo "$runs" | jq -r '.[]
+  | "\(.workflowName)\t\(.status)\t\(.conclusion // "-")\tage=\(((now - (.createdAt | fromdateiso8601)) / 3600 | floor))h\trun=\(.databaseId)\t\(.displayTitle)"'
+echo "$runs" | jq -r '.[] | select(.status == "completed" and .conclusion == "failure") | "\(.databaseId)\t\(.workflowName)"' \
   | while IFS=$'\t' read -r id wf; do
       step=$(gh run view "$id" -R "$REPO" --json jobs \
         -q '[.jobs[] | select(.conclusion == "failure") as $j | $j.steps[] | select(.conclusion == "failure") | "\($j.name) › \(.name)"] | first // "-"' 2>/dev/null || echo "-")
@@ -101,8 +109,8 @@ echo
 
 echo "== CORE LIB ($LIB_REPO) =="
 vendored=$(jq -r .version module/vendor/dcc-core-lib/VERSION.json 2>/dev/null || echo "?")
-lib_latest=$(gh release list -R "$LIB_REPO" --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || echo "?")
-echo "vendored=$vendored	lib_latest=$lib_latest"
+lib_latest=$(gh release list -R "$LIB_REPO" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || echo "?")
+echo "vendored=$vendored	lib_latest=$lib_latest	sync_due=$([ "${lib_latest#v}" = "$vendored" ] && echo no || echo yes)"
 echo "-- open lib PRs"
 pr_lines "$LIB_REPO" | cut -f1-3,5,8,9,13,14 || true
 echo "-- lib issues awaiting a reply"
@@ -111,9 +119,10 @@ echo
 
 echo "== SIBLING MODULES =="
 for r in $SIBLINGS; do
+  # A failed query is reported, not hidden: an empty section must mean "nothing".
   prs=$(gh pr list -R "$r" --state open --limit 20 --json number,title,isDraft,author,mergeStateStatus \
-    -q '.[] | "PR #\(.number)\tdraft=\(.isDraft)\tauthor=\(.author.login)\tmerge=\(.mergeStateStatus)\t\(.title)"' 2>/dev/null || true)
-  issues=$(awaiting_reply "$r" 2>/dev/null || true)
+    -q '.[] | "PR #\(.number)\tdraft=\(.isDraft)\tauthor=\(.author.login)\tmerge=\(.mergeStateStatus)\t\(.title)"' 2>/dev/null) || prs="error=PR query failed"
+  issues=$(awaiting_reply "$r" 2>/dev/null) || issues="error=issue query failed"
   if [ -n "$prs$issues" ]; then
     echo "-- $r"
     [ -n "$prs" ] && printf '%s\n' "$prs"
@@ -123,11 +132,14 @@ done
 echo
 
 echo "== LOCAL CHECKOUT =="
-echo "branch=$(git branch --show-current)	dirty_files=$(git status --porcelain | wc -l | tr -d ' ')"
-git fetch -q --prune origin 2>/dev/null || true
+echo "current_branch=$(git branch --show-current)	dirty_files=$(git status --porcelain | wc -l | tr -d ' ')"
+# Only remote-tracking refs change here; no local branch or file is touched.
+git fetch -q --prune origin 2>/dev/null || echo "fetch=failed (ahead/gone data below may be stale)"
 git for-each-ref --format='%(refname:short)	%(upstream:track)' refs/heads \
   | awk -F'\t' '$2 != "" && $2 != "[gone]" { print "branch=" $1 "\t" $2 }'
 gone=$(git for-each-ref --format='%(refname:short)	%(upstream:track)' refs/heads | awk -F'\t' '$2 == "[gone]" { print $1 }' | paste -sd' ' -)
-[ -n "$gone" ] && echo "merged_branches_to_delete=$(wc -w <<<"$gone" | tr -d ' ')	$gone"
+# "gone" means the remote branch was deleted — usually a merged PR, but not
+# always; the skill verifies with `gh pr list --head` before offering -D.
+[ -n "$gone" ] && echo "gone_branches=$(wc -w <<<"$gone" | tr -d ' ')	$gone"
 echo "-- worktrees (pnpm run work:list)"
 pnpm run --silent work:list 2>/dev/null || echo "(work:list unavailable)"

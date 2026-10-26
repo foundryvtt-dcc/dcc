@@ -14,7 +14,9 @@ bot PRs expect). This skill is the checklist; those are the truth when the
 two disagree.
 
 **Read-only.** Report and recommend; never label, comment, close, merge,
-rebase, delete a branch, or run a workflow as part of the check. **Never
+rebase, delete a branch, or run a workflow as part of the check. The only
+thing the scan changes is the remote-tracking refs (`git fetch --prune`); it
+never touches a local branch, the working tree, or GitHub. **Never
 publish or promote a release** — the maintainer does that by hand, always
 (see the standing authorizations in `CLAUDE.md`). Offer the action and wait
 for a yes.
@@ -37,12 +39,13 @@ for a yes.
 
    | PR state                                                              | Meaning / suggested action                                                                                                                                                                                                 |
    | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `author=app/dependabot`, `automerge=true`, checks pending or green    | In flight — `dependabot-auto-merge.yml` squash-merges it once `Run Tests` is green. Say nothing unless it has sat for more than a day.                                                                                   |
+   | `author=app/dependabot`, `automerge=true`, checks pending or green    | In flight — `dependabot-auto-merge.yml` squash-merges it once the required checks pass (`Run Tests`, if it is required; with no required check it merges immediately). Say nothing unless it has sat for more than a day. |
    | `author=app/dependabot`, `automerge=false`                            | Auto-merge didn't take (repo setting, or no required check). **Needs a human merge** after a glance at the diff. Red `Run Tests` on it → read the failure first.                                                           |
-   | `author=app/github-actions`, branch `automated/npm-audit-fix`         | The daily **Audit Fix** PR. `Run Tests` never runs on it (opened with `GITHUB_TOKEN`); the unit tests ran inside the workflow before it opened, so `merge=UNSTABLE` with no checks is its normal state. **Needs you**: read the lockfile diff and merge. It re-opens or updates itself daily until merged. |
+   | `author=app/github-actions`, branch `automated/npm-audit-fix`         | The daily **Audit Fix** PR. `Run Tests` never runs on it (opened with `GITHUB_TOKEN`); the unit tests ran inside the workflow before it opened, so no checks on it is normal (`merge=UNSTABLE` or `CLEAN`; `BLOCKED` if `Run Tests` is ever made required, which then needs an admin merge). **Needs you**: read the lockfile diff and merge. It re-opens or updates itself daily until merged. |
    | author is not Tim and not a bot                                       | **Contributor PR.** Review per `CONTRIBUTING.md`: ask for specific changes if needed, then merge as submitted — never cherry-pick or trim it on their behalf. Say how long it has waited.                                   |
    | `e2e=PENDING` (or `-`) with no `e2e-approved` label, author not a member | The E2E gate is waiting: either Claude triage is still running, or it declined and a maintainer must add the **`e2e-approved`** label to run the PR's code on the self-hosted runner. A new push drops the label again. |
-   | `e2e=FAILURE`                                                         | **E2E red** on the self-hosted runner. Check the run log before blaming the change — some specs are order-dependent or scene-drift flaky (`docs/dev/TESTING.md`); a standalone rerun is the first step.                     |
+   | `e2e=FAILURE`                                                         | Either the gate's Claude triage **declined** the PR (the gate's PR comment says so; a maintainer overrides with `e2e-approved`) or the suite is **red** on the self-hosted runner. Read the status link to tell which. For a red suite, check the log before blaming the change — some specs are order-dependent or scene-drift flaky (`docs/dev/TESTING.md`); a standalone rerun is the first step. |
+   | `e2e=ERROR`                                                           | The gate itself crashed (triage error), so nothing ran. A maintainer adds `e2e-approved` or the author re-pushes to retry.                                                                                                |
    | `checks_failed` non-empty                                             | **Red CI** — name the failing check(s) (`Run Tests`, `Check Translations`, `CodeQL`, …).                                                                                                                                   |
    | `merge=DIRTY` (or `CONFLICTING`)                                      | **Conflicts with main** — needs a rebase. A contributor's PR: ask them; ours: offer to do it.                                                                                                                              |
    | `draft=true`, `depends_on=#N(MERGED)`                                 | **Stacked PR whose base has landed.** It should be rebased onto `main` and marked ready (the author's job for a fork; ours if it's our branch). Offer the nudge or the rebase.                                              |
@@ -74,8 +77,8 @@ for a yes.
      unreleased. Offer the `version.txt` bump from `/release` (its own
      commit on `main`, never inside a PR). CI-only or docs-only commits
      don't need a release; say so instead of offering one.
-   - `version_txt_on_main` ahead of `latest_published` with **no** draft and
-     no `Create GitHub Release` run newer than the bump → the release
+   - `bump_unreleased=yes` with **no** draft and no `Create GitHub Release`
+     run newer than the bump → the release
      workflow was skipped. A very large squash-merge can trip the
      `paths: version.txt` filter; recovery is a small whitespace push to
      `version.txt` on `main`, which needs Tim's go-ahead.
@@ -100,7 +103,8 @@ for a yes.
    - `CodeQL` → read the alert; usually a real finding or a config break.
 
 6. **Core lib** (`CORE LIB`).
-   - `vendored` behind `lib_latest` → a `/sync-core-lib` is due. Note whether
+   - `sync_due=yes` (vendored behind the latest published lib release) → a
+     `/sync-core-lib` is due. Note whether
      the branch carries a temporary adapter workaround that the sync should
      remove.
    - Our own open lib PR → after it merges, the sync + workaround removal is
@@ -118,10 +122,14 @@ for a yes.
 8. **Local checkout** (`LOCAL CHECKOUT`): housekeeping, never urgent.
    - `dirty_files` on `main` → say what's uncommitted before anyone switches
      branches (Tim does his own git work in this checkout).
+   - `fetch=failed` → the ahead/gone lines are stale; say so.
    - `branch=… [ahead N]` → unpushed commits; offer the push if the branch
      isn't `main`.
-   - `merged_branches_to_delete=` → local branches whose remote is gone;
-     offer `git branch -d` for the batch.
+   - `gone_branches=` → local branches whose remote was deleted. PRs are
+     squash-merged, so `git branch -d` refuses them; before offering
+     `git branch -D`, confirm each one's PR merged
+     (`gh pr list --head <branch> --state merged`) and leave out any that
+     didn't.
    - A worktree whose `PR: #N MERGED` → offer `pnpm run work:finish`.
 
 9. **Report**, grouped, most urgent first — one line per item with the
@@ -136,7 +144,7 @@ for a yes.
    Worth a look
    - Dependabot Updates red 6 runs in a row on main (Run Dependabot step) — no issue tracks it
    - mcc-classes #30 — PhDoom's sheet request, 632d without a reply
-   - 8 merged local branches to delete; worktree for #1075 can be finished
+   - 8 local branches with a deleted remote (all merged PRs) to delete; worktree for #1075 can be finished
 
    In flight (no action)
    - PR #1102 — contributor PR, E2E gate triage running
