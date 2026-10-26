@@ -134,6 +134,7 @@ All project skills live in `.claude/skills/<name>/SKILL.md` (there is no
 | `/pr` | Open or update a PR: branch verify, i18n sync, checks, E2E gate, dependent-module check, commit, push, review, auto-fix. No version bump. |
 | `/release` | Merge, bump `version.txt` on `main` as its own commit, and hand off the draft release. |
 | `/sync-core-lib` | Sync `module/vendor/dcc-core-lib/` after an upstream lib PR merges, then remove temporary adapter workarounds. |
+| `/needanything` | Read-only sweep of what's waiting on a human: PRs, issues awaiting a reply, release state, red jobs on main, lib sync, sibling modules, local branches/worktrees. Reports and offers; never merges, publishes or pushes. |
 
 ## Documentation
 
