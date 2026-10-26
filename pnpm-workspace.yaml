@@ -60,6 +60,14 @@ allowBuilds:
 # with `git archive`, so nothing reaches Foundry users. Ignoring it keeps the
 # daily Audit Fix report focused on fixable advisories. Remove this entry once
 # braces ships a fix (or stylelint drops micromatch), so the fix gets picked up.
+# GHSA-mrhx-c7xc-m3w5 (zod < 4.6.6, memory exhaustion while validating
+# oversized constrained collections): zod is pinned to exactly 4.5.4 by every
+# @remotion/* package in tools/video (still pinned in Remotion 4.0.539), so no
+# version update can reach the fix and Dependabot's security job for it fails
+# daily (#1096). It is dev-only — the Remotion video pipeline validates only
+# our own compositions — and nothing under tools/video ships to Foundry users.
+# Remove this entry once Remotion depends on zod >= 4.6.6.
 auditConfig:
   ignoreGhsas:
     - GHSA-vfj7-8cjw-p6xm
+    - GHSA-mrhx-c7xc-m3w5
