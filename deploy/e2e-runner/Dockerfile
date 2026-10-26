@@ -7,7 +7,7 @@
 # Bump at least monthly: the runner runs with --disableupdate (its install dir
 # is read-only), and GitHub stops sending jobs to runners that fall too far
 # behind the current release.
-FROM ghcr.io/actions/actions-runner:2.338.0
+FROM ghcr.io/actions/actions-runner:2.338.2
 
 USER root
 
