@@ -1,29 +1,75 @@
-# Automatically merge Dependabot PRs once required checks pass.
+# Merge Dependabot PRs once "Run Tests" has passed on their current head.
 #
-# Uses GitHub's native auto-merge, so the PR only lands after the
-# branch-protection required checks (Run Tests) are green. Requires the
-# repository setting "Allow auto-merge" to be enabled and "Run Tests"
-# to be a required status check on main — without a required check the
-# PR merges immediately, before tests finish. If auto-merge is
-# unavailable the step logs a notice and leaves the PR for manual
-# review instead of failing.
+# main has no required status checks on purpose: a required check would also
+# reject the release workflow's GITHUB_TOKEN push of the "Release vX" commit
+# (foundry-manifest-update-action), and that token cannot bypass a ruleset.
+# GitHub's native auto-merge merges immediately when nothing is required —
+# #1103 landed 30 s after a push, before its tests had finished. So instead
+# of enabling auto-merge when the PR opens, this workflow waits for the
+# "Run Tests" workflow to finish on a pull_request event and squash-merges
+# the PR only when all of these hold:
+#   - the PR was opened by dependabot[bot] (a human who takes the branch
+#     over still gets the merge, as long as the tests are green),
+#   - the run concluded "success",
+#   - the run's head SHA is still the PR's head (a newer push gets its own
+#     run and its own decision), and
+#   - the PR is open, not a draft, and GitHub can merge it.
+# Anything else is logged and left for a human (the /needanything skill
+# reports it). A PR with conflicts stays open until Dependabot rebases it or
+# someone resolves it by hand; the next green run merges it.
+#
+# workflow_run always runs on the default branch with the default
+# GITHUB_TOKEN, which is enough to merge. A merge made with that token does
+# not trigger the push-triggered "Run Tests" on main; that is expected, the
+# same tests just passed on the PR head.
 name: Dependabot Auto-Merge
 
-on: pull_request
+on:
+  workflow_run:
+    workflows: ["Run Tests"]
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  auto-merge:
+  merge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'foundryvtt-dcc/dcc'
+    if: >-
+      github.repository == 'foundryvtt-dcc/dcc' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
     steps:
-      - name: Enable auto-merge (squash)
-        run: |
-          gh pr merge --auto --squash "$PR_URL" || \
-            echo "::notice::Auto-merge unavailable (repo setting disabled or no required checks); leaving PR for manual review"
+      - name: Squash-merge the Dependabot PR this run tested
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          pr=$(gh api --method GET "repos/$REPO/pulls" \
+            -f state=open -f "head=${REPO%%/*}:$HEAD_BRANCH" \
+            --jq '.[0] | select(. != null) | {number, draft, author: .user.login, head: .head.sha}')
+          if [ -z "$pr" ]; then
+            echo "::notice::No open PR for $HEAD_BRANCH; nothing to merge"
+            exit 0
+          fi
+          number=$(jq -r .number <<<"$pr")
+          author=$(jq -r .author <<<"$pr")
+          head=$(jq -r .head <<<"$pr")
+          draft=$(jq -r .draft <<<"$pr")
+          if [ "$author" != "dependabot[bot]" ]; then
+            echo "::notice::#$number was opened by $author, not Dependabot; leaving it"
+            exit 0
+          fi
+          if [ "$head" != "$HEAD_SHA" ]; then
+            echo "::notice::#$number moved to $head after this run tested $HEAD_SHA; waiting for the newer run"
+            exit 0
+          fi
+          if [ "$draft" = "true" ]; then
+            echo "::notice::#$number is a draft; leaving it"
+            exit 0
+          fi
+          gh pr merge --squash "https://github.com/$REPO/pull/$number" || \
+            echo "::warning::Could not merge #$number (conflicts with main?); leaving it for manual review"

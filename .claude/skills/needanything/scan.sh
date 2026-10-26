@@ -31,14 +31,14 @@ awaiting_reply() { # <repo>
 
 pr_lines() { # <repo>
   gh pr list -R "$1" --state open --limit 100 \
-    --json number,title,isDraft,labels,author,mergeStateStatus,reviewDecision,statusCheckRollup,autoMergeRequest,headRefName,baseRefName,updatedAt,body \
+    --json number,title,isDraft,labels,author,mergeStateStatus,reviewDecision,statusCheckRollup,headRefName,baseRefName,updatedAt,body \
     | jq -r "$AGE"'
       .[]
       | ([.statusCheckRollup[]? | select((.conclusion // .state // "") | test("^(FAILURE|CANCELLED|TIMED_OUT|ERROR|ACTION_REQUIRED|STARTUP_FAILURE)$")) | (.name // .context)]) as $failed
       | ([.statusCheckRollup[]? | select(.status == "IN_PROGRESS" or .status == "QUEUED" or .status == "PENDING" or .status == "WAITING" or .status == "REQUESTED" or .state == "PENDING" or .state == "EXPECTED")] | length) as $pending
       | ([.statusCheckRollup[]? | select(.context == "E2E (self-hosted)") | .state] | first // "-") as $e2e
       | ([(.body // "") | capture("[Dd]epends on #(?<n>[0-9]+)") | .n] | first // "-") as $dep
-      | "#\(.number)\tdraft=\(.isDraft)\tauthor=\(.author.login)\tlabels=\([.labels[].name] | join(",") | if . == "" then "-" else . end)\tmerge=\(.mergeStateStatus)\treview=\(.reviewDecision | if . == "" or . == null then "-" else . end)\tautomerge=\(.autoMergeRequest != null)\tchecks_failed=\($failed | join("|") | if . == "" then "-" else . end)\tchecks_pending=\($pending)\te2e=\($e2e)\tdepends_on=\($dep)\tbranch=\(.headRefName)->\(.baseRefName)\tupdated=\(age(.updatedAt)) ago\t\(.title)"'
+      | "#\(.number)\tdraft=\(.isDraft)\tauthor=\(.author.login)\tlabels=\([.labels[].name] | join(",") | if . == "" then "-" else . end)\tmerge=\(.mergeStateStatus)\treview=\(.reviewDecision | if . == "" or . == null then "-" else . end)\tchecks_failed=\($failed | join("|") | if . == "" then "-" else . end)\tchecks_pending=\($pending)\te2e=\($e2e)\tdepends_on=\($dep)\tbranch=\(.headRefName)->\(.baseRefName)\tupdated=\(age(.updatedAt)) ago\t\(.title)"'
 }
 
 echo "== OPEN PRS ($REPO) =="
