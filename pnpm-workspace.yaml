@@ -41,6 +41,9 @@ packages:
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@moonloch/dcc-core-lib'
+  # fast-uri 3.1.9 (published 2026-10-19T23:04Z, GHSA security fix) was merged
+  # in #1094 inside the 7-day window. Remove this entry after 2026-10-27.
+  - 'fast-uri@3.1.9'
 # Native build scripts pnpm may run (everything else stays sandboxed):
 # classic-level backs e2e-env's world-settings edits.
 allowBuilds:
