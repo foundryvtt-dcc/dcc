@@ -18,6 +18,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    ignore:
+      # zod is pinned by Remotion (tools/video); the advisory is accepted in
+      # pnpm-workspace.yaml's auditConfig.ignoreGhsas. Without this, the
+      # security job for it runs and fails every day (#1096). Remove together
+      # with that entry.
+      - dependency-name: "zod"
 
   # Playwright end-to-end test dependencies
   - package-ecosystem: "npm"
