@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@remotion/cli": "4.0.536",
+    "@remotion/cli": "4.0.537",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "remotion": "4.0.536"
