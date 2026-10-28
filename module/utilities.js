@@ -560,11 +560,57 @@ export async function resolveMercurialMagicRollTable (classKey) {
 }
 
 /**
+ * Name of the default PC fumble table. A world RollTable with this name
+ * replaces the configured compendium fumble table.
+ */
+export const PC_FUMBLE_TABLE_NAME = 'Table 4-2: Fumbles'
+
+/**
+ * Find a RollTable by name for a weapon's fumble table override (#1110):
+ * a world table first, then a compendium path (`scope.pack.Table`), then
+ * the first RollTable compendium with a table of that name. Babele-aware.
+ *
+ * @param {string} tableName - table name or compendium path
+ * @returns {Promise<Object|null>} the RollTable document, or null
+ */
+export async function findRollTableByName (tableName) {
+  if (!tableName) { return null }
+  const worldTable = game.tables?.find?.((entity) => docNameMatches(entity, tableName))
+  if (worldTable) { return worldTable }
+  try {
+    const pathTable = await getTableFromPath(tableName)
+    if (pathTable) { return pathTable }
+    for (const pack of game.packs ?? []) {
+      if (pack.documentName !== 'RollTable') { continue }
+      const entry = findPackEntryByName(pack, tableName)
+      if (entry) { return await pack.getDocument(entry._id) }
+    }
+  } catch (err) {
+    console.warn('DCC | findRollTableByName: table lookup rejected', { tableName, err })
+  }
+  return null
+}
+
+/**
  * Draw a result from the fumble table
  * @param roll - roll instance to use
- * @param localTableName - name of the local world table to check first (e.g. 'Table 4-2: Fumbles')
+ * @param localTableName - name of the table to use. The default PC table is
+ *   looked up as a world table, then the configured compendium table. Any
+ *   other name is a weapon's fumble table override (#1110): it is looked up
+ *   in the world and in compendiums, falling back to the default PC table
+ *   when no table has that name.
  */
-export async function getFumbleTableResult (roll, localTableName = 'Table 4-2: Fumbles') {
+export async function getFumbleTableResult (roll, localTableName = PC_FUMBLE_TABLE_NAME) {
+  if (localTableName && localTableName !== PC_FUMBLE_TABLE_NAME) {
+    const overrideTable = await findRollTableByName(localTableName)
+    if (overrideTable) {
+      const fumbleResult = overrideTable.getResultsForRoll(roll.total)
+      return fumbleResult[0] || 'Unable to find fumble result'
+    }
+    console.warn(`DCC | Fumble table "${localTableName}" not found, using ${PC_FUMBLE_TABLE_NAME}`)
+    localTableName = PC_FUMBLE_TABLE_NAME
+  }
+
   // First check for a local world table
   const worldFumbleTable = game.tables.find((entity) => docNameMatches(entity, localTableName))
   if (worldFumbleTable) {

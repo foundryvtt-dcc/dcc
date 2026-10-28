@@ -50,6 +50,7 @@ export class WeaponData extends PhysicalItemData {
         critRangeOverride: new NumberField({ nullable: true, initial: null, integer: true, min: 1, max: 20 }),
         critTableOverride: new StringField({ initial: '' }),
         fumbleRangeOverride: new NumberField({ nullable: true, initial: null, integer: true, min: 1, max: 20 }),
+        fumbleTableOverride: new StringField({ initial: '' }),
         damageOverride: new StringField({ initial: '' }),
         attackBonusOverride: new StringField({ initial: '' }),
         initiativeBonusOverride: new StringField({ initial: '' }),

@@ -238,6 +238,10 @@
           <option value=""></option>
           {{selectOptions config.fumbleRanges selected=system.config.fumbleRangeOverride}}
         </select>
+
+        <label for="system.config.fumbleTableOverride" title="{{localize 'DCC.FumbleTableOverrideHint'}}">{{localize "DCC.FumbleTableOverride"}}</label>
+        <input id="system.config.fumbleTableOverride" name="system.config.fumbleTableOverride"
+               value="{{system.config.fumbleTableOverride}}" title="{{localize 'DCC.FumbleTableOverrideHint'}}" data-dtype="String"/>
       </div>
     </div>
 

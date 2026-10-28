@@ -1,6 +1,6 @@
 /* global CONFIG, game, Hooks, Roll, ChatMessage, ui, foundry */
 
-import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls, substituteDeedDieResult } from '../utilities.js'
+import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, findRollTableByName, addDamageFlavorToRolls, substituteDeedDieResult } from '../utilities.js'
 import {
   makeAttackRoll as libMakeAttackRoll,
   rollDamage as libRollDamage,
@@ -333,7 +333,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       // Module not installed, use default (true)
     }
     let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
-    const originalFumbleTableName = fumbleTableName // Preserve for navigation
+    let originalFumbleTableName = fumbleTableName // Preserve for navigation
 
     let fumbleRoll
     let fumbleResult = '' // Separate storage for navigable result
@@ -365,7 +365,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         useNPCFumbles,
         monsterFumbleLuckMod,
         fumbleTableName,
-        originalFumbleTableName
+        originalFumbleTableName,
+        fumbleTableOverride: weapon.system?.config?.fumbleTableOverride?.trim()
       })
       fumbleRollFormula = fumbleDispatch.fumbleRollFormula
       fumbleInlineRoll = fumbleDispatch.fumbleInlineRoll
@@ -374,6 +375,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       fumbleResult = fumbleDispatch.fumbleResult
       fumbleRollTotal = fumbleDispatch.fumbleRollTotal
       fumbleTableName = fumbleDispatch.fumbleTableName
+      originalFumbleTableName = fumbleDispatch.originalFumbleTableName
       isNPCFumble = fumbleDispatch.isNPCFumble
       libFumbleResult = fumbleDispatch.libFumbleResult
       if (fumbleRoll) rolls.push(fumbleRoll)
@@ -1226,8 +1228,18 @@ export const RollsWeaponMixin = (Base) => class extends Base {
   async _rollFumble (weapon, ctx) {
     logDispatch('rollFumble', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { automate, inverseLuckMod, useNPCFumbles, monsterFumbleLuckMod = null, originalFumbleTableName } = ctx
+    const { automate, inverseLuckMod, useNPCFumbles, monsterFumbleLuckMod = null, fumbleTableOverride } = ctx
     let fumbleTableName = ctx.fumbleTableName
+    let originalFumbleTableName = ctx.originalFumbleTableName
+    // A weapon's fumble table override (#1110) changes only the table: the
+    // fumble die, Luck and fumble adjustments stay as they are. A name that
+    // matches no table is ignored, so the fumble uses the normal table.
+    const overrideTable = fumbleTableOverride ? await findRollTableByName(fumbleTableOverride) : null
+    if (overrideTable) {
+      fumbleTableName = originalFumbleTableName = fumbleTableOverride
+    } else if (fumbleTableOverride) {
+      console.warn(`DCC | Fumble table override "${fumbleTableOverride}" on ${weapon?.name} not found, using the normal fumble table`)
+    }
     // NPC fumble die: flat 1d10, or — under the optional Monster Fumbles rule
     // (Yearbook #8) — stepped along the dice chain by the targeted PC's Luck.
     const npcFumbleDie = monsterFumbleLuckMod !== null ? getMonsterFumbleDie(monsterFumbleLuckMod) : '1d10'
@@ -1254,6 +1266,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         fumbleResult: '',
         fumbleRollTotal: null,
         fumbleTableName,
+        originalFumbleTableName,
         isNPCFumble: false
       }
     }
@@ -1292,7 +1305,12 @@ export const RollsWeaponMixin = (Base) => class extends Base {
 
     let isNPCFumble = false
     let fumbleResultObj
-    if (this.isPC || !useNPCFumbles) {
+    if (overrideTable) {
+      // A custom table may not cover every total (Luck, adjustments, the NPC
+      // die): keep the table's name on the card and say there's no result.
+      fumbleResultObj = overrideTable.getResultsForRoll(fumbleRoll.total)[0] ||
+        { parent: overrideTable, description: game.i18n.format('DCC.FumbleNoResult', { total: fumbleRoll.total }) }
+    } else if (this.isPC || !useNPCFumbles) {
       fumbleResultObj = await getFumbleTableResult(fumbleRoll)
     } else {
       isNPCFumble = true
@@ -1315,6 +1333,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       fumbleResult,
       fumbleRollTotal,
       fumbleTableName,
+      originalFumbleTableName,
       isNPCFumble,
       libFumbleResult: {
         fumbleDie: libResult.fumbleDie,

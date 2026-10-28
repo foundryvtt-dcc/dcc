@@ -1012,6 +1012,26 @@ describe('Utilities', () => {
       const result = await getFumbleTableResult(mockRoll)
       expect(result).toEqual({ text: 'Fumble result' })
     })
+
+    it('draws from a weapon fumble table override in the world or a compendium, else the PC table (#1110)', async () => {
+      const worldOverride = { name: 'Firearm Fumbles', getResultsForRoll: vi.fn().mockReturnValue([{ text: 'Jam' }]) }
+      global.game.tables.find.mockImplementation((fn) => [worldOverride].find(fn) ?? null)
+      expect(await getFumbleTableResult(mockRoll, 'Firearm Fumbles')).toEqual({ text: 'Jam' })
+
+      global.game.tables.find.mockReturnValue(null)
+      global.game.tables.getName = vi.fn().mockReturnValue(null)
+      mockPack.documentName = 'RollTable'
+      mockEntry.name = 'Firearm Fumbles'
+      global.game.packs = [mockPack]
+      global.game.packs.get = vi.fn().mockReturnValue(mockPack)
+      expect(await getFumbleTableResult(mockRoll, 'Firearm Fumbles')).toEqual({ text: 'Fumble result' })
+
+      mockEntry.name = 'Fumble Table'
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      expect(await getFumbleTableResult(mockRoll, 'No Such Table')).toEqual({ text: 'Fumble result' })
+      expect(warn).toHaveBeenCalled()
+      warn.mockRestore()
+    })
   })
 
   describe('getNPCFumbleTableResult', () => {

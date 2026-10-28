@@ -27,6 +27,15 @@ This allows you to:
 - Use house rules for fumbles
 - Create thematic fumble tables for specific adventures
 
+## A Fumble Table for One Weapon
+
+You can also give a single weapon its own fumble table, for example so firearms fumble on a table of misfires and jams:
+
+1. Create a rollable table with any name (e.g. `Firearm Fumbles`), in the world or in a compendium
+2. Open the weapon and type the table's name into the **Fumble Table** field in the **Critical / Fumble** box
+
+Fumbles with that weapon are then drawn from that table. Only the table changes: the fumble die, the Luck modifier and any fumble adjustments are the same as for any other fumble, so build the table for the usual fumble range. This works for PC and NPC weapons. If no table with that name exists, the normal fumble table is used.
+
 ## Note on NPC Fumbles
 
 NPC and monster fumbles use separate tables based on their crit table setting. See [NPC and Monster Fumbles](NPC-and-Monster-Fumbles.md) for details on how those work.

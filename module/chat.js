@@ -1,7 +1,7 @@
 /* global canvas, foundry, game, ui, document, console, ChatMessage */
 // noinspection DuplicatedCode
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog, PC_FUMBLE_TABLE_NAME } from './utilities.js'
 import ApplyDamageDialog from './apply-damage-dialog.js'
 import { burnLuckAfterRoll, luckBurnMessageActor } from './luck-burn.mjs'
 import { checkPenaltyNoteHtml } from './adapter/chat-renderer.mjs'
@@ -354,7 +354,7 @@ export const emoteAttackRoll = function (message, html) {
       const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
       const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
       fumble += `
-        <div class="table-draw fumble-result" data-table-name="${message.system.originalFumbleTableName}" data-current-roll="${message.system.fumbleRollTotal}" data-is-npc="${message.system.isNPCFumble}">
+        <div class="table-draw fumble-result" data-table-name="${foundry.utils.escapeHTML(message.system.originalFumbleTableName ?? '')}" data-current-roll="${message.system.fumbleRollTotal}" data-is-npc="${message.system.isNPCFumble}">
           <ol class="table-results"><li class="table-result">
             <div class="result-range">
               <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>
@@ -614,6 +614,29 @@ export const emoteDamageRoll = function (message, html, data) {
 }
 
 /**
+ * Which table a fumble roll message draws from: the stored table name, or
+ * for a click-to-roll fumble the table named in its flavor
+ * (`Fumble (<table>)`). NPC tables are named `Fumble Table X` or
+ * `Crit/Fumble Table EL`; any other name is the default PC table or a
+ * weapon's fumble table override (#1110), which `getFumbleTableResult`
+ * draws from with a fallback to the PC table.
+ * @param message
+ * @returns {{tableName: string, isNPC: boolean}}
+ */
+export function fumbleTableForMessage (message) {
+  let tableName = message.system?.fumbleTableName
+  if (!tableName && message.flavor) {
+    const match = message.flavor.match(/\((Fumble Table [A-Z0-9\s]+|Crit\/Fumble Table EL)\)/) ||
+      message.flavor.match(/^[^(]*\((.+)\)\s*$/)
+    tableName = match?.[1]
+  }
+  if (!tableName || tableName === PC_FUMBLE_TABLE_NAME || tableName === `(${PC_FUMBLE_TABLE_NAME}).`) {
+    return { tableName: PC_FUMBLE_TABLE_NAME, isNPC: false }
+  }
+  return { tableName, isNPC: /^(Fumble Table |Crit\/Fumble Table )/.test(tableName) }
+}
+
+/**
  * Change fumble rolls into emotes
  * @param message
  * @param html
@@ -625,12 +648,11 @@ export const emoteFumbleRoll = async function (message, html, data) {
   if (game.settings.get('dcc', 'emoteRolls') === false) return
 
   let fumbleResult
-  const pcFumbleTableIdentifier = 'Table 4-2: Fumbles'
-
-  if (message.system?.fumbleTableName && !message.system.fumbleTableName.includes(pcFumbleTableIdentifier)) {
-    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], message.system.fumbleTableName)
+  const { tableName, isNPC } = fumbleTableForMessage(message)
+  if (isNPC) {
+    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableName)
   } else {
-    fumbleResult = await getFumbleTableResult(message.rolls[0])
+    fumbleResult = await getFumbleTableResult(message.rolls[0], tableName)
   }
 
   let fumbleText
@@ -838,24 +860,7 @@ export const lookupCriticalRoll = async function (message, html) {
 export const lookupFumbleRoll = async function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
 
-  const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).'
-  let tableToUse = null
-  let isNPCFumble = false
-
-  if (message.system && message.system.fumbleTableName) {
-    tableToUse = message.system.fumbleTableName
-  } else if (message.flavor) { // Fallback in case the fumble table is not set
-    const match = message.flavor.match(/\((Fumble Table [A-Z0-9\s]+|Crit\/Fumble Table EL)\)/)
-    if (match && match[1]) {
-      tableToUse = match[1]
-    }
-  }
-
-  if (tableToUse && tableToUse !== pcFumbleTableIdentifier) {
-    isNPCFumble = true
-  } else {
-    tableToUse = 'Table 4-2: Fumbles'
-  }
+  const { tableName: tableToUse, isNPC: isNPCFumble } = fumbleTableForMessage(message)
 
   // Use stored result if available (from previous lookup or navigation),
   // otherwise do a fresh lookup
@@ -871,7 +876,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     if (isNPCFumble) {
       fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse)
     } else {
-      fumbleResult = await getFumbleTableResult(message.rolls[0])
+      fumbleResult = await getFumbleTableResult(message.rolls[0], tableToUse)
     }
 
     if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
@@ -892,7 +897,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
     const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
     const navigableResult = `
-      <div class="table-draw fumble-result" data-table-name="${tableToUse}" data-current-roll="${rollTotal}" data-is-npc="${isNPCFumble}">
+      <div class="table-draw fumble-result" data-table-name="${foundry.utils.escapeHTML(tableToUse)}" data-current-roll="${rollTotal}" data-is-npc="${isNPCFumble}">
         <ol class="table-results"><li class="table-result">
           <div class="result-range">
             <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>

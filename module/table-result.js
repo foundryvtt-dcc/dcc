@@ -172,7 +172,8 @@ class TableResult {
     if (isNPC) {
       newResult = await getNPCFumbleTableResult(mockRoll, tableName)
     } else {
-      newResult = await getFumbleTableResult(mockRoll)
+      // The PC table, or a weapon's fumble table override (#1110)
+      newResult = await getFumbleTableResult(mockRoll, tableName)
     }
 
     if (!newResult || !newResult.description) {

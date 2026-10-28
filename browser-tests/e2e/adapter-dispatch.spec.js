@@ -5341,8 +5341,14 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       // A weapon `config.fumbleRangeOverride: 2` fumbles on natural 1-2 (a
       // natural threshold on the rolled die — never rescaled like critRange).
       // Force a natural 2 and roll both a cursed and a plain weapon: the
-      // cursed weapon must fumble, the plain control must not.
+      // cursed weapon must fumble, the plain control must not. The cursed
+      // weapon also has a `fumbleTableOverride` (#1110), so its fumble is
+      // drawn from that world table instead of Table 4-2.
       await page.evaluate(async () => {
+        await RollTable.create({
+          name: 'P1 Cursed Fumbles',
+          results: [{ type: 'text', description: 'P1 cursed fumble result', range: [-20, 40] }]
+        })
         const actor = await Actor.create({ name: 'P1 FumbleRange Adapter', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
           name: 'P1-CursedSword',
@@ -5354,7 +5360,7 @@ test.describe('DCC Adapter Dispatch Validation', () => {
             damage: '1d6',
             melee: true,
             equipped: true,
-            config: { fumbleRangeOverride: 2 }
+            config: { fumbleRangeOverride: 2, fumbleTableOverride: 'P1 Cursed Fumbles' }
           }
         }, {
           name: 'P1-PlainControlSword',
@@ -5393,7 +5399,9 @@ test.describe('DCC Adapter Dispatch Validation', () => {
             if (msg) {
               return {
                 isFumble: msg.getFlag('dcc', 'isFumble'),
-                natural: msg.getFlag('dcc', 'libResult')?.natural
+                natural: msg.getFlag('dcc', 'libResult')?.natural,
+                fumbleResult: msg.system?.fumbleResult,
+                fumbleTableName: msg.system?.originalFumbleTableName
               }
             }
             await new Promise(resolve => setTimeout(resolve, 50))
@@ -5410,13 +5418,16 @@ test.describe('DCC Adapter Dispatch Validation', () => {
 
       const plain = await readAttackFlags('P1-PlainControlSword')
 
-      await page.evaluate(() => {
+      await page.evaluate(async () => {
         CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+        await game.tables.getName('P1 Cursed Fumbles')?.delete()
       })
 
       expect(cursed, 'cursed-weapon attack card must exist').not.toBeNull()
       expect(cursed.natural, 'forced natural must be 2').toBe(2)
       expect(cursed.isFumble, 'natural 2 inside fumbleRangeOverride 2 is a fumble').toBe(true)
+      expect(cursed.fumbleTableName, 'fumble table comes from the weapon override').toBe('P1 Cursed Fumbles')
+      expect(cursed.fumbleResult, 'fumble drawn from the override table').toContain('P1 cursed fumble result')
 
       expect(plain, 'plain-weapon attack card must exist').not.toBeNull()
       expect(plain.natural, 'forced natural must be 2').toBe(2)
