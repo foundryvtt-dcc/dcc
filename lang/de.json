@@ -428,6 +428,8 @@
   "DCC.FumblePrompt": "Gewürfelt",
   "DCC.FumbleRange": "Patzerbereich",
   "DCC.FumbleRangeHint": "Patzer bei einem natürlichen Wurf in diesem Bereich (Standard: nur natürliche 1); wird nicht an kleinere oder größere Aktionswürfel angepasst",
+  "DCC.FumbleTableOverride": "Patzertabelle",
+  "DCC.FumbleTableOverrideHint": "Name einer Zufallstabelle (Welt oder Kompendium), auf der Patzer mit dieser Waffe statt auf der normalen Patzertabelle gewürfelt werden. Der Patzerwürfel bleibt gleich. Leer lassen für die normale Tabelle",
   "DCC.FumbleTableUnavailable": "Patzertabelle nicht verfügbar",
   "DCC.Funds": "Geld",
   "DCC.Generic": "Generisch",

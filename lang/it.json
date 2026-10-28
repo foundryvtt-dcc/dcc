@@ -428,6 +428,8 @@
   "DCC.FumblePrompt": "Fallimento",
   "DCC.FumbleRange": "Intervallo di Fallimento",
   "DCC.FumbleRangeHint": "Fallimento con un tiro naturale entro questo intervallo (predefinito: solo 1 naturale); non viene riscalato per dadi azione più piccoli o più grandi",
+  "DCC.FumbleTableOverride": "Tabella fallimenti",
+  "DCC.FumbleTableOverrideHint": "Nome di una tabella casuale (del mondo o di un compendio) su cui tirare i fallimenti di quest’arma al posto della normale tabella dei fallimenti. Il dado fallimento non cambia. Lascia vuoto per la tabella normale",
   "DCC.FumbleTableUnavailable": "Tabella Fallimento Non Disponibile",
   "DCC.Funds": "Tesori",
   "DCC.Generic": "Generico",

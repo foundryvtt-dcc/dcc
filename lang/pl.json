@@ -428,6 +428,8 @@
   "DCC.FumblePrompt": "Wyrzucono",
   "DCC.FumbleRange": "Zakres Potknięcia",
   "DCC.FumbleRangeHint": "Potknięcie przy naturalnym wyniku w tym zakresie (domyślnie: tylko naturalna 1); nie jest przeskalowywany dla mniejszych ani większych kości akcji",
+  "DCC.FumbleTableOverride": "Tabela potknięć",
+  "DCC.FumbleTableOverrideHint": "Nazwa tabeli losowej (ze świata lub kompendium), na której rzuca się potknięcia tej broni zamiast na zwykłej tabeli potknięć. Kość potknięcia się nie zmienia. Pozostaw puste, aby użyć zwykłej tabeli",
   "DCC.FumbleTableUnavailable": "Tabela Potknięć Niedostępna",
   "DCC.Funds": "Fundusze",
   "DCC.Generic": "Ogólny",

@@ -34,7 +34,7 @@ import '../__mocks__/foundry.js'
 import { withSyncCreateRoll } from '../__mocks__/dcc-roll.js'
 import DCCActor from '../actor.js'
 import { buildCriticalInput, buildFumbleInput } from '../adapter/crit-fumble-input.mjs'
-import { getCritTableResult } from '../utilities.js'
+import { getCritTableResult, findRollTableByName, getNPCFumbleTableResult } from '../utilities.js'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -51,7 +51,8 @@ vi.mock('../utilities.js', async () => {
     getCritTableLink: vi.fn(async (name, display) => `<a>${display || name}</a>`),
     getCritTableResult: vi.fn(async () => ({ description: 'Double damage and knockdown.' })),
     getFumbleTableResult: vi.fn(async () => ({ description: 'You drop your weapon.', parent: { link: 'Fumble Table 4-2' } })),
-    getNPCFumbleTableResult: vi.fn(async () => ({ description: 'You trip and fall.', parent: { link: 'Fumble Table 4-2' } }))
+    getNPCFumbleTableResult: vi.fn(async () => ({ description: 'You trip and fall.', parent: { link: 'Fumble Table 4-2' } })),
+    findRollTableByName: vi.fn(async () => null)
   }
 })
 
@@ -360,6 +361,48 @@ test('adapter fumble path swaps to NPC fumble die when actor is NPC + useNPCFumb
   expect(result.fumbleRollFormula).toBe('1d10')
   expect(result.isNPCFumble).toBe(true)
   expect(result.libFumbleResult.fumbleDie).toBe('d10')
+})
+
+test('weapon fumble table override draws from that table and keeps the fumble die; an unknown name is ignored (#1110)', async () => {
+  const overrideTable = {
+    getResultsForRoll: vi.fn(() => [{ description: 'Your gun jams.', parent: { link: 'Firearm Fumbles' } }])
+  }
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.isPC = false
+  actor.isNPC = true
+  actor.system.attributes = { critical: { die: '1d10', table: 'III' }, fumble: { die: '1d4' } }
+  actor.system.abilities = { lck: { mod: '+0' } }
+  const ctx = {
+    automate: true,
+    luckMod: '+0',
+    inverseLuckMod: '+0',
+    useNPCFumbles: true,
+    fumbleTableName: 'Fumble Table H',
+    originalFumbleTableName: 'Fumble Table H',
+    fumbleTableOverride: 'Firearm Fumbles'
+  }
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 6, natural: 6 }))
+  const restore = withAutomate(true)
+  let found, missing
+  try {
+    findRollTableByName.mockResolvedValueOnce(overrideTable)
+    getNPCFumbleTableResult.mockClear()
+    found = await actor._rollFumble({ name: 'pistol' }, ctx)
+    missing = await actor._rollFumble({ name: 'pistol' }, ctx)
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(overrideTable.getResultsForRoll).toHaveBeenCalledWith(6)
+  expect(found.fumbleResult).toContain('Your gun jams.')
+  expect(found.originalFumbleTableName).toBe('Firearm Fumbles')
+  expect(found.isNPCFumble).toBe(false)
+  expect(found.fumbleRollFormula).toBe('1d10')
+  expect(getNPCFumbleTableResult).toHaveBeenCalledTimes(1)
+  expect(missing.originalFumbleTableName).toBe('Fumble Table H')
+  expect(missing.isNPCFumble).toBe(true)
 })
 
 // ============================================================================

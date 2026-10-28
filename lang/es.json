@@ -428,6 +428,8 @@
   "DCC.FumblePrompt": "Lanzado",
   "DCC.FumbleRange": "Rango de Pifia",
   "DCC.FumbleRangeHint": "Pifia con una tirada natural dentro de este rango (por defecto: solo 1 natural); no se reescala para dados de acción menores o mayores",
+  "DCC.FumbleTableOverride": "Tabla de pifias",
+  "DCC.FumbleTableOverrideHint": "Nombre de una tabla aleatoria (del mundo o de un compendio) en la que tirar las pifias de esta arma en lugar de la tabla de pifias normal. El dado de pifia no cambia. Déjalo en blanco para usar la tabla normal",
   "DCC.FumbleTableUnavailable": "Tabla de Pifias no disponible",
   "DCC.Funds": "Fondos",
   "DCC.Generic": "Genérico",

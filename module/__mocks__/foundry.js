@@ -2167,7 +2167,7 @@ const DOCUMENT_DEFAULTS = {
       container: null
     },
     weapon: {
-      config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: null, critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
+      config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: null, critTableOverride: '', fumbleTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
       actionDie: '1d20',
       attackBonus: '',
       attackBonusWeapon: '',
