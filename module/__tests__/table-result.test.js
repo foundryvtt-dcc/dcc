@@ -94,7 +94,7 @@ describe('_adjustFumbleResult', () => {
     getFumbleTableResult.mockResolvedValue({ description: 'Drop weapon' })
     const msg = { content: '<div class="fumble-result"></div>', update: vi.fn(async () => {}) }
     await TableResult._adjustFumbleResult.call(msg, eventFor(makeContainer({ 'data-table-name': 'Fumble', 'data-current-roll': '3' }), '.fumble-result'), 1)
-    expect(getFumbleTableResult).toHaveBeenCalled()
+    expect(getFumbleTableResult).toHaveBeenCalledWith({ total: 4, _evaluated: true }, 'Fumble')
     expect(msg.update.mock.calls[0][0]).toMatchObject({
       'system.fumbleResult': '<e>Drop weapon</e>',
       'system.fumbleRollTotal': 4

@@ -414,6 +414,7 @@
   "DCC.FumbleAdjustment": "Fumble Adjustment",
   "DCC.FumblePrompt": "Rolled",
   "DCC.FumbleRange": "Fumble Range",
+  "DCC.FumbleNoResult": "No result on this table for a roll of {total}",
   "DCC.FumbleRangeHint": "Fumble on a natural roll within this range (default: natural 1 only); not rescaled for smaller or larger action dice",
   "DCC.FumbleTableOverride": "Fumble Table",
   "DCC.FumbleTableOverrideHint": "Name of a rollable table (world or compendium) to roll this weapon's fumbles on instead of the normal fumble table. The fumble die is unchanged. Leave blank for the normal table",

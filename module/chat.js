@@ -354,7 +354,7 @@ export const emoteAttackRoll = function (message, html) {
       const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
       const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
       fumble += `
-        <div class="table-draw fumble-result" data-table-name="${message.system.originalFumbleTableName}" data-current-roll="${message.system.fumbleRollTotal}" data-is-npc="${message.system.isNPCFumble}">
+        <div class="table-draw fumble-result" data-table-name="${foundry.utils.escapeHTML(message.system.originalFumbleTableName ?? '')}" data-current-roll="${message.system.fumbleRollTotal}" data-is-npc="${message.system.isNPCFumble}">
           <ol class="table-results"><li class="table-result">
             <div class="result-range">
               <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>
@@ -627,10 +627,10 @@ export function fumbleTableForMessage (message) {
   let tableName = message.system?.fumbleTableName
   if (!tableName && message.flavor) {
     const match = message.flavor.match(/\((Fumble Table [A-Z0-9\s]+|Crit\/Fumble Table EL)\)/) ||
-      message.flavor.match(/\(([^()]+)\)\s*$/)
+      message.flavor.match(/^[^(]*\((.+)\)\s*$/)
     tableName = match?.[1]
   }
-  if (!tableName || tableName.includes(PC_FUMBLE_TABLE_NAME)) {
+  if (!tableName || tableName === PC_FUMBLE_TABLE_NAME || tableName === `(${PC_FUMBLE_TABLE_NAME}).`) {
     return { tableName: PC_FUMBLE_TABLE_NAME, isNPC: false }
   }
   return { tableName, isNPC: /^(Fumble Table |Crit\/Fumble Table )/.test(tableName) }
@@ -897,7 +897,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
     const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
     const navigableResult = `
-      <div class="table-draw fumble-result" data-table-name="${tableToUse}" data-current-roll="${rollTotal}" data-is-npc="${isNPCFumble}">
+      <div class="table-draw fumble-result" data-table-name="${foundry.utils.escapeHTML(tableToUse)}" data-current-roll="${rollTotal}" data-is-npc="${isNPCFumble}">
         <ol class="table-results"><li class="table-result">
           <div class="result-range">
             <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>

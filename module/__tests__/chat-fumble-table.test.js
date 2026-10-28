@@ -8,5 +8,7 @@ describe('fumbleTableForMessage', () => {
     expect(fumbleTableForMessage({ flavor: 'Fumble (Fumble Table M)' })).toEqual({ tableName: 'Fumble Table M', isNPC: true })
     expect(fumbleTableForMessage({ flavor: 'Fumble (Firearm Fumbles)' })).toEqual({ tableName: 'Firearm Fumbles', isNPC: false })
     expect(fumbleTableForMessage({ flavor: 'Fumble' })).toEqual({ tableName: 'Table 4-2: Fumbles', isNPC: false })
+    expect(fumbleTableForMessage({ flavor: 'Fumble (Fumbles (Firearms))' })).toEqual({ tableName: 'Fumbles (Firearms)', isNPC: false })
+    expect(fumbleTableForMessage({ flavor: 'Fumble (Table 4-2: Fumbles - Firearms)' })).toEqual({ tableName: 'Table 4-2: Fumbles - Firearms', isNPC: false })
   })
 })

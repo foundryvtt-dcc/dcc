@@ -384,12 +384,15 @@ test('weapon fumble table override draws from that table and keeps the fumble di
   }
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 6, natural: 6 }))
   const restore = withAutomate(true)
-  let found, missing
+  const shortTable = { link: '<a>Firearm Fumbles</a>', getResultsForRoll: vi.fn(() => []) }
+  let found, missing, outOfRange
   try {
     findRollTableByName.mockResolvedValueOnce(overrideTable)
     getNPCFumbleTableResult.mockClear()
     found = await actor._rollFumble({ name: 'pistol' }, ctx)
     missing = await actor._rollFumble({ name: 'pistol' }, ctx)
+    findRollTableByName.mockResolvedValueOnce(shortTable)
+    outOfRange = await actor._rollFumble({ name: 'pistol' }, ctx)
   } finally {
     restore()
     restoreRoll()
@@ -403,6 +406,9 @@ test('weapon fumble table override draws from that table and keeps the fumble di
   expect(getNPCFumbleTableResult).toHaveBeenCalledTimes(1)
   expect(missing.originalFumbleTableName).toBe('Fumble Table H')
   expect(missing.isNPCFumble).toBe(true)
+  // a total the custom table doesn't cover keeps the table's name on the card
+  expect(outOfRange.fumbleInlineRoll).toContain('Firearm Fumbles')
+  expect(outOfRange.fumbleResult).toContain('FumbleNoResult')
 })
 
 // ============================================================================

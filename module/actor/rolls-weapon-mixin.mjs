@@ -366,7 +366,7 @@ export const RollsWeaponMixin = (Base) => class extends Base {
         monsterFumbleLuckMod,
         fumbleTableName,
         originalFumbleTableName,
-        fumbleTableOverride: weapon.system?.config?.fumbleTableOverride
+        fumbleTableOverride: weapon.system?.config?.fumbleTableOverride?.trim()
       })
       fumbleRollFormula = fumbleDispatch.fumbleRollFormula
       fumbleInlineRoll = fumbleDispatch.fumbleInlineRoll
@@ -1306,7 +1306,10 @@ export const RollsWeaponMixin = (Base) => class extends Base {
     let isNPCFumble = false
     let fumbleResultObj
     if (overrideTable) {
-      fumbleResultObj = overrideTable.getResultsForRoll(fumbleRoll.total)[0] || 'Unable to find fumble result'
+      // A custom table may not cover every total (Luck, adjustments, the NPC
+      // die): keep the table's name on the card and say there's no result.
+      fumbleResultObj = overrideTable.getResultsForRoll(fumbleRoll.total)[0] ||
+        { parent: overrideTable, description: game.i18n.format('DCC.FumbleNoResult', { total: fumbleRoll.total }) }
     } else if (this.isPC || !useNPCFumbles) {
       fumbleResultObj = await getFumbleTableResult(fumbleRoll)
     } else {
