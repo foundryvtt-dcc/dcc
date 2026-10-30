@@ -12,7 +12,7 @@ The **Combat Basics** box on the NPC sheet has a **Morale** row. The value next 
 ## From the combat tracker (GM only)
 
 * **Right-click an NPC combatant → Morale Check** rolls for that NPC. Ctrl/Command-click the menu entry for the modifier dialog.
-* **Encounter menu (⋮) → Morale Check (NPCs)** rolls for every NPC combatant that isn't marked defeated, posting one card each. Player characters are skipped, and an NPC with several combatants rolls once.
+* **Encounter menu (⋮) → Morale Check (NPCs)** rolls for every NPC combatant that isn't marked defeated, posting one card each. Player characters and NPCs that [never check morale](#npcs-that-never-check-morale) are skipped, and an NPC with several combatants rolls once.
 
 A morale check for a hidden combatant or hidden token is shown to the GM only, so it can't give away an NPC the players haven't seen.
 
@@ -20,7 +20,18 @@ A morale check for a hidden combatant or hidden token is shown to the GM only, s
 
 When damage takes an NPC from above half its hit points to half or below, the GM gets a whispered card: "*Name* is at half hit points or below," with a **Roll Morale** button. Nothing is rolled until the GM clicks (Ctrl/Command-click for the modifier dialog). An NPC dropped straight to 0 gets no prompt.
 
-The prompt comes again if the NPC is healed above half and then damaged below it again. Turn it off with **Prompt morale checks at half HP** in [System Settings](System-Settings.md#combat-automation).
+The prompt comes again if the NPC is healed above half and then damaged below it again. Turn it off for everyone with **Prompt morale checks at half HP** in [System Settings](System-Settings.md#combat-automation), or for one NPC with the card's **Don't Ask Again** button (see below).
+
+## NPCs that never check morale
+
+Some creatures fight to the death. Tick **Never checks morale** in the NPC's sheet configuration, or click **Don't Ask Again** on its half-HP prompt card, and that NPC:
+
+* gets no half-HP prompt, and
+* is skipped by **Morale Check (NPCs)**.
+
+Clicking **Morale** on its sheet or on its combatant entry still rolls, since you asked for that roll directly.
+
+For a token that isn't linked to its actor (most monsters), **Don't Ask Again** marks the actor in the Actors directory, so every token of that creature stops prompting. The exception is a token whose own sheet configuration has been saved: it keeps its own setting, so tick the box there. To undo, untick **Never checks morale** in the configuration.
 
 ## The chat card
 

@@ -46,7 +46,7 @@ The remaining settings add automated combat rules to the system. Each can be tur
 
 **Auto-apply dead status to NPCs** (on by default in new worlds) automatically adds the "dead" status effect to a non-player character whose hit points drop to 0 or below. Player characters are left alone (at 0 HP they are dying and may recover per DCC rules). The status is added automatically but not removed automatically — a GM can clear it if the creature is healed or revived.
 
-**Prompt morale checks at half HP** (on by default) whispers the GM a card with a **Roll morale** button when damage takes a non-player character from above half its hit points to half or below. Nothing is rolled until the GM clicks. See [Morale Checks](Morale-Checks.md).
+**Prompt morale checks at half HP** (on by default) whispers the GM a card with a **Roll morale** button when damage takes a non-player character from above half its hit points to half or below. Nothing is rolled until the GM clicks. To stop the prompt for one NPC, tick **Never checks morale** in its sheet configuration. See [Morale Checks](Morale-Checks.md).
 
 **Enable death clock for PCs** implements the DCC death and dying rules for player characters: a PC dropping to 0 hit points begins bleeding out with their level in rounds to be healed (tracked in the combat tracker and the sidebar Death Clock tool), death applied like the tracker's skull button, the permanent Stamina cost of a bleed-out save, and the Roll the Body recovery check. See the [Death Clock](Death-Clock.md) guide for the full feature.
 

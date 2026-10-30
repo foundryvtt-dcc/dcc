@@ -53,7 +53,7 @@ test.describe('Auto-apply dead status', () => {
     expect(result.pcDead).toBe(false) // PC at 0 HP → not auto-dead
   })
 
-  test('an NPC damaged to half HP whispers the GM a Roll Morale prompt that rolls morale (#972)', async ({ page }) => {
+  test("an NPC damaged to half HP whispers the GM a prompt: Roll Morale rolls, Don't Ask Again stops it (#972)", async ({ page }) => {
     const result = await page.evaluate(async () => {
       const prev = game.settings.get('dcc', 'moraleHalfHpPrompt')
       await game.settings.set('dcc', 'moraleHalfHpPrompt', true)
@@ -72,12 +72,21 @@ test.describe('Auto-apply dead status', () => {
       button?.click()
       const card = await poll(() => game.messages.contents.find(m => m.flags?.dcc?.isMoraleCheck && m.speaker?.actor === npc.id))
 
+      document.querySelector(`#chat [data-message-id="${prompt?.id}"] button[data-action="moraleNeverAsk"]`)?.click()
+      const marked = await poll(() => npc.system.config.moraleImmune)
+      await npc.update({ 'system.attributes.hp.value': 10 })
+      await npc.update({ 'system.attributes.hp.value': 4 })
+      await new Promise(resolve => setTimeout(resolve, 500))
+      const prompts = game.messages.contents.filter(m => m.flags?.dcc?.moraleHalfHpPrompt && m.speaker?.actor === npc.id)
+
       const out = {
+        marked: !!marked,
+        promptsAfterMark: prompts.length,
         whispered: (prompt?.whisper?.length ?? 0) > 0,
         trigger: card?.flags.dcc.libResult.trigger ?? null,
         rollMatchesLib: card ? card.rolls[0].total === card.flags.dcc.libResult.total : null
       }
-      await ChatMessage.deleteDocuments([prompt?.id, card?.id].filter(Boolean))
+      await ChatMessage.deleteDocuments([...prompts.map(m => m.id), card?.id].filter(Boolean))
       await npc.delete()
       await game.settings.set('dcc', 'moraleHalfHpPrompt', prev)
       return out
@@ -86,5 +95,7 @@ test.describe('Auto-apply dead status', () => {
     expect(result.whispered).toBe(true)
     expect(result.trigger).toBe('half-hp-lost')
     expect(result.rollMatchesLib).toBe(true)
+    expect(result.marked).toBe(true)
+    expect(result.promptsAfterMark).toBe(1) // the original prompt only
   })
 })

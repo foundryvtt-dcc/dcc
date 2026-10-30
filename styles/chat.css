@@ -675,6 +675,7 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
 .dcc-death-clock-actions,
 .dcc-morale-actions {
   display: flex;
+  gap: 6px;
   justify-content: center;
   margin-top: 10px;
 

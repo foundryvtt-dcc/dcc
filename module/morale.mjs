@@ -1,4 +1,4 @@
-/* global ChatMessage, console, foundry, fromUuid, game */
+/* global ChatMessage, console, foundry, fromUuid, game, ui */
 
 /**
  * Morale checks from the combat tracker and the half-HP prompt (#972).
@@ -13,6 +13,12 @@
  *     takes an NPC to half its hit points or below (lib
  *     `checkCreatureMoraleTrigger`), whisper the GM a card with a
  *     Roll morale button. Offer tier: nothing rolls until the GM clicks.
+ *     Its Don't Ask Again button ticks the NPC's "Never checks morale"
+ *     (`system.config.moraleImmune`).
+ *
+ * An NPC that never checks morale gets no prompt and is skipped by the
+ * encounter roll. A direct roll (sheet, combatant entry) still rolls: the
+ * judge asked for it.
  *
  * Foundry collects both menus once, at the tracker's first render, so the
  * hooks are registered at import time and each entry decides at click
@@ -52,8 +58,18 @@ function moraleMessageMode (combatant, actor = combatant?.actor) {
 }
 
 /**
- * NPC combatants in a combat that can still check morale (not defeated),
- * one per actor so a linked actor with several combatants rolls once.
+ * Whether an NPC is marked as never checking morale.
+ * @param {Actor} actor
+ * @returns {boolean}
+ */
+function neverChecksMorale (actor) {
+  return !!actor?.system?.config?.moraleImmune
+}
+
+/**
+ * NPC combatants in a combat that can still check morale (not defeated,
+ * not marked as never checking morale), one per actor so a linked actor
+ * with several combatants rolls once.
  * @param {Combat|undefined} combat
  * @returns {Combatant[]}
  */
@@ -62,7 +78,7 @@ export function moraleEligibleCombatants (combat) {
   const seen = new Set()
   return combat.combatants.filter(c => {
     const actor = !c.isDefeated && npcActor(c)
-    if (!actor || seen.has(actor.uuid)) return false
+    if (!actor || neverChecksMorale(actor) || seen.has(actor.uuid)) return false
     seen.add(actor.uuid)
     return true
   })
@@ -139,7 +155,7 @@ export async function onUpdateActorForMorale (actor, changes, options) {
   try {
     if (!game.settings.get('dcc', 'moraleHalfHpPrompt')) return
     if (!isActiveGM()) return
-    if (actor?.type !== 'NPC') return
+    if (actor?.type !== 'NPC' || neverChecksMorale(actor)) return
 
     const before = options?.[HP_BEFORE_OPTION]
     const after = Number(changes?.system?.attributes?.hp?.value)
@@ -155,7 +171,8 @@ export async function onUpdateActorForMorale (actor, changes, options) {
 }
 
 /**
- * Whisper the GMs a "below half HP" card with a Roll morale button.
+ * Whisper the GMs a "below half HP" card with Roll Morale and Don't Ask
+ * Again buttons.
  * @param {Actor} actor
  */
 async function postHalfHpPrompt (actor) {
@@ -164,7 +181,9 @@ async function postHalfHpPrompt (actor) {
   const content = `<p>${game.i18n.format('DCC.MoraleHalfHpPrompt', { name })}</p>` +
     '<div class="dcc-morale-actions">' +
     `<button type="button" data-action="rollMoraleHalfHp" data-actor-uuid="${actor.uuid}">` +
-    `${game.i18n.localize('DCC.MoraleRollButton')}</button></div>`
+    `${game.i18n.localize('DCC.MoraleRollButton')}</button>` +
+    `<button type="button" data-action="moraleNeverAsk" data-actor-uuid="${actor.uuid}">` +
+    `${game.i18n.localize('DCC.MoraleNeverAskButton')}</button></div>`
   await ChatMessage.create({
     content,
     speaker: ChatMessage.getSpeaker({ actor }),
@@ -174,26 +193,44 @@ async function postHalfHpPrompt (actor) {
 }
 
 /**
- * `renderChatMessageHTML` handler. Wires the Roll morale button on the
- * half-HP prompt card; disabled for anyone but a GM.
+ * Mark an NPC as never checking morale. An unlinked token's actor is a copy
+ * of the world actor, so the mark goes on the world actor: every token of
+ * that creature stops prompting, not just the one that was hit.
+ * @param {Actor} actor
+ */
+export async function markNeverChecksMorale (actor) {
+  const target = actor.isToken ? (game.actors.get(actor.id) ?? actor) : actor
+  await target.update({ 'system.config.moraleImmune': true })
+  ui.notifications.info(game.i18n.format('DCC.MoraleNeverAskDone', { name: target.name }))
+}
+
+/**
+ * `renderChatMessageHTML` handler. Wires the Roll Morale and Don't Ask
+ * Again buttons on the half-HP prompt card; disabled for anyone but a GM.
  *
  * @param {ChatMessage} message
  * @param {HTMLElement} html - the rendered message HTML
  */
 export function onRenderChatMessageHTMLForMorale (message, html) {
   if (!message?.getFlag?.('dcc', 'moraleHalfHpPrompt')) return
-  for (const button of html?.querySelectorAll?.('button[data-action="rollMoraleHalfHp"]') ?? []) {
-    if (!game.user.isGM) {
-      button.disabled = true
-      continue
-    }
-    button.addEventListener('click', async event => {
-      const actor = await fromUuid(button.dataset.actorUuid)
-      await actor?.rollMoraleCheck({
-        trigger: 'half-hp-lost',
-        showModifierDialog: wantsModifierDialog(event),
-        messageMode: moraleMessageMode(undefined, actor)
+  const handlers = {
+    rollMoraleHalfHp: (actor, event) => actor.rollMoraleCheck({
+      trigger: 'half-hp-lost',
+      showModifierDialog: wantsModifierDialog(event),
+      messageMode: moraleMessageMode(undefined, actor)
+    }),
+    moraleNeverAsk: actor => markNeverChecksMorale(actor)
+  }
+  for (const [action, handler] of Object.entries(handlers)) {
+    for (const button of html?.querySelectorAll?.(`button[data-action="${action}"]`) ?? []) {
+      if (!game.user.isGM) {
+        button.disabled = true
+        continue
+      }
+      button.addEventListener('click', async event => {
+        const actor = await fromUuid(button.dataset.actorUuid)
+        if (actor) await handler(actor, event)
       })
-    })
+    }
   }
 }

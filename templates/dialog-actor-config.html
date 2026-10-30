@@ -20,6 +20,13 @@
   <select name="system.config.attackBonusMode" id="system.config.attackBonusMode">
     {{selectOptions config.attackBonusModes selected=system.config.attackBonusMode localize=true}}
   </select>
+  {{#if isNPC}}
+
+    <div class="group-separator"></div>
+    <label for="system.config.moraleImmune" title="{{localize 'DCC.MoraleImmuneConfigHint'}}">{{localize "DCC.MoraleImmuneConfig"}}</label>
+    <input type="checkbox" name="system.config.moraleImmune" id="system.config.moraleImmune" {{checked system.config.moraleImmune}}
+           data-dtype="boolean"/>
+  {{/if}}
 
   <div class="group-separator"></div>
   {{#if isNPC}}
