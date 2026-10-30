@@ -495,6 +495,74 @@ export async function renderSavingThrow ({
 }
 
 /**
+ * Localization keys for the lib's morale modifier sources. The lib labels
+ * its `LegacyRollModifier` lines in English; anything unmapped keeps the
+ * lib's label.
+ */
+const MORALE_MODIFIER_LABEL_KEYS = {
+  will: 'DCC.MoraleWillSave',
+  situational: 'DCC.MoraleSituational',
+  employer: 'DCC.MoraleEmployerPersonality'
+}
+
+/**
+ * Render a morale-check result (#972) as a Foundry ChatMessage.
+ *
+ * The flavor carries the DC and the outcome ("Stands firm" / "Flees"),
+ * matching how saves show a DC verdict. Flags: `dcc.RollType:
+ * 'MoraleCheck'`, `dcc.isMoraleCheck: true`, and `dcc.libResult` with the
+ * lib's `MoraleCheckResult` fields.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that rolled.
+ * @param {Object} params.result - The lib's MoraleCheckResult.
+ * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @returns {Promise<ChatMessage>} The created ChatMessage.
+ */
+export async function renderMoraleCheck ({ actor, result, foundryRoll }) {
+  const outcomeLabel = game.i18n.localize(result.passed ? 'DCC.MoraleStandsFirm' : 'DCC.MoraleFlees')
+  const flavor = `${game.i18n.localize('DCC.MoraleCheck')} (${game.i18n.format('DCC.SaveDC', { dc: result.dc })}) — ${outcomeLabel}`
+
+  const modifiers = result.modifiers.map(mod => {
+    const key = MORALE_MODIFIER_LABEL_KEYS[mod.source]
+    return key ? { ...mod, label: game.i18n.localize(key) } : mod
+  })
+
+  const flags = {
+    'dcc.RollType': 'MoraleCheck',
+    'dcc.isMoraleCheck': true,
+    'dcc.libResult': {
+      natural: result.roll,
+      total: result.total,
+      dc: result.dc,
+      passed: result.passed,
+      outcome: result.outcome,
+      trigger: result.trigger,
+      modifiers
+    }
+  }
+
+  const toMessageData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags
+  }
+
+  const breakdownHtml = buildModifierBreakdownHtml(
+    modifiers,
+    game.i18n.localize('DCC.ModifierBreakdown')
+  )
+  if (breakdownHtml) {
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}${breakdownHtml}`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+
+  return ChatMessage.create(messageData)
+}
+
+/**
  * Render a skill-check result as a Foundry ChatMessage.
  *
  * Preserves the legacy flag contract — `dcc.RollType: 'SkillCheck'`,

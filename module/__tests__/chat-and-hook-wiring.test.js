@@ -783,7 +783,7 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
     expect(CHAT_AND_HOOK_WIRING_HOOKS.getProseMirrorMenuDropDowns.handler).toBe(onGetProseMirrorMenuDropDowns)
   })
 
-  test('covers exactly the twenty-three documented hook names', () => {
+  test('covers exactly the twenty-five documented hook names', () => {
     expect(Object.keys(CHAT_AND_HOOK_WIRING_HOOKS).sort()).toEqual([
       'applyActiveEffect',
       'combatRound',
@@ -793,6 +793,8 @@ describe('CHAT_AND_HOOK_WIRING_HOOKS dispatch table', () => {
       'deleteCombat',
       'deleteCombatant',
       'getChatMessageContextOptions',
+      'getCombatContextOptions',
+      'getCombatTrackerContextOptions',
       'getCompendiumContextOptions',
       'getProseMirrorMenuDropDowns',
       'getUserContextOptions',
@@ -863,12 +865,13 @@ describe('registerChatAndHookWiring', () => {
     expect(globalThis.Hooks.once).toHaveBeenCalledWith('item-piles-ready', onItemPilesReady)
   })
 
-  test('registers exactly twenty-three Hooks.on listeners and one Hooks.once listener', () => {
+  test('registers exactly twenty-five Hooks.on listeners and one Hooks.once listener', () => {
     registerChatAndHookWiring()
 
-    // Twenty-two dispatch-table listeners (incl. the seven action-dice combat
-    // hooks) + the ability-score-log fallback logger
-    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(23)
+    // Twenty-four dispatch-table listeners (incl. the seven action-dice combat
+    // hooks and the two morale context menus) + the ability-score-log
+    // fallback logger
+    expect(globalThis.Hooks.on).toHaveBeenCalledTimes(25)
     expect(globalThis.Hooks.once).toHaveBeenCalledTimes(1)
   })
 })

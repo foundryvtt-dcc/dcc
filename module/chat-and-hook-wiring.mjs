@@ -25,6 +25,8 @@
  *   - `combatTurn` / `combatRound` — auto-reset action-die pips at the start of
  *     a combatant's turn (multiple-action-dice feature, gated)
  *   - `renderCombatTracker` — inject per-combatant action-die pips (gated)
+ *   - `getCombatTrackerContextOptions` / `getCombatContextOptions` — morale
+ *     check entries on the combatant and encounter menus (#972)
  *   - `item-piles-ready` — one-shot Item Piles module integration
  *   - `getProseMirrorMenuDropDowns` — sidebar-style menu in the rich-text editor
  *
@@ -50,6 +52,7 @@ import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathCloc
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 import { attachManualDamageAutoApply } from './auto-apply-damage.mjs'
 import { onRenderActiveEffectConfig } from './active-effect-key-autocomplete.mjs'
+import { onGetCombatContextOptions, onGetCombatTrackerContextOptions } from './morale.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -527,6 +530,8 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   combatTurn: { handler: onCombatTurnForActionDice, once: false },
   combatRound: { handler: onCombatRoundForActionDice, once: false },
   renderCombatTracker: { handler: onRenderCombatTrackerComposed, once: false },
+  getCombatTrackerContextOptions: { handler: onGetCombatTrackerContextOptions, once: false },
+  getCombatContextOptions: { handler: onGetCombatContextOptions, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }
 })

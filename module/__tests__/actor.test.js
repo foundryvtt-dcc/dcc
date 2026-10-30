@@ -283,6 +283,38 @@ test('roll saving throw returns roll', async () => {
   expect(roll.total).toBeDefined()
 })
 
+test('roll morale check: d20 + Will save vs DC 11 through the lib', async () => {
+  rollToMessageMock.mockClear()
+
+  // Mock roll is 10, Will save +2: 12 meets DC 11
+  const roll = await actor.rollMoraleCheck()
+  expect(roll.formula).toEqual('1d20+2')
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Morale Check (DC 11) \u2014 Stands firm',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'MoraleCheck',
+        'dcc.isMoraleCheck': true,
+        'dcc.libResult': expect.objectContaining({
+          total: 12,
+          dc: 11,
+          passed: true,
+          modifiers: [expect.objectContaining({ source: 'will', value: 2, label: 'Will save' })]
+        })
+      })
+    }),
+    { create: false }
+  )
+
+  rollToMessageMock.mockClear()
+  await actor.rollMoraleCheck({ dc: 15 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({ flavor: 'Morale Check (DC 15) \u2014 Flees' }),
+    { create: false }
+  )
+})
+
 test('roll initiative', async () => {
   // Default (no dialog) path flows through the adapter: the lib
   // builds the formula string and `new Roll(formula)` replaces

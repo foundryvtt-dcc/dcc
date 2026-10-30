@@ -135,6 +135,14 @@
                disabled
           {{/if}}
         >
+
+        {{!-- Morale --}}
+        <label for="morale-modifier" class="rollable morale-check" title="{{localize 'DCC.MoraleCheckHint'}}" data-action="rollMoraleCheck">{{localize "DCC.Morale"}}</label>
+        {{!-- Read-only: the morale modifier is the Will save. No name, so the form never submits it --}}
+        <input id="morale-modifier" class="morale-modifier" type="text" readonly tabindex="-1" size="3"
+               value="{{numberFormat system.saves.wil.value decimals=0 sign=true}}"
+               title="{{localize 'DCC.MoraleModifierHint'}}"
+        >
       </div>
     </div>
 
