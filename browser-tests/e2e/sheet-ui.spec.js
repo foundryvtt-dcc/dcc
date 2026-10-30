@@ -116,6 +116,16 @@ test.describe('DCC Sheet UI', () => {
     )
   })
 
+  test('morale from the NPC sheet posts a morale card (#972)', async ({ page }) => {
+    await page.evaluate(() => Actor.create({ name: 'SMOKE Morale', type: 'NPC', system: { saves: { wil: { value: 2 } } } }))
+    await openActorSheet(page, 'SMOKE Morale')
+    await expect(page.locator('.dcc.actor.sheet .morale-modifier')).toHaveValue('+2')
+    await clickRollAndExpectChat(page, '.dcc.actor.sheet [data-action="rollMoraleCheck"]', 'Morale check')
+    const lib = await page.evaluate(() => game.messages.contents.at(-1).flags.dcc.libResult)
+    expect(lib.total).toBe(lib.natural + 2)
+    expect(lib.dc).toBe(11)
+  })
+
   // ── Class-Specific Sheet Tabs ────────────────────────────────────────
 
   test.describe('Class-Specific Sheet Tabs', () => {
