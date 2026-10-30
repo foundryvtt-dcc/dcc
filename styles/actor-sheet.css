@@ -649,6 +649,19 @@
       label {
         font-size: 12px;
       }
+
+      /*
+       * Read-only morale modifier (#972): undo Foundry's read-only input
+       * styling so it matches the editable fields beside it. The text color
+       * restores the editable-input tokens Foundry swaps out for
+       * input[readonly] (light-dark follows the element's color-scheme).
+       */
+      .morale-modifier {
+        --input-text-color: light-dark(var(--color-dark-2), var(--color-light-3));
+        border-bottom-style: inset;
+        box-shadow: none;
+        cursor: default;
+      }
     }
 
     .name-and-level {

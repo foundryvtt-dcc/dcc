@@ -64,7 +64,8 @@ export class NPCData extends BaseActorData {
         showSpells: new BooleanField({ initial: false }),
         showSkills: new BooleanField({ initial: false }),
         showBackstab: new BooleanField({ initial: false }),
-        showSwimFlySpeed: new BooleanField({ initial: false })
+        showSwimFlySpeed: new BooleanField({ initial: false }),
+        moraleImmune: new BooleanField({ initial: false }) // Never checks morale: no half-HP prompt, skipped by group rolls (#972)
       })
     }
   }

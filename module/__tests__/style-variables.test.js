@@ -47,6 +47,8 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
  * needs a fallback or a DCC-owned replacement.
  */
 const CORE_PROVIDED = [
+  '--color-dark-2',
+  '--color-light-3',
   '--font-size-12',
   '--input-text-color'
 ]

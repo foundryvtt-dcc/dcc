@@ -662,6 +662,20 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Whisper the GM a "Roll morale" prompt when damage takes an NPC to half
+   * its hit points or below (#972). Offer tier: nothing rolls until the GM
+   * clicks.
+   */
+  game.settings.register('dcc', 'moraleHalfHpPrompt', {
+    name: 'DCC.SettingMoraleHalfHpPrompt',
+    hint: 'DCC.SettingMoraleHalfHpPromptHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: false
+  })
+
+  /**
    * Disable icon filter in dark theme
    */
   game.settings.register('dcc', 'disableDarkThemeIconFilter', {

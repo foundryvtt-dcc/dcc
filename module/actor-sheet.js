@@ -60,6 +60,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollHitDice: this.#rollHitDice,
       rollInitiative: this.#rollInitiative,
       rollLuckDie: this.#rollLuckDie,
+      rollMoraleCheck: this.#rollMoraleCheck,
       rollSavingThrow: this.#rollSavingThrow,
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
@@ -828,6 +829,19 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const options = DCCActorSheet.fillRollOptions(event)
     const save = target.parentElement.dataset.save
     await this.options.document.rollSavingThrow(save, options)
+  }
+
+  /**
+   * Handle rolling a morale check (NPCs)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #rollMoraleCheck (event, target) {
+    event.preventDefault() // Clicking the label would otherwise focus the read-only modifier input
+    const options = DCCActorSheet.fillRollOptions(event)
+    await this.options.document.rollMoraleCheck(options)
   }
 
   /**

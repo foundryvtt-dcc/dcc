@@ -1,4 +1,4 @@
-/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll, Hooks, CONFIG */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, uiNotificationsInfoMock, game, ChatMessage, Roll, Hooks, CONFIG */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -281,6 +281,62 @@ test('roll saving throw returns roll', async () => {
   const roll = await actor.rollSavingThrow('ref')
   expect(roll).toBeDefined()
   expect(roll.total).toBeDefined()
+})
+
+test('roll morale check: d20 + Will save vs DC 11 through the lib', async () => {
+  rollToMessageMock.mockClear()
+
+  // Mock roll is 10, Will save +2: 12 meets DC 11
+  const roll = await actor.rollMoraleCheck()
+  expect(roll.formula).toEqual('1d20+2')
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Morale Check (DC 11) \u2014 Stands firm',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'MoraleCheck',
+        'dcc.isMoraleCheck': true,
+        'dcc.libResult': expect.objectContaining({
+          total: 12,
+          dc: 11,
+          passed: true,
+          modifiers: [expect.objectContaining({ source: 'will', value: 2, label: 'Will save' })]
+        })
+      })
+    }),
+    { create: false }
+  )
+
+  rollToMessageMock.mockClear()
+  await actor.rollMoraleCheck({ dc: 15 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({ flavor: 'Morale Check (DC 15) \u2014 Flees' }),
+    { create: false }
+  )
+})
+
+test('roll morale check dialog: situational modifier is capped, with a notice, and the roll matches the lib', async () => {
+  rollToMessageMock.mockClear()
+  uiNotificationsInfoMock.mockClear()
+  // The judge enters +8 in all against Will +2: situational +6, capped at +4
+  dccRollCreateRollMock.mockReturnValueOnce(Roll.fromTerms([
+    { class: 'Die', formula: '1d20' },
+    { class: 'OperatorTerm', operator: '+' },
+    { class: 'NumericTerm', number: 8 }
+  ]))
+
+  const roll = await actor.rollMoraleCheck({ showModifierDialog: true, messageMode: 'gm' })
+  expect(roll.formula).toEqual('1d20+6')
+  expect(uiNotificationsInfoMock).toHaveBeenCalledOnce()
+  const [messageData, messageOptions] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].total).toBe(16)
+  expect(messageOptions).toEqual({ create: false, messageMode: 'gm' })
+
+  // A cancelled dialog posts nothing
+  rollToMessageMock.mockClear()
+  dccRollCreateRollMock.mockReturnValueOnce(null)
+  expect(await actor.rollMoraleCheck({ showModifierDialog: true })).toBeNull()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
 })
 
 test('roll initiative', async () => {

@@ -2,13 +2,15 @@
 
 import { ensurePlus } from '../utilities.js'
 import {
+  calculateMoraleModifier,
+  makeMoraleCheck,
   rollCheck as libRollCheck,
   rollLuckCheck as libRollLuckCheck,
   rollSavingThrow as libRollSavingThrow
 } from '../vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from '../adapter/character-accessors.mjs'
 import { normalizeLibDie } from '../adapter/attack-input.mjs'
-import { renderAbilityCheck, renderAbilityCheckRollUnder, renderSavingThrow } from '../adapter/chat-renderer.mjs'
+import { renderAbilityCheck, renderAbilityCheckRollUnder, renderMoraleCheck, renderSavingThrow } from '../adapter/chat-renderer.mjs'
 import { dialogModifierLines, promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { buildLuckBurnTerm } from '../luck-burn.mjs'
 import { logDispatch, withRollErrorBoundary, withRollErrorBoundarySync } from '../adapter/debug.mjs'
@@ -905,5 +907,70 @@ export const RollsCheckMixin = (Base) => class extends Base {
     })
 
     return foundryRoll
+  }
+
+  /**
+   * Roll a morale check (#972): 1d20 + Will save against DC 11, through
+   * the lib's `makeMoraleCheck`. The judge rolls it from the NPC sheet,
+   * the combat tracker, or the half-HP prompt card.
+   *
+   * With `showModifierDialog`, whatever the judge adds beyond the Will
+   * save becomes the lib's situational modifier, which the lib clamps to
+   * its allowed range. The Foundry roll uses the same clamped total, so
+   * the card and the lib result agree, and a notification says when the
+   * clamp changed what the judge entered.
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.showModifierDialog] - Show the roll-modifier dialog
+   * @param {number} [options.dc] - Override the DC (e.g. a magical fear effect)
+   * @param {string} [options.trigger] - Lib morale trigger (default `other`)
+   * @param {string} [options.messageMode] - Chat message mode (e.g. `gm` for a hidden combatant)
+   * @returns {Promise<Roll|null|undefined>} The evaluated Roll, or null if the dialog was cancelled
+   */
+  async rollMoraleCheck (options = {}) {
+    const label = game.i18n.localize('DCC.MoraleCheck')
+    return withRollErrorBoundary('rollMoraleCheck', label, async () => {
+      logDispatch('rollMoraleCheck', 'adapter', {})
+      const willSave = parseInt(this.system.saves?.wil?.value) || 0
+      let die = '1d20'
+      let situationalModifier = 0
+
+      if (options.showModifierDialog) {
+        const terms = [
+          { type: 'Die', formula: '1d20' },
+          { type: 'Modifier', label: game.i18n.localize('DCC.MoraleWillSave'), formula: ensurePlus(willSave) },
+          { type: 'Modifier', label: game.i18n.localize('DCC.MoraleSituational'), formula: '+0' }
+        ]
+        const prompt = await promptRollModifierDialog(terms, {
+          rollData: this.getRollData(),
+          title: options.title || label,
+          rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+        })
+        if (prompt === null) return null
+        die = prompt.actionDie || die
+        situationalModifier = prompt.modifierTotal - willSave
+      }
+
+      const input = { entityType: 'monster', willSave, trigger: options.trigger || 'other', situationalModifier }
+      const parsedDc = parseInt(options.dc)
+      if (Number.isFinite(parsedDc)) input.dc = parsedDc
+
+      const moraleModifier = calculateMoraleModifier(willSave, situationalModifier)
+      if (moraleModifier !== willSave + situationalModifier) {
+        ui.notifications.info(game.i18n.format('DCC.MoraleSituationalCapped', {
+          entered: ensurePlus(situationalModifier),
+          applied: ensurePlus(moraleModifier - willSave)
+        }))
+      }
+
+      const foundryRoll = new Roll(`${die}${ensurePlus(moraleModifier)}`)
+      await foundryRoll.evaluate()
+      const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+      const result = makeMoraleCheck(input, () => natural)
+
+      await renderMoraleCheck({ actor: this, result, foundryRoll, messageMode: options.messageMode })
+      return foundryRoll
+    })
   }
 }

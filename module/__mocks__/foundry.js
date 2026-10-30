@@ -1462,7 +1462,12 @@ class Localization {
       'DCC.AbilityLogRecoveryLuckRegen': 'Regenerates {level} point(s) per night, up to natural maximum',
       'DCC.AbilityLogRecoveryRest': "Heals 1 point per night's rest, 2 per day of bed rest",
       'DCC.AbilityLogAdjustHP': 'Also adjust hit points by {hpChange} (Stamina modifier {oldMod} → {newMod}, level {level})',
-      'DCC.CheckPenaltyNote': 'With check penalty ({penalty}): {total}'
+      'DCC.CheckPenaltyNote': 'With check penalty ({penalty}): {total}',
+      'DCC.ModifierBreakdown': 'Modifiers',
+      'DCC.MoraleCheck': 'Morale Check',
+      'DCC.MoraleFlees': 'Flees',
+      'DCC.MoraleStandsFirm': 'Stands firm',
+      'DCC.MoraleWillSave': 'Will save'
     }
   }
 

@@ -45,6 +45,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Custom Critical Hit Table](Custom-Critical-Hit-Table.md)
 * [Custom Fumble Table](Custom-Fumble-Table.md)
 * [NPC and Monster Fumbles](NPC-and-Monster-Fumbles.md)
+* [Morale Checks](Morale-Checks.md)
 
 ## Usage
 * [System Settings](System-Settings.md)

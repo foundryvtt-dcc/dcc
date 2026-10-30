@@ -16,7 +16,8 @@
  *   - `preCreateActor` / `preCreateItem` — default-image assignment + Player
  *     prototype-token actor-link
  *   - `applyActiveEffect` — DiceChain bump for string-valued dice expressions
- *   - `preUpdateActor` — sync prototype-token texture when the actor image changes
+ *   - `preUpdateActor` — sync prototype-token texture when the actor image
+ *     changes; record NPC pre-update HP for the half-HP morale prompt (#972)
  *   - `updateCombat` — Active Effect duration expiry on round advance, composed
  *     with the sheet-chip refresh on round/active changes (issue #834)
  *   - `deleteCombat` / `updateCombatant` / `createCombatant` / `deleteCombatant`
@@ -25,6 +26,8 @@
  *   - `combatTurn` / `combatRound` — auto-reset action-die pips at the start of
  *     a combatant's turn (multiple-action-dice feature, gated)
  *   - `renderCombatTracker` — inject per-combatant action-die pips (gated)
+ *   - `getCombatTrackerContextOptions` / `getCombatContextOptions` — morale
+ *     check entries on the combatant and encounter menus (#972)
  *   - `item-piles-ready` — one-shot Item Piles module integration
  *   - `getProseMirrorMenuDropDowns` — sidebar-style menu in the rich-text editor
  *
@@ -50,6 +53,13 @@ import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathCloc
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 import { attachManualDamageAutoApply } from './auto-apply-damage.mjs'
 import { onRenderActiveEffectConfig } from './active-effect-key-autocomplete.mjs'
+import {
+  onGetCombatContextOptions,
+  onGetCombatTrackerContextOptions,
+  onPreUpdateActorForMorale,
+  onRenderChatMessageHTMLForMorale,
+  onUpdateActorForMorale
+} from './morale.mjs'
 
 /**
  * Create a macro when a rollable is dropped on the hotbar.
@@ -357,12 +367,13 @@ export async function onUpdateCombatComposed (combat, changed, options, userId) 
 }
 
 /**
- * `updateActor` runs two independent death concerns: the NPC auto-dead
- * status (auto-dead-status.mjs) and the Player death clock
- * (death-clock.mjs, issue #843).
+ * `updateActor` runs three independent HP concerns: the NPC auto-dead
+ * status (auto-dead-status.mjs), the Player death clock (death-clock.mjs,
+ * issue #843) and the NPC half-HP morale prompt (morale.mjs, issue #972).
  */
 export async function onUpdateActorComposed (actor, changes, options, userId) {
   await onUpdateActorForDeath(actor, changes, options, userId)
+  await onUpdateActorForMorale(actor, changes, options)
   return onUpdateActorForDeathClock(actor, changes)
 }
 
@@ -377,11 +388,12 @@ export function onRenderCombatTrackerComposed (app, html) {
 
 /**
  * `renderChatMessageHTML` runs the roll-card pipeline (which bails early on
- * non-roll messages) and the death-clock Roll the Body button wiring (which
- * lives on plain announcement cards).
+ * non-roll messages) and the button wiring on plain announcement cards: the
+ * death-clock Roll the Body buttons and the half-HP Roll morale button.
  */
 export async function onRenderChatMessageHTMLComposed (message, html, data) {
   onRenderChatMessageHTMLForDeathClock(message, html)
+  onRenderChatMessageHTMLForMorale(message, html)
   return onRenderChatMessageHTML(message, html, data)
 }
 
@@ -527,6 +539,8 @@ export const CHAT_AND_HOOK_WIRING_HOOKS = Object.freeze({
   combatTurn: { handler: onCombatTurnForActionDice, once: false },
   combatRound: { handler: onCombatRoundForActionDice, once: false },
   renderCombatTracker: { handler: onRenderCombatTrackerComposed, once: false },
+  getCombatTrackerContextOptions: { handler: onGetCombatTrackerContextOptions, once: false },
+  getCombatContextOptions: { handler: onGetCombatContextOptions, once: false },
   'item-piles-ready': { handler: onItemPilesReady, once: true },
   getProseMirrorMenuDropDowns: { handler: onGetProseMirrorMenuDropDowns, once: false }
 })
@@ -543,4 +557,7 @@ export function registerChatAndHookWiring () {
   // direct ability value edits (macros, modules, GM bar edits) as 'manual'
   // entries unless the update carries the dcc.abilityLogged flag.
   Hooks.on('preUpdateActor', abilityLogPreUpdateActor)
+  // Same reason: records an NPC's pre-update HP for the half-HP morale
+  // prompt (morale.mjs, #972).
+  Hooks.on('preUpdateActor', onPreUpdateActorForMorale)
 }
