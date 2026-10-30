@@ -214,6 +214,7 @@ class DCCEnhancedCombatSettings extends DCCSettingsMenu {
         'monsterFumbles',
         'autoApplyDamage',
         'autoApplyDeadStatus',
+        'moraleHalfHpPrompt',
         'enableDeathClock'
       ]
     }

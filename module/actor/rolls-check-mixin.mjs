@@ -911,17 +911,20 @@ export const RollsCheckMixin = (Base) => class extends Base {
 
   /**
    * Roll a morale check (#972): 1d20 + Will save against DC 11, through
-   * the lib's `makeMoraleCheck`. The judge rolls it by hand (NPC sheet,
-   * combat tracker), so the trigger is always `other`.
+   * the lib's `makeMoraleCheck`. The judge rolls it from the NPC sheet,
+   * the combat tracker, or the half-HP prompt card.
    *
    * With `showModifierDialog`, whatever the judge adds beyond the Will
    * save becomes the lib's situational modifier, which the lib clamps to
    * its allowed range. The Foundry roll uses the same clamped total, so
-   * the card and the lib result agree.
+   * the card and the lib result agree, and a notification says when the
+   * clamp changed what the judge entered.
    *
    * @param {Object} [options]
    * @param {boolean} [options.showModifierDialog] - Show the roll-modifier dialog
    * @param {number} [options.dc] - Override the DC (e.g. a magical fear effect)
+   * @param {string} [options.trigger] - Lib morale trigger (default `other`)
+   * @param {string} [options.messageMode] - Chat message mode (e.g. `gm` for a hidden combatant)
    * @returns {Promise<Roll|null|undefined>} The evaluated Roll, or null if the dialog was cancelled
    */
   async rollMoraleCheck (options = {}) {
@@ -948,17 +951,25 @@ export const RollsCheckMixin = (Base) => class extends Base {
         situationalModifier = prompt.modifierTotal - willSave
       }
 
-      const input = { entityType: 'monster', willSave, trigger: 'other', situationalModifier }
+      const input = { entityType: 'monster', willSave, trigger: options.trigger || 'other', situationalModifier }
       const parsedDc = parseInt(options.dc)
       if (Number.isFinite(parsedDc)) input.dc = parsedDc
 
-      const foundryRoll = new Roll(`${die}${ensurePlus(calculateMoraleModifier(willSave, situationalModifier))}`)
+      const moraleModifier = calculateMoraleModifier(willSave, situationalModifier)
+      if (moraleModifier !== willSave + situationalModifier) {
+        ui.notifications.info(game.i18n.format('DCC.MoraleSituationalCapped', {
+          entered: ensurePlus(situationalModifier),
+          applied: ensurePlus(moraleModifier - willSave)
+        }))
+      }
+
+      const foundryRoll = new Roll(`${die}${ensurePlus(moraleModifier)}`)
       await foundryRoll.evaluate()
       const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
 
       const result = makeMoraleCheck(input, () => natural)
 
-      await renderMoraleCheck({ actor: this, result, foundryRoll })
+      await renderMoraleCheck({ actor: this, result, foundryRoll, messageMode: options.messageMode })
       return foundryRoll
     })
   }

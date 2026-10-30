@@ -517,9 +517,10 @@ const MORALE_MODIFIER_LABEL_KEYS = {
  * @param {Object} params.actor - The DCCActor that rolled.
  * @param {Object} params.result - The lib's MoraleCheckResult.
  * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @param {string} [params.messageMode] - Chat message mode; defaults to the core setting.
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
-export async function renderMoraleCheck ({ actor, result, foundryRoll }) {
+export async function renderMoraleCheck ({ actor, result, foundryRoll, messageMode }) {
   const outcomeLabel = game.i18n.localize(result.passed ? 'DCC.MoraleStandsFirm' : 'DCC.MoraleFlees')
   const flavor = `${game.i18n.localize('DCC.MoraleCheck')} (${game.i18n.format('DCC.SaveDC', { dc: result.dc })}) — ${outcomeLabel}`
 
@@ -557,7 +558,7 @@ export async function renderMoraleCheck ({ actor, result, foundryRoll }) {
     toMessageData.content = `${rollHTML}${breakdownHtml}`
   }
 
-  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+  const messageData = await foundryRoll.toMessage(toMessageData, messageMode ? { create: false, messageMode } : { create: false })
 
   return ChatMessage.create(messageData)
 }

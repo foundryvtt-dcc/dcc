@@ -6,6 +6,9 @@ const { expect, createSessionTest } = require('./fixtures')
  * Foundry. The session is the active GM, so the updateActor reaction fires
  * here: reducing an NPC's HP to 0 (with autoApplyDeadStatus on) applies the
  * dead status; a PC reduced to 0 does not (PCs are dying, not dead).
+ *
+ * The same HP-change path drives the half-HP morale prompt (module/morale.mjs,
+ * #972): the pre-update HP rides the update options into `updateActor`.
  */
 const test = createSessionTest()
 
@@ -48,5 +51,40 @@ test.describe('Auto-apply dead status', () => {
 
     expect(result.npcDead).toBe(true) // NPC at 0 HP → dead
     expect(result.pcDead).toBe(false) // PC at 0 HP → not auto-dead
+  })
+
+  test('an NPC damaged to half HP whispers the GM a Roll Morale prompt that rolls morale (#972)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prev = game.settings.get('dcc', 'moraleHalfHpPrompt')
+      await game.settings.set('dcc', 'moraleHalfHpPrompt', true)
+      ui.sidebar.changeTab('chat', 'primary')
+      const npc = await Actor.create({ name: 'DCC Morale Probe NPC', type: 'NPC', system: { attributes: { hp: { value: 10, max: 10 } } } })
+      const poll = async (find) => {
+        const deadline = Date.now() + 5000
+        let found
+        while (Date.now() < deadline && !(found = find())) await new Promise(resolve => setTimeout(resolve, 50))
+        return found
+      }
+
+      await npc.update({ 'system.attributes.hp.value': 5 })
+      const prompt = await poll(() => game.messages.contents.find(m => m.flags?.dcc?.moraleHalfHpPrompt && m.speaker?.actor === npc.id))
+      const button = prompt && await poll(() => document.querySelector(`#chat [data-message-id="${prompt.id}"] button[data-action="rollMoraleHalfHp"]`))
+      button?.click()
+      const card = await poll(() => game.messages.contents.find(m => m.flags?.dcc?.isMoraleCheck && m.speaker?.actor === npc.id))
+
+      const out = {
+        whispered: (prompt?.whisper?.length ?? 0) > 0,
+        trigger: card?.flags.dcc.libResult.trigger ?? null,
+        rollMatchesLib: card ? card.rolls[0].total === card.flags.dcc.libResult.total : null
+      }
+      await ChatMessage.deleteDocuments([prompt?.id, card?.id].filter(Boolean))
+      await npc.delete()
+      await game.settings.set('dcc', 'moraleHalfHpPrompt', prev)
+      return out
+    })
+
+    expect(result.whispered).toBe(true)
+    expect(result.trigger).toBe('half-hp-lost')
+    expect(result.rollMatchesLib).toBe(true)
   })
 })

@@ -200,7 +200,7 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
    * Core's light chip/button values need card tokens for enhanced-card and
    * death-clock actions only; leave unrelated chat controls' paint unchanged.
    */
-  .message-content :is(.dcc-enhanced-card .enhanced-card-button, .dcc-death-clock-actions button) {
+  .message-content :is(.dcc-enhanced-card .enhanced-card-button, .dcc-death-clock-actions button, .dcc-morale-actions button) {
     --button-background-color: rgb(0 0 0 / 10%);
     --button-border-color: var(--chat-border-muted-color);
     --button-text-color: var(--chat-primary-color);
@@ -668,10 +668,12 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
 
 
 /*
- * Death-clock chat card actions (Roll the Body / Roll Ability Loss buttons,
- * issue #843) — injected by module/death-clock.mjs postDeathClockCard.
+ * Chat card action rows: death-clock Roll the Body / Roll Ability Loss
+ * (issue #843, module/death-clock.mjs) and the half-HP Roll morale button
+ * (issue #972, module/morale.mjs).
  */
-.dcc-death-clock-actions {
+.dcc-death-clock-actions,
+.dcc-morale-actions {
   display: flex;
   justify-content: center;
   margin-top: 10px;

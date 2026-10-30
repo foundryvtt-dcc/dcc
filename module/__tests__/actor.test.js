@@ -1,4 +1,4 @@
-/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage, Roll, Hooks, CONFIG */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, uiNotificationsInfoMock, game, ChatMessage, Roll, Hooks, CONFIG */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -313,6 +313,30 @@ test('roll morale check: d20 + Will save vs DC 11 through the lib', async () => 
     expect.objectContaining({ flavor: 'Morale Check (DC 15) \u2014 Flees' }),
     { create: false }
   )
+})
+
+test('roll morale check dialog: situational modifier is capped, with a notice, and the roll matches the lib', async () => {
+  rollToMessageMock.mockClear()
+  uiNotificationsInfoMock.mockClear()
+  // The judge enters +8 in all against Will +2: situational +6, capped at +4
+  dccRollCreateRollMock.mockReturnValueOnce(Roll.fromTerms([
+    { class: 'Die', formula: '1d20' },
+    { class: 'OperatorTerm', operator: '+' },
+    { class: 'NumericTerm', number: 8 }
+  ]))
+
+  const roll = await actor.rollMoraleCheck({ showModifierDialog: true, messageMode: 'gm' })
+  expect(roll.formula).toEqual('1d20+6')
+  expect(uiNotificationsInfoMock).toHaveBeenCalledOnce()
+  const [messageData, messageOptions] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.libResult'].total).toBe(16)
+  expect(messageOptions).toEqual({ create: false, messageMode: 'gm' })
+
+  // A cancelled dialog posts nothing
+  rollToMessageMock.mockClear()
+  dccRollCreateRollMock.mockReturnValueOnce(null)
+  expect(await actor.rollMoraleCheck({ showModifierDialog: true })).toBeNull()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
 })
 
 test('roll initiative', async () => {
