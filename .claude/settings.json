@@ -2,6 +2,14 @@
   "enabledPlugins": {
     "foundryvtt-dev@cyface": true
   },
+  "extraKnownMarketplaces": {
+    "cyface": {
+      "source": {
+        "source": "github",
+        "repo": "cyface/cyface-claude-plugin-marketplace"
+      }
+    }
+  },
   "hooks": {
     "SessionStart": [
       {
