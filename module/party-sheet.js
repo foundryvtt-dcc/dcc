@@ -1,5 +1,6 @@
 /* global game, foundry, ui, canvas */
 
+import { abilityScoreLogEnabled, recoverLuckOvernight } from './ability-score-log.js'
 import DCCActorSheet from './actor-sheet.js'
 import { handlePartyItemDrop } from './actor-sheet/drop.mjs'
 import HitPointsConfig from './hit-points-config.js'
@@ -37,6 +38,7 @@ class DCCPartySheet extends DCCActorSheet {
       rollAttack: this.#rollAttack,
       rollPartyInitiative: this.#rollPartyInitiative,
       togglePartyTokens: this.#togglePartyTokens,
+      nightsRest: this.#nightsRest,
       adjustHitPoints: this.#adjustHitPoints
     },
     dragDrop: [{
@@ -134,6 +136,36 @@ class DCCPartySheet extends DCCActorSheet {
       levelId: canvas.level?.id,
       selection: [...(canvas.tokens?.controlled ?? [])]
     })
+  }
+
+  static async #nightsRest () {
+    return this.nightsRest()
+  }
+
+  /**
+   * GM "Night's Rest" for the whole party (#1064): every member whose class
+   * recovers Luck regains a night's worth against their logged Luck spends.
+   * Members whose class doesn't recover Luck are skipped. Without the Ability
+   * Score Log there's no record of what was burned, so it explains that and
+   * changes nothing.
+   *
+   * @return {Promise<Array<Object>>} One recovery result per member that rested
+   */
+  async nightsRest () {
+    if (!game.user.isGM) return []
+    if (!abilityScoreLogEnabled()) {
+      ui.notifications.warn(game.i18n.localize('DCC.PartyNightsRestLogDisabled'))
+      return []
+    }
+    // A double-click would interleave two passes over the party and split
+    // the results across two notifications; ignore the second click
+    if (this._nightsRestRunning) return []
+    this._nightsRestRunning = true
+    try {
+      return await restPartyMembers(this.members.map(member => game.actors.get(member.id)).filter(actor => actor))
+    } finally {
+      this._nightsRestRunning = false
+    }
   }
 
   /**
@@ -719,6 +751,43 @@ class DCCPartySheet extends DCCActorSheet {
 
     return result
   }
+}
+
+/**
+ * One Night's Rest pass over the given party members, reporting the outcome
+ * to the GM (#1064)
+ * @param {Array<Object>} memberActors   The party's member actors
+ * @return {Promise<Array<Object>>}      One result per member that rested
+ */
+async function restPartyMembers (memberActors) {
+  const results = []
+  const failed = []
+  for (const actor of memberActors) {
+    // One member's failed update must not silently skip the rest of the party
+    try {
+      const result = await recoverLuckOvernight(actor)
+      if (result.status !== 'notEligible') results.push({ actor, ...result })
+    } catch (error) {
+      console.error(`[DCC] Night's Rest failed for ${actor.name}`, error)
+      failed.push(actor.name)
+    }
+  }
+  const recovered = results.filter(result => result.status === 'recovered')
+  const list = game.i18n.getListFormatter({ type: 'conjunction' })
+  if (recovered.length) {
+    ui.notifications.info(game.i18n.format('DCC.PartyNightsRestDone', {
+      names: list.format(recovered.map(result => game.i18n.format('DCC.PartyNightsRestMember', {
+        name: result.actor.name,
+        points: result.restored
+      })))
+    }))
+  } else if (!failed.length) {
+    ui.notifications.info(game.i18n.localize('DCC.PartyNightsRestNone'))
+  }
+  if (failed.length) {
+    ui.notifications.error(game.i18n.format('DCC.PartyNightsRestFailed', { names: list.format(failed) }))
+  }
+  return results
 }
 
 export default DCCPartySheet

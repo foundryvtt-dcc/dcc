@@ -1,4 +1,15 @@
 <section class="ability-score-log-content">
+  {{#if nightsRest}}
+  <div class="ability-log-toolbar">
+    {{!-- Tooltip on the wrapper: a disabled button gets no pointer events --}}
+    <span class="nights-rest-wrapper" data-tooltip="{{nightsRest.hint}}">
+      <button type="button" class="nights-rest-button" data-action="nightsRest" aria-label="{{localize 'DCC.AbilityLogNightsRest'}}"
+              {{#if nightsRest.disabled}}disabled{{/if}}>
+        <i class="fas fa-moon" aria-hidden="true"></i> {{localize "DCC.AbilityLogNightsRest"}}
+      </button>
+    </span>
+  </div>
+  {{/if}}
   {{#if entries.length}}
   <table class="ability-log-table">
     <thead>

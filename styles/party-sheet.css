@@ -30,7 +30,8 @@
     min-width: 0;
   }
 
-  .party-token-action {
+  .party-token-action,
+  .party-nights-rest {
     flex: 0 1 auto;
     width: auto;
     height: auto;

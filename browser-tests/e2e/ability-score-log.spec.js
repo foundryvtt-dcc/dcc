@@ -361,6 +361,18 @@ test.describe('DCC Ability Score Log E2E Tests', () => {
     })
     expect(bonus).toBeGreaterThanOrEqual(1)
     expect(bonus).toBeLessThanOrEqual(3)
+
+    // A night's rest from the log viewer recovers the logged spend (#1064)
+    await page.evaluate(async () => {
+      await game.actors.getName('ASL Luck Thief').sheet.render(true)
+    })
+    await page.waitForSelector('.dcc.actor.sheet .ability-log-button', { timeout: 10000 })
+    await page.evaluate(() => document.querySelector('.dcc.actor.sheet .ability-log-button').click())
+    const rest = page.locator('.dcc.ability-score-log [data-action="nightsRest"]')
+    await expect(rest).toBeEnabled({ timeout: 10000 })
+    await page.evaluate(() => document.querySelector('.dcc.ability-score-log [data-action="nightsRest"]').click())
+    await page.waitForFunction(() => game.actors.getName('ASL Luck Thief')?.system.abilities.lck.value === 10, null, { timeout: 10000 })
+    await expect(rest).toBeDisabled()
   })
 
   test('unchecking the spellburn HP box burns Stamina without touching hit points (#921)', async ({ page }) => {

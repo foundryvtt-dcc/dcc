@@ -24,7 +24,8 @@
  * - `detectSecretDoorsBonus` (string): bonus written to the Detect Secret
  *   Doors skill, e.g. `'+4'`.
  * - `luckRecovers` (boolean): spent Luck recovers rather than being lost
- *   for good (ability score log recovery class).
+ *   for good (ability score log recovery class); Night's Rest recovers it
+ *   at one point per level (#1064).
  * - `disapprovalDie` (string): the die rolled per point of the natural roll
  *   on a disapproval roll, e.g. `'d10'`. Default `'d4'` (#1001).
  * - `disapprovalIncreasesOnFailure` (boolean): set `false` for a class whose

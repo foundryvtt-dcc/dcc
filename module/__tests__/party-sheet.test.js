@@ -400,3 +400,61 @@ describe('no effects tab (#1022)', () => {
     expect(warn).toHaveBeenCalledWith('DCC.PartyNoEffectsHint')
   })
 })
+
+describe("night's rest (#1064)", () => {
+  test('GM-only button; warns with the log off, otherwise rests only Luck-recovering members', async () => {
+    const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
+    expect(template.match(/{{#if canManagePartyTokens}}([\s\S]*?){{\/if}}/)?.[1]).toContain('data-action="nightsRest"')
+
+    const member = (id, sheetClass) => ({
+      id,
+      name: id,
+      system: {
+        abilities: { lck: { value: 8, max: 11 } },
+        details: { level: { value: 3 }, sheetClass },
+        abilityLog: [{ id: 'spend', timestamp: 1, ability: 'lck', change: -3, type: 'luckSpend', healedAmount: 0 }]
+      },
+      update: vi.fn()
+    })
+    const broken = member('broken', 'Thief')
+    broken.update = vi.fn(async () => { throw new Error('denied') })
+    const actors = [broken, member('halfling', 'Halfling'), member('warrior', 'Warrior')]
+    const saved = { actors: globalThis.game.actors, user: globalThis.game.user, i18n: globalThis.game.i18n, ui: globalThis.ui }
+    globalThis.game.actors = { get: vi.fn(id => actors.find(a => a.id === id)) }
+    globalThis.game.user = { id: 'gm', isGM: true }
+    globalThis.game.i18n = {
+      localize: key => key,
+      format: vi.fn((key, data) => key === 'DCC.PartyNightsRestMember' ? `${data.name} +${data.points}` : key),
+      getListFormatter: () => new Intl.ListFormat('en', { type: 'conjunction' })
+    }
+    globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }
+    const ctx = { members: actors.map(a => ({ id: a.id })) }
+    const original = globalThis.gameSettingsGetMock.getMockImplementation()
+    try {
+      globalThis.gameSettingsGetMock.mockImplementation((module, key) => key === 'enableAbilityScoreLog' ? false : original?.(module, key))
+      expect(await proto.nightsRest.call(ctx)).toEqual([])
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNightsRestLogDisabled')
+
+      globalThis.gameSettingsGetMock.mockImplementation((module, key) => key === 'enableAbilityScoreLog' ? true : original?.(module, key))
+      // A failing member is reported and doesn't stop the rest of the party
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const results = await proto.nightsRest.call(ctx)
+      consoleError.mockRestore()
+      expect(results.map(r => [r.actor.id, r.restored])).toEqual([['halfling', 3]])
+      expect(globalThis.ui.notifications.error).toHaveBeenCalledWith('DCC.PartyNightsRestFailed')
+      expect(actors[2].update).not.toHaveBeenCalled()
+      // Names and the list separator are both localized
+      expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.PartyNightsRestDone', { names: 'halfling +3' })
+      expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.PartyNightsRestFailed', { names: 'broken' })
+
+      // A second click while the first pass is running is ignored
+      const [, second] = await Promise.all([proto.nightsRest.call(ctx), proto.nightsRest.call(ctx)])
+      expect(second).toEqual([])
+      expect(ctx._nightsRestRunning).toBe(false)
+    } finally {
+      globalThis.gameSettingsGetMock.mockImplementation(original)
+      Object.assign(globalThis.game, { actors: saved.actors, user: saved.user, i18n: saved.i18n })
+      globalThis.ui = saved.ui
+    }
+  })
+})

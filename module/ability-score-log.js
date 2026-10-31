@@ -1,7 +1,7 @@
-/* global ChatMessage, CONFIG, foundry, game, Hooks */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, ui */
 
 import { getClassTraits } from './extension-api.mjs'
-import { calculateMinimumHP } from './vendor/dcc-core-lib/index.js'
+import { calculateMinimumHP, nightlyLuckRecovery } from './vendor/dcc-core-lib/index.js'
 
 /**
  * Ability Score Change Log
@@ -57,6 +57,18 @@ export function getRecoveryClass (type, actor) {
 }
 
 /**
+ * The level a Luck-recovering class regains Luck at
+ * A class actor whose level was never filled in reads as level 0 (the schema
+ * default), but every class starts at level 1, so treat it as 1. The log's
+ * recovery text and the Night's Rest button share this so they agree.
+ * @param {Object} actor    The actor
+ * @returns {number}        Class level, at least 1
+ */
+function luckRecoveryLevel (actor) {
+  return Math.max(1, parseInt(actor.system.details?.level?.value) || 0)
+}
+
+/**
  * Localized recovery expectation text for a log entry
  * @param {Object} entry    The log entry (or {type, change} subset)
  * @param {Object} actor    The actor the entry belongs to
@@ -68,9 +80,7 @@ export function getRecoveryText (entry, actor) {
     case 'rest':
       return game.i18n.localize('DCC.AbilityLogRecoveryRest')
     case 'luckRegen':
-      return game.i18n.format('DCC.AbilityLogRecoveryLuckRegen', {
-        level: Math.max(1, parseInt(actor.system.details?.level?.value) || 0)
-      })
+      return game.i18n.format('DCC.AbilityLogRecoveryLuckRegen', { level: luckRecoveryLevel(actor) })
     case 'permanent':
       if (entry.type === 'luckSpend') {
         return game.i18n.localize('DCC.AbilityLogRecoveryPermanentLuck')
@@ -536,6 +546,147 @@ export async function healAbilityLogEntry (actor, entryId, { healAll = false } =
 }
 
 /**
+ * Does this actor's class recover spent Luck overnight?
+ * Read from the `luckRecovers` class trait, so a sibling-module class can
+ * opt in the same way thieves and halflings do.
+ * @param {Object} actor    The actor to check
+ * @returns {boolean}
+ */
+export function recoversLuck (actor) {
+  return getRecoveryClass('luckSpend', actor) === 'luckRegen'
+}
+
+/**
+ * The Luck spends a night's rest can still recover, oldest first
+ * @param {Object} actor    The actor to check
+ * @returns {Array<Object>} Healable `luckSpend` log entries
+ */
+function unrecoveredLuckSpends (actor) {
+  return (actor.system.abilityLog ?? [])
+    .filter(entry => entry.type === 'luckSpend' && entry.ability === 'lck' && isHealable(entry, actor))
+    .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0))
+}
+
+/**
+ * How much spent Luck the actor's log says is still owed back
+ * @param {Object} actor    The actor to check
+ * @returns {number}        Points of logged Luck spends not yet recovered
+ */
+export function unrecoveredLuck (actor) {
+  return unrecoveredLuckSpends(actor)
+    .reduce((sum, entry) => sum + Math.abs(entry.change) - (entry.healedAmount ?? 0), 0)
+}
+
+/**
+ * Actors with a Night's Rest in flight
+ * A fast double-click reads the actor twice before the first update lands;
+ * the second call would write the same values but post a second chat card.
+ */
+const restingActors = new Set()
+
+/**
+ * Night's Rest button state for the log viewer (#1064)
+ * Disabled with an explaining tooltip when no logged spends are left, or
+ * when Luck is already at its natural maximum.
+ * @param {Object} actor    The actor (must recover Luck)
+ * @returns {{disabled: boolean, hint: string}}
+ */
+export function nightsRestButtonState (actor) {
+  const owed = unrecoveredLuck(actor)
+  if (!owed) return { disabled: true, hint: game.i18n.localize('DCC.AbilityLogNightsRestNothingHint') }
+  const lck = actor.system.abilities.lck
+  if ((parseInt(lck.value) || 0) >= (parseInt(lck.max) || 0)) {
+    return { disabled: true, hint: game.i18n.localize('DCC.AbilityLogNightsRestAtMaxHint') }
+  }
+  return { disabled: false, hint: game.i18n.format('DCC.AbilityLogNightsRestHint', { owed }) }
+}
+
+/**
+ * Recover a night's worth of spent Luck (#1064)
+ *
+ * The lib's `nightlyLuckRecovery` sets the ceiling: one point per class
+ * level, never past the natural maximum. The log then limits it further: the
+ * points are healed against the oldest unrecovered `luckSpend` entries, so a
+ * night's rest never hands back more Luck than was actually burned. One
+ * update carries the new score and the healed entries, and one chat card
+ * reports the total.
+ *
+ * Without the Ability Score Log there is no record of what was burned, so
+ * this does nothing and reports `logDisabled` rather than guessing.
+ *
+ * @param {Object} actor      The actor resting
+ * @param {Object} [options]
+ * @param {boolean} [options.announce=true]  Post a chat card
+ * @returns {Promise<{status: string, restored: number, remaining: number}>}
+ *   status is `recovered`, `nothingToRecover`, `notEligible`, `logDisabled`,
+ *   or `busy` (a rest for this actor is already running)
+ */
+export async function recoverLuckOvernight (actor, { announce = true } = {}) {
+  if (!abilityScoreLogEnabled()) return { status: 'logDisabled', restored: 0, remaining: 0 }
+  if (!recoversLuck(actor)) return { status: 'notEligible', restored: 0, remaining: 0 }
+  if (restingActors.has(actor.id)) return { status: 'busy', restored: 0, remaining: 0 }
+  restingActors.add(actor.id)
+  try {
+    return await restOneNight(actor, announce)
+  } finally {
+    restingActors.delete(actor.id)
+  }
+}
+
+/**
+ * The body of `recoverLuckOvernight`, run with the in-flight guard held
+ * @param {Object} actor       The actor resting
+ * @param {boolean} announce   Post a chat card
+ * @returns {Promise<{status: string, restored: number, remaining: number}>}
+ */
+async function restOneNight (actor, announce) {
+  const lck = actor.system.abilities.lck
+  const current = parseInt(lck.value) || 0
+  const ceiling = nightlyLuckRecovery({
+    level: luckRecoveryLevel(actor),
+    current,
+    max: parseInt(lck.max) || 0
+  })
+  const spends = unrecoveredLuckSpends(actor)
+  const owed = unrecoveredLuck(actor)
+  const restored = Math.max(0, Math.min(ceiling - current, owed))
+  if (!restored) return { status: 'nothingToRecover', restored: 0, remaining: owed }
+
+  const now = Date.now()
+  const healed = new Map()
+  let budget = restored
+  for (const entry of spends) {
+    if (!budget) break
+    const take = Math.min(budget, Math.abs(entry.change) - (entry.healedAmount ?? 0))
+    healed.set(entry.id, { ...entry, healedAmount: (entry.healedAmount ?? 0) + take, healedTimestamp: now })
+    budget -= take
+  }
+
+  const newLog = (actor.system.abilityLog ?? []).map(entry => healed.get(entry.id) ?? entry)
+  await actor.update({
+    'system.abilities.lck.value': current + restored,
+    'system.abilityLog': newLog
+  }, { dcc: { abilityLogged: true } })
+
+  const remaining = owed - restored
+  if (announce) {
+    await createAbilityChangeMessage(actor, {
+      headline: game.i18n.format('DCC.AbilityLogChatRecovers', {
+        points: restored,
+        ability: game.i18n.localize(CONFIG.DCC.abilities.lck)
+      }),
+      reason: game.i18n.localize('DCC.AbilityLogNightsRestReason'),
+      recovery: remaining
+        ? game.i18n.format('DCC.AbilityLogNightsRestRemaining', { remaining })
+        : game.i18n.localize('DCC.AbilityLogNightsRestAllRecovered'),
+      hpNote: ''
+    })
+  }
+
+  return { status: 'recovered', restored, remaining }
+}
+
+/**
  * Delete a log entry (GM only, for bookkeeping mistakes)
  * Does not change the ability score
  * @param {Object} actor      The actor to modify
@@ -610,7 +761,8 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
     },
     actions: {
       healEntry: AbilityScoreLogDialog.#onHealEntry,
-      deleteEntry: AbilityScoreLogDialog.#onDeleteEntry
+      deleteEntry: AbilityScoreLogDialog.#onDeleteEntry,
+      nightsRest: AbilityScoreLogDialog.#onNightsRest
     }
   }
 
@@ -644,6 +796,12 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
 
     context.actor = actor
     context.isGM = game.user.isGM
+    // Observers can open the log, but only owners can write the actor: hide
+    // the Heal and Night's Rest buttons rather than let them throw
+    const canEdit = !!actor.isOwner
+    if (canEdit && recoversLuck(actor)) {
+      context.nightsRest = nightsRestButtonState(actor)
+    }
     context.entries = [...log]
       .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
       .map(entry => {
@@ -659,7 +817,7 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
           typeLabel: game.i18n.localize(CONFIG.DCC.abilityLogTypes[entry.type] ?? entry.type),
           source: entry.source,
           recovery: entry.change < 0 ? getRecoveryText(entry, actor) : '',
-          healable: isHealable(entry, actor),
+          healable: canEdit && isHealable(entry, actor),
           fullyHealed,
           healedDate: fullyHealed && entry.healedTimestamp
             ? game.i18n.format('DCC.AbilityLogHealedOn', { date: new Date(entry.healedTimestamp).toLocaleDateString() })
@@ -698,7 +856,25 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    */
   static async #onHealEntry (event, target) {
+    if (!this.actor.isOwner) return
     await healAbilityLogEntry(this.actor, target.dataset.entryId, { healAll: event.shiftKey })
+    this.render(false)
+  }
+
+  /**
+   * Recover a night's worth of spent Luck (#1064)
+   * @this {AbilityScoreLogDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The Night's Rest button
+   */
+  static async #onNightsRest (event, target) {
+    if (!this.actor.isOwner) return
+    // Immediate feedback; the re-render below restores the computed state
+    target.disabled = true
+    const result = await recoverLuckOvernight(this.actor)
+    if (result.status === 'nothingToRecover') {
+      ui.notifications.info(game.i18n.format('DCC.AbilityLogNightsRestNothing', { name: this.actor.name }))
+    }
     this.render(false)
   }
 
