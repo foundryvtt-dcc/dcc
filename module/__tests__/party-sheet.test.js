@@ -419,9 +419,14 @@ describe("night's rest (#1064)", () => {
     const broken = member('broken', 'Thief')
     broken.update = vi.fn(async () => { throw new Error('denied') })
     const actors = [broken, member('halfling', 'Halfling'), member('warrior', 'Warrior')]
-    globalThis.game.actors.get = vi.fn(id => actors.find(a => a.id === id))
+    const saved = { actors: globalThis.game.actors, user: globalThis.game.user, i18n: globalThis.game.i18n, ui: globalThis.ui }
+    globalThis.game.actors = { get: vi.fn(id => actors.find(a => a.id === id)) }
     globalThis.game.user = { id: 'gm', isGM: true }
-    globalThis.game.i18n = { localize: key => key, format: key => key }
+    globalThis.game.i18n = {
+      localize: key => key,
+      format: vi.fn((key, data) => key === 'DCC.PartyNightsRestMember' ? `${data.name} +${data.points}` : key),
+      getListFormatter: () => new Intl.ListFormat('en', { type: 'conjunction' })
+    }
     globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }
     const ctx = { members: actors.map(a => ({ id: a.id })) }
     const original = globalThis.gameSettingsGetMock.getMockImplementation()
@@ -438,8 +443,18 @@ describe("night's rest (#1064)", () => {
       expect(results.map(r => [r.actor.id, r.restored])).toEqual([['halfling', 3]])
       expect(globalThis.ui.notifications.error).toHaveBeenCalledWith('DCC.PartyNightsRestFailed')
       expect(actors[2].update).not.toHaveBeenCalled()
+      // Names and the list separator are both localized
+      expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.PartyNightsRestDone', { names: 'halfling +3' })
+      expect(globalThis.game.i18n.format).toHaveBeenCalledWith('DCC.PartyNightsRestFailed', { names: 'broken' })
+
+      // A second click while the first pass is running is ignored
+      const [, second] = await Promise.all([proto.nightsRest.call(ctx), proto.nightsRest.call(ctx)])
+      expect(second).toEqual([])
+      expect(ctx._nightsRestRunning).toBe(false)
     } finally {
       globalThis.gameSettingsGetMock.mockImplementation(original)
+      Object.assign(globalThis.game, { actors: saved.actors, user: saved.user, i18n: saved.i18n })
+      globalThis.ui = saved.ui
     }
   })
 })

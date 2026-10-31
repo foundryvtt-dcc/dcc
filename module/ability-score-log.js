@@ -578,6 +578,30 @@ export function unrecoveredLuck (actor) {
 }
 
 /**
+ * Actors with a Night's Rest in flight
+ * A fast double-click reads the actor twice before the first update lands;
+ * the second call would write the same values but post a second chat card.
+ */
+const restingActors = new Set()
+
+/**
+ * Night's Rest button state for the log viewer (#1064)
+ * Disabled with an explaining tooltip when no logged spends are left, or
+ * when Luck is already at its natural maximum.
+ * @param {Object} actor    The actor (must recover Luck)
+ * @returns {{disabled: boolean, hint: string}}
+ */
+export function nightsRestButtonState (actor) {
+  const owed = unrecoveredLuck(actor)
+  if (!owed) return { disabled: true, hint: game.i18n.localize('DCC.AbilityLogNightsRestNothingHint') }
+  const lck = actor.system.abilities.lck
+  if ((parseInt(lck.value) || 0) >= (parseInt(lck.max) || 0)) {
+    return { disabled: true, hint: game.i18n.localize('DCC.AbilityLogNightsRestAtMaxHint') }
+  }
+  return { disabled: false, hint: game.i18n.format('DCC.AbilityLogNightsRestHint', { owed }) }
+}
+
+/**
  * Recover a night's worth of spent Luck (#1064)
  *
  * The lib's `nightlyLuckRecovery` sets the ceiling: one point per class
@@ -594,12 +618,28 @@ export function unrecoveredLuck (actor) {
  * @param {Object} [options]
  * @param {boolean} [options.announce=true]  Post a chat card
  * @returns {Promise<{status: string, restored: number, remaining: number}>}
- *   status is `recovered`, `nothingToRecover`, `notEligible`, or `logDisabled`
+ *   status is `recovered`, `nothingToRecover`, `notEligible`, `logDisabled`,
+ *   or `busy` (a rest for this actor is already running)
  */
 export async function recoverLuckOvernight (actor, { announce = true } = {}) {
   if (!abilityScoreLogEnabled()) return { status: 'logDisabled', restored: 0, remaining: 0 }
   if (!recoversLuck(actor)) return { status: 'notEligible', restored: 0, remaining: 0 }
+  if (restingActors.has(actor.id)) return { status: 'busy', restored: 0, remaining: 0 }
+  restingActors.add(actor.id)
+  try {
+    return await restOneNight(actor, announce)
+  } finally {
+    restingActors.delete(actor.id)
+  }
+}
 
+/**
+ * The body of `recoverLuckOvernight`, run with the in-flight guard held
+ * @param {Object} actor       The actor resting
+ * @param {boolean} announce   Post a chat card
+ * @returns {Promise<{status: string, restored: number, remaining: number}>}
+ */
+async function restOneNight (actor, announce) {
   const lck = actor.system.abilities.lck
   const current = parseInt(lck.value) || 0
   const ceiling = nightlyLuckRecovery({
@@ -760,13 +800,7 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
     // the Heal and Night's Rest buttons rather than let them throw
     const canEdit = !!actor.isOwner
     if (canEdit && recoversLuck(actor)) {
-      const owed = unrecoveredLuck(actor)
-      context.nightsRest = {
-        disabled: owed === 0,
-        hint: owed
-          ? game.i18n.format('DCC.AbilityLogNightsRestHint', { owed })
-          : game.i18n.localize('DCC.AbilityLogNightsRestNothingHint')
-      }
+      context.nightsRest = nightsRestButtonState(actor)
     }
     context.entries = [...log]
       .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
@@ -830,9 +864,13 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
   /**
    * Recover a night's worth of spent Luck (#1064)
    * @this {AbilityScoreLogDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The Night's Rest button
    */
-  static async #onNightsRest () {
+  static async #onNightsRest (event, target) {
     if (!this.actor.isOwner) return
+    // Immediate feedback; the re-render below restores the computed state
+    target.disabled = true
     const result = await recoverLuckOvernight(this.actor)
     if (result.status === 'nothingToRecover') {
       ui.notifications.info(game.i18n.format('DCC.AbilityLogNightsRestNothing', { name: this.actor.name }))

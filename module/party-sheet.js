@@ -157,31 +157,15 @@ class DCCPartySheet extends DCCActorSheet {
       ui.notifications.warn(game.i18n.localize('DCC.PartyNightsRestLogDisabled'))
       return []
     }
-    const memberActors = this.members.map(member => game.actors.get(member.id)).filter(actor => actor)
-    const results = []
-    const failed = []
-    for (const actor of memberActors) {
-      // One member's failed update must not silently skip the rest of the party
-      try {
-        const result = await recoverLuckOvernight(actor)
-        if (result.status !== 'notEligible') results.push({ actor, ...result })
-      } catch (error) {
-        console.error(`[DCC] Night's Rest failed for ${actor.name}`, error)
-        failed.push(actor.name)
-      }
+    // A double-click would interleave two passes over the party and split
+    // the results across two notifications; ignore the second click
+    if (this._nightsRestRunning) return []
+    this._nightsRestRunning = true
+    try {
+      return await restPartyMembers(this.members.map(member => game.actors.get(member.id)).filter(actor => actor))
+    } finally {
+      this._nightsRestRunning = false
     }
-    const recovered = results.filter(result => result.status === 'recovered')
-    if (recovered.length) {
-      ui.notifications.info(game.i18n.format('DCC.PartyNightsRestDone', {
-        names: recovered.map(result => `${result.actor.name} (+${result.restored})`).join(', ')
-      }))
-    } else if (!failed.length) {
-      ui.notifications.info(game.i18n.localize('DCC.PartyNightsRestNone'))
-    }
-    if (failed.length) {
-      ui.notifications.error(game.i18n.format('DCC.PartyNightsRestFailed', { names: failed.join(', ') }))
-    }
-    return results
   }
 
   /**
@@ -767,6 +751,43 @@ class DCCPartySheet extends DCCActorSheet {
 
     return result
   }
+}
+
+/**
+ * One Night's Rest pass over the given party members, reporting the outcome
+ * to the GM (#1064)
+ * @param {Array<Object>} memberActors   The party's member actors
+ * @return {Promise<Array<Object>>}      One result per member that rested
+ */
+async function restPartyMembers (memberActors) {
+  const results = []
+  const failed = []
+  for (const actor of memberActors) {
+    // One member's failed update must not silently skip the rest of the party
+    try {
+      const result = await recoverLuckOvernight(actor)
+      if (result.status !== 'notEligible') results.push({ actor, ...result })
+    } catch (error) {
+      console.error(`[DCC] Night's Rest failed for ${actor.name}`, error)
+      failed.push(actor.name)
+    }
+  }
+  const recovered = results.filter(result => result.status === 'recovered')
+  const list = game.i18n.getListFormatter({ type: 'conjunction' })
+  if (recovered.length) {
+    ui.notifications.info(game.i18n.format('DCC.PartyNightsRestDone', {
+      names: list.format(recovered.map(result => game.i18n.format('DCC.PartyNightsRestMember', {
+        name: result.actor.name,
+        points: result.restored
+      })))
+    }))
+  } else if (!failed.length) {
+    ui.notifications.info(game.i18n.localize('DCC.PartyNightsRestNone'))
+  }
+  if (failed.length) {
+    ui.notifications.error(game.i18n.format('DCC.PartyNightsRestFailed', { names: list.format(failed) }))
+  }
+  return results
 }
 
 export default DCCPartySheet

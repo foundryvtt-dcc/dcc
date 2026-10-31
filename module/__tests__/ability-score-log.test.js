@@ -16,6 +16,7 @@ import {
   isHealable,
   logAbilityChange,
   logSpellburn,
+  nightsRestButtonState,
   recoverLuckOvernight,
   requiresNote,
   staminaHpDelta,
@@ -683,6 +684,23 @@ describe('recoverLuckOvernight', () => {
 
     expect(wizard.update).not.toHaveBeenCalled()
     expect(unlogged.update).not.toHaveBeenCalled()
+  })
+
+  test('a second click while a rest is running is refused, so only one card posts', async () => {
+    const actor = thief()
+    const [first, second] = await Promise.all([recoverLuckOvernight(actor), recoverLuckOvernight(actor)])
+    expect(first.status).toEqual('recovered')
+    expect(second.status).toEqual('busy')
+    expect(actor.update).toHaveBeenCalledTimes(1)
+    expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledTimes(1)
+    // The guard is released afterwards
+    expect((await recoverLuckOvernight(actor)).status).not.toEqual('busy')
+  })
+
+  test('button is disabled with a reason when nothing is owed or Luck is at max', () => {
+    expect(nightsRestButtonState(thief())).toEqual({ disabled: false, hint: expect.stringContaining('AbilityLogNightsRestHint') })
+    expect(nightsRestButtonState(thief({ value: 11 }))).toEqual({ disabled: true, hint: expect.stringContaining('AbilityLogNightsRestAtMaxHint') })
+    expect(nightsRestButtonState(thief({ log: [] }))).toEqual({ disabled: true, hint: expect.stringContaining('AbilityLogNightsRestNothingHint') })
   })
 })
 

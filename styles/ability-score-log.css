@@ -162,6 +162,10 @@
     justify-content: flex-end;
     margin-bottom: 6px;
 
+    .nights-rest-wrapper {
+      display: inline-flex;
+    }
+
     .nights-rest-button {
       flex: 0 0 auto;
       font-size: 12px;
@@ -169,6 +173,10 @@
       padding: 3px 10px;
       white-space: nowrap;
       width: auto;
+
+      &:disabled {
+        pointer-events: none;
+      }
     }
   }
 
