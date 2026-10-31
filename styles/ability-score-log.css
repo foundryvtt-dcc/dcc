@@ -157,6 +157,21 @@
     text-align: center;
   }
 
+  .ability-log-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+
+    .nights-rest-button {
+      flex: 0 0 auto;
+      font-size: 12px;
+      line-height: normal;
+      padding: 3px 10px;
+      white-space: nowrap;
+      width: auto;
+    }
+  }
+
   .ability-log-table {
     border-collapse: collapse;
     font-size: 13px;

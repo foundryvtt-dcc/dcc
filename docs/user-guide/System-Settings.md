@@ -102,6 +102,8 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Enable Ability Score Log** tracks ability score changes on Player sheets with a reason, recovery expectation, and a per-actor history log — useful for spellburn and stat drain. Click an ability score to record a change: arrows step the new value up or down, and the most likely reason is preselected (Spellburn on physical stats for wizards and elves, Ability Damage otherwise, Luck Spend for Luck).
 
+Thieves and halflings (and any class with the `luckRecovers` trait) get a **Night's Rest** button in the log viewer. It recovers one point of spent Luck per level, up to the natural maximum, against the oldest logged Luck spends, so it never hands back more than was burned. The GM's party sheet has a **Night's Rest** button that does the same for every member at once. Both need this setting: without the log there's no record of how much Luck was spent.
+
 **Disable icon filter in dark theme** turns off the sepia filter applied to item and sheet icons when using the dark theme (per player).
 
 **Chat Cards Use App Theme** makes chat cards follow the core application light/dark theme setting instead of the interface theme (per player).

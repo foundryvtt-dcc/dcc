@@ -1,4 +1,12 @@
 <section class="ability-score-log-content">
+  {{#if nightsRest}}
+  <div class="ability-log-toolbar">
+    <button type="button" class="nights-rest-button" data-action="nightsRest" data-tooltip="{{nightsRest.hint}}"
+            {{#if nightsRest.disabled}}disabled{{/if}}>
+      <i class="fas fa-moon" aria-hidden="true"></i> {{localize "DCC.AbilityLogNightsRest"}}
+    </button>
+  </div>
+  {{/if}}
   {{#if entries.length}}
   <table class="ability-log-table">
     <thead>

@@ -1,5 +1,6 @@
 /* global game, foundry, ui, canvas */
 
+import { abilityScoreLogEnabled, recoverLuckOvernight } from './ability-score-log.js'
 import DCCActorSheet from './actor-sheet.js'
 import { handlePartyItemDrop } from './actor-sheet/drop.mjs'
 import HitPointsConfig from './hit-points-config.js'
@@ -37,6 +38,7 @@ class DCCPartySheet extends DCCActorSheet {
       rollAttack: this.#rollAttack,
       rollPartyInitiative: this.#rollPartyInitiative,
       togglePartyTokens: this.#togglePartyTokens,
+      nightsRest: this.#nightsRest,
       adjustHitPoints: this.#adjustHitPoints
     },
     dragDrop: [{
@@ -134,6 +136,42 @@ class DCCPartySheet extends DCCActorSheet {
       levelId: canvas.level?.id,
       selection: [...(canvas.tokens?.controlled ?? [])]
     })
+  }
+
+  static async #nightsRest () {
+    return this.nightsRest()
+  }
+
+  /**
+   * GM "Night's Rest" for the whole party (#1064): every member whose class
+   * recovers Luck regains a night's worth against their logged Luck spends.
+   * Members whose class doesn't recover Luck are skipped. Without the Ability
+   * Score Log there's no record of what was burned, so it explains that and
+   * changes nothing.
+   *
+   * @return {Promise<Array<Object>>} One recovery result per member that rested
+   */
+  async nightsRest () {
+    if (!game.user.isGM) return []
+    if (!abilityScoreLogEnabled()) {
+      ui.notifications.warn(game.i18n.localize('DCC.PartyNightsRestLogDisabled'))
+      return []
+    }
+    const memberActors = this.members.map(member => game.actors.get(member.id)).filter(actor => actor)
+    const results = []
+    for (const actor of memberActors) {
+      const result = await recoverLuckOvernight(actor)
+      if (result.status !== 'notEligible') results.push({ actor, ...result })
+    }
+    const recovered = results.filter(result => result.status === 'recovered')
+    if (recovered.length) {
+      ui.notifications.info(game.i18n.format('DCC.PartyNightsRestDone', {
+        names: recovered.map(result => `${result.actor.name} (+${result.restored})`).join(', ')
+      }))
+    } else {
+      ui.notifications.info(game.i18n.localize('DCC.PartyNightsRestNone'))
+    }
+    return results
   }
 
   /**

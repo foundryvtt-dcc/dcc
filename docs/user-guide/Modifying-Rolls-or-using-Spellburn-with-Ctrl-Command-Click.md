@@ -20,4 +20,4 @@ Attacks, saving throws, ability checks, skill checks and spell checks opened thi
 
 You can also decide after seeing the result. Right-click the attack, check, save, skill or spell check card in chat and choose **Burn Luck**. Pick the points in the same Luck Burn dialog; a new chat card shows the bonus and the roll's new total, e.g. "burns 2 Luck after the roll (Fortitude Save): +4, so the total goes from 13 to 17". The original card is not changed, so the judge decides whether the new total hits, saves or reaches a better spell result. The entry only appears on cards rolled by a character you own that has Luck left.
 
-With the Ability Score Log enabled, each burn is logged as a Luck spend, so thieves and halflings can recover it from the log.
+With the Ability Score Log enabled, each burn is logged as a Luck spend, so thieves and halflings can recover it with the log viewer's **Night's Rest** button (or the GM's party-sheet **Night's Rest**).

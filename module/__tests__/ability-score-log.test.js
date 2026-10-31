@@ -16,6 +16,7 @@ import {
   isHealable,
   logAbilityChange,
   logSpellburn,
+  recoverLuckOvernight,
   requiresNote,
   staminaHpDelta,
   staminaHpDeltaForLevel
@@ -616,6 +617,72 @@ describe('deleteAbilityLogEntry', () => {
     actor.system.abilityLog = [{ id: 'entry1' }]
     await deleteAbilityLogEntry(actor, 'entry1')
     expect(actor.update).not.toHaveBeenCalled()
+  })
+})
+
+/* -------------------------------------------- */
+/*  recoverLuckOvernight (#1064)                */
+/* -------------------------------------------- */
+
+describe('recoverLuckOvernight', () => {
+  function luckSpend (id, timestamp, change, healedAmount = 0) {
+    return { id, timestamp, ability: 'lck', change, type: 'luckSpend', source: '', healedAmount, healedTimestamp: null }
+  }
+
+  function thief ({ level = 2, value = 6, max = 11, log } = {}) {
+    const actor = makeActor()
+    actor.system.details = { level: { value: level }, sheetClass: 'Thief' }
+    actor.system.abilities.lck = { value, max }
+    actor.system.abilityLog = log ?? [
+      luckSpend('newer', 2000, -3),
+      luckSpend('older', 1000, -2, 1),
+      { id: 'damage', timestamp: 500, ability: 'lck', change: -4, type: 'damage', healedAmount: 0 }
+    ]
+    return actor
+  }
+
+  test('heals one point per level against the oldest unrecovered Luck spends', async () => {
+    const actor = thief()
+    const result = await recoverLuckOvernight(actor)
+
+    expect(result).toEqual({ status: 'recovered', restored: 2, remaining: 2 })
+    const [update, options] = actor.update.mock.calls[0]
+    expect(update['system.abilities.lck.value']).toEqual(8)
+    const byId = Object.fromEntries(update['system.abilityLog'].map(e => [e.id, e]))
+    expect(byId.older.healedAmount).toEqual(2) // finished first
+    expect(byId.newer.healedAmount).toEqual(1)
+    expect(byId.damage.healedAmount).toEqual(0) // only Luck spends recover
+    expect(options).toEqual({ dcc: { abilityLogged: true } })
+    expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledTimes(1)
+  })
+
+  test('never restores more than was spent or past the natural maximum', async () => {
+    const owedLess = thief({ level: 5, log: [luckSpend('a', 1000, -2)] })
+    expect((await recoverLuckOvernight(owedLess)).restored).toEqual(2)
+
+    const nearMax = thief({ level: 5, value: 10 })
+    expect((await recoverLuckOvernight(nearMax)).restored).toEqual(1)
+
+    // An unset (schema default 0) level recovers as level 1, matching the log text
+    const unsetLevel = thief({ level: 0 })
+    expect((await recoverLuckOvernight(unsetLevel)).restored).toEqual(1)
+
+    const atMax = thief({ value: 11 })
+    expect(await recoverLuckOvernight(atMax)).toEqual({ status: 'nothingToRecover', restored: 0, remaining: 4 })
+    expect(atMax.update).not.toHaveBeenCalled()
+  })
+
+  test('does nothing for classes without luckRecovers, or with the log off', async () => {
+    const wizard = thief()
+    wizard.system.details.sheetClass = 'Wizard'
+    expect((await recoverLuckOvernight(wizard)).status).toEqual('notEligible')
+
+    setLogEnabled(false)
+    const unlogged = thief()
+    expect((await recoverLuckOvernight(unlogged)).status).toEqual('logDisabled')
+
+    expect(wizard.update).not.toHaveBeenCalled()
+    expect(unlogged.update).not.toHaveBeenCalled()
   })
 })
 

@@ -400,3 +400,40 @@ describe('no effects tab (#1022)', () => {
     expect(warn).toHaveBeenCalledWith('DCC.PartyNoEffectsHint')
   })
 })
+
+describe("night's rest (#1064)", () => {
+  test('GM-only button; warns with the log off, otherwise rests only Luck-recovering members', async () => {
+    const template = fs.readFileSync(path.join(ROOT, 'templates/party-sheet-partial-party.html'), 'utf8')
+    expect(template.match(/{{#if canManagePartyTokens}}([\s\S]*?){{\/if}}/)?.[1]).toContain('data-action="nightsRest"')
+
+    const member = (id, sheetClass) => ({
+      id,
+      name: id,
+      system: {
+        abilities: { lck: { value: 8, max: 11 } },
+        details: { level: { value: 3 }, sheetClass },
+        abilityLog: [{ id: 'spend', timestamp: 1, ability: 'lck', change: -3, type: 'luckSpend', healedAmount: 0 }]
+      },
+      update: vi.fn()
+    })
+    const actors = [member('halfling', 'Halfling'), member('warrior', 'Warrior')]
+    globalThis.game.actors.get = vi.fn(id => actors.find(a => a.id === id))
+    globalThis.game.user = { id: 'gm', isGM: true }
+    globalThis.game.i18n = { localize: key => key, format: key => key }
+    globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn() } }
+    const ctx = { members: actors.map(a => ({ id: a.id })) }
+    const original = globalThis.gameSettingsGetMock.getMockImplementation()
+    try {
+      globalThis.gameSettingsGetMock.mockImplementation((module, key) => key === 'enableAbilityScoreLog' ? false : original?.(module, key))
+      expect(await proto.nightsRest.call(ctx)).toEqual([])
+      expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNightsRestLogDisabled')
+
+      globalThis.gameSettingsGetMock.mockImplementation((module, key) => key === 'enableAbilityScoreLog' ? true : original?.(module, key))
+      const results = await proto.nightsRest.call(ctx)
+      expect(results.map(r => [r.actor.id, r.restored])).toEqual([['halfling', 3]])
+      expect(actors[1].update).not.toHaveBeenCalled()
+    } finally {
+      globalThis.gameSettingsGetMock.mockImplementation(original)
+    }
+  })
+})
