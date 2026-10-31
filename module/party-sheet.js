@@ -159,17 +159,27 @@ class DCCPartySheet extends DCCActorSheet {
     }
     const memberActors = this.members.map(member => game.actors.get(member.id)).filter(actor => actor)
     const results = []
+    const failed = []
     for (const actor of memberActors) {
-      const result = await recoverLuckOvernight(actor)
-      if (result.status !== 'notEligible') results.push({ actor, ...result })
+      // One member's failed update must not silently skip the rest of the party
+      try {
+        const result = await recoverLuckOvernight(actor)
+        if (result.status !== 'notEligible') results.push({ actor, ...result })
+      } catch (error) {
+        console.error(`[DCC] Night's Rest failed for ${actor.name}`, error)
+        failed.push(actor.name)
+      }
     }
     const recovered = results.filter(result => result.status === 'recovered')
     if (recovered.length) {
       ui.notifications.info(game.i18n.format('DCC.PartyNightsRestDone', {
         names: recovered.map(result => `${result.actor.name} (+${result.restored})`).join(', ')
       }))
-    } else {
+    } else if (!failed.length) {
       ui.notifications.info(game.i18n.localize('DCC.PartyNightsRestNone'))
+    }
+    if (failed.length) {
+      ui.notifications.error(game.i18n.format('DCC.PartyNightsRestFailed', { names: failed.join(', ') }))
     }
     return results
   }

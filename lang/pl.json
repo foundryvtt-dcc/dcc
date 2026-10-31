@@ -637,6 +637,7 @@
   "DCC.PartyNoMembersWarning": "Drużyna nie ma członków; najpierw przeciągnij aktorów na kartę drużyny",
   "DCC.PartyNightsRest": "Nocny odpoczynek",
   "DCC.PartyNightsRestDone": "Nocny odpoczynek. Odzyskane Szczęście: {names}",
+  "DCC.PartyNightsRestFailed": "Nocny odpoczynek nie powiódł się dla: {names}. Szczegóły w konsoli.",
   "DCC.PartyNightsRestHint": "Członkowie, których klasa odzyskuje Szczęście (złodzieje, niziołki), odzyskują wydane Szczęście z jednej nocy",
   "DCC.PartyNightsRestLogDisabled": "Nocny odpoczynek wymaga ustawienia Dziennik Zmian Cech. Bez niego nie ma zapisu, ile Szczęścia wydała każda postać.",
   "DCC.PartyNightsRestNone": "Nocny odpoczynek: żaden członek drużyny nie ma wydanego Szczęścia do odzyskania.",

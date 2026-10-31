@@ -624,6 +624,7 @@
   "DCC.PartyNoMembersWarning": "Le groupe n'a aucun membre ; faites d'abord glisser des acteurs sur la feuille de groupe",
   "DCC.PartyNightsRest": "Repos nocturne",
   "DCC.PartyNightsRestDone": "Repos nocturne. Chance récupérée : {names}",
+  "DCC.PartyNightsRestFailed": "Le repos nocturne a échoué pour : {names}. Voir la console pour les détails.",
   "DCC.PartyNightsRestHint": "Les membres dont la classe récupère la Chance (voleurs, halfelins) regagnent une nuit de Chance dépensée",
   "DCC.PartyNightsRestLogDisabled": "Le repos nocturne nécessite le paramètre Journal des Caractéristiques. Sans lui, rien n'indique combien de Chance chaque personnage a dépensé.",
   "DCC.PartyNightsRestNone": "Repos nocturne : aucun membre du groupe n'a de Chance dépensée à récupérer.",

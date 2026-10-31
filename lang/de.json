@@ -637,6 +637,7 @@
   "DCC.PartyNoMembersWarning": "Die Gruppe hat keine Mitglieder; ziehe zuerst Akteure auf den Gruppenbogen",
   "DCC.PartyNightsRest": "Nachtruhe",
   "DCC.PartyNightsRestDone": "Nachtruhe. Glück zurückgewonnen: {names}",
+  "DCC.PartyNightsRestFailed": "Nachtruhe fehlgeschlagen für: {names}. Details in der Konsole.",
   "DCC.PartyNightsRestHint": "Mitglieder, deren Klasse Glück zurückgewinnt (Diebe, Halblinge), erhalten das verbrauchte Glück einer Nacht zurück",
   "DCC.PartyNightsRestLogDisabled": "Die Nachtruhe benötigt die Einstellung Attributsprotokoll. Ohne sie gibt es keine Aufzeichnung, wie viel Glück jeder Charakter verbraucht hat.",
   "DCC.PartyNightsRestNone": "Nachtruhe: Kein Gruppenmitglied hat verbrauchtes Glück zurückzugewinnen.",

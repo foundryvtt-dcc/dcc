@@ -416,11 +416,13 @@ describe("night's rest (#1064)", () => {
       },
       update: vi.fn()
     })
-    const actors = [member('halfling', 'Halfling'), member('warrior', 'Warrior')]
+    const broken = member('broken', 'Thief')
+    broken.update = vi.fn(async () => { throw new Error('denied') })
+    const actors = [broken, member('halfling', 'Halfling'), member('warrior', 'Warrior')]
     globalThis.game.actors.get = vi.fn(id => actors.find(a => a.id === id))
     globalThis.game.user = { id: 'gm', isGM: true }
     globalThis.game.i18n = { localize: key => key, format: key => key }
-    globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn() } }
+    globalThis.ui = { notifications: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }
     const ctx = { members: actors.map(a => ({ id: a.id })) }
     const original = globalThis.gameSettingsGetMock.getMockImplementation()
     try {
@@ -429,9 +431,13 @@ describe("night's rest (#1064)", () => {
       expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('DCC.PartyNightsRestLogDisabled')
 
       globalThis.gameSettingsGetMock.mockImplementation((module, key) => key === 'enableAbilityScoreLog' ? true : original?.(module, key))
+      // A failing member is reported and doesn't stop the rest of the party
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
       const results = await proto.nightsRest.call(ctx)
+      consoleError.mockRestore()
       expect(results.map(r => [r.actor.id, r.restored])).toEqual([['halfling', 3]])
-      expect(actors[1].update).not.toHaveBeenCalled()
+      expect(globalThis.ui.notifications.error).toHaveBeenCalledWith('DCC.PartyNightsRestFailed')
+      expect(actors[2].update).not.toHaveBeenCalled()
     } finally {
       globalThis.gameSettingsGetMock.mockImplementation(original)
     }

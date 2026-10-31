@@ -637,6 +637,7 @@
   "DCC.PartyNoMembersWarning": "队伍没有成员；请先将角色拖到队伍卡上",
   "DCC.PartyNightsRest": "夜间休息",
   "DCC.PartyNightsRestDone": "夜间休息。已恢复幸运：{names}",
+  "DCC.PartyNightsRestFailed": "夜间休息失败：{names}。详情请查看控制台。",
   "DCC.PartyNightsRestHint": "职业可恢复幸运的成员（盗贼、半身人）恢复一晚的已消耗幸运",
   "DCC.PartyNightsRestLogDisabled": "夜间休息需要启用属性变化日志设置。没有它就没有每个角色消耗了多少幸运的记录。",
   "DCC.PartyNightsRestNone": "夜间休息：没有队伍成员有可恢复的已消耗幸运。",

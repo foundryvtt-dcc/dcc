@@ -624,6 +624,7 @@
   "DCC.PartyNoMembersWarning": "The party has no members; drag actors onto the party sheet first",
   "DCC.PartyNightsRest": "Night's Rest",
   "DCC.PartyNightsRestDone": "Night's rest. Luck recovered: {names}",
+  "DCC.PartyNightsRestFailed": "Night's Rest failed for: {names}. See the console for details.",
   "DCC.PartyNightsRestHint": "Members whose class recovers Luck (thieves, halflings) regain a night's worth of spent Luck",
   "DCC.PartyNightsRestLogDisabled": "Night's Rest needs the Ability Score Log setting. Without it there is no record of how much Luck each character spent.",
   "DCC.PartyNightsRestNone": "Night's rest: no party member has spent Luck to recover.",

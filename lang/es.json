@@ -637,6 +637,7 @@
   "DCC.PartyNoMembersWarning": "El grupo no tiene miembros; arrastra actores a la hoja de grupo primero",
   "DCC.PartyNightsRest": "Descanso nocturno",
   "DCC.PartyNightsRestDone": "Descanso nocturno. Suerte recuperada: {names}",
+  "DCC.PartyNightsRestFailed": "El descanso nocturno falló para: {names}. Consulta la consola para más detalles.",
   "DCC.PartyNightsRestHint": "Los miembros cuya clase recupera Suerte (ladrones, medianos) recuperan la Suerte gastada de una noche",
   "DCC.PartyNightsRestLogDisabled": "El descanso nocturno necesita el ajuste Registro de Puntuaciones de Habilidad. Sin él no hay constancia de cuánta Suerte gastó cada personaje.",
   "DCC.PartyNightsRestNone": "Descanso nocturno: ningún miembro del grupo tiene Suerte gastada que recuperar.",

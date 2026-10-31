@@ -756,7 +756,10 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
 
     context.actor = actor
     context.isGM = game.user.isGM
-    if (recoversLuck(actor)) {
+    // Observers can open the log, but only owners can write the actor: hide
+    // the Heal and Night's Rest buttons rather than let them throw
+    const canEdit = !!actor.isOwner
+    if (canEdit && recoversLuck(actor)) {
       const owed = unrecoveredLuck(actor)
       context.nightsRest = {
         disabled: owed === 0,
@@ -780,7 +783,7 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
           typeLabel: game.i18n.localize(CONFIG.DCC.abilityLogTypes[entry.type] ?? entry.type),
           source: entry.source,
           recovery: entry.change < 0 ? getRecoveryText(entry, actor) : '',
-          healable: isHealable(entry, actor),
+          healable: canEdit && isHealable(entry, actor),
           fullyHealed,
           healedDate: fullyHealed && entry.healedTimestamp
             ? game.i18n.format('DCC.AbilityLogHealedOn', { date: new Date(entry.healedTimestamp).toLocaleDateString() })
@@ -819,6 +822,7 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    */
   static async #onHealEntry (event, target) {
+    if (!this.actor.isOwner) return
     await healAbilityLogEntry(this.actor, target.dataset.entryId, { healAll: event.shiftKey })
     this.render(false)
   }
@@ -828,6 +832,7 @@ export class AbilityScoreLogDialog extends HandlebarsApplicationMixin(Applicatio
    * @this {AbilityScoreLogDialog}
    */
   static async #onNightsRest () {
+    if (!this.actor.isOwner) return
     const result = await recoverLuckOvernight(this.actor)
     if (result.status === 'nothingToRecover') {
       ui.notifications.info(game.i18n.format('DCC.AbilityLogNightsRestNothing', { name: this.actor.name }))

@@ -637,6 +637,7 @@
   "DCC.PartyNoMembersWarning": "Il gruppo non ha membri; trascina prima degli Attori sulla scheda del gruppo",
   "DCC.PartyNightsRest": "Riposo notturno",
   "DCC.PartyNightsRestDone": "Riposo notturno. Fortuna recuperata: {names}",
+  "DCC.PartyNightsRestFailed": "Riposo notturno non riuscito per: {names}. Vedi la console per i dettagli.",
   "DCC.PartyNightsRestHint": "I membri la cui classe recupera la Fortuna (ladri, halfling) recuperano la Fortuna spesa di una notte",
   "DCC.PartyNightsRestLogDisabled": "Il riposo notturno richiede l'impostazione Registro delle Caratteristiche. Senza di essa non c'è traccia di quanta Fortuna abbia speso ogni personaggio.",
   "DCC.PartyNightsRestNone": "Riposo notturno: nessun membro del gruppo ha Fortuna spesa da recuperare.",
