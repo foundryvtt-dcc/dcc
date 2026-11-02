@@ -144,11 +144,11 @@ test.describe('DCC Extension API', () => {
           await new Promise(resolve => setTimeout(resolve, 50))
         }
       }
-      const actor = await Actor.create({ name: 'Item Macro Probe', type: 'Player' })
-      let macro
+      const actor = await Actor.create({ name: 'P7 Item Macro Probe', type: 'Player' })
+      let item
       let message
       try {
-        const [item] = await actor.createEmbeddedDocuments('Item', [{
+        [item] = await actor.createEmbeddedDocuments('Item', [{
           name: 'Probe Rope',
           type: 'equipment',
           system: { description: { value: '<p>Visible text</p><section class="secret"><p>Secret text</p></section>', judge: { value: '<p>Judge text</p>' } } }
@@ -162,15 +162,15 @@ test.describe('DCC Extension API', () => {
 
         // Core only stops making its own macro on a literal false.
         const hookResult = Hooks.call('hotbarDrop', ui.hotbar, JSON.parse(transfer.getData('text/plain')), SLOT)
-        macro = await until(() => game.macros.get(game.user.hotbar[SLOT])?.command?.includes(item.id) && game.macros.get(game.user.hotbar[SLOT]))
+        const macro = await until(() => game.macros.get(game.user.hotbar[SLOT])?.command?.includes(item.id) && game.macros.get(game.user.hotbar[SLOT]))
         const before = game.messages.size
         await macro?.execute()
         message = await until(() => game.messages.size > before && game.messages.contents.at(-1))
         return { hookResult, content: message?.content }
       } finally {
         await message?.delete()
-        await game.user.assignHotbarMacro(previous ? game.macros.get(previous) : null, SLOT)
-        await macro?.delete()
+        await game.user.assignHotbarMacro(game.macros.get(previous) ?? null, SLOT)
+        for (const macro of game.macros.filter(m => item && m.command?.includes(item.id))) await macro.delete()
         await actor.delete()
       }
     })
