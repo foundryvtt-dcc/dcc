@@ -338,6 +338,16 @@ describe('_createDCCItemMacro', () => {
   test('returns undefined when no item payload', () => {
     expect(_createDCCItemMacro({ type: 'Item', actorId: 'A11', data: null, system: {} })).toBeUndefined()
   })
+
+  test('finds an item on a compendium actor through the drag uuid', () => {
+    const uuid = 'Compendium.world.pack.Actor.A11.Item.I4'
+    const macro = _createDCCItemMacro({ type: 'Item', actorId: 'A11', uuid, data: {}, system: { item: { _id: 'I4', name: 'Rope', type: 'equipment' } } })
+    expect(macro.command).toContain(`await fromUuid("${uuid}")`)
+  })
+
+  test('leaves a temporary item with no id or owner to core', () => {
+    expect(_createDCCItemMacro({ type: 'Item', data: { name: 'Rope', type: 'equipment' } })).toBeUndefined()
+  })
 })
 
 describe('_createDCCApplyDisapprovalMacro', () => {
@@ -381,6 +391,26 @@ describe('MACRO_FACTORIES dispatch table', () => {
 })
 
 describe('createDCCMacro dispatcher', () => {
+  const abilityDrop = () => ({ type: 'Ability', actorId: 'A1', data: { abilityId: 'str', rollUnder: false } })
+
+  test('assigns nothing when a hook cancels the macro create', async () => {
+    let created
+    globalThis.Macro.create.mockImplementationOnce(() => { created = Promise.resolve(undefined); return created })
+    expect(createDCCMacro(abilityDrop(), 1)).toBe(false)
+    await created
+    await new Promise(resolve => setTimeout(resolve))
+    expect(globalThis.game.user.assignHotbarMacro).not.toHaveBeenCalled()
+  })
+
+  test('logs a failed macro create instead of leaving a rejection uncaught', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const failure = new Error('denied')
+    globalThis.Macro.create.mockRejectedValueOnce(failure)
+    expect(createDCCMacro(abilityDrop(), 1)).toBe(false)
+    await vi.waitFor(() => expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('hotbar'), failure))
+    consoleError.mockRestore()
+  })
+
   test('rewrites dccType/dccData into the standard shape before dispatch', async () => {
     const data = {
       dccType: 'Ability',

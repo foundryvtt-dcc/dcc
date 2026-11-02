@@ -239,8 +239,8 @@ export function buildDragStartData (actor, event) {
       const itemId = findDataset(event.currentTarget, 'itemId')
       const item = actor.items.get(itemId)
       if (item) {
-        // Use 'DCC Item' for spells to prevent Foundry's default macro creation
-        // Use 'Item' for other items to maintain normal drag/drop functionality
+        // Spells drag as 'DCC Item', which sheet drop handlers convert back to
+        // 'Item'. A hotbar drop makes a DCC macro for either type.
         const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
 
         dragData = {

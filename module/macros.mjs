@@ -30,14 +30,15 @@ function macroActorArgs (data) {
 /**
  * The macro expression that finds a dropped item. A uuid built from the actor
  * id would find the world actor's copy, so an unlinked token's item goes
- * through that token's actor.
+ * through that token's actor. The drag's own uuid also finds an item on a
+ * compendium actor.
  * @param {Object} data     The dropped data
  * @param {string} itemId   The item's id
  * @returns {string}
  */
 function macroItemLookup (data, itemId) {
   if (data.tokenId) return `game.dcc.getMacroActor(${macroActorArgs(data)})?.items.get('${itemId}')`
-  return `await fromUuid("Actor.${data.actorId}.Item.${itemId}")`
+  return `await fromUuid("${data.uuid ?? `Actor.${data.actorId}.Item.${itemId}`}")`
 }
 
 /**
@@ -259,6 +260,9 @@ export function _createDCCItemMacro (data) {
   const item = data.system?.item || data.data
   if (!item) return
 
+  // A temporary document has nothing a macro could find later
+  if (!item._id || !(data.actorId || data.uuid)) return
+
   const lookup = macroItemLookup(data, item._id)
 
   // Handle spell items
@@ -359,7 +363,7 @@ export function createDCCMacro (data, slot) {
   const macroData = MACRO_FACTORIES[data.type](data, slot)
   if (!macroData) return true
 
-  placeDCCMacro(macroData, slot)
+  placeDCCMacro(macroData, slot).catch(err => console.error('DCC | Failed to place macro on the hotbar', err))
   return false // Prevent Foundry's default behavior
 }
 
@@ -384,6 +388,9 @@ async function placeDCCMacro (macroData, slot) {
       flags: { 'dcc.itemMacro': true }
     })
   }
+
+  // A preCreateMacro hook can cancel the create
+  if (!macro) return
 
   await game.user.assignHotbarMacro(macro, slot)
 }

@@ -80,7 +80,7 @@ async activate (options = {}) {
 ```javascript
 /** Template for this item's chat card */
 get chatCardTemplate () {
-  return `systems/dcc/templates/chat-card-activate-item.hbs`
+  return `systems/dcc/templates/chat-card-item.html`
 }
 
 /** Data for the chat card template */
@@ -111,28 +111,18 @@ Returns type-specific properties to display on the chat card:
 | `treasure` | Currency values (pp/ep/gp/sp/cp) |
 | `container` | Capacity, current weight |
 
-#### 1d. Create chat card template
+#### 1d. Extend the chat card template
 
-Create `templates/chat-card-activate-item.hbs`:
+`templates/chat-card-item.html` and its `.dcc-item-card` styles already exist for `DCCItem.roll()`. Add the properties between the header and the description:
 
 ```handlebars
-<div class="dcc chat-card item-card">
-  <header class="card-header">
-    {{#if img}}<img src="{{img}}" alt="{{name}}" width="36" height="36"/>{{/if}}
-    <h3>{{name}}</h3>
-    {{#if typeLabel}}<span class="item-type">{{typeLabel}}</span>{{/if}}
-  </header>
-  {{#if properties.length}}
-  <div class="card-properties">
-    {{#each properties}}
-    <span class="property">{{this}}</span>
-    {{/each}}
-  </div>
-  {{/if}}
-  {{#if description}}
-  <div class="card-content">{{{description}}}</div>
-  {{/if}}
+{{#if properties.length}}
+<div class="card-properties">
+  {{#each properties}}
+  <span class="property">{{this}}</span>
+  {{/each}}
 </div>
+{{/if}}
 ```
 
 ### Phase 2: Sheet Integration
@@ -232,7 +222,6 @@ Add `dcc.activateItem` to the hooks list in the README or wherever system hooks 
 
 - Click equipment name on actor sheet → chat message appears with item details
 - Click armor icon on actor sheet → chat message with AC/penalty info
-- Drag equipment to hotbar → macro works and posts to chat
 - `dcc.activateItem` hook fires and allows message modification
 
 ### Manual Testing
