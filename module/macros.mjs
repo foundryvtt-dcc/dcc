@@ -383,8 +383,8 @@ export async function createDCCMacro (data, slot) {
  * @param {string} itemId
  * @param {string} actorId
  * @param {Object} options
- * @return {Promise}
  * @param {string} [tokenId] - the unlinked token the macro was dragged from
+ * @return {Promise}
  */
 export function rollDCCWeaponMacro (itemId, actorId, options = {}, tokenId = null) {
   /** @type {DCCActor} */
@@ -399,7 +399,7 @@ export function rollDCCWeaponMacro (itemId, actorId, options = {}, tokenId = nul
  * @param {string} [actorId] - a specific world actor
  * @param {string} [tokenId] - a specific unlinked token. It doesn't fall back
  *   to the world actor, because that would change the wrong character.
- * @return {Object}
+ * @return {Object|undefined} undefined if the named token isn't on the viewed scene
  */
 export function getMacroActor (actorId = null, tokenId = null) {
   if (tokenId) {
