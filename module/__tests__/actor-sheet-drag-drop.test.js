@@ -8,6 +8,9 @@
  * a `#`/override with no prior unit coverage (drag is e2e-hard).
  */
 
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test, vi } from 'vitest'
 import { findDataset, buildDragStartData } from '../actor-sheet/drag-drop.mjs'
 
@@ -257,5 +260,25 @@ describe('buildDragStartData', () => {
     const actor = makeActor({ isToken: true, token: { id: 'token-9' } })
     const event = makeEvent({ dataset: { drag: 'true', dragAction: 'initiative' } })
     expect(buildDragStartData(actor, event).tokenId).toBe('token-9')
+  })
+
+  // #1118: a template drag action with no matching case builds no drag data, so
+  // the drag silently does nothing.
+  // The party sheet is skipped because it has its own switch in party-sheet.js.
+  test('every data-drag-action in the actor sheet templates has a matching case', () => {
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+    const source = readFileSync(join(root, 'module', 'actor-sheet', 'drag-drop.mjs'), 'utf8')
+    const cases = new Set([...source.matchAll(/case '([^']+)'/g)].map(match => match[1]))
+
+    const templatesDir = join(root, 'templates')
+    const actions = new Set()
+    for (const file of readdirSync(templatesDir, { recursive: true })) {
+      if (!file.endsWith('.html') || file.startsWith('party-sheet')) continue
+      const template = readFileSync(join(templatesDir, file), 'utf8')
+      for (const match of template.matchAll(/data-drag-action="([^"]+)"/g)) actions.add(match[1])
+    }
+
+    expect(actions.size).toBeGreaterThan(0)
+    expect([...actions].filter(action => !cases.has(action))).toEqual([])
   })
 })
