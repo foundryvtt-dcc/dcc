@@ -264,6 +264,7 @@ describe('burning Luck for an ally (#1063)', () => {
 
     await globalThis.__luckBurn.burnLuckForAlly(card(ally, { RollType: 'SavingThrow' }))
     expect(wait.mock.calls[0][0].buttons.map(b => b.label)).toEqual(['Bilbo', 'Rosie'])
+    expect(wait.mock.calls[0][0].classes).toContain('dcc-luck-burn-chooser')
     expect(vi.mocked(logAbilityChange).mock.calls[0][0]).toBe(second)
 
     vi.mocked(logAbilityChange).mockClear()

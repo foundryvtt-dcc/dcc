@@ -281,6 +281,7 @@ export async function burnLuckForAlly (message) {
   let burner = burners[0]
   if (burners.length > 1) {
     const id = await foundry.applications.api.DialogV2.wait({
+      classes: ['dcc-luck-burn-chooser'],
       window: { title: game.i18n.localize('DCC.ChatContextBurnLuckForAlly') },
       content: `<p>${game.i18n.localize('DCC.LuckBurnForAllyChoose')}</p>`,
       buttons: burners.map(actor => ({ action: actor.id, label: actor.name, callback: () => actor.id })),
