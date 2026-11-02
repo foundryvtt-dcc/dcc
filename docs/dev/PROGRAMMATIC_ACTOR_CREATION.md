@@ -93,7 +93,7 @@ Fields written this way: `saves.{ref,frt,wil}.value`,
 Separately from the dialog's stored fields, Phase 6 wired a
 **lib-side** class-progression registry. At `dcc.ready`,
 `registerClassProgressionsFromPacks()`
-(`module/adapter/foundry-data-loader.mjs:220`) walks the same
+(`module/adapter/foundry-data-loader.mjs:227`) walks the same
 `CONFIG.DCC.levelDataPacks`, assembles a `ClassProgression` per class,
 and calls the vendored lib's `registerClassProgressions(...)`. Adapter
 roll paths then read derived values (`getSaveBonus`, `getCritDie`,

@@ -241,6 +241,32 @@ describe('registerClassProgressionsFromPacks', () => {
     expect(secondPack.getDocument).not.toHaveBeenCalled()
   })
 
+  test('skips a pack that fails to read and still loads the others', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const entry = { _id: 'cleric-1', name: 'cleric-1', system: { levelData: 'system.details.critDie=d13' } }
+    // The failed pack's index still names the item, so it must not hide
+    // the copy in the working pack.
+    const failingPack = makeMockPack([entry])
+    failingPack.collection = 'test.failing'
+    failingPack.getIndex.mockRejectedValue(new Error('read failed'))
+    const packs = { 'test.failing': failingPack, 'test.working': makeMockPack([entry]) }
+
+    const registered = await registerClassProgressionsFromPacks({
+      CONFIG: {
+        DCC: {
+          levelDataPacks: { packs: ['test.failing', 'test.working'] },
+          classLevelNames: { cleric: 'cleric' }
+        }
+      },
+      game: { packs: { get: (name) => packs[name] } }
+    })
+
+    expect(registered).toEqual(['cleric'])
+    expect(getClassProgression('cleric').levels[1].criticalDie).toBe('d13')
+    expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('test.failing'), expect.any(Error))
+    consoleError.mockRestore()
+  })
+
   test('registers per-class progressions and the lib registry sees them', async () => {
     // Mocks `CONFIG.DCC.levelDataPacks` + `CONFIG.DCC.classLevelNames`
     // + `game.packs.get(packName)` and asserts the registered

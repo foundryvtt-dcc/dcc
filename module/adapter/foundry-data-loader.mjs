@@ -158,7 +158,8 @@ export function buildProgressionLevelFromParsed (parsed) {
  * `dcc.ready`, so it makes one server round trip per pack (none if the
  * field is already indexed), however many classes and levels are
  * registered (#1122). Packs are searched in registration order, so the
- * earliest pack holding an item name wins.
+ * earliest pack holding an item name wins. A pack that can't be read is
+ * logged and skipped, so it doesn't cost the classes in the other packs.
  *
  * @param {object} [deps] - dependency injection for tests.
  * @returns {Promise<Map<string, string>>} item name → levelData text.
@@ -170,8 +171,14 @@ async function loadLevelDataByItemName (deps = {}) {
   const packs = (CONFIG?.DCC?.levelDataPacks?.packs ?? [])
     .map(packName => gameImpl?.packs?.get?.(packName))
     .filter(pack => pack)
-  await Promise.all(packs.map(pack => pack.getIndex({ fields: ['system.levelData'] })))
-  for (const pack of packs) {
+  const results = await Promise.allSettled(packs.map(pack => pack.getIndex({ fields: ['system.levelData'] })))
+  for (const [i, pack] of packs.entries()) {
+    // A failed pack's existing index has names but no levelData, so reading
+    // it would hide the same item in a later pack.
+    if (results[i].status === 'rejected') {
+      console.error(`DCC | Failed to read level data from pack ${pack.collection}`, results[i].reason)
+      continue
+    }
     for (const entry of pack.index) {
       if (levelDataByItemName.has(entry.name)) continue
       levelDataByItemName.set(entry.name, entry.system?.levelData ?? '')
