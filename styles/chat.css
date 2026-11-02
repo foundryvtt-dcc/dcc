@@ -405,6 +405,11 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   .message-content h3 {
     color: var(--chat-primary-color);
   }
+
+  /* An item's description can hold any heading level, see `.table-draw` above. */
+  .dcc-item-card .card-description :is(h1, h2, h4, h5, h6) {
+    color: var(--chat-primary-color);
+  }
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -533,7 +538,7 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
 }
 
 /* ----------------------------------------- */
-/*  Enhanced attack card (QoL integration)   */
+/*  Item card                                */
 /* ----------------------------------------- */
 .dcc-item-card {
   .card-header {
@@ -565,6 +570,9 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   }
 }
 
+/* ----------------------------------------- */
+/*  Enhanced attack card (QoL integration)   */
+/* ----------------------------------------- */
 .dcc-enhanced-card {
   /* Hit/miss accent down the left edge */
   border-left: 3px solid transparent;

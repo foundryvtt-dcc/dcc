@@ -388,12 +388,13 @@ describe('createDCCMacro dispatcher', () => {
       data: { abilityId: 'str', rollUnder: false },
       dccData: { extra: true }
     }
-    const result = await createDCCMacro(data, 1)
+    // Not awaited: the hotbarDrop hook needs a literal false, not a Promise (#1125)
+    const result = createDCCMacro(data, 1)
     expect(result).toBe(false) // false = consumed
     expect(data.type).toBe('Ability')
     expect(data.system).toEqual({ extra: true })
     expect(globalThis.Macro.create).toHaveBeenCalledOnce()
-    expect(globalThis.game.user.assignHotbarMacro).toHaveBeenCalledOnce()
+    await vi.waitFor(() => expect(globalThis.game.user.assignHotbarMacro).toHaveBeenCalledOnce())
   })
 
   test('creates the macro with the clean factory name — no actorId suffix (#876)', async () => {

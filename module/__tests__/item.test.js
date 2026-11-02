@@ -213,7 +213,9 @@ describe('DCCItem Tests', () => {
       const { TextEditor } = foundry.applications.ux
       const { renderTemplate } = foundry.applications.handlebars
       const create = vi.fn(async (data) => data)
+      const originalChatMessage = globalThis.CONFIG.ChatMessage
       globalThis.CONFIG.ChatMessage = { documentClass: { create } }
+      globalThis.ChatMessage.applyMode.mockClear()
       renderTemplate.mockClear()
       TextEditor.enrichHTML.mockClear()
       renderTemplate.mockResolvedValueOnce('<div>card</div>')
@@ -226,6 +228,8 @@ describe('DCCItem Tests', () => {
       expect(renderTemplate.mock.calls[0][1]).toMatchObject({ name: 'Rope', description: '<p>Fifty feet</p>' })
       expect(JSON.stringify(renderTemplate.mock.calls[0][1])).not.toContain('Cursed')
       expect(create).toHaveBeenCalledWith(expect.objectContaining({ content: '<div>card</div>' }))
+      expect(globalThis.ChatMessage.applyMode).toHaveBeenCalledOnce()
+      globalThis.CONFIG.ChatMessage = originalChatMessage
     })
   })
 

@@ -19,7 +19,7 @@ Extension modules (dcc-qol, xcc, etc.) can hook into the activation to add custo
 - **Spells** have `rollSpellCheck` on the item sheet, but not directly from the actor sheet equipment tab.
 - **Treasure** items have `rollValue()` on `DCCItem`, but it's only accessible from the item sheet — not the actor sheet.
 - **All other items** (armor, equipment, ammunition, mounts, containers) are display-only on the actor sheet with no click action.
-- **Hotbar macros** for non-spell/non-weapon items call `_item.roll()`, which posts the item's name, image, type and player description to chat (#1125). Sheet clicks, type-specific properties and the `dcc.activateItem` hook below don't exist yet.
+- **Hotbar macros** for items without a roll of their own, including one dragged from a weapon row's icon, call `_item.roll()`, which posts the item's name, image, type and player description to chat (#1125). Sheet clicks, type-specific properties and the `dcc.activateItem` hook below don't exist yet.
 
 ### What the Old Branch Did
 

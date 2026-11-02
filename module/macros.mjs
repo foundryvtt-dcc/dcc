@@ -256,7 +256,7 @@ export function _createDCCWeaponMacro (data) {
 export function _createDCCItemMacro (data) {
   if (data.type !== 'Item' && data.type !== 'DCC Item') return
 
-  const item = data.system.item || data.data
+  const item = data.system?.item || data.data
   if (!item) return
 
   const lookup = macroItemLookup(data, item._id)
@@ -337,9 +337,11 @@ export const MACRO_FACTORIES = {
  * Dispatch to the appropriate function for the item type
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {boolean} false when this drop was handled. It isn't async because
+ *   the hotbarDrop hook checks for a literal false, and a Promise would let
+ *   Foundry replace the macro with its own (#1125).
  */
-export async function createDCCMacro (data, slot) {
+export function createDCCMacro (data, slot) {
   // Pull out the DCC data from the drop handler (it may be packaged inside Foundry Item data)
   if (data.dccType) {
     data.type = data.dccType
@@ -355,27 +357,35 @@ export async function createDCCMacro (data, slot) {
 
   // Call the appropriate function to generate a macro
   const macroData = MACRO_FACTORIES[data.type](data, slot)
-  if (macroData) {
-    // Create or reuse existing macro. The command embeds the actor id, so
-    // matching on name + command keeps per-actor macros distinct without
-    // polluting the visible name. Only reuse macros this user authored —
-    // players may not be able to execute another user's script macro.
-    let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command) && m.isAuthor)
-    if (!macro) {
-      macro = await Macro.create({
-        name: macroData.name,
-        type: 'script',
-        img: macroData.img,
-        command: macroData.command,
-        flags: { 'dcc.itemMacro': true }
-      })
-    }
+  if (!macroData) return true
 
-    // Assign the macro to the hotbar slot
-    await game.user.assignHotbarMacro(macro, slot)
-    return false // Prevent Foundry's default behavior
+  placeDCCMacro(macroData, slot)
+  return false // Prevent Foundry's default behavior
+}
+
+/**
+ * Create or reuse a macro and assign it to a hotbar slot.
+ * @param {Object} macroData    The factory's macro config
+ * @param {number} slot         The hotbar slot to use
+ * @returns {Promise}
+ */
+async function placeDCCMacro (macroData, slot) {
+  // The command embeds the actor id, so matching on name + command keeps
+  // per-actor macros distinct without polluting the visible name. Only reuse
+  // macros this user authored — players may not be able to execute another
+  // user's script macro.
+  let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command) && m.isAuthor)
+  if (!macro) {
+    macro = await Macro.create({
+      name: macroData.name,
+      type: 'script',
+      img: macroData.img,
+      command: macroData.command,
+      flags: { 'dcc.itemMacro': true }
+    })
   }
-  return true
+
+  await game.user.assignHotbarMacro(macro, slot)
 }
 
 /**

@@ -332,28 +332,6 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
   }
 
   /**
-   * Cast the spell attached to this equipment item, spending a charge.
-   * A charge is spent per cast regardless of the spell check result;
-   * casting is blocked at zero charges. Items with a charge maximum of
-   * zero do not track charges and cast freely.
-   * @param options
-   * @return {Promise}
-   */
-  async castSpell (options = {}) {
-    if (this.type !== 'equipment') { return }
-
-    // Only one pending cast per item - the roll dialog can stay open
-    // indefinitely, and concurrent casts would race on the charge count
-    if (this.#castInFlight) { return }
-    this.#castInFlight = true
-    try {
-      return await this._castSpell(options)
-    } finally {
-      this.#castInFlight = false
-    }
-  }
-
-  /**
    * Post this item to chat. Hotbar macros for items without a roll of their
    * own call this, including macros saved before this method existed (#1125).
    * The judge description stays out, and secret blocks are removed.
@@ -378,6 +356,28 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
     }
     ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
     return CONFIG.ChatMessage.documentClass.create(messageData)
+  }
+
+  /**
+   * Cast the spell attached to this equipment item, spending a charge.
+   * A charge is spent per cast regardless of the spell check result;
+   * casting is blocked at zero charges. Items with a charge maximum of
+   * zero do not track charges and cast freely.
+   * @param options
+   * @return {Promise}
+   */
+  async castSpell (options = {}) {
+    if (this.type !== 'equipment') { return }
+
+    // Only one pending cast per item - the roll dialog can stay open
+    // indefinitely, and concurrent casts would race on the charge count
+    if (this.#castInFlight) { return }
+    this.#castInFlight = true
+    try {
+      return await this._castSpell(options)
+    } finally {
+      this.#castInFlight = false
+    }
   }
 
   /**
