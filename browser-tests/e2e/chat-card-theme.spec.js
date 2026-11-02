@@ -867,4 +867,31 @@ test.describe('Chat card text color', () => {
     expect(result.appDarkUiLight.linkBackground, debug).not.toBe(TRANSPARENT)
     expect(result.appLightUiDark.linkBackground, debug).toBe(TRANSPARENT)
   })
+
+  test('a long sender name wraps beside the timestamp instead of running off the card', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const message = await ChatMessage.create({
+        speaker: { alias: 'Rosamund Underhill-Proudfoot of the Southern Farthing' },
+        content: '<p>Long sender</p>'
+      })
+      await ui.sidebar.changeTab('chat', 'primary')
+      const deadline = Date.now() + 5000
+      let header
+      while (!header && Date.now() < deadline) {
+        header = document.querySelector(`#chat ol.chat-log [data-message-id="${message.id}"] .message-header`)
+        if (!header) await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      const box = selector => header.querySelector(selector).getBoundingClientRect()
+      const [card, sender, metadata] = [header.getBoundingClientRect(), box('.message-sender'), box('.message-metadata')]
+      const measured = {
+        senderInsideCard: sender.right <= card.right + 0.5,
+        wrapped: sender.height > metadata.height,
+        timestampBesideName: metadata.top < sender.bottom && metadata.left >= sender.right - 0.5
+      }
+      await message.delete()
+      return measured
+    })
+
+    expect(result).toEqual({ senderInsideCard: true, wrapped: true, timestampBesideName: true })
+  })
 })

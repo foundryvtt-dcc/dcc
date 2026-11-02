@@ -194,6 +194,22 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
 
   .message-header {
     color: var(--chat-primary-color);
+
+    /*
+     * Core keeps the sender on one line, so a long name pushes the timestamp
+     * to its own row and runs off the card. Let the name take the room left
+     * beside the timestamp and wrap inside it.
+     */
+    .message-sender {
+      flex: 1 1 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .message-metadata {
+      flex: 0 0 auto;
+    }
   }
 
   /*
