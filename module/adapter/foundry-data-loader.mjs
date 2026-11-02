@@ -84,14 +84,16 @@ export function parseLevelDataText (text) {
  * Path → field mapping (Foundry-system-path on the left, lib field on
  * the right):
  *
- * - `system.saves.ref.value` → `saves.ref`
- * - `system.saves.frt.value` → `saves.frt`
- * - `system.saves.wil.value` → `saves.wil`
- * - `system.details.attackHitBonus` → `attackBonus`
+ * - `system.saves.ref.classBonus` → `saves.ref`
+ * - `system.saves.frt.classBonus` → `saves.frt`
+ * - `system.saves.wil.classBonus` → `saves.wil`
+ *   (each falls back to `system.saves.<save>.value`, the documented way
+ *    for a level item to set a save's total directly)
+ * - `system.details.attackBonus` → `attackBonus`
  *   (number for flat-mode classes; dice notation like `d3` for
- *    warrior deeds)
- * - `system.details.critDie` → `criticalDie`
- * - `system.details.critTable` → `criticalTable`
+ *    warrior deeds, with the leading `+` dropped)
+ * - `system.attributes.critical.die` → `criticalDie`
+ * - `system.attributes.critical.table` → `criticalTable`
  * - `system.details.critRange` → `critRange` (warriors only)
  * - `system.attributes.actionDice.value` → `actionDice`
  *   (comma-separated string → array)
@@ -109,9 +111,9 @@ export function parseLevelDataText (text) {
 export function buildProgressionLevelFromParsed (parsed) {
   const out = {}
 
-  const ref = parsed['system.saves.ref.value']
-  const frt = parsed['system.saves.frt.value']
-  const wil = parsed['system.saves.wil.value']
+  const ref = parsed['system.saves.ref.classBonus'] ?? parsed['system.saves.ref.value']
+  const frt = parsed['system.saves.frt.classBonus'] ?? parsed['system.saves.frt.value']
+  const wil = parsed['system.saves.wil.classBonus'] ?? parsed['system.saves.wil.value']
   if (ref !== undefined || frt !== undefined || wil !== undefined) {
     out.saves = {
       ref: typeof ref === 'number' ? ref : 0,
@@ -120,13 +122,13 @@ export function buildProgressionLevelFromParsed (parsed) {
     }
   }
 
-  const atk = parsed['system.details.attackHitBonus']
-  if (atk !== undefined) out.attackBonus = atk
+  const atk = parsed['system.details.attackBonus']
+  if (atk !== undefined) out.attackBonus = typeof atk === 'string' ? atk.replace(/^\+/, '') : atk
 
-  const critDie = parsed['system.details.critDie']
+  const critDie = parsed['system.attributes.critical.die']
   if (critDie !== undefined) out.criticalDie = String(critDie)
 
-  const critTable = parsed['system.details.critTable']
+  const critTable = parsed['system.attributes.critical.table']
   if (critTable !== undefined) out.criticalTable = String(critTable)
 
   const critRange = parsed['system.details.critRange']
@@ -153,37 +155,55 @@ export function buildProgressionLevelFromParsed (parsed) {
 }
 
 /**
- * Walk every registered level-data pack for the `{className}-{level}`
- * items for a single class. Returns a level-keyed object suitable
- * for `ClassProgression.levels`, or `null` if no items were found.
+ * Read `system.levelData` for every item in the registered level-data
+ * packs, keyed by item name. This runs on every client before
+ * `dcc.ready`, so it makes one server round trip per pack (none if the
+ * field is already indexed), however many classes and levels are
+ * registered (#1122). Packs are searched in registration order, so the
+ * earliest pack holding an item name wins. A pack that can't be read is
+ * logged and skipped, so it doesn't cost the classes in the other packs.
  *
- * @param {string} className - capitalized item-name prefix.
  * @param {object} [deps] - dependency injection for tests.
- * @returns {Promise<Object<number, object>|null>}
+ * @returns {Promise<Map<string, string>>} item name → levelData text.
  */
-async function loadLevelsForClass (className, deps = {}) {
+async function loadLevelDataByItemName (deps = {}) {
   const CONFIG = deps.CONFIG ?? globalThis.CONFIG
   const gameImpl = deps.game ?? game
-  const packsManager = CONFIG?.DCC?.levelDataPacks
-  if (!packsManager?.packs) return null
+  const levelDataByItemName = new Map()
+  const packs = (CONFIG?.DCC?.levelDataPacks?.packs ?? [])
+    .map(packName => gameImpl?.packs?.get?.(packName))
+    .filter(pack => pack)
+  const results = await Promise.allSettled(packs.map(pack => pack.getIndex({ fields: ['system.levelData'] })))
+  for (const [i, pack] of packs.entries()) {
+    // A failed pack's existing index has names but no levelData, so reading
+    // it would hide the same item in a later pack.
+    if (results[i].status === 'rejected') {
+      console.error(`DCC | Failed to read level data from pack ${pack.collection}`, results[i].reason)
+      continue
+    }
+    for (const entry of pack.index) {
+      if (levelDataByItemName.has(entry.name)) continue
+      levelDataByItemName.set(entry.name, entry.system?.levelData ?? '')
+    }
+  }
+  return levelDataByItemName
+}
 
+/**
+ * Assemble the `{className}-{level}` items for a single class into a
+ * level-keyed object suitable for `ClassProgression.levels`.
+ *
+ * @param {string} className - capitalized item-name prefix.
+ * @param {Map<string, string>} levelDataByItemName - from
+ *   `loadLevelDataByItemName`.
+ * @returns {Object<number, object>|null} levels, or `null` if no items
+ *   were found.
+ */
+function buildLevelsForClass (className, levelDataByItemName) {
   const levels = {}
   for (let level = 1; level <= MAX_LEVEL; level++) {
-    const itemName = `${className}-${level}`
-    let item = null
-    for (const packName of packsManager.packs) {
-      const pack = gameImpl?.packs?.get?.(packName)
-      if (!pack) continue
-      // eslint-disable-next-line no-await-in-loop
-      await pack.getIndex()
-      const entry = pack.index.find(e => e.name === itemName)
-      if (!entry) continue
-      // eslint-disable-next-line no-await-in-loop
-      item = await pack.getDocument(entry._id)
-      break
-    }
-    if (!item) continue
-    const text = item.system?.levelData ?? ''
+    const text = levelDataByItemName.get(`${className}-${level}`)
+    if (text === undefined) continue
     const parsed = parseLevelDataText(text)
     const progression = buildProgressionLevelFromParsed(parsed)
     if (Object.keys(progression).length === 0) continue
@@ -209,10 +229,10 @@ async function loadLevelsForClass (className, deps = {}) {
 export async function registerClassProgressionsFromPacks (deps = {}) {
   const CONFIG = deps.CONFIG ?? globalThis.CONFIG
   const classLevelNames = CONFIG?.DCC?.classLevelNames ?? {}
+  const levelDataByItemName = await loadLevelDataByItemName(deps)
   const progressions = []
   for (const [classId, itemPrefix] of Object.entries(classLevelNames)) {
-    // eslint-disable-next-line no-await-in-loop
-    const levels = await loadLevelsForClass(itemPrefix, deps)
+    const levels = buildLevelsForClass(itemPrefix, levelDataByItemName)
     if (!levels) continue
     // Display name capitalizes the first letter of the classId
     // (`'warrior'` → `'Warrior'`). The lib uses `name` for chat /

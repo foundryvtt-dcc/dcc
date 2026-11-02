@@ -17,7 +17,7 @@
  * parser + mapper logic only.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import {
   buildProgressionLevelFromParsed,
   parseLevelDataText,
@@ -79,12 +79,12 @@ describe('buildProgressionLevelFromParsed', () => {
     // Fictional placeholder values — arbitrary numbers for a made-up
     // class. Not data from any official DCC source.
     const parsed = {
-      'system.saves.ref.value': 2,
-      'system.saves.frt.value': 1,
-      'system.saves.wil.value': 3,
-      'system.details.attackHitBonus': 4,
-      'system.details.critDie': 'd12',
-      'system.details.critTable': 'III',
+      'system.saves.ref.classBonus': 2,
+      'system.saves.frt.classBonus': 1,
+      'system.saves.wil.classBonus': 3,
+      'system.details.attackBonus': 4,
+      'system.attributes.critical.die': '1d12',
+      'system.attributes.critical.table': 'III',
       'system.details.critRange': 19,
       'system.attributes.actionDice.value': '1d20,1d14',
       'system.attributes.hitDice.value': '1d8',
@@ -93,12 +93,26 @@ describe('buildProgressionLevelFromParsed', () => {
     const out = buildProgressionLevelFromParsed(parsed)
     expect(out.saves).toEqual({ ref: 2, frt: 1, wil: 3 })
     expect(out.attackBonus).toBe(4)
-    expect(out.criticalDie).toBe('d12')
+    expect(out.criticalDie).toBe('1d12')
     expect(out.criticalTable).toBe('III')
     expect(out.critRange).toBe(19)
     expect(out.actionDice).toEqual(['1d20', '1d14'])
     expect(out.hitDie).toBe('d8')
     expect(out.luckDie).toBe('d5')
+  })
+
+  test('reads a save total when the level item sets no class bonus, and prefers the class bonus', () => {
+    const out = buildProgressionLevelFromParsed({
+      'system.saves.ref.value': 5,
+      'system.saves.frt.classBonus': 2,
+      'system.saves.frt.value': 9
+    })
+    expect(out.saves).toEqual({ ref: 5, frt: 2, wil: 0 })
+  })
+
+  test('drops the leading + from a dice attack bonus', () => {
+    const parsed = parseLevelDataText('system.details.attackBonus=+d13')
+    expect(buildProgressionLevelFromParsed(parsed).attackBonus).toBe('d13')
   })
 
   test('strips the level-count prefix when the hit-dice value carries one (LdN → dN)', () => {
@@ -116,8 +130,8 @@ describe('buildProgressionLevelFromParsed', () => {
 
   test('omits fields that are not present in the parsed input', () => {
     expect(buildProgressionLevelFromParsed({})).toEqual({})
-    expect(buildProgressionLevelFromParsed({ 'system.details.critDie': 'd8' }))
-      .toEqual({ criticalDie: 'd8' })
+    expect(buildProgressionLevelFromParsed({ 'system.attributes.critical.die': '1d8' }))
+      .toEqual({ criticalDie: '1d8' })
   })
 
   test('coerces saves to zero when only some sub-keys are present', () => {
@@ -126,7 +140,7 @@ describe('buildProgressionLevelFromParsed', () => {
     // `ProgressionLevelData.saves` requires all three, so the mapper
     // fills the missing slots with zero rather than emitting an
     // invalid partial shape.
-    const out = buildProgressionLevelFromParsed({ 'system.saves.wil.value': 5 })
+    const out = buildProgressionLevelFromParsed({ 'system.saves.wil.classBonus': 5 })
     expect(out.saves).toEqual({ ref: 0, frt: 0, wil: 5 })
   })
 
@@ -152,6 +166,20 @@ describe('registerClassProgressionsFromPacks', () => {
     clearClassProgressions()
   })
 
+  // Like a real compendium, the index only carries `system.levelData`
+  // once it has been requested.
+  function makeMockPack (entries) {
+    const pack = {
+      index: entries.map(({ system, ...entry }) => entry),
+      getIndex: vi.fn(async ({ fields = [] } = {}) => {
+        if (fields.includes('system.levelData')) pack.index = entries
+        return pack.index
+      }),
+      getDocument: vi.fn(async () => null)
+    }
+    return pack
+  }
+
   function makeMockPackWithTestData () {
     // Test fixture using unambiguously fake placeholder values
     // (saves like 7/9/11, crit die `d13`, crit table 'TEST') — no
@@ -160,49 +188,98 @@ describe('registerClassProgressionsFromPacks', () => {
     // `BUILT_IN_CLASS_LEVEL_NAMES` mapping currently looks for
     // canonical class prefixes; that's just the dispatch key, not a
     // claim about which progression the values describe.
-    const level1 = {
-      _id: 'doc-test-1',
-      system: {
-        levelData:
-          'system.saves.ref.value=7\n' +
-          'system.saves.frt.value=9\n' +
-          'system.saves.wil.value=11\n' +
-          'system.attributes.actionDice.value=1d13\n' +
-          'system.attributes.hitDice.value=1d13\n' +
-          'system.details.critDie=d13\n' +
-          'system.details.critTable=TEST'
-      }
-    }
-    const level2 = {
-      _id: 'doc-test-2',
-      system: {
-        levelData:
-          'system.saves.ref.value=8\n' +
-          'system.saves.frt.value=10\n' +
-          'system.saves.wil.value=12\n' +
-          'system.attributes.actionDice.value=1d13\n' +
-          'system.attributes.hitDice.value=2d13\n' +
-          'system.details.critDie=d13\n' +
-          'system.details.critTable=TEST'
-      }
-    }
     const indexEntries = [
-      { _id: 'doc-test-1', name: 'cleric-1' },
-      { _id: 'doc-test-2', name: 'cleric-2' }
+      {
+        _id: 'doc-test-1',
+        name: 'cleric-1',
+        system: {
+          levelData:
+            'system.saves.ref.classBonus=+7\n' +
+            'system.saves.frt.classBonus=+9\n' +
+            'system.saves.wil.classBonus=+11\n' +
+            'system.attributes.actionDice.value=1d13\n' +
+            'system.attributes.hitDice.value=1d13\n' +
+            'system.attributes.critical.die=1d13\n' +
+            'system.attributes.critical.table=TEST'
+        }
+      },
+      {
+        _id: 'doc-test-2',
+        name: 'cleric-2',
+        system: {
+          levelData:
+            'system.saves.ref.classBonus=+8\n' +
+            'system.saves.frt.classBonus=+10\n' +
+            'system.saves.wil.classBonus=+12\n' +
+            'system.attributes.actionDice.value=1d13\n' +
+            'system.attributes.hitDice.value=2d13\n' +
+            'system.attributes.critical.die=1d13\n' +
+            'system.attributes.critical.table=TEST'
+        }
+      }
     ]
-    const docs = {
-      'doc-test-1': level1,
-      'doc-test-2': level2
-    }
     return {
       packName: 'test.placeholder-pack',
-      pack: {
-        index: indexEntries,
-        async getIndex () { /* no-op — index already populated */ },
-        async getDocument (id) { return docs[id] ?? null }
-      }
+      pack: makeMockPack(indexEntries)
     }
   }
+
+  test('reads each pack once however many classes are registered, and the first pack wins', async () => {
+    // #1122: this load blocks `dcc.ready` on every client, so its
+    // round trips must not grow with the number of classes and levels.
+    const makeEntry = (name, critDie) => ({
+      _id: name,
+      name,
+      system: { levelData: `system.attributes.critical.die=${critDie}` }
+    })
+    const firstPack = makeMockPack([makeEntry('cleric-1', 'd13')])
+    const secondPack = makeMockPack([makeEntry('cleric-1', 'd99'), makeEntry('wizard-1', 'd17')])
+    const packs = { 'test.first': firstPack, 'test.second': secondPack }
+
+    const registered = await registerClassProgressionsFromPacks({
+      CONFIG: {
+        DCC: {
+          levelDataPacks: { packs: ['test.first', 'test.second'] },
+          classLevelNames: { cleric: 'cleric', wizard: 'wizard' }
+        }
+      },
+      game: { packs: { get: (name) => packs[name] } }
+    })
+
+    expect(registered).toEqual(['cleric', 'wizard'])
+    expect(getClassProgression('cleric').levels[1].criticalDie).toBe('d13')
+    expect(getClassProgression('wizard').levels[1].criticalDie).toBe('d17')
+    expect(firstPack.getIndex).toHaveBeenCalledTimes(1)
+    expect(secondPack.getIndex).toHaveBeenCalledTimes(1)
+    expect(firstPack.getDocument).not.toHaveBeenCalled()
+    expect(secondPack.getDocument).not.toHaveBeenCalled()
+  })
+
+  test('skips a pack that fails to read and still loads the others', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const entry = { _id: 'cleric-1', name: 'cleric-1', system: { levelData: 'system.attributes.critical.die=d13' } }
+    // The failed pack's index still names the item, so it must not hide
+    // the copy in the working pack.
+    const failingPack = makeMockPack([entry])
+    failingPack.collection = 'test.failing'
+    failingPack.getIndex.mockRejectedValue(new Error('read failed'))
+    const packs = { 'test.failing': failingPack, 'test.working': makeMockPack([entry]) }
+
+    const registered = await registerClassProgressionsFromPacks({
+      CONFIG: {
+        DCC: {
+          levelDataPacks: { packs: ['test.failing', 'test.working'] },
+          classLevelNames: { cleric: 'cleric' }
+        }
+      },
+      game: { packs: { get: (name) => packs[name] } }
+    })
+
+    expect(registered).toEqual(['cleric'])
+    expect(getClassProgression('cleric').levels[1].criticalDie).toBe('d13')
+    expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('test.failing'), expect.any(Error))
+    consoleError.mockRestore()
+  })
 
   test('registers per-class progressions and the lib registry sees them', async () => {
     // Mocks `CONFIG.DCC.levelDataPacks` + `CONFIG.DCC.classLevelNames`
@@ -249,11 +326,7 @@ describe('registerClassProgressionsFromPacks', () => {
   })
 
   test('returns [] when levelDataPacks is set but contains no matching items', async () => {
-    const emptyPack = {
-      index: [],
-      async getIndex () { },
-      async getDocument () { return null }
-    }
+    const emptyPack = makeMockPack([])
     const registered = await registerClassProgressionsFromPacks({
       CONFIG: {
         DCC: {
