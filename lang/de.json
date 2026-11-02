@@ -529,6 +529,7 @@
   "DCC.LuckyWeaponMod": "Persönliche-Waffen-Mod",
   "DCC.LuckyWeaponModHint": "Glücksmodifikator des Charakters auf Stufe 1 - nur Erinnerung",
   "DCC.MacroNoTokenSelected": "Kein Token für Makro ausgewählt!",
+  "DCC.MacroTokenNotFound": "Das Token dieses Makros befindet sich nicht in der aktuellen Szene",
   "DCC.Manifestation": "Manifestation",
   "DCC.ManifestationValue": "Wurf",
   "DCC.ManifestationButtonCancel": "Abbrechen",

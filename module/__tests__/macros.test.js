@@ -329,6 +329,11 @@ describe('_createDCCItemMacro', () => {
 })
 
 describe('_createDCCApplyDisapprovalMacro', () => {
+  test('names the token when dragged from an unlinked token (#1120)', () => {
+    const macro = _createDCCApplyDisapprovalMacro({ type: 'Apply Disapproval', actorId: 'A12', tokenId: 'T1' })
+    expect(macro.command).toContain("game.dcc.getMacroActor('A12', 'T1')")
+  })
+
   test('builds an apply-disapproval macro', () => {
     const macro = _createDCCApplyDisapprovalMacro({ type: 'Apply Disapproval', actorId: 'A12' })
     expect(macro.command).toContain('applyDisapproval()')
@@ -453,6 +458,14 @@ describe('createDCCMacro dispatcher', () => {
 })
 
 describe('rollDCCWeaponMacro', () => {
+  test('rolls for the token named by its macro (#1120)', () => {
+    const macro = _createDCCWeaponMacro({ type: 'Weapon', actorId: 'A1', tokenId: 'T1', system: { weapon: { _id: 'W1', name: 'Sword', img: 'sword.png' } } })
+    expect(macro.command).toContain(', "T1");')
+    const tokenActor = { rollWeaponAttack: vi.fn(() => 'token-roll') }
+    globalThis.game.actors = { get: vi.fn(), tokens: { T1: tokenActor } }
+    expect(rollDCCWeaponMacro('W1', 'A1', {}, 'T1')).toBe('token-roll')
+  })
+
   test('looks up the actor by id and delegates to rollWeaponAttack', () => {
     const rollWeaponAttack = vi.fn(() => 'roll-result')
     globalThis.game.actors.get = vi.fn(() => ({ rollWeaponAttack }))
@@ -468,6 +481,18 @@ describe('getMacroActor', () => {
     const actor = { id: 'A1' }
     globalThis.game.actors.get = vi.fn(() => actor)
     expect(getMacroActor('A1')).toBe(actor)
+  })
+
+  test('with a tokenId returns that token\'s actor, not the world actor (#1120)', () => {
+    const tokenActor = { id: 'A1' }
+    globalThis.game.actors = { get: vi.fn(() => ({ id: 'A1', world: true })), tokens: { T1: tokenActor } }
+    expect(getMacroActor('A1', 'T1')).toBe(tokenActor)
+  })
+
+  test('warns instead of using the world actor when the token is not on the scene (#1120)', () => {
+    globalThis.game.actors = { get: vi.fn(() => ({ id: 'A1', world: true })), tokens: {} }
+    expect(getMacroActor('A1', 'T1')).toBeUndefined()
+    expect(globalThis.ui.notifications.warn).toHaveBeenCalledWith('loc:DCC.MacroTokenNotFound')
   })
 
   test('without actorId resolves via ChatMessage.getSpeaker → token first', () => {

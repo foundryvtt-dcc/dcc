@@ -529,6 +529,7 @@
   "DCC.LuckyWeaponMod": "Mod. Arma Fortunata",
   "DCC.LuckyWeaponModHint": "Modificatore di fortuna del personaggio al 1° livello (solo come promemoria)",
   "DCC.MacroNoTokenSelected": "Devi scegliere un Segnalino per eseguire questa macro",
+  "DCC.MacroTokenNotFound": "Il token di questa macro non è nella scena corrente",
   "DCC.Manifestation": "Manifestazione",
   "DCC.ManifestationValue": "Tiro",
   "DCC.ManifestationButtonCancel": "Elimina",
