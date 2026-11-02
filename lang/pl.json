@@ -529,6 +529,7 @@
   "DCC.LuckyWeaponMod": "Mod. Szczęśliwej Broni",
   "DCC.LuckyWeaponModHint": "Modyfikator szczęścia postaci na 1 poziomie - tylko przypomnienie",
   "DCC.MacroNoTokenSelected": "Musisz wybrać żeton aby uruchomić to makro",
+  "DCC.MacroTokenNotFound": "Token tego makra nie znajduje się na bieżącej scenie",
   "DCC.Manifestation": "Manifestacja",
   "DCC.ManifestationValue": "Rzut",
   "DCC.ManifestationButtonCancel": "Anuluj",

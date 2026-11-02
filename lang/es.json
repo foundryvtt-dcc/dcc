@@ -529,6 +529,7 @@
   "DCC.LuckyWeaponMod": "Modificador de arma de suerte",
   "DCC.LuckyWeaponModHint": "Modificador de suerte del personaje en nivel 1 - solo recordatorio",
   "DCC.MacroNoTokenSelected": "Debes seleccionar un token para ejecutar esta macro",
+  "DCC.MacroTokenNotFound": "El token de esta macro no está en la escena actual",
   "DCC.Manifestation": "Manifestación",
   "DCC.ManifestationValue": "Tirada",
   "DCC.ManifestationButtonCancel": "Cancelar",

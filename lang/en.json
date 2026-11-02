@@ -516,6 +516,7 @@
   "DCC.LuckyWeaponMod": "Lucky Weapon Mod",
   "DCC.LuckyWeaponModHint": "Character's luck modifier at level 1 - reminder only",
   "DCC.MacroNoTokenSelected": "You must select a token to run this macro",
+  "DCC.MacroTokenNotFound": "This macro's token isn't on the current scene",
   "DCC.Manifestation": "Manifestation",
   "DCC.ManifestationValue": "Roll",
   "DCC.ManifestationButtonCancel": "Cancel",

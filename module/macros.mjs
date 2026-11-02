@@ -17,6 +17,30 @@
 import EntityImages from './entity-images.js'
 
 /**
+ * The `getMacroActor` arguments for a dropped entry. A drag from an unlinked
+ * token's sheet also names the token, because its actor shares an id with the
+ * world actor.
+ * @param {Object} data     The dropped data
+ * @returns {string}
+ */
+function macroActorArgs (data) {
+  return data.tokenId ? `'${data.actorId}', '${data.tokenId}'` : `'${data.actorId}'`
+}
+
+/**
+ * The macro expression that finds a dropped item. A uuid built from the actor
+ * id would find the world actor's copy, so an unlinked token's item goes
+ * through that token's actor.
+ * @param {Object} data     The dropped data
+ * @param {string} itemId   The item's id
+ * @returns {string}
+ */
+function macroItemLookup (data, itemId) {
+  if (data.tokenId) return `game.dcc.getMacroActor(${macroActorArgs(data)})?.items.get('${itemId}')`
+  return `await fromUuid("Actor.${data.actorId}.Item.${itemId}")`
+}
+
+/**
  * Create a macro from an ability check drop.
  * @param {Object} data     The dropped data
  * @returns {Object}
@@ -29,7 +53,7 @@ export function _createDCCAbilityMacro (data) {
   const rollUnder = data.data.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
     img: EntityImages.imageForMacro(abilityId, rollUnder ? 'abilityRollUnder' : 'ability')
   }
 
@@ -52,7 +76,7 @@ export function _createDCCInitiativeMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.Initiative'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollInit(event, token) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollInit(event, token) }`,
     img: EntityImages.imageForMacro('initiative')
   }
 }
@@ -68,7 +92,7 @@ export function _createDCCHitDiceMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.HitDiceRoll'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 }
@@ -85,7 +109,7 @@ export function _createDCCSaveMacro (data) {
   const saveId = data.data
   return {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
 }
@@ -103,7 +127,7 @@ export function _createDCCSkillMacro (data) {
   const skillName = game.i18n.localize(data.data.skillName)
   return {
     name: skillName,
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
 }
@@ -120,7 +144,7 @@ export function _createDCCLuckDieMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.LuckDie'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'luckDie')
   }
 }
@@ -145,14 +169,13 @@ export function _createDCCSpellCheckMacro (data) {
 
   // If we have an itemId, create an item-based macro
   if (itemId) {
-    const uuid = `Actor.${data.actorId}.Item.${itemId}`
-    macroData.command = `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`
+    macroData.command = `const _item = ${macroItemLookup(data, itemId)}; if (_item) { _item.rollSpellCheck() }`
   } else if (spell) {
     // Fallback to actor-based spell check with spell name
-    macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
+    macroData.command = `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
   } else {
     // Generic spell check
-    macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`
+    macroData.command = `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollSpellCheck() }`
   }
 
   return macroData
@@ -170,7 +193,7 @@ export function _createDCCAttackBonusMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.AttackBonus'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'attackBonus')
   }
 }
@@ -187,7 +210,7 @@ export function _createDCCActionDiceMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.setActionDice('${die}') }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.setActionDice('${die}') }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'defaultDice')
   }
 }
@@ -208,7 +231,7 @@ export function _createDCCWeaponMacro (data) {
 
   const macroData = {
     name: weapon.name,
-    command: `game.dcc.rollDCCWeaponMacro("${weapon._id}", "${data.actorId}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
+    command: `game.dcc.rollDCCWeaponMacro("${weapon._id}", "${data.actorId}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions())${data.tokenId ? `, "${data.tokenId}"` : ''});`,
     img: weapon.img
   }
 
@@ -236,14 +259,13 @@ export function _createDCCItemMacro (data) {
   const item = data.system.item || data.data
   if (!item) return
 
-  // Generate the UUID for the item
-  const uuid = `Actor.${data.actorId}.Item.${item._id}`
+  const lookup = macroItemLookup(data, item._id)
 
   // Handle spell items
   if (item.type === 'spell') {
     return {
       name: item.name,
-      command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`,
+      command: `const _item = ${lookup}; if (_item) { _item.rollSpellCheck() }`,
       img: item.img
     }
   }
@@ -251,7 +273,7 @@ export function _createDCCItemMacro (data) {
   // For other item types, create a generic macro
   return {
     name: item.name,
-    command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.roll() }`,
+    command: `const _item = ${lookup}; if (_item) { _item.roll() }`,
     img: item.img || EntityImages.imageForItem(item.type)
   }
 }
@@ -267,7 +289,7 @@ export function _createDCCApplyDisapprovalMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.ApplyDisapprovalMacroName'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.applyDisapproval() }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.applyDisapproval() }`,
     img: EntityImages.imageForMacro('applyDisapproval')
   }
 }
@@ -283,7 +305,7 @@ export function _createDCCRollDisapprovalMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.RollDisapprovalMacroName'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollDisapproval() }`,
+    command: `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollDisapproval() }`,
     img: EntityImages.imageForMacro('rollDisapproval')
   }
 }
@@ -361,21 +383,30 @@ export async function createDCCMacro (data, slot) {
  * @param {string} itemId
  * @param {string} actorId
  * @param {Object} options
+ * @param {string} [tokenId] - the unlinked token the macro was dragged from
  * @return {Promise}
  */
-export function rollDCCWeaponMacro (itemId, actorId, options = {}) {
+export function rollDCCWeaponMacro (itemId, actorId, options = {}, tokenId = null) {
   /** @type {DCCActor} */
-  const actor = game.actors.get(actorId)
+  const actor = getMacroActor(actorId, tokenId)
 
   // Trigger the weapon roll
-  return actor.rollWeaponAttack(itemId, options)
+  return actor?.rollWeaponAttack(itemId, options)
 }
 
 /**
  * Get the current actor - for use in macros
- * @return {Object}
+ * @param {string} [actorId] - a specific world actor
+ * @param {string} [tokenId] - a specific unlinked token. It doesn't fall back
+ *   to the world actor, because that would change the wrong character.
+ * @return {Object|undefined} undefined if the named token isn't on the viewed scene
  */
-export function getMacroActor (actorId = null) {
+export function getMacroActor (actorId = null, tokenId = null) {
+  if (tokenId) {
+    const tokenActor = game.actors.tokens[tokenId]
+    if (!tokenActor) ui.notifications.warn(game.i18n.localize('DCC.MacroTokenNotFound'))
+    return tokenActor
+  }
   if (actorId) {
     return game.actors.get(actorId)
   }

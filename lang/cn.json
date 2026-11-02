@@ -529,6 +529,7 @@
   "DCC.LuckyWeaponMod": "幸运武器调整值",
   "DCC.LuckyWeaponModHint": "角色 1 级的幸运调整值——仅提醒",
   "DCC.MacroNoTokenSelected": "须选中指示物以运行此宏",
+  "DCC.MacroTokenNotFound": "此宏对应的指示物不在当前场景中",
   "DCC.Manifestation": "显现",
   "DCC.ManifestationValue": "投骰",
   "DCC.ManifestationButtonCancel": "取消",

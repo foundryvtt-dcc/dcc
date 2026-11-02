@@ -516,6 +516,7 @@
   "DCC.LuckyWeaponMod": "Mod. Arme Chanceuse",
   "DCC.LuckyWeaponModHint": "Modificateur de chance du personnage au niveau 1 - rappel seulement",
   "DCC.MacroNoTokenSelected": "Pas de Token sélectionné pour la macro!",
+  "DCC.MacroTokenNotFound": "Le jeton de cette macro n'est pas sur la scène actuelle",
   "DCC.Manifestation": "Manifestation",
   "DCC.ManifestationButtonCancel": "Annuler",
   "DCC.ManifestationButtonLookup": "Consulter",
