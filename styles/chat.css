@@ -405,6 +405,11 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
   .message-content h3 {
     color: var(--chat-primary-color);
   }
+
+  /* An item's description can hold any heading level, see `.table-draw` above. */
+  .dcc-item-card .card-description :is(h1, h2, h4, h5, h6) {
+    color: var(--chat-primary-color);
+  }
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -529,6 +534,39 @@ body.chat-cards-use-ui-theme #interface.theme-dark .chat-message {
       line-height: 24px;
       min-height: 0;
     }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Item card                                */
+/* ----------------------------------------- */
+.dcc-item-card {
+  .card-header {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+
+    img {
+      border: 0;
+      flex: none;
+    }
+
+    /* Without this the h3 inherits the large default chat heading size. */
+    h3 {
+      border: 0;
+      font-size: 14px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .item-type {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  }
+
+  .card-description {
+    margin-top: 6px;
   }
 }
 

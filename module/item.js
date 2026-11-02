@@ -1,4 +1,4 @@
-/* global Item, foundry, game, ui, Roll, Dialog */
+/* global ChatMessage, CONFIG, Item, foundry, game, ui, Roll, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getSingleActionDie, inferWeaponDie } from './utilities.js'
@@ -329,6 +329,33 @@ class DCCItem extends SpellItemMixin(CurrencyItemMixin(ContainerItemMixin(Item))
   async removeAttachedSpell () {
     if (this.type !== 'equipment') { return }
     return this.update({ 'system.spell': null })
+  }
+
+  /**
+   * Post this item to chat. Hotbar macros for items without a roll of their
+   * own call this, including macros saved before this method existed (#1125).
+   * The judge description stays out, and secret blocks are removed.
+   * @return {Promise<ChatMessage>}
+   */
+  async roll () {
+    const { renderTemplate } = foundry.applications.handlebars
+    const description = await foundry.applications.ux.TextEditor.enrichHTML(this.system.description?.value ?? '', {
+      relativeTo: this,
+      secrets: false
+    })
+    const content = await renderTemplate('systems/dcc/templates/chat-card-item.html', {
+      name: this.name,
+      img: this.img,
+      typeLabel: game.i18n.localize(`TYPES.Item.${this.type}`),
+      description
+    })
+    const messageData = {
+      user: game.user.id,
+      speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+      content
+    }
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
+    return CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
   /**

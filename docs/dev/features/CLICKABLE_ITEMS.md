@@ -19,7 +19,7 @@ Extension modules (dcc-qol, xcc, etc.) can hook into the activation to add custo
 - **Spells** have `rollSpellCheck` on the item sheet, but not directly from the actor sheet equipment tab.
 - **Treasure** items have `rollValue()` on `DCCItem`, but it's only accessible from the item sheet — not the actor sheet.
 - **All other items** (armor, equipment, ammunition, mounts, containers) are display-only on the actor sheet with no click action.
-- **Hotbar macros** for non-spell/non-weapon items call `_item.roll()` which **does not exist**, so dragging these items to the hotbar creates a broken macro.
+- **Hotbar macros** for items without a roll of their own, including one dragged from a weapon row's icon, call `_item.roll()`, which posts the item's name, image, type and player description to chat (#1125). Sheet clicks, type-specific properties and the `dcc.activateItem` hook below don't exist yet.
 
 ### What the Old Branch Did
 
@@ -189,20 +189,7 @@ In `styles/items.css`, add hover/cursor styles for the new clickable elements:
 
 ### Phase 3: Hotbar Macro Fix
 
-#### 3a. Update `_createDCCItemMacro` in `module/dcc.js`
-
-Replace the broken `_item.roll()` call with `_item.activate()`:
-
-```javascript
-// For other item types, create an activation macro
-return {
-  name: item.name,
-  command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.activate() }`,
-  img: item.img || EntityImages.imageForItem(item.type)
-}
-```
-
-This fixes the existing bug where non-spell/non-weapon items dragged to the hotbar produce broken macros.
+Done in #1125 by adding `DCCItem.roll()`, which also repairs macros already saved on hotbars. Keep that method if `activate()` is added, since saved macros call it.
 
 ### Phase 4: Extension Hook
 
@@ -240,7 +227,6 @@ Add `dcc.activateItem` to the hooks list in the README or wherever system hooks 
 - `DCCItem.activate()` produces a chat message with correct content and flags
 - `DCCItem.chatCardData` returns correct properties for each item type
 - `_getChatCardProperties()` returns appropriate data per type
-- `_createDCCItemMacro()` generates `activate()` calls (not `roll()`)
 
 ### Integration Tests
 
