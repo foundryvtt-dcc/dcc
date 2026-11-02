@@ -17,7 +17,7 @@
  * parser + mapper logic only.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import {
   buildProgressionLevelFromParsed,
   parseLevelDataText,
@@ -152,6 +152,20 @@ describe('registerClassProgressionsFromPacks', () => {
     clearClassProgressions()
   })
 
+  // Like a real compendium, the index only carries `system.levelData`
+  // once it has been requested.
+  function makeMockPack (entries) {
+    const pack = {
+      index: entries.map(({ system, ...entry }) => entry),
+      getIndex: vi.fn(async ({ fields = [] } = {}) => {
+        if (fields.includes('system.levelData')) pack.index = entries
+        return pack.index
+      }),
+      getDocument: vi.fn(async () => null)
+    }
+    return pack
+  }
+
   function makeMockPackWithTestData () {
     // Test fixture using unambiguously fake placeholder values
     // (saves like 7/9/11, crit die `d13`, crit table 'TEST') — no
@@ -160,49 +174,72 @@ describe('registerClassProgressionsFromPacks', () => {
     // `BUILT_IN_CLASS_LEVEL_NAMES` mapping currently looks for
     // canonical class prefixes; that's just the dispatch key, not a
     // claim about which progression the values describe.
-    const level1 = {
-      _id: 'doc-test-1',
-      system: {
-        levelData:
-          'system.saves.ref.value=7\n' +
-          'system.saves.frt.value=9\n' +
-          'system.saves.wil.value=11\n' +
-          'system.attributes.actionDice.value=1d13\n' +
-          'system.attributes.hitDice.value=1d13\n' +
-          'system.details.critDie=d13\n' +
-          'system.details.critTable=TEST'
-      }
-    }
-    const level2 = {
-      _id: 'doc-test-2',
-      system: {
-        levelData:
-          'system.saves.ref.value=8\n' +
-          'system.saves.frt.value=10\n' +
-          'system.saves.wil.value=12\n' +
-          'system.attributes.actionDice.value=1d13\n' +
-          'system.attributes.hitDice.value=2d13\n' +
-          'system.details.critDie=d13\n' +
-          'system.details.critTable=TEST'
-      }
-    }
     const indexEntries = [
-      { _id: 'doc-test-1', name: 'cleric-1' },
-      { _id: 'doc-test-2', name: 'cleric-2' }
+      {
+        _id: 'doc-test-1',
+        name: 'cleric-1',
+        system: {
+          levelData:
+            'system.saves.ref.value=7\n' +
+            'system.saves.frt.value=9\n' +
+            'system.saves.wil.value=11\n' +
+            'system.attributes.actionDice.value=1d13\n' +
+            'system.attributes.hitDice.value=1d13\n' +
+            'system.details.critDie=d13\n' +
+            'system.details.critTable=TEST'
+        }
+      },
+      {
+        _id: 'doc-test-2',
+        name: 'cleric-2',
+        system: {
+          levelData:
+            'system.saves.ref.value=8\n' +
+            'system.saves.frt.value=10\n' +
+            'system.saves.wil.value=12\n' +
+            'system.attributes.actionDice.value=1d13\n' +
+            'system.attributes.hitDice.value=2d13\n' +
+            'system.details.critDie=d13\n' +
+            'system.details.critTable=TEST'
+        }
+      }
     ]
-    const docs = {
-      'doc-test-1': level1,
-      'doc-test-2': level2
-    }
     return {
       packName: 'test.placeholder-pack',
-      pack: {
-        index: indexEntries,
-        async getIndex () { /* no-op — index already populated */ },
-        async getDocument (id) { return docs[id] ?? null }
-      }
+      pack: makeMockPack(indexEntries)
     }
   }
+
+  test('reads each pack once however many classes are registered, and the first pack wins', async () => {
+    // #1122: this load blocks `dcc.ready` on every client, so its
+    // round trips must not grow with the number of classes and levels.
+    const makeEntry = (name, critDie) => ({
+      _id: name,
+      name,
+      system: { levelData: `system.details.critDie=${critDie}` }
+    })
+    const firstPack = makeMockPack([makeEntry('cleric-1', 'd13')])
+    const secondPack = makeMockPack([makeEntry('cleric-1', 'd99'), makeEntry('wizard-1', 'd17')])
+    const packs = { 'test.first': firstPack, 'test.second': secondPack }
+
+    const registered = await registerClassProgressionsFromPacks({
+      CONFIG: {
+        DCC: {
+          levelDataPacks: { packs: ['test.first', 'test.second'] },
+          classLevelNames: { cleric: 'cleric', wizard: 'wizard' }
+        }
+      },
+      game: { packs: { get: (name) => packs[name] } }
+    })
+
+    expect(registered).toEqual(['cleric', 'wizard'])
+    expect(getClassProgression('cleric').levels[1].criticalDie).toBe('d13')
+    expect(getClassProgression('wizard').levels[1].criticalDie).toBe('d17')
+    expect(firstPack.getIndex).toHaveBeenCalledTimes(1)
+    expect(secondPack.getIndex).toHaveBeenCalledTimes(1)
+    expect(firstPack.getDocument).not.toHaveBeenCalled()
+    expect(secondPack.getDocument).not.toHaveBeenCalled()
+  })
 
   test('registers per-class progressions and the lib registry sees them', async () => {
     // Mocks `CONFIG.DCC.levelDataPacks` + `CONFIG.DCC.classLevelNames`
@@ -249,11 +286,7 @@ describe('registerClassProgressionsFromPacks', () => {
   })
 
   test('returns [] when levelDataPacks is set but contains no matching items', async () => {
-    const emptyPack = {
-      index: [],
-      async getIndex () { },
-      async getDocument () { return null }
-    }
+    const emptyPack = makeMockPack([])
     const registered = await registerClassProgressionsFromPacks({
       CONFIG: {
         DCC: {

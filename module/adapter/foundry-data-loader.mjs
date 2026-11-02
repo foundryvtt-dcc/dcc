@@ -153,37 +153,48 @@ export function buildProgressionLevelFromParsed (parsed) {
 }
 
 /**
- * Walk every registered level-data pack for the `{className}-{level}`
- * items for a single class. Returns a level-keyed object suitable
- * for `ClassProgression.levels`, or `null` if no items were found.
+ * Read `system.levelData` for every item in the registered level-data
+ * packs, keyed by item name. This runs on every client before
+ * `dcc.ready`, so it makes one server round trip per pack (none if the
+ * field is already indexed), however many classes and levels are
+ * registered (#1122). Packs are searched in registration order, so the
+ * earliest pack holding an item name wins.
  *
- * @param {string} className - capitalized item-name prefix.
  * @param {object} [deps] - dependency injection for tests.
- * @returns {Promise<Object<number, object>|null>}
+ * @returns {Promise<Map<string, string>>} item name → levelData text.
  */
-async function loadLevelsForClass (className, deps = {}) {
+async function loadLevelDataByItemName (deps = {}) {
   const CONFIG = deps.CONFIG ?? globalThis.CONFIG
   const gameImpl = deps.game ?? game
-  const packsManager = CONFIG?.DCC?.levelDataPacks
-  if (!packsManager?.packs) return null
+  const levelDataByItemName = new Map()
+  const packs = (CONFIG?.DCC?.levelDataPacks?.packs ?? [])
+    .map(packName => gameImpl?.packs?.get?.(packName))
+    .filter(pack => pack)
+  await Promise.all(packs.map(pack => pack.getIndex({ fields: ['system.levelData'] })))
+  for (const pack of packs) {
+    for (const entry of pack.index) {
+      if (levelDataByItemName.has(entry.name)) continue
+      levelDataByItemName.set(entry.name, entry.system?.levelData ?? '')
+    }
+  }
+  return levelDataByItemName
+}
 
+/**
+ * Assemble the `{className}-{level}` items for a single class into a
+ * level-keyed object suitable for `ClassProgression.levels`.
+ *
+ * @param {string} className - capitalized item-name prefix.
+ * @param {Map<string, string>} levelDataByItemName - from
+ *   `loadLevelDataByItemName`.
+ * @returns {Object<number, object>|null} levels, or `null` if no items
+ *   were found.
+ */
+function buildLevelsForClass (className, levelDataByItemName) {
   const levels = {}
   for (let level = 1; level <= MAX_LEVEL; level++) {
-    const itemName = `${className}-${level}`
-    let item = null
-    for (const packName of packsManager.packs) {
-      const pack = gameImpl?.packs?.get?.(packName)
-      if (!pack) continue
-      // eslint-disable-next-line no-await-in-loop
-      await pack.getIndex()
-      const entry = pack.index.find(e => e.name === itemName)
-      if (!entry) continue
-      // eslint-disable-next-line no-await-in-loop
-      item = await pack.getDocument(entry._id)
-      break
-    }
-    if (!item) continue
-    const text = item.system?.levelData ?? ''
+    const text = levelDataByItemName.get(`${className}-${level}`)
+    if (text === undefined) continue
     const parsed = parseLevelDataText(text)
     const progression = buildProgressionLevelFromParsed(parsed)
     if (Object.keys(progression).length === 0) continue
@@ -209,10 +220,10 @@ async function loadLevelsForClass (className, deps = {}) {
 export async function registerClassProgressionsFromPacks (deps = {}) {
   const CONFIG = deps.CONFIG ?? globalThis.CONFIG
   const classLevelNames = CONFIG?.DCC?.classLevelNames ?? {}
+  const levelDataByItemName = await loadLevelDataByItemName(deps)
   const progressions = []
   for (const [classId, itemPrefix] of Object.entries(classLevelNames)) {
-    // eslint-disable-next-line no-await-in-loop
-    const levels = await loadLevelsForClass(itemPrefix, deps)
+    const levels = buildLevelsForClass(itemPrefix, levelDataByItemName)
     if (!levels) continue
     // Display name capitalizes the first letter of the classId
     // (`'warrior'` → `'Warrior'`). The lib uses `name` for chat /
