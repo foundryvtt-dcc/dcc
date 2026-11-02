@@ -177,3 +177,97 @@ describe('burning Luck after the roll', () => {
     format.mockRestore()
   })
 })
+
+describe('burning Luck for an ally (#1063)', () => {
+  const card = (speakerActor, flags) => ({
+    id: 'msg1',
+    flavor: 'Reflex Save',
+    speaker: { actor: speakerActor.id },
+    rolls: [{ total: 11, formula: '1d20' }],
+    getFlag: (_scope, key) => flags[key]
+  })
+  const pc = (id, classId, overrides = {}) => ({ ...makeActor(classId), id, name: id, isOwner: true, ...overrides })
+  const stubDialog = (points, bonus) => {
+    game.dcc.DCCRoll = {
+      createRoll: vi.fn(async ([term], _data, options) => {
+        expect(term.multiplier).toBe(2)
+        term.points = points
+        term.bonus = bonus
+        term.callback(`+${bonus}`, term)
+        await term.pending
+        return { options }
+      })
+    }
+  }
+
+  beforeEach(() => {
+    ChatMessage.create = vi.fn()
+  })
+
+  test('offers only owned PCs with the trait and Luck left, never the roller, and only on PC cards', () => {
+    const { luckBurnAllyBurners } = globalThis.__luckBurn
+    const ally = pc('ally', 'warrior')
+    const halfling = pc('halfling', 'halfling')
+    const rollingHalfling = pc('rolling', 'halfling')
+    game.actors = {
+      contents: [
+        ally,
+        halfling,
+        rollingHalfling,
+        pc('unowned', 'halfling', { isOwner: false }),
+        pc('broke', 'halfling', makeActor('halfling', 0))
+      ]
+    }
+    ChatMessage.getSpeakerActor = vi.fn(() => ally)
+    expect(luckBurnAllyBurners(card(ally, { RollType: 'SavingThrow' }))).toEqual([halfling, rollingHalfling])
+    expect(luckBurnAllyBurners(card(ally, { RollType: 'HitDice' }))).toEqual([])
+
+    ChatMessage.getSpeakerActor = vi.fn(() => rollingHalfling)
+    expect(luckBurnAllyBurners(card(rollingHalfling, { isToHit: true }))).toEqual([halfling])
+
+    const npc = pc('npc', 'warrior', { type: 'NPC' })
+    ChatMessage.getSpeakerActor = vi.fn(() => npc)
+    expect(luckBurnAllyBurners(card(npc, { RollType: 'SavingThrow' }))).toEqual([])
+  })
+
+  test('spends the burner\'s Luck at their rate and posts the ally\'s new total as the burner', async () => {
+    const ally = pc('Mira', 'warrior')
+    const halfling = pc('Bilbo', 'halfling')
+    game.actors = { contents: [ally, halfling] }
+    ChatMessage.getSpeakerActor = vi.fn(() => ally)
+    stubDialog(1, 2)
+    const getSpeaker = vi.spyOn(ChatMessage, 'getSpeaker')
+    const format = vi.spyOn(game.i18n, 'format')
+
+    await globalThis.__luckBurn.burnLuckForAlly(card(ally, { RollType: 'SavingThrow' }))
+
+    expect(logAbilityChange).toHaveBeenCalledTimes(1)
+    expect(logAbilityChange).toHaveBeenCalledWith(halfling,
+      { ability: 'lck', change: -1, type: 'luckSpend', source: 'Mira: Reflex Save' }, { announce: false })
+    expect(getSpeaker).toHaveBeenCalledWith({ actor: halfling })
+    expect(format).toHaveBeenCalledWith('DCC.LuckBurnForAlly',
+      { ally: 'Mira', name: 'Bilbo', roll: 'Reflex Save', points: 1, bonus: '+2', before: 11, after: 13 })
+    expect(ChatMessage.create.mock.calls[0][0].flags.dcc).toEqual({ RollType: 'LuckBurn', luckBurnFor: 'msg1', luckBurnBonus: 2 })
+    format.mockRestore()
+    getSpeaker.mockRestore()
+  })
+
+  test('asks whose Luck when several PCs qualify, and spends nothing if the chooser is closed', async () => {
+    const ally = pc('Mira', 'warrior')
+    const first = pc('Bilbo', 'halfling')
+    const second = pc('Rosie', 'halfling')
+    game.actors = { contents: [ally, first, second] }
+    ChatMessage.getSpeakerActor = vi.fn(() => ally)
+    stubDialog(1, 2)
+    const wait = vi.fn().mockResolvedValueOnce('Rosie').mockResolvedValueOnce(null)
+    foundry.applications.api.DialogV2 = { wait }
+
+    await globalThis.__luckBurn.burnLuckForAlly(card(ally, { RollType: 'SavingThrow' }))
+    expect(wait.mock.calls[0][0].buttons.map(b => b.label)).toEqual(['Bilbo', 'Rosie'])
+    expect(vi.mocked(logAbilityChange).mock.calls[0][0]).toBe(second)
+
+    vi.mocked(logAbilityChange).mockClear()
+    await globalThis.__luckBurn.burnLuckForAlly(card(ally, { RollType: 'SavingThrow' }))
+    expect(logAbilityChange).not.toHaveBeenCalled()
+  })
+})

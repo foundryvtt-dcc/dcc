@@ -20,4 +20,10 @@ Attacks, saving throws, ability checks, skill checks and spell checks opened thi
 
 You can also decide after seeing the result. Right-click the attack, check, save, skill or spell check card in chat and choose **Burn Luck**. Pick the points in the same Luck Burn dialog; a new chat card shows the bonus and the roll's new total, e.g. "burns 2 Luck after the roll (Fortitude Save): +4, so the total goes from 13 to 17". The original card is not changed, so the judge decides whether the new total hits, saves or reaches a better spell result. The entry only appears on cards rolled by a character you own that has Luck left.
 
+### Burning Luck for an ally
+
+A halfling can burn Luck on another character's roll. Right-click the ally's attack, check, save, skill or spell check card in chat and choose **Burn Luck for Ally**. The entry appears if you own a halfling with Luck left, other than the character who rolled; the GM sees it for every halfling, and picks which one if there are several. Each point adds +2, the same as on the halfling's own roll. The halfling loses the Luck, and a new chat card shows the bonus and the roll's new total, e.g. "burns 1 Luck for Mira (Reflex Save): +2, so the total goes from 11 to 13".
+
+The rules require the ally to be nearby and visible to the halfling, and only one halfling in a party counts as the good luck charm. The system doesn't check either, so that's up to the judge. Damage cards don't offer this entry: for a damage roll, add the bonus with Ctrl/Command-click on **Apply Damage** and lower the halfling's Luck by hand.
+
 With the Ability Score Log enabled, each burn is logged as a Luck spend, so thieves and halflings can recover it with the log viewer's **Night's Rest** button (or the GM's party-sheet **Night's Rest**).

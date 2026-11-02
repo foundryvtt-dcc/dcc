@@ -3,7 +3,7 @@
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getTableFromPath, addDamageFlavorToRolls, wantsModifierDialog, PC_FUMBLE_TABLE_NAME } from './utilities.js'
 import ApplyDamageDialog from './apply-damage-dialog.js'
-import { burnLuckAfterRoll, luckBurnMessageActor } from './luck-burn.mjs'
+import { burnLuckAfterRoll, burnLuckForAlly, luckBurnAllyBurners, luckBurnMessageActor } from './luck-burn.mjs'
 import { checkPenaltyNoteHtml } from './adapter/chat-renderer.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -111,6 +111,16 @@ export const addChatMessageContextOptions = function (html, options) {
       visible: (li) => !!luckBurnMessageActor(cardMessage(li)),
       onClick: (event, li) => burnLuckAfterRoll(cardMessage(li)).catch(err => {
         console.error('[DCC] Burn Luck failed', err)
+        ui.notifications.error(game.i18n.localize('DCC.LuckBurnApplyFailed'))
+      })
+    },
+    // Burn your halfling's Luck on an ally's roll (#1063)
+    {
+      label: 'DCC.ChatContextBurnLuckForAlly',
+      icon: 'fas fa-clover',
+      visible: (li) => luckBurnAllyBurners(cardMessage(li)).length > 0,
+      onClick: (event, li) => burnLuckForAlly(cardMessage(li)).catch(err => {
+        console.error('[DCC] Burn Luck for ally failed', err)
         ui.notifications.error(game.i18n.localize('DCC.LuckBurnApplyFailed'))
       })
     }

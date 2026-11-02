@@ -21,4 +21,4 @@ See [Two-Weapon Fighting](Two-Weapon-Fighting.md) for detailed instructions.
 
 ## Good Luck Charm
 
-When a halfling burns Luck through the roll dialog (Ctrl/Command-click a roll), each point burned adds +2 instead of +1. See [Modifying Rolls](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md#burning-luck). Burning Luck for another character is not automated yet; lower the halfling's Luck by hand and add the bonus to the ally's roll.
+When a halfling burns Luck through the roll dialog (Ctrl/Command-click a roll), each point burned adds +2 instead of +1. See [Modifying Rolls](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md#burning-luck). A halfling can also burn Luck on an ally's roll at the same +2 per point: see [Burning Luck for an ally](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md#burning-luck-for-an-ally).

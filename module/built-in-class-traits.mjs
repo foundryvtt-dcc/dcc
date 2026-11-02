@@ -34,6 +34,8 @@
  *   die (`system.class.luckDie`) instead of adding +1 (#963).
  * - `luckBurnMultiplier` (number): each point of burned Luck adds this much
  *   instead of +1, e.g. 2 for a halfling's good luck charm (#963).
+ * - `luckBurnForAllies` (boolean): the class can burn its Luck on another
+ *   PC's roll card, at its own burn rate (#1063).
  */
 
 export const BUILT_IN_CLASS_TRAITS = {
@@ -48,7 +50,8 @@ export const BUILT_IN_CLASS_TRAITS = {
     twoWeaponCritOnMax: true,
     twoWeaponFumbleBothOnes: true,
     luckRecovers: true,
-    luckBurnMultiplier: 2
+    luckBurnMultiplier: 2,
+    luckBurnForAllies: true
   },
   thief: {
     luckRecovers: true,

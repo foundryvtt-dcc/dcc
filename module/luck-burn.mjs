@@ -21,6 +21,10 @@ import { rollOrNullOnCancel } from './roll-cancellation.mjs'
  * context menu (`burnLuckAfterRoll`). That posts a follow-up card with the
  * bonus and the new total rather than rewriting the original card, whose
  * outcome (hit, save, spell result) the judge then reads off the new total.
+ *
+ * A class with the `luckBurnForAllies` trait (halfling) can also burn its Luck
+ * on another PC's card at its own rate (`burnLuckForAlly`, #1063). The follow-up
+ * card is the burner's own, so their player needs no rights on the ally's card.
  */
 
 /**
@@ -128,6 +132,21 @@ export function buildLuckBurnTerm (actor, { source = '', announce = true, onBurn
 const LUCK_BURN_ROLL_TYPES = new Set(['AbilityCheck', 'SavingThrow', 'SkillCheck', 'SpellCheck'])
 
 /**
+ * The actor who rolled a card Luck can be burned on after the roll: an
+ * attack, check, save, skill or spell check card with a resolvable speaker.
+ *
+ * @param {ChatMessage} message
+ * @returns {Object|null}
+ */
+function luckBurnCardRoller (message) {
+  if (!message?.rolls?.length) return null
+  const isLuckRoll = message.getFlag?.('dcc', 'isToHit') ||
+    LUCK_BURN_ROLL_TYPES.has(message.getFlag?.('dcc', 'RollType'))
+  if (!isLuckRoll) return null
+  return (message.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null) ?? null
+}
+
+/**
  * The actor who can burn Luck on a chat card after the roll, or null: the
  * card must be an attack, check, save, skill or spell check card, and its
  * speaker a PC this user owns with Luck left.
@@ -136,13 +155,95 @@ const LUCK_BURN_ROLL_TYPES = new Set(['AbilityCheck', 'SavingThrow', 'SkillCheck
  * @returns {Object|null}
  */
 export function luckBurnMessageActor (message) {
-  if (!message?.rolls?.length) return null
-  const isLuckRoll = message.getFlag?.('dcc', 'isToHit') ||
-    LUCK_BURN_ROLL_TYPES.has(message.getFlag?.('dcc', 'RollType'))
-  if (!isLuckRoll) return null
-  const actor = message.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null
+  const actor = luckBurnCardRoller(message)
   if (!actor?.isOwner || !luckBurnDescriptor(actor)) return null
   return actor
+}
+
+/**
+ * The actors this user can burn Luck from on an ally's roll card (#1063):
+ * PCs they own with the `luckBurnForAllies` trait and Luck left, other than
+ * the PC who rolled. The GM owns them all.
+ *
+ * @param {ChatMessage} message
+ * @returns {Array<Object>}
+ */
+export function luckBurnAllyBurners (message) {
+  const ally = luckBurnCardRoller(message)
+  if (ally?.type !== 'Player') return []
+  return (game.actors?.contents ?? []).filter(actor =>
+    actor.id !== ally.id &&
+    actor.isOwner &&
+    getClassTrait(actor, 'luckBurnForAllies') === true &&
+    luckBurnDescriptor(actor))
+}
+
+/**
+ * A card's flavor as plain text, for the log entry and the follow-up card.
+ * Flavor can carry markup. Strip until nothing changes so a nested tag can't
+ * reassemble into a new one.
+ *
+ * @param {ChatMessage} message
+ * @returns {string}
+ */
+function plainFlavor (message) {
+  let flavor = String(message.flavor ?? '')
+  for (let previous; previous !== flavor;) {
+    previous = flavor
+    flavor = flavor.replace(/<[^>]*>/g, '')
+  }
+  return flavor.trim()
+}
+
+/**
+ * Open the Roll Modifier dialog with just the Luck Burn term for `actor`,
+ * spend the Luck, and post a card with the bonus and the roll's new total.
+ *
+ * @param {ChatMessage} message  The roll card
+ * @param {Object} actor  Whose Luck is burned
+ * @param {Object} options
+ * @param {string} options.flavor  The card's plain-text flavor
+ * @param {string} options.source  Roll name, for the log entry
+ * @param {string} options.title  Dialog title
+ * @param {string} options.cardKey  i18n key of the follow-up card's text
+ * @param {Object} [options.cardData]  Extra values for `cardKey`
+ * @returns {Promise<void>}
+ */
+async function burnLuckOnCard (message, actor, { flavor, source, title, cardKey, cardData = {} }) {
+  let burn = null
+  const term = buildLuckBurnTerm(actor, {
+    source,
+    // This card already says what was burned
+    announce: false,
+    onBurn: (points, bonus) => { burn = { points, bonus } }
+  })
+  if (!term) return
+  const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll([term], {}, {
+    showModifierDialog: true,
+    title,
+    rollLabel: game.i18n.localize('DCC.ChatContextBurnLuck')
+  }))
+  // `burn` is only set once the Luck was actually spent
+  if (!roll || !burn) return
+
+  // A second burn on the same card builds on the earlier ones
+  const earlier = (game.messages?.contents ?? [])
+    .filter(m => m.getFlag?.('dcc', 'luckBurnFor') === message.id)
+    .reduce((sum, m) => sum + (Number(m.getFlag('dcc', 'luckBurnBonus')) || 0), 0)
+  const before = (Number(message.rolls[0].total) || 0) + earlier
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    content: `<p>${game.i18n.format(cardKey, {
+      ...cardData,
+      name: foundry.utils.escapeHTML(actor.name),
+      roll: foundry.utils.escapeHTML(flavor || message.rolls[0].formula),
+      points: burn.points,
+      bonus: `+${burn.bonus}`,
+      before,
+      after: before + burn.bonus
+    })}</p>`,
+    flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id, luckBurnBonus: burn.bonus } }
+  })
 }
 
 /**
@@ -156,44 +257,45 @@ export function luckBurnMessageActor (message) {
 export async function burnLuckAfterRoll (message) {
   const actor = luckBurnMessageActor(message)
   if (!actor) return
-  let burn = null
-  // Flavor can carry markup; the log entry wants plain text. Strip until
-  // nothing changes so a nested tag can't reassemble into a new one.
-  let flavor = String(message.flavor ?? '')
-  for (let previous; previous !== flavor;) {
-    previous = flavor
-    flavor = flavor.replace(/<[^>]*>/g, '')
-  }
-  flavor = flavor.trim()
-  const term = buildLuckBurnTerm(actor, {
+  const flavor = plainFlavor(message)
+  await burnLuckOnCard(message, actor, {
+    flavor,
     source: flavor || game.i18n.localize('DCC.RollModifierLuckBurnTerm'),
-    // This card already says what was burned
-    announce: false,
-    onBurn: (points, bonus) => { burn = { points, bonus } }
-  })
-  const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll([term], {}, {
-    showModifierDialog: true,
     title: game.i18n.localize('DCC.LuckBurnAfterRollTitle'),
-    rollLabel: game.i18n.localize('DCC.ChatContextBurnLuck')
-  }))
-  // `burn` is only set once the Luck was actually spent
-  if (!roll || !burn) return
+    cardKey: 'DCC.LuckBurnAfterRoll'
+  })
+}
 
-  // A second burn on the same card builds on the earlier ones
-  const earlier = (game.messages?.contents ?? [])
-    .filter(m => m.getFlag?.('dcc', 'luckBurnFor') === message.id)
-    .reduce((sum, m) => sum + (Number(m.getFlag('dcc', 'luckBurnBonus')) || 0), 0)
-  const before = (Number(message.rolls[0].total) || 0) + earlier
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<p>${game.i18n.format('DCC.LuckBurnAfterRoll', {
-      name: foundry.utils.escapeHTML(actor.name),
-      roll: foundry.utils.escapeHTML(flavor || message.rolls[0].formula),
-      points: burn.points,
-      bonus: `+${burn.bonus}`,
-      before,
-      after: before + burn.bonus
-    })}</p>`,
-    flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id, luckBurnBonus: burn.bonus } }
+/**
+ * Burn another PC's Luck on an ally's roll card (#1063). With more than one
+ * possible burner, ask whose Luck. The bonus is the burner's own rate.
+ *
+ * The rules leave "nearby and visible" and "only one halfling in the party"
+ * to the table, so the user clicking the entry is what confirms them.
+ *
+ * @param {ChatMessage} message  The ally's roll card
+ * @returns {Promise<void>}
+ */
+export async function burnLuckForAlly (message) {
+  const burners = luckBurnAllyBurners(message)
+  let burner = burners[0]
+  if (burners.length > 1) {
+    const id = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize('DCC.ChatContextBurnLuckForAlly') },
+      content: `<p>${game.i18n.localize('DCC.LuckBurnForAllyChoose')}</p>`,
+      buttons: burners.map(actor => ({ action: actor.id, label: actor.name, callback: () => actor.id })),
+      rejectClose: false
+    })
+    burner = burners.find(actor => actor.id === id)
+  }
+  if (!burner) return
+  const ally = luckBurnCardRoller(message)
+  const flavor = plainFlavor(message)
+  await burnLuckOnCard(message, burner, {
+    flavor,
+    source: flavor ? `${ally.name}: ${flavor}` : ally.name,
+    title: game.i18n.format('DCC.LuckBurnForAllyTitle', { name: burner.name, ally: ally.name }),
+    cardKey: 'DCC.LuckBurnForAlly',
+    cardData: { ally: foundry.utils.escapeHTML(ally.name) }
   })
 }
