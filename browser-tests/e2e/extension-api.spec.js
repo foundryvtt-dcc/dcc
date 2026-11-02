@@ -2736,6 +2736,7 @@ test.describe('DCC Extension API', () => {
         postIds,
         intersection,
         sampleHasLevels: sample ? Object.keys(sample.levels ?? {}).length > 0 : null,
+        sampleLevelFields: sample ? Object.keys(sample.levels[1] ?? {}) : null,
         sampleClassId: sample?.classId ?? null,
         sampleName: sample?.name ?? null
       }
@@ -2751,6 +2752,7 @@ test.describe('DCC Extension API', () => {
     // the seven canonical PC classes.
     expect(result.intersection.length).toBeGreaterThan(0)
     expect(result.sampleHasLevels).toBe(true)
+    expect(result.sampleLevelFields).toEqual(expect.arrayContaining(['saves', 'attackBonus', 'criticalDie', 'criticalTable']))
     expect(typeof result.sampleClassId).toBe('string')
     expect(typeof result.sampleName).toBe('string')
   })

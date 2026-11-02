@@ -84,14 +84,16 @@ export function parseLevelDataText (text) {
  * Path → field mapping (Foundry-system-path on the left, lib field on
  * the right):
  *
- * - `system.saves.ref.value` → `saves.ref`
- * - `system.saves.frt.value` → `saves.frt`
- * - `system.saves.wil.value` → `saves.wil`
- * - `system.details.attackHitBonus` → `attackBonus`
+ * - `system.saves.ref.classBonus` → `saves.ref`
+ * - `system.saves.frt.classBonus` → `saves.frt`
+ * - `system.saves.wil.classBonus` → `saves.wil`
+ *   (each falls back to `system.saves.<save>.value`, the documented way
+ *    for a level item to set a save's total directly)
+ * - `system.details.attackBonus` → `attackBonus`
  *   (number for flat-mode classes; dice notation like `d3` for
- *    warrior deeds)
- * - `system.details.critDie` → `criticalDie`
- * - `system.details.critTable` → `criticalTable`
+ *    warrior deeds, with the leading `+` dropped)
+ * - `system.attributes.critical.die` → `criticalDie`
+ * - `system.attributes.critical.table` → `criticalTable`
  * - `system.details.critRange` → `critRange` (warriors only)
  * - `system.attributes.actionDice.value` → `actionDice`
  *   (comma-separated string → array)
@@ -109,9 +111,9 @@ export function parseLevelDataText (text) {
 export function buildProgressionLevelFromParsed (parsed) {
   const out = {}
 
-  const ref = parsed['system.saves.ref.value']
-  const frt = parsed['system.saves.frt.value']
-  const wil = parsed['system.saves.wil.value']
+  const ref = parsed['system.saves.ref.classBonus'] ?? parsed['system.saves.ref.value']
+  const frt = parsed['system.saves.frt.classBonus'] ?? parsed['system.saves.frt.value']
+  const wil = parsed['system.saves.wil.classBonus'] ?? parsed['system.saves.wil.value']
   if (ref !== undefined || frt !== undefined || wil !== undefined) {
     out.saves = {
       ref: typeof ref === 'number' ? ref : 0,
@@ -120,13 +122,13 @@ export function buildProgressionLevelFromParsed (parsed) {
     }
   }
 
-  const atk = parsed['system.details.attackHitBonus']
-  if (atk !== undefined) out.attackBonus = atk
+  const atk = parsed['system.details.attackBonus']
+  if (atk !== undefined) out.attackBonus = typeof atk === 'string' ? atk.replace(/^\+/, '') : atk
 
-  const critDie = parsed['system.details.critDie']
+  const critDie = parsed['system.attributes.critical.die']
   if (critDie !== undefined) out.criticalDie = String(critDie)
 
-  const critTable = parsed['system.details.critTable']
+  const critTable = parsed['system.attributes.critical.table']
   if (critTable !== undefined) out.criticalTable = String(critTable)
 
   const critRange = parsed['system.details.critRange']
