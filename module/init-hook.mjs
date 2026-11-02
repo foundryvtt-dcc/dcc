@@ -120,7 +120,8 @@ export const TEMPLATE_PATHS = Object.freeze([
   'systems/dcc/templates/roll-modifier-partial-luck-burn.html',
   'systems/dcc/templates/party-sheet-partial-party.html',
   'systems/dcc/templates/party-sheet-partial-tabs.html',
-  'systems/dcc/templates/chat-card-attack-enhanced.html'
+  'systems/dcc/templates/chat-card-attack-enhanced.html',
+  'systems/dcc/templates/chat-card-item.html'
 ])
 
 /**

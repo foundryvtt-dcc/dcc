@@ -1,0 +1,10 @@
+<div class="dcc dcc-item-card">
+  <header class="card-header">
+    {{#if img}}<img src="{{img}}" alt="" width="36" height="36">{{/if}}
+    <div>
+      <h3>{{name}}</h3>
+      <span class="item-type">{{typeLabel}}</span>
+    </div>
+  </header>
+  {{#if description}}<div class="card-description">{{{description}}}</div>{{/if}}
+</div>

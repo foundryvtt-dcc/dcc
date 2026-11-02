@@ -133,6 +133,33 @@ test.describe('DCC Extension API', () => {
     expect(result.dccPackExistsFalse).toBe('NO')
   })
 
+  test('a generic item macro posts the item to chat without judge text or secrets (#1125)', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const actor = await Actor.create({ name: 'Item Macro Probe', type: 'Player' })
+      let message
+      try {
+        const [item] = await actor.createEmbeddedDocuments('Item', [{
+          name: 'Probe Rope',
+          type: 'equipment',
+          system: { description: { value: '<p>Visible text</p><section class="secret"><p>Secret text</p></section>', judge: { value: '<p>Judge text</p>' } } }
+        }])
+        const { _createDCCItemMacro } = await import('../../../../../../../../systems/dcc/module/macros.mjs')
+        const { command } = _createDCCItemMacro({ type: 'Item', actorId: actor.id, system: { item: item.toObject() } })
+        message = await item.roll()
+        return { command: command.includes('_item.roll()'), content: message.content }
+      } finally {
+        await message?.delete()
+        await actor.delete()
+      }
+    })
+
+    expect(result.command).toBe(true)
+    expect(result.content).toContain('Probe Rope')
+    expect(result.content).toContain('Visible text')
+    expect(result.content).not.toContain('Secret text')
+    expect(result.content).not.toContain('Judge text')
+  })
+
   test('DCC macro factories (createDCCMacro / rollDCCWeaponMacro / getMacroActor / getMacroOptions) survive macros.mjs extraction', async ({ page }) => {
     // Phase 7 session 2: the 13 _createDCCXxxMacro factories, the
     // createDCCMacro dispatcher, and the three runtime macro-surface

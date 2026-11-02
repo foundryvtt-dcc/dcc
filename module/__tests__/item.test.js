@@ -1,3 +1,4 @@
+/* global foundry */
 import { describe, beforeEach, test, expect, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item.js'
@@ -204,6 +205,27 @@ describe('DCCItem Tests', () => {
       expect(armor.system.acBonus).toBe('+4')
       expect(armor.system.checkPenalty).toBe('-2')
       expect(armor.system.fumbleDie).toBe('1d6')
+    })
+  })
+
+  describe('roll', () => {
+    test('posts the player description to chat, without the judge text or secrets (#1125)', async () => {
+      const { TextEditor } = foundry.applications.ux
+      const { renderTemplate } = foundry.applications.handlebars
+      const create = vi.fn(async (data) => data)
+      globalThis.CONFIG.ChatMessage = { documentClass: { create } }
+      renderTemplate.mockClear()
+      TextEditor.enrichHTML.mockClear()
+      renderTemplate.mockResolvedValueOnce('<div>card</div>')
+
+      const item = new DCCItem({ type: 'equipment', name: 'Rope' }, {})
+      item.system = { description: { value: '<p>Fifty feet</p>', judge: { value: '<p>Cursed</p>' } } }
+      await item.roll()
+
+      expect(TextEditor.enrichHTML).toHaveBeenCalledWith('<p>Fifty feet</p>', expect.objectContaining({ secrets: false }))
+      expect(renderTemplate.mock.calls[0][1]).toMatchObject({ name: 'Rope', description: '<p>Fifty feet</p>' })
+      expect(JSON.stringify(renderTemplate.mock.calls[0][1])).not.toContain('Cursed')
+      expect(create).toHaveBeenCalledWith(expect.objectContaining({ content: '<div>card</div>' }))
     })
   })
 
