@@ -194,6 +194,12 @@ describe('_createDCCLuckDieMacro', () => {
 })
 
 describe('_createDCCSpellCheckMacro', () => {
+  test('finds the spell through the token when dragged from an unlinked token (#1120)', () => {
+    const macro = _createDCCSpellCheckMacro({ type: 'Spell Check', actorId: 'A7', tokenId: 'T1', data: { name: 'Sleep', itemId: 'I1' } })
+    expect(macro.command).toContain("game.dcc.getMacroActor('A7', 'T1')?.items.get('I1')")
+    expect(macro.command).not.toContain('fromUuid')
+  })
+
   test('itemId branch builds an item-based command', () => {
     const macro = _createDCCSpellCheckMacro({
       type: 'Spell Check',
@@ -289,6 +295,12 @@ describe('_createDCCWeaponMacro', () => {
 })
 
 describe('_createDCCItemMacro', () => {
+  test('finds the item through the token when dragged from an unlinked token (#1120)', () => {
+    const macro = _createDCCItemMacro({ type: 'Item', actorId: 'A11', tokenId: 'T1', system: { item: { _id: 'I1', name: 'Rope', type: 'equipment' } } })
+    expect(macro.command).toContain("game.dcc.getMacroActor('A11', 'T1')?.items.get('I1')")
+    expect(macro.command).not.toContain('fromUuid')
+  })
+
   test('spell item uses rollSpellCheck command', () => {
     const macro = _createDCCItemMacro({
       type: 'Item',

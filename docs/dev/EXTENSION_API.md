@@ -165,6 +165,10 @@ The macro-surface functions (`rollDCCWeaponMacro`, `getMacroActor`,
 macro scripts**. They're de-facto stable in the same sense that the
 `game.dcc.*` JS shape is.
 
+Macros dragged from an unlinked token's sheet also pass that token's id
+(`getMacroActor(actorId, tokenId)`, `rollDCCWeaponMacro(itemId, actorId,
+options, tokenId)`), because a token actor shares its id with the world actor.
+
 ### Dead
 
 None identified.

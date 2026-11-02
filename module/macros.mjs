@@ -28,6 +28,19 @@ function macroActorArgs (data) {
 }
 
 /**
+ * The macro expression that finds a dropped item. A uuid built from the actor
+ * id would find the world actor's copy, so an unlinked token's item goes
+ * through that token's actor.
+ * @param {Object} data     The dropped data
+ * @param {string} itemId   The item's id
+ * @returns {string}
+ */
+function macroItemLookup (data, itemId) {
+  if (data.tokenId) return `game.dcc.getMacroActor(${macroActorArgs(data)})?.items.get('${itemId}')`
+  return `await fromUuid("Actor.${data.actorId}.Item.${itemId}")`
+}
+
+/**
  * Create a macro from an ability check drop.
  * @param {Object} data     The dropped data
  * @returns {Object}
@@ -156,8 +169,7 @@ export function _createDCCSpellCheckMacro (data) {
 
   // If we have an itemId, create an item-based macro
   if (itemId) {
-    const uuid = `Actor.${data.actorId}.Item.${itemId}`
-    macroData.command = `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`
+    macroData.command = `const _item = ${macroItemLookup(data, itemId)}; if (_item) { _item.rollSpellCheck() }`
   } else if (spell) {
     // Fallback to actor-based spell check with spell name
     macroData.command = `const _actor = game.dcc.getMacroActor(${macroActorArgs(data)}); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
@@ -247,14 +259,13 @@ export function _createDCCItemMacro (data) {
   const item = data.system.item || data.data
   if (!item) return
 
-  // Generate the UUID for the item
-  const uuid = `Actor.${data.actorId}.Item.${item._id}`
+  const lookup = macroItemLookup(data, item._id)
 
   // Handle spell items
   if (item.type === 'spell') {
     return {
       name: item.name,
-      command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`,
+      command: `const _item = ${lookup}; if (_item) { _item.rollSpellCheck() }`,
       img: item.img
     }
   }
@@ -262,7 +273,7 @@ export function _createDCCItemMacro (data) {
   // For other item types, create a generic macro
   return {
     name: item.name,
-    command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.roll() }`,
+    command: `const _item = ${lookup}; if (_item) { _item.roll() }`,
     img: item.img || EntityImages.imageForItem(item.type)
   }
 }
