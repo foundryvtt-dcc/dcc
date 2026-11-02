@@ -134,12 +134,14 @@ const LUCK_BURN_ROLL_TYPES = new Set(['AbilityCheck', 'SavingThrow', 'SkillCheck
 /**
  * The actor who rolled a card Luck can be burned on after the roll: an
  * attack, check, save, skill or spell check card with a resolvable speaker.
+ * A private roll this user can't read doesn't count: core still delivers its
+ * rolls and speaker to non-recipients, and burning would reveal them.
  *
  * @param {ChatMessage} message
  * @returns {Object|null}
  */
 function luckBurnCardRoller (message) {
-  if (!message?.rolls?.length) return null
+  if (!message?.isContentVisible || !message.rolls?.length) return null
   const isLuckRoll = message.getFlag?.('dcc', 'isToHit') ||
     LUCK_BURN_ROLL_TYPES.has(message.getFlag?.('dcc', 'RollType'))
   if (!isLuckRoll) return null

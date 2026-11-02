@@ -132,6 +132,7 @@ describe('LuckBurn dialog term', () => {
 describe('burning Luck after the roll', () => {
   const card = (actor, flags) => ({
     id: 'msg1',
+    isContentVisible: true,
     flavor: 'Fortitude Save',
     rolls: [{ total: 13 }],
     speaker: { actor: 'a1' },
@@ -181,6 +182,7 @@ describe('burning Luck after the roll', () => {
 describe('burning Luck for an ally (#1063)', () => {
   const card = (speakerActor, flags) => ({
     id: 'msg1',
+    isContentVisible: true,
     flavor: 'Reflex Save',
     speaker: { actor: speakerActor.id },
     rolls: [{ total: 11, formula: '1d20' }],
@@ -228,6 +230,17 @@ describe('burning Luck for an ally (#1063)', () => {
     const npc = pc('npc', 'warrior', { type: 'NPC' })
     ChatMessage.getSpeakerActor = vi.fn(() => npc)
     expect(luckBurnAllyBurners(card(npc, { RollType: 'SavingThrow' }))).toEqual([])
+  })
+
+  test('neither burn entry is offered on a private roll this user cannot read', () => {
+    const { luckBurnAllyBurners, luckBurnMessageActor } = globalThis.__luckBurn
+    const ally = pc('Mira', 'warrior')
+    const halfling = pc('Bilbo', 'halfling')
+    game.actors = { contents: [ally, halfling] }
+    ChatMessage.getSpeakerActor = vi.fn(() => ally)
+    const hidden = { ...card(ally, { isToHit: true }), isContentVisible: false }
+    expect(luckBurnAllyBurners(hidden)).toEqual([])
+    expect(luckBurnMessageActor(hidden)).toBeNull()
   })
 
   test('spends the burner\'s Luck at their rate and posts the ally\'s new total as the burner', async () => {
