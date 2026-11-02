@@ -243,6 +243,15 @@ describe('burning Luck for an ally (#1063)', () => {
     expect(luckBurnMessageActor(hidden)).toBeNull()
   })
 
+  test('the follow-up card stays as private as the roll it follows', async () => {
+    const ally = pc('Mira', 'warrior')
+    game.actors = { contents: [ally, pc('Bilbo', 'halfling')] }
+    ChatMessage.getSpeakerActor = vi.fn(() => ally)
+    stubDialog(1, 2)
+    await globalThis.__luckBurn.burnLuckForAlly({ ...card(ally, { RollType: 'SavingThrow' }), whisper: ['gm1'], blind: true })
+    expect(ChatMessage.create.mock.calls[0][0]).toMatchObject({ whisper: ['gm1'], blind: true })
+  })
+
   test('spends the burner\'s Luck at their rate and posts the ally\'s new total as the burner', async () => {
     const ally = pc('Mira', 'warrior')
     const halfling = pc('Bilbo', 'halfling')

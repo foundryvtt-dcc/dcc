@@ -77,6 +77,13 @@ Even then:
 - **Anything above the Note tier sits behind a setting.** Defaults are
   decided per setting (#962). With the setting off, the rule falls back to
   the Note tier, not to silence.
+  - **Exception: Burn Luck and Burn Luck for Ally (#963, #1063).** These chat
+    card context menu entries have no setting, and their labels don't state
+    the conditions they rely on, such as the ally being nearby and visible.
+    They only appear when someone opens the menu, nothing is spent until the
+    player confirms a dialog, and the follow-up card leaves the outcome and
+    those conditions to the judge. Don't treat this as a precedent for
+    buttons on the card itself.
 - **Logic lives in the lib.** The rule itself (when does a halfling fumble)
   belongs in dcc-core-lib. The tier, flags, and card UI belong in the system.
 

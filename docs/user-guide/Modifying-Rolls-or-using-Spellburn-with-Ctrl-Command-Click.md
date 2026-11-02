@@ -20,6 +20,8 @@ Attacks, saving throws, ability checks, skill checks and spell checks opened thi
 
 You can also decide after seeing the result. Right-click the attack, check, save, skill or spell check card in chat and choose **Burn Luck**. Pick the points in the same Luck Burn dialog; a new chat card shows the bonus and the roll's new total, e.g. "burns 2 Luck after the roll (Fortitude Save): +4, so the total goes from 13 to 17". The original card is not changed, so the judge decides whether the new total hits, saves or reaches a better spell result. The entry only appears on cards rolled by a character you own that has Luck left.
 
+Burning on a private roll stays private: the new card is whispered to the same people as the roll, and is blind if the roll was. Neither burn entry appears on a private roll you can't read.
+
 ### Burning Luck for an ally
 
 A halfling can burn Luck on another character's roll. Right-click the ally's attack, check, save, skill or spell check card in chat and choose **Burn Luck for Ally**. The entry appears if you own a halfling with Luck left, other than the character who rolled; the GM sees it for every halfling, and picks which one if there are several. Each point adds +2, the same as on the halfling's own roll. The halfling loses the Luck, and a new chat card shows the bonus and the roll's new total, e.g. "burns 1 Luck for Mira (Reflex Save): +2, so the total goes from 11 to 13".

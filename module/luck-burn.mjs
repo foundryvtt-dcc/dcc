@@ -244,6 +244,9 @@ async function burnLuckOnCard (message, actor, { flavor, source, title, cardKey,
       before,
       after: before + burn.bonus
     })}</p>`,
+    // The card shows the roll's flavor and total, so it stays as private as the roll
+    whisper: message.whisper,
+    blind: message.blind,
     flags: { dcc: { RollType: 'LuckBurn', luckBurnFor: message.id, luckBurnBonus: burn.bonus } }
   })
 }
