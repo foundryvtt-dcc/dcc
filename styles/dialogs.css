@@ -555,3 +555,21 @@
     }
   }
 }
+
+/* Burn Luck for Ally chooser: one full-width row per actor, so a long name
+ * wraps inside its button and a GM with many halflings gets a scrolling list
+ * rather than a squeezed row (#1063). */
+.dialog.dcc-luck-burn-chooser .form-footer {
+  align-items: stretch;
+  flex-flow: column nowrap;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 2px;
+
+  button {
+    flex: none;
+    height: auto;
+    min-height: var(--button-size, 2em);
+    padding-block: 0.25rem;
+  }
+}

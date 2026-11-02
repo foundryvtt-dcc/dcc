@@ -749,7 +749,8 @@ export const CLASS_TRAIT_TYPES = Object.freeze({
   disapprovalDie: 'string',
   disapprovalIncreasesOnFailure: 'boolean',
   luckBurnDie: 'boolean',
-  luckBurnMultiplier: 'number'
+  luckBurnMultiplier: 'number',
+  luckBurnForAllies: 'boolean'
 })
 
 /**

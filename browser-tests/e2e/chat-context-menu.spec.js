@@ -168,12 +168,13 @@ test.describe('Chat card Apply Damage / Apply Healing context menu', () => {
       expect(setup.messageId).toBeTruthy()
       const card = await revealCard(page, setup.messageId)
       await card.click({ button: 'right' })
-      const burnLuck = page.locator('#context-menu li.context-item:has-text("Burn Luck")')
+      // Exact: a leftover halfling in the world would add "Burn Luck for Ally"
+      const burnLuck = page.locator('#context-menu li.context-item').filter({ hasText: /^\s*Burn Luck\s*$/ })
       await expect(burnLuck).toBeVisible()
       await expect(burnLuck.locator('i.fas.fa-clover')).toBeAttached()
       await page.evaluate(() => {
         const item = [...document.querySelectorAll('#context-menu li.context-item')]
-          .find(li => li.textContent.includes(game.i18n.localize('DCC.ChatContextBurnLuck')))
+          .find(li => li.textContent.trim() === game.i18n.localize('DCC.ChatContextBurnLuck'))
         item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
       })
 
@@ -196,6 +197,60 @@ test.describe('Chat card Apply Damage / Apply Healing context menu', () => {
           await m.delete()
         }
         await game.actors.get(actorId)?.delete()
+      }, setup)
+    }
+  })
+
+  test('Burn Luck for Ally spends the halfling\'s Luck at +2 and posts the ally\'s new total (#1063)', async ({ page }) => {
+    const setup = await page.evaluate(async () => {
+      const halfling = await Actor.create({
+        name: 'DCC ChatCtx Ally Halfling',
+        type: 'Player',
+        system: { abilities: { lck: { value: 10, max: 10 } }, details: { sheetClass: 'Halfling' } },
+        flags: { core: { sheetClass: 'dcc.DCCActorSheetHalfling' } }
+      })
+      const ally = await Actor.create({ name: 'DCC ChatCtx Ally', type: 'Player', system: { abilities: { lck: { value: 10, max: 10 } } } })
+      const before = new Set(game.messages.contents.map(m => m.id))
+      await ally.rollSavingThrow('ref')
+      const deadline = Date.now() + 5000
+      let message
+      while (!message && Date.now() < deadline) {
+        message = game.messages.contents.find(m => !before.has(m.id) && m.getFlag('dcc', 'RollType') === 'SavingThrow')
+        if (!message) await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      return { halflingId: halfling.id, allyId: ally.id, messageId: message?.id, total: message?.rolls[0]?.total }
+    })
+    try {
+      expect(setup.messageId).toBeTruthy()
+      const card = await revealCard(page, setup.messageId)
+      await card.click({ button: 'right' })
+      await expect(page.locator('#context-menu li.context-item:has-text("Burn Luck for Ally")')).toBeVisible()
+      await page.evaluate(() => {
+        const item = [...document.querySelectorAll('#context-menu li.context-item')]
+          .find(li => li.textContent.trim() === game.i18n.localize('DCC.ChatContextBurnLuckForAlly'))
+        item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+      })
+
+      await page.waitForSelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"]', { timeout: 10000 })
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier button[data-action="modifyLuckBurn"][data-mod="+1"]').click()
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      })
+
+      await expect.poll(() =>
+        page.evaluate((id) => game.actors.get(id).system.abilities.lck.value, setup.halflingId)
+      ).toBe(9)
+      expect(await page.evaluate((id) => game.actors.get(id).system.abilities.lck.value, setup.allyId)).toBe(10)
+      await expect.poll(() => page.evaluate((id) =>
+        game.messages.contents.find(m => m.getFlag('dcc', 'luckBurnFor') === id)?.content ?? '', setup.messageId)
+      ).toContain(`to ${setup.total + 2}`)
+    } finally {
+      await page.evaluate(async ({ halflingId, allyId, messageId }) => {
+        for (const m of game.messages.contents.filter(m => m.id === messageId || m.getFlag('dcc', 'luckBurnFor') === messageId)) {
+          await m.delete()
+        }
+        await game.actors.get(halflingId)?.delete()
+        await game.actors.get(allyId)?.delete()
       }, setup)
     }
   })
