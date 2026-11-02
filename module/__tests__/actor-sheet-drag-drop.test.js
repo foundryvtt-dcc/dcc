@@ -264,7 +264,8 @@ describe('buildDragStartData', () => {
 
   // #1118: a template drag action with no matching case builds no drag data, so
   // the drag silently does nothing.
-  test('every data-drag-action in the templates has a matching case', () => {
+  // The party sheet is skipped because it has its own switch in party-sheet.js.
+  test('every data-drag-action in the actor sheet templates has a matching case', () => {
     const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
     const source = readFileSync(join(root, 'module', 'actor-sheet', 'drag-drop.mjs'), 'utf8')
     const cases = new Set([...source.matchAll(/case '([^']+)'/g)].map(match => match[1]))
@@ -272,7 +273,7 @@ describe('buildDragStartData', () => {
     const templatesDir = join(root, 'templates')
     const actions = new Set()
     for (const file of readdirSync(templatesDir, { recursive: true })) {
-      if (!file.endsWith('.html')) continue
+      if (!file.endsWith('.html') || file.startsWith('party-sheet')) continue
       const template = readFileSync(join(templatesDir, file), 'utf8')
       for (const match of template.matchAll(/data-drag-action="([^"]+)"/g)) actions.add(match[1])
     }
