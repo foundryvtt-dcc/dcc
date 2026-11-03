@@ -2553,12 +2553,6 @@ packages:
     resolution: {integrity: sha512-pq2bWo9mVD43nbts2wGv17XLiNLya+GklZ8kaDLV2Z08gDCsGpnKn9BFMepvWuHCbyVvY7J5o5+BVvoQbmlJLg==}
     engines: {node: '>=8'}
 
-  remotion@4.0.537:
-    resolution: {integrity: sha512-chlB4+lnCWnDr6Pk+fDh3vWgac/ntGduq4VUpDsXzY1Pzu6URdnl40LUClK4ZlS3mwMv2U0oflE7qjZ9LGpVWg==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-
   remotion@4.0.539:
     resolution: {integrity: sha512-CC97/XczqcJDJq0za0lU/kc7XnOocs8L9ADHFPWPMEXLm2aOxzdy3E0qnNNwqcW6q98JoKovtxc6YHQGZsZY/Q==}
     peerDependencies:
@@ -5830,11 +5824,6 @@ snapshots:
       set-function-name: 2.0.2
 
   regexpp@3.2.0: {}
-
-  remotion@4.0.537(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
-    dependencies:
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
 
   remotion@4.0.539(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
