@@ -52,6 +52,7 @@ import { onUpdateActorForDeath } from './auto-dead-status.mjs'
 import { onRenderChatMessageHTMLForDeathClock, onRenderCombatTrackerForDeathClock, onUpdateActorForDeathClock, onUpdateCombatForDeathClock } from './death-clock.mjs'
 import { shouldRenderEnhancedAttackCard, renderEnhancedAttackCard } from './chat/enhanced-attack-card.mjs'
 import { attachManualDamageAutoApply } from './auto-apply-damage.mjs'
+import { onRenderChatMessageHTMLForLayOnHands } from './lay-on-hands-heal.mjs'
 import { onRenderActiveEffectConfig } from './active-effect-key-autocomplete.mjs'
 import {
   onGetCombatContextOptions,
@@ -389,11 +390,13 @@ export function onRenderCombatTrackerComposed (app, html) {
 /**
  * `renderChatMessageHTML` runs the roll-card pipeline (which bails early on
  * non-roll messages) and the button wiring on plain announcement cards: the
- * death-clock Roll the Body buttons and the half-HP Roll morale button.
+ * death-clock Roll the Body buttons, the half-HP Roll morale button, and the
+ * Lay on Hands heal offer.
  */
 export async function onRenderChatMessageHTMLComposed (message, html, data) {
   onRenderChatMessageHTMLForDeathClock(message, html)
   onRenderChatMessageHTMLForMorale(message, html)
+  onRenderChatMessageHTMLForLayOnHands(message, html)
   return onRenderChatMessageHTML(message, html, data)
 }
 

@@ -3,6 +3,11 @@
 /* ----------------------------------------- */
 
 .dcc.hit-points-config {
+  .hit-points-config {
+    column-gap: 8px;
+    align-items: center;
+  }
+
   .hp-display {
     text-align: center;
     font-size: 1.8em;
@@ -36,5 +41,30 @@
     font-style: italic;
     margin: 0;
   }
-}
 
+  input[name='subdual'],
+  input[name='restDays'] {
+    text-align: center;
+  }
+
+  .natural-healing {
+    margin: 0;
+    padding: 6px 10px 10px;
+    gap: 12px 8px;
+    align-items: center;
+
+    legend {
+      padding: 0 4px;
+    }
+
+    /* Long translations wrap onto a second line instead of overflowing. */
+    button {
+      align-self: stretch;
+      height: auto;
+      min-height: var(--button-size, 28px);
+      padding: 4px 6px;
+      line-height: 1.2;
+      white-space: normal;
+    }
+  }
+}

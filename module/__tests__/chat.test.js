@@ -297,17 +297,17 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
 
   it('onClick applies the damage-applyable amount to each controlled token actor', async () => {
     await damageEntry.onClick(new Event('click'), makeLi({ damage: '5' }))
-    expect(applyDamage).toHaveBeenCalledWith('5', 1)
+    expect(applyDamage).toHaveBeenCalledWith('5', 1, { subdual: false })
   })
 
   it('healing onClick applies the amount with a -1 multiplier', async () => {
     await healingEntry.onClick(new Event('click'), makeLi({ damage: '3' }))
-    expect(applyDamage).toHaveBeenCalledWith('3', -1)
+    expect(applyDamage).toHaveBeenCalledWith('3', -1, { subdual: false })
   })
 
   it('onClick falls back to the dice total for plain rolls', async () => {
     await damageEntry.onClick(new Event('click'), makeLi({ diceTotal: '7' }))
-    expect(applyDamage).toHaveBeenCalledWith('7', 1)
+    expect(applyDamage).toHaveBeenCalledWith('7', 1, { subdual: false })
   })
 
   it('onClick warns instead of applying when no amount can be found', async () => {
@@ -346,7 +346,7 @@ describe('addChatMessageContextOptions (chat card context menu, issue #828)', ()
     it('a plain click still applies directly without a dialog', async () => {
       await damageEntry.onClick(new Event('click'), makeLi({ damage: '5' }))
 
-      expect(applyDamage).toHaveBeenCalledWith('5', 1)
+      expect(applyDamage).toHaveBeenCalledWith('5', 1, { subdual: false })
       expect(ApplyDamageDialog).not.toHaveBeenCalled()
     })
 

@@ -5,6 +5,7 @@ import { AbilityScoreLogDialog, abilityScoreLogEnabled } from './ability-score-l
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
+import HitPointsConfig from './hit-points-config.js'
 import LayOnHandsManifestationConfig from './lay-on-hands-manifestation-config.js'
 import EntityImages from './entity-images.js'
 import { applyActiveVariantSheetTheme } from './extension-api.mjs'
@@ -39,6 +40,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       height: 455
     },
     actions: {
+      adjustHitPoints: this.#adjustHitPoints,
       applyDisapproval: this.#applyDisapproval,
       castEquipmentSpell: this.#castEquipmentSpell,
       configureActor: this.#configureActor,
@@ -97,6 +99,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           action: 'viewAbilityLog',
           icon: 'fas fa-clock-rotate-left',
           label: 'DCC.AbilityLogTitle',
+          ownership: 'OWNER'
+        },
+        {
+          action: 'adjustHitPoints',
+          icon: 'fas fa-heart-pulse',
+          label: 'DCC.AdjustHitPoints',
           ownership: 'OWNER'
         }
       ]
@@ -675,6 +683,25 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       position: {
         top: this.position.top + 40,
         left: this.position.left + (this.position.width - 340) / 2
+      }
+    }).render(true)
+  }
+
+  /**
+   * Open the Adjust Hit Points dialog: damage, healing, subdual damage and
+   * natural healing from rest (#966)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #adjustHitPoints (event, target) {
+    event.preventDefault()
+    await new HitPointsConfig({
+      document: this.options.document,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + 60
       }
     }).render(true)
   }

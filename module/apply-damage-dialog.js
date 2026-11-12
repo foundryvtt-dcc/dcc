@@ -65,6 +65,8 @@ class ApplyDamageDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
     context.amount = this.options.amount
     context.isHealing = this.options.multiplier < 0
+    context.subdual = !!this.options.subdual
+    context.trackSubdual = !!game.settings.get('dcc', 'trackSubdualDamage')
     context.targetNames = this.options.targets.map(a => a.name).join(', ')
 
     const luckActor = this.options.luckActor
@@ -122,7 +124,7 @@ class ApplyDamageDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     if (amount !== 0) {
-      await Promise.all(this.options.targets.map(a => a.applyDamage(amount, this.options.multiplier)))
+      await Promise.all(this.options.targets.map(a => a.applyDamage(amount, this.options.multiplier, { subdual: !!formData.object.subdual })))
     }
   }
 }

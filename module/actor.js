@@ -10,7 +10,7 @@ import { RollsSpellMixin } from './actor/rolls-spell-mixin.mjs'
 import { RollsWeaponMixin } from './actor/rolls-weapon-mixin.mjs'
 import { RollsCheckMixin } from './actor/rolls-check-mixin.mjs'
 import { RollsSkillMixin } from './actor/rolls-skill-mixin.mjs'
-import { increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
+import { getHealingFromRest, increaseDisapprovalRange, parseActionDice } from './vendor/dcc-core-lib/index.js'
 import { strayElfDetectSecretDoorsReset } from './stray-elf-detect-secret-doors.mjs'
 import { resolveDisapprovalRoll } from './adapter/disapproval.mjs'
 import { disapprovalDieFaces } from './adapter/disapproval-traits.mjs'
@@ -439,15 +439,27 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
   /**
    * Apply damage to this actor
+   *
+   * Subdual damage (#966) is tracked in `system.attributes.hp.subdual` rather
+   * than taken off hit points, so it can't kill: per RAW an opponent brought
+   * to 0 hit points by subdual damage collapses unconscious instead. When the
+   * running subdual total reaches current hit points the chat card says so.
+   * With the `trackSubdualDamage` setting off, subdual damage comes off hit
+   * points like any other damage.
+   *
    * @param {Number} damageAmount   Damage amount to apply
    * @param {Number} multiplier     Damage multiplier
+   * @param {Object} [options]
+   * @param {boolean} [options.subdual=false]  The damage is subdual damage
    */
-  async applyDamage (damageAmount, multiplier) {
-    const speaker = ChatMessage.getSpeaker({ actor: this })
-
+  async applyDamage (damageAmount, multiplier, { subdual = false } = {}) {
     // Calculate damage amount and current hit points
     const amount = damageAmount * multiplier
     const hp = this.system.attributes.hp.value
+
+    if (subdual && amount > 0 && game.settings.get('dcc', 'trackSubdualDamage')) {
+      return this._applySubdualDamage(amount)
+    }
 
     let newHp = hp
     if (amount > 0) {
@@ -464,28 +476,86 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     const deltaHp = newHp - hp
-
-    // Announce damage or healing results
+    const update = { 'system.attributes.hp.value': newHp }
+    const announcements = []
     if (Math.abs(deltaHp) > 0) {
       const locString = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
-      const messageData = {
-        user: game.user.id,
-        speaker,
-        flags: {
-          'dcc.isApplyDamage': true
-        },
-        content: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
-        style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-        sound: CONFIG.sounds.notification
-      }
-      ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
-      await CONFIG.ChatMessage.documentClass.create(messageData)
+      announcements.push(game.i18n.format(locString, { damage: Math.abs(deltaHp) }))
     }
 
-    // Apply new HP
-    return this.update({
-      'system.attributes.hp.value': newHp
-    })
+    // Healing also recovers subdual damage, by the full amount healed, even
+    // when hit points are already at their maximum (#966)
+    const subdualBefore = Number(this.system.attributes.hp.subdual) || 0
+    if (amount < 0 && subdualBefore > 0) {
+      const newSubdual = Math.max(0, subdualBefore + amount)
+      update['system.attributes.hp.subdual'] = newSubdual
+      announcements.push(game.i18n.format('DCC.HealSubdualDamage', { damage: subdualBefore - newSubdual, subdual: newSubdual }))
+    }
+
+    // Announce damage or healing results
+    if (announcements.length) {
+      await this._announceApplyDamage(announcements.join(' '))
+    }
+
+    return this.update(update)
+  }
+
+  /**
+   * Add subdual damage to the running total, leaving hit points alone (#966)
+   * @param {Number} amount   Subdual damage taken (positive)
+   * @private
+   */
+  async _applySubdualDamage (amount) {
+    const hp = Number(this.system.attributes.hp.value) || 0
+    const before = Number(this.system.attributes.hp.subdual) || 0
+    const subdual = before + amount
+    // Knocked out the moment the total first reaches current hit points; a
+    // creature already at 0 HP or below is down for other reasons.
+    const knockedOut = hp > 0 && before < hp && subdual >= hp
+    const locString = knockedOut ? 'DCC.TakeSubdualDamageKnockedOut' : 'DCC.TakeSubdualDamage'
+    await this._announceApplyDamage(game.i18n.format(locString, { damage: amount, subdual, hp }))
+    return this.update({ 'system.attributes.hp.subdual': subdual })
+  }
+
+  /**
+   * Post the apply-damage emote card for this actor
+   * @param {string} content   Localized damage/healing text
+   * @private
+   */
+  async _announceApplyDamage (content) {
+    const messageData = {
+      user: game.user.id,
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flags: {
+        'dcc.isApplyDamage': true
+      },
+      content,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      sound: CONFIG.sounds.notification
+    }
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
+    await CONFIG.ChatMessage.documentClass.create(messageData)
+  }
+
+  /**
+   * Heal naturally from rest (#966)
+   *
+   * The lib's natural-healing rule sets the rate: one hit point per night of
+   * rest while adventuring, two per day of bed rest. The healing goes through
+   * `applyDamage`, so it never raises hit points past their maximum.
+   * Ability score damage also heals with rest; that is left to the Ability
+   * Score Log, which knows which losses are temporary.
+   *
+   * @param {string} restType   'active-adventure' (a night's rest) or 'bed-rest' (a day of bed rest)
+   * @param {Object} [options]
+   * @param {number} [options.days=1]   Nights or days of rest
+   * @returns {Promise<number>}   Hit points the rest is worth (before the max HP cap)
+   */
+  async applyNaturalHealing (restType, { days = 1 } = {}) {
+    const nights = Math.max(1, parseInt(days) || 1)
+    const amount = getHealingFromRest(restType) * nights
+    await this.applyDamage(amount, -1)
+    return amount
   }
 
   /**

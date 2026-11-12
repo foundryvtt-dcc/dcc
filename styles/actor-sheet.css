@@ -832,3 +832,19 @@
   }
 }
 
+
+/*
+ * Subdual damage total (#966), shown only when nonzero: a small badge in the
+ * top-left corner of the HP shield (the right half of the AC/HP box), clear
+ * of the HP effect icons in the top-right corner.
+ */
+.dcc .ac-and-hp .hp-subdual {
+  cursor: help;
+  font-size: 11px;
+  left: calc(50% + 4px);
+  line-height: 1;
+  position: absolute;
+  top: 4px;
+  white-space: nowrap;
+  z-index: 10;
+}

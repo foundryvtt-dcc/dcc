@@ -151,7 +151,7 @@ describe('manual damage from an attack card (#992)', () => {
 
     await handler({ messageId: 'card1', amount: 5, actorUuid: 'Actor.someoneElse' }, 'player')
     expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.tgt')
-    expect(applyDamage).toHaveBeenCalledWith(5, 1)
+    expect(applyDamage).toHaveBeenCalledWith(5, 1, { subdual: false })
     expect(card.setFlag).toHaveBeenCalledWith('dcc', 'damageApplied', true)
 
     await handler({ messageId: 'card1', amount: 5 }, 'player')
@@ -200,7 +200,7 @@ describe('manual damage from an attack card (#992)', () => {
     globalThis.game.messages = { get: () => card }
     globalThis.game.users = { get: () => player }
     await cardHandler()({ messageId: 'card1', amount: 5 }, 'player')
-    expect(applyDamage).toHaveBeenCalledWith(5, 1)
+    expect(applyDamage).toHaveBeenCalledWith(5, 1, { subdual: false })
   })
 
   test('the GM handler refuses a requester who owns neither the card nor the character', async () => {
@@ -344,7 +344,7 @@ describe('automated card damage (#994)', () => {
 
     await handler({ messageId: 'card2', amount: 999, actorUuid: 'Actor.someoneElse' }, 'player')
     expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.tgt')
-    expect(applyDamage).toHaveBeenCalledWith(7, 1)
+    expect(applyDamage).toHaveBeenCalledWith(7, 1, { subdual: false })
     expect(card.setFlag).toHaveBeenCalledWith('dcc', 'damageApplied', true)
 
     await handler({ messageId: 'card2' }, 'player')
@@ -371,7 +371,7 @@ describe('automated card damage (#994)', () => {
     await handler({ messageId: 'card2', amount: Infinity }, 'player')
     expect(applyDamage).not.toHaveBeenCalled()
     await handler({ messageId: 'card2', amount: 4 }, 'player')
-    expect(applyDamage).toHaveBeenCalledWith(4, 1)
+    expect(applyDamage).toHaveBeenCalledWith(4, 1, { subdual: false })
   })
 
   test('the GM refuses a requester who owns neither the card nor the attacker', async () => {
@@ -399,7 +399,15 @@ describe('automated card damage (#994)', () => {
     expect(executeAsGM).toHaveBeenCalledWith('dcc.applyCardDamage', { messageId: 'card2' })
     await handlerFor(card)({ messageId: 'card2' }, 'player')
     expect(globalThis.fromUuid).toHaveBeenCalledWith('Actor.ally')
-    expect(applyDamage).toHaveBeenCalledWith(4, 1)
+    expect(applyDamage).toHaveBeenCalledWith(4, 1, { subdual: false })
+  })
+
+  test('a subdual weapon card applies its damage as subdual damage (#966)', async () => {
+    const card = makeAutomatedCard({ subdual: true })
+    const applyDamage = vi.fn()
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    await handlerFor(card)({ messageId: 'card2' }, 'player')
+    expect(applyDamage).toHaveBeenCalledWith(7, 1, { subdual: true })
   })
 
   test('an automated card never awaits a manual damage roll', () => {

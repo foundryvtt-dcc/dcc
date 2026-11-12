@@ -5,6 +5,7 @@ import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getT
 import ApplyDamageDialog from './apply-damage-dialog.js'
 import { burnLuckAfterRoll, burnLuckForAlly, luckBurnAllyBurners, luckBurnMessageActor } from './luck-burn.mjs'
 import { checkPenaltyNoteHtml } from './adapter/chat-renderer.mjs'
+import { messageDealsSubdualDamage } from './subdual-damage.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -167,6 +168,8 @@ function applyChatCardDamage (roll, multiplier, event) {
   }
 
   const targets = canvas.tokens.controlled.map(t => t.actor)
+  // Subdual damage is tracked apart from hit points (#966); healing never is.
+  const subdual = multiplier > 0 && messageDealsSubdualDamage(message)
 
   if (wantsModifierDialog(event)) {
     // The roller (the damage message's speaker) is who a post-roll Luck spend
@@ -175,11 +178,11 @@ function applyChatCardDamage (roll, multiplier, event) {
     // unowned actor would just be rejected at apply time.
     const speakerActor = (message?.speaker ? ChatMessage.getSpeakerActor(message.speaker) : null) ?? game.user?.character ?? null
     const luckActor = speakerActor?.isOwner ? speakerActor : null
-    new ApplyDamageDialog({ amount: Number(amount), multiplier, targets, luckActor }).render(true)
+    new ApplyDamageDialog({ amount: Number(amount), multiplier, targets, luckActor, subdual }).render(true)
     return Promise.resolve()
   }
 
-  return Promise.all(targets.map(a => a.applyDamage(amount, multiplier)))
+  return Promise.all(targets.map(a => a.applyDamage(amount, multiplier, { subdual })))
 }
 
 /**

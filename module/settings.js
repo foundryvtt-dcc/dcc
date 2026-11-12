@@ -513,6 +513,33 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Offer a "Heal <target>" button on a Lay on Hands card when a token was
+   * targeted (#966). Offer tier: nothing is healed until someone clicks.
+   * Off: the card shows the table result only.
+   */
+  game.settings.register('dcc', 'layOnHandsHealButton', {
+    name: 'DCC.SettingLayOnHandsHealButton',
+    hint: 'DCC.SettingLayOnHandsHealButtonHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
+   * Track subdual damage separately from hit point damage (#966). Off:
+   * subdual damage comes off hit points like any other damage.
+   */
+  game.settings.register('dcc', 'trackSubdualDamage', {
+    name: 'DCC.SettingTrackSubdualDamage',
+    hint: 'DCC.SettingTrackSubdualDamageHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
    * Enable automation of Wizard/Elf spell loss
    */
   game.settings.register('dcc', 'automateWizardSpellLoss', {

@@ -59,7 +59,8 @@
       </div>
       {{/if}}
       <label for="system.attributes.hp.value" style="grid-row: 2; min-width: 72px; margin-top: 4px;">{{localize
-              "DCC.HitPoints"}}</label>
+              "DCC.HitPoints"}}{{#if system.attributes.hp.subdual}}
+        <span class="hp-subdual" data-tooltip="{{localize 'DCC.SubdualDamageTotalHint'}}"><i class="fas fa-hand-fist"></i> {{system.attributes.hp.subdual}}</span>{{/if}}</label>
       <div class="grid-tpl-max-auto" style="grid-area: 3/2;">
         <label style="line-height: 16px;" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
         <input style="font-size: 12px; height: 16px; border-bottom: 1px solid rgba(0, 0, 0, 0.5); width: min-content;"
