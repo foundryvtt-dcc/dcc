@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Wymiana Pojedynku Magicznego</b><br>{attacker} ({attackerCheck}) kontra {defender} ({defenderCheck})<br>Obaj przyzwali tego samego patrona: oba czary zostają anulowane.",
   "DCC.SubdualDamageTotalHint": "Dotychczasowe obrażenia nieprowadzące do śmierci. Nie zmniejszają punktów wytrzymałości; gdy je osiągną, istota pada nieprzytomna. Ustaw 0, aby je wyzerować.",
   "DCC.TakeSubdualDamage": "Otrzymuje {damage} obrażeń nieprowadzących do śmierci.",
+  "DCC.HealSubdualDamage": "Odzyskuje {damage} obrażeń nieprowadzących do śmierci (pozostało {subdual}).",
   "DCC.TakeSubdualDamageKnockedOut": "Otrzymuje {damage} obrażeń nieprowadzących do śmierci i pada nieprzytomny ({subdual} takich obrażeń, {hp} PW)."
 }

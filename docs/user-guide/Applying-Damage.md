@@ -28,7 +28,7 @@ A weapon with **Subdual Damage** ticked on its item sheet deals subdual damage: 
 
 With the **Track Subdual Damage** setting on (the default), subdual damage doesn't come off hit points. It adds to a separate subdual total, shown as a small fist badge on the HP shield of the character or NPC sheet. When the total reaches the creature's current hit points, the chat message says it collapses unconscious. Nothing else changes automatically: you decide when it comes round.
 
-To change or clear the total, open **Adjust Hit Points** from the sheet's window menu (or the party sheet) and edit the **Subdual Damage** field.
+Healing reduces the subdual total by the amount healed, even when hit points are already full. That covers Apply Healing, Lay on Hands and natural rest. To change or clear the total by hand, open **Adjust Hit Points** from the sheet's window menu (or the party sheet) and edit the **Subdual Damage** field.
 
 With the setting off, subdual damage reduces hit points like any other damage.
 
@@ -39,4 +39,4 @@ Open **Adjust Hit Points** from the sheet's window menu (or click a member's HP 
 - **Night's Rest**: 1 hit point per night of rest while adventuring.
 - **Bed Rest**: 2 hit points per day of complete bed rest.
 
-Healing never raises hit points above the maximum. Ability score damage also heals with rest; record that recovery in the Ability Score Change Log.
+Healing never raises hit points above the maximum. It also reduces any subdual damage by the same amount. Ability score damage also heals with rest; record that recovery in the Ability Score Change Log.

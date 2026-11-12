@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Zauberduell-Austausch</b><br>{attacker} ({attackerCheck}) gegen {defender} ({defenderCheck})<br>Beide haben denselben Patron angerufen: Beide Zauber werden aufgehoben.",
   "DCC.SubdualDamageTotalHint": "Bisher erlittener Betäubungsschaden. Er senkt die Trefferpunkte nicht; erreicht er sie, bricht die Kreatur bewusstlos zusammen. Auf 0 setzen, um ihn zu löschen.",
   "DCC.TakeSubdualDamage": "Erleidet {damage} Betäubungsschaden.",
+  "DCC.HealSubdualDamage": "Erholt sich von {damage} Betäubungsschaden ({subdual} verbleibend).",
   "DCC.TakeSubdualDamageKnockedOut": "Erleidet {damage} Betäubungsschaden und bricht bewusstlos zusammen ({subdual} Betäubungsschaden, {hp} TP)."
 }

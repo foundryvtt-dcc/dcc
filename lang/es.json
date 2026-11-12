@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Intercambio de Duelo de Hechizos</b><br>{attacker} ({attackerCheck}) contra {defender} ({defenderCheck})<br>Ambos invocaron al mismo patrón: los dos hechizos se cancelan.",
   "DCC.SubdualDamageTotalHint": "Daño no letal recibido hasta ahora. No reduce los puntos de golpe; cuando los alcanza, la criatura cae inconsciente. Ponlo a 0 para borrarlo.",
   "DCC.TakeSubdualDamage": "Recibe {damage} de daño no letal.",
+  "DCC.HealSubdualDamage": "Se recupera de {damage} de daño no letal (quedan {subdual}).",
   "DCC.TakeSubdualDamageKnockedOut": "Recibe {damage} de daño no letal y cae inconsciente ({subdual} de daño no letal, {hp} PG)."
 }

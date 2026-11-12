@@ -1009,6 +1009,18 @@ describe('subdual damage (#966)', () => {
 
     expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
   })
+
+  test('healing recovers subdual damage by the amount healed, even at full hit points', async () => {
+    actorUpdateMock.mockClear()
+    actor.system.attributes.hp.value = 3
+    actor.system.attributes.hp.max = 3
+    actor.system.attributes.hp.subdual = 5
+
+    await actor.applyDamage(2, -1)
+
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.attributes.hp.value': 3, 'system.attributes.hp.subdual': 3 })
+    actor.system.attributes.hp.subdual = 0
+  })
 })
 
 test('applyNaturalHealing heals the lib rate per night or day of rest (#966)', async () => {

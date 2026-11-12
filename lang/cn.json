@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>法术对决</b><br>{attacker}（{attackerCheck}）对 {defender}（{defenderCheck}）<br>双方祈求了同一位宗主：两个法术均被取消。",
   "DCC.SubdualDamageTotalHint": "目前受到的制服伤害。它不会减少生命值；达到生命值时，生物会昏倒。设为 0 即可清除。",
   "DCC.TakeSubdualDamage": "受到 {damage} 点制服伤害。",
+  "DCC.HealSubdualDamage": "恢复 {damage} 点制服伤害（剩余 {subdual} 点）。",
   "DCC.TakeSubdualDamageKnockedOut": "受到 {damage} 点制服伤害并昏倒（制服伤害 {subdual}，HP {hp}）。"
 }

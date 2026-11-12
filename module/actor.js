@@ -476,17 +476,28 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     const deltaHp = newHp - hp
-
-    // Announce damage or healing results
+    const update = { 'system.attributes.hp.value': newHp }
+    const announcements = []
     if (Math.abs(deltaHp) > 0) {
       const locString = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
-      await this._announceApplyDamage(game.i18n.format(locString, { damage: Math.abs(deltaHp) }))
+      announcements.push(game.i18n.format(locString, { damage: Math.abs(deltaHp) }))
     }
 
-    // Apply new HP
-    return this.update({
-      'system.attributes.hp.value': newHp
-    })
+    // Healing also recovers subdual damage, by the full amount healed, even
+    // when hit points are already at their maximum (#966)
+    const subdualBefore = Number(this.system.attributes.hp.subdual) || 0
+    if (amount < 0 && subdualBefore > 0) {
+      const newSubdual = Math.max(0, subdualBefore + amount)
+      update['system.attributes.hp.subdual'] = newSubdual
+      announcements.push(game.i18n.format('DCC.HealSubdualDamage', { damage: subdualBefore - newSubdual, subdual: newSubdual }))
+    }
+
+    // Announce damage or healing results
+    if (announcements.length) {
+      await this._announceApplyDamage(announcements.join(' '))
+    }
+
+    return this.update(update)
   }
 
   /**

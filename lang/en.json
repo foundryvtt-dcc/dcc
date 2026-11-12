@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Spell Duel Exchange</b><br>{attacker} ({attackerCheck}) vs {defender} ({defenderCheck})<br>Both invoked the same patron: both spells are cancelled.",
   "DCC.SubdualDamageTotalHint": "Subdual damage taken so far. It doesn't reduce hit points; once it reaches them, the creature collapses unconscious. Set to 0 to clear it.",
   "DCC.TakeSubdualDamage": "Takes {damage} subdual damage.",
+  "DCC.HealSubdualDamage": "Recovers {damage} subdual damage ({subdual} left).",
   "DCC.TakeSubdualDamageKnockedOut": "Takes {damage} subdual damage and collapses unconscious ({subdual} subdual damage, {hp} HP)."
 }

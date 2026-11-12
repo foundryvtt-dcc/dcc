@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Scambio di Duello Magico</b><br>{attacker} ({attackerCheck}) contro {defender} ({defenderCheck})<br>Entrambi hanno invocato lo stesso patrono: entrambi gli incantesimi sono annullati.",
   "DCC.SubdualDamageTotalHint": "Danni non letali subiti finora. Non riducono i punti ferita; quando li raggiungono, la creatura crolla priva di sensi. Imposta 0 per azzerarli.",
   "DCC.TakeSubdualDamage": "Subisce {damage} danni non letali.",
+  "DCC.HealSubdualDamage": "Recupera {damage} danni non letali ({subdual} rimanenti).",
   "DCC.TakeSubdualDamageKnockedOut": "Subisce {damage} danni non letali e crolla privo di sensi ({subdual} danni non letali, {hp} PF)."
 }

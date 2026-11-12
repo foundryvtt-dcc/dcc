@@ -1274,5 +1274,6 @@
   "DCC.SpellDuelSamePatronCancelled": "<b>Échange de Duel de Sorts</b><br>{attacker} ({attackerCheck}) contre {defender} ({defenderCheck})<br>Les deux ont invoqué le même patron : les deux sorts sont annulés.",
   "DCC.SubdualDamageTotalHint": "Dégâts non-létaux subis jusqu'ici. Ils ne réduisent pas les points de vie ; quand ils les atteignent, la créature s'effondre inconsciente. Mettez 0 pour les effacer.",
   "DCC.TakeSubdualDamage": "Subit {damage} dégâts non-létaux.",
+  "DCC.HealSubdualDamage": "Récupère {damage} dégâts non-létaux ({subdual} restants).",
   "DCC.TakeSubdualDamageKnockedOut": "Subit {damage} dégâts non-létaux et s'effondre inconscient ({subdual} dégâts non-létaux, {hp} PV)."
 }
