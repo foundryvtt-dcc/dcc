@@ -296,6 +296,8 @@ test.describe('Auto-apply damage', () => {
 
         return {
           record: card?.getFlag('dcc', 'layOnHands') ?? null,
+          // The heal record sits beside the spell-check flags, not in place of them.
+          spellCheck: card?.getFlag('dcc', 'SpellCheck') ?? null,
           buttonText,
           alternates,
           hpAfterHeal,
@@ -315,6 +317,7 @@ test.describe('Auto-apply damage', () => {
     })
 
     expect(out.record).toMatchObject({ relation: 'same', hitDie: 'd8', hitDice: 2, dice: { same: 3, adjacent: 2, opposed: 1 } })
+    expect(out.spellCheck).toBe(true)
     expect(out.buttonText).toContain('Bob')
     expect(out.buttonText).toContain('2d8')
     expect(out.alternates).toBe(2)

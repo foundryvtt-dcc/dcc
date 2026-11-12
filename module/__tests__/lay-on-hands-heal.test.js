@@ -105,6 +105,15 @@ describe('the card record', () => {
     expect(html).toContain('data-relation="adjacent"')
     expect(html).toContain('data-relation="opposed"')
   })
+
+  test('a crafted record renders nothing unchecked', () => {
+    const record = buildLayOnHandsHealFlag(cleric, result, [{ name: '<b>Bob</b>', actor: subject }])
+    expect(layOnHandsHealHtml({ ...record, hitDie: 'd8<img src=x onerror=alert(1)>' })).toBe('')
+    const html = layOnHandsHealHtml({ ...record, relation: '"><img src=x>', dice: { ...record.dice, '"><img src=x>': 5 } })
+    expect(html).not.toContain('<img')
+    expect(html).not.toContain('<b>')
+    expect(layOnHandsHealHtml({ ...record, healed: { relation: 'same', hp: '<img src=x>' } })).not.toContain('<img')
+  })
 })
 
 describe('GM-side heal', () => {
@@ -125,7 +134,7 @@ describe('GM-side heal', () => {
     const toMessage = vi.fn()
     globalThis.game.messages = { get: () => message }
     globalThis.game.users = { get: () => ({ isGM: false }) }
-    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', applyDamage }))
+    globalThis.fromUuid = vi.fn(async () => ({ documentName: 'Actor', type: 'NPC', system: { attributes: { hitDice: { value: '2d8' } } }, applyDamage }))
     globalThis.Roll = vi.fn(function (formula) {
       this.formula = formula
       this.total = 7
@@ -148,12 +157,26 @@ describe('GM-side heal', () => {
     expect(applyDamage).toHaveBeenCalledWith(7, -1)
   })
 
+  test('heals once even if the healed mark is cleared, and rolls the target\'s own hit die', async () => {
+    const { message, applyDamage } = setup()
+    message.flags.layOnHands.hitDie = 'd100'
+    message.flags.layOnHands.hitDice = 99
+
+    // A fresh card id: the GM remembers healed cards for the session.
+    await layOnHandsHealHandler({ messageId: 'card2', relation: 'same' }, 'player')
+    delete message.flags.layOnHands.healed
+    await layOnHandsHealHandler({ messageId: 'card2', relation: 'same' }, 'player')
+
+    expect(globalThis.Roll).toHaveBeenCalledWith('2d8')
+    expect(applyDamage).toHaveBeenCalledTimes(1)
+  })
+
   test('refuses a user who may not act for the card', async () => {
     const { message, applyDamage } = setup()
     message.testUserPermission = vi.fn(() => false)
     globalThis.ChatMessage = { getSpeakerActor: () => null }
 
-    await layOnHandsHealHandler({ messageId: 'card1', relation: 'same' }, 'player')
+    await layOnHandsHealHandler({ messageId: 'card3', relation: 'same' }, 'player')
 
     expect(applyDamage).not.toHaveBeenCalled()
   })

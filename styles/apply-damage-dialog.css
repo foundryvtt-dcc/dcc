@@ -13,6 +13,18 @@
     text-align: center;
   }
 
+  .subdual-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    input {
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+    }
+  }
+
   .hint {
     font-size: 0.85em;
     color: var(--system-text-muted-color);

@@ -527,7 +527,9 @@ export const RollsSkillMixin = (Base) => class extends Base {
         item: skillItem,
         manifestation: skillManifestation,
         actionDiceChatLine,
-        messageData: layOnHands ? { flags: { dcc: { layOnHands } } } : {}
+        // Dotted key: addChatMessage's flags are dotted, and a nested `dcc`
+        // object would replace them when the message is created.
+        messageData: layOnHands ? { flags: { 'dcc.layOnHands': layOnHands } } : {}
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same

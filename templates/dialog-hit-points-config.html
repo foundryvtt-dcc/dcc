@@ -14,14 +14,14 @@
   <p class="grid-col-span-12 hint">{{localize "DCC.HitPointsHint"}}</p>
 
   {{#if trackSubdual}}
-  <label class="grid-col-span-8" for="subdual" title="{{localize 'DCC.SubdualDamageTotalHint'}}">{{localize "DCC.SubdualDamage"}}</label>
-  <input class="grid-col-span-4" type="number" name="subdual" id="subdual" value="{{subdual}}" min="0" step="1">
+  <label class="grid-col-span-9" for="subdual" title="{{localize 'DCC.SubdualDamageTotalHint'}}">{{localize "DCC.SubdualDamage"}}</label>
+  <input class="grid-col-span-3" type="number" name="subdual" id="subdual" value="{{subdual}}" min="0" step="1">
   {{/if}}
 
-  <fieldset class="natural-healing grid-col-span-12 grid-container grid-row-gap-4">
+  <fieldset class="natural-healing grid-col-span-12 grid-container">
     <legend>{{localize "DCC.NaturalHealing"}}</legend>
-    <label class="grid-col-span-8" for="restDays">{{localize "DCC.NaturalHealingDays"}}</label>
-    <input class="grid-col-span-4" type="number" name="restDays" id="restDays" value="1" min="1" step="1">
+    <label class="grid-col-span-9" for="restDays">{{localize "DCC.NaturalHealingDays"}}</label>
+    <input class="grid-col-span-3" type="number" name="restDays" id="restDays" value="1" min="1" step="1">
     <button class="grid-col-span-6" type="button" data-action="rest" data-rest-type="active-adventure" data-tooltip="{{nightsRestHint}}">
       <i class="fas fa-moon"></i> {{localize "DCC.NaturalHealingNight"}}
     </button>

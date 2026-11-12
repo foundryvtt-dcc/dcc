@@ -16,7 +16,7 @@ class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ['dcc', 'sheet', 'hit-points-config'],
     tag: 'form',
     position: {
-      width: 280,
+      width: 310,
       height: 'auto'
     },
     window: {

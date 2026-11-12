@@ -1,4 +1,4 @@
-/* global console, fromUuid, game, Roll */
+/* global console, fromUuid, game, Roll, ui */
 
 /**
  * Lay on Hands: heal the targeted creature from the result card (#966).
@@ -46,6 +46,12 @@ const RELATION_LABELS = {
 
 /** Cards the GM is healing from right now (double-click guard). */
 const cardsHealing = new Set()
+
+/**
+ * Cards healed from this session. The `healed` flag is the durable record,
+ * but the card's author can clear it, so the GM also remembers.
+ */
+const cardsHealed = new Set()
 
 /**
  * The cleric–subject alignment relationship (lib `LayOnHandsAlignment`):
@@ -190,6 +196,44 @@ export function healingDice (record, relation) {
 }
 
 /**
+ * Clamp a value to an integer in [min, max]; anything non-numeric is min.
+ * @param {*} value
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function clampInt (value, min, max) {
+  const n = Math.trunc(Number(value))
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : min
+}
+
+/**
+ * A card's `flags.dcc.layOnHands` record with every field checked. The card's
+ * author can edit its flags, so nothing from them is rendered or rolled
+ * unchecked: relations must be known ones, the hit die must look like `d8`,
+ * and counts are clamped integers.
+ * @param {Object} record - `flags.dcc.layOnHands`
+ * @returns {Object|null} the checked record, or null when unusable
+ */
+export function normalizeLayOnHandsRecord (record) {
+  if (!record || typeof record !== 'object') return null
+  const hitDie = typeof record.hitDie === 'string' && /^d\d{1,3}$/.test(record.hitDie) ? record.hitDie : null
+  if (!hitDie) return null
+  const knownRelation = relation => LAY_ON_HANDS_RELATIONS.includes(relation) ? relation : null
+  return {
+    targetUuid: String(record.targetUuid ?? ''),
+    targetName: String(record.targetName ?? ''),
+    relation: knownRelation(record.relation),
+    hitDie,
+    hitDice: clampInt(record.hitDice, 0, 99),
+    dice: Object.fromEntries(LAY_ON_HANDS_RELATIONS.map(r => [r, clampInt(record.dice?.[r], 0, 10)])),
+    healed: record.healed
+      ? { relation: knownRelation(record.healed.relation), hp: clampInt(record.healed.hp, 0, 9999) }
+      : null
+  }
+}
+
+/**
  * Escape text for HTML.
  * @param {string} text
  * @returns {string}
@@ -204,16 +248,18 @@ function escapeHtml (text) {
  * @returns {string}
  */
 function relationLabel (relation) {
-  return game.i18n.localize(RELATION_LABELS[relation])
+  return RELATION_LABELS[relation] ? game.i18n.localize(RELATION_LABELS[relation]) : ''
 }
 
 /**
  * The heal section's HTML for a card record: the buttons, or the outcome once
- * healed. Empty when no column grants dice.
- * @param {Object} record - `flags.dcc.layOnHands`
+ * healed. Empty when no column grants dice or the record is unusable.
+ * @param {Object} rawRecord - `flags.dcc.layOnHands`
  * @returns {string}
  */
-export function layOnHandsHealHtml (record) {
+export function layOnHandsHealHtml (rawRecord) {
+  const record = normalizeLayOnHandsRecord(rawRecord)
+  if (!record) return ''
   const target = escapeHtml(record.targetName)
   if (record.healed) {
     const text = game.i18n.format('DCC.LayOnHandsHealed', {
@@ -280,6 +326,8 @@ export function onRenderChatMessageHTMLForLayOnHands (message, html) {
       event.stopPropagation()
       button.disabled = true
       await requestLayOnHandsHeal(message, button.dataset.relation)
+      // With no GM connected nothing happened (executeAsGM warned): allow a retry.
+      if (!game.users?.activeGM) button.disabled = false
     })
   }
 }
@@ -306,12 +354,10 @@ export async function requestLayOnHandsHeal (message, relation) {
  */
 export async function layOnHandsHealHandler ({ messageId, relation } = {}, userId) {
   const message = game.messages?.get(messageId)
-  const record = message?.getFlag?.('dcc', 'layOnHands')
-  if (!record || record.healed || !LAY_ON_HANDS_RELATIONS.includes(relation)) return
+  const record = normalizeLayOnHandsRecord(message?.getFlag?.('dcc', 'layOnHands'))
+  if (!record || record.healed || cardsHealed.has(messageId) || !LAY_ON_HANDS_RELATIONS.includes(relation)) return
   const sender = userId ? game.users?.get(userId) : null
   if (!canApplyCardDamage(message, sender)) return
-  const heal = healingDice(record, relation)
-  if (!heal) return
   if (cardsHealing.has(messageId)) return
   cardsHealing.add(messageId)
   try {
@@ -321,8 +367,13 @@ export async function layOnHandsHealHandler ({ messageId, relation } = {}, userI
       console.warn(`DCC | Lay on Hands card ${messageId}: target ${record.targetUuid} no longer exists; not healed`)
       return
     }
+    // The hit die and cap come from the target itself, not the card's copy.
+    const hd = subjectHitDice(target)
+    const heal = hd ? healingDice({ ...record, ...hd }, relation) : null
+    if (!heal) return
     const roll = new Roll(heal.formula)
     await roll.evaluate()
+    cardsHealed.add(messageId)
     await message.update({ 'flags.dcc.layOnHands.healed': { relation, hp: roll.total, formula: heal.formula } })
     await roll.toMessage({
       speaker: message.speaker,
@@ -337,7 +388,15 @@ export async function layOnHandsHealHandler ({ messageId, relation } = {}, userI
   }
 }
 
-/** Register the GM-side heal handler. Call once at ready. */
+/**
+ * Register the GM-side heal handler. Call once at ready, after the system
+ * settings are registered: the chat log first renders before that, while the
+ * `layOnHandsHealButton` setting can't be read yet, so cards already in the
+ * log are re-rendered here to show their heal section.
+ */
 export function registerLayOnHandsHealHandler () {
   registerSocketHandler(LAY_ON_HANDS_HEAL_ACTION, layOnHandsHealHandler)
+  for (const message of game.messages ?? []) {
+    if (message.getFlag?.('dcc', 'layOnHands')) ui.chat?.updateMessage?.(message)
+  }
 }
