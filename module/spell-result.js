@@ -1,5 +1,7 @@
 /* global ChatMessage, CONFIG, game, foundry */
 
+import { adjustedLayOnHandsDice } from './lay-on-hands-heal.mjs'
+
 const { TextEditor } = foundry.applications.ux
 
 class SpellResult {
@@ -195,7 +197,11 @@ class SpellResult {
         actionDiceChatLine
       })
 
-      this.update({ content: newContent })
+      // A Lay on Hands card with a heal offer follows the new result's dice (#966)
+      const update = { content: newContent }
+      const layOnHandsDice = adjustedLayOnHandsDice(this, newResult)
+      if (layOnHandsDice) update['flags.dcc.layOnHands.dice'] = layOnHandsDice
+      this.update(update)
 
       // Update the spell item's lastResult if this message is for a specific spell
       const spellId = this.getFlag('dcc', 'ItemId')

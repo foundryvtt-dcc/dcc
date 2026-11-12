@@ -217,4 +217,110 @@ test.describe('Auto-apply damage', () => {
     expect(out.damageApplied).toBe(true)
     expect(out.hpAfterSecond).toBe(14)
   })
+
+  /**
+   * Lay on Hands heal offer (#966): a cleric lays on hands with one token
+   * targeted; the card offers to heal it from the active (core book) table,
+   * and the click heals it once through the GM. Dice are pinned (every die
+   * rolls half its faces): d20 10 + level 5 + Per 18 (+3) = 18, the "3 dice"
+   * same-alignment row, capped at the subject's 2 HD → 2d8 = 8.
+   */
+  test('Lay on Hands heals the targeted token from the result card, once (#966)', async ({ page }) => {
+    const out = await page.evaluate(async () => {
+      if (!game.canvas?.ready || !game.canvas?.scene) {
+        const scene = await Scene.create({ name: 'DCC AutoDmg Probe', width: 4000, height: 3000, grid: { type: 1, size: 100, distance: 5, units: 'ft' } })
+        await scene.view()
+      }
+      const scene = game.canvas.scene
+      const keys = ['layOnHandsHealButton', 'automateClericDisapproval', 'showRollModifierByDefault', 'multipleActionDice']
+      const prev = Object.fromEntries(keys.map(k => [k, game.settings.get('dcc', k)]))
+      const origRandomUniform = CONFIG.Dice.randomUniform
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+      let subject = null
+      let cleric = null
+      let tokenDoc = null
+      try {
+        await game.settings.set('dcc', 'layOnHandsHealButton', true)
+        await game.settings.set('dcc', 'automateClericDisapproval', false)
+        await game.settings.set('dcc', 'showRollModifierByDefault', false)
+        await game.settings.set('dcc', 'multipleActionDice', false)
+        ui.sidebar.changeTab('chat', 'primary')
+
+        subject = await Actor.create({
+          name: 'DCC LoH Subject',
+          type: 'NPC',
+          system: { details: { alignment: 'l' }, attributes: { hp: { value: 5, max: 20 }, hitDice: { value: '2d8' } } },
+          prototypeToken: { actorLink: true }
+        })
+        cleric = await Actor.create({
+          name: 'DCC LoH Cleric',
+          type: 'Player',
+          system: {
+            abilities: { per: { value: 18, max: 18 } },
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { alignment: 'l', level: { value: 5 }, sheetClass: 'Cleric' }
+          }
+        })
+        ;[tokenDoc] = await scene.createEmbeddedDocuments('Token', [{ name: 'Bob', actorId: subject.id, actorLink: true, x: 500, y: 500, width: 1, height: 1 }])
+        const deadline0 = Date.now() + 3000
+        while (Date.now() < deadline0 && !game.canvas.tokens.get(tokenDoc.id)) await wait(50)
+        game.canvas.tokens.get(tokenDoc.id).setTarget(true, { releaseOthers: true })
+
+        const before = new Set(game.messages.contents.map(m => m.id))
+        CONFIG.Dice.randomUniform = () => 0.5
+        await cleric.rollSkillCheck('layOnHands')
+
+        let card = null
+        const deadline1 = Date.now() + 3000
+        while (Date.now() < deadline1 && !card) {
+          card = game.messages.contents.find(m => !before.has(m.id) && m.getFlag('dcc', 'layOnHands'))
+          if (!card) await wait(50)
+        }
+        const findButton = () => document.querySelector(`.message[data-message-id="${card?.id}"] button[data-action="layOnHandsHeal"].primary`)
+        let button = null
+        const deadline2 = Date.now() + 3000
+        while (Date.now() < deadline2 && !(button = findButton())) await wait(50)
+        const buttonText = button?.textContent ?? null
+        // Count within one rendering: the chat log and the notification pane both show the card.
+        const alternates = button?.closest('.message')?.querySelectorAll('button[data-action="layOnHandsHeal"].alternate').length ?? 0
+
+        button?.click()
+        const deadline3 = Date.now() + 4000
+        while (Date.now() < deadline3 && subject.system.attributes.hp.value === 5) await wait(100)
+        const hpAfterHeal = subject.system.attributes.hp.value
+
+        // The card re-renders as healed; no button is left to heal twice.
+        await wait(300)
+        findButton()?.click()
+        await wait(1000)
+
+        return {
+          record: card?.getFlag('dcc', 'layOnHands') ?? null,
+          buttonText,
+          alternates,
+          hpAfterHeal,
+          hpAfterSecond: subject.system.attributes.hp.value,
+          buttonLeft: !!findButton()
+        }
+      } finally {
+        CONFIG.Dice.randomUniform = origRandomUniform
+        if (tokenDoc) {
+          game.canvas.tokens.get(tokenDoc.id)?.setTarget(false, { releaseOthers: true })
+          await scene.deleteEmbeddedDocuments('Token', [tokenDoc.id])
+        }
+        for (const [k, v] of Object.entries(prev)) await game.settings.set('dcc', k, v)
+        await subject?.delete()
+        await cleric?.delete()
+      }
+    })
+
+    expect(out.record).toMatchObject({ relation: 'same', hitDie: 'd8', hitDice: 2, dice: { same: 3, adjacent: 2, opposed: 1 } })
+    expect(out.buttonText).toContain('Bob')
+    expect(out.buttonText).toContain('2d8')
+    expect(out.alternates).toBe(2)
+    expect(out.hpAfterHeal).toBe(13)
+    expect(out.record.healed).toMatchObject({ relation: 'same', hp: 8, formula: '2d8' })
+    expect(out.hpAfterSecond).toBe(13)
+    expect(out.buttonLeft).toBe(false)
+  })
 })

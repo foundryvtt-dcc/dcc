@@ -35,7 +35,7 @@ describe('ApplyDamageDialog (apply-time damage adjustment, issue #401)', () => {
     await runSubmit({ amount: 5, multiplier: 1, targets, luckActor: null }, { amount: '3' })
 
     for (const target of targets) {
-      expect(target.applyDamage).toHaveBeenCalledWith(3, 1)
+      expect(target.applyDamage).toHaveBeenCalledWith(3, 1, { subdual: false })
     }
   })
 
@@ -44,7 +44,7 @@ describe('ApplyDamageDialog (apply-time damage adjustment, issue #401)', () => {
 
     await runSubmit({ amount: 4, multiplier: -1, targets: [target], luckActor: null }, { amount: '6' })
 
-    expect(target.applyDamage).toHaveBeenCalledWith(6, -1)
+    expect(target.applyDamage).toHaveBeenCalledWith(6, -1, { subdual: false })
   })
 
   it('does not apply anything when the amount is zero or not a number', async () => {
@@ -68,7 +68,7 @@ describe('ApplyDamageDialog (apply-time damage adjustment, issue #401)', () => {
       type: 'luckSpend',
       source: 'Apply Damage'
     }, { announce: true })
-    expect(target.applyDamage).toHaveBeenCalledWith(7, 1)
+    expect(target.applyDamage).toHaveBeenCalledWith(7, 1, { subdual: false })
   })
 
   it('still applies the damage when the Luck spend fails, with a warning', async () => {
@@ -77,7 +77,7 @@ describe('ApplyDamageDialog (apply-time damage adjustment, issue #401)', () => {
 
     await runSubmit({ amount: 5, multiplier: 1, targets: [target], luckActor: { name: 'Roller' } }, { amount: '4', luckSpend: '2' })
 
-    expect(target.applyDamage).toHaveBeenCalledWith(4, 1)
+    expect(target.applyDamage).toHaveBeenCalledWith(4, 1, { subdual: false })
     expect(globalThis.ui.notifications.warn).toHaveBeenCalled()
   })
 

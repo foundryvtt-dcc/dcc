@@ -26,6 +26,7 @@
 
 import { qolHandlingCombat } from './integrations.mjs'
 import { executeAsGM, registerSocketHandler } from './socket.mjs'
+import { messageDealsSubdualDamage } from './subdual-damage.mjs'
 
 export const APPLY_CARD_DAMAGE_ACTION = 'dcc.applyCardDamage'
 
@@ -263,7 +264,7 @@ async function applyCardDamageHandler ({ messageId, amount } = {}, userId) {
     }
     cardsApplied.add(message)
     await message.setFlag('dcc', 'damageApplied', true)
-    await target.applyDamage(amount, 1)
+    await target.applyDamage(amount, 1, { subdual: messageDealsSubdualDamage(message) })
   } catch (err) {
     console.error('DCC | applying card damage failed', err)
   } finally {

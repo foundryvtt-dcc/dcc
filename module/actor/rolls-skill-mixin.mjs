@@ -15,6 +15,7 @@ import { emitAfterSpellCheckResult } from './spell-result-hook.mjs'
 import { planActionDie, spendPlannedActionDie, formatActionDiceChatLine, reconcilePlannedActionDie, actionDicePresetsFromPlan, slotRollFormula } from '../action-dice-tracker.mjs'
 import { rollOrNullOnCancel } from '../roll-cancellation.mjs'
 import { getClassTrait } from '../extension-api.mjs'
+import { buildLayOnHandsHealFlag } from '../lay-on-hands-heal.mjs'
 
 /**
  * Skill-check dispatch mixin for {@link DCCActor}.
@@ -516,8 +517,17 @@ export const RollsSkillMixin = (Base) => class extends Base {
       // Manifestation on the actor skill (no spell item) — surface it in
       // the chat card when present (#426).
       const skillManifestation = this.system.skills?.[skillId]?.manifestation
+      // Lay on Hands with one token targeted: record the subject so the card
+      // can offer to heal it (#966). Null leaves the card note-only.
+      const layOnHands = skillId === 'layOnHands' ? buildLayOnHandsHealFlag(this, tableResult) : null
       await game.dcc.SpellResult.addChatMessage(roll, skillTable, tableResult, {
-        crit, fumble, disapprovalFailure, item: skillItem, manifestation: skillManifestation, actionDiceChatLine
+        crit,
+        fumble,
+        disapprovalFailure,
+        item: skillItem,
+        manifestation: skillManifestation,
+        actionDiceChatLine,
+        messageData: layOnHands ? { flags: { dcc: { layOnHands } } } : {}
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same

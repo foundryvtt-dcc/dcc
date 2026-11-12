@@ -396,6 +396,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       'dcc.critNeedsHit': !!attackRollResult.critNeedsHit,
       'dcc.isMelee': weapon.system?.melee
     }
+    // Subdual weapon: its damage is tracked apart from hit points (#966)
+    if (weapon.system?.subdual) flags['dcc.subdual'] = true
     // Hit/miss vs the selected target, computed here while the targets are in
     // hand (they're stripped from system data before create). Read back by the
     // enhanced attack card's hit/miss banner.
@@ -932,6 +934,8 @@ export const RollsWeaponMixin = (Base) => class extends Base {
       await damageRoll.evaluate()
     }
     foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
+    // Lets the apply-damage paths track it apart from hit points (#966)
+    if (weapon?.system?.subdual) foundry.utils.mergeObject(damageRoll.options, { 'dcc.subdual': true })
     if (damageRoll.total < 1) {
       damageRoll._total = 1
     }

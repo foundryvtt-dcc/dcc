@@ -27,6 +27,7 @@ import { registerTables, setupCoreBookCompendiumLinks } from './table-loading.mj
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 import { registerSocket } from './socket.mjs'
 import { registerAutoApplyDamageHandler } from './auto-apply-damage.mjs'
+import { registerLayOnHandsHealHandler } from './lay-on-hands-heal.mjs'
 import { registerEnhancedCardSocket } from './chat/enhanced-attack-card.mjs'
 import { registerActionDiceSocketHandler } from './action-dice-tracker.mjs'
 import { registerPartyTokenSocket } from './party-token.mjs'
@@ -87,6 +88,7 @@ export async function onReady () {
   // handlers run only on the active GM. See module/socket.mjs.
   registerSocket()
   registerAutoApplyDamageHandler()
+  registerLayOnHandsHealHandler()
   registerEnhancedCardSocket()
   registerActionDiceSocketHandler()
   registerPartyTokenSocket()

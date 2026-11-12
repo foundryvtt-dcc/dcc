@@ -984,6 +984,46 @@ test('applyDamage allows damage below zero', async () => {
   })
 })
 
+describe('subdual damage (#966)', () => {
+  test('is tracked apart from hit points and reports the knockout when it reaches them', async () => {
+    actorUpdateMock.mockClear()
+    const create = vi.spyOn(CONFIG.ChatMessage.documentClass, 'create')
+    actor.system.attributes.hp.value = 3
+    actor.system.attributes.hp.subdual = 1
+
+    await actor.applyDamage(2, 1, { subdual: true })
+
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.attributes.hp.subdual': 3 })
+    expect(actorUpdateMock).not.toHaveBeenCalledWith(expect.objectContaining({ 'system.attributes.hp.value': expect.anything() }))
+    expect(create.mock.calls.at(-1)[0].content).toBe('TakeSubdualDamageKnockedOut')
+    create.mockRestore()
+    actor.system.attributes.hp.subdual = 0
+  })
+
+  test('comes off hit points when the trackSubdualDamage setting is off', async () => {
+    actorUpdateMock.mockClear()
+    actor.system.attributes.hp.value = 3
+    global.gameSettingsGetMock.mockImplementationOnce((module, key) => key === 'trackSubdualDamage' ? false : undefined)
+
+    await actor.applyDamage(2, 1, { subdual: true })
+
+    expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.attributes.hp.value': 1 })
+  })
+})
+
+test('applyNaturalHealing heals the lib rate per night or day of rest (#966)', async () => {
+  actorUpdateMock.mockClear()
+  actor.system.attributes.hp.value = -2
+  actor.system.attributes.hp.max = 10
+
+  // Bed rest: 2 HP per day, for 2 days
+  await actor.applyNaturalHealing('bed-rest', { days: 2 })
+
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.attributes.hp.value': 2 })
+  actor.system.attributes.hp.max = 3
+  actor.system.attributes.hp.value = 3
+})
+
 test('loseSpell marks spell as lost', async () => {
   const spellItem = {
     name: 'Test Spell',

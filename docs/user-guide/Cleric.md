@@ -21,6 +21,20 @@ If your cleric's deity has their own disapproval table that you have created, yo
 
 There is also a handy reference chart for those skills on this tab.
 
+## Healing with Lay on Hands
+
+Target the creature you're healing (one token), then roll Lay on Hands. The result card offers a button that heals the target, for example **Heal Bob: same alignment, 3 dice capped at 2 HD, 2d8**. The button says what it assumes:
+
+- the alignment relationship, from the cleric's and the target's alignments (same, adjacent, or opposed)
+- the dice count from the Lay on Hands table row
+- the target's hit die, and the cap: no more dice than the target's hit dice (a character's level)
+
+Clicking it rolls the healing dice and applies them to the target, once. If the judge rules the relationship differently, use one of the smaller buttons for the other alignment columns. If the target has no alignment set, the card asks you to pick one.
+
+With no target, or more than one, the card shows the table result only. The GM must be connected for a player's click to heal a token they don't own. Turn the button off with the **Lay on Hands: Offer to Heal the Target** setting.
+
+The dice counts are read from the active Lay on Hands table. A custom table works if each result lists the dice for same, adjacent and opposed alignment in that order, as rows of an HTML table, like the core book table.
+
 Cleric spells are on the Spells tab.
 
 ![Cleric Spells Tab](images/cleric_spells_tab.png)

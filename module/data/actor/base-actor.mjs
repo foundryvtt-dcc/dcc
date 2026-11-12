@@ -28,7 +28,7 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     }
 
     // Convert string HP values to numbers if needed
-    migrateFieldsToInteger(source.attributes?.hp, ['value', 'min', 'max', 'temp', 'tempmax'], 0)
+    migrateFieldsToInteger(source.attributes?.hp, ['value', 'min', 'max', 'temp', 'tempmax', 'subdual'], 0)
 
     // Fix invalid dice notation in attributes
     // hitDice.value might be just a number like "1" for zero-level
@@ -184,7 +184,11 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           min: new NumberField({ initial: 0, integer: true }),
           max: new NumberField({ initial: 10, integer: true }),
           temp: new NumberField({ initial: 0, integer: true }),
-          tempmax: new NumberField({ initial: 0, integer: true })
+          tempmax: new NumberField({ initial: 0, integer: true }),
+          // Subdual damage taken, tracked apart from `value` (#966): it
+          // never lowers hit points, and once it reaches them the creature
+          // is knocked out instead of killed.
+          subdual: new NumberField({ initial: 0, integer: true, min: 0 })
         }),
         init: new SchemaField({
           die: new DiceField({ initial: '1d20' }),

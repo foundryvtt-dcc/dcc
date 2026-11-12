@@ -1,10 +1,13 @@
-/* global foundry */
+/* global foundry, game */
+
+import { getHealingFromRest } from './vendor/dcc-core-lib/index.js'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
  * A dialog for adjusting an actor's hit points
- * Can apply damage, healing, or set HP to a specific value
+ * Can apply damage, healing, or set HP to a specific value, edit the running
+ * subdual damage total, and heal naturally from rest (#966)
  * @extends {ApplicationV2}
  */
 class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -24,6 +27,9 @@ class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       handler: HitPointsConfig.#onSubmitForm,
       submitOnChange: false,
       closeOnSubmit: true
+    },
+    actions: {
+      rest: HitPointsConfig.#onRest
     }
   }
 
@@ -49,6 +55,10 @@ class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     context.hp = actor.system.attributes.hp.value
     context.maxHp = actor.system.attributes.hp.max
     context.actorName = actor.name
+    context.trackSubdual = !!game.settings.get('dcc', 'trackSubdualDamage')
+    context.subdual = actor.system.attributes.hp.subdual ?? 0
+    context.nightsRestHint = game.i18n.format('DCC.NaturalHealingNightHint', { hp: getHealingFromRest('active-adventure') })
+    context.bedRestHint = game.i18n.format('DCC.NaturalHealingBedRestHint', { hp: getHealingFromRest('bed-rest') })
 
     return context
   }
@@ -80,8 +90,23 @@ class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
+    const actor = this.options.document
+
+    // Subdual damage total, edited directly (e.g. cleared when the judge
+    // rules the creature has come round)
+    const subdual = formData.object.subdual
+    if (subdual !== undefined && subdual !== null && subdual !== '') {
+      const newSubdual = Math.max(0, parseInt(subdual) || 0)
+      if (newSubdual !== (actor.system.attributes.hp.subdual ?? 0)) {
+        await actor.update({ 'system.attributes.hp.subdual': newSubdual })
+      }
+    }
+
     const adjustment = formData.object.adjustment?.trim()
-    if (!adjustment) return
+    if (!adjustment) {
+      if (typeof this.options.callback === 'function') this.options.callback()
+      return
+    }
 
     const value = Number(adjustment)
     if (isNaN(value)) return
@@ -107,6 +132,24 @@ class HitPointsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     if (typeof this.options.callback === 'function') {
       this.options.callback()
     }
+  }
+
+  /**
+   * Heal naturally from rest: a night's rest or a day of bed rest, times the
+   * number of days entered (#966)
+   * @this {HitPointsConfig}
+   * @param {PointerEvent} event - The click event
+   * @param {HTMLElement} target - The rest button (carries data-rest-type)
+   * @private
+   */
+  static async #onRest (event, target) {
+    event.preventDefault()
+    const days = this.element.querySelector('input[name="restDays"]')?.value
+    await this.options.document.applyNaturalHealing(target.dataset.restType, { days })
+    if (typeof this.options.callback === 'function') {
+      this.options.callback()
+    }
+    await this.close()
   }
 }
 

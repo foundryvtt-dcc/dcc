@@ -36,5 +36,22 @@
     font-style: italic;
     margin: 0;
   }
-}
 
+  input[name='subdual'],
+  input[name='restDays'] {
+    text-align: center;
+  }
+
+  .natural-healing {
+    margin: 0;
+    padding: 4px 8px 8px;
+
+    legend {
+      padding: 0 4px;
+    }
+
+    button {
+      white-space: nowrap;
+    }
+  }
+}

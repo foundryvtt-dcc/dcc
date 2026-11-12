@@ -1566,6 +1566,9 @@ global.gameSettingsGetMock = vi.fn((module, key) => {
         return 'dcc-core-book.dcc-level-data'
       case 'ownedTokenVision':
         return true
+      case 'layOnHandsHealButton':
+      case 'trackSubdualDamage':
+        return true
       default:
         return undefined
     }

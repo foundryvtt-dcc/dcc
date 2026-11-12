@@ -98,6 +98,10 @@ Click the **Multiple Action Dice** button to configure the experimental multiple
 
 **Automated Wizard/Elf Spell Loss** (on by default in new worlds) will automatically mark a spell as lost if the spell fails.
 
+**Lay on Hands: Offer to Heal the Target** (on by default) adds a heal button to a Lay on Hands result card when one token is targeted. See [Cleric](Cleric.md#healing-with-lay-on-hands).
+
+**Track Subdual Damage** (on by default) keeps subdual damage as its own total instead of taking it off hit points. See [Applying Damage](Applying-Damage.md#subdual-damage).
+
 **Show the Modify Roll dialog by default** will show the Modify Roll dialog when you roll from the character sheet. If this is unchecked, you will need to cmd/ctrl click to show the Modify Roll dialog.
 
 **Enable Ability Score Log** tracks ability score changes on Player sheets with a reason, recovery expectation, and a per-actor history log — useful for spellburn and stat drain. Click an ability score to record a change: arrows step the new value up or down, and the most likely reason is preselected (Spellburn on physical stats for wizards and elves, Ability Damage otherwise, Luck Spend for Luck).
