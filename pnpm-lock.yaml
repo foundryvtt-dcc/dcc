@@ -57,8 +57,8 @@ importers:
         specifier: 19.3.1
         version: 19.3.1(react@19.3.1)
       remotion:
-        specifier: 4.0.540
-        version: 4.0.540(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 4.0.542
+        version: 4.0.542(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
 packages:
 
