@@ -372,6 +372,30 @@ test('adapter path opens RollModifierDialog when showModifierDialog is true', as
   expect(dialogMod.value).toBe(3)
 })
 
+test('the dialog offers the Judge-only checkbox and a ticked box posts the card blind (#1141)', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+  global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+    formula: '1d14+3',
+    total: 14,
+    dice: [{ results: [11], total: 11, options: {} }],
+    // The dialog stores the ticked checkbox as the roll's messageMode
+    options: { dcc: {}, messageMode: 'blind' },
+    terms: [
+      { class: 'Die', formula: '1d14', number: 1, faces: 14 },
+      { class: 'OperatorTerm', operator: '+' },
+      { class: 'NumericTerm', number: 3 }
+    ],
+    _evaluated: true
+  }))
+
+  await actor.rollSkillCheck('customDieAndValueSkill', { showModifierDialog: true })
+
+  expect(global.dccRollCreateRollMock.mock.calls[0][2].offerBlindRoll).toBe(true)
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(rollToMessageMock.mock.calls[0][1]).toEqual({ create: false, messageMode: 'blind' })
+})
+
 test('adapter path returns undefined when user cancels the dialog', async () => {
   rollToMessageMock.mockClear()
   global.dccRollCreateRollMock.mockClear()

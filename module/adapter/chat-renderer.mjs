@@ -68,6 +68,18 @@ export function buildLibResultFlag (result, extras = {}) {
  * @param {Roll} [foundryRoll] - The evaluated Foundry Roll; no-op when
  *   absent.
  */
+/**
+ * `Roll#toMessage` options for a renderer. A `messageMode` in the call
+ * options (e.g. `'blind'` from the roll dialog's Judge-only checkbox,
+ * #1141) overrides the core roll-mode setting; without one Foundry uses
+ * the setting.
+ * @param {Object} [options] - The roll's call options
+ * @returns {{create: false, messageMode?: string}}
+ */
+function toMessageOptions (options = {}) {
+  return options.messageMode ? { create: false, messageMode: options.messageMode } : { create: false }
+}
+
 export function applyFleetingLuck (flags, foundryRoll) {
   if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
     game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
@@ -279,7 +291,8 @@ export function dcResultSuffix (total, options = {}) {
  *   when present it rides under the rolled formula + breakdown.
  * @param {Object} [params.options] - Original call options. Supports
  *   `dc` / `showDc` for the DC success/failure suffix (roll requests
- *   #855), matching the saving-throw renderer.
+ *   #855), matching the saving-throw renderer, and `messageMode` to
+ *   override the core roll-mode setting (#1141).
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderAbilityCheck ({
@@ -339,7 +352,7 @@ export async function renderAbilityCheck ({
     toMessageData.content = `${rollHTML}${breakdownHtml}${actionDiceHtml}${penaltyHtml}`
   }
 
-  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+  const messageData = await foundryRoll.toMessage(toMessageData, toMessageOptions(options))
 
   return ChatMessage.create(messageData)
 }
@@ -446,7 +459,8 @@ export async function renderAbilityCheckRollUnder ({
  *   `dcc.checkPenalty` flag and rendered as a "With check penalty (−X): Y"
  *   note; informational, NOT in the roll.
  * @param {Object} [params.options] - Original call options. Supports
- *   `dc` / `showDc` for the DC suffix the legacy path rendered.
+ *   `dc` / `showDc` for the DC suffix the legacy path rendered, and
+ *   `messageMode` to override the core roll-mode setting (#1141).
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSavingThrow ({
@@ -489,7 +503,7 @@ export async function renderSavingThrow ({
     toMessageData.content = `${rollHTML}${breakdownHtml}${penaltyHtml}`
   }
 
-  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+  const messageData = await foundryRoll.toMessage(toMessageData, toMessageOptions(options))
 
   return ChatMessage.create(messageData)
 }
@@ -594,7 +608,8 @@ export async function renderMoraleCheck ({ actor, result, foundryRoll, messageMo
  *   when present it rides under the rolled formula + breakdown.
  * @param {Object} [params.options] - Original call options. Supports
  *   `dc` / `showDc` for the DC success/failure suffix (roll requests
- *   #855), matching the saving-throw renderer.
+ *   #855), matching the saving-throw renderer, and `messageMode` to
+ *   override the core roll-mode setting (#1141).
  * @returns {Promise<ChatMessage>} The created ChatMessage.
  */
 export async function renderSkillCheck ({
@@ -660,7 +675,7 @@ export async function renderSkillCheck ({
     toMessageData.content = `${rollHTML}${breakdownHtml}${descriptionHtml}${actionDiceHtml}`
   }
 
-  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
+  const messageData = await foundryRoll.toMessage(toMessageData, toMessageOptions(options))
 
   return ChatMessage.create(messageData)
 }

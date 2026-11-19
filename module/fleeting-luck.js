@@ -1,4 +1,4 @@
-/* global CONFIG, CONST, game, Hooks, foundry, ui */
+/* global ChatMessage, CONFIG, CONST, game, Hooks, foundry, ui */
 
 import { rollOrNullOnCancel } from './roll-cancellation.mjs'
 
@@ -207,6 +207,13 @@ class FleetingLuck {
         const effect = message.getFlag('dcc', 'FleetingLuckEffect')
         if (effect !== undefined) {
           if (FleetingLuck.isTrackedForUser(message.author)) {
+            // A blind roll's result is hidden from the roller (#1141).
+            // Awarding or clearing luck would show the natural 20 or 1 in
+            // the public chat line and the Fleeting Luck panel, so leave
+            // the change to the Judge and tell only them.
+            if (message.blind && ['Gain', 'Lose'].includes(effect)) {
+              return FleetingLuck.addJudgeNote(effect, message.author)
+            }
             switch (effect) {
               case 'Gain':
                 FleetingLuck.give(message.author.id, 1)
@@ -486,6 +493,22 @@ class FleetingLuck {
       sound: CONFIG.sounds.notification
     }
     return CONFIG.ChatMessage.documentClass.create(messageData)
+  }
+
+  /**
+   * Whisper the Judge that a blind roll would have changed Fleeting Luck
+   * (#1141), so they can award or clear it by hand once the result is out
+   * @param {String} effect   The message's FleetingLuckEffect ('Gain' or 'Lose')
+   * @param {User} user       The user who made the blind roll
+   * @return {Promise}
+   */
+  static async addJudgeNote (effect, user) {
+    const key = effect === 'Gain' ? 'DCC.FleetingLuckBlindCritNote' : 'DCC.FleetingLuckBlindFumbleNote'
+    return CONFIG.ChatMessage.documentClass.create({
+      user: game.user.id,
+      content: game.i18n.format(key, { user: user.name }),
+      whisper: ChatMessage.getWhisperRecipients('GM').map(gm => gm.id)
+    })
   }
 
   /*

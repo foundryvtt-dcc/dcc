@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import FleetingLuck from '../fleeting-luck.js'
 
@@ -183,5 +183,56 @@ describe('give / take / spend balance math', () => {
     user = makeUser(2)
     await FleetingLuck.spend('u1', 10)
     expect(user.setFlag).toHaveBeenCalledWith('dcc', expect.anything(), 0)
+  })
+})
+
+describe('blind rolls (#1141)', () => {
+  let onCreate
+  const player = { id: 'p1', name: 'Pat', isGM: false }
+  const message = (effect, blind) => ({ author: player, blind, getFlag: () => effect })
+
+  const originalOn = globalThis.Hooks.on
+  const originalRecipients = globalThis.ChatMessage.getWhisperRecipients
+
+  beforeEach(() => {
+    globalThis.game = {
+      user: { id: 'gm', isGM: true },
+      settings: { get: () => true },
+      i18n: { format: (key, data) => `${key}:${data.user}` }
+    }
+    globalThis.Hooks.on = vi.fn((hook, fn) => { if (hook === 'createChatMessage') onCreate = fn })
+    globalThis.ChatMessage.getWhisperRecipients = () => [{ id: 'gm' }]
+    globalThis.CONFIG.ChatMessage.documentClass.create.mockClear()
+    vi.spyOn(FleetingLuck, 'give').mockResolvedValue()
+    vi.spyOn(FleetingLuck, 'clearAll').mockResolvedValue()
+    FleetingLuck.init()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    globalThis.Hooks.on = originalOn
+    globalThis.ChatMessage.getWhisperRecipients = originalRecipients
+  })
+
+  test('a blind natural 20 awards nothing and whispers the Judge instead', async () => {
+    await onCreate(message('Gain', true))
+    expect(FleetingLuck.give).not.toHaveBeenCalled()
+    expect(globalThis.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith(expect.objectContaining({
+      content: 'DCC.FleetingLuckBlindCritNote:Pat',
+      whisper: ['gm']
+    }))
+  })
+
+  test('a blind natural 1 clears nothing and whispers the Judge instead', async () => {
+    await onCreate(message('Lose', true))
+    expect(FleetingLuck.clearAll).not.toHaveBeenCalled()
+    expect(globalThis.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith(expect.objectContaining({
+      content: 'DCC.FleetingLuckBlindFumbleNote:Pat'
+    }))
+  })
+
+  test('a public natural 20 still awards the roller', async () => {
+    await onCreate(message('Gain', false))
+    expect(FleetingLuck.give).toHaveBeenCalledWith('p1', 1)
   })
 })

@@ -108,6 +108,7 @@ describe('LuckBurn dialog term', () => {
     t._resolve = vi.fn()
     t.close = vi.fn()
     t._constructRoll = proto._constructRoll
+    t._chosenMessageMode = proto._chosenMessageMode
     Object.defineProperty(t, 'roll', { get () { return this._roll } })
     const submit = RollModifierDialog.DEFAULT_OPTIONS.form.handler
     const event = { preventDefault () {} }

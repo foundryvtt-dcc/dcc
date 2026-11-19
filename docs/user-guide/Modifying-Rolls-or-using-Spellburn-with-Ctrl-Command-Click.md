@@ -8,6 +8,12 @@ You can even use Spellburn with spells, and they will reduce physical stats.
 
 ![Spellburn](images/spellburn.png)
 
+## Sending the result only to the Judge
+
+Ability checks, saving throws and skill checks opened this way show a **Send results only to the Judge** checkbox above the Roll button. Tick it to make the roll blind: the Judge sees the card, and you see a hidden "privately rolled some dice" card. Use it for rolls where you shouldn't know how well you did, such as a thief's Sneak Silently or Hide in Shadows. It applies to that one roll only. To make every roll blind, use the roll mode menu in the chat sidebar instead.
+
+If Fleeting Luck automation is on, a blind natural 20 or natural 1 doesn't change anyone's Fleeting Luck, because that would give the result away. The Judge gets a private note instead and can award or clear Fleeting Luck by hand. See [Fleeting Luck](Fleeting-Luck.md).
+
 ## Burning Luck
 
 Attacks, saving throws, ability checks, skill checks and spell checks opened this way also show a **Luck Burn** term for player characters. Use its + and − buttons to choose how many points of Luck to burn; the field shows the bonus that buys and the box under it shows the Luck you will have left. The Luck is spent when you click Roll, and the roll card lists the bonus as its own Luck Burn modifier.

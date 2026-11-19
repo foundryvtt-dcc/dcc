@@ -503,6 +503,9 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     data.terms = this._terms
     data.damageTerms = this._damageTerms
     data.rollLabel = this.options.rollLabel || game.i18n.localize('DCC.RollModifierRoll')
+    // Only callers that pass the chosen mode on to their chat card ask for
+    // the "results only to the Judge" checkbox (#1141)
+    data.offerBlindRoll = !!this.options.offerBlindRoll
     data.cancelLabel = this.options.cancelLabel || game.i18n.localize('DCC.RollModifierCancel')
     return data
   }
@@ -535,8 +538,23 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       const damageFormula = this._constructDamageFormula()
       foundry.utils.mergeObject(this._roll.options, { modifiedDamageFormula: damageFormula })
     }
+    const messageMode = this._chosenMessageMode(form)
+    if (messageMode) this._roll.options.messageMode = messageMode
     this._resolve(this.roll)
     await this.close()
+  }
+
+  /**
+   * The chat message mode the roller picked in the dialog (#1141).
+   * Ticking "Send results only to the Judge" posts the roll in Foundry's
+   * blind mode. Otherwise returns null, so the caller falls back to the
+   * core roll-mode setting.
+   * @param {HTMLFormElement} form - The submitted dialog form
+   * @return {string|null}
+   */
+  _chosenMessageMode (form) {
+    if (!this.options?.offerBlindRoll) return null
+    return form?.elements?.blindRoll?.checked ? 'blind' : null
   }
 
   /**

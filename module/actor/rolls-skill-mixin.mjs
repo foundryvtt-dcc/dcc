@@ -273,9 +273,12 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const prompt = await promptRollModifierDialog(dialogTerms, {
         rollData: this.getRollData(),
         title: options.title,
-        rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+        rollLabel: game.i18n.localize('DCC.RollModifierRoll'),
+        offerBlindRoll: true
       })
       if (prompt === null) return
+      // Judge-only checkbox (#1141): the renderer reads `options.messageMode`
+      if (prompt.messageMode) options = { ...options, messageMode: prompt.messageMode }
       if (prompt.actionDie) {
         const libDie = this._stripDieCount(prompt.actionDie)
         if (libDie) definition.roll.die = libDie
@@ -430,8 +433,11 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const luckBurnTerm = buildLuckBurnTerm(this, { source: options.title || game.i18n.localize(skill?.label || '') })
       if (luckBurnTerm) terms.push(luckBurnTerm)
     }
-    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), { ...options, offerBlindRoll: true }))
     if (!roll) return // Dialog cancelled — post no skill-check card
+    // The dialog's Judge-only checkbox (#1141) rides on the roll; a caller's
+    // explicit `options.messageMode` wins. Null ⇒ the core roll-mode setting.
+    const messageMode = options.messageMode || roll.options?.messageMode || null
 
     if (skill.useDisapprovalRange && roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -529,7 +535,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
         actionDiceChatLine,
         // Dotted key: addChatMessage's flags are dotted, and a nested `dcc`
         // object would replace them when the message is created.
-        messageData: layOnHands ? { flags: { 'dcc.layOnHands': layOnHands } } : {}
+        messageData: layOnHands ? { flags: { 'dcc.layOnHands': layOnHands } } : {},
+        messageOptions: messageMode ? { messageMode } : {}
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same
@@ -569,7 +576,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
         flags,
         system: { spellId: skillItem?.id, skillId },
         content: `${rollHTML}${spellResultHtml}${actionDiceLineHtml(actionDiceChatLine)}`
-      })
+      }, messageMode ? { messageMode } : {})
     }
 
     // Spell-like skill failure automation (#375): a skill configured with an

@@ -61,6 +61,11 @@ import { spellburnTermFromDescriptor } from '../spellburn.mjs'
  *                                             `@`-substitutions.
  * @param {string}        [options.title]      Dialog window title.
  * @param {string}        [options.rollLabel]  Submit button label.
+ * @param {boolean}       [options.offerBlindRoll]  Show the "Send results
+ *                                             only to the Judge" checkbox
+ *                                             (#1141). Only set it when the
+ *                                             caller passes `messageMode`
+ *                                             on to its chat card.
  * @param {{str: number, agl: number, sta: number, level: (number|undefined)}} [options.spellburn]
  *                                             Current ability values
  *                                             for the casting actor.
@@ -77,7 +82,8 @@ import { spellburnTermFromDescriptor } from '../spellburn.mjs'
  *   luckBurn: number,
  *   formula: string,
  *   roll: Roll,
- *   spellburn: {str: number, agl: number, sta: number, adjustHP: boolean} | null
+ *   spellburn: {str: number, agl: number, sta: number, adjustHP: boolean} | null,
+ *   messageMode: string | null
  * } | null>}
  *   Returns `null` if the user cancelled (closed without submitting).
  *   Otherwise returns the user's final action die (e.g. `'1d20'`,
@@ -86,7 +92,9 @@ import { spellburnTermFromDescriptor } from '../spellburn.mjs'
  *   it, so callers can show it as its own line — see
  *   `dialogModifierLines`), the underlying Foundry Roll for
  *   callers that want the raw formula, and (when `options.spellburn`
- *   was requested) the chosen burn commitment.
+ *   was requested) the chosen burn commitment. `messageMode` is `'blind'`
+ *   when the roller ticked the Judge-only checkbox, otherwise `null` (use
+ *   the core roll-mode setting).
  */
 export async function promptRollModifierDialog (terms, options = {}) {
   let spellburnCapture = null
@@ -123,7 +131,8 @@ export async function promptRollModifierDialog (terms, options = {}) {
     roll = await game.dcc.DCCRoll.createRoll(effectiveTerms, options.rollData ?? {}, {
       showModifierDialog: true,
       title: options.title,
-      rollLabel: options.rollLabel
+      rollLabel: options.rollLabel,
+      offerBlindRoll: !!options.offerBlindRoll
     })
   } catch (err) {
     // A cancel is the expected way out of the dialog (issue #867). Anything
@@ -165,7 +174,8 @@ export async function promptRollModifierDialog (terms, options = {}) {
     luckBurn: parsed.luckBurn,
     formula: roll.formula,
     roll,
-    spellburn: spellburnResult
+    spellburn: spellburnResult,
+    messageMode: roll.options?.messageMode || null
   }
 }
 
