@@ -139,6 +139,49 @@ describe('addUserContextOptions (Players list context menu, issue #826)', () => 
   })
 })
 
+describe('awardForCrit (#1142)', () => {
+  const makeUser = (id, { active = true, isGM = false, luck = 0 } = {}) => {
+    let v = luck
+    return { id, name: id, active, isGM, getFlag: () => v, setFlag: vi.fn(async (scope, key, val) => { v = val }) }
+  }
+  let users
+  let award
+
+  beforeEach(() => {
+    users = [
+      makeUser('roller', { luck: 1 }),
+      makeUser('friend'),
+      makeUser('away', { active: false }),
+      makeUser('gm', { isGM: true })
+    ]
+    FleetingLuck.addChatMessage = vi.fn(async () => {})
+    FleetingLuck.refresh = vi.fn(async () => {})
+    globalThis.game = {
+      users: { filter: fn => users.filter(fn), get: id => users.find(u => u.id === id) },
+      settings: { get: () => award },
+      i18n: { format: (key, data) => `${key}:${data.user}` }
+    }
+  })
+
+  test('by default only the roller gains a point', async () => {
+    award = 'roller'
+    await FleetingLuck.awardForCrit(users[0])
+    expect(users[0].setFlag).toHaveBeenCalledWith('dcc', 'fleetingLuckValue', 2)
+    expect(users[1].setFlag).not.toHaveBeenCalled()
+  })
+
+  test("'all' gives every active player a point, with one chat line", async () => {
+    award = 'all'
+    await FleetingLuck.awardForCrit(users[0])
+    expect(users[0].setFlag).toHaveBeenCalledWith('dcc', 'fleetingLuckValue', 2)
+    expect(users[1].setFlag).toHaveBeenCalledWith('dcc', 'fleetingLuckValue', 1)
+    expect(users[2].setFlag).not.toHaveBeenCalled()
+    expect(users[3].setFlag).not.toHaveBeenCalled()
+    expect(FleetingLuck.addChatMessage).toHaveBeenCalledTimes(1)
+    expect(FleetingLuck.addChatMessage).toHaveBeenCalledWith('DCC.FleetingLuckGiveAllMessage:roller')
+  })
+})
+
 describe('give / take / spend balance math', () => {
   let user
   const makeUser = (start) => {
