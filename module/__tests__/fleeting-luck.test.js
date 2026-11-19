@@ -231,6 +231,12 @@ describe('blind rolls (#1141)', () => {
     }))
   })
 
+  test('only the active GM posts the note when several GMs are connected', async () => {
+    globalThis.game.users = { activeGM: { isSelf: false } }
+    await onCreate(message('Gain', true))
+    expect(globalThis.CONFIG.ChatMessage.documentClass.create).not.toHaveBeenCalled()
+  })
+
   test('a public natural 20 still awards the roller', async () => {
     await onCreate(message('Gain', false))
     expect(FleetingLuck.give).toHaveBeenCalledWith('p1', 1)

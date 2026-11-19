@@ -12,6 +12,8 @@ You can even use Spellburn with spells, and they will reduce physical stats.
 
 Ability checks, saving throws and skill checks opened this way show a **Send results only to the Judge** checkbox above the Roll button. Tick it to make the roll blind: the Judge sees the card, and you see a hidden "privately rolled some dice" card. Use it for rolls where you shouldn't know how well you did, such as a thief's Sneak Silently or Hide in Shadows. It applies to that one roll only. To make every roll blind, use the roll mode menu in the chat sidebar instead.
 
+On a blind skill check that works like a spell (Turn Unholy, Lay on Hands, Divine Aid and similar), the messages that follow it, such as a lost spell, a disapproval roll or a rise in disapproval, are blind too. The skill's last result isn't shown on the sheet either. The change itself, such as a spell marked lost or a higher disapproval range, still shows on your sheet.
+
 If Fleeting Luck automation is on, a blind natural 20 or natural 1 doesn't change anyone's Fleeting Luck, because that would give the result away. The Judge gets a private note instead and can award or clear Fleeting Luck by hand. See [Fleeting Luck](Fleeting-Luck.md).
 
 ## Burning Luck

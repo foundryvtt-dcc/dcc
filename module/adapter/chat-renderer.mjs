@@ -903,7 +903,7 @@ function buildNakedSpellResultHtml (result) {
  * @param {Roll} [params.roll] - The evaluated Foundry disapproval Roll.
  * @returns {Promise<ChatMessage>}
  */
-export async function renderDisapprovalRoll ({ actor, disapprovalResult, roll }) {
+export async function renderDisapprovalRoll ({ actor, disapprovalResult, roll, messageMode }) {
   const description = disapprovalResult?.description || ''
 
   let chatRoll = roll
@@ -938,7 +938,7 @@ export async function renderDisapprovalRoll ({ actor, disapprovalResult, roll })
       flavor,
       flags
     },
-    { create: false }
+    toMessageOptions({ messageMode })
   )
 
   return ChatMessage.create(messageData)

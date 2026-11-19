@@ -339,7 +339,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       options
     })
 
-    if (skillItem && skillItem.system.config.showLastResult) {
+    // A blind check's total stays off the sheet (#1141)
+    if (skillItem && skillItem.system.config.showLastResult && options.messageMode !== 'blind') {
       skillItem.update({ 'system.lastResult': foundryRoll.total })
     }
 
@@ -433,11 +434,15 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const luckBurnTerm = buildLuckBurnTerm(this, { source: options.title || game.i18n.localize(skill?.label || '') })
       if (luckBurnTerm) terms.push(luckBurnTerm)
     }
-    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), { ...options, offerBlindRoll: true }))
+    const createOptions = options.showModifierDialog ? { ...options, offerBlindRoll: true } : options
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), createOptions))
     if (!roll) return // Dialog cancelled — post no skill-check card
-    // The dialog's Judge-only checkbox (#1141) rides on the roll; a caller's
-    // explicit `options.messageMode` wins. Null ⇒ the core roll-mode setting.
-    const messageMode = options.messageMode || roll.options?.messageMode || null
+    // The dialog's Judge-only checkbox (#1141) rides on the roll and wins over
+    // a caller's `options.messageMode`, as on the other dialog paths. Null ⇒
+    // the core roll-mode setting. Every follow-up message below uses it too,
+    // so a blind check's spell loss or disapproval doesn't reveal the result.
+    const messageMode = roll.options?.messageMode || options.messageMode || null
+    const followUp = messageMode ? { messageMode } : {}
 
     if (skill.useDisapprovalRange && roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -601,18 +606,18 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     if (castingMode === 'wizard') {
       if (game.settings.get('dcc', 'automateWizardSpellLoss') && !success) {
-        await this.loseSpell(skillItem)
+        await this.loseSpell(skillItem, followUp)
       }
     } else if (castingMode === 'cleric') {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
         // A natural roll inside the disapproval range triggers disapproval
         // (nat 1 fumbles land here too — 1 is always inside the range)
         if (rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
-          await this.rollDisapproval(naturalRoll, { disapprovalRange })
+          await this.rollDisapproval(naturalRoll, { disapprovalRange, ...followUp })
           success = false
         }
         if (!success && disapprovalIncreasesOnFailure(this)) {
-          await this.applyDisapproval()
+          await this.applyDisapproval(1, followUp)
         }
       }
     }
@@ -638,16 +643,17 @@ export const RollsSkillMixin = (Base) => class extends Base {
       tableResult,
       spellItem: skillItem,
       castingMode,
-      suppressPatronTaint: !!options.suppressPatronTaint
+      suppressPatronTaint: !!options.suppressPatronTaint,
+      messageMode
     })
 
     // Skill-driven disapproval drain (Turn Unholy etc.) — preserves
     // the former legacy skill-check post-step.
     if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-      await this.applyDisapproval(skill.drainDisapproval)
+      await this.applyDisapproval(skill.drainDisapproval, followUp)
     }
 
-    if (skillItem && skillItem.system.config.showLastResult) {
+    if (skillItem && skillItem.system.config.showLastResult && messageMode !== 'blind') {
       skillItem.update({ 'system.lastResult': roll.total })
     }
 

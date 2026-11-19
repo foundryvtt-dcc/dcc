@@ -71,7 +71,8 @@ describe('emitAfterSpellCheckResult', () => {
       castingMode: 'wizard',
       patronTaint: null,
       suppressPatronTaint: false,
-      spellburn: 2
+      spellburn: 2,
+      messageMode: null
     })
   })
 

@@ -503,6 +503,10 @@ class FleetingLuck {
    * @return {Promise}
    */
   static async addJudgeNote (effect, user) {
+    // Every GM client runs the hook; only the active GM posts, so a table
+    // with two Judges logged in gets one note, not two
+    const activeGM = game.users?.activeGM
+    if (activeGM && !activeGM.isSelf) return
     const key = effect === 'Gain' ? 'DCC.FleetingLuckBlindCritNote' : 'DCC.FleetingLuckBlindFumbleNote'
     return CONFIG.ChatMessage.documentClass.create({
       user: game.user.id,

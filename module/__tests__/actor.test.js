@@ -1788,7 +1788,15 @@ test('rollSkillCheck routes spell-like wizard skills through the adapter with sp
   expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
   expect(dccRollCreateRollMock).toHaveBeenCalled()
   // The default failing roll (total 10 < threshold 12) loses the spell
-  expect(loseSpellSpy).toHaveBeenCalledWith(skillItem)
+  expect(loseSpellSpy).toHaveBeenCalledWith(skillItem, {})
+
+  // A blind check (#1141) keeps its follow-ups blind and its total off the sheet
+  loseSpellSpy.mockClear()
+  skillItem.system.config.showLastResult = true
+  const updateSpy = skillItem.update = vi.fn(async () => skillItem)
+  await actor.rollSkillCheck('Runic Alphabet', { messageMode: 'blind' })
+  expect(loseSpellSpy).toHaveBeenCalledWith(skillItem, { messageMode: 'blind' })
+  expect(updateSpy).not.toHaveBeenCalledWith({ 'system.lastResult': expect.anything() })
 
   loseSpellSpy.mockRestore()
   global.itemTypesMock.mockReset()

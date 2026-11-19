@@ -560,8 +560,12 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
 
   /**
    * Lose a wizard spell through a casting failure
+   * @param {Object} [item] - The lost spell item
+   * @param {Object} [options]
+   * @param {string} [options.messageMode] - Chat mode for the announcement;
+   *   a blind check passes 'blind' so the loss doesn't reveal it (#1141)
    */
-  async loseSpell (item) {
+  async loseSpell (item, { messageMode } = {}) {
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Mark the spell as lost - if the item is known
@@ -580,14 +584,18 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       content: locString,
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
+    ChatMessage.applyMode(messageData, messageMode || game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
   /**
    * Apply a point of disapproval
+   * @param {Number} [amount=1] - Points to add to the disapproval range
+   * @param {Object} [options]
+   * @param {string} [options.messageMode] - Chat mode for the announcement;
+   *   a blind check passes 'blind' so it doesn't reveal the failure (#1141)
    */
-  async applyDisapproval (amount = 1) {
+  async applyDisapproval (amount = 1, { messageMode } = {}) {
     if (this.isNPC) {
       return
     }
@@ -617,7 +625,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
+    ChatMessage.applyMode(messageData, messageMode || game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
@@ -635,11 +643,13 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    * @param {Number} [options.disapprovalRange] The range the check was made
    *   against, recorded on the card. Defaults to the actor's current range;
    *   callers that just raised it pass the pre-roll value.
+   * @param {string} [options.messageMode] - Chat mode for the card; a blind
+   *   check passes 'blind' (#1141). Defaults to the core setting.
    * @returns {Promise<Object|null|undefined>} The lib `DisapprovalResult`,
    *   null with no table configured, undefined when the dialog is cancelled
    *   or the roll fails
    */
-  async rollDisapproval (naturalRoll, { disapprovalRange } = {}) {
+  async rollDisapproval (naturalRoll, { disapprovalRange, messageMode } = {}) {
     // Generate a formula, placeholder if the natural roll is not known
     const terms = [
       {
@@ -660,7 +670,7 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
     }
 
     // If we know the formula just roll it
-    return this._onRollDisapproval(terms, options, disapprovalRange)
+    return this._onRollDisapproval(terms, options, disapprovalRange, messageMode)
   }
 
   /**
@@ -669,15 +679,16 @@ class DCCActor extends RollsSkillMixin(RollsCheckMixin(RollsWeaponMixin(RollsSpe
    * @param terms
    * @param options
    * @param {Number} [disapprovalRange] Range to record on the card
+   * @param {string} [messageMode] Chat mode for the card (#1141)
    */
-  async _onRollDisapproval (terms, options = {}, disapprovalRange) {
+  async _onRollDisapproval (terms, options = {}, disapprovalRange, messageMode) {
     try {
       const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
       if (!roll) { return }
       if (!roll._evaluated) await roll.evaluate()
 
-      return await resolveDisapprovalRoll({ actor: this, roll, disapprovalRange })
+      return await resolveDisapprovalRoll({ actor: this, roll, disapprovalRange, messageMode })
     } catch (err) {
       // `if (err)` used to be the cancel guard, back when the dialog
       // rejected with a bare `null` (issue #867). Closing the disapproval

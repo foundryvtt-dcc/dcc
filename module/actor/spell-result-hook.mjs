@@ -50,6 +50,10 @@ const SUCCESS_TIERS = ['success', 'success-minor', 'success-major', 'success-cri
  *   verdict (threshold, fumble, disapproval auto-failure) on the Foundry
  *   total. When omitted, `success` is read from the lib tier, which can
  *   differ when the Foundry and lib totals diverge.
+ * @param {string|null} [ctx.messageMode=null] - The check's chat mode when
+ *   the caller overrode the core setting (`'blind'` from the roll dialog's
+ *   Judge-only checkbox, #1141). Listeners that post their own chat messages
+ *   should use it so they don't reveal a blind result.
  */
 export function emitAfterSpellCheckResult (actor, {
   foundryRoll,
@@ -59,7 +63,8 @@ export function emitAfterSpellCheckResult (actor, {
   castingMode,
   suppressPatronTaint = false,
   spellburn = 0,
-  success
+  success,
+  messageMode = null
 } = {}) {
   const naturalRoll = result?.natural ?? foundryRoll?.dice?.[0]?.total ?? foundryRoll?.total
 
@@ -79,7 +84,8 @@ export function emitAfterSpellCheckResult (actor, {
     castingMode,
     patronTaint: null,
     suppressPatronTaint: !!suppressPatronTaint,
-    spellburn: spellburn || 0
+    spellburn: spellburn || 0,
+    messageMode
   })
 }
 

@@ -55,7 +55,7 @@ export function readDisapprovalRoll (roll) {
  * @returns {Promise<Object|null>} The lib `DisapprovalResult`, or null when
  *   no table is configured.
  */
-export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange }) {
+export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange, messageMode }) {
   const { diceCount, dieFaces, diceTotal, luckModifier } = readDisapprovalRoll(roll)
   const table = await loadDisapprovalTable(actor)
 
@@ -70,6 +70,6 @@ export async function resolveDisapprovalRoll ({ actor, roll, disapprovalRange })
     )
   }
 
-  await renderDisapprovalRoll({ actor, disapprovalResult, roll })
+  await renderDisapprovalRoll({ actor, disapprovalResult, roll, messageMode })
   return disapprovalResult
 }
