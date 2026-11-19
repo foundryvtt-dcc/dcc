@@ -134,3 +134,33 @@ test.describe('Automated Fleeting Luck die-size gate', () => {
     expect(await rollNaturalOneSkill(page, '1d20')).toBe('Lose')
   })
 })
+
+test.describe('Fleeting Luck crit award setting (#1142)', () => {
+  // Calls the award directly: the GM-side hook ignores GM-authored rolls, and
+  // this checks the real setting registration and game.users collection.
+  test("'Every active player' awards the roller even when offline, and skips offline others", async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const prior = game.settings.get('dcc', 'fleetingLuckCritAward')
+      const roller = await User.create({ name: 'FL Award Roller', role: CONST.USER_ROLES.PLAYER })
+      const other = await User.create({ name: 'FL Award Other', role: CONST.USER_ROLES.PLAYER })
+      const before = new Set(game.messages.contents.map(m => m.id))
+      try {
+        await game.settings.set('dcc', 'fleetingLuckCritAward', 'all')
+        await game.dcc.FleetingLuck.awardForCrit(roller)
+        return {
+          roller: roller.getFlag('dcc', 'fleetingLuckValue') ?? 0,
+          other: other.getFlag('dcc', 'fleetingLuckValue') ?? 0,
+          lines: game.messages.contents.filter(m => !before.has(m.id)).map(m => m.content)
+        }
+      } finally {
+        await game.settings.set('dcc', 'fleetingLuckCritAward', prior)
+        await roller.delete()
+        await other.delete()
+      }
+    })
+    expect(result.roller).toBe(1)
+    expect(result.other).toBe(0)
+    expect(result.lines).toHaveLength(1)
+    expect(result.lines[0]).toContain('FL Award Roller')
+  })
+})

@@ -53,6 +53,22 @@ export const registerEarlySystemSettings = function () {
     config: true
   })
 
+  // Who a natural 20 / critical hit awards Fleeting Luck to (#1142). Read when
+  // the luck is awarded, so no reload; registered here to sit beside the
+  // other Fleeting Luck settings.
+  game.settings.register('dcc', 'fleetingLuckCritAward', {
+    name: 'DCC.SettingFleetingLuckCritAward',
+    hint: 'DCC.SettingFleetingLuckCritAwardHint',
+    scope: 'world',
+    type: String,
+    choices: {
+      roller: 'DCC.SettingFleetingLuckCritAwardRoller',
+      all: 'DCC.SettingFleetingLuckCritAwardAll'
+    },
+    default: 'roller',
+    config: true
+  })
+
   /**
    * Death Clock (issue #843): auto-start the DCC death & dying countdown
    * when a Player drops to 0 HP — (level) rounds to be healed, dead status

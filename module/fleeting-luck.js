@@ -216,7 +216,7 @@ class FleetingLuck {
             }
             switch (effect) {
               case 'Gain':
-                FleetingLuck.give(message.author.id, 1)
+                FleetingLuck.awardForCrit(message.author)
                 break
               case 'Lose':
                 FleetingLuck.clearAll()
@@ -315,6 +315,29 @@ class FleetingLuck {
     if (amount !== 0) {
       await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckGiveMessage', { user: user.name, amount }))
     }
+    return await FleetingLuck.refresh()
+  }
+
+  /**
+   * Award the Fleeting Luck a natural 20 or critical hit earns (#1142). The
+   * `fleetingLuckCritAward` setting picks who gets it: the player who rolled
+   * (default), or every active player.
+   * @param {User} author    The user whose roll earned the luck
+   * @returns {Promise}
+   */
+  static async awardForCrit (author) {
+    if (game.settings.get('dcc', 'fleetingLuckCritAward') !== 'all') {
+      return FleetingLuck.give(author.id, 1)
+    }
+    // The roller always counts, even if their active flag lags behind
+    const players = game.users.filter(user =>
+      FleetingLuck.isTrackedForUser(user) && (user.active || user.id === author.id))
+    for (const user of players) {
+      const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
+      await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + 1)
+    }
+    // One chat line for the whole table rather than one per player
+    await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckGiveAllMessage', { user: author.name }))
     return await FleetingLuck.refresh()
   }
 
