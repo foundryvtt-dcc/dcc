@@ -377,6 +377,26 @@ test.describe('DCC Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { abilityId: 'str' })
     })
 
+    // #1141: the dialog's "Send results only to the Judge" checkbox posts
+    // the card in Foundry's blind mode. Exercises the real form submit, so
+    // a renamed input or a dropped `offerBlindRoll` shows up here.
+    test('the Judge-only checkbox posts the check blind (#1141)', async ({ page }) => {
+      await makePlayer(page, 'P1 Blind Dialog')
+      await page.evaluate(() => {
+        game.actors.getName('P1 Blind Dialog').rollAbilityCheck('str', { showModifierDialog: true })
+      })
+      await page.waitForSelector('.dcc-roll-modifier input[name="blindRoll"]', { timeout: 10000 })
+      // In-page clicks: pointer clicks can hang on chat/notification overlays
+      await page.evaluate(() => {
+        document.querySelector('.dcc-roll-modifier input[name="blindRoll"]').click()
+        document.querySelector('.dcc-roll-modifier button[type="submit"]').click()
+      })
+      await expect.poll(() => page.evaluate(() => {
+        const msg = game.messages.contents.findLast(m => m.speaker?.alias === 'P1 Blind Dialog')
+        return msg ? { blind: msg.blind, whisperedToGM: msg.whisper.includes(game.user.id) } : null
+      }), { timeout: 10000 }).toEqual({ blind: true, whisperedToGM: true })
+    })
+
     // Phase 7 session 14: the per-modifier breakdown the adapter
     // already captures on `flags.dcc.libResult.modifiers` now renders
     // under the rolled formula in chat (PR #720 resilience item). The

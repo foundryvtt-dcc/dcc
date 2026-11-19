@@ -8,7 +8,7 @@
     "block-no-empty": true,
     "color-hex-length": "short",
     "color-no-invalid-hex": true,
-    "declaration-block-single-line-max-declarations": 1,
+    "@stylistic/declaration-block-single-line-max-declarations": 1,
     "declaration-property-value-disallowed-list": {
       "border": ["none"],
       "border-top": ["none"],

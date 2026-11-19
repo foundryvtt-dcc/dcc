@@ -294,9 +294,12 @@ export const RollsCheckMixin = (Base) => class extends Base {
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
       title: options.title || flavor,
-      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll'),
+      offerBlindRoll: true
     })
     if (prompt === null) return
+    // Judge-only checkbox (#1141): the renderer reads `options.messageMode`
+    if (prompt.messageMode) options = { ...options, messageMode: prompt.messageMode }
 
     const libDie = (prompt.actionDie && this._stripDieCount(prompt.actionDie)) ||
       this._stripDieCount(die) || 'd20'
@@ -857,9 +860,12 @@ export const RollsCheckMixin = (Base) => class extends Base {
     const prompt = await promptRollModifierDialog(terms, {
       rollData: this.getRollData(),
       title: options.title || flavor,
-      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll'),
+      offerBlindRoll: true
     })
     if (prompt === null) return
+    // Judge-only checkbox (#1141): the renderer reads `options.messageMode`
+    if (prompt.messageMode) options = { ...options, messageMode: prompt.messageMode }
 
     const libDie = (prompt.actionDie && this._stripDieCount(prompt.actionDie)) || 'd20'
 

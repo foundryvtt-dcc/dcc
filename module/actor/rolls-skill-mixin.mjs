@@ -273,9 +273,12 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const prompt = await promptRollModifierDialog(dialogTerms, {
         rollData: this.getRollData(),
         title: options.title,
-        rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+        rollLabel: game.i18n.localize('DCC.RollModifierRoll'),
+        offerBlindRoll: true
       })
       if (prompt === null) return
+      // Judge-only checkbox (#1141): the renderer reads `options.messageMode`
+      if (prompt.messageMode) options = { ...options, messageMode: prompt.messageMode }
       if (prompt.actionDie) {
         const libDie = this._stripDieCount(prompt.actionDie)
         if (libDie) definition.roll.die = libDie
@@ -336,7 +339,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
       options
     })
 
-    if (skillItem && skillItem.system.config.showLastResult) {
+    // A blind check's total stays off the sheet (#1141)
+    if (skillItem && skillItem.system.config.showLastResult && options.messageMode !== 'blind') {
       skillItem.update({ 'system.lastResult': foundryRoll.total })
     }
 
@@ -430,8 +434,15 @@ export const RollsSkillMixin = (Base) => class extends Base {
       const luckBurnTerm = buildLuckBurnTerm(this, { source: options.title || game.i18n.localize(skill?.label || '') })
       if (luckBurnTerm) terms.push(luckBurnTerm)
     }
-    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options))
+    const createOptions = options.showModifierDialog ? { ...options, offerBlindRoll: true } : options
+    const roll = await rollOrNullOnCancel(game.dcc.DCCRoll.createRoll(terms, this.getRollData(), createOptions))
     if (!roll) return // Dialog cancelled — post no skill-check card
+    // The dialog's Judge-only checkbox (#1141) rides on the roll and wins over
+    // a caller's `options.messageMode`, as on the other dialog paths. Null ⇒
+    // the core roll-mode setting. Every follow-up message below uses it too,
+    // so a blind check's spell loss or disapproval doesn't reveal the result.
+    const messageMode = roll.options?.messageMode || options.messageMode || null
+    const followUp = messageMode ? { messageMode } : {}
 
     if (skill.useDisapprovalRange && roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -529,7 +540,8 @@ export const RollsSkillMixin = (Base) => class extends Base {
         actionDiceChatLine,
         // Dotted key: addChatMessage's flags are dotted, and a nested `dcc`
         // object would replace them when the message is created.
-        messageData: layOnHands ? { flags: { 'dcc.layOnHands': layOnHands } } : {}
+        messageData: layOnHands ? { flags: { 'dcc.layOnHands': layOnHands } } : {},
+        messageOptions: messageMode ? { messageMode } : {}
       })
     } else {
       // `useDisapprovalRange` without a table: emit the same
@@ -569,7 +581,7 @@ export const RollsSkillMixin = (Base) => class extends Base {
         flags,
         system: { spellId: skillItem?.id, skillId },
         content: `${rollHTML}${spellResultHtml}${actionDiceLineHtml(actionDiceChatLine)}`
-      })
+      }, messageMode ? { messageMode } : {})
     }
 
     // Spell-like skill failure automation (#375): a skill configured with an
@@ -594,18 +606,18 @@ export const RollsSkillMixin = (Base) => class extends Base {
 
     if (castingMode === 'wizard') {
       if (game.settings.get('dcc', 'automateWizardSpellLoss') && !success) {
-        await this.loseSpell(skillItem)
+        await this.loseSpell(skillItem, followUp)
       }
     } else if (castingMode === 'cleric') {
       if (game.settings.get('dcc', 'automateClericDisapproval')) {
         // A natural roll inside the disapproval range triggers disapproval
         // (nat 1 fumbles land here too — 1 is always inside the range)
         if (rollTriggersDisapproval(naturalRoll, disapprovalRange)) {
-          await this.rollDisapproval(naturalRoll, { disapprovalRange })
+          await this.rollDisapproval(naturalRoll, { disapprovalRange, ...followUp })
           success = false
         }
         if (!success && disapprovalIncreasesOnFailure(this)) {
-          await this.applyDisapproval()
+          await this.applyDisapproval(1, followUp)
         }
       }
     }
@@ -631,16 +643,17 @@ export const RollsSkillMixin = (Base) => class extends Base {
       tableResult,
       spellItem: skillItem,
       castingMode,
-      suppressPatronTaint: !!options.suppressPatronTaint
+      suppressPatronTaint: !!options.suppressPatronTaint,
+      messageMode
     })
 
     // Skill-driven disapproval drain (Turn Unholy etc.) — preserves
     // the former legacy skill-check post-step.
     if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-      await this.applyDisapproval(skill.drainDisapproval)
+      await this.applyDisapproval(skill.drainDisapproval, followUp)
     }
 
-    if (skillItem && skillItem.system.config.showLastResult) {
+    if (skillItem && skillItem.system.config.showLastResult && messageMode !== 'blind') {
       skillItem.update({ 'system.lastResult': roll.total })
     }
 

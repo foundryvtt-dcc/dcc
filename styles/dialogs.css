@@ -61,7 +61,12 @@
    * the term columns. Shares the ability score log row's 13px scale and its
    * tightly scoped checkbox rules, but not its alignment (see below)
    */
-  .spellburn-adjust-hp-row {
+  /*
+   * The "results only to the Judge" checkbox (#1141) shares the HP row's
+   * full-width label + checkbox layout; only the HP row has a hidden state
+   */
+  .spellburn-adjust-hp-row,
+  .blind-roll-row {
     font-size: 13px;
     margin-left: 2px;
 

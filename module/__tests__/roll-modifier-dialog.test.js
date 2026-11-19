@@ -262,3 +262,20 @@ describe('modifySpellburn refreshes the HP row', () => {
     expect(ctx._updateSpellburnHpRow).not.toHaveBeenCalled()
   })
 })
+
+describe('Judge-only checkbox (#1141)', () => {
+  const form = (checked) => ({ elements: { blindRoll: { checked } } })
+  const chosen = (options, f) => proto._chosenMessageMode.call({ options }, f)
+
+  test('a ticked box picks the blind message mode', () => {
+    expect(chosen({ offerBlindRoll: true }, form(true))).toBe('blind')
+  })
+
+  test('an unticked box leaves the core roll-mode setting in charge', () => {
+    expect(chosen({ offerBlindRoll: true }, form(false))).toBeNull()
+  })
+
+  test('a dialog that did not offer the box ignores it', () => {
+    expect(chosen({}, form(true))).toBeNull()
+  })
+})
